@@ -77,7 +77,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
     _setAppLifecycleState(ui.AppLifecycleState.resumed);
-    viewManager = FlutterViewManager(initialViewId: kImplicitViewId);
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -137,11 +136,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     EngineFlutterDisplay.instance,
   ];
 
-  late FlutterViewManager viewManager;
+  final FlutterViewManager viewManager = FlutterViewManager();
 
   /// Adds [view] to the platform dispatcher's registry of [views].
   void registerView(EngineFlutterView view) {
-    viewManager.setImplicitView(view);
+    viewManager.registerView(view);
   }
 
   /// Removes [view] from the platform dispatcher's registry of [views].
@@ -154,7 +153,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The current list of windows.
   @override
   Iterable<EngineFlutterView> get views => viewManager.views;
-  // final Map<int, EngineFlutterView> viewData = <int, EngineFlutterView>{};
 
   /// Returns the [EngineFlutterView] with the provided ID if one exists, or null
   /// otherwise.

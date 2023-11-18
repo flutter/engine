@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop' show JSAny;
+
+import 'package:ui/src/engine/dom.dart';
+
 import 'configuration.dart';
 import 'js_interop/js_app.dart';
 import 'js_interop/js_loader.dart';
@@ -67,7 +71,13 @@ class AppBootstrap {
     return FlutterApp(
       addView: (JsFlutterViewOptions options) async {
         assert(configuration.multiViewEnabled, 'Cannot addView when multiView is not enabled');
-        return EnginePlatformDispatcher.instance.viewManager.createView(options: options);
+        // TODO(mdebbar/dit): Create a view from JS Options, then register it in
+        // the viewManager... (Or have a method that creates-and-registers a view)
+        // final EngineFlutterView view = View.createFromOptions(options);
+        // return EnginePlatformDispatcher.instance.viewManager.registerView(view).viewId;
+        domWindow.console.warn('Create view from JS is unimplemented!');
+        domWindow.console.warn((options as JSAny).toObjectDeep);
+        return -1;
       },
       removeView: (int viewId) async {
         return EnginePlatformDispatcher.instance.viewManager.unregisterView(viewId);

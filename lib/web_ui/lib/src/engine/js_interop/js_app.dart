@@ -6,10 +6,9 @@
 library js_app;
 
 import 'dart:js_interop';
-
 import 'package:ui/src/engine.dart';
 
-/// The JS bindings for the object that's set as `window.flutterConfiguration`.
+/// The JS bindings for the configuration object passed to [FlutterApp.addView].
 @JS()
 @anonymous
 @staticInterop
@@ -26,7 +25,7 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
   Object? get initialData => _initialData?.toObjectDeep;
 }
 
-/// A class that exposes the public API of a running Flutter Web App running.
+/// The public JS API of a running Flutter Web App.
 @JS()
 @anonymous
 @staticInterop
@@ -34,10 +33,13 @@ abstract class FlutterApp {
   factory FlutterApp({
     required AddFlutterViewFn addView,
     required RemoveFlutterViewFn removeView,
-  }) => FlutterApp._(
-      addView: ((JsFlutterViewOptions options) => futureToPromise(addView(options) as Future<JSAny>)).toJS,
-      removeView: ((int id) => futureToPromise(removeView(id) as Future<JSObject?>)).toJS,
-    );
+  }) =>
+      FlutterApp._(
+        addView: ((JsFlutterViewOptions options) =>
+            futureToPromise(addView(options) as Future<JSAny>)).toJS,
+        removeView: ((int id) =>
+            futureToPromise(removeView(id) as Future<JSObject?>)).toJS,
+      );
   external factory FlutterApp._({
     required JSFunction addView,
     required JSFunction removeView,
