@@ -306,11 +306,8 @@ bool SurfaceMTL::Present() const {
       auto drawable = deferred_drawable_->get();
       [drawable present];
     } else {
-      auto deferred_drawable = deferred_drawable_;
-      [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> _Nonnull) {
-        auto drawable = deferred_drawable->get();
-        [drawable present];
-      }];
+      auto drawable = deferred_drawable_->get();
+      [command_buffer presentDrawable:drawable];
       [command_buffer commit];
     }
   }
