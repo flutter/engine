@@ -72,11 +72,6 @@ class SceneContext {
         return;
       }
       // Apply default ContentContextOptions to the descriptor.
-      // TODO(matanlurey): Consider failing if the descriptor is empty.
-      //
-      // Note that previously we used to dereference *desc, which is undefined
-      // behavior if desc is empty. Ideally we would signal failure upwards
-      // and not create the PipelineVariantsT at all.
       SceneContextOptions{}.ApplyToPipelineDescriptor(
           /*capabilities=*/*context.GetCapabilities(),
           /*desc=*/desc.value());
