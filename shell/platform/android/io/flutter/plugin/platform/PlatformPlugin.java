@@ -524,7 +524,7 @@ public class PlatformPlugin {
           // able to retrieve text from URI. FileNotFoundException will be thrown
           // if not, and then null will be returned.
           if (item.getUri() != null) {
-            activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "*/*", null);
+            activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
           }
         }
         // Safely return clipbaord item into text by returning itemText or text retrieved
