@@ -360,20 +360,12 @@ bool EntityPass::Render(ContentContext& renderer,
     auto command_buffer = renderer.GetContext()->CreateCommandBuffer();
     command_buffer->SetLabel("EntityPass Root Command Buffer");
 
-    // If the context supports blitting and the pixel formats are identical,
-    // blit the offscreen texture to the onscreen texture. Otherwise, draw it to
-    // the parent texture using a pipeline (slower).
-    auto src_format = offscreen_target.GetRenderTarget()
-                          .GetRenderTargetTexture()
-                          ->GetTextureDescriptor()
-                          .format;
-    auto dst_format = root_render_target.GetRenderTargetTexture()
-                          ->GetTextureDescriptor()
-                          .format;
+    // If the context supports blitting, blit the offscreen texture to the
+    // onscreen texture. Otherwise, draw it to the parent texture using a
+    // pipeline (slower).
     if (renderer.GetContext()
             ->GetCapabilities()
-            ->SupportsTextureToTextureBlits() &&
-        src_format == dst_format) {
+            ->SupportsTextureToTextureBlits()) {
       auto blit_pass = command_buffer->CreateBlitPass();
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),

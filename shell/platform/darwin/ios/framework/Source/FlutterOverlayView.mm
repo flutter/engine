@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
+#include <Metal/Metal.h>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -30,25 +31,44 @@
   return nil;
 }
 
-- (instancetype)init {
+- (instancetype)init:(MTLPixelFormat)pixelFormat {
   self = [super initWithFrame:CGRectZero];
 
   if (self) {
     self.layer.opaque = NO;
     self.userInteractionEnabled = NO;
     self.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+    CAMetalLayer* layer = (CAMetalLayer*)self.layer;
+#pragma clang diagnostic pop
+    layer.pixelFormat = pixelFormat;
+    if (pixelFormat == MTLPixelFormatRGBA16Float) {
+      CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      layer.colorspace = srgb;
+    }
   }
 
   return self;
 }
 
-- (instancetype)initWithContentsScale:(CGFloat)contentsScale {
-  self = [self init];
+- (instancetype)initWithContentsScale:(CGFloat)contentsScale
+                          pixelFormat:(MTLPixelFormat)pixelFormat {
+  self = [self init:pixelFormat];
 
   if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
     self.layer.allowsGroupOpacity = NO;
     self.layer.contentsScale = contentsScale;
     self.layer.rasterizationScale = contentsScale;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+    CAMetalLayer* layer = (CAMetalLayer*)self.layer;
+#pragma clang diagnostic pop
+    layer.pixelFormat = pixelFormat;
+    if (pixelFormat == MTLPixelFormatRGBA16Float) {
+      CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      layer.colorspace = srgb;
+    }
   }
 
   return self;

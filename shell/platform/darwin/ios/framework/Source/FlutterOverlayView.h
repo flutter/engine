@@ -5,6 +5,7 @@
 #ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_OVERLAY_VIEW_H_
 #define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_OVERLAY_VIEW_H_
 
+#include <Metal/Metal.h>
 #include <UIKit/UIKit.h>
 
 #include <memory>
@@ -31,8 +32,8 @@
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
-- (instancetype)init NS_DESIGNATED_INITIALIZER;
-- (instancetype)initWithContentsScale:(CGFloat)contentsScale;
+- (instancetype)init:(MTLPixelFormat)pixelFormat NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithContentsScale:(CGFloat)contentsScale pixelFormat:(MTLPixelFormat)pixelFormat;
 
 @end
 

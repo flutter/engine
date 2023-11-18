@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
+#include <Metal/Metal.h>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -19,6 +20,7 @@
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
   BOOL _isWideGamutEnabled;
+  MTLPixelFormat _pixelFormat;
 }
 
 - (instancetype)init {
@@ -41,6 +43,10 @@
     return self.window.windowScene.screen;
   }
   return UIScreen.mainScreen;
+}
+
+- (MTLPixelFormat)pixelFormat {
+  return _pixelFormat;
 }
 
 - (BOOL)isWideGamutSupported {
@@ -115,8 +121,12 @@ static void PrintWideGamutWarningOnce() {
       // F16 was chosen over BGRA10_XR since Skia does not support decoding
       // BGRA10_XR.
       layer.pixelFormat = MTLPixelFormatRGBA16Float;
-    } else if (_isWideGamutEnabled && !isWideGamutSupported) {
-      PrintWideGamutWarningOnce();
+      _pixelFormat = MTLPixelFormatRGBA16Float;
+    } else {
+      if (_isWideGamutEnabled && !isWideGamutSupported) {
+        PrintWideGamutWarningOnce();
+      }
+      _pixelFormat = layer.pixelFormat;
     }
   }
 
