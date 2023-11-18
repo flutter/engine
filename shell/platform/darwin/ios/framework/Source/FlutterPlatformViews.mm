@@ -95,7 +95,6 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     fml::scoped_nsobject<UIView> overlay_view_wrapper;
 
     if (!gr_context) {
-      CGFloat screenScale = [UIScreen mainScreen].scale;
       overlay_view.reset([[FlutterOverlayView alloc] init:pixel_format]);
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] init:pixel_format]);
 
