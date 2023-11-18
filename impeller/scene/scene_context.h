@@ -67,9 +67,19 @@ class SceneContext {
    public:
     explicit PipelineVariantsT(Context& context) {
       auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+      if (!desc.has_value()) {
+        is_valid_ = false;
+        return;
+      }
       // Apply default ContentContextOptions to the descriptor.
+      // TODO(matanlurey): Consider failing if the descriptor is empty.
+      //
+      // Note that previously we used to dereference *desc, which is undefined
+      // behavior if desc is empty. Ideally we would signal failure upwards
+      // and not create the PipelineVariantsT at all.
       SceneContextOptions{}.ApplyToPipelineDescriptor(
-          *context.GetCapabilities(), *desc);
+          /*capabilities=*/*context.GetCapabilities(),
+          /*desc=*/desc.value());
       variants_[{}] = std::make_unique<PipelineT>(context, desc);
     };
 
@@ -99,7 +109,10 @@ class SceneContext {
       return variant_pipeline;
     }
 
+    bool IsValid() const { return is_valid_; }
+
    private:
+    bool is_valid_ = true;
     std::unordered_map<SceneContextOptions,
                        std::unique_ptr<PipelineT>,
                        SceneContextOptions::Hash,
@@ -108,10 +121,19 @@ class SceneContext {
   };
 
   template <typename VertexShader, typename FragmentShader>
+  /// Creates a PipelineVariantsT for the given vertex and fragment shaders.
+  ///
+  /// If a pipeline could not be created, returns nullptr.
   std::unique_ptr<PipelineVariants> MakePipelineVariants(Context& context) {
+    auto pipeline =
+        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>(
+            context);
+    if (!pipeline.IsValid()) {
+      return nullptr;
+    }
     return std::make_unique<
         PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>>(
-        context);
+        std::move(pipeline));
   }
 
   std::unordered_map<PipelineKey,
