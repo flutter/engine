@@ -179,6 +179,101 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRunningRootIsolate(
   return isolate;
 }
 
+/*std::weak_ptr<DartIsolate> DartIsolate::CreateRunningPlatformIsolate(
+    const Settings& settings,
+    const fml::RefPtr<const DartSnapshot>& isolate_snapshot,
+    std::unique_ptr<PlatformConfiguration> platform_configuration,
+    Flags isolate_flags,
+    const fml::closure& root_isolate_create_callback,
+    const fml::closure& isolate_create_callback,
+    const fml::closure& isolate_shutdown_callback,
+    std::optional<std::string> dart_entrypoint,
+    std::optional<std::string> dart_entrypoint_library,
+    const std::vector<std::string>& dart_entrypoint_args,
+    std::unique_ptr<IsolateConfiguration> isolate_configuration,
+    const UIDartState::Context& context,
+    const DartIsolate* spawning_isolate) {
+  if (!isolate_snapshot) {
+    FML_LOG(ERROR) << "Invalid isolate snapshot.";
+    return {};
+  }
+
+  if (!isolate_configuration) {
+    FML_LOG(ERROR) << "Invalid isolate configuration.";
+    return {};
+  }
+
+  isolate_flags.SetNullSafetyEnabled(
+      isolate_configuration->IsNullSafetyEnabled(*isolate_snapshot));
+  isolate_flags.SetIsDontNeedSafe(isolate_snapshot->IsDontNeedSafe());
+
+  auto isolate = CreateIsolate(settings,                           //
+                                   isolate_snapshot,                   //
+                                   std::move(platform_configuration),  //
+                                   isolate_flags,                      //
+                                   isolate_create_callback,            //
+                                   isolate_shutdown_callback,          //
+                                   context,                            //
+                                   spawning_isolate                    //
+                                   )
+                     .lock();
+
+  if (!isolate) {
+    FML_LOG(ERROR) << "Could not create root isolate.";
+    return {};
+  }
+
+  fml::ScopedCleanupClosure shutdown_on_error([isolate]() {
+    if (!isolate->Shutdown()) {
+      FML_DLOG(ERROR) << "Could not shutdown transient isolate.";
+    }
+  });
+
+  if (isolate->GetPhase() != DartIsolate::Phase::LibrariesSetup) {
+    FML_LOG(ERROR) << "Root isolate was created in an incorrect phase: "
+                   << static_cast<int>(isolate->GetPhase());
+    return {};
+  }
+
+  if (!isolate_configuration->PrepareIsolate(*isolate.get())) {
+    FML_LOG(ERROR) << "Could not prepare isolate.";
+    return {};
+  }
+
+  if (isolate->GetPhase() != DartIsolate::Phase::Ready) {
+    FML_LOG(ERROR) << "Root isolate not in the ready phase for Dart entrypoint "
+                      "invocation.";
+    return {};
+  }
+
+  if (settings.root_isolate_create_callback) {
+    // Isolate callbacks always occur in isolate scope and before user code has
+    // had a chance to run.
+    tonic::DartState::Scope scope(isolate.get());
+    settings.root_isolate_create_callback(*isolate.get());
+  }
+
+  if (root_isolate_create_callback) {
+    root_isolate_create_callback();
+  }
+
+  if (!isolate->RunFromLibrary(std::move(dart_entrypoint_library),  //
+                               std::move(dart_entrypoint),          //
+                               dart_entrypoint_args)) {
+    FML_LOG(ERROR) << "Could not run the run main Dart entrypoint.";
+    return {};
+  }
+
+  if (settings.root_isolate_shutdown_callback) {
+    isolate->AddIsolateShutdownCallback(
+        settings.root_isolate_shutdown_callback);
+  }
+
+  shutdown_on_error.Release();
+
+  return isolate;
+}*/
+
 void DartIsolate::SpawnIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
@@ -187,6 +282,29 @@ void DartIsolate::SpawnIsolateShutdownCallback(
 
 std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const Settings& settings,
+    fml::RefPtr<const DartSnapshot> isolate_snapshot,
+    std::unique_ptr<PlatformConfiguration> platform_configuration,
+    const Flags& flags,
+    const fml::closure& isolate_create_callback,
+    const fml::closure& isolate_shutdown_callback,
+    const UIDartState::Context& context,
+    const DartIsolate* spawning_isolate) {
+  return CreateIsolate(
+    settings,
+    true,  // is_root_isolate
+    std::move(isolate_snapshot),
+    std::move(platform_configuration),
+    flags,
+    isolate_create_callback,
+    isolate_shutdown_callback,
+    context,
+    spawning_isolate,
+  );
+}
+
+std::weak_ptr<DartIsolate> DartIsolate::CreateIsolate(
+    const Settings& settings,
+    bool is_root_isolate,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     std::unique_ptr<PlatformConfiguration> platform_configuration,
     const Flags& flags,
@@ -211,10 +329,9 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
               )));
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
-      std::shared_ptr<DartIsolate>(new DartIsolate(settings,  // settings
-                                                   true,      // is_root_isolate
-                                                   context    // context
-                                                   )));
+      std::shared_ptr<DartIsolate>(new DartIsolate(settings,
+                                                   is_root_isolate,
+                                                   context)));
 
   DartErrorString error;
   Dart_Isolate vm_isolate = nullptr;
@@ -301,6 +418,10 @@ DartIsolate::Phase DartIsolate::GetPhase() const {
   return phase_;
 }
 
+bool DartIsolate::IsPlatformIsolate() const {
+  return debugName == ;
+}
+
 std::string DartIsolate::GetServiceId() {
   const char* service_id_buf = Dart_IsolateServiceId(isolate());
   std::string service_id(service_id_buf);
@@ -328,7 +449,12 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     Dart_SetCurrentUserTag(Dart_NewUserTag("AppStartUp"));
   }
 
-  SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner());
+  std::cout << "Creating isolate: " << Dart_DebugNameToCString() << std::endl;
+  const bool is_platform_isolate = strstr(Dart_DebugNameToCString(), "PlatformIsolate") != NULL;
+  SetMessageHandlingTaskRunner(
+      is_platform_isolate ?
+          GetTaskRunners().GetUITaskRunner() :
+          GetTaskRunners().GetPlatformTaskRunner());
 
   if (tonic::CheckAndHandleError(
           Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag))) {
