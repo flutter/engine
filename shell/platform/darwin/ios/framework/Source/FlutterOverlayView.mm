@@ -31,13 +31,26 @@
   return nil;
 }
 
-- (instancetype)init:(MTLPixelFormat)pixelFormat {
+- (instancetype)init {
   self = [super initWithFrame:CGRectZero];
 
   if (self) {
     self.layer.opaque = NO;
     self.userInteractionEnabled = NO;
     self.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+  }
+
+  return self;
+}
+
+- (instancetype)initWithContentsScale:(CGFloat)contentsScale
+                          pixelFormat:(MTLPixelFormat)pixelFormat {
+  self = [self init];
+
+  if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+    self.layer.allowsGroupOpacity = NO;
+    self.layer.contentsScale = contentsScale;
+    self.layer.rasterizationScale = contentsScale;
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
     CAMetalLayer* layer = (CAMetalLayer*)self.layer;
@@ -47,19 +60,6 @@
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
     }
-  }
-
-  return self;
-}
-
-- (instancetype)initWithContentsScale:(CGFloat)contentsScale
-                          pixelFormat:(MTLPixelFormat)pixelFormat {
-  self = [self init:pixelFormat];
-
-  if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
-    self.layer.allowsGroupOpacity = NO;
-    self.layer.contentsScale = contentsScale;
-    self.layer.rasterizationScale = contentsScale;
   }
   return self;
 }

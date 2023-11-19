@@ -32,7 +32,7 @@
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
-- (instancetype)init:(MTLPixelFormat)pixelFormat NS_DESIGNATED_INITIALIZER;
+- (instancetype)init NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithContentsScale:(CGFloat)contentsScale
                           pixelFormat:(MTLPixelFormat)pixelFormat;
 

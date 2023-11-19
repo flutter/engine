@@ -94,9 +94,10 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     fml::scoped_nsobject<UIView> overlay_view;
     fml::scoped_nsobject<UIView> overlay_view_wrapper;
 
-    if (!gr_context) {
-      overlay_view.reset([[FlutterOverlayView alloc] init:pixel_format]);
-      overlay_view_wrapper.reset([[FlutterOverlayView alloc] init:pixel_format]);
+    bool impeller_enabled = !!ios_context->GetImpellerContext();
+    if (!gr_context && !impeller_enabled) {
+      overlay_view.reset([[FlutterOverlayView alloc] init]);
+      overlay_view_wrapper.reset([[FlutterOverlayView alloc] init]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
       std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
