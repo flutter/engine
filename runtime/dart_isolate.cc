@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <tuple>
 #include <utility>
+#include <iostream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/posix_wrappers.h"
@@ -298,7 +299,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     isolate_create_callback,
     isolate_shutdown_callback,
     context,
-    spawning_isolate,
+    spawning_isolate
   );
 }
 
@@ -416,10 +417,6 @@ DartIsolate::~DartIsolate() {
 
 DartIsolate::Phase DartIsolate::GetPhase() const {
   return phase_;
-}
-
-bool DartIsolate::IsPlatformIsolate() const {
-  return debugName == ;
 }
 
 std::string DartIsolate::GetServiceId() {
