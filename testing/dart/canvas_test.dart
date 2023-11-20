@@ -1059,6 +1059,7 @@ void main() async {
         decorationColor: const Color(0xFFFF0000),
         fontFamily: 'RobotoSlab',
         fontSize: 24.0,
+        foreground: Paint()..color = const Color(0xFF0000FF),
       ));
 
       builder.addText(style.name);
