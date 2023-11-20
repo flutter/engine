@@ -11,6 +11,7 @@
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/contents_filter_input.h"
 #include "impeller/entity/contents/filters/inputs/filter_contents_filter_input.h"
+#include "impeller/entity/contents/filters/inputs/placeholder_filter_input.h"
 #include "impeller/entity/contents/filters/inputs/texture_filter_input.h"
 
 namespace impeller {
@@ -30,6 +31,11 @@ FilterInput::Ref FilterInput::Make(Variant input, bool msaa_enabled) {
 
   if (auto texture = std::get_if<std::shared_ptr<Texture>>(&input)) {
     return Make(*texture, Matrix());
+  }
+
+  if (auto rect = std::get_if<Rect>(&input)) {
+    return std::shared_ptr<PlaceholderFilterInput>(
+        new PlaceholderFilterInput(*rect));
   }
 
   FML_UNREACHABLE();
@@ -56,14 +62,38 @@ Matrix FilterInput::GetLocalTransform(const Entity& entity) const {
 
 std::optional<Rect> FilterInput::GetLocalCoverage(const Entity& entity) const {
   Entity local_entity = entity;
-  local_entity.SetTransformation(GetLocalTransform(entity));
+  local_entity.SetTransform(GetLocalTransform(entity));
   return GetCoverage(local_entity);
 }
 
-Matrix FilterInput::GetTransform(const Entity& entity) const {
-  return entity.GetTransformation() * GetLocalTransform(entity);
+std::optional<Rect> FilterInput::GetSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return output_limit;
 }
 
+Matrix FilterInput::GetTransform(const Entity& entity) const {
+  return entity.GetTransform() * GetLocalTransform(entity);
+}
+
+void FilterInput::PopulateGlyphAtlas(
+    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+    Scalar scale) {}
+
 FilterInput::~FilterInput() = default;
+
+bool FilterInput::IsTranslationOnly() const {
+  return true;
+}
+
+bool FilterInput::IsLeaf() const {
+  return true;
+}
+
+void FilterInput::SetLeafInputs(const FilterInput::Vector& inputs) {}
+
+void FilterInput::SetEffectTransform(const Matrix& matrix) {}
+
+void FilterInput::SetRenderingMode(Entity::RenderingMode rendering_mode) {}
 
 }  // namespace impeller

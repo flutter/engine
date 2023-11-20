@@ -22,8 +22,8 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+void ClipContents::SetGeometry(const std::shared_ptr<Geometry>& geometry) {
+  geometry_ = geometry;
 }
 
 void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
@@ -34,31 +34,29 @@ std::optional<Rect> ClipContents::GetCoverage(const Entity& entity) const {
   return std::nullopt;
 };
 
-Contents::StencilCoverage ClipContents::GetStencilCoverage(
+Contents::ClipCoverage ClipContents::GetClipCoverage(
     const Entity& entity,
-    const std::optional<Rect>& current_stencil_coverage) const {
-  if (!current_stencil_coverage.has_value()) {
-    return {.type = StencilCoverage::Type::kAppend, .coverage = std::nullopt};
+    const std::optional<Rect>& current_clip_coverage) const {
+  if (!current_clip_coverage.has_value()) {
+    return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
   }
   switch (clip_op_) {
     case Entity::ClipOperation::kDifference:
       // This can be optimized further by considering cases when the bounds of
       // the current stencil will shrink.
-      return {.type = StencilCoverage::Type::kAppend,
-              .coverage = current_stencil_coverage};
+      return {.type = ClipCoverage::Type::kAppend,
+              .coverage = current_clip_coverage};
     case Entity::ClipOperation::kIntersect:
       if (!geometry_) {
-        return {.type = StencilCoverage::Type::kAppend,
-                .coverage = std::nullopt};
+        return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
-      auto coverage = geometry_->GetCoverage(entity.GetTransformation());
-      if (!coverage.has_value() || !current_stencil_coverage.has_value()) {
-        return {.type = StencilCoverage::Type::kAppend,
-                .coverage = std::nullopt};
+      auto coverage = geometry_->GetCoverage(entity.GetTransform());
+      if (!coverage.has_value() || !current_clip_coverage.has_value()) {
+        return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
       return {
-          .type = StencilCoverage::Type::kAppend,
-          .coverage = current_stencil_coverage->Intersection(coverage.value()),
+          .type = ClipCoverage::Type::kAppend,
+          .coverage = current_clip_coverage->Intersection(coverage.value()),
       };
   }
   FML_UNREACHABLE();
@@ -66,7 +64,7 @@ Contents::StencilCoverage ClipContents::GetStencilCoverage(
 
 bool ClipContents::ShouldRender(
     const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
+    const std::optional<Rect>& clip_coverage) const {
   return true;
 }
 
@@ -80,27 +78,22 @@ bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
-  using FS = ClipPipeline::FragmentShader;
 
   VS::FrameInfo info;
 
   Command cmd;
 
-  FS::FragInfo frag_info;
-  // The color really doesn't matter.
-  frag_info.color = Color::SkyBlue();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kDestination;
+  cmd.stencil_reference = entity.GetClipDepth();
   options.stencil_compare = CompareFunction::kEqual;
   options.stencil_operation = StencilOperation::kIncrementClamp;
 
   if (clip_op_ == Entity::ClipOperation::kDifference) {
     {
-      cmd.label = "Difference Clip (Increment)";
+      DEBUG_COMMAND_INFO(cmd, "Difference Clip (Increment)");
 
-      auto points = Rect(Size(pass.GetRenderTargetSize())).GetPoints();
+      auto points = Rect::MakeSize(pass.GetRenderTargetSize()).GetPoints();
       auto vertices =
           VertexBufferBuilder<VS::PerVertexData>{}
               .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
@@ -112,18 +105,18 @@ bool ClipContents::Render(const ContentContext& renderer,
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
       cmd.pipeline = renderer.GetClipPipeline(options);
-      pass.AddCommand(cmd);
+      pass.AddCommand(Command(cmd));
     }
 
     {
-      cmd.label = "Difference Clip (Punch)";
+      DEBUG_COMMAND_INFO(cmd, "Difference Clip (Punch)");
 
-      cmd.stencil_reference = entity.GetStencilDepth() + 1;
+      cmd.stencil_reference = entity.GetClipDepth() + 1;
       options.stencil_compare = CompareFunction::kEqual;
       options.stencil_operation = StencilOperation::kDecrementClamp;
     }
   } else {
-    cmd.label = "Intersect Clip";
+    DEBUG_COMMAND_INFO(cmd, "Intersect Clip");
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
@@ -160,15 +153,15 @@ std::optional<Rect> ClipRestoreContents::GetCoverage(
   return std::nullopt;
 };
 
-Contents::StencilCoverage ClipRestoreContents::GetStencilCoverage(
+Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
     const Entity& entity,
-    const std::optional<Rect>& current_stencil_coverage) const {
-  return {.type = StencilCoverage::Type::kRestore, .coverage = std::nullopt};
+    const std::optional<Rect>& current_clip_coverage) const {
+  return {.type = ClipCoverage::Type::kRestore, .coverage = std::nullopt};
 }
 
 bool ClipRestoreContents::ShouldRender(
     const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
+    const std::optional<Rect>& clip_coverage) const {
   return true;
 }
 
@@ -182,21 +175,22 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  const Entity& entity,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
-  using FS = ClipPipeline::FragmentShader;
 
   Command cmd;
-  cmd.label = "Restore Clip";
-  auto options = OptionsFromPassAndEntity(pass, entity);
+  DEBUG_COMMAND_INFO(cmd, "Restore Clip");
+  auto options = OptionsFromPass(pass);
+  options.blend_mode = BlendMode::kDestination;
   options.stencil_compare = CompareFunction::kLess;
   options.stencil_operation = StencilOperation::kSetToReferenceValue;
   options.primitive_type = PrimitiveType::kTriangleStrip;
   cmd.pipeline = renderer.GetClipPipeline(options);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
 
   // Create a rect that covers either the given restore area, or the whole
   // render target texture.
-  auto ltrb = restore_coverage_.value_or(Rect(Size(pass.GetRenderTargetSize())))
-                  .GetLTRB();
+  auto ltrb =
+      restore_coverage_.value_or(Rect::MakeSize(pass.GetRenderTargetSize()))
+          .GetLTRB();
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.AddVertices({
       {Point(ltrb[0], ltrb[1])},
@@ -209,11 +203,6 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   VS::FrameInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
-
-  FS::FragInfo frag_info;
-  // The color really doesn't matter.
-  frag_info.color = Color::SkyBlue();
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   pass.AddCommand(std::move(cmd));
   return true;

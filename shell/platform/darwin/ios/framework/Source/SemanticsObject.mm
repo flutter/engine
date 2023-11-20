@@ -157,9 +157,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @property(nonatomic, retain) FlutterSemanticsScrollView* scrollView;
 @end
 
-@implementation FlutterScrollableSemanticsObject {
-  fml::scoped_nsobject<SemanticsObjectContainer> _container;
-}
+@implementation FlutterScrollableSemanticsObject
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid {
@@ -547,17 +545,16 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 // Finds the first eligiable semantics object in hit test order.
-- (SemanticsObject*)search:(CGPoint)point {
+- (id)search:(CGPoint)point {
   // Search children in hit test order.
   for (SemanticsObject* child in [self childrenInHitTestOrder]) {
     if ([child containsPoint:point]) {
-      SemanticsObject* childSearchResult = [child search:point];
+      id childSearchResult = [child search:point];
       if (childSearchResult != nil) {
         return childSearchResult;
       }
     }
   }
-
   // Check if the current semantic object should be returned.
   if ([self containsPoint:point] && [self isFocusable]) {
     return self.nativeAccessibility;
@@ -866,9 +863,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
-                  platformView:(nonnull UIView*)platformView {
+                  platformView:(nonnull FlutterTouchInterceptingView*)platformView {
   if (self = [super initWithBridge:bridge uid:uid]) {
     _platformView = [platformView retain];
+    [platformView setFlutterAccessibilityContainer:self];
   }
   return self;
 }
@@ -879,10 +877,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [super dealloc];
 }
 
-#pragma mark - UIAccessibilityContainer overrides
-
-- (NSArray*)accessibilityElements {
-  return @[ _platformView ];
+- (id)nativeAccessibility {
+  return _platformView;
 }
 
 @end

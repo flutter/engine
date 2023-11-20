@@ -14,6 +14,7 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
+import 'services.dart';
 import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
@@ -52,10 +53,10 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
   // If the callback synchronously throws an error, then synchronously
   // rethrow that error instead of adding it to the completer. This
   // prevents the Zone from receiving an uncaught exception.
-  bool sync = true;
+  bool isSync = true;
   final String? error = callbacker((T? t) {
     if (t == null) {
-      if (sync) {
+      if (isSync) {
         throw Exception('operation failed');
       } else {
         completer.completeError(Exception('operation failed'));
@@ -64,7 +65,7 @@ Future<T> futurize<T>(Callbacker<T> callbacker) {
       completer.complete(t);
     }
   });
-  sync = false;
+  isSync = false;
   if (error != null) {
     throw Exception(error);
   }
@@ -625,6 +626,27 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   double? tryDouble(String propertyName) {
     return (this[propertyName] as num?)?.toDouble();
   }
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Throws if the view ID is not present or if [arguments] is not a map.
+int readViewId(Object? arguments) {
+  final int? viewId = tryViewId(arguments);
+  if (viewId == null) {
+    throw Exception('Could not find a `viewId` in the arguments: $arguments');
+  }
+  return viewId;
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Returns null if the view ID is not present or if [arguments] is not a map.
+int? tryViewId(Object? arguments) {
+  if (arguments is Map) {
+    return arguments.tryInt('viewId');
+  }
+  return null;
 }
 
 /// Prints a list of bytes in hex format.

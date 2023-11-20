@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <variant>
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -31,8 +33,9 @@ class SwapchainImplVK final
   static std::shared_ptr<SwapchainImplVK> Create(
       const std::shared_ptr<Context>& context,
       vk::UniqueSurfaceKHR surface,
-      bool was_rotated,
-      vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE);
+      vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE,
+      vk::SurfaceTransformFlagBitsKHR last_transform =
+          vk::SurfaceTransformFlagBitsKHR::eIdentity);
 
   ~SwapchainImplVK();
 
@@ -42,17 +45,18 @@ class SwapchainImplVK final
     std::unique_ptr<Surface> surface;
     bool out_of_date = false;
 
-    AcquireResult(bool p_out_of_date = false) : out_of_date(p_out_of_date) {}
+    explicit AcquireResult(bool p_out_of_date = false)
+        : out_of_date(p_out_of_date) {}
 
-    AcquireResult(std::unique_ptr<Surface> p_surface)
+    explicit AcquireResult(std::unique_ptr<Surface> p_surface)
         : surface(std::move(p_surface)) {}
   };
-
-  bool GetIsRotated() const { return is_rotated_; }
 
   AcquireResult AcquireNextDrawable();
 
   vk::Format GetSurfaceFormat() const;
+
+  vk::SurfaceTransformFlagBitsKHR GetLastTransform() const;
 
   std::shared_ptr<Context> GetContext() const;
 
@@ -68,20 +72,21 @@ class SwapchainImplVK final
   std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers_;
   size_t current_frame_ = 0u;
   bool is_valid_ = false;
-
-  bool was_rotated_ = false;
-  bool is_rotated_ = false;
+  size_t current_transform_poll_count_ = 0u;
+  vk::SurfaceTransformFlagBitsKHR transform_if_changed_discard_swapchain_;
 
   SwapchainImplVK(const std::shared_ptr<Context>& context,
                   vk::UniqueSurfaceKHR surface,
-                  bool was_rotated,
-                  vk::SwapchainKHR old_swapchain);
+                  vk::SwapchainKHR old_swapchain,
+                  vk::SurfaceTransformFlagBitsKHR last_transform);
 
   bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);
 
   void WaitIdle() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SwapchainImplVK);
+  SwapchainImplVK(const SwapchainImplVK&) = delete;
+
+  SwapchainImplVK& operator=(const SwapchainImplVK&) = delete;
 };
 
 }  // namespace impeller

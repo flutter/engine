@@ -16,7 +16,7 @@ class ProcTableGLES;
 
 class DescriptionGLES {
  public:
-  DescriptionGLES(const ProcTableGLES& gl);
+  explicit DescriptionGLES(const ProcTableGLES& gl);
 
   ~DescriptionGLES();
 
@@ -28,6 +28,7 @@ class DescriptionGLES {
 
   bool HasExtension(const std::string& ext) const;
 
+  /// @brief      Returns whether GLES includes the debug extension.
   bool HasDebugExtension() const;
 
  private:
@@ -41,7 +42,9 @@ class DescriptionGLES {
   std::set<std::string> extensions_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DescriptionGLES);
+  DescriptionGLES(const DescriptionGLES&) = delete;
+
+  DescriptionGLES& operator=(const DescriptionGLES&) = delete;
 };
 
 }  // namespace impeller

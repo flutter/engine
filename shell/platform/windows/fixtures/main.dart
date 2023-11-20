@@ -92,7 +92,7 @@ void exitTestExit() async {
   final Completer<ByteData?> closed = Completer<ByteData?>();
   ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
     final String jsonString = json.encode(<Map<String, String>>[{'response': 'exit'}]);
-    final ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
+    final ByteData responseData = ByteData.sublistView(utf8.encode(jsonString));
     callback(responseData);
     closed.complete(data);
   });
@@ -104,7 +104,7 @@ void exitTestCancel() async {
   final Completer<ByteData?> closed = Completer<ByteData?>();
   ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
     final String jsonString = json.encode(<Map<String, String>>[{'response': 'cancel'}]);
-    final ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
+    final ByteData responseData = ByteData.sublistView(utf8.encode(jsonString));
     callback(responseData);
     closed.complete(data);
   });
@@ -120,13 +120,43 @@ void exitTestCancel() async {
     });
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform',
-    ByteData.sublistView(
-      Uint8List.fromList(utf8.encode(jsonString))
-    ),
+    ByteData.sublistView(utf8.encode(jsonString)),
     (ByteData? reply) {
       exited.complete(reply);
     });
   await exited.future;
+}
+
+@pragma('vm:entry-point')
+void enableLifecycleTest() async {
+  final Completer<ByteData?> finished = Completer<ByteData?>();
+  ui.channelBuffers.setListener('flutter/lifecycle', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
+    if (data != null) {
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/unittest',
+        data,
+        (ByteData? reply) {
+          finished.complete();
+        });
+    }
+  });
+  await finished.future;
+}
+
+@pragma('vm:entry-point')
+void enableLifecycleToFrom() async {
+  ui.channelBuffers.setListener('flutter/lifecycle', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
+    if (data != null) {
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/unittest',
+        data,
+        (ByteData? reply) {});
+    }
+  });
+  final Completer<ByteData?> enabledLifecycle = Completer<ByteData?>();
+  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(utf8.encode('{"method":"System.initializationComplete"}')), (ByteData? data) {
+    enabledLifecycle.complete(data);
+  });
 }
 
 @pragma('vm:entry-point')

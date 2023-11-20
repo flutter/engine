@@ -21,7 +21,7 @@ class AllocatorGLES final : public Allocator {
   ReactorGLES::Ref reactor_;
   bool is_valid_ = false;
 
-  AllocatorGLES(ReactorGLES::Ref reactor);
+  explicit AllocatorGLES(ReactorGLES::Ref reactor);
 
   // |Allocator|
   bool IsValid() const;
@@ -37,7 +37,9 @@ class AllocatorGLES final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatorGLES);
+  AllocatorGLES(const AllocatorGLES&) = delete;
+
+  AllocatorGLES& operator=(const AllocatorGLES&) = delete;
 };
 
 }  // namespace impeller

@@ -7,6 +7,7 @@ package dev.flutter.scenarios;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,6 +37,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class TestActivity extends TestableFlutterActivity {
   static final String TAG = "Scenarios";
 
+  private Runnable resultsTask =
+      new Runnable() {
+        @Override
+        public void run() {
+          final Uri logFileUri = getIntent().getData();
+          writeTimelineData(logFileUri);
+          testFlutterLoaderCallbackWhenInitializedTwice();
+        }
+      };
+
+  private Handler handler = new Handler();
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -46,20 +59,16 @@ public abstract class TestActivity extends TestableFlutterActivity {
       if (Build.VERSION.SDK_INT > 22) {
         requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
       }
-      final Uri logFileUri = launchIntent.getData();
-      new Handler()
-          .postDelayed(
-              new Runnable() {
-                @Override
-                public void run() {
-                  writeTimelineData(logFileUri);
-                  testFlutterLoaderCallbackWhenInitializedTwice();
-                }
-              },
-              20000);
+      handler.postDelayed(resultsTask, 20000);
     } else {
       testFlutterLoaderCallbackWhenInitializedTwice();
     }
+  }
+
+  @Override
+  protected void onDestroy() {
+    handler.removeCallbacks(resultsTask);
+    super.onDestroy();
   }
 
   @Override
@@ -113,14 +122,23 @@ public abstract class TestActivity extends TestableFlutterActivity {
     channel.send(
         null,
         (ByteBuffer reply) -> {
+          AssetFileDescriptor afd = null;
           try {
-            final FileDescriptor fd =
-                getContentResolver().openAssetFileDescriptor(logFile, "w").getFileDescriptor();
+            afd = getContentResolver().openAssetFileDescriptor(logFile, "w");
+            final FileDescriptor fd = afd.getFileDescriptor();
             final FileOutputStream outputStream = new FileOutputStream(fd);
             outputStream.write(reply.array());
             outputStream.close();
           } catch (IOException ex) {
             Log.e(TAG, "Could not write timeline file", ex);
+          } finally {
+            try {
+              if (afd != null) {
+                afd.close();
+              }
+            } catch (IOException e) {
+              Log.w(TAG, "Could not close", e);
+            }
           }
           finish();
         });

@@ -7,12 +7,12 @@
 #include <mutex>
 #include <string_view>
 
+#include "flutter/common/constants.h"
 #include "flutter/common/settings.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/compositing/scene_builder.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
-#include "flutter/lib/ui/gpu/context.h"
 #include "flutter/lib/ui/isolate_name_server/isolate_name_server_natives.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/codec.h"
@@ -78,7 +78,7 @@ typedef CanvasPath Path;
   V(Gradient::Create, 1)                                              \
   V(ImageFilter::Create, 1)                                           \
   V(ImageShader::Create, 1)                                           \
-  V(ParagraphBuilder::Create, 9)                                      \
+  V(ParagraphBuilder::Create, 10)                                     \
   V(PathMeasure::Create, 3)                                           \
   V(Path::Create, 1)                                                  \
   V(PictureRecorder::Create, 1)                                       \
@@ -96,10 +96,9 @@ typedef CanvasPath Path;
   V(IsolateNameServerNatives::RemovePortNameMapping, 1)               \
   V(NativeStringAttribute::initLocaleStringAttribute, 4)              \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
-  V(PlatformConfigurationNativeApi::ImplicitViewEnabled, 0)           \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
-  V(PlatformConfigurationNativeApi::Render, 1)                        \
+  V(PlatformConfigurationNativeApi::Render, 2)                        \
   V(PlatformConfigurationNativeApi::UpdateSemantics, 1)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings, 1)         \
   V(PlatformConfigurationNativeApi::SetIsolateDebugName, 1)           \
@@ -111,6 +110,8 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
   V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
+  V(PlatformConfigurationNativeApi::SendChannelUpdate, 2)             \
+  V(PlatformConfigurationNativeApi::GetScaledFontSize, 2)             \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
@@ -217,6 +218,9 @@ typedef CanvasPath Path;
   V(Paragraph, didExceedMaxLines, 1)                   \
   V(Paragraph, dispose, 1)                             \
   V(Paragraph, getLineBoundary, 2)                     \
+  V(Paragraph, getLineMetricsAt, 3)                    \
+  V(Paragraph, getLineNumberAt, 2)                     \
+  V(Paragraph, getNumberOfLines, 1)                    \
   V(Paragraph, getPositionForOffset, 3)                \
   V(Paragraph, getRectsForPlaceholders, 1)             \
   V(Paragraph, getRectsForRange, 5)                    \
@@ -316,10 +320,6 @@ typedef CanvasPath Path;
   V(SceneShader, SetCameraTransform, 2) \
   V(SceneShader, Dispose, 1)
 
-#define FFI_FUNCTION_LIST_GPU(V) V(GpuContext::InitializeDefault, 1)
-
-#define FFI_METHOD_LIST_GPU(V)
-
 #endif  // IMPELLER_ENABLE_3D
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
@@ -352,9 +352,6 @@ void InitDispatcherMap() {
 #ifdef IMPELLER_ENABLE_3D
   FFI_FUNCTION_LIST_3D(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)
-
-  FFI_FUNCTION_LIST_GPU(FFI_FUNCTION_INSERT)
-  FFI_METHOD_LIST_GPU(FFI_METHOD_INSERT)
 #endif  // IMPELLER_ENABLE_3D
 }
 
@@ -380,6 +377,12 @@ void DartUI::InitForIsolate(const Settings& settings) {
     if (Dart_IsError(result)) {
       Dart_PropagateError(result);
     }
+  }
+
+  result = Dart_SetField(dart_ui, ToDart("_implicitViewId"),
+                         Dart_NewInteger(kFlutterImplicitViewId));
+  if (Dart_IsError(result)) {
+    Dart_PropagateError(result);
   }
 }
 

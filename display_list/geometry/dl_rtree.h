@@ -11,6 +11,7 @@
 
 #include "flutter/display_list/geometry/dl_region.h"
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkRefCnt.h"
 
@@ -96,7 +97,7 @@ class DlRTree : public SkRefCnt {
   const SkRect& bounds(int result_index) const {
     return (result_index >= 0 && result_index < leaf_count_)
                ? nodes_[result_index].bounds
-               : empty_;
+               : kEmpty;
   }
 
   /// Returns the bytes used by the object and all of its node data.
@@ -136,14 +137,14 @@ class DlRTree : public SkRefCnt {
   }
 
  private:
-  static constexpr SkRect empty_ = SkRect::MakeEmpty();
+  static constexpr SkRect kEmpty = SkRect::MakeEmpty();
 
   void search(const Node& parent,
               const SkRect& query,
               std::vector<int>* results) const;
 
   std::vector<Node> nodes_;
-  int leaf_count_;
+  int leaf_count_ = 0;
   int invalid_id_;
   mutable std::optional<DlRegion> region_;
 };

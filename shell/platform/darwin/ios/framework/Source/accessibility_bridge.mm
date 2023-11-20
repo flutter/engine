@@ -161,7 +161,8 @@ void AccessibilityBridge::UpdateSemantics(
 
   if (root) {
     if (!view_controller_.view.accessibilityElements) {
-      view_controller_.view.accessibilityElements = @[ [root accessibilityContainer] ];
+      view_controller_.view.accessibilityElements =
+          @[ [root accessibilityContainer] ?: [NSNull null] ];
     }
     NSMutableArray<SemanticsObject*>* newRoutes = [[[NSMutableArray alloc] init] autorelease];
     [root collectRoutes:newRoutes];
@@ -278,7 +279,7 @@ static SemanticsObject* CreateObject(const flutter::SemanticsNode& node,
     return [[[FlutterPlatformViewSemanticsContainer alloc]
         initWithBridge:weak_ptr
                    uid:node.id
-          platformView:weak_ptr->GetPlatformViewsController()->GetPlatformViewByID(
+          platformView:weak_ptr->GetPlatformViewsController()->GetFlutterTouchInterceptingViewByID(
                            node.platformViewId)] autorelease];
   } else {
     return [[[FlutterSemanticsObject alloc] initWithBridge:weak_ptr uid:node.id] autorelease];

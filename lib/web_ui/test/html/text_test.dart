@@ -79,10 +79,6 @@ Future<void> testMain() async {
       expect(paragraph.height, fontSize * 2.0); // because it wraps
       expect(paragraph.width, fontSize * 5.0);
       expect(paragraph.minIntrinsicWidth, fontSize * 4.0);
-
-      // TODO(yjbanov): due to https://github.com/flutter/flutter/issues/21965
-      //                Flutter reports a different number. Ours is correct
-      //                though.
       expect(paragraph.maxIntrinsicWidth, fontSize * 9.0);
       expect(paragraph.alphabeticBaseline, fontSize * .8);
       expect(
@@ -91,6 +87,57 @@ Future<void> testMain() async {
             distance: 0.001,
             from: paragraph.alphabeticBaseline * baselineRatio),
       );
+    }
+  });
+
+  test('Basic line related metrics', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+
+    expect(paragraph.numberOfLines, 1);
+
+    expect(paragraph.getLineMetricsAt(-1), isNull);
+    expect(paragraph.getLineMetricsAt(0), isNotNull);
+    expect(paragraph.getLineMetricsAt(1), isNull);
+
+    expect(paragraph.getLineNumberAt(-1), isNull);
+    expect(paragraph.getLineNumberAt(0), 0);
+    expect(paragraph.getLineNumberAt(6), 0);
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getLineNumberAt(7), isNull);
+  });
+
+  test('Can disable rounding hack', () {
+    if (!ParagraphBuilder.shouldDisableRoundingHack) {
+      ParagraphBuilder.setDisableRoundingHack(true);
+      addTearDown(() => ParagraphBuilder.setDisableRoundingHack(false));
+    }
+    assert(ParagraphBuilder.shouldDisableRoundingHack);
+    const double fontSize = 1;
+    const String text = '12345';
+    const double letterSpacing = 0.25;
+    const double expectedIntrinsicWidth = text.length * (fontSize + letterSpacing);
+    assert(expectedIntrinsicWidth.truncate() != expectedIntrinsicWidth);
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'));
+    builder.pushStyle(TextStyle(letterSpacing: letterSpacing));
+    builder.addText(text);
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: expectedIntrinsicWidth));
+
+    expect(paragraph.maxIntrinsicWidth, expectedIntrinsicWidth);
+    switch (paragraph.computeLineMetrics()) {
+      case [LineMetrics(width: final double width)]:
+        expect(width, expectedIntrinsicWidth);
+      case final List<LineMetrics> metrics:
+        expect(metrics, hasLength(1));
     }
   });
 
@@ -363,7 +410,9 @@ Future<void> testMain() async {
   group('test fonts in flutterTester environment', () {
     final bool resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
     ui_web.debugEmulateFlutterTesterEnvironment = true;
-    tearDownAll(() => ui_web.debugEmulateFlutterTesterEnvironment = resetValue);
+    tearDownAll(() {
+      ui_web.debugEmulateFlutterTesterEnvironment = resetValue;
+    });
     const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
 
     test('The default test font is used when a non-test fontFamily is specified, or fontFamily is not specified', () {

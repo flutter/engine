@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
@@ -19,20 +20,21 @@
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
 
 namespace vulkan {
 
 VulkanWindow::VulkanWindow(fml::RefPtr<VulkanProcTable> proc_table,
                            std::unique_ptr<VulkanNativeSurface> native_surface)
     : VulkanWindow(/*context/*/ nullptr,
-                   proc_table,
+                   std::move(proc_table),
                    std::move(native_surface)) {}
 
 VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
                            fml::RefPtr<VulkanProcTable> proc_table,
                            std::unique_ptr<VulkanNativeSurface> native_surface)
-    : valid_(false), vk(std::move(proc_table)), skia_gr_context_(context) {
-  if (!vk || !vk->HasAcquiredMandatoryProcAddresses()) {
+    : valid_(false), vk_(std::move(proc_table)), skia_gr_context_(context) {
+  if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(INFO) << "Proc table has not acquired mandatory proc addresses.";
     return;
   }
@@ -49,10 +51,10 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
       native_surface->GetExtensionName()  // child extension
   };
 
-  application_ = std::make_unique<VulkanApplication>(*vk, "Flutter",
+  application_ = std::make_unique<VulkanApplication>(*vk_, "Flutter",
                                                      std::move(extensions));
 
-  if (!application_->IsValid() || !vk->AreInstanceProcsSetup()) {
+  if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it set up the
     // instance proc table entries.
     FML_DLOG(INFO) << "Instance proc addresses have not been set up.";
@@ -64,7 +66,7 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
   logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
 
   if (logical_device_ == nullptr || !logical_device_->IsValid() ||
-      !vk->AreDeviceProcsSetup()) {
+      !vk_->AreDeviceProcsSetup()) {
     // Make certain the device was created and it set up the device proc table
     // entries.
     FML_DLOG(INFO) << "Device proc addresses have not been set up.";
@@ -76,7 +78,7 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
   }
 
   // Create the logical surface from the native platform surface.
-  surface_ = std::make_unique<VulkanSurface>(*vk, *application_,
+  surface_ = std::make_unique<VulkanSurface>(*vk_, *application_,
                                              std::move(native_surface));
 
   if (!surface_->IsValid()) {
@@ -88,7 +90,7 @@ VulkanWindow::VulkanWindow(const sk_sp<GrDirectContext>& context,
   memory_allocator_ = flutter::FlutterSkiaVulkanMemoryAllocator::Make(
       application_->GetAPIVersion(), application_->GetInstance(),
       logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
-      vk, true);
+      vk_, true);
 
   // Create the Skia GrDirectContext.
 
@@ -118,6 +120,7 @@ GrDirectContext* VulkanWindow::GetSkiaGrContext() {
 }
 
 bool VulkanWindow::CreateSkiaGrContext() {
+#ifdef SK_VUKLAN
   GrVkBackendContext backend_context;
 
   if (!CreateSkiaBackendContext(&backend_context)) {
@@ -127,7 +130,7 @@ bool VulkanWindow::CreateSkiaGrContext() {
   GrContextOptions options;
   options.fReduceOpsTaskSplitting = GrContextOptions::Enable::kNo;
   sk_sp<GrDirectContext> context =
-      GrDirectContext::MakeVulkan(backend_context, options);
+      GrDirectContexts::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
     return false;
@@ -138,10 +141,13 @@ bool VulkanWindow::CreateSkiaGrContext() {
   skia_gr_context_ = context;
 
   return true;
+#else
+  return false;
+#endif  // SK_VULKAN
 }
 
 bool VulkanWindow::CreateSkiaBackendContext(GrVkBackendContext* context) {
-  auto getProc = CreateSkiaGetProc(vk);
+  auto getProc = CreateSkiaGetProc(vk_);
 
   if (getProc == nullptr) {
     return false;
@@ -247,7 +253,7 @@ bool VulkanWindow::RecreateSwapchain() {
   // cannot create a new one to replace it.
   auto old_swapchain = std::move(swapchain_);
 
-  if (!vk->IsValid()) {
+  if (!vk_->IsValid()) {
     return false;
   }
 
@@ -264,7 +270,7 @@ bool VulkanWindow::RecreateSwapchain() {
   }
 
   auto swapchain = std::make_unique<VulkanSwapchain>(
-      *vk, *logical_device_, *surface_, skia_gr_context_.get(),
+      *vk_, *logical_device_, *surface_, skia_gr_context_.get(),
       std::move(old_swapchain), logical_device_->GetGraphicsQueueIndex());
 
   if (!swapchain->IsValid()) {

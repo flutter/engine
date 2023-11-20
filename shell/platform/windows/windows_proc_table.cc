@@ -25,4 +25,21 @@ BOOL WindowsProcTable::GetPointerType(UINT32 pointer_id,
   return get_pointer_type_.value()(pointer_id, pointer_type);
 }
 
+LRESULT WindowsProcTable::GetThreadPreferredUILanguages(DWORD flags,
+                                                        PULONG count,
+                                                        PZZWSTR languages,
+                                                        PULONG length) const {
+  return ::GetThreadPreferredUILanguages(flags, count, languages, length);
+}
+
+bool WindowsProcTable::GetHighContrastEnabled() {
+  HIGHCONTRAST high_contrast = {.cbSize = sizeof(HIGHCONTRAST)};
+  if (!::SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(HIGHCONTRAST),
+                               &high_contrast, 0)) {
+    return false;
+  }
+
+  return high_contrast.dwFlags & HCF_HIGHCONTRASTON;
+}
+
 }  // namespace flutter

@@ -603,7 +603,7 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
       expected_builder.Translate(offset.fX, offset.fY);
       /* ImageFilterLayer::Paint() */ {
         DlPaint image_filter_paint;
-        image_filter_paint.setColor(opacity_alpha << 24);
+        image_filter_paint.setColor(DlColor(opacity_alpha << 24));
         image_filter_paint.setImageFilter(dl_image_filter.get());
         expected_builder.SaveLayer(&child_path.getBounds(),
                                    &image_filter_paint);
@@ -709,6 +709,19 @@ TEST_F(ImageFilterLayerDiffTest, ImageFilterLayerInflatestChildSize) {
 
   // ensure that filter properly inflated child size
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(40, 40, 170, 170));
+}
+
+TEST_F(ImageFilterLayerTest, EmptyFilterWithOffset) {
+  const SkRect child_bounds = SkRect::MakeLTRB(10.0f, 11.0f, 19.0f, 20.0f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+  const SkPoint offset = SkPoint::Make(5.0f, 6.0f);
+  auto layer = std::make_shared<ImageFilterLayer>(nullptr, offset);
+  layer->Add(mock_layer);
+
+  layer->Preroll(preroll_context());
+  EXPECT_EQ(layer->paint_bounds(), child_bounds.makeOffset(offset));
 }
 
 }  // namespace testing

@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class HtmlRenderer implements Renderer {
   static HtmlRenderer get instance => _instance;
@@ -17,8 +19,6 @@ class HtmlRenderer implements Renderer {
   String get rendererTag => 'html';
 
   late final HtmlFontCollection _fontCollection = HtmlFontCollection();
-
-  late FlutterViewEmbedder _viewEmbedder;
 
   @override
   HtmlFontCollection get fontCollection => _fontCollection;
@@ -36,9 +36,7 @@ class HtmlRenderer implements Renderer {
   }
 
   @override
-  void reset(FlutterViewEmbedder embedder) {
-    _viewEmbedder = embedder;
-  }
+  void reset(FlutterViewEmbedder embedder) {}
 
   @override
   ui.Paint createPaint() => SurfacePaint();
@@ -176,11 +174,9 @@ class HtmlRenderer implements Renderer {
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
-    WebOnlyImageCodecChunkCallback? chunkCallback}) {
-      return futurize<ui.Codec>((Callback<ui.Codec> callback) {
-        callback(HtmlCodec(uri.toString(), chunkCallback: chunkCallback));
-        return null;
-      });
+    ui_web.ImageCodecChunkCallback? chunkCallback,
+  }) async {
+    return HtmlCodec(uri.toString(), chunkCallback: chunkCallback);
   }
 
   @override
@@ -328,7 +324,8 @@ class HtmlRenderer implements Renderer {
 
   @override
   void renderScene(ui.Scene scene) {
-    _viewEmbedder.addSceneToSceneHost((scene as SurfaceScene).webOnlyRootElement);
+    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+    implicitView.dom.setScene((scene as SurfaceScene).webOnlyRootElement!);
     frameTimingsOnRasterFinish();
   }
 
@@ -362,4 +359,31 @@ class HtmlRenderer implements Renderer {
     baseline: baseline,
     lineNumber: lineNumber
   );
+
+  @override
+  Future<ui.Image> createImageFromImageBitmap(DomImageBitmap imageSource) async {
+    final int width = imageSource.width.toDartInt;
+    final int height = imageSource.height.toDartInt;
+    final OffScreenCanvas canvas = OffScreenCanvas(width, height);
+    final DomCanvasRenderingContextBitmapRenderer context = canvas.getBitmapRendererContext()!;
+    context.transferFromImageBitmap(imageSource);
+    final DomHTMLImageElement imageElement = createDomHTMLImageElement();
+    late final DomEventListener loadListener;
+    late final DomEventListener errorListener;
+    final Completer<HtmlImage> completer = Completer<HtmlImage>();
+    loadListener = createDomEventListener((DomEvent event) {
+      completer.complete(HtmlImage(imageElement, width, height));
+      imageElement.removeEventListener('load', loadListener);
+      imageElement.removeEventListener('error', errorListener);
+    });
+    errorListener = createDomEventListener((DomEvent event) {
+      completer.completeError(Exception('Failed to create image from image bitmap.'));
+      imageElement.removeEventListener('load', loadListener);
+      imageElement.removeEventListener('error', errorListener);
+    });
+    imageElement.addEventListener('load', loadListener);
+    imageElement.addEventListener('error', errorListener);
+    imageElement.src = await canvas.toDataUrl();
+    return completer.future;
+  }
 }

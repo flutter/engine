@@ -9,12 +9,10 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/external_view_embedder/surface_pool.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 
@@ -51,25 +49,26 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger)
+      override;
 
   // |ExternalViewEmbedder|
   DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(
-      SkISize frame_size,
-      GrDirectContext* context,
-      double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void BeginFrame(SkISize frame_size,
+                  GrDirectContext* context,
+                  double device_pixel_ratio,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void EndFrame(
-      bool should_resubmit_frame,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void EndFrame(bool should_resubmit_frame,
+                const fml::RefPtr<fml::RasterThreadMerger>&
+                    raster_thread_merger) override;
 
   bool SupportsDynamicThreadMerging() override;
 

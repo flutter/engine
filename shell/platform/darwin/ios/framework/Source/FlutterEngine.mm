@@ -8,8 +8,10 @@
 
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/engine.h"
@@ -19,7 +21,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/variable_refresh_rate_display.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
@@ -30,6 +32,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/connection_collection.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h"
@@ -46,16 +49,19 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
 
   // set thread priority
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND: {
+    case fml::Thread::ThreadPriority::kBackground: {
+      pthread_set_qos_class_self_np(QOS_CLASS_BACKGROUND, 0);
       [[NSThread currentThread] setThreadPriority:0];
       break;
     }
-    case fml::Thread::ThreadPriority::NORMAL: {
+    case fml::Thread::ThreadPriority::kNormal: {
+      pthread_set_qos_class_self_np(QOS_CLASS_DEFAULT, 0);
       [[NSThread currentThread] setThreadPriority:0.5];
       break;
     }
-    case fml::Thread::ThreadPriority::RASTER:
-    case fml::Thread::ThreadPriority::DISPLAY: {
+    case fml::Thread::ThreadPriority::kRaster:
+    case fml::Thread::ThreadPriority::kDisplay: {
+      pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
       [[NSThread currentThread] setThreadPriority:1.0];
       sched_param param;
       int policy;
@@ -111,9 +117,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory;
 
-  fml::WeakPtr<FlutterViewController> _viewController;
+  fml::WeakNSObject<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
@@ -184,7 +190,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
+  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(self);
 
   if (project == nil) {
     _dartProject.reset([[FlutterDartProject alloc] init]);
@@ -223,15 +229,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                  name:UIApplicationDidReceiveMemoryWarningNotification
                object:nil];
 
-  [center addObserver:self
-             selector:@selector(applicationWillEnterForeground:)
-                 name:UIApplicationWillEnterForegroundNotification
-               object:nil];
-
-  [center addObserver:self
-             selector:@selector(applicationDidEnterBackground:)
-                 name:UIApplicationDidEnterBackgroundNotification
-               object:nil];
+#if APPLICATION_EXTENSION_API_ONLY
+  if (@available(iOS 13.0, *)) {
+    [self setUpSceneLifecycleNotifications:center];
+  } else {
+    [self setUpApplicationLifecycleNotifications:center];
+  }
+#else
+  [self setUpApplicationLifecycleNotifications:center];
+#endif
 
   [center addObserver:self
              selector:@selector(onLocaleUpdated:)
@@ -239,6 +245,28 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                object:nil];
 
   return self;
+}
+
+- (void)setUpSceneLifecycleNotifications:(NSNotificationCenter*)center API_AVAILABLE(ios(13.0)) {
+  [center addObserver:self
+             selector:@selector(sceneWillEnterForeground:)
+                 name:UISceneWillEnterForegroundNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(sceneDidEnterBackground:)
+                 name:UISceneDidEnterBackgroundNotification
+               object:nil];
+}
+
+- (void)setUpApplicationLifecycleNotifications:(NSNotificationCenter*)center {
+  [center addObserver:self
+             selector:@selector(applicationWillEnterForeground:)
+                 name:UIApplicationWillEnterForegroundNotification
+               object:nil];
+  [center addObserver:self
+             selector:@selector(applicationDidEnterBackground:)
+                 name:UIApplicationDidEnterBackgroundNotification
+               object:nil];
 }
 
 - (void)recreatePlatformViewController {
@@ -300,15 +328,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return *_shell;
 }
 
-- (fml::WeakPtr<FlutterEngine>)getWeakPtr {
-  return _weakFactory->GetWeakPtr();
+- (fml::WeakNSObject<FlutterEngine>)getWeakNSObject {
+  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(viewportMetrics);
+  self.platformView->SetViewportMetrics(flutter::kFlutterImplicitViewId, viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
@@ -396,8 +424,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
-  _viewController =
-      viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
+  _viewController = viewController ? [viewController getWeakNSObject]
+                                   : fml::WeakNSObject<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
   [self updateDisplays];
@@ -554,10 +582,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 // If you add a channel, be sure to also update `resetChannels`.
 // Channels get a reference to the engine, and therefore need manual
 // cleanup for proper collection.
-- (void)setupChannels {
+- (void)setUpChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
-  fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
                             if (weakSelf) {
@@ -641,13 +669,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterTextInputPlugin* textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:self];
   _textInputPlugin.reset(textInputPlugin);
   textInputPlugin.indirectScribbleDelegate = self;
-  [textInputPlugin setupIndirectScribbleInteraction:self.viewController];
+  [textInputPlugin setUpIndirectScribbleInteraction:self.viewController];
 
   FlutterUndoManagerPlugin* undoManagerPlugin =
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   _undoManagerPlugin.reset(undoManagerPlugin);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakNSObject]]);
 
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
@@ -681,7 +709,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
         NSString* format = [NSString stringWithUTF8String:screenshot.format.c_str()];
         NSNumber* width = @(screenshot.frame_size.fWidth);
         NSNumber* height = @(screenshot.frame_size.fHeight);
-        return result(@[ width, height, format, data ]);
+        return result(@[ width, height, format ?: [NSNull null], data ]);
       }];
 }
 
@@ -692,7 +720,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [platformPlugin handleMethodCall:call result:result];
     }];
 
-    fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+    fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
@@ -733,10 +761,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
                                                           entrypointArgs:entrypointArgs]);
 }
 
-- (void)setupShell:(std::unique_ptr<flutter::Shell>)shell
+- (void)setUpShell:(std::unique_ptr<flutter::Shell>)shell
     withVMServicePublication:(BOOL)doesVMServicePublication {
   _shell = std::move(shell);
-  [self setupChannels];
+  [self setUpChannels];
   [self onLocaleUpdated:nil];
   [self updateDisplays];
   _publisher.reset([[FlutterDartVMServicePublisher alloc]
@@ -778,17 +806,17 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   host_config.ui_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::UI, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::DISPLAY);
+                                fml::Thread::ThreadPriority::kDisplay);
 
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::RASTER, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::RASTER);
+                                fml::Thread::ThreadPriority::kRaster);
 
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
                                     flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::NORMAL);
+                                fml::Thread::ThreadPriority::kNormal);
 
   return (flutter::ThreadHost){host_config};
 }
@@ -854,8 +882,20 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                     _threadHost->io_thread->GetTaskRunner()          // io
   );
 
+#if APPLICATION_EXTENSION_API_ONLY
+  if (@available(iOS 13.0, *)) {
+    _isGpuDisabled = self.viewController.flutterWindowSceneIfViewLoaded.activationState ==
+                     UISceneActivationStateBackground;
+  } else {
+    // [UIApplication sharedApplication API is not available for app extension.
+    // We intialize the shell assuming the GPU is required.
+    _isGpuDisabled = NO;
+  }
+#else
   _isGpuDisabled =
       [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+#endif
+
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
       /*platform_data=*/platformData,
@@ -869,7 +909,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
                    << entrypoint.UTF8String;
   } else {
-    [self setupShell:std::move(shell)
+    // TODO(vashworth): Remove once done debugging https://github.com/flutter/flutter/issues/129836
+    FML_LOG(INFO) << "Enabled VM Service Publication: " << settings.enable_vm_service_publication;
+    [self setUpShell:std::move(shell)
         withVMServicePublication:settings.enable_vm_service_publication];
     if ([FlutterEngine isProfilerEnabled]) {
       [self startProfiler];
@@ -1179,9 +1221,11 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 // remove this.
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
   // Discard the previous messenger and keep the new one.
-  _binaryMessenger.parent = nil;
-  [_binaryMessenger release];
-  _binaryMessenger = [binaryMessenger retain];
+  if (binaryMessenger != _binaryMessenger) {
+    _binaryMessenger.parent = nil;
+    [_binaryMessenger release];
+    _binaryMessenger = [binaryMessenger retain];
+  }
 }
 
 #pragma mark - FlutterBinaryMessenger
@@ -1298,11 +1342,29 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Notifications
 
+#if APPLICATION_EXTENSION_API_ONLY
+- (void)sceneWillEnterForeground:(NSNotification*)notification API_AVAILABLE(ios(13.0)) {
+  [self flutterWillEnterForeground:notification];
+}
+
+- (void)sceneDidEnterBackground:(NSNotification*)notification API_AVAILABLE(ios(13.0)) {
+  [self flutterDidEnterBackground:notification];
+}
+#else
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
-  [self setIsGpuDisabled:NO];
+  [self flutterWillEnterForeground:notification];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
+  [self flutterDidEnterBackground:notification];
+}
+#endif
+
+- (void)flutterWillEnterForeground:(NSNotification*)notification {
+  [self setIsGpuDisabled:NO];
+}
+
+- (void)flutterDidEnterBackground:(NSNotification*)notification {
   [self setIsGpuDisabled:YES];
   [self notifyLowMemory];
 }
@@ -1403,7 +1465,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   result->_profiler = _profiler;
   result->_profiler_metrics = _profiler_metrics;
   result->_isGpuDisabled = _isGpuDisabled;
-  [result setupShell:std::move(shell) withVMServicePublication:NO];
+  [result setUpShell:std::move(shell) withVMServicePublication:NO];
   return [result autorelease];
 }
 
@@ -1457,7 +1519,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }];
 }
 
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions") {
   id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
     id<FlutterAppLifeCycleProvider> lifeCycleProvider =

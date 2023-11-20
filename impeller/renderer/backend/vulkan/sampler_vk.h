@@ -9,7 +9,6 @@
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -35,7 +34,9 @@ class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
   // |Sampler|
   bool IsValid() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SamplerVK);
+  SamplerVK(const SamplerVK&) = delete;
+
+  SamplerVK& operator=(const SamplerVK&) = delete;
 };
 
 }  // namespace impeller

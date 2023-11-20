@@ -104,14 +104,15 @@ class PlatformView {
         const fml::closure& closure) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate the viewport metrics of the platform
-    ///             view have been updated. The rasterizer will need to be
-    ///             reconfigured to render the frame in the updated viewport
-    ///             metrics.
+    /// @brief      Notifies the delegate the viewport metrics of a view have
+    ///             been updated. The rasterizer will need to be reconfigured to
+    ///             render the frame in the updated viewport metrics.
     ///
+    /// @param[in]  view_id  The ID for the view that `metrics` describes.
     /// @param[in]  metrics  The updated viewport metrics.
     ///
     virtual void OnPlatformViewSetViewportMetrics(
+        int64_t view_id,
         const ViewportMetrics& metrics) = 0;
 
     //--------------------------------------------------------------------------
@@ -465,16 +466,28 @@ class PlatformView {
                                CustomAccessibilityActionUpdates actions);
 
   //----------------------------------------------------------------------------
-  /// @brief      Used by embedders to specify the updated viewport metrics. In
-  ///             response to this call, on the raster thread, the rasterizer
-  ///             may need to be reconfigured to the updated viewport
+  /// @brief      Used by the framework to tell the embedder that it has
+  ///             registered a listener on a given channel.
+  ///
+  /// @param[in]  name      The name of the channel on which the listener has
+  ///                       set or cleared a listener.
+  /// @param[in]  listening True if a listener has been set, false if it has
+  ///                       been cleared.
+  ///
+  virtual void SendChannelUpdate(const std::string& name, bool listening);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to specify the updated viewport metrics for
+  ///             a view. In response to this call, on the raster thread, the
+  ///             rasterizer may need to be reconfigured to the updated viewport
   ///             dimensions. On the UI thread, the framework may need to start
   ///             generating a new frame for the updated viewport metrics as
   ///             well.
   ///
+  /// @param[in]  view_id  The ID for the view that `metrics` describes.
   /// @param[in]  metrics  The updated viewport metrics.
   ///
-  void SetViewportMetrics(const ViewportMetrics& metrics);
+  void SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to notify the shell that a platform view
@@ -830,6 +843,28 @@ class PlatformView {
   /// @return     The settings.
   ///
   const Settings& GetSettings() const;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Synchronously invokes platform-specific APIs to apply the
+  ///             system text scaling on the given unscaled font size.
+  ///
+  ///             Platforms that support this feature (currently it's only
+  ///             implemented for Android SDK level 34+) will send a valid
+  ///             configuration_id to potential callers, before this method can
+  ///             be called.
+  ///
+  /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+  ///                                 app developer. The value is in logical
+  ///                                 pixels, and is guaranteed to be finite and
+  ///                                 non-negative.
+  /// @param[in]  configuration_id    The unique id of the configuration to use
+  ///                                 for computing the scaled font size.
+  ///
+  /// @return     The scaled font size in logical pixels, or -1 if the given
+  ///             configuration_id did not match a valid configuration.
+  ///
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const;
 
  protected:
   // This is the only method called on the raster task runner.

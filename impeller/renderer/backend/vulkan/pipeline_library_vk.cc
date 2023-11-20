@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 
 #include <chrono>
+#include <cstdint>
 #include <optional>
 #include <sstream>
 
@@ -75,8 +76,9 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
 /// spec:
 /// https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/chap8.html#renderpass-compatibility
 ///
-static vk::UniqueRenderPass CreateRenderPass(const vk::Device& device,
-                                             const PipelineDescriptor& desc) {
+static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
+    const vk::Device& device,
+    const PipelineDescriptor& desc) {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -127,6 +129,13 @@ static vk::UniqueRenderPass CreateRenderPass(const vk::Device& device,
                    << desc.GetLabel() << "'. Error: " << vk::to_string(result);
     return {};
   }
+
+  // This pass is not used with the render pass. It is only necessary to tell
+  // Vulkan the expected render pass layout. The actual pass will be created
+  // later during render pass setup and will need to be compatible with this
+  // one.
+  ContextVK::SetDebugName(device, pass.get(),
+                          "Compat Render Pass: " + desc.GetLabel());
 
   return std::move(pass);
 }
@@ -205,7 +214,10 @@ static void ReportPipelineCreationFeedbackToTrace(
     gPipelineCacheMisses++;
   }
   gPipelines++;
+  static constexpr int64_t kImpellerPipelineTraceID = 1988;
   FML_TRACE_COUNTER("impeller",                                   //
+                    "PipelineCache",                              // series name
+                    kImpellerPipelineTraceID,                     // series ID
                     "PipelineCacheHits", gPipelineCacheHits,      //
                     "PipelineCacheMisses", gPipelineCacheMisses,  //
                     "TotalPipelines", gPipelines                  //
@@ -266,7 +278,15 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Shader Stages
   ///
+  const auto& constants = desc.GetSpecializationConstants();
+
+  std::vector<std::vector<vk::SpecializationMapEntry>> map_entries(
+      desc.GetStageEntrypoints().size());
+  std::vector<vk::SpecializationInfo> specialization_infos(
+      desc.GetStageEntrypoints().size());
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
+
+  size_t entrypoint_count = 0;
   for (const auto& entrypoint : desc.GetStageEntrypoints()) {
     auto stage = ToVKShaderStageFlagBits(entrypoint.first);
     if (!stage.has_value()) {
@@ -274,12 +294,31 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
                      << desc.GetLabel();
       return nullptr;
     }
+
+    std::vector<vk::SpecializationMapEntry>& entries =
+        map_entries[entrypoint_count];
+    for (auto i = 0u; i < constants.size(); i++) {
+      vk::SpecializationMapEntry entry;
+      entry.offset = (i * sizeof(int32_t));
+      entry.size = sizeof(int32_t);
+      entry.constantID = i;
+      entries.emplace_back(entry);
+    }
+
+    vk::SpecializationInfo& specialization_info =
+        specialization_infos[entrypoint_count];
+    specialization_info.setMapEntries(map_entries[entrypoint_count]);
+    specialization_info.setPData(constants.data());
+    specialization_info.setDataSize(sizeof(int32_t) * constants.size());
+
     vk::PipelineShaderStageCreateInfo info;
     info.setStage(stage.value());
     info.setPName("main");
     info.setModule(
         ShaderFunctionVK::Cast(entrypoint.second.get())->GetModule());
+    info.setPSpecializationInfo(&specialization_info);
     shader_stages.push_back(info);
+    entrypoint_count++;
   }
   pipeline_info.setStages(shader_stages);
 
@@ -329,7 +368,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  auto render_pass = CreateRenderPass(strong_device->GetDevice(), desc);
+  auto render_pass =
+      CreateCompatRenderPassForPipeline(strong_device->GetDevice(), desc);
   if (render_pass) {
     pipeline_info.setBasePipelineHandle(VK_NULL_HANDLE);
     pipeline_info.setSubpass(0);

@@ -91,7 +91,7 @@ void AccessibilityBridge::CommitUpdates() {
   }
 
   for (size_t i = results.size(); i > 0; i--) {
-    for (SemanticsNode node : results[i - 1]) {
+    for (const SemanticsNode& node : results[i - 1]) {
       ConvertFlutterUpdate(node, update);
     }
   }
@@ -149,18 +149,6 @@ AccessibilityBridge::GetPendingEvents() const {
   return result;
 }
 
-void AccessibilityBridge::RecreateNodeDelegates() {
-  for (const auto& [node_id, old_platform_node_delegate] : id_wrapper_map_) {
-    std::shared_ptr<FlutterPlatformNodeDelegate> platform_node_delegate =
-        CreateFlutterPlatformNodeDelegate();
-    platform_node_delegate->Init(
-        std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
-            shared_from_this()),
-        old_platform_node_delegate->GetAXNode());
-    id_wrapper_map_[node_id] = platform_node_delegate;
-  }
-}
-
 void AccessibilityBridge::OnNodeWillBeDeleted(ui::AXTree* tree,
                                               ui::AXNode* node) {}
 
@@ -215,7 +203,7 @@ std::optional<ui::AXTreeUpdate>
 AccessibilityBridge::CreateRemoveReparentedNodesUpdate() {
   std::unordered_map<int32_t, ui::AXNodeData> updates;
 
-  for (auto node_update : pending_semantics_node_updates_) {
+  for (const auto& node_update : pending_semantics_node_updates_) {
     for (int32_t child_id : node_update.second.children_in_traversal_order) {
       // Skip nodes that don't exist or have a parent in the current tree.
       ui::AXNode* child = tree_->GetFromId(child_id);
@@ -345,7 +333,7 @@ void AccessibilityBridge::SetRoleFromFlutterUpdate(ui::AXNodeData& node_data,
     return;
   }
   if (flags & kFlutterSemanticsFlagHasToggledState) {
-    node_data.role = ax::mojom::Role::kToggleButton;
+    node_data.role = ax::mojom::Role::kSwitch;
     return;
   }
   if (flags & kFlutterSemanticsFlagIsSlider) {
@@ -365,6 +353,13 @@ void AccessibilityBridge::SetStateFromFlutterUpdate(ui::AXNodeData& node_data,
                                                     const SemanticsNode& node) {
   FlutterSemanticsFlag flags = node.flags;
   FlutterSemanticsAction actions = node.actions;
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagHasExpandedState &&
+      flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsExpanded) {
+    node_data.AddState(ax::mojom::State::kExpanded);
+  } else if (flags &
+             FlutterSemanticsFlag::kFlutterSemanticsFlagHasExpandedState) {
+    node_data.AddState(ax::mojom::State::kCollapsed);
+  }
   if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
       (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0) {
     node_data.AddState(ax::mojom::State::kEditable);
@@ -482,7 +477,7 @@ void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
             : flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked
                 ? ax::mojom::CheckedState::kTrue
                 : ax::mojom::CheckedState::kFalse));
-  } else if (node_data.role == ax::mojom::Role::kToggleButton) {
+  } else if (node_data.role == ax::mojom::Role::kSwitch) {
     node_data.AddIntAttribute(
         ax::mojom::IntAttribute::kCheckedState,
         static_cast<int32_t>(

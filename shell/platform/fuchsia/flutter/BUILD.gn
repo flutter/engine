@@ -58,30 +58,24 @@ template("runner_sources") {
     sources = [
       "accessibility_bridge.cc",
       "accessibility_bridge.h",
+      "canvas_spy.cc",
+      "canvas_spy.h",
       "component_v2.cc",
       "component_v2.h",
       "engine.cc",
       "engine.h",
+      "external_view_embedder.cc",
+      "external_view_embedder.h",
       "file_in_namespace_buffer.cc",
       "file_in_namespace_buffer.h",
       "flatland_connection.cc",
       "flatland_connection.h",
-      "flatland_external_view_embedder.cc",
-      "flatland_external_view_embedder.h",
-      "flatland_platform_view.cc",
-      "flatland_platform_view.h",
       "flutter_runner_product_configuration.cc",
       "flutter_runner_product_configuration.h",
       "focus_delegate.cc",
       "focus_delegate.h",
       "fuchsia_intl.cc",
       "fuchsia_intl.h",
-      "gfx_external_view_embedder.cc",
-      "gfx_external_view_embedder.h",
-      "gfx_platform_view.cc",
-      "gfx_platform_view.h",
-      "gfx_session_connection.cc",
-      "gfx_session_connection.h",
       "isolate_configurator.cc",
       "isolate_configurator.h",
       "keyboard.cc",
@@ -94,6 +88,8 @@ template("runner_sources") {
       "pointer_injector_delegate.cc",
       "pointer_injector_delegate.h",
       "program_metadata.h",
+      "rtree.cc",
+      "rtree.h",
       "runner.cc",
       "runner.h",
       "software_surface.cc",
@@ -144,7 +140,6 @@ template("runner_sources") {
 
     public_deps = [
                     "$fuchsia_sdk_root/pkg:inspect",
-                    "$fuchsia_sdk_root/pkg:scenic_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
                     "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
                     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
@@ -159,12 +154,12 @@ template("runner_sources") {
              "$fuchsia_sdk_root/fidl:fuchsia.io",
              "$fuchsia_sdk_root/fidl:fuchsia.media",
              "$fuchsia_sdk_root/fidl:fuchsia.memorypressure",
-             "$fuchsia_sdk_root/fidl:fuchsia.sys",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.composition",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.input",
+             "$fuchsia_sdk_root/fidl:fuchsia.ui.input3",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.pointer",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.pointerinjector",
-             "$fuchsia_sdk_root/fidl:fuchsia.ui.scenic",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.test.input",
              "$fuchsia_sdk_root/fidl:fuchsia.ui.views",
              "$fuchsia_sdk_root/pkg:async-cpp",
@@ -499,23 +494,21 @@ if (enable_unittests) {
 
     sources = [
       "accessibility_bridge_unittest.cc",
+      "canvas_spy_unittests.cc",
       "component_v2_unittest.cc",
       "flutter_runner_fakes.h",
       "focus_delegate_unittests.cc",
       "fuchsia_intl_unittest.cc",
       "keyboard_unittest.cc",
-      "platform_view_unittest.cc",
       "pointer_delegate_unittests.cc",
       "pointer_injector_delegate_unittest.cc",
+      "rtree_unittests.cc",
       "tests/engine_unittests.cc",
+      "tests/external_view_embedder_unittests.cc",
       "tests/fake_flatland_unittests.cc",
-      "tests/fake_session_unittests.cc",
       "tests/flatland_connection_unittests.cc",
-      "tests/flatland_external_view_embedder_unittests.cc",
-      "tests/flatland_platform_view_unittest.cc",
       "tests/flutter_runner_product_configuration_unittests.cc",
-      "tests/gfx_external_view_embedder_unittests.cc",
-      "tests/gfx_session_connection_unittests.cc",
+      "tests/platform_view_unittest.cc",
       "tests/pointer_event_utility.cc",
       "tests/pointer_event_utility.h",
       "text_delegate_unittests.cc",
@@ -664,12 +657,28 @@ if (enable_unittests) {
     deps = [ "//flutter/display_list:display_list_unittests" ]
 
     binary = "display_list_unittests"
+
+    resources = [
+      {
+        path = rebase_path(
+                "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf")
+        dest = "assets/Roboto-Regular.ttf"
+      },
+    ]
   }
 
   fuchsia_test_archive("display_list_render_tests") {
     deps = [ "//flutter/display_list:display_list_rendertests" ]
 
     binary = "display_list_rendertests"
+
+    resources = [
+      {
+        path = rebase_path(
+                "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf")
+        dest = "assets/Roboto-Regular.ttf"
+      },
+    ]
   }
 
   fuchsia_test_archive("flow_tests") {
@@ -692,6 +701,11 @@ if (enable_unittests) {
         path = rebase_path(
                 "//flutter/testing/resources/performance_overlay_gold_120fps.png")
         dest = "flutter/testing/resources/performance_overlay_gold_120fps.png"
+      },
+      {
+        path = rebase_path(
+                "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf")
+        dest = "assets/Roboto-Regular.ttf"
       },
     ]
   }

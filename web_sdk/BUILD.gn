@@ -4,6 +4,7 @@
 
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
+import("//flutter/lib/web_ui/flutter_js/sources.gni")
 import("//flutter/web_sdk/web_sdk.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 
@@ -139,8 +140,8 @@ template("_dartdevc") {
       deps = web_engine_libraries + [
                "//third_party/dart:create_sdk",
                "//third_party/dart/pkg:pkg_files_stamp",
-               "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
-               "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+               "//third_party/dart/utils/ddc:ddc_files_stamp",
+               "//third_party/dart/utils/ddc:ddc_sdk_patch_stamp",
              ]
 
       script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
@@ -190,8 +191,8 @@ template("_kernel_worker") {
       deps = web_engine_libraries + [
                "//third_party/dart:create_sdk",
                "//third_party/dart/pkg:pkg_files_stamp",
-               "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
-               "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+               "//third_party/dart/utils/ddc:ddc_files_stamp",
+               "//third_party/dart/utils/ddc:ddc_sdk_patch_stamp",
              ]
 
       script = "//third_party/dart/utils/bazel/kernel_worker.dart"
@@ -229,6 +230,11 @@ template("_compile_platform") {
     if (defined(invoker.null_environment) && invoker.null_environment) {
       args += [ "--null-environment" ]
     }
+    skwasm_library = "dart:_skwasm_stub"
+    if (invoker.kernel_target == "dart2wasm") {
+      skwasm_library = "dart:_skwasm_impl"
+    }
+
     args += [
       "--target",
       "${invoker.kernel_target}",
@@ -253,7 +259,7 @@ template("_compile_platform") {
       "--source",
       "dart:_engine",
       "--source",
-      "dart:_skwasm_stub",
+      skwasm_library,
       "--source",
       "dart:_web_unicode",
       "--source",
@@ -306,28 +312,19 @@ _compile_platform("flutter_dart2js_kernel_sdk_full_sound") {
   null_environment = true
 }
 
-# TODO(jacksongardner): remove these once they are no longer used by the flutter tool
-copy("flutter_dartdevc_kernel_sdk_outline_unsound_legacy") {
-  sources = get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_unsound")
-
-  outputs = [ "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk.dill" ]
-
-  deps = [ ":flutter_dartdevc_kernel_sdk_outline_unsound" ]
-}
-
-copy("flutter_dartdevc_kernel_sdk_outline_sound_legacy") {
-  sources = get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound")
-
-  outputs =
-      [ "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk_sound.dill" ]
-
-  deps = [ ":flutter_dartdevc_kernel_sdk_outline_sound" ]
+_compile_platform("flutter_dart2wasm_kernel_sdk_full_sound") {
+  sound_null_safety = true
+  kernel_target = "dart2wasm"
+  summary_only = false
+  output_dill = "$root_out_dir/flutter_web_sdk/kernel/dart2wasm_platform.dill"
+  null_environment = true
 }
 
 group("flutter_platform_dills") {
   public_deps = [
     ":flutter_dart2js_kernel_sdk_full_sound",
     ":flutter_dart2js_kernel_sdk_full_unsound",
+    ":flutter_dart2wasm_kernel_sdk_full_sound",
     ":flutter_dartdevc_kernel_sdk_outline_sound",
     ":flutter_dartdevc_kernel_sdk_outline_unsound",
 
@@ -364,14 +361,10 @@ template("_compile_ddc_modules") {
 
     amd_js_path =
         "$root_out_dir/flutter_web_sdk/kernel/amd${name_suffix}/dart_sdk.js"
-    legacy_js_path =
-        "$root_out_dir/flutter_web_sdk/kernel/legacy${name_suffix}/dart_sdk.js"
 
     outputs = [
       amd_js_path,
       amd_js_path + ".map",
-      legacy_js_path,
-      legacy_js_path + ".map",
     ]
 
     if (invoker.sound_null_safety) {
@@ -409,10 +402,6 @@ template("_compile_ddc_modules") {
       "amd",
       "-o",
       rebase_path(amd_js_path),
-      "--modules",
-      "legacy",
-      "-o",
-      rebase_path(legacy_js_path),
     ]
     if (flutter_prebuilt_dart_sdk) {
       args += [
@@ -478,27 +467,13 @@ group("flutter_ddc_modules") {
     ":flutter_dartdevc_canvaskit_kernel_sdk_sound",
     ":flutter_dartdevc_kernel_sdk",
     ":flutter_dartdevc_kernel_sdk_sound",
-
-    # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
-    # https://github.com/flutter/flutter/issues/113303
-    ":flutter_dartdevc_kernel_sdk_outline_sound_legacy",
-    ":flutter_dartdevc_kernel_sdk_outline_unsound_legacy",
   ]
 }
 
 # Archives Flutter Web SDK
 if (!is_fuchsia) {
   zip_bundle_from_file("flutter_web_sdk_archive") {
-    if (target_os == "wasm") {
-      output = "flutter-web-sdk.zip"
-    } else if (is_win) {
-      output = "flutter-web-sdk-${full_target_platform_name}.zip"
-    } else {
-      # TODO(jacksongardner): remove this once we stop making platform-specific
-      # flutter_web_sdk archives.
-      # https://github.com/flutter/flutter/issues/113303
-      output = "flutter-web-sdk-${full_platform_name}.zip"
-    }
+    output = "flutter-web-sdk.zip"
     deps = [
              ":flutter_ddc_modules",
              ":flutter_platform_dills",
@@ -511,6 +486,7 @@ if (!is_fuchsia) {
         "//flutter/third_party/canvaskit:skwasm_group",
       ]
     }
+    deps += [ "//flutter/lib/web_ui/flutter_js" ]
 
     # flutter_ddc_modules
     sources = get_target_outputs(":flutter_dartdevc_kernel_sdk")
@@ -528,24 +504,32 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound")
     sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_unsound")
     sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_sound")
+    sources += get_target_outputs(":flutter_dart2wasm_kernel_sdk_full_sound")
     if (is_wasm) {
       sources += [
         "$root_out_dir/flutter_web_sdk/canvaskit/canvaskit.js",
+        "$root_out_dir/flutter_web_sdk/canvaskit/canvaskit.js.symbols",
         "$root_out_dir/flutter_web_sdk/canvaskit/canvaskit.wasm",
         "$root_out_dir/flutter_web_sdk/canvaskit/chromium/canvaskit.js",
+        "$root_out_dir/flutter_web_sdk/canvaskit/chromium/canvaskit.js.symbols",
         "$root_out_dir/flutter_web_sdk/canvaskit/chromium/canvaskit.wasm",
         "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.js",
+        "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.js.symbols",
         "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.wasm",
         "$root_out_dir/flutter_web_sdk/canvaskit/skwasm.worker.js",
       ]
     }
 
-    # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
-    # https://github.com/flutter/flutter/issues/113303
-    sources += get_target_outputs(
-            ":flutter_dartdevc_kernel_sdk_outline_unsound_legacy")
-    sources +=
-        get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound_legacy")
+    # flutter.js full sources
+    foreach(source, flutter_js_source_list) {
+      sources += [ "$root_out_dir/flutter_web_sdk/flutter_js/$source" ]
+    }
+
+    # flutter.js bundled source and sourcemap
+    sources += [
+      "$root_out_dir/flutter_web_sdk/flutter_js/flutter.js",
+      "$root_out_dir/flutter_web_sdk/flutter_js/flutter.js.map",
+    ]
 
     foreach(web_engine_library, web_engine_libraries) {
       sources += get_target_outputs(web_engine_library)

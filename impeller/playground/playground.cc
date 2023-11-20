@@ -102,7 +102,7 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
       return false;
 #endif  // IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kVulkan:
-#if IMPELLER_ENABLE_VULKAN
+#if IMPELLER_ENABLE_VULKAN && IMPELLER_ENABLE_VULKAN_PLAYGROUNDS
       return true;
 #else   // IMPELLER_ENABLE_VULKAN
       return false;
@@ -125,8 +125,8 @@ void Playground::SetupContext(PlaygroundBackend backend) {
 
 void Playground::SetupWindow() {
   if (!context_) {
-    FML_LOG(WARNING)
-        << "Asked to setup a window with no context (call SetupContext first).";
+    FML_LOG(WARNING) << "Asked to set up a window with no context (call "
+                        "SetupContext first).";
     return;
   }
   auto renderer = std::make_unique<Renderer>(context_);

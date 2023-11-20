@@ -14,11 +14,11 @@
 #import "flutter/shell/common/thread_host.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
-FLUTTER_ASSERT_NOT_ARC
+FLUTTER_ASSERT_ARC
 
 namespace {
 using namespace flutter;
-fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
+fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   auto thread = std::make_unique<fml::Thread>(name);
   auto runner = thread->GetTaskRunner();
   return runner;

@@ -174,6 +174,8 @@ constexpr GLenum ToTextureType(TextureType type) {
       return GL_TEXTURE_2D_MULTISAMPLE;
     case TextureType::kTextureCube:
       return GL_TEXTURE_CUBE_MAP;
+    case TextureType::kTextureExternalOES:
+      return GL_TEXTURE_EXTERNAL_OES;
   }
   FML_UNREACHABLE();
 }
@@ -183,11 +185,15 @@ constexpr std::optional<GLenum> ToTextureTarget(TextureType type) {
     case TextureType::kTexture2D:
       return GL_TEXTURE_2D;
     case TextureType::kTexture2DMultisample:
-      return std::nullopt;
+      return GL_TEXTURE_2D;
     case TextureType::kTextureCube:
       return GL_TEXTURE_CUBE_MAP;
+    case TextureType::kTextureExternalOES:
+      return GL_TEXTURE_EXTERNAL_OES;
   }
   FML_UNREACHABLE();
 }
+
+std::string DebugToFramebufferError(int status);
 
 }  // namespace impeller

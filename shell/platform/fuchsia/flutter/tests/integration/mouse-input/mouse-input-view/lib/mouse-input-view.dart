@@ -5,8 +5,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
-
-import 'package:zircon/zircon.dart';
+import 'dart:zircon';
 
 void main() {
   print('Launching mouse-input-view');
@@ -109,20 +108,17 @@ class MyApp {
       double wheelXPhysicalPixel,
       double wheelYPhysicalPixel}) {
     print('mouse-input-view reporting mouse input to MouseInputListener');
-    final message = utf8.encoder
-        .convert(json.encode({
-          'method': 'MouseInputListener.ReportMouseInput',
-          'local_x': localX,
-          'local_y': localY,
-          'time_received': timeReceived,
-          'component_name': 'touch-input-view',
-          'buttons': buttons,
-          'phase': 'asdf',
-          'wheel_x_physical_pixel': wheelXPhysicalPixel,
-          'wheel_y_physical_pixel': wheelYPhysicalPixel,
-        }))
-        .buffer
-        .asByteData();
+    final message = ByteData.sublistView(utf8.encode(json.encode({
+        'method': 'MouseInputListener.ReportMouseInput',
+        'local_x': localX,
+        'local_y': localY,
+        'time_received': timeReceived,
+        'component_name': 'touch-input-view',
+        'buttons': buttons,
+        'phase': 'asdf',
+        'wheel_x_physical_pixel': wheelXPhysicalPixel,
+        'wheel_y_physical_pixel': wheelYPhysicalPixel,
+      })));
     PlatformDispatcher.instance
         .sendPlatformMessage('fuchsia/input_test', message, null);
   }

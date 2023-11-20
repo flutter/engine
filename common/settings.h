@@ -146,6 +146,7 @@ struct Settings {
   std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  std::string trace_to_file;
   bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
@@ -223,6 +224,10 @@ struct Settings {
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
   bool enable_vulkan_validation = false;
+
+  // Enable GPU tracing in GLES backends.
+  // Some devices claim to support the required APIs but crash on their usage.
+  bool enable_opengl_gpu_tracing = false;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;

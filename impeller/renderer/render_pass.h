@@ -47,7 +47,7 @@ class RenderPass {
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
-  bool AddCommand(Command command);
+  bool AddCommand(Command&& command);
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
@@ -79,7 +79,9 @@ class RenderPass {
   virtual bool OnEncodeCommands(const Context& context) const = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(RenderPass);
+  RenderPass(const RenderPass&) = delete;
+
+  RenderPass& operator=(const RenderPass&) = delete;
 };
 
 }  // namespace impeller

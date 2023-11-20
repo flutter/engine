@@ -4,18 +4,23 @@
 
 package io.flutter.embedding.engine.renderer;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.hardware.SyncFence;
+import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
 import android.view.Surface;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -45,6 +50,7 @@ public class FlutterRenderer implements TextureRegistry {
   @NonNull private final AtomicLong nextTextureId = new AtomicLong(0L);
   @Nullable private Surface surface;
   private boolean isDisplayingFlutterUi = false;
+  private int isRenderingToImageViewCount = 0;
   private Handler handler = new Handler();
 
   @NonNull
@@ -76,6 +82,19 @@ public class FlutterRenderer implements TextureRegistry {
    */
   public boolean isDisplayingFlutterUi() {
     return isDisplayingFlutterUi;
+  }
+
+  /**
+   * Informs the renderer whether the surface it is rendering to is backend by a {@code
+   * FlutterImageView}, which requires additional synchonization in the Vulkan backend.
+   */
+  public void SetRenderingToImageView(boolean value) {
+    if (value) {
+      isRenderingToImageViewCount++;
+    } else {
+      isRenderingToImageViewCount--;
+    }
+    flutterJNI.SetIsRenderingToImageView(isRenderingToImageViewCount > 0);
   }
 
   /**
@@ -159,6 +178,15 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   @Override
+  public ImageTextureEntry createImageTexture() {
+    final ImageTextureRegistryEntry entry =
+        new ImageTextureRegistryEntry(nextTextureId.getAndIncrement());
+    Log.v(TAG, "New ImageTextureEntry ID: " + entry.id());
+    registerImageTexture(entry.id(), entry);
+    return entry;
+  }
+
+  @Override
   public void onTrimMemory(int level) {
     final Iterator<WeakReference<OnTrimMemoryListener>> iterator = onTrimMemoryListeners.iterator();
     while (iterator.hasNext()) {
@@ -195,15 +223,18 @@ public class FlutterRenderer implements TextureRegistry {
       this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture, onFrameConsumed);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        // The callback relies on being executed on the UI thread (unsynchronised read of
+        // The callback relies on being executed on the UI thread (unsynchronised read
+        // of
         // mNativeView
         // and also the engine code check for platform thread in
         // Shell::OnPlatformViewMarkTextureFrameAvailable),
         // so we explicitly pass a Handler for the current thread.
         this.surfaceTexture().setOnFrameAvailableListener(onFrameListener, new Handler());
       } else {
-        // Android documentation states that the listener can be called on an arbitrary thread.
-        // But in practice, versions of Android that predate the newer API will call the listener
+        // Android documentation states that the listener can be called on an arbitrary
+        // thread.
+        // But in practice, versions of Android that predate the newer API will call the
+        // listener
         // on the thread where the SurfaceTexture was constructed.
         this.surfaceTexture().setOnFrameAvailableListener(onFrameListener);
       }
@@ -270,7 +301,7 @@ public class FlutterRenderer implements TextureRegistry {
           return;
         }
 
-        handler.post(new SurfaceTextureFinalizerRunnable(id, flutterJNI));
+        handler.post(new TextureFinalizerRunnable(id, flutterJNI));
       } finally {
         super.finalize();
       }
@@ -287,11 +318,11 @@ public class FlutterRenderer implements TextureRegistry {
     }
   }
 
-  static final class SurfaceTextureFinalizerRunnable implements Runnable {
+  static final class TextureFinalizerRunnable implements Runnable {
     private final long id;
     private final FlutterJNI flutterJNI;
 
-    SurfaceTextureFinalizerRunnable(long id, @NonNull FlutterJNI flutterJNI) {
+    TextureFinalizerRunnable(long id, @NonNull FlutterJNI flutterJNI) {
       this.id = id;
       this.flutterJNI = flutterJNI;
     }
@@ -301,8 +332,123 @@ public class FlutterRenderer implements TextureRegistry {
       if (!flutterJNI.isAttached()) {
         return;
       }
-      Log.v(TAG, "Releasing a SurfaceTexture (" + id + ").");
+      Log.v(TAG, "Releasing a Texture (" + id + ").");
       flutterJNI.unregisterTexture(id);
+    }
+  }
+
+  @Keep
+  final class ImageTextureRegistryEntry implements TextureRegistry.ImageTextureEntry {
+    private static final String TAG = "ImageTextureRegistryEntry";
+    private final long id;
+    private boolean released;
+    private boolean ignoringFence = false;
+    private Image image;
+
+    ImageTextureRegistryEntry(long id) {
+      this.id = id;
+    }
+
+    @Override
+    public long id() {
+      return id;
+    }
+
+    @Override
+    @TargetApi(19)
+    public void release() {
+      if (released) {
+        return;
+      }
+      released = true;
+      if (image != null) {
+        image.close();
+        image = null;
+      }
+      unregisterTexture(id);
+    }
+
+    @Override
+    @TargetApi(19)
+    public void pushImage(Image image) {
+      if (released) {
+        return;
+      }
+      Image toClose;
+      synchronized (this) {
+        toClose = this.image;
+        this.image = image;
+      }
+      // Close the previously pushed buffer.
+      if (toClose != null) {
+        Log.e(TAG, "Dropping PlatformView Frame");
+        toClose.close();
+      }
+      if (image != null) {
+        // Mark that we have a new frame available.
+        markTextureFrameAvailable(id);
+      }
+    }
+
+    @TargetApi(33)
+    private void waitOnFence(Image image) {
+      try {
+        SyncFence fence = image.getFence();
+        boolean signaled = fence.awaitForever();
+        if (!signaled) {
+          Log.e(TAG, "acquireLatestImage image's fence was never signalled.");
+        }
+      } catch (IOException e) {
+        // Drop.
+      }
+    }
+
+    @TargetApi(29)
+    private void maybeWaitOnFence(Image image) {
+      if (image == null) {
+        return;
+      }
+      if (Build.VERSION.SDK_INT >= 33) {
+        // The fence API is only available on Android >= 33.
+        waitOnFence(image);
+        return;
+      }
+      if (!ignoringFence) {
+        // Log once per ImageTextureEntry.
+        ignoringFence = true;
+        Log.w(TAG, "ImageTextureEntry can't wait on the fence on Android < 33");
+      }
+    }
+
+    @Override
+    @TargetApi(29)
+    public Image acquireLatestImage() {
+      Image r;
+      synchronized (this) {
+        r = this.image;
+        this.image = null;
+      }
+      maybeWaitOnFence(r);
+      return r;
+    }
+
+    @Override
+    @TargetApi(19)
+    protected void finalize() throws Throwable {
+      try {
+        if (released) {
+          return;
+        }
+        if (image != null) {
+          // Be sure to finalize any cached image.
+          image.close();
+          image = null;
+        }
+        released = true;
+        handler.post(new TextureFinalizerRunnable(id, flutterJNI));
+      } finally {
+        super.finalize();
+      }
     }
   }
   // ------ END TextureRegistry IMPLEMENTATION ----
@@ -321,20 +467,26 @@ public class FlutterRenderer implements TextureRegistry {
    * android.view.TextureView.SurfaceTextureListener}
    *
    * @param surface The render surface.
-   * @param keepCurrentSurface True if the current active surface should not be released.
+   * @param onlySwap True if the current active surface should not be detached.
    */
-  public void startRenderingToSurface(@NonNull Surface surface, boolean keepCurrentSurface) {
-    // Don't stop rendering the surface if it's currently paused.
-    // Stop rendering to the surface releases the associated native resources, which
-    // causes a glitch when showing platform views.
-    // For more, https://github.com/flutter/flutter/issues/95343
-    if (this.surface != null && !keepCurrentSurface) {
+  public void startRenderingToSurface(@NonNull Surface surface, boolean onlySwap) {
+    if (!onlySwap) {
+      // Stop rendering to the surface releases the associated native resources, which
+      // causes a glitch when toggling between rendering to an image view (hybrid composition) and
+      // rendering directly to a Surface or Texture view. For more,
+      // https://github.com/flutter/flutter/issues/95343
       stopRenderingToSurface();
     }
 
     this.surface = surface;
 
-    flutterJNI.onSurfaceCreated(surface);
+    if (onlySwap) {
+      // In the swap case we are just swapping the surface that we render to.
+      flutterJNI.onSurfaceWindowChanged(surface);
+    } else {
+      // In the non-swap case we are creating a new surface to render to.
+      flutterJNI.onSurfaceCreated(surface);
+    }
   }
 
   /**
@@ -370,19 +522,23 @@ public class FlutterRenderer implements TextureRegistry {
    * android.view.TextureView.SurfaceTextureListener}
    */
   public void stopRenderingToSurface() {
-    flutterJNI.onSurfaceDestroyed();
+    if (surface != null) {
+      flutterJNI.onSurfaceDestroyed();
 
-    surface = null;
+      // TODO(mattcarroll): the source of truth for this call should be FlutterJNI,
+      // which is where
+      // the call to onFlutterUiDisplayed() comes from. However, no such native
+      // callback exists yet,
+      // so until the engine and FlutterJNI are configured to call us back when
+      // rendering stops,
+      // we will manually monitor that change here.
+      if (isDisplayingFlutterUi) {
+        flutterUiDisplayListener.onFlutterUiNoLongerDisplayed();
+      }
 
-    // TODO(mattcarroll): the source of truth for this call should be FlutterJNI, which is where
-    // the call to onFlutterUiDisplayed() comes from. However, no such native callback exists yet,
-    // so until the engine and FlutterJNI are configured to call us back when rendering stops,
-    // we will manually monitor that change here.
-    if (isDisplayingFlutterUi) {
-      flutterUiDisplayListener.onFlutterUiNoLongerDisplayed();
+      isDisplayingFlutterUi = false;
+      surface = null;
     }
-
-    isDisplayingFlutterUi = false;
   }
 
   /**
@@ -486,6 +642,11 @@ public class FlutterRenderer implements TextureRegistry {
   // TODO(mattcarroll): describe the native behavior that this invokes
   private void registerTexture(long textureId, @NonNull SurfaceTextureWrapper textureWrapper) {
     flutterJNI.registerTexture(textureId, textureWrapper);
+  }
+
+  private void registerImageTexture(
+      long textureId, @NonNull TextureRegistry.ImageTextureEntry textureEntry) {
+    flutterJNI.registerImageTexture(textureId, textureEntry);
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes

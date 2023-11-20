@@ -23,7 +23,7 @@ class PipelineLibraryGLES final : public PipelineLibrary {
   ReactorGLES::Ref reactor_;
   PipelineMap pipelines_;
 
-  PipelineLibraryGLES(ReactorGLES::Ref reactor);
+  explicit PipelineLibraryGLES(ReactorGLES::Ref reactor);
 
   // |PipelineLibrary|
   bool IsValid() const override;
@@ -40,7 +40,9 @@ class PipelineLibraryGLES final : public PipelineLibrary {
   void RemovePipelinesWithEntryPoint(
       std::shared_ptr<const ShaderFunction> function) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryGLES);
+  PipelineLibraryGLES(const PipelineLibraryGLES&) = delete;
+
+  PipelineLibraryGLES& operator=(const PipelineLibraryGLES&) = delete;
 };
 
 }  // namespace impeller

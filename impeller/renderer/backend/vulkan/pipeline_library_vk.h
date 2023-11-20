@@ -17,7 +17,6 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/pipeline_library.h"
-#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -74,7 +73,9 @@ class PipelineLibraryVK final
 
   void PersistPipelineCacheToDisk();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryVK);
+  PipelineLibraryVK(const PipelineLibraryVK&) = delete;
+
+  PipelineLibraryVK& operator=(const PipelineLibraryVK&) = delete;
 };
 
 }  // namespace impeller

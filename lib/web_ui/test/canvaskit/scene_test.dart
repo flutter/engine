@@ -8,6 +8,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -15,7 +17,7 @@ void main() {
 void testMain() {
   group('$LayerScene', () {
     setUpAll(() async {
-      await ui.webOnlyInitializePlatform();
+      await bootstrapAndRunApp();
     });
 
     test('toImage returns an image', () async {

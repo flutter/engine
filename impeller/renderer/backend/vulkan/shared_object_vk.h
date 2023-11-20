@@ -25,6 +25,7 @@ class SharedObjectVKT : public SharedObjectVK {
 
   explicit SharedObjectVKT(UniqueResource res) : resource_(std::move(res)) {}
 
+  // NOLINTNEXTLINE(google-explicit-constructor)
   operator Resource() const { return Get(); }
 
   const Resource& Get() const { return *resource_; }
@@ -32,7 +33,9 @@ class SharedObjectVKT : public SharedObjectVK {
  private:
   UniqueResource resource_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SharedObjectVKT);
+  SharedObjectVKT(const SharedObjectVKT&) = delete;
+
+  SharedObjectVKT& operator=(const SharedObjectVKT&) = delete;
 };
 
 template <class T>

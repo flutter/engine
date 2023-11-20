@@ -20,16 +20,22 @@ typedef int64_t FlutterViewId;
  * backward compatibility, single-view APIs will always operate on the view with
  * this ID. Also, the first view assigned to the engine will also have this ID.
  */
-constexpr FlutterViewId kFlutterDefaultViewId = 0ll;
+constexpr FlutterViewId kFlutterImplicitViewId = 0ll;
 
 /**
- * Listener for view resizing.
+ * Delegate for FlutterView.
  */
-@protocol FlutterViewReshapeListener <NSObject>
+@protocol FlutterViewDelegate <NSObject>
 /**
  * Called when the view's backing store changes size.
  */
 - (void)viewDidReshape:(nonnull NSView*)view;
+
+/**
+ * Called to determine whether the view should accept first responder status.
+ */
+- (BOOL)viewShouldAcceptFirstResponder:(nonnull NSView*)view;
+
 @end
 
 /**
@@ -43,7 +49,7 @@ constexpr FlutterViewId kFlutterDefaultViewId = 0ll;
  */
 - (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
                               commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                           reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
+                                  delegate:(nonnull id<FlutterViewDelegate>)delegate
                         threadSynchronizer:(nonnull FlutterThreadSynchronizer*)threadSynchronizer
                                     viewId:(int64_t)viewId NS_DESIGNATED_INITIALIZER;
 

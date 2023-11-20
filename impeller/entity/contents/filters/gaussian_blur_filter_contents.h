@@ -4,36 +4,43 @@
 
 #pragma once
 
-#include <memory>
 #include <optional>
 #include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 namespace impeller {
 
-class DirectionalGaussianBlurFilterContents final : public FilterContents {
+/// Performs a bidirectional Gaussian blur.
+///
+/// This is accomplished by rendering multiple passes in multiple directions.
+/// Note: This will replace `DirectionalGaussianBlurFilterContents`.
+class GaussianBlurFilterContents final : public FilterContents {
  public:
-  DirectionalGaussianBlurFilterContents();
+  explicit GaussianBlurFilterContents(Scalar sigma = 0.0f);
 
-  ~DirectionalGaussianBlurFilterContents() override;
+  Scalar GetSigma() const { return sigma_; }
 
-  void SetSigma(Sigma sigma);
-
-  void SetSecondarySigma(Sigma sigma);
-
-  void SetDirection(Vector2 direction);
-
-  void SetBlurStyle(BlurStyle blur_style);
-
-  void SetTileMode(Entity::TileMode tile_mode);
-
-  void SetSourceOverride(FilterInput::Ref alpha_mask);
+  // |FilterContents|
+  std::optional<Rect> GetFilterSourceCoverage(
+      const Matrix& effect_transform,
+      const Rect& output_limit) const override;
 
   // |FilterContents|
   std::optional<Rect> GetFilterCoverage(
       const FilterInput::Vector& inputs,
       const Entity& entity,
       const Matrix& effect_transform) const override;
+
+  /// Given a sigma (standard deviation) calculate the blur radius (1/2 the
+  /// kernel size).
+  static Scalar CalculateBlurRadius(Scalar sigma);
+
+  /// Calculate the UV coordinates for rendering the filter_input.
+  /// @param filter_input The FilterInput that should be rendered.
+  /// @param entity The associated entity for the filter_input.
+  /// @param texture_size The size of the texture_size the uvs will be used for.
+  static Quad CalculateUVs(const std::shared_ptr<FilterInput>& filter_input,
+                           const Entity& entity,
+                           const ISize& pass_size);
 
  private:
   // |FilterContents|
@@ -44,17 +51,8 @@ class DirectionalGaussianBlurFilterContents final : public FilterContents {
       const Matrix& effect_transform,
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const override;
-  Sigma blur_sigma_;
-  Sigma secondary_blur_sigma_;
-  Vector2 blur_direction_;
-  BlurStyle blur_style_ = BlurStyle::kNormal;
-  Entity::TileMode tile_mode_ = Entity::TileMode::kDecal;
-  bool src_color_factor_ = false;
-  bool inner_blur_factor_ = true;
-  bool outer_blur_factor_ = true;
-  FilterInput::Ref source_override_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DirectionalGaussianBlurFilterContents);
+  const Scalar sigma_ = 0.0;
 };
 
 }  // namespace impeller

@@ -6,6 +6,8 @@ import 'dart:ui';
 
 import 'animated_color_square.dart';
 import 'bogus_font_text.dart';
+import 'darwin_app_extension_scenario.dart';
+import 'darwin_system_font.dart';
 import 'get_bitmap_scenario.dart';
 import 'initial_route_reply.dart';
 import 'locale_initialization.dart';
@@ -43,6 +45,7 @@ Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'platform_view_opacity': (FlutterView view) => PlatformViewOpacityScenario(view, id: _viewId++),
   'platform_view_with_other_backdrop_filter': (FlutterView view) => PlatformViewWithOtherBackDropFilter(view, id: _viewId++),
   'two_platform_views_with_other_backdrop_filter': (FlutterView view) => TwoPlatformViewsWithOtherBackDropFilter(view, firstId: _viewId++, secondId: _viewId++),
+  'platform_view_with_negative_backdrop_filter': (FlutterView view) => PlatformViewWithNegativeBackDropFilter(view, id: _viewId++),
   'platform_view_multiple': (FlutterView view) => MultiPlatformViewScenario(view, firstId: _viewId++, secondId: _viewId++),
   'platform_view_multiple_background_foreground': (FlutterView view) => MultiPlatformViewBackgroundForegroundScenario(view, firstId: _viewId++, secondId: _viewId++),
   'non_full_screen_flutter_view_platform_view': (FlutterView view) => NonFullScreenFlutterViewPlatformViewScenario(view, id: _viewId++),
@@ -65,6 +68,8 @@ Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'pointer_events': (FlutterView view) => TouchesScenario(view),
   'display_texture': (FlutterView view) => DisplayTexture(view),
   'get_bitmap': (FlutterView view) => GetBitmapScenario(view),
+  'app_extension': (FlutterView view) => DarwinAppExtensionScenario(view),
+  'darwin_system_font': (FlutterView view) => DarwinSystemFont(view),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

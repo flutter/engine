@@ -9,6 +9,7 @@
 
 #include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
 #include "impeller/base/promise.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/shader_function_gles.h"
@@ -30,6 +31,19 @@ static std::string GetShaderInfoLog(const ProcTableGLES& gl, GLuint shader) {
   auto log_string = std::string(log_buffer, log_length);
   std::free(log_buffer);
   return log_string;
+}
+
+static std::string GetShaderSource(const ProcTableGLES& gl, GLuint shader) {
+  // Arbitrarily chosen size that should be larger than most shaders.
+  // Since this only fires on compilation errors the performance shouldn't
+  // matter.
+  auto data = static_cast<char*>(malloc(10240));
+  GLsizei length;
+  gl.GetShaderSource(shader, 10240, &length, data);
+
+  auto result = std::string{data, static_cast<size_t>(length)};
+  free(data);
+  return result;
 }
 
 static void LogShaderCompilationFailure(const ProcTableGLES& gl,
@@ -62,10 +76,7 @@ static void LogShaderCompilationFailure(const ProcTableGLES& gl,
   stream << " shader for '" << name << "' with error:" << std::endl;
   stream << GetShaderInfoLog(gl, shader) << std::endl;
   stream << "Shader source was: " << std::endl;
-  stream << std::string{reinterpret_cast<const char*>(
-                            source_mapping.GetMapping()),
-                        source_mapping.GetSize()}
-         << std::endl;
+  stream << GetShaderSource(gl, shader) << std::endl;
   VALIDATION_LOG << stream.str();
 }
 
@@ -104,8 +115,10 @@ static bool LinkProgram(
   fml::ScopedCleanupClosure delete_frag_shader(
       [&gl, frag_shader]() { gl.DeleteShader(frag_shader); });
 
-  gl.ShaderSourceMapping(vert_shader, *vert_mapping);
-  gl.ShaderSourceMapping(frag_shader, *frag_mapping);
+  gl.ShaderSourceMapping(vert_shader, *vert_mapping,
+                         descriptor.GetSpecializationConstants());
+  gl.ShaderSourceMapping(frag_shader, *frag_mapping,
+                         descriptor.GetSpecializationConstants());
 
   gl.CompileShader(vert_shader);
   gl.CompileShader(frag_shader);

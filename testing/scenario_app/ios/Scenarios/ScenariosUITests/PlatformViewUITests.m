@@ -375,6 +375,29 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 }
 
 - (void)testPlatformView {
+  // (TODO)cyanglaz: remove the threshold adjustment after all the ci migrates to macOS13.
+  // https://github.com/flutter/flutter/issues/133207
+  if ([NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 13) {
+    self.rmseThreadhold = 0.7;
+  }
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewWithNegativeOtherBackDropFilterTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewWithNegativeOtherBackDropFilterTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-with-negative-backdrop-filter"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
   [self checkPlatformViewGolden];
 }
 

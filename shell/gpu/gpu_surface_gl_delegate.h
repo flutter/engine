@@ -27,8 +27,6 @@ struct GLFrameInfo {
 struct GLFBOInfo {
   // The frame buffer's ID.
   uint32_t fbo_id;
-  // This boolean flags whether the returned FBO supports partial repaint.
-  const bool partial_repaint_enabled;
   // The frame buffer's existing damage (i.e. damage since it was last used).
   const std::optional<SkIRect> existing_damage;
 };
@@ -58,7 +56,7 @@ class GPUSurfaceGLDelegate {
   virtual std::unique_ptr<GLContextResult> GLContextMakeCurrent() = 0;
 
   // Called to clear the current GL context on the thread. This may be called on
-  // either the GPU or IO threads.
+  // either the Raster or IO threads.
   virtual bool GLContextClearCurrent() = 0;
 
   // Inform the GL Context that there's going to be no writing beyond

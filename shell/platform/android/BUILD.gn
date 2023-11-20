@@ -4,6 +4,7 @@
 
 import("//build/config/android/config.gni")
 import("//build/toolchain/clang.gni")
+import("//flutter/build/bin_to_obj.gni")
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
@@ -28,7 +29,7 @@ source_set("image_generator") {
   deps = [
     "//flutter/fml",
     "//flutter/lib/ui:ui",
-    "//third_party/skia",
+    "//flutter/skia",
   ]
 
   libs = [
@@ -46,6 +47,7 @@ executable("flutter_shell_native_unittests") {
     "android_shell_holder_unittests.cc",
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
+    "platform_view_android_unittests.cc",
   ]
   public_configs = [ "//flutter:config" ]
   deps = [
@@ -63,11 +65,18 @@ shared_library("flutter_shell_native") {
   ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
 }
 
+bin_to_assembly("icudtl_asm") {
+  deps = []
+  input = "//third_party/icu/flutter/icudtl.dat"
+  symbol = "_binary_icudtl_dat_start"
+  size_symbol = "_binary_icudtl_dat_size"
+  executable = false
+}
+
 source_set("flutter_shell_native_src") {
   visibility = [ ":*" ]
 
   sources = [
-    "$root_build_dir/flutter_icu/icudtl.o",
     "android_choreographer.cc",
     "android_choreographer.h",
     "android_context_gl_impeller.cc",
@@ -82,8 +91,6 @@ source_set("flutter_shell_native_src") {
     "android_egl_surface.h",
     "android_environment_gl.cc",
     "android_environment_gl.h",
-    "android_external_texture_gl.cc",
-    "android_external_texture_gl.h",
     "android_shell_holder.cc",
     "android_shell_holder.h",
     "android_surface_gl_impeller.cc",
@@ -98,7 +105,15 @@ source_set("flutter_shell_native_src") {
     "apk_asset_provider.h",
     "flutter_main.cc",
     "flutter_main.h",
+    "image_external_texture.cc",
+    "image_external_texture.h",
+    "image_external_texture_gl.cc",
+    "image_external_texture_gl.h",
+    "image_external_texture_vk.cc",
+    "image_external_texture_vk.h",
     "library_loader.cc",
+    "ndk_helpers.cc",
+    "ndk_helpers.h",
     "platform_message_handler_android.cc",
     "platform_message_handler_android.h",
     "platform_message_response_android.cc",
@@ -107,13 +122,19 @@ source_set("flutter_shell_native_src") {
     "platform_view_android.h",
     "platform_view_android_jni_impl.cc",
     "platform_view_android_jni_impl.h",
+    "surface_texture_external_texture.cc",
+    "surface_texture_external_texture.h",
+    "surface_texture_external_texture_gl.cc",
+    "surface_texture_external_texture_gl.h",
     "vsync_waiter_android.cc",
     "vsync_waiter_android.h",
   ]
 
+  sources += get_target_outputs(":icudtl_asm")
+
   public_deps = [
     ":android_gpu_configuration",
-    ":icudtl_object",
+    ":icudtl_asm",
     ":image_generator",
     "//flutter/assets",
     "//flutter/common",
@@ -122,6 +143,7 @@ source_set("flutter_shell_native_src") {
     "//flutter/fml",
     "//flutter/impeller",
     "//flutter/impeller/toolkit/egl",
+    "//flutter/impeller/toolkit/gles",
     "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
@@ -132,8 +154,9 @@ source_set("flutter_shell_native_src") {
     "//flutter/shell/platform/android/platform_view_android_delegate",
     "//flutter/shell/platform/android/surface",
     "//flutter/shell/platform/android/surface:native_window",
+    "//flutter/skia",
+    "//flutter/third_party/txt",
     "//flutter/vulkan",
-    "//third_party/skia",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -180,7 +203,6 @@ android_java_sources = [
   "io/flutter/app/FlutterPlayStoreSplitApplication.java",
   "io/flutter/app/FlutterPluginRegistry.java",
   "io/flutter/embedding/android/AndroidTouchProcessor.java",
-  "io/flutter/embedding/android/DrawableSplashScreen.java",
   "io/flutter/embedding/android/ExclusiveAppComponent.java",
   "io/flutter/embedding/android/FlutterActivity.java",
   "io/flutter/embedding/android/FlutterActivityAndFragmentDelegate.java",
@@ -191,7 +213,6 @@ android_java_sources = [
   "io/flutter/embedding/android/FlutterFragmentActivity.java",
   "io/flutter/embedding/android/FlutterImageView.java",
   "io/flutter/embedding/android/FlutterPlayStoreSplitApplication.java",
-  "io/flutter/embedding/android/FlutterSplashView.java",
   "io/flutter/embedding/android/FlutterSurfaceView.java",
   "io/flutter/embedding/android/FlutterTextureView.java",
   "io/flutter/embedding/android/FlutterView.java",
@@ -202,8 +223,6 @@ android_java_sources = [
   "io/flutter/embedding/android/KeyboardMap.java",
   "io/flutter/embedding/android/MotionEventTracker.java",
   "io/flutter/embedding/android/RenderMode.java",
-  "io/flutter/embedding/android/SplashScreen.java",
-  "io/flutter/embedding/android/SplashScreenProvider.java",
   "io/flutter/embedding/android/TransparencyMode.java",
   "io/flutter/embedding/android/WindowInfoRepositoryCallbackAdapterWrapper.java",
   "io/flutter/embedding/engine/FlutterEngine.java",
@@ -258,6 +277,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/systemchannels/NavigationChannel.java",
   "io/flutter/embedding/engine/systemchannels/PlatformChannel.java",
   "io/flutter/embedding/engine/systemchannels/PlatformViewsChannel.java",
+  "io/flutter/embedding/engine/systemchannels/ProcessTextChannel.java",
   "io/flutter/embedding/engine/systemchannels/RestorationChannel.java",
   "io/flutter/embedding/engine/systemchannels/SettingsChannel.java",
   "io/flutter/embedding/engine/systemchannels/SpellCheckChannel.java",
@@ -291,17 +311,21 @@ android_java_sources = [
   "io/flutter/plugin/localization/LocalizationPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
   "io/flutter/plugin/platform/AccessibilityEventsDelegate.java",
+  "io/flutter/plugin/platform/ImageReaderPlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/PlatformOverlayView.java",
   "io/flutter/plugin/platform/PlatformPlugin.java",
   "io/flutter/plugin/platform/PlatformView.java",
   "io/flutter/plugin/platform/PlatformViewFactory.java",
   "io/flutter/plugin/platform/PlatformViewRegistry.java",
   "io/flutter/plugin/platform/PlatformViewRegistryImpl.java",
+  "io/flutter/plugin/platform/PlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/PlatformViewWrapper.java",
   "io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java",
   "io/flutter/plugin/platform/PlatformViewsController.java",
   "io/flutter/plugin/platform/SingleViewPresentation.java",
+  "io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/VirtualDisplayController.java",
+  "io/flutter/plugin/text/ProcessTextPlugin.java",
   "io/flutter/util/HandlerCompat.java",
   "io/flutter/util/PathUtils.java",
   "io/flutter/util/Preconditions.java",
@@ -414,28 +438,6 @@ action("flutter_shell_java") {
   ]
 }
 
-action("icudtl_object") {
-  script = "//flutter/sky/tools/objcopy.py"
-
-  icudtl_input = "//third_party/icu/flutter/icudtl.dat"
-  icudtl_output = "$root_build_dir/flutter_icu/icudtl.o"
-
-  inputs = [ "$icudtl_input" ]
-
-  outputs = [ "$icudtl_output" ]
-
-  args = [
-    "--objcopy",
-    rebase_path(android_objcopy),
-    "--input",
-    rebase_path(icudtl_input),
-    "--output",
-    rebase_path(icudtl_output),
-    "--arch",
-    current_cpu,
-  ]
-}
-
 action("android_jar") {
   script = "//build/android/gyp/create_flutter_jar.py"
 
@@ -480,14 +482,22 @@ action("android_jar") {
     ":pom_libflutter",
   ]
 
-  if (enable_vulkan_validation_layers) {
+  if (impeller_enable_vulkan_validation_layers) {
     assert(impeller_enable_vulkan)
-    deps += [ "//third_party/vulkan_validation_layers" ]
+
+    # We use a different toolchain here so that vulkan validation layers are
+    # built against API level 26, which they require, rather than the default.
+    # This is safe because the Engine can do a version check before loading the
+    # .so for the validation layers.
+    apilevel26_toolchain = "//build/toolchain/android:clang_arm64_apilevel26"
+    validation_layer_target =
+        "//third_party/vulkan_validation_layers($apilevel26_toolchain)"
+    validation_layer_out_dir =
+        get_label_info(validation_layer_target, "root_out_dir")
+    deps += [ validation_layer_target ]
     args += [
       "--native_lib",
-      rebase_path("libVkLayer_khronos_validation.so",
-                  root_build_dir,
-                  root_build_dir),
+      rebase_path("$validation_layer_out_dir/libVkLayer_khronos_validation.so"),
     ]
     if (current_cpu == "arm64") {
       args += [

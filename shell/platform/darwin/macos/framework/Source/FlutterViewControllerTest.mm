@@ -16,7 +16,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
-#import "flutter/testing/testing.h"
+#include "flutter/testing/autoreleasepool_test.h"
+#include "flutter/testing/testing.h"
 
 #pragma mark - Test Helper Classes
 
@@ -38,6 +39,42 @@
 }
 @end
 
+/// Responder wrapper that forwards key events to another responder. This is a necessary middle step
+/// for mocking responder because when setting the responder to controller AppKit will access ivars
+/// of the objects, which means it must extend NSResponder instead of just implementing the
+/// selectors.
+@interface FlutterResponderWrapper : NSResponder {
+  NSResponder* _responder;
+}
+@end
+
+@implementation FlutterResponderWrapper
+
+- (instancetype)initWithResponder:(NSResponder*)responder {
+  if (self = [super init]) {
+    _responder = responder;
+  }
+  return self;
+}
+
+- (void)keyDown:(NSEvent*)event {
+  [_responder keyDown:event];
+}
+
+- (void)keyUp:(NSEvent*)event {
+  [_responder keyUp:event];
+}
+
+- (BOOL)performKeyEquivalent:(NSEvent*)event {
+  return [_responder performKeyEquivalent:event];
+}
+
+- (void)flagsChanged:(NSEvent*)event {
+  [_responder flagsChanged:event];
+}
+
+@end
+
 // A FlutterViewController subclass for testing that mouseDown/mouseUp get called when
 // mouse events are sent to the associated view.
 @interface MouseEventFlutterViewController : FlutterViewController
@@ -56,17 +93,18 @@
 @end
 
 @interface FlutterViewControllerTestObjC : NSObject
-- (bool)testKeyEventsAreSentToFramework;
-- (bool)testKeyEventsArePropagatedIfNotHandled;
-- (bool)testKeyEventsAreNotPropagatedIfHandled;
-- (bool)testCtrlTabKeyEventIsPropagated;
-- (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
-- (bool)testKeyboardIsRestartedOnEngineRestart;
-- (bool)testTrackpadGesturesAreSentToFramework;
-- (bool)testMouseDownUpEventsSentToNextResponder;
-- (bool)testModifierKeysAreSynthesizedOnMouseMove;
-- (bool)testViewWillAppearCalledMultipleTimes;
-- (bool)testFlutterViewIsConfigured;
+- (bool)testKeyEventsAreSentToFramework:(id)mockEngine;
+- (bool)testKeyEventsArePropagatedIfNotHandled:(id)mockEngine;
+- (bool)testKeyEventsAreNotPropagatedIfHandled:(id)mockEngine;
+- (bool)testCtrlTabKeyEventIsPropagated:(id)mockEngine;
+- (bool)testKeyEquivalentIsPassedToTextInputPlugin:(id)mockEngine;
+- (bool)testFlagsChangedEventsArePropagatedIfNotHandled:(id)mockEngine;
+- (bool)testKeyboardIsRestartedOnEngineRestart:(id)mockEngine;
+- (bool)testTrackpadGesturesAreSentToFramework:(id)mockEngine;
+- (bool)testMouseDownUpEventsSentToNextResponder:(id)mockEngine;
+- (bool)testModifierKeysAreSynthesizedOnMouseMove:(id)mockEngine;
+- (bool)testViewWillAppearCalledMultipleTimes:(id)mockEngine;
+- (bool)testFlutterViewIsConfigured:(id)mockEngine;
 - (bool)testLookupKeyAssets;
 - (bool)testLookupKeyAssetsWithPackage;
 - (bool)testViewControllerIsReleased;
@@ -136,7 +174,11 @@ NSEvent* CreateMouseEvent(NSEventModifierFlags modifierFlags) {
 
 #pragma mark - gtest tests
 
-TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
+// Test-specific names for AutoreleasePoolTest, MockFlutterEngineTest fixtures.
+using FlutterViewControllerTest = AutoreleasePoolTest;
+using FlutterViewControllerMockEngineTest = MockFlutterEngineTest;
+
+TEST_F(FlutterViewControllerTest, HasViewThatHidesOtherViewsInAccessibility) {
   FlutterViewController* viewControllerMock = CreateMockViewController();
 
   [viewControllerMock loadView];
@@ -157,13 +199,13 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
-TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
+TEST_F(FlutterViewControllerTest, FlutterViewAcceptsFirstMouse) {
   FlutterViewController* viewControllerMock = CreateMockViewController();
   [viewControllerMock loadView];
   EXPECT_EQ([viewControllerMock.flutterView acceptsFirstMouse:nil], YES);
 }
 
-TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
+TEST_F(FlutterViewControllerTest, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -189,70 +231,94 @@ TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   EXPECT_TRUE(viewController.textInputPlugin.superview == viewController.view);
 }
 
-TEST(FlutterViewController, CanSetMouseTrackingModeBeforeViewLoaded) {
+TEST_F(FlutterViewControllerTest, CanSetMouseTrackingModeBeforeViewLoaded) {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  viewController.mouseTrackingMode = FlutterMouseTrackingModeInActiveApp;
-  ASSERT_EQ(viewController.mouseTrackingMode, FlutterMouseTrackingModeInActiveApp);
+  viewController.mouseTrackingMode = kFlutterMouseTrackingModeInActiveApp;
+  ASSERT_EQ(viewController.mouseTrackingMode, kFlutterMouseTrackingModeInActiveApp);
 }
 
-TEST(FlutterViewControllerTest, TestKeyEventsAreSentToFramework) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreSentToFramework]);
+TEST_F(FlutterViewControllerMockEngineTest, TestKeyEventsAreSentToFramework) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreSentToFramework:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, TestKeyEventsArePropagatedIfNotHandled) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsArePropagatedIfNotHandled]);
-}
-
-TEST(FlutterViewControllerTest, TestKeyEventsAreNotPropagatedIfHandled) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyEventsAreNotPropagatedIfHandled]);
-}
-
-TEST(FlutterViewControllerTest, TestCtrlTabKeyEventIsPropagated) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testCtrlTabKeyEventIsPropagated]);
-}
-
-TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled) {
+TEST_F(FlutterViewControllerMockEngineTest, TestKeyEventsArePropagatedIfNotHandled) {
+  id mockEngine = GetMockEngine();
   ASSERT_TRUE(
-      [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
+      [[FlutterViewControllerTestObjC alloc] testKeyEventsArePropagatedIfNotHandled:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyboardIsRestartedOnEngineRestart]);
+TEST_F(FlutterViewControllerMockEngineTest, TestKeyEventsAreNotPropagatedIfHandled) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE(
+      [[FlutterViewControllerTestObjC alloc] testKeyEventsAreNotPropagatedIfHandled:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework]);
+TEST_F(FlutterViewControllerMockEngineTest, TestCtrlTabKeyEventIsPropagated) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testCtrlTabKeyEventIsPropagated:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, TestMouseDownUpEventsSentToNextResponder) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testMouseDownUpEventsSentToNextResponder]);
+TEST_F(FlutterViewControllerMockEngineTest, TestKeyEquivalentIsPassedToTextInputPlugin) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc]
+      testKeyEquivalentIsPassedToTextInputPlugin:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, TestModifierKeysAreSynthesizedOnMouseMove) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testModifierKeysAreSynthesizedOnMouseMove]);
+TEST_F(FlutterViewControllerMockEngineTest, TestFlagsChangedEventsArePropagatedIfNotHandled) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc]
+      testFlagsChangedEventsArePropagatedIfNotHandled:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewWillAppearCalledMultipleTimes]);
+TEST_F(FlutterViewControllerMockEngineTest, TestKeyboardIsRestartedOnEngineRestart) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE(
+      [[FlutterViewControllerTestObjC alloc] testKeyboardIsRestartedOnEngineRestart:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testFlutterViewIsConfigured]);
+TEST_F(FlutterViewControllerMockEngineTest, TestTrackpadGesturesAreSentToFramework) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE(
+      [[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework:mockEngine]);
 }
 
-TEST(FlutterViewControllerTest, testLookupKeyAssets) {
+TEST_F(FlutterViewControllerMockEngineTest, TestMouseDownUpEventsSentToNextResponder) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE(
+      [[FlutterViewControllerTestObjC alloc] testMouseDownUpEventsSentToNextResponder:mockEngine]);
+}
+
+TEST_F(FlutterViewControllerMockEngineTest, TestModifierKeysAreSynthesizedOnMouseMove) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE(
+      [[FlutterViewControllerTestObjC alloc] testModifierKeysAreSynthesizedOnMouseMove:mockEngine]);
+}
+
+TEST_F(FlutterViewControllerMockEngineTest, testViewWillAppearCalledMultipleTimes) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE(
+      [[FlutterViewControllerTestObjC alloc] testViewWillAppearCalledMultipleTimes:mockEngine]);
+}
+
+TEST_F(FlutterViewControllerMockEngineTest, testFlutterViewIsConfigured) {
+  id mockEngine = GetMockEngine();
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testFlutterViewIsConfigured:mockEngine]);
+}
+
+TEST_F(FlutterViewControllerTest, testLookupKeyAssets) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssets]);
 }
 
-TEST(FlutterViewControllerTest, testLookupKeyAssetsWithPackage) {
+TEST_F(FlutterViewControllerTest, testLookupKeyAssetsWithPackage) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testLookupKeyAssetsWithPackage]);
 }
 
-TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
+TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewControllerIsReleased]);
 }
 
@@ -262,8 +328,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
 
 @implementation FlutterViewControllerTestObjC
 
-- (bool)testKeyEventsAreSentToFramework {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testKeyEventsAreSentToFramework:(id)engineMock {
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
@@ -301,8 +366,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
 }
 
 // Regression test for https://github.com/flutter/flutter/issues/122084.
-- (bool)testCtrlTabKeyEventIsPropagated {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testCtrlTabKeyEventIsPropagated:(id)engineMock {
   __block bool called = false;
   __block FlutterKeyEvent last_event;
   OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
@@ -331,6 +395,13 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   const uint64_t kPhysicalKeyTab = 0x7002b;
 
   [viewController viewWillAppear];  // Initializes the event channel.
+  // Creates a NSWindow so that FlutterView view can be first responder.
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+  [window makeFirstResponder:viewController.flutterView];
   [viewController.view performKeyEquivalent:event];
 
   EXPECT_TRUE(called);
@@ -339,8 +410,57 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
-- (bool)testKeyEventsArePropagatedIfNotHandled {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testKeyEquivalentIsPassedToTextInputPlugin:(id)engineMock {
+  __block bool called = false;
+  __block FlutterKeyEvent last_event;
+  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
+                                                  callback:nil
+                                                  userData:nil])
+      .andDo((^(NSInvocation* invocation) {
+        FlutterKeyEvent* event;
+        [invocation getArgument:&event atIndex:2];
+        called = true;
+        last_event = *event;
+      }));
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  // Ctrl+tab
+  NSEvent* event = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                                    location:NSZeroPoint
+                               modifierFlags:0x40101
+                                   timestamp:0
+                                windowNumber:0
+                                     context:nil
+                                  characters:@""
+                 charactersIgnoringModifiers:@""
+                                   isARepeat:NO
+                                     keyCode:48];
+  const uint64_t kPhysicalKeyTab = 0x7002b;
+
+  [viewController viewWillAppear];  // Initializes the event channel.
+
+  NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                                 styleMask:NSBorderlessWindowMask
+                                                   backing:NSBackingStoreBuffered
+                                                     defer:NO];
+  window.contentView = viewController.view;
+
+  [viewController.view addSubview:viewController.textInputPlugin];
+
+  // Make the textInputPlugin first responder. This should still result in
+  // view controller reporting the key event.
+  [window makeFirstResponder:viewController.textInputPlugin];
+
+  [viewController.view performKeyEquivalent:event];
+
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.type, kFlutterKeyEventTypeDown);
+  EXPECT_EQ(last_event.physical, kPhysicalKeyTab);
+  return true;
+}
+
+- (bool)testKeyEventsArePropagatedIfNotHandled:(id)engineMock {
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
@@ -354,7 +474,8 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
+  id responderWrapper = [[FlutterResponderWrapper alloc] initWithResponder:responderMock];
+  viewController.nextResponder = responderWrapper;
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
     @"type" : @"keydown",
@@ -394,9 +515,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
-- (bool)testFlutterViewIsConfigured {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
-
+- (bool)testFlutterViewIsConfigured:(id)engineMock {
   FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
 
@@ -415,8 +534,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
-- (bool)testFlagsChangedEventsArePropagatedIfNotHandled {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testFlagsChangedEventsArePropagatedIfNotHandled:(id)engineMock {
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
@@ -430,7 +548,8 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
+  id responderWrapper = [[FlutterResponderWrapper alloc] initWithResponder:responderMock];
+  viewController.nextResponder = responderWrapper;
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
     @"type" : @"keydown",
@@ -468,8 +587,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
-- (bool)testKeyEventsAreNotPropagatedIfHandled {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testKeyEventsAreNotPropagatedIfHandled:(id)engineMock {
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
@@ -483,7 +601,8 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
+  id responderWrapper = [[FlutterResponderWrapper alloc] initWithResponder:responderMock];
+  viewController.nextResponder = responderWrapper;
   NSDictionary* expectedEvent = @{
     @"keymap" : @"macos",
     @"type" : @"keydown",
@@ -523,8 +642,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
-- (bool)testKeyboardIsRestartedOnEngineRestart {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testKeyboardIsRestartedOnEngineRestart:(id)engineMock {
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
       [engineMock binaryMessenger])
@@ -585,8 +703,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   }
 }
 
-- (bool)testTrackpadGesturesAreSentToFramework {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testTrackpadGesturesAreSentToFramework:(id)engineMock {
   // Need to return a real renderer to allow view controller to load.
   FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
@@ -762,7 +879,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   CGEventRef cgEventDiscreteShift =
       CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
   CGEventSetType(cgEventDiscreteShift, kCGEventScrollWheel);
-  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
+  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift | flutter::kModifierFlagShiftLeft);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventIsContinuous, 0);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis2,
                               0);  // scroll_delta_x
@@ -881,8 +998,7 @@ TEST(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
-- (bool)testViewWillAppearCalledMultipleTimes {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testViewWillAppearCalledMultipleTimes:(id)engineMock {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
@@ -918,7 +1034,7 @@ static void SwizzledNoop(id self, SEL _cmd) {}
 // See: https://github.com/flutter/flutter/issues/115015
 // See: http://www.openradar.me/FB12050037
 // See: https://developer.apple.com/documentation/appkit/nsresponder/1524634-mousedown
-- (bool)testMouseDownUpEventsSentToNextResponder {
+- (bool)testMouseDownUpEventsSentToNextResponder:(id)engineMock {
   // The root cause of the above bug is NSResponder mouseDown/mouseUp methods that don't correctly
   // walk the responder chain calling the appropriate method on the next responder under certain
   // conditions. Simulate this by swizzling out the default implementations and replacing them with
@@ -930,7 +1046,6 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   IMP origMouseUp = method_setImplementation(mouseUp, noopImp);
 
   // Verify that mouseDown/mouseUp trigger mouseDown/mouseUp calls on FlutterViewController.
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   MouseEventFlutterViewController* viewController =
       [[MouseEventFlutterViewController alloc] initWithEngine:engineMock nibName:@"" bundle:nil];
   FlutterView* view = (FlutterView*)[viewController view];
@@ -955,15 +1070,18 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   return true;
 }
 
-- (bool)testModifierKeysAreSynthesizedOnMouseMove {
-  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
+- (bool)testModifierKeysAreSynthesizedOnMouseMove:(id)engineMock {
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+
   // Need to return a real renderer to allow view controller to load.
   FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
 
   // Capture calls to sendKeyEvent
-  __block NSMutableArray<KeyEventWrapper*>* events =
-      [[NSMutableArray<KeyEventWrapper*> alloc] init];
+  __block NSMutableArray<KeyEventWrapper*>* events = [NSMutableArray array];
   OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
                                                   callback:nil
                                                   userData:nil])
@@ -971,6 +1089,17 @@ static void SwizzledNoop(id self, SEL _cmd) {}
         FlutterKeyEvent* event;
         [invocation getArgument:&event atIndex:2];
         [events addObject:[[KeyEventWrapper alloc] initWithEvent:event]];
+      }));
+
+  __block NSMutableArray<NSDictionary*>* channelEvents = [NSMutableArray array];
+  OCMStub([binaryMessengerMock sendOnChannel:@"flutter/keyevent"
+                                     message:[OCMArg any]
+                                 binaryReply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        NSData* data;
+        [invocation getArgument:&data atIndex:3];
+        id event = [[FlutterJSONMessageCodec sharedInstance] decode:data];
+        [channelEvents addObject:event];
       }));
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
@@ -987,12 +1116,27 @@ static void SwizzledNoop(id self, SEL _cmd) {}
   // For each modifier key, check that key events are synthesized.
   for (NSNumber* keyCode in flutter::keyCodeToModifierFlag) {
     FlutterKeyEvent* event;
+    NSDictionary* channelEvent;
     NSNumber* logicalKey;
     NSNumber* physicalKey;
-    NSNumber* flag = flutter::keyCodeToModifierFlag[keyCode];
+    NSEventModifierFlags flag = [flutter::keyCodeToModifierFlag[keyCode] unsignedLongValue];
+
+    // Cocoa event always contain combined flags.
+    if (flag & (flutter::kModifierFlagShiftLeft | flutter::kModifierFlagShiftRight)) {
+      flag |= NSEventModifierFlagShift;
+    }
+    if (flag & (flutter::kModifierFlagControlLeft | flutter::kModifierFlagControlRight)) {
+      flag |= NSEventModifierFlagControl;
+    }
+    if (flag & (flutter::kModifierFlagAltLeft | flutter::kModifierFlagAltRight)) {
+      flag |= NSEventModifierFlagOption;
+    }
+    if (flag & (flutter::kModifierFlagMetaLeft | flutter::kModifierFlagMetaRight)) {
+      flag |= NSEventModifierFlagCommand;
+    }
 
     // Should synthesize down event.
-    NSEvent* mouseEvent = flutter::testing::CreateMouseEvent([flag unsignedLongValue]);
+    NSEvent* mouseEvent = flutter::testing::CreateMouseEvent(flag);
     [viewController mouseMoved:mouseEvent];
     EXPECT_EQ([events count], 1u);
     event = events[0].data;
@@ -1002,6 +1146,11 @@ static void SwizzledNoop(id self, SEL _cmd) {}
     EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
     EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
     EXPECT_EQ(event->synthesized, true);
+
+    channelEvent = channelEvents[0];
+    EXPECT_TRUE([channelEvent[@"type"] isEqual:@"keydown"]);
+    EXPECT_TRUE([channelEvent[@"keyCode"] isEqual:keyCode]);
+    EXPECT_TRUE([channelEvent[@"modifiers"] isEqual:@(flag)]);
 
     // Should synthesize up event.
     mouseEvent = flutter::testing::CreateMouseEvent(0x00);
@@ -1015,7 +1164,13 @@ static void SwizzledNoop(id self, SEL _cmd) {}
     EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
     EXPECT_EQ(event->synthesized, true);
 
+    channelEvent = channelEvents[1];
+    EXPECT_TRUE([channelEvent[@"type"] isEqual:@"keyup"]);
+    EXPECT_TRUE([channelEvent[@"keyCode"] isEqual:keyCode]);
+    EXPECT_TRUE([channelEvent[@"modifiers"] isEqual:@(0)]);
+
     [events removeAllObjects];
+    [channelEvents removeAllObjects];
   };
 
   return true;
@@ -1034,10 +1189,11 @@ static void SwizzledNoop(id self, SEL _cmd) {}
                                                                                    bundle:nil];
     [viewController loadView];
     weakController = viewController;
+
+    [engineMock shutDownEngine];
   }
 
   EXPECT_EQ(weakController, nil);
-
   return true;
 }
 

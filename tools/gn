@@ -67,6 +67,9 @@ def get_out_dir(args):
   if args.target_dir != '':
     target_dir = [args.target_dir]
 
+  if args.darwin_extension_safe:
+    target_dir.append('extension_safe')
+
   return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
 
@@ -103,16 +106,12 @@ def is_host_build(args):
 
 
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
-# We can use a prebuilt Dart SDK when:
-# 1. It is a host build, a build targeting Fuchsia, or a build targeting desktop.
-# 2. The prebuilt SDK exists under //flutter/prebuilts/$OS-$ARCH.
 def can_use_prebuilt_dart(args):
   prebuilt = None
-  # In a Fuchsia build, we can use a prebuilt Dart SDK for the host to build
-  # platform agnostic artifacts (e.g. kernel snapshots), and a Dart SDK
-  # targeting Fuchsia is not needed. So, it is safe to say that the prebuilt
-  # Dart SDK in a Fuchsia build is the host prebuilt Dart SDK.
-  if args.target_os is None or args.target_os == 'fuchsia':
+  # When doing a 'host' build (args.target_os is None), or a build when the
+  # target OS and host OS are different, the prebuilt Dart SDK is the Dart SDK
+  # for the host system's OS and archetecture.
+  if args.target_os is None or args.target_os in ['android', 'ios', 'fuchsia']:
     if sys.platform.startswith(('cygwin', 'win')):
       prebuilt = 'windows-x64'
     elif sys.platform == 'darwin':
@@ -211,8 +210,76 @@ def buildtools_dir():
   return '%s-%s' % (host_os, host_cpu)
 
 
+def setup_rbe(args):
+  rbe_gn_args = {}
+  # RBE is default-off. If it is not asked for, then silently keep all default
+  # flag values.
+  if not args.rbe:
+    return rbe_gn_args
+
+  if get_host_os() not in ['linux']:
+    print(
+        'The --rbe flag has no effect. RBE is currently only supported on Linux.'
+    )
+    return rbe_gn_args
+
+  rbe_gn_args['use_rbe'] = True
+
+  # When running in CI, the recipes use their own rbe install, and take
+  # care of starting and stopping the compiler proxy.
+  running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
+
+  # Bootstrap reproxy if not running in CI.
+  if not running_on_luci:
+    cipd_reclient_dir = os.path.join(
+        SRC_ROOT,
+        'buildtools',
+        buildtools_dir(),
+        'reclient',
+    )
+    bootstrap_path = os.path.join(cipd_reclient_dir, 'bootstrap')
+    reproxy_path = os.path.join(cipd_reclient_dir, 'reproxy')
+    rbe_cfg_path = os.path.join(SRC_ROOT, 'build', 'rbe.cfg')
+    bootstrap_cmd = [
+        bootstrap_path,
+        '--re_proxy=' + reproxy_path,
+        '--automatic_auth=true',
+        '--cfg=' + rbe_cfg_path,
+    ]
+    try:
+      subprocess.call(bootstrap_cmd, cwd=SRC_ROOT)
+    except subprocess.CalledProcessError as exc:
+      print('Failed to boostrap reproxy: ', exc.returncode, exc.output)
+      return {}
+
+  if args.rbe_server_address:
+    rbe_gn_args['rbe_server_address'] = args.rbe_server_address
+  if args.rbe_exec_strategy:
+    rbe_gn_args['rbe_exec_strategy'] = args.rbe_exec_strategy
+  if args.rbe_dial_timeout:
+    rbe_gn_args['rbe_dial_timeout'] = args.rbe_dial_timeout
+  if args.rbe_platform:
+    rbe_gn_args['rbe_platform'] = args.rbe_platform
+  if args.rbe_dir:
+    rbe_gn_args['rbe_dir'] = args.rbe_dir
+
+  return rbe_gn_args
+
+
 def setup_goma(args):
   goma_gn_args = {}
+  # If RBE is requested, don't try to use goma.
+  if args.rbe:
+    goma_gn_args['use_goma'] = False
+    goma_gn_args['goma_dir'] = None
+    return goma_gn_args
+
+  # args.goma has three states, True (--goma), False (--no-goma), and
+  # None (default). In True mode, we force GOMA to be used (and fail
+  # if we cannot enable it) unless the selected target definitely does
+  # not support it (in which case we print a warning). In False mode,
+  # we disable GOMA regardless. In None mode, we enable it if we can
+  # autodetect a configuration, and otherwise disable it.
 
   # When running in CI, the recipes use their own goma install, and take
   # care of starting and stopping the compiler proxy.
@@ -235,14 +302,16 @@ def setup_goma(args):
   if args.target_os == 'wasm' or args.web:
     goma_gn_args['use_goma'] = False
     goma_gn_args['goma_dir'] = None
-    print('Disabling GOMA for wasm builds, it is not supported yet.')
-  elif args.goma and not running_on_luci and os.path.exists(cipd_goma_dir):
+    if args.goma:
+      print('Disabling GOMA for wasm builds, it is not supported yet.')
+  elif args.goma is not False and not running_on_luci and os.path.exists(
+      cipd_goma_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = cipd_goma_dir
-  elif args.goma and goma_dir and os.path.exists(goma_dir):
+  elif args.goma is not False and goma_dir and os.path.exists(goma_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = goma_dir
-  elif args.goma and os.path.exists(goma_home_dir):
+  elif args.goma is not False and os.path.exists(goma_home_dir):
     goma_gn_args['use_goma'] = True
     goma_gn_args['goma_dir'] = goma_home_dir
   elif args.goma:
@@ -278,6 +347,8 @@ def to_gn_args(args):
 
   gn_args.update(setup_goma(args))
 
+  gn_args.update(setup_rbe(args))
+
   # If building for WASM, set the GN args using 'to_gn_wasm_args' as most
   # of the Flutter SDK specific arguments are unused.
   if args.target_os == 'wasm' or args.web:
@@ -287,6 +358,17 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
 
   if args.enable_unittests:
+    # Ensure that Android and iOS are *not* used with --enable-unittests.
+    # https://github.com/flutter/flutter/issues/132611
+    if args.target_os == 'android' or args.target_os == 'ios':
+      raise Exception(
+          'Cannot use --enable-unittests with --target-os=android or ios. If ' +
+          'you are trying to create an output directory to use for clangd ' +
+          '(i.e. for VSCode integration), use a host build instead.\n\n' +
+          'See https://github.com/flutter/flutter/wiki/' +
+          'Setting-up-the-Engine-development-environment' +
+          '#vscode-with-cc-intellisense-cc'
+      )
     gn_args['enable_unittests'] = True
   if args.no_enable_unittests:
     gn_args['enable_unittests'] = False
@@ -390,6 +472,11 @@ def to_gn_args(args):
     gn_args['dart_debug'] = True
     gn_args['dart_debug_optimization_level'] = '0'
 
+  if args.dart_optimization_level:
+    gn_args['dart_default_optimization_level'] = args.dart_optimization_level
+  elif gn_args['target_os'] in ['android', 'ios']:
+    gn_args['dart_default_optimization_level'] = '2'
+
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
   gn_args['dart_component_kind'
          ] = 'static_library'  # Always link Dart in statically.
@@ -454,10 +541,6 @@ def to_gn_args(args):
     gn_args['skia_use_gl'] = False
     gn_args['shell_enable_metal'] = True
     gn_args['skia_use_metal'] = True
-    # Bitcode enabled builds using the current version of the toolchain leak
-    # C++ symbols decorated with the availability attribute. Disable these
-    # attributes in release modes till the toolchain is updated.
-    gn_args['skia_enable_api_available_macro'] = args.runtime_mode != 'release'
   else:
     gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
 
@@ -549,10 +632,15 @@ def to_gn_args(args):
   if args.fstack_protector:
     gn_args['use_fstack_protector'] = True
 
-  if args.enable_vulkan_validation_layers:
-    if args.target_os == 'android':
-      gn_args['android_api_level'] = 26
+  enable_vulkan_validation = args.enable_vulkan_validation_layers
+
+  # Enable Vulkan validation layer automatically on debug builds for arm64.
+  if args.unoptimized and args.target_os == 'android' and args.android_cpu == 'arm64':
+    enable_vulkan_validation = True
+
+  if enable_vulkan_validation:
     gn_args['enable_vulkan_validation_layers'] = True
+    gn_args['impeller_enable_vulkan_validation_layers'] = True
 
   # Enable pointer compression on 64-bit mobile targets. iOS is excluded due to
   # its inability to allocate address space without allocating memory.
@@ -575,6 +663,9 @@ def to_gn_args(args):
   # Impeller flags.
   if args.enable_impeller_3d:
     gn_args['impeller_enable_3d'] = True
+
+  if args.enable_impeller_trace_canvas:
+    gn_args['impeller_trace_canvas'] = True
 
   if args.enable_impeller_vulkan:
     gn_args['impeller_enable_vulkan'] = True
@@ -632,6 +723,9 @@ def to_gn_args(args):
     gn_args['angle_vulkan_tools_dir'
            ] = '//third_party/vulkan-deps/vulkan-tools/src'
 
+  if args.darwin_extension_safe:
+    gn_args['darwin_extension_safe'] = True
+
   return gn_args
 
 
@@ -674,7 +768,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_enable_fontmgr_custom_embedded'] = True
   gn_args['skia_enable_fontmgr_custom_empty'] = True
   gn_args['skia_fontmgr_factory'
-         ] = '//third_party/skia:fontmgr_custom_empty_factory'
+         ] = '//flutter/skia:fontmgr_custom_empty_factory'
   gn_args['skia_enable_skshaper'] = True
   gn_args['skia_enable_skparagraph'] = True
   gn_args['skia_canvaskit_force_tracing'] = False
@@ -776,6 +870,12 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--dart-optimization-level',
+      type=str,
+      help='The default optimization level for the Dart VM runtime.',
+  )
+
+  parser.add_argument(
       '--target-os',
       type=str,
       choices=['android', 'ios', 'mac', 'linux', 'fuchsia', 'wasm', 'win']
@@ -870,7 +970,42 @@ def parse_args(args):
       help='Do not build the host-side development artifacts.'
   )
 
-  parser.add_argument('--goma', default=True, action='store_true')
+  parser.add_argument('--rbe', default=None, action='store_true')
+  parser.add_argument('--no-rbe', dest='rbe', action='store_false')
+  parser.add_argument(
+      '--rbe-server-address',
+      default=None,
+      type=str,
+      help='The reproxy serveraddress'
+  )
+  parser.add_argument(
+      '--rbe-exec-strategy',
+      default=None,
+      type=str,
+      help='The RBE execution strategy.',
+      choices=['local', 'remote', 'remote_local_fallback', 'racing']
+  )
+  parser.add_argument(
+      '--rbe-dial-timeout',
+      default=None,
+      type=str,
+      help='The timeout for connecting to the local reproxy server.',
+  )
+  parser.add_argument(
+      '--rbe-platform',
+      default=None,
+      type=str,
+      help='The RBE "platform" string. This is used to identify remote platform '
+      'settings like the docker image to use to run the command.'
+  )
+  parser.add_argument(
+      '--rbe-dir',
+      default=None,
+      type=str,
+      help='The location of the reclient binaries.'
+  )
+
+  parser.add_argument('--goma', default=None, action='store_true')
   parser.add_argument('--no-goma', dest='goma', action='store_false')
   parser.add_argument(
       '--xcode-symlinks',
@@ -1084,6 +1219,12 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--enable-impeller-trace-canvas',
+      default=False,
+      action='store_true',
+      help='Enables tracing calls to Canvas.'
+  )
+  parser.add_argument(
       '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
@@ -1114,6 +1255,13 @@ def parse_args(args):
       action='store_true',
       help='Write a GN trace log (gn_trace.json) in the Chromium tracing '
       'format in the build directory.'
+  )
+
+  parser.add_argument(
+      '--darwin-extension-safe',
+      default=False,
+      action='store_true',
+      help='Whether the produced Flutter.framework is app extension safe. Only for iOS.'
   )
 
   # Verbose output.

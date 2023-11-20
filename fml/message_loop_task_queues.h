@@ -22,7 +22,7 @@
 
 namespace fml {
 
-static const TaskQueueId _kUnmerged = TaskQueueId(TaskQueueId::kUnmerged);
+static const TaskQueueId kUnmerged = TaskQueueId(TaskQueueId::kUnmerged);
 
 /// A collection of tasks and observers associated with one TaskQueue.
 ///
@@ -40,7 +40,7 @@ class TaskQueueEntry {
   /// empty, this TaskQueue does not own any other TaskQueues.
   std::set<TaskQueueId> owner_of;
 
-  /// Identifies the TaskQueue that subsumes this TaskQueue. If it is _kUnmerged
+  /// Identifies the TaskQueue that subsumes this TaskQueue. If it is kUnmerged
   /// it indicates that this TaskQueue is not owned by any other TaskQueue.
   TaskQueueId subsumed_by;
 
@@ -155,7 +155,7 @@ class MessageLoopTaskQueues {
   mutable std::mutex queue_mutex_;
   std::map<TaskQueueId, std::unique_ptr<TaskQueueEntry>> queue_entries_;
 
-  size_t task_queue_id_counter_;
+  size_t task_queue_id_counter_ = 0;
 
   std::atomic_int order_;
 

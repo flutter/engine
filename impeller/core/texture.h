@@ -6,7 +6,6 @@
 
 #include <string_view>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -39,9 +38,9 @@ class Texture {
 
   const TextureDescriptor& GetTextureDescriptor() const;
 
-  void SetIntent(TextureIntent intent);
+  void SetCoordinateSystem(TextureCoordinateSystem coordinate_system);
 
-  TextureIntent GetIntent() const;
+  TextureCoordinateSystem GetCoordinateSystem() const;
 
   virtual Scalar GetYCoordScale() const;
 
@@ -61,13 +60,16 @@ class Texture {
   bool mipmap_generated_ = false;
 
  private:
-  TextureIntent intent_ = TextureIntent::kRenderToTexture;
+  TextureCoordinateSystem coordinate_system_ =
+      TextureCoordinateSystem::kRenderToTexture;
   const TextureDescriptor desc_;
   bool is_opaque_ = false;
 
   bool IsSliceValid(size_t slice) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Texture);
+  Texture(const Texture&) = delete;
+
+  Texture& operator=(const Texture&) = delete;
 };
 
 }  // namespace impeller

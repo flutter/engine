@@ -29,6 +29,11 @@ class FlutterWindowsEngineBuilder {
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
       KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan);
 
+  void SetSwitches(std::vector<std::string> switches);
+
+  void SetWindowsProcTable(
+      std::shared_ptr<WindowsProcTable> windows_proc_table);
+
   std::unique_ptr<FlutterWindowsEngine> Build();
 
  private:
@@ -36,8 +41,10 @@ class FlutterWindowsEngineBuilder {
   FlutterDesktopEngineProperties properties_ = {};
   std::string dart_entrypoint_;
   std::vector<std::string> dart_entrypoint_arguments_;
+  std::vector<std::string> switches_;
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state_;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan_;
+  std::shared_ptr<WindowsProcTable> windows_proc_table_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngineBuilder);
 };

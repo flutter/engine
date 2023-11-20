@@ -13,7 +13,6 @@ namespace testing {
 TEST(DisplayListPaint, ConstructorDefaults) {
   DlPaint paint;
   EXPECT_FALSE(paint.isAntiAlias());
-  EXPECT_FALSE(paint.isDither());
   EXPECT_FALSE(paint.isInvertColors());
   EXPECT_EQ(paint.getColor(), DlPaint::kDefaultColor);
   EXPECT_EQ(paint.getAlpha(), 0xFF);
@@ -42,14 +41,13 @@ TEST(DisplayListPaint, ConstructorDefaults) {
 
   EXPECT_EQ(paint, DlPaint());
   EXPECT_EQ(paint, DlPaint(DlColor::kBlack()));
-  EXPECT_EQ(paint, DlPaint(0xFF000000));
+  EXPECT_EQ(paint, DlPaint(DlColor(0xFF000000)));
 
   EXPECT_NE(paint, DlPaint().setAntiAlias(true));
-  EXPECT_NE(paint, DlPaint().setDither(true));
   EXPECT_NE(paint, DlPaint().setInvertColors(true));
   EXPECT_NE(paint, DlPaint().setColor(DlColor::kGreen()));
   EXPECT_NE(paint, DlPaint(DlColor::kGreen()));
-  EXPECT_NE(paint, DlPaint(0xFF00FF00));
+  EXPECT_NE(paint, DlPaint(DlColor(0xFF00FF00)));
   EXPECT_NE(paint, DlPaint().setAlpha(0x7f));
   EXPECT_NE(paint, DlPaint().setBlendMode(DlBlendMode::kDstIn));
   EXPECT_NE(paint, DlPaint().setDrawStyle(DlDrawStyle::kStrokeAndFill));
@@ -110,7 +108,6 @@ TEST(DisplayListPaint, ChainingConstructor) {
   DlPaint paint =
       DlPaint()                                                              //
           .setAntiAlias(true)                                                //
-          .setDither(true)                                                   //
           .setInvertColors(true)                                             //
           .setColor(DlColor::kGreen())                                       //
           .setAlpha(0x7F)                                                    //
@@ -129,7 +126,6 @@ TEST(DisplayListPaint, ChainingConstructor) {
           .setMaskFilter(DlBlurMaskFilter(DlBlurStyle::kInner, 3.14).shared())
           .setPathEffect(path_effect);
   EXPECT_TRUE(paint.isAntiAlias());
-  EXPECT_TRUE(paint.isDither());
   EXPECT_TRUE(paint.isInvertColors());
   EXPECT_EQ(paint.getColor(), DlColor::kGreen().withAlpha(0x7F));
   EXPECT_EQ(paint.getAlpha(), 0x7F);

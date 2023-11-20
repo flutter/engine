@@ -20,8 +20,8 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'display.dart';
 import 'dom.dart';
-import 'platform_dispatcher.dart';
 import 'vector_math.dart';
 
 export 'package:js/js_util.dart' show allowInterop;
@@ -65,9 +65,6 @@ T setJsProperty<T>(Object object, String name, T value) {
 Future<T> promiseToFuture<T>(Object jsPromise) {
   return js_util.promiseToFuture<T>(jsPromise);
 }
-
-/// A function that receives a benchmark [value] labeleb by [name].
-typedef OnBenchmark = void Function(String name, double value);
 
 /// Parses a string [source] into a double.
 ///
@@ -199,20 +196,6 @@ bool get _defaultBrowserSupportsImageDecoder =>
 // enable it explicitly.
 bool get _isBrowserImageDecoderStable => browserEngine == BrowserEngine.blink;
 
-/// The signature of the function passed to the constructor of JavaScript `Promise`.
-typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
-
-/// Corresponds to JavaScript's `Promise`.
-///
-/// This type doesn't need any members. Instead, it should be first converted
-/// to Dart's [Future] using [promiseToFuture] then interacted with through the
-/// [Future] API.
-@JS('window.Promise')
-@staticInterop
-class JsPromise {
-  external factory JsPromise(JsPromiseCallback callback);
-}
-
 /// Corresponds to the browser's `ImageDecoder` type.
 ///
 /// See also:
@@ -231,7 +214,7 @@ extension ImageDecoderExtension on ImageDecoder {
   external JSBoolean get _complete;
   bool get complete => _complete.toDart;
 
-  external JsPromise decode(DecodeOptions options);
+  external JSPromise decode(DecodeOptions options);
   external JSVoid close();
 }
 
@@ -302,11 +285,11 @@ class VideoFrame implements DomCanvasImageSource {}
 extension VideoFrameExtension on VideoFrame {
   @JS('allocationSize')
   external JSNumber _allocationSize();
-  double allocationSize() => _allocationSize().toDart;
+  double allocationSize() => _allocationSize().toDartDouble;
 
   @JS('copyTo')
-  external JsPromise _copyTo(JSAny destination);
-  JsPromise copyTo(Object destination) => _copyTo(destination.toJSAnyShallow);
+  external JSPromise _copyTo(JSAny destination);
+  JSPromise copyTo(Object destination) => _copyTo(destination.toJSAnyShallow);
 
   @JS('format')
   external JSString? get _format;
@@ -314,23 +297,23 @@ extension VideoFrameExtension on VideoFrame {
 
   @JS('codedWidth')
   external JSNumber get _codedWidth;
-  double get codedWidth => _codedWidth.toDart;
+  double get codedWidth => _codedWidth.toDartDouble;
 
   @JS('codedHeight')
   external JSNumber get _codedHeight;
-  double get codedHeight => _codedHeight.toDart;
+  double get codedHeight => _codedHeight.toDartDouble;
 
   @JS('displayWidth')
   external JSNumber get _displayWidth;
-  double get displayWidth => _displayWidth.toDart;
+  double get displayWidth => _displayWidth.toDartDouble;
 
   @JS('displayHeight')
   external JSNumber get _displayHeight;
-  double get displayHeight => _displayHeight.toDart;
+  double get displayHeight => _displayHeight.toDartDouble;
 
   @JS('duration')
   external JSNumber? get _duration;
-  double? get duration => _duration?.toDart;
+  double? get duration => _duration?.toDartDouble;
 
   external VideoFrame clone();
   external JSVoid close();
@@ -347,7 +330,7 @@ extension VideoFrameExtension on VideoFrame {
 class ImageTrackList {}
 
 extension ImageTrackListExtension on ImageTrackList {
-  external JsPromise get ready;
+  external JSPromise get ready;
   external ImageTrack? get selectedTrack;
 }
 
@@ -364,11 +347,11 @@ class ImageTrack {}
 extension ImageTrackExtension on ImageTrack {
   @JS('repetitionCount')
   external JSNumber get _repetitionCount;
-  double get repetitionCount => _repetitionCount.toDart;
+  double get repetitionCount => _repetitionCount.toDartDouble;
 
   @JS('frameCount')
   external JSNumber get _frameCount;
-  double get frameCount => _frameCount.toDart;
+  double get frameCount => _frameCount.toDartDouble;
 }
 
 void scaleCanvas2D(Object context2d, num x, num y) {
@@ -970,8 +953,8 @@ class OffScreenCanvas {
   static bool? _supported;
 
   void _updateCanvasCssSize(DomCanvasElement element) {
-    final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
-    final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
+    final double cssWidth = width / EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final double cssHeight = height / EngineFlutterDisplay.instance.browserDevicePixelRatio;
     element.style
       ..position = 'absolute'
       ..width = '${cssWidth}px'
@@ -1004,6 +987,12 @@ class OffScreenCanvas {
     return offScreenCanvas != null
         ? offScreenCanvas!.getContext('2d')
         : canvasElement!.getContext('2d');
+  }
+
+  DomCanvasRenderingContextBitmapRenderer? getBitmapRendererContext() {
+    return (offScreenCanvas != null
+        ? offScreenCanvas!.getContext('bitmaprenderer')
+        : canvasElement!.getContext('bitmaprenderer')) as DomCanvasRenderingContextBitmapRenderer?;
   }
 
   /// Feature detection for transferToImageBitmap on OffscreenCanvas.

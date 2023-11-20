@@ -44,7 +44,7 @@ SceneBuilder::~SceneBuilder() = default;
 void SceneBuilder::pushTransform(Dart_Handle layer_handle,
                                  tonic::Float64List& matrix4,
                                  const fml::RefPtr<EngineLayer>& oldLayer) {
-  SkMatrix sk_matrix = ToSkMatrix(matrix4);
+  SkM44 sk_matrix = ToSkM44(matrix4);
   auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
   PushLayer(layer);
   // matrix4 has to be released before we can return another Dart object
@@ -110,7 +110,7 @@ void SceneBuilder::pushClipPath(Dart_Handle layer_handle,
                                 int clipBehavior,
                                 const fml::RefPtr<EngineLayer>& oldLayer) {
   flutter::Clip clip_behavior = static_cast<flutter::Clip>(clipBehavior);
-  FML_DCHECK(clip_behavior != flutter::Clip::none);
+  FML_DCHECK(clip_behavior != flutter::Clip::kNone);
   auto layer =
       std::make_shared<flutter::ClipPathLayer>(path->path(), clip_behavior);
   PushLayer(layer);

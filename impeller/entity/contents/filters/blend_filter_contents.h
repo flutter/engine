@@ -4,22 +4,44 @@
 
 #pragma once
 
+#include <optional>
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
 
+constexpr std::array<std::array<Scalar, 5>, 15> kPorterDuffCoefficients = {{
+    {0, 0, 0, 0, 0},    // Clear
+    {1, 0, 0, 0, 0},    // Source
+    {0, 0, 1, 0, 0},    // Destination
+    {1, 0, 1, -1, 0},   // SourceOver
+    {1, -1, 1, 0, 0},   // DestinationOver
+    {0, 1, 0, 0, 0},    // SourceIn
+    {0, 0, 0, 1, 0},    // DestinationIn
+    {1, -1, 0, 0, 0},   // SourceOut
+    {0, 0, 1, -1, 0},   // DestinationOut
+    {0, 1, 1, -1, 0},   // SourceATop
+    {1, -1, 0, 1, 0},   // DestinationATop
+    {1, -1, 1, -1, 0},  // Xor
+    {1, 0, 1, 0, 0},    // Plus
+    {0, 0, 0, 0, 1},    // Modulate
+    {0, 0, 1, 0, -1},   // Screen
+}};
+
+std::optional<BlendMode> InvertPorterDuffBlend(BlendMode blend_mode);
+
 class BlendFilterContents : public ColorFilterContents {
  public:
-  using AdvancedBlendProc =
-      std::function<std::optional<Entity>(const FilterInput::Vector& inputs,
-                                          const ContentContext& renderer,
-                                          const Entity& entity,
-                                          const Rect& coverage,
-                                          BlendMode blend_mode,
-                                          std::optional<Color> foreground_color,
-                                          bool absorb_opacity,
-                                          std::optional<Scalar> alpha)>;
+  using AdvancedBlendProc = std::function<std::optional<Entity>(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage,
+      BlendMode blend_mode,
+      std::optional<Color> foreground_color,
+      ColorFilterContents::AbsorbOpacity absorb_opacity,
+      std::optional<Scalar> alpha)>;
 
   BlendFilterContents();
 
@@ -53,7 +75,7 @@ class BlendFilterContents : public ColorFilterContents {
       Color foreground_color,
       BlendMode blend_mode,
       std::optional<Scalar> alpha,
-      bool absorb_opacity) const;
+      ColorFilterContents::AbsorbOpacity absorb_opacity) const;
 
   /// @brief Optimized porter-duff blend that avoids a second subpass when there
   ///        is only a single input and a foreground color.
@@ -67,13 +89,15 @@ class BlendFilterContents : public ColorFilterContents {
       Color foreground_color,
       BlendMode blend_mode,
       std::optional<Scalar> alpha,
-      bool absorb_opacity) const;
+      ColorFilterContents::AbsorbOpacity absorb_opacity) const;
 
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   AdvancedBlendProc advanced_blend_proc_;
   std::optional<Color> foreground_color_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(BlendFilterContents);
+  BlendFilterContents(const BlendFilterContents&) = delete;
+
+  BlendFilterContents& operator=(const BlendFilterContents&) = delete;
 };
 
 }  // namespace impeller

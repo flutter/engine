@@ -9,9 +9,10 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/src/engine/text_editing/composition_aware_mixin.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
+
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -47,7 +48,7 @@ GloballyPositionedTextEditingStrategy _enableEditingStrategy({
 }
 
 Future<void> testMain() async {
-  await initializeEngine();
+  await bootstrapAndRunApp();
 
   const String fakeComposingText = 'ImComposingText';
 
@@ -106,14 +107,81 @@ Future<void> testMain() async {
     });
 
     group('determine composition state', () {
-      test('should return new composition state if valid new composition', () {
-        const int baseOffset = 100;
+      test('should return editing state if extentOffset is null', () {
+        final EditingState editingState = EditingState(text: 'Test');
+
+        final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
+            _MockWithCompositionAwareMixin();
+        mockWithCompositionAwareMixin.composingText = 'Test';
+
+        expect(
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
+      });
+
+      test('should return editing state if composingText is null', () {
+        final EditingState editingState = EditingState(
+          text: 'Test',
+          baseOffset: 0,
+          extentOffset: 4,
+        );
+
+        final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
+            _MockWithCompositionAwareMixin();
+
+        expect(
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
+      });
+
+      test('should return editing state if text is null', () {
+        final EditingState editingState = EditingState(
+          baseOffset: 0,
+          extentOffset: 0,
+        );
+
+        final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
+            _MockWithCompositionAwareMixin();
+        mockWithCompositionAwareMixin.composingText = 'Test';
+
+        expect(
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
+      });
+
+      test(
+          'should return editing state if extentOffset is smaller than composingText length',
+          () {
         const String composingText = 'composeMe';
 
         final EditingState editingState = EditingState(
-          extentOffset: baseOffset,
-          text: 'testing',
+          text: 'Test',
+          baseOffset: 0,
+          extentOffset: 4,
+        );
+
+        final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
+            _MockWithCompositionAwareMixin();
+        mockWithCompositionAwareMixin.composingText = composingText;
+
+        expect(
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState,
+        );
+      });
+
+      test('should return new composition state - compositing middle of text',
+          () {
+        const int baseOffset = 7;
+        const String composingText = 'Test';
+
+        final EditingState editingState = EditingState(
+          text: 'Testing',
           baseOffset: baseOffset,
+          extentOffset: baseOffset,
         );
 
         final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
@@ -123,10 +191,38 @@ Future<void> testMain() async {
         const int expectedComposingBase = baseOffset - composingText.length;
 
         expect(
-            mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          mockWithCompositionAwareMixin.determineCompositionState(editingState),
+          editingState.copyWith(
+            composingBaseOffset: expectedComposingBase,
+            composingExtentOffset: expectedComposingBase + composingText.length,
+          ),
+        );
+      });
+
+      test(
+          'should return new composition state - compositing from beginning of text',
+          () {
+        const String composingText = '今日は';
+
+        final EditingState editingState = EditingState(
+          text: '今日は',
+          baseOffset: 0,
+          extentOffset: 3,
+        );
+
+        final _MockWithCompositionAwareMixin mockWithCompositionAwareMixin =
+            _MockWithCompositionAwareMixin();
+        mockWithCompositionAwareMixin.composingText = composingText;
+
+        const int expectedComposingBase = 0;
+
+        expect(
+            mockWithCompositionAwareMixin
+                .determineCompositionState(editingState),
             editingState.copyWith(
                 composingBaseOffset: expectedComposingBase,
-                composingExtentOffset: expectedComposingBase + composingText.length));
+                composingExtentOffset:
+                    expectedComposingBase + composingText.length));
       });
     });
   });

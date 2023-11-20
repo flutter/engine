@@ -8,54 +8,18 @@
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/fml/trace_event.h"
 
+#include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/GrRecordingContext.h"
+
 namespace flutter {
-
-// clang-format off
-constexpr float kInvertColorMatrix[20] = {
-  -1.0,    0,    0, 1.0, 0,
-     0, -1.0,    0, 1.0, 0,
-     0,    0, -1.0, 1.0, 0,
-   1.0,  1.0,  1.0, 1.0, 0
-};
-// clang-format on
-
-static SkPaint ToSk(const DlPaint& paint, bool force_stroke = false) {
-  SkPaint sk_paint;
-
-  sk_paint.setAntiAlias(paint.isAntiAlias());
-  sk_paint.setDither(paint.isDither());
-
-  sk_paint.setColor(paint.getColor());
-  sk_paint.setBlendMode(ToSk(paint.getBlendMode()));
-  sk_paint.setStyle(force_stroke ? SkPaint::kStroke_Style
-                                 : ToSk(paint.getDrawStyle()));
-  sk_paint.setStrokeWidth(paint.getStrokeWidth());
-  sk_paint.setStrokeMiter(paint.getStrokeMiter());
-  sk_paint.setStrokeCap(ToSk(paint.getStrokeCap()));
-  sk_paint.setStrokeJoin(ToSk(paint.getStrokeJoin()));
-
-  sk_paint.setShader(ToSk(paint.getColorSourcePtr()));
-  sk_paint.setImageFilter(ToSk(paint.getImageFilterPtr()));
-  auto color_filter = ToSk(paint.getColorFilterPtr());
-  if (paint.isInvertColors()) {
-    auto invert_filter = SkColorFilters::Matrix(kInvertColorMatrix);
-    if (color_filter) {
-      invert_filter = invert_filter->makeComposed(color_filter);
-    }
-    color_filter = invert_filter;
-  }
-  sk_paint.setColorFilter(color_filter);
-  sk_paint.setMaskFilter(ToSk(paint.getMaskFilterPtr()));
-  sk_paint.setPathEffect(ToSk(paint.getPathEffectPtr()));
-
-  return sk_paint;
-}
 
 class SkOptionalPaint {
  public:
+  // SkOptionalPaint is only valid for ops that do not use the ColorSource
   explicit SkOptionalPaint(const DlPaint* dl_paint) {
     if (dl_paint && !dl_paint->isDefault()) {
-      sk_paint_ = ToSk(*dl_paint);
+      sk_paint_ = ToNonShaderSk(*dl_paint);
       ptr_ = &sk_paint_;
     } else {
       ptr_ = nullptr;
@@ -224,13 +188,13 @@ void DlSkCanvasAdapter::DrawPaint(const DlPaint& paint) {
 }
 
 void DlSkCanvasAdapter::DrawColor(DlColor color, DlBlendMode mode) {
-  delegate_->drawColor(color, ToSk(mode));
+  delegate_->drawColor(ToSk(color), ToSk(mode));
 }
 
 void DlSkCanvasAdapter::DrawLine(const SkPoint& p0,
                                  const SkPoint& p1,
                                  const DlPaint& paint) {
-  delegate_->drawLine(p0, p1, ToSk(paint, true));
+  delegate_->drawLine(p0, p1, ToStrokedSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawRect(const SkRect& rect, const DlPaint& paint) {
@@ -273,7 +237,7 @@ void DlSkCanvasAdapter::DrawPoints(PointMode mode,
                                    uint32_t count,
                                    const SkPoint pts[],
                                    const DlPaint& paint) {
-  delegate_->drawPoints(ToSk(mode), count, pts, ToSk(paint, true));
+  delegate_->drawPoints(ToSk(mode), count, pts, ToStrokedSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawVertices(const DlVertices* vertices,
@@ -362,6 +326,14 @@ void DlSkCanvasAdapter::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
   delegate_->drawTextBlob(blob, x, y, ToSk(paint));
 }
 
+void DlSkCanvasAdapter::DrawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y,
+    const DlPaint& paint) {
+  FML_CHECK(false);
+}
+
 void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
                                    const DlColor color,
                                    const SkScalar elevation,
@@ -372,7 +344,11 @@ void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
 }
 
 void DlSkCanvasAdapter::Flush() {
-  delegate_->flush();
+  auto dContext = GrAsDirectContext(delegate_->recordingContext());
+
+  if (dContext) {
+    dContext->flushAndSubmit();
+  }
 }
 
 }  // namespace flutter

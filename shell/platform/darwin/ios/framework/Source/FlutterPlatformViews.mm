@@ -10,7 +10,6 @@
 #include <string>
 
 #include "flutter/common/graphics/persistent_cache.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
@@ -89,8 +88,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     const std::shared_ptr<IOSContext>& ios_context) {
   if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view_wrapper;
+    fml::scoped_nsobject<UIView> overlay_view;
+    fml::scoped_nsobject<UIView> overlay_view_wrapper;
 
     if (!gr_context) {
       overlay_view.reset([[FlutterOverlayView alloc] init]);
@@ -174,7 +173,7 @@ UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
   return flutter_view_controller_.get();
 }
 
-void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult result) {
   if ([[call method] isEqualToString:@"create"]) {
     OnCreate(call, result);
   } else if ([[call method] isEqualToString:@"dispose"]) {
@@ -188,7 +187,7 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
   }
 }
 
-void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
 
   int64_t viewId = [args[@"id"] longLongValue];
@@ -253,7 +252,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   result(nil);
 }
 
-void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult result) {
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
@@ -269,7 +268,7 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
 }
 
 void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -287,7 +286,7 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
 }
 
 void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -407,10 +406,15 @@ size_t FlutterPlatformViewsController::EmbeddedViewCount() {
 }
 
 UIView* FlutterPlatformViewsController::GetPlatformViewByID(int64_t view_id) {
+  return [GetFlutterTouchInterceptingViewByID(view_id) embeddedView];
+}
+
+FlutterTouchInterceptingView* FlutterPlatformViewsController::GetFlutterTouchInterceptingViewByID(
+    int64_t view_id) {
   if (views_.empty()) {
     return nil;
   }
-  return [touch_interceptors_[view_id].get() embeddedView];
+  return touch_interceptors_[view_id].get();
 }
 
 long FlutterPlatformViewsController::FindFirstResponderPlatformViewId() {
@@ -677,7 +681,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   // Clipping the background canvas before drawing the picture recorders requires
   // saving and restoring the clip context.
-  DlAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  DlAutoCanvasRestore save(background_canvas, /*do_save=*/true);
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
@@ -958,6 +962,10 @@ void FlutterPlatformViewsController::ResetFrameState() {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
   UIView* _embeddedView;
+  // The used as the accessiblityContainer.
+  // The `accessiblityContainer` is used in UIKit to determine the parent of this accessibility
+  // node.
+  NSObject* _flutterAccessibilityContainer;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
              platformViewsController:
@@ -1034,6 +1042,14 @@ void FlutterPlatformViewsController::ResetFrameState() {
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
+}
+
+- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer {
+  _flutterAccessibilityContainer = flutterAccessibilityContainer;
+}
+
+- (id)accessibilityContainer {
+  return _flutterAccessibilityContainer;
 }
 
 @end

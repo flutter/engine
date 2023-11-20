@@ -6,7 +6,6 @@
 
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/include_dir.h"
 #include "shaderc/shaderc.hpp"
@@ -52,7 +51,9 @@ class Includer final : public shaderc::CompileOptions::IncluderInterface {
   std::unique_ptr<fml::FileMapping> FindFirstMapping(
       const char* requested_source);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Includer);
+  Includer(const Includer&) = delete;
+
+  Includer& operator=(const Includer&) = delete;
 };
 
 }  // namespace compiler

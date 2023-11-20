@@ -11,6 +11,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/fml/compiler_specific.h"
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/size.h"
@@ -90,18 +91,19 @@ static const char* kDartStartPausedArgs[]{
     "--pause_isolates_on_start",
 };
 
-static const char* kDartDisableServiceAuthCodesArgs[]{
-    "--disable-service-auth-codes",
-};
-
 static const char* kDartEndlessTraceBufferArgs[]{
     "--timeline_recorder=endless",
 };
 
-// This is the same as --timeline_recorder=systrace.
 static const char* kDartSystraceTraceBufferArgs[] = {
-    "--systrace_timeline",
+    "--timeline_recorder=systrace",
 };
+
+static std::string DartFileRecorderArgs(const std::string& path) {
+  std::ostringstream oss;
+  oss << "--timeline_recorder=perfettofile:" << path;
+  return oss.str();
+}
 
 FML_ALLOW_UNUSED_TYPE
 static const char* kDartDefaultTraceStreamsArgs[]{
@@ -217,22 +219,22 @@ static std::vector<const char*> ProfilingFlags(bool enable_profiling) {
   // flags.
   if (enable_profiling) {
     return {
-      // This is the default. But just be explicit.
-      "--profiler",
-          // This instructs the profiler to walk C++ frames, and to include
-          // them in the profile.
-          "--profile-vm",
+        // This is the default. But just be explicit.
+        "--profiler",
+        // This instructs the profiler to walk C++ frames, and to include
+        // them in the profile.
+        "--profile-vm",
 #if FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
-          // Set the profiler interrupt period to 500Hz instead of the
-          // default 1000Hz on 32-bit iOS devices to reduce average and worst
-          // case frame build times.
-          //
-          // Note: profile_period is time in microseconds between sampling
-          // events, not frequency. Frequency is calculated 1/period (or
-          // 1,000,000 / 2,000 -> 500Hz in this case).
-          "--profile_period=2000",
+        // Set the profiler interrupt period to 500Hz instead of the
+        // default 1000Hz on 32-bit iOS devices to reduce average and worst
+        // case frame build times.
+        //
+        // Note: profile_period is time in microseconds between sampling
+        // events, not frequency. Frequency is calculated 1/period (or
+        // 1,000,000 / 2,000 -> 500Hz in this case).
+        "--profile_period=2000",
 #else
-          "--profile_period=1000",
+        "--profile_period=1000",
 #endif  // FML_OS_IOS && FML_ARCH_CPU_ARM_FAMILY && FML_ARCH_CPU_ARMEL
     };
   } else {
@@ -283,7 +285,9 @@ size_t DartVM::GetVMLaunchCount() {
 DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
-      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
+      concurrent_message_loop_(fml::ConcurrentMessageLoop::Create(
+          fml::EfficiencyCoreCount().value_or(
+              std::thread::hardware_concurrency()))),
       skia_concurrent_executor_(
           [runner = concurrent_message_loop_->GetTaskRunner()](
               const fml::closure& work) { runner->PostTask(work); }),
@@ -380,11 +384,6 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
     PushBackAll(&args, kDartStartPausedArgs, fml::size(kDartStartPausedArgs));
   }
 
-  if (settings_.disable_service_auth_codes) {
-    PushBackAll(&args, kDartDisableServiceAuthCodesArgs,
-                fml::size(kDartDisableServiceAuthCodesArgs));
-  }
-
   if (settings_.endless_trace_buffer || settings_.trace_startup) {
     // If we are tracing startup, make sure the trace buffer is endless so we
     // don't lose early traces.
@@ -395,6 +394,14 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
   if (settings_.trace_systrace) {
     PushBackAll(&args, kDartSystraceTraceBufferArgs,
                 fml::size(kDartSystraceTraceBufferArgs));
+    PushBackAll(&args, kDartSystraceTraceStreamsArgs,
+                fml::size(kDartSystraceTraceStreamsArgs));
+  }
+
+  std::string file_recorder_args;
+  if (!settings_.trace_to_file.empty()) {
+    file_recorder_args = DartFileRecorderArgs(settings_.trace_to_file);
+    args.push_back(file_recorder_args.c_str());
     PushBackAll(&args, kDartSystraceTraceStreamsArgs,
                 fml::size(kDartSystraceTraceStreamsArgs));
   }
@@ -472,13 +479,15 @@ DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
     // As this call is immediately after initialization of the Dart VM,
     // we are interested in only one timestamp.
     int64_t micros = Dart_TimelineGetMicros();
-    Dart_TimelineEvent("FlutterEngineMainEnter",     // label
-                       micros,                       // timestamp0
-                       micros,                       // timestamp1_or_async_id
-                       Dart_Timeline_Event_Instant,  // event type
-                       0,                            // argument_count
-                       nullptr,                      // argument_names
-                       nullptr                       // argument_values
+    Dart_RecordTimelineEvent("FlutterEngineMainEnter",  // label
+                             micros,                    // timestamp0
+                             micros,   // timestamp1_or_async_id
+                             0,        // flow_id_count
+                             nullptr,  // flow_ids
+                             Dart_Timeline_Event_Instant,  // event type
+                             0,                            // argument_count
+                             nullptr,                      // argument_names
+                             nullptr                       // argument_values
     );
   }
 

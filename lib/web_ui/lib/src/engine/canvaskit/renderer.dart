@@ -68,7 +68,9 @@ class CanvasKitRenderer implements Renderer {
     // added eagerly during initialization here and never touched, unless the
     // system is reset due to hot restart or in a test.
     _sceneHost = createDomElement('flt-scene');
-    embedder.addSceneToSceneHost(_sceneHost);
+    // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
+    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+    implicitView.dom.setScene(_sceneHost!);
   }
 
   @override
@@ -209,8 +211,20 @@ class CanvasKitRenderer implements Renderer {
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
-    WebOnlyImageCodecChunkCallback? chunkCallback
+    ui_web.ImageCodecChunkCallback? chunkCallback
   }) => skiaInstantiateWebImageCodec(uri.toString(), chunkCallback);
+
+  @override
+  ui.Image createImageFromImageBitmap(DomImageBitmap imageBitmap) {
+    final SkImage? skImage = canvasKit.MakeLazyImageFromImageBitmap(
+      imageBitmap,
+      true
+    );
+    if (skImage == null) {
+      throw Exception('Failed to convert image bitmap to an SkImage.');
+    }
+    return CkImage(skImage);
+  }
 
   @override
   void decodeImageFromPixels(
@@ -328,6 +342,7 @@ class CanvasKitRenderer implements Renderer {
     strutStyle: strutStyle,
     ellipsis: ellipsis,
     locale: locale,
+    applyRoundingHack: !ui.ParagraphBuilder.shouldDisableRoundingHack,
   );
 
   @override

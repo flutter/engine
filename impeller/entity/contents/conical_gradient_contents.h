@@ -29,6 +29,10 @@ class ConicalGradientContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
+
   void SetCenterAndRadius(Point center, Scalar radius);
 
   void SetColors(std::vector<Color> colors);
@@ -56,10 +60,13 @@ class ConicalGradientContents final : public ColorSourceContents {
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
+  Color decal_border_color_ = Color::BlackTransparent();
   std::optional<Point> focus_;
   Scalar focus_radius_ = 0.0f;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ConicalGradientContents);
+  ConicalGradientContents(const ConicalGradientContents&) = delete;
+
+  ConicalGradientContents& operator=(const ConicalGradientContents&) = delete;
 };
 
 }  // namespace impeller

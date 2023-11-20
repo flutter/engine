@@ -54,7 +54,7 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element.
  */
-- (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
+- (void)setUpIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
 - (void)resetViewResponder;
 
 @end
@@ -128,11 +128,11 @@ FLUTTER_DARWIN_EXPORT
 
 // UITextInput
 @property(nonatomic, readonly) NSMutableString* text;
-@property(nonatomic, readonly) NSMutableString* markedText;
 @property(readwrite, copy) UITextRange* selectedTextRange;
 @property(nonatomic, strong) UITextRange* markedTextRange;
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
 @property(nonatomic, weak) id<UITextInputDelegate> inputDelegate;
+@property(nonatomic, strong) NSMutableArray* pendingDeltas;
 
 // UITextInputTraits
 @property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
@@ -164,4 +164,9 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
 @end
+
+@interface UIView (FindFirstResponder)
+@property(nonatomic, readonly) id flutterFirstResponder;
+@end
+
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

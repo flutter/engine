@@ -90,9 +90,9 @@ void PortableUITest::SetUpRealmBase() {
   realm_builder_.AddRoute(Route{
       .capabilities = {Protocol{fuchsia::ui::composition::Allocator::Name_},
                        Protocol{fuchsia::ui::composition::Flatland::Name_},
-                       Protocol{fuchsia::ui::scenic::Scenic::Name_},
                        Protocol{fuchsia::ui::test::input::Registry::Name_},
                        Protocol{fuchsia::ui::test::scene::Controller::Name_},
+                       Protocol{fuchsia::ui::display::singleton::Info::Name_},
                        Protocol{kPointerInjectorRegistryName}},
       .source = kTestUIStackRef,
       .targets = {ParentRef(), kFlutterJitRunnerRef}});

@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer.h"
 #include "impeller/core/buffer_view.h"
@@ -32,8 +31,6 @@ class DeviceBuffer : public Buffer,
 
   BufferView AsBufferView() const;
 
-  virtual void Flush();
-
   virtual std::shared_ptr<Texture> AsTexture(
       Allocator& allocator,
       const TextureDescriptor& descriptor,
@@ -57,7 +54,9 @@ class DeviceBuffer : public Buffer,
                                 size_t offset) = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(DeviceBuffer);
+  DeviceBuffer(const DeviceBuffer&) = delete;
+
+  DeviceBuffer& operator=(const DeviceBuffer&) = delete;
 };
 
 }  // namespace impeller

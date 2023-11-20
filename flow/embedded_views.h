@@ -6,22 +6,19 @@
 #define FLUTTER_FLOW_EMBEDDED_VIEWS_H_
 
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/raster_thread_merger.h"
-#include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/core/SkSurface.h"
 
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/impeller/aiks/aiks_context.h"  // nogncheck
@@ -55,7 +52,7 @@ class ImageFilterMutation {
  public:
   ImageFilterMutation(std::shared_ptr<const DlImageFilter> filter,
                       const SkRect& filter_rect)
-      : filter_(filter), filter_rect_(filter_rect) {}
+      : filter_(std::move(filter)), filter_rect_(filter_rect) {}
 
   const DlImageFilter& GetFilter() const { return *filter_; }
   const SkRect& GetFilterRect() const { return filter_rect_; }
@@ -114,7 +111,7 @@ class Mutator {
   explicit Mutator(const SkMatrix& matrix)
       : type_(kTransform), matrix_(matrix) {}
   explicit Mutator(const int& alpha) : type_(kOpacity), alpha_(alpha) {}
-  explicit Mutator(std::shared_ptr<const DlImageFilter> filter,
+  explicit Mutator(const std::shared_ptr<const DlImageFilter>& filter,
                    const SkRect& filter_rect)
       : type_(kBackdropFilter),
         filter_mutation_(
@@ -271,12 +268,10 @@ class EmbeddedViewParams {
 
   EmbeddedViewParams(SkMatrix matrix,
                      SkSize size_points,
-                     MutatorsStack mutators_stack,
-                     bool display_list_enabled = false)
+                     MutatorsStack mutators_stack)
       : matrix_(matrix),
         size_points_(size_points),
-        mutators_stack_(mutators_stack),
-        display_list_enabled_(display_list_enabled) {
+        mutators_stack_(std::move(mutators_stack)) {
     SkPath path;
     SkRect starting_rect = SkRect::MakeSize(size_points);
     path.addRect(starting_rect);
@@ -301,14 +296,10 @@ class EmbeddedViewParams {
   // Pushes the stored DlImageFilter object to the mutators stack.
   //
   // `filter_rect` is in global coordinates.
-  void PushImageFilter(std::shared_ptr<const DlImageFilter> filter,
+  void PushImageFilter(const std::shared_ptr<const DlImageFilter>& filter,
                        const SkRect& filter_rect) {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
   }
-
-  // Whether the embedder should construct DisplayList objects to hold the
-  // rendering commands for each between-view slice of the layer tree.
-  bool display_list_enabled() const { return display_list_enabled_; }
 
   bool operator==(const EmbeddedViewParams& other) const {
     return size_points_ == other.size_points_ &&
@@ -322,7 +313,6 @@ class EmbeddedViewParams {
   SkSize size_points_;
   MutatorsStack mutators_stack_;
   SkRect final_bounding_rect_;
-  bool display_list_enabled_;
 };
 
 enum class PostPrerollResult {
@@ -355,7 +345,7 @@ class EmbedderViewSlice {
 
 class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
  public:
-  DisplayListEmbedderViewSlice(SkRect view_bounds);
+  explicit DisplayListEmbedderViewSlice(SkRect view_bounds);
   ~DisplayListEmbedderViewSlice() override = default;
 
   DlCanvas* canvas() override;
@@ -402,7 +392,7 @@ class ExternalViewEmbedder {
       SkISize frame_size,
       GrDirectContext* context,
       double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) = 0;
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
       int64_t view_id,
@@ -413,7 +403,7 @@ class ExternalViewEmbedder {
   // after it does any requisite tasks needed to bring itself to a valid state.
   // Returns kSuccess if the view embedder is already in a valid state.
   virtual PostPrerollResult PostPrerollAction(
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
     return PostPrerollResult::kSuccess;
   }
 
@@ -443,7 +433,7 @@ class ExternalViewEmbedder {
   // returns false.
   virtual void EndFrame(
       bool should_resubmit_frame,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
   // Whether the embedder should support dynamic thread merging.
   //
@@ -479,7 +469,7 @@ class ExternalViewEmbedder {
   // See also: |PushVisitedPlatformView| for pushing platform view ids to the
   // visited platform views list.
   virtual void PushFilterToVisitedPlatformViews(
-      std::shared_ptr<const DlImageFilter> filter,
+      const std::shared_ptr<const DlImageFilter>& filter,
       const SkRect& filter_rect) {}
 
  private:

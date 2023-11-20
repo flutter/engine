@@ -18,6 +18,7 @@
 #include "impeller/renderer/backend/metal/pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
+#include "impeller/renderer/vertex_descriptor.h"
 
 namespace impeller {
 
@@ -379,8 +380,9 @@ static bool Bind(PassBindingsCache& pass,
 static bool Bind(PassBindingsCache& pass,
                  ShaderStage stage,
                  size_t bind_index,
+                 const Sampler& sampler,
                  const Texture& texture) {
-  if (!texture.IsValid()) {
+  if (!sampler.IsValid() || !texture.IsValid()) {
     return false;
   }
 
@@ -395,18 +397,8 @@ static bool Bind(PassBindingsCache& pass,
   }
 
   return pass.SetTexture(stage, bind_index,
-                         TextureMTL::Cast(texture).GetMTLTexture());
-}
-
-static bool Bind(PassBindingsCache& pass,
-                 ShaderStage stage,
-                 size_t bind_index,
-                 const Sampler& sampler) {
-  if (!sampler.IsValid()) {
-    return false;
-  }
-
-  return pass.SetSampler(stage, bind_index,
+                         TextureMTL::Cast(texture).GetMTLTexture()) &&
+         pass.SetSampler(stage, bind_index,
                          SamplerMTL::Cast(sampler).GetMTLSamplerState());
 }
 
@@ -416,21 +408,22 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
   auto bind_stage_resources = [&allocator, &pass_bindings](
                                   const Bindings& bindings,
                                   ShaderStage stage) -> bool {
+    if (stage == ShaderStage::kVertex) {
+      if (!Bind(pass_bindings, *allocator, stage,
+                VertexDescriptor::kReservedVertexBufferIndex,
+                bindings.vertex_buffer.view.resource)) {
+        return false;
+      }
+    }
     for (const auto& buffer : bindings.buffers) {
       if (!Bind(pass_bindings, *allocator, stage, buffer.first,
-                buffer.second.resource)) {
+                buffer.second.view.resource)) {
         return false;
       }
     }
-    for (const auto& texture : bindings.textures) {
-      if (!Bind(pass_bindings, stage, texture.first,
-                *texture.second.resource)) {
-        return false;
-      }
-    }
-    for (const auto& sampler : bindings.samplers) {
-      if (!Bind(pass_bindings, stage, sampler.first,
-                *sampler.second.resource)) {
+    for (const auto& data : bindings.sampled_images) {
+      if (!Bind(pass_bindings, stage, data.first, *data.second.sampler.resource,
+                *data.second.texture.resource)) {
         return false;
       }
     }
@@ -448,12 +441,14 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       continue;
     }
 
+#ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure auto_pop_debug_marker(pop_debug_marker);
     if (!command.label.empty()) {
       [encoder pushDebugGroup:@(command.label.c_str())];
     } else {
       auto_pop_debug_marker.Release();
     }
+#endif  // IMPELLER_DEBUG
 
     const auto& pipeline_desc = command.pipeline->GetDescriptor();
     if (target_sample_count != pipeline_desc.GetSampleCount()) {
@@ -498,13 +493,13 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 #if TARGET_OS_SIMULATOR
         VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
         return false;
-#endif
+#else   // TARGET_OS_SIMULATOR
         [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
                     vertexStart:command.base_vertex
                     vertexCount:command.vertex_count
                   instanceCount:command.instance_count
                    baseInstance:0u];
-
+#endif  // TARGET_OS_SIMULATOR
       } else {
         [encoder drawPrimitives:ToMTLPrimitiveType(primitive_type)
                     vertexStart:command.base_vertex
@@ -538,7 +533,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
 #if TARGET_OS_SIMULATOR
       VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
       return false;
-#endif
+#else   // TARGET_OS_SIMULATOR
       [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
                           indexCount:command.vertex_count
                            indexType:ToMTLIndexType(command.index_type)
@@ -547,6 +542,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                        instanceCount:command.instance_count
                           baseVertex:command.base_vertex
                         baseInstance:0u];
+#endif  // TARGET_OS_SIMULATOR
     } else {
       [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
                           indexCount:command.vertex_count

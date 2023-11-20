@@ -5,9 +5,10 @@
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
-#include "flutter/impeller/renderer/backend/gles/surface_gles.h"
-#include "flutter/impeller/renderer/renderer.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/renderer/backend/gles/surface_gles.h"
+#include "impeller/renderer/renderer.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
 
@@ -28,7 +29,8 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
     return;
   }
 
-  auto aiks_context = std::make_shared<impeller::AiksContext>(context);
+  auto aiks_context = std::make_shared<impeller::AiksContext>(
+      context, impeller::TypographerContextSkia::Make());
 
   if (!aiks_context->IsValid()) {
     return;
@@ -61,7 +63,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
                         delegate = delegate_]() -> bool {
     if (weak) {
       GLPresentInfo present_info = {
-          .fbo_id = 0,
+          .fbo_id = 0u,
           .frame_damage = std::nullopt,
           // TODO (https://github.com/flutter/flutter/issues/105597): wire-up
           // presentation time to impeller backend.
@@ -80,10 +82,13 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
     return nullptr;
   }
 
+  GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
+                            static_cast<uint32_t>(size.height())};
+  const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
   auto surface = impeller::SurfaceGLES::WrapFBO(
       impeller_context_,                            // context
       swap_callback,                                // swap_callback
-      0u,                                           // fbo
+      fbo_info.fbo_id,                              // fbo
       impeller::PixelFormat::kR8G8B8A8UNormInt,     // color_format
       impeller::ISize{size.width(), size.height()}  // fbo_size
   );
@@ -105,8 +110,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
 
         auto cull_rect =
             surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-
-        impeller::DlDispatcher impeller_dispatcher;
+        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
+        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
         display_list->Dispatch(
             impeller_dispatcher,
             SkIRect::MakeWH(cull_rect.width, cull_rect.height));
@@ -122,12 +127,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       });
 
   return std::make_unique<SurfaceFrame>(
-      nullptr,                          // surface
-      SurfaceFrame::FramebufferInfo{},  // framebuffer info
-      submit_callback,                  // submit callback
-      size,                             // frame size
-      std::move(context_switch),        // context result
-      true                              // display list fallback
+      nullptr,                                // surface
+      delegate_->GLContextFramebufferInfo(),  // framebuffer info
+      submit_callback,                        // submit callback
+      size,                                   // frame size
+      std::move(context_switch),              // context result
+      true                                    // display list fallback
   );
 }
 

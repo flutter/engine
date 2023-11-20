@@ -7,6 +7,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
+#include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -37,8 +38,6 @@ constexpr float kStops[] = {
     0.5,
     1.0,
 };
-static std::vector<uint32_t> color_vector(kColors, kColors + 3);
-static std::vector<float> stops_vector(kStops, kStops + 3);
 
 // clang-format off
 constexpr float kRotateColorMatrix[20] = {
@@ -58,13 +57,13 @@ constexpr float kInvertColorMatrix[20] = {
 const SkScalar kTestDashes1[] = {4.0, 2.0};
 const SkScalar kTestDashes2[] = {1.0, 1.5};
 
-constexpr SkPoint TestPoints[] = {
+constexpr SkPoint kTestPoints[] = {
     {10, 10},
     {20, 20},
     {10, 20},
     {20, 10},
 };
-#define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
+#define TestPointCount sizeof(kTestPoints) / (sizeof(kTestPoints[0]))
 
 static DlImageSampling kNearestSampling = DlImageSampling::kNearestNeighbor;
 static DlImageSampling kLinearSampling = DlImageSampling::kLinear;
@@ -151,9 +150,9 @@ static const DlBlurImageFilter kTestBlurImageFilter4(5.0,
 static const DlDilateImageFilter kTestDilateImageFilter1(5.0, 5.0);
 static const DlDilateImageFilter kTestDilateImageFilter2(6.0, 5.0);
 static const DlDilateImageFilter kTestDilateImageFilter3(5.0, 6.0);
-static const DlErodeImageFilter kTestErodeImageFilter1(5.0, 5.0);
-static const DlErodeImageFilter kTestErodeImageFilter2(6.0, 5.0);
-static const DlErodeImageFilter kTestErodeImageFilter3(5.0, 6.0);
+static const DlErodeImageFilter kTestErodeImageFilter1(4.0, 4.0);
+static const DlErodeImageFilter kTestErodeImageFilter2(4.0, 3.0);
+static const DlErodeImageFilter kTestErodeImageFilter3(3.0, 4.0);
 static const DlMatrixImageFilter kTestMatrixImageFilter1(
     SkMatrix::RotateDeg(45),
     kNearestSampling);
@@ -204,19 +203,19 @@ static const SkMatrix kTestMatrix2 = SkMatrix::RotateDeg(45);
 static std::shared_ptr<const DlVertices> TestVertices1 =
     DlVertices::Make(DlVertexMode::kTriangles,  //
                      3,
-                     TestPoints,
+                     kTestPoints,
                      nullptr,
                      kColors);
 static std::shared_ptr<const DlVertices> TestVertices2 =
     DlVertices::Make(DlVertexMode::kTriangleFan,  //
                      3,
-                     TestPoints,
+                     kTestPoints,
                      nullptr,
                      kColors);
 
 static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, SkColor color) {
   DisplayListBuilder builder;
-  builder.DrawRect(SkRect::MakeWH(w, h), DlPaint(color));
+  builder.DrawRect(SkRect::MakeWH(w, h), DlPaint(DlColor(color)));
   return builder.Build();
 }
 static sk_sp<DisplayList> TestDisplayList1 =
@@ -224,12 +223,9 @@ static sk_sp<DisplayList> TestDisplayList1 =
 static sk_sp<DisplayList> TestDisplayList2 =
     MakeTestDisplayList(25, 25, SK_ColorBLUE);
 
-static sk_sp<SkTextBlob> MakeTextBlob(std::string string) {
-  return SkTextBlob::MakeFromText(string.c_str(), string.size(), SkFont(),
-                                  SkTextEncoding::kUTF8);
-}
-static sk_sp<SkTextBlob> TestBlob1 = MakeTextBlob("TestBlob1");
-static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");
+SkFont CreateTestFontOfSize(SkScalar scalar);
+
+sk_sp<SkTextBlob> GetTestTextBlob(int index);
 
 struct DisplayListInvocation {
   unsigned int op_count_;
@@ -244,18 +240,6 @@ struct DisplayListInvocation {
   DlInvoker invoker;
   bool supports_group_opacity_ = false;
 
-  bool sk_version_matches() {
-    return (static_cast<int>(op_count_) == sk_op_count_ &&
-            byte_count_ == sk_byte_count_);
-  }
-
-  // A negative sk_op_count means "do not test this op".
-  // Used mainly for these cases:
-  // - we cannot encode a DrawShadowRec (Skia private header)
-  // - SkCanvas cannot receive a DisplayList
-  // - SkCanvas may or may not inline an SkPicture
-  bool sk_testing_invalid() { return sk_op_count_ < 0; }
-
   bool is_empty() { return byte_count_ == 0; }
 
   bool supports_group_opacity() { return supports_group_opacity_; }
@@ -266,11 +250,6 @@ struct DisplayListInvocation {
   // byte count for the ops with DisplayList overhead, comparable
   // to |DisplayList.byte_count().
   size_t byte_count() { return sizeof(DisplayList) + byte_count_; }
-
-  int sk_op_count() { return sk_op_count_; }
-  // byte count for the ops with DisplayList overhead as translated
-  // through an SkCanvas interface, comparable to |DisplayList.byte_count().
-  size_t sk_byte_count() { return sizeof(DisplayList) + sk_byte_count_; }
 
   void Invoke(DlOpReceiver& builder) { invoker(builder); }
 

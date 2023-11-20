@@ -55,14 +55,6 @@ void debugEmulateHotRestart() {
   }
 }
 
-/// Fully initializes the engine, including services and UI.
-Future<void> initializeEngine({
-  ui_web.AssetManager? assetManager,
-}) async {
-  await initializeEngineServices(assetManager: assetManager);
-  await initializeEngineUi();
-}
-
 /// How far along the initialization process the engine is currently is.
 ///
 /// The initialization process starts with [none] and proceeds in increasing
@@ -169,7 +161,8 @@ Future<void> initializeEngineServices({
         // milliseconds as a double value, with sub-millisecond information
         // hidden in the fraction. So we first multiply it by 1000 to uncover
         // microsecond precision, and only then convert to `int`.
-        final int highResTimeMicroseconds = (1000 * highResTime.toDart).toInt();
+        final int highResTimeMicroseconds =
+            (1000 * highResTime.toDartDouble).toInt();
 
         // In Flutter terminology "building a frame" consists of "beginning
         // frame" and "drawing frame".
@@ -225,13 +218,16 @@ Future<void> initializeEngineUi() async {
   _initializationState = DebugEngineInitializationState.initializingUi;
 
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
-  MouseCursor.initialize();
+  ensureImplicitViewInitialized(hostElement: configuration.hostElement);
   ensureFlutterViewEmbedderInitialized();
   _initializationState = DebugEngineInitializationState.initialized;
 }
 
-ui_web.AssetManager get engineAssetManager => _assetManager!;
+ui_web.AssetManager get engineAssetManager => _debugAssetManager ?? _assetManager!;
 ui_web.AssetManager? _assetManager;
+ui_web.AssetManager? _debugAssetManager;
+
+set debugOnlyAssetManager(ui_web.AssetManager? manager) => _debugAssetManager = manager;
 
 void _setAssetManager(ui_web.AssetManager assetManager) {
   if (assetManager == _assetManager) {
@@ -253,7 +249,7 @@ Future<void> _downloadAssetFonts() async {
     );
   }
 
-  if (_assetManager != null) {
+  if (_debugAssetManager != null || _assetManager != null) {
     await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
   }
 }
@@ -270,8 +266,3 @@ set debugDisableFontFallbacks(bool value) {
   _debugDisableFontFallbacks = value;
 }
 bool _debugDisableFontFallbacks = false;
-
-/// The shared instance of PlatformViewManager shared across the engine to handle
-/// rendering of PlatformViews into the web app.
-// TODO(dit): How to make this overridable from tests?
-final PlatformViewManager platformViewManager = PlatformViewManager();

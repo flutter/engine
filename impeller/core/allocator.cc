@@ -6,6 +6,7 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/range.h"
 
 namespace impeller {
@@ -56,6 +57,8 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
 
   return OnCreateTexture(desc);
 }
+
+void Allocator::DidAcquireSurfaceFrame() {}
 
 uint16_t Allocator::MinimumBytesPerRow(PixelFormat format) const {
   return BytesPerPixelForPixelFormat(format);

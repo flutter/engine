@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 
 #include "flutter/fml/macros.h"
+#include "flutter/shell/platform/windows/windows_proc_table.h"
 
 namespace flutter {
 namespace testing {
@@ -14,8 +15,9 @@ class TestFlutterWindowsEngine : public FlutterWindowsEngine {
   TestFlutterWindowsEngine(
       const FlutterProjectBundle& project,
       KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
-      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan)
-      : FlutterWindowsEngine(project),
+      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan,
+      std::shared_ptr<WindowsProcTable> windows_proc_table = nullptr)
+      : FlutterWindowsEngine(project, std::move(windows_proc_table)),
         get_key_state_(std::move(get_key_state)),
         map_vk_to_scan_(std::move(map_vk_to_scan)) {}
 
@@ -62,11 +64,21 @@ void FlutterWindowsEngineBuilder::AddDartEntrypointArgument(std::string arg) {
   dart_entrypoint_arguments_.emplace_back(std::move(arg));
 }
 
+void FlutterWindowsEngineBuilder::SetSwitches(
+    std::vector<std::string> switches) {
+  switches_ = std::move(switches);
+}
+
 void FlutterWindowsEngineBuilder::SetCreateKeyboardHandlerCallbacks(
     KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
     KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan) {
   get_key_state_ = std::move(get_key_state);
   map_vk_to_scan_ = std::move(map_vk_to_scan);
+}
+
+void FlutterWindowsEngineBuilder::SetWindowsProcTable(
+    std::shared_ptr<WindowsProcTable> windows_proc_table) {
+  windows_proc_table_ = std::move(windows_proc_table);
 }
 
 std::unique_ptr<FlutterWindowsEngine> FlutterWindowsEngineBuilder::Build() {
@@ -86,9 +98,10 @@ std::unique_ptr<FlutterWindowsEngine> FlutterWindowsEngineBuilder::Build() {
   }
 
   FlutterProjectBundle project(properties_);
+  project.SetSwitches(switches_);
 
-  return std::make_unique<TestFlutterWindowsEngine>(project, get_key_state_,
-                                                    map_vk_to_scan_);
+  return std::make_unique<TestFlutterWindowsEngine>(
+      project, get_key_state_, map_vk_to_scan_, std::move(windows_proc_table_));
 }
 
 }  // namespace testing

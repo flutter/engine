@@ -18,6 +18,7 @@
 #include "impeller/playground/imgui/vk/imgui_shaders_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/vk/compute_shaders_vk.h"
@@ -44,6 +45,8 @@ ShaderLibraryMappingsForPlayground() {
   };
 }
 
+vk::UniqueInstance PlaygroundImplVK::global_instance_;
+
 void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
   if (!handle) {
     return;
@@ -66,6 +69,8 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     return;
   }
 
+  InitGlobalVulkanInstance();
+
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   ::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
@@ -86,29 +91,38 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
   context_settings.cache_directory = fml::paths::GetCachesDirectory();
   context_settings.enable_validation = switches_.enable_vulkan_validation;
 
-  auto context = ContextVK::Create(std::move(context_settings));
-
-  if (!context || !context->IsValid()) {
+  auto context_vk = ContextVK::Create(std::move(context_settings));
+  if (!context_vk || !context_vk->IsValid()) {
     VALIDATION_LOG << "Could not create Vulkan context in the playground.";
     return;
   }
 
+  // Without this, the playground will timeout waiting for the presentation.
+  // It's better to have some Vulkan validation tests running on CI to catch
+  // regressions, but for now this is a workaround.
+  //
+  // TODO(matanlurey): https://github.com/flutter/flutter/issues/134852.
+  //
+  // (Note, if you're using MoltenVK, or Linux, you can comment out this line).
+  context_vk->SetSyncPresentation(true);
+
   VkSurfaceKHR vk_surface;
-  auto res =
-      vk::Result{::glfwCreateWindowSurface(context->GetInstance(),  // instance
-                                           window,                  // window
-                                           nullptr,                 // allocator
-                                           &vk_surface              // surface
-                                           )};
+  auto res = vk::Result{::glfwCreateWindowSurface(
+      context_vk->GetInstance(),  // instance
+      window,                     // window
+      nullptr,                    // allocator
+      &vk_surface                 // surface
+      )};
   if (res != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not create surface for GLFW window: "
                    << vk::to_string(res);
     return;
   }
 
-  vk::UniqueSurfaceKHR surface{vk_surface, context->GetInstance()};
+  vk::UniqueSurfaceKHR surface{vk_surface, context_vk->GetInstance()};
+  auto context = context_vk->CreateSurfaceContext();
   if (!context->SetWindowSurface(std::move(surface))) {
-    VALIDATION_LOG << "Could not setup surface for context.";
+    VALIDATION_LOG << "Could not set up surface for context.";
     return;
   }
 
@@ -130,8 +144,38 @@ PlaygroundImpl::WindowHandle PlaygroundImplVK::GetWindowHandle() const {
 // |PlaygroundImpl|
 std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
-  ContextVK* context_vk = reinterpret_cast<ContextVK*>(context_.get());
-  return context_vk->AcquireNextSurface();
+  SurfaceContextVK* surface_context_vk =
+      reinterpret_cast<SurfaceContextVK*>(context_.get());
+  return surface_context_vk->AcquireNextSurface();
+}
+
+// Create a global instance of Vulkan in order to prevent unloading of the
+// Vulkan library.
+// A test suite may repeatedly create and destroy PlaygroundImplVK instances,
+// and if the PlaygroundImplVK's Vulkan instance is the only one in the
+// process then the Vulkan library will be unloaded when the instance is
+// destroyed.  Repeated loading and unloading of SwiftShader was leaking
+// resources, so this will work around that leak.
+// (see https://github.com/flutter/flutter/issues/138028)
+void PlaygroundImplVK::InitGlobalVulkanInstance() {
+  if (global_instance_) {
+    return;
+  }
+
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(::glfwGetInstanceProcAddress);
+
+  vk::ApplicationInfo application_info;
+  application_info.setApplicationVersion(VK_API_VERSION_1_0);
+  application_info.setApiVersion(VK_API_VERSION_1_1);
+  application_info.setEngineVersion(VK_API_VERSION_1_0);
+  application_info.setPEngineName("PlaygroundImplVK");
+  application_info.setPApplicationName("PlaygroundImplVK");
+
+  auto instance_result =
+      vk::createInstanceUnique(vk::InstanceCreateInfo({}, &application_info));
+  FML_CHECK(instance_result.result == vk::Result::eSuccess)
+      << "Unable to initialize global Vulkan instance";
+  global_instance_ = std::move(instance_result.value);
 }
 
 }  // namespace impeller

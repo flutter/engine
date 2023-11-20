@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/buffer.h"
 #include "impeller/core/range.h"
 
@@ -15,7 +14,7 @@ struct BufferView {
   uint8_t* contents;
   Range range;
 
-  constexpr operator bool() const { return static_cast<bool>(buffer); }
+  constexpr explicit operator bool() const { return static_cast<bool>(buffer); }
 };
 
 }  // namespace impeller

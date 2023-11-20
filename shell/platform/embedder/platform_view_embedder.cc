@@ -66,16 +66,12 @@ PlatformViewEmbedder::PlatformViewEmbedder(
 PlatformViewEmbedder::PlatformViewEmbedder(
     PlatformView::Delegate& delegate,
     const flutter::TaskRunners& task_runners,
-    const EmbedderSurfaceGL::GLDispatchTable& gl_dispatch_table,
-    bool fbo_reset_after_present,
+    std::unique_ptr<EmbedderSurface> embedder_surface,
     PlatformDispatchTable platform_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : PlatformView(delegate, task_runners),
       external_view_embedder_(std::move(external_view_embedder)),
-      embedder_surface_(
-          std::make_unique<EmbedderSurfaceGL>(gl_dispatch_table,
-                                              fbo_reset_after_present,
-                                              external_view_embedder_)),
+      embedder_surface_(std::move(embedder_surface)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
           task_runners.GetPlatformTaskRunner())),
@@ -200,6 +196,14 @@ PlatformViewEmbedder::ComputePlatformResolvedLocales(
 void PlatformViewEmbedder::OnPreEngineRestart() const {
   if (platform_dispatch_table_.on_pre_engine_restart_callback != nullptr) {
     platform_dispatch_table_.on_pre_engine_restart_callback();
+  }
+}
+
+// |PlatformView|
+void PlatformViewEmbedder::SendChannelUpdate(const std::string& name,
+                                             bool listening) {
+  if (platform_dispatch_table_.on_channel_update != nullptr) {
+    platform_dispatch_table_.on_channel_update(name, listening);
   }
 }
 
