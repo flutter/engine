@@ -139,7 +139,7 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
   thread_host_config.SetUIConfig(MakeThreadConfig(
       ThreadHost::Type::UI, fml::Thread::ThreadPriority::kDisplay));
   thread_host_config.SetIOConfig(MakeThreadConfig(
-      ThreadHost::Type::IO, fml::Thread::ThreadPriority::kBackground));
+      ThreadHost::Type::kIo, fml::Thread::ThreadPriority::kBackground));
 
   auto platform_task_runner_pair = CreateEmbedderTaskRunner(
       SAFE_ACCESS(custom_task_runners, platform_task_runner, nullptr));
@@ -157,7 +157,7 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
   // created.
   if (!render_task_runner_pair.second) {
     thread_host_config.SetRasterConfig(MakeThreadConfig(
-        ThreadHost::Type::RASTER, fml::Thread::ThreadPriority::kRaster));
+        ThreadHost::Type::kRaster, fml::Thread::ThreadPriority::kRaster));
   }
 
   // If both the platform task runner and the raster task runner are specified

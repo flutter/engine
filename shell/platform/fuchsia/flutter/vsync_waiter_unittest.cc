@@ -25,9 +25,9 @@ TEST(VSyncWaiterFuchsia, FrameScheduledForStartTime) {
   auto platform_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
 
   ThreadHost thread_host =
-      ThreadHost(prefix, flutter::ThreadHost::Type::RASTER |
+      ThreadHost(prefix, flutter::ThreadHost::Type::kRaster |
                              flutter::ThreadHost::Type::UI |
-                             flutter::ThreadHost::Type::IO);
+                             flutter::ThreadHost::Type::kIo);
   const flutter::TaskRunners task_runners(
       prefix,                                      // Dart thread labels
       platform_task_runner,                        // platform

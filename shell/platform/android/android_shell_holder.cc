@@ -90,7 +90,7 @@ AndroidShellHolder::AndroidShellHolder(
   auto thread_label = std::to_string(thread_host_count++);
 
   auto mask =
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO;
+      ThreadHost::Type::UI | ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
@@ -100,11 +100,11 @@ AndroidShellHolder::AndroidShellHolder(
       fml::Thread::ThreadPriority::kDisplay);
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::RASTER, thread_label),
+          flutter::ThreadHost::Type::kRaster, thread_label),
       fml::Thread::ThreadPriority::kRaster);
   host_config.io_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::IO, thread_label),
+          flutter::ThreadHost::Type::kIo, thread_label),
       fml::Thread::ThreadPriority::kNormal);
 
   thread_host_ = std::make_shared<ThreadHost>(host_config);
