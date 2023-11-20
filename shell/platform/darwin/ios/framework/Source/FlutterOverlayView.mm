@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
+#include <CoreGraphics/CGColorSpace.h>
 #include <Metal/Metal.h>
 
 #include "flutter/common/settings.h"
@@ -57,7 +58,9 @@
 #pragma clang diagnostic pop
     layer.pixelFormat = pixelFormat;
     if (pixelFormat == MTLPixelFormatRGBA16Float) {
-      layer.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      auto srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      layer.colorspace = srgb;
+      CGColorSpaceRelease(srgb);
     }
   }
   return self;
