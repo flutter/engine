@@ -1738,6 +1738,17 @@ class SemanticsObject {
     }());
     return result;
   }
+
+  bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _isDisposed = true;
+    element.remove();
+    _parent = null;
+    primaryRole?.dispose();
+    primaryRole = null;
+  }
 }
 
 /// Controls how pointer events and browser-detected gestures are treated by
@@ -2004,14 +2015,14 @@ class EngineSemantics {
   /// Callbacks are called synchronously. HTML DOM updates made in a callback
   /// take effect in the current animation frame and/or the current message loop
   /// event.
-  final List<GestureModeCallback?> _gestureModeListeners = <GestureModeCallback?>[];
+  final List<GestureModeCallback> _gestureModeListeners = <GestureModeCallback>[];
 
   /// Calls the [callback] every time the current [GestureMode] changes.
   ///
   /// The callback is called synchronously. HTML DOM updates made in the
   /// callback take effect in the current animation frame and/or the current
   /// message loop event.
-  void addGestureModeListener(GestureModeCallback? callback) {
+  void addGestureModeListener(GestureModeCallback callback) {
     _gestureModeListeners.add(callback);
   }
 
@@ -2019,14 +2030,14 @@ class EngineSemantics {
   ///
   /// The passed [callback] must be the exact same object as the one passed to
   /// [addGestureModeListener].
-  void removeGestureModeListener(GestureModeCallback? callback) {
+  void removeGestureModeListener(GestureModeCallback callback) {
     assert(_gestureModeListeners.contains(callback));
     _gestureModeListeners.remove(callback);
   }
 
   void _notifyGestureModeListeners() {
     for (int i = 0; i < _gestureModeListeners.length; i++) {
-      _gestureModeListeners[i]!(_gestureMode);
+      _gestureModeListeners[i](_gestureMode);
     }
   }
 
@@ -2141,11 +2152,13 @@ class EngineSemanticsOwner {
   /// the one-time callbacks scheduled via the [addOneTimePostUpdateCallback]
   /// method.
   void _finalizeTree() {
+    // Collect all nodes that need to be permanently removed, i.e. nodes that
+    // were detached from their parent, but not reattached to another parent.
+    final Set<SemanticsObject> removals = <SemanticsObject>{};
     for (final SemanticsObject detachmentRoot in _detachments) {
       // A detached node may or may not have some of its descendants reattached
       // elsewhere. Walk the descendant tree and find all descendants that were
       // reattached to a parent. Those descendants need to be removed.
-      final List<SemanticsObject> removals = <SemanticsObject>[];
       detachmentRoot.visitDepthFirst((SemanticsObject node) {
         final SemanticsObject? parent = _attachments[node.id];
         if (parent == null) {
@@ -2157,12 +2170,13 @@ class EngineSemanticsOwner {
         }
       });
 
-      for (final SemanticsObject removal in removals) {
-        _semanticsTree.remove(removal.id);
-        removal._parent = null;
-        removal.element.remove();
-      }
     }
+
+    for (final SemanticsObject removal in removals) {
+      _semanticsTree.remove(removal.id);
+      removal.dispose();
+    }
+
     _detachments = <SemanticsObject>[];
     _attachments = <int, SemanticsObject>{};
 
@@ -2226,26 +2240,19 @@ class EngineSemanticsOwner {
       object._dirtyFields = 0;
     }
 
+    final SemanticsObject root = _semanticsTree[0]!;
     if (_rootSemanticsElement == null) {
-      final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      // print('>>> semanticsHost.append(root.element)');
       semanticsHost.append(root.element);
-      // print(EnginePlatformDispatcher.instance.implicitView!.dom.rootElement.outerHTML!.split('<flt').join('\n<flt'));
-      // print('-----------------------------------------------------');
-      // print(semanticsHost.outerHTML!.split('<flt').join('\n<flt'));
-      // print('-----------------------------------------------------');
     }
 
     _finalizeTree();
 
-    assert(_semanticsTree.containsKey(0)); // must contain root node
     assert(() {
       // Validate that the node map only contains live elements, i.e. descendants
       // of the root node. If a node is not reachable from the root, it should
       // have been removed from the map.
       final List<int> liveIds = <int>[];
-      final SemanticsObject root = _semanticsTree[0]!;
       root.visitDepthFirst((SemanticsObject child) {
         liveIds.add(child.id);
       });
@@ -2304,7 +2311,6 @@ class EngineSemanticsOwner {
   /// Removes the semantics tree for this view from the page and collects all
   /// resources.
   void dispose() {
-    print('>>> EngineSemanticsOwner.dispose()');
     final List<int> keys = _semanticsTree.keys.toList();
     final int len = keys.length;
     for (int i = 0; i < len; i++) {
@@ -2313,6 +2319,11 @@ class EngineSemanticsOwner {
     _finalizeTree();
     _rootSemanticsElement?.remove();
     _rootSemanticsElement = null;
+    _semanticsTree.clear();
+    _attachments.clear();
+    _detachments.clear();
+    _phase = SemanticsUpdatePhase.idle;
+    _oneTimePostUpdateCallbacks.clear();
   }
 }
 

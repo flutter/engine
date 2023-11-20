@@ -8,21 +8,10 @@ import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/semantics.dart';
-import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../common/matchers.dart';
-
-/// Gets the DOM host where the Flutter app is being rendered.
-///
-/// This function returns the correct host for the flutter app under testing,
-/// so we don't have to hardcode domDocument across the test. The semantics
-/// tree has moved outside of the shadowDOM as a workaround for a password
-/// autofill bug on Chrome.
-/// Ref: https://github.com/flutter/flutter/issues/87735
-// DomElement get rootElement =>
-//     EnginePlatformDispatcher.instance.implicitView!.dom.rootElement;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].

@@ -94,6 +94,7 @@ base class EngineFlutterView implements ui.FlutterView {
     dom.rootElement.remove();
     // TODO(harryterkelsen): What should we do about this in multi-view?
     renderer.clearFragmentProgramCache();
+    semantics.dispose();
   }
 
   @override

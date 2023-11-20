@@ -76,7 +76,7 @@ class Incrementable extends PrimaryRoleManager {
   /// Disables the input [_element] when the gesture mode switches to
   /// [GestureMode.pointerEvents], and enables it when the mode switches back to
   /// [GestureMode.browserGestures].
-  GestureModeCallback? _gestureModeListener;
+  late final GestureModeCallback _gestureModeListener;
 
   /// Whether we forwarded a semantics action to the framework and awaiting an
   /// update.
@@ -148,11 +148,9 @@ class Incrementable extends PrimaryRoleManager {
 
   @override
   void dispose() {
-    assert(_gestureModeListener != null);
     super.dispose();
     _focusManager.stopManaging();
     EngineSemantics.instance.removeGestureModeListener(_gestureModeListener);
-    _gestureModeListener = null;
     _disableBrowserGestureHandling();
     _element.remove();
   }

@@ -25,7 +25,6 @@ Future<void> testMain() async {
   await ui_web.bootstrapEngine();
 
   test('EngineSemanticsOwner auto-enables semantics on update', () async {
-    flutterViewEmbedder.reset(); // triggers `autoEnableOnTap` to be called
     expect(semantics().semanticsEnabled, isFalse);
     expect(
         EnginePlatformDispatcher

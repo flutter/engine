@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@TestOn('chrome || safari || firefox')
-library;
-
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -1145,17 +1142,10 @@ void _testVerticalScrolling() {
     semantics().semanticsEnabled = false;
   });
 
-  for (int i = 0; i < 5; i++) {
-  test(solo: true, 'scrollable node dispatches scroll events $i', () async {
-    print('>>> START: node count = ${domDocument.querySelectorAll('flutter-view').length}');
-    // final List<int> idLog = <int>[];
-    // final List<ui.SemanticsAction> actionLog = <ui.SemanticsAction>[];
-    // final List<Object?> eventArguments = <Object?>[];
-
+  test('scrollable node dispatches scroll events', () async {
     Future<ui.SemanticsActionEvent> captureSemanticsEvent() {
       final Completer<ui.SemanticsActionEvent> completer = Completer<ui.SemanticsActionEvent>();
       ui.PlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
-        print('>>> event: $event');
         completer.complete(event);
       };
       return completer.future;
@@ -1164,6 +1154,10 @@ void _testVerticalScrolling() {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
+
+    addTearDown(() async {
+      semantics().semanticsEnabled = false;
+    });
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -1212,15 +1206,10 @@ void _testVerticalScrolling() {
 
     expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
-    print('>>> 1: scrollable.scrollTop = ${scrollable.scrollTop}');
     Future<ui.SemanticsActionEvent> capturedEventFuture = captureSemanticsEvent();
     scrollable.scrollTop = 20;
-    print('>>> 2: scrollable.scrollTop = ${scrollable.scrollTop}');
     expect(scrollable.scrollTop, 20);
-    print('>>> 2.5: scrollable.scrollTop = ${scrollable.scrollTop}');
     ui.SemanticsActionEvent capturedEvent = await capturedEventFuture;
-    print('>>> 3: scrollable.scrollTop = ${scrollable.scrollTop}');
-    print('>>> 3: capturedEvent.type = ${capturedEvent.type}');
 
     expect(capturedEvent.nodeId, 0);
     expect(capturedEvent.type, ui.SemanticsAction.scrollUp);
@@ -1238,11 +1227,7 @@ void _testVerticalScrolling() {
     expect(capturedEvent.arguments, isNull);
     // Engine semantics returns scroll top back to neutral.
     expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
-
-    semantics().semanticsEnabled = false;
-    print('>>> START: node count = ${domDocument.querySelectorAll('flutter-view').length}');
-  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
-  }
+  });
 }
 
 void _testHorizontalScrolling() {
@@ -1309,10 +1294,21 @@ void _testHorizontalScrolling() {
   });
 
   test('scrollable node dispatches scroll events', () async {
-    final SemanticsActionLogger logger = SemanticsActionLogger();
+    Future<ui.SemanticsActionEvent> captureSemanticsEvent() {
+      final Completer<ui.SemanticsActionEvent> completer = Completer<ui.SemanticsActionEvent>();
+      ui.PlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+        completer.complete(event);
+      };
+      return completer.future;
+    }
+
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
+
+    addTearDown(() async {
+      semantics().semanticsEnabled = false;
+    });
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -1360,22 +1356,28 @@ void _testHorizontalScrolling() {
     }
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
+    Future<ui.SemanticsActionEvent> capturedEventFuture = captureSemanticsEvent();
     scrollable.scrollLeft = 20;
     expect(scrollable.scrollLeft, 20);
-    expect(await logger.idLog.first, 0);
-    expect(await logger.actionLog.first, ui.SemanticsAction.scrollLeft);
+    ui.SemanticsActionEvent capturedEvent = await capturedEventFuture;
+
+    expect(capturedEvent.nodeId, 0);
+    expect(capturedEvent.type, ui.SemanticsAction.scrollLeft);
+    expect(capturedEvent.arguments, isNull);
     // Engine semantics returns scroll position back to neutral.
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
+    capturedEventFuture = captureSemanticsEvent();
     scrollable.scrollLeft = 5;
+    capturedEvent = await capturedEventFuture;
+
     expect(scrollable.scrollLeft >= (5 - browserMaxScrollDiff), isTrue);
-    expect(await logger.idLog.first, 0);
-    expect(await logger.actionLog.first, ui.SemanticsAction.scrollRight);
+    expect(capturedEvent.nodeId, 0);
+    expect(capturedEvent.type, ui.SemanticsAction.scrollRight);
+    expect(capturedEvent.arguments, isNull);
     // Engine semantics returns scroll top back to neutral.
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
-
-    semantics().semanticsEnabled = false;
-  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
+  });
 }
 
 void _testIncrementables() {

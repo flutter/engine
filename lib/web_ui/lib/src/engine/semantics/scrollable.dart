@@ -63,7 +63,6 @@ class Scrollable extends PrimaryRoleManager {
 
   /// Responds to browser-detected "scroll" gestures.
   void _recomputeScrollPosition() {
-    print('>>> _domScrollPosition ($_domScrollPosition) != _effectiveNeutralScrollPosition ($_effectiveNeutralScrollPosition)');
     if (_domScrollPosition != _effectiveNeutralScrollPosition) {
       if (!EngineSemantics.instance.shouldAcceptBrowserGesture('scroll')) {
         return;
@@ -124,7 +123,7 @@ class Scrollable extends PrimaryRoleManager {
       _gestureModeListener = (_) {
         _gestureModeDidChange();
       };
-      EngineSemantics.instance.addGestureModeListener(_gestureModeListener);
+      EngineSemantics.instance.addGestureModeListener(_gestureModeListener!);
 
       final Zone zone = Zone.current;
       _scrollListener = createDomEventListener((_) {
@@ -236,8 +235,11 @@ class Scrollable extends PrimaryRoleManager {
     style.removeProperty('touch-action');
     if (_scrollListener != null) {
       removeEventListener('scroll', _scrollListener);
+      _scrollListener = null;
     }
-    EngineSemantics.instance.removeGestureModeListener(_gestureModeListener);
-    _gestureModeListener = null;
+    if (_gestureModeListener != null) {
+      EngineSemantics.instance.removeGestureModeListener(_gestureModeListener!);
+      _gestureModeListener = null;
+    }
   }
 }

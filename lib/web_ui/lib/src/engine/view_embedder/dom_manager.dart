@@ -70,10 +70,7 @@ class DomManager {
 
     // Rendering host (shadow root) children.
 
-    // TODO(yjbanov): In a multi-view world, we may want to have a separate
-    //                semantics owner for each view.
-    //                https://github.com/flutter/flutter/issues/137445
-    final DomElement accessibilityPlaceholder = EngineSemanticsOwner
+    final DomElement accessibilityPlaceholder = EngineSemantics
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
