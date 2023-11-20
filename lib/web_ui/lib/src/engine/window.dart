@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@JS()
-library window;
-
 import 'dart:async';
-import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -16,7 +12,6 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'display.dart';
 import 'dom.dart';
-import 'embedder.dart';
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
@@ -59,7 +54,13 @@ base class EngineFlutterView implements ui.FlutterView {
     // by the public `EngineFlutterView` constructor).
     DomElement? hostElement,
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
-        _dimensionsProvider = DimensionsProvider.create(hostElement: hostElement);
+        dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
+    platformDispatcher.registerView(this);
+    // The embeddingStrategy will take care of cleaning up the rootElement on
+    // hot restart.
+    embeddingStrategy.attachGlassPane(dom.rootElement);
+    registerHotRestartListener(dispose);
+  }
 
   @override
   final int viewId;
@@ -72,11 +73,32 @@ base class EngineFlutterView implements ui.FlutterView {
 
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
-  @override
-  void render(ui.Scene scene) => platformDispatcher.render(scene, this);
+  /// Whether this [EngineFlutterView] has been disposed or not.
+  bool isDisposed = false;
+
+  /// Disposes of the [EngineFlutterView] instance and undoes all of its DOM
+  /// tree and any event listeners.
+  @mustCallSuper
+  void dispose() {
+    isDisposed = true;
+    platformDispatcher.unregisterView(this);
+    dimensionsProvider.close();
+    dom.rootElement.remove();
+    // TODO(harryterkelsen): What should we do about this in multi-view?
+    renderer.clearFragmentProgramCache();
+  }
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void render(ui.Scene scene) {
+    assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    platformDispatcher.render(scene, this);
+  }
+
+  @override
+  void updateSemantics(ui.SemanticsUpdate update) {
+    assert(!isDisposed, 'Trying to update semantics on a disposed EngineFlutterView.');
+    platformDispatcher.updateSemantics(update);
+  }
 
   // TODO(yjbanov): How should this look like for multi-view?
   //                https://github.com/flutter/flutter/issues/137445
@@ -87,8 +109,7 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom =
-      DomManager.fromFlutterViewEmbedderDEPRECATED(flutterViewEmbedder);
+  late final DomManager dom = DomManager(devicePixelRatio: devicePixelRatio);
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
@@ -123,7 +144,7 @@ base class EngineFlutterView implements ui.FlutterView {
     }());
 
     if (!override) {
-      _physicalSize = _dimensionsProvider.computePhysicalSize();
+      _physicalSize = dimensionsProvider.computePhysicalSize();
     }
   }
 
@@ -157,9 +178,10 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   double get devicePixelRatio => display.devicePixelRatio;
 
-  final DimensionsProvider _dimensionsProvider;
+  @visibleForTesting
+  final DimensionsProvider dimensionsProvider;
 
-  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
+  Stream<ui.Size?> get onResize => dimensionsProvider.onResize;
 }
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
@@ -167,14 +189,7 @@ final class _EngineFlutterViewImpl extends EngineFlutterView {
     super.viewId,
     super.platformDispatcher,
     super.hostElement,
-  ) : super._() {
-    platformDispatcher.registerView(this);
-    registerHotRestartListener(() {
-      // TODO(harryterkelsen): What should we do about this in multi-view?
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
-  }
+  ) : super._();
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
@@ -184,15 +199,15 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     super.platformDispatcher,
     super.hostElement,
   ) : super._() {
-    platformDispatcher.registerView(this);
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
-    registerHotRestartListener(() {
-      _browserHistory?.dispose();
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _browserHistory?.dispose();
   }
 
   @override
@@ -511,7 +526,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
+    _viewInsets = dimensionsProvider.computeKeyboardInsets(
       _physicalSize!.height,
       isEditingOnMobile,
     );
@@ -535,7 +550,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
-      final ui.Size current = _dimensionsProvider.computePhysicalSize();
+      final ui.Size current = dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
       if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the

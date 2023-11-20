@@ -22,8 +22,8 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+void ClipContents::SetGeometry(const std::shared_ptr<Geometry>& geometry) {
+  geometry_ = geometry;
 }
 
 void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
@@ -50,7 +50,7 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
       if (!geometry_) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
-      auto coverage = geometry_->GetCoverage(entity.GetTransformation());
+      auto coverage = geometry_->GetCoverage(entity.GetTransform());
       if (!coverage.has_value() || !current_clip_coverage.has_value()) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }

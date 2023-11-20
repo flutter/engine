@@ -67,8 +67,6 @@ VerticesGeometry::VerticesGeometry(std::vector<Point> vertices,
   NormalizeIndices();
 }
 
-VerticesGeometry::~VerticesGeometry() = default;
-
 PrimitiveType VerticesGeometry::GetPrimitiveType() const {
   switch (vertex_mode_) {
     case VerticesGeometry::VertexMode::kTriangleFan:
@@ -113,7 +111,7 @@ std::optional<Rect> VerticesGeometry::GetTextureCoordinateCoverge() const {
 GeometryResult VerticesGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   auto index_count = indices_.size();
   auto vertex_count = vertices_.size();
 
@@ -153,7 +151,7 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -212,7 +210,7 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -222,7 +220,7 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   using VS = TexturePipeline::VertexShader;
 
   auto index_count = indices_.size();
@@ -283,7 +281,7 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
