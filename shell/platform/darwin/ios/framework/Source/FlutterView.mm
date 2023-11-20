@@ -13,6 +13,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -146,8 +147,7 @@ static BOOL _forceSoftwareRendering;
 }
 
 + (Class)layerClass {
-  return flutter::GetCoreAnimationLayerClassForRenderingAPI(
-      flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering));
+  return [FlutterMetalLayer class];
 }
 
 - (void)drawLayer:(CALayer*)layer inContext:(CGContextRef)context {

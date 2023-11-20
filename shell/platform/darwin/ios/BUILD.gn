@@ -58,12 +58,17 @@ source_set("flutter_framework_source_arc") {
   public_configs = [ "//flutter:config" ]
 
   sources = [
+    "framework/Source/FlutterMetalLayer.h",
+    "framework/Source/FlutterMetalLayer.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
   ]
 
-  frameworks = [ "UIKit.framework" ]
+  frameworks = [
+    "UIKit.framework",
+    "IOSurface.framework",
+  ]
 }
 
 source_set("flutter_framework_source") {

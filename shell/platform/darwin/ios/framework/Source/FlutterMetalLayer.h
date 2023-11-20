@@ -1,0 +1,18 @@
+#import <QuartzCore/QuartzCore.h>
+
+/// Drop-in replacement (as far as Flutter is concerned) for CAMetalLayer
+/// that can present with transaction from a background thread.
+@interface FlutterMetalLayer : CALayer
+
+@property(nullable, retain) id<MTLDevice> device;
+@property(nullable, readonly) id<MTLDevice> preferredDevice;
+@property MTLPixelFormat pixelFormat;
+@property BOOL framebufferOnly;
+@property CGSize drawableSize;
+@property BOOL presentsWithTransaction;
+@property(nullable) CGColorSpaceRef colorspace;
+@property BOOL wantsExtendedDynamicRangeContent;
+
+- (nullable id<CAMetalDrawable>)nextDrawable;
+
+@end
