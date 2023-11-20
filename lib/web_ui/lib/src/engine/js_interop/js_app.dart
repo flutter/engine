@@ -18,7 +18,12 @@ class JsFlutterViewOptions {
 
 /// The attributes of the [JsFlutterViewOptions] object.
 extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
-  external DomElement? get hostElement;
+  @JS('hostElement')
+  external DomElement? get _hostElement;
+  DomElement get hostElement {
+    assert (_hostElement != null, '`hostElement` passed to addView cannot be null.');
+    return _hostElement!;
+  }
 
   @JS('initialData')
   external JSObject? get _initialData;

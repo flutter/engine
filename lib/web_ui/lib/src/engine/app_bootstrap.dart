@@ -71,7 +71,7 @@ class AppBootstrap {
     return FlutterApp(
       addView: (JsFlutterViewOptions options) async {
         assert(configuration.multiViewEnabled, 'Cannot addView when multiView is not enabled');
-        // TODO(mdebbar/dit): Create a view from JS Options, then register it in
+        // NEXT: Create a view from JS Options, then register it in
         // the viewManager... (Or have a method that creates-and-registers a view)
         // final EngineFlutterView view = View.createFromOptions(options);
         // return EnginePlatformDispatcher.instance.viewManager.registerView(view).viewId;
@@ -80,6 +80,7 @@ class AppBootstrap {
         return -1;
       },
       removeView: (int viewId) async {
+        assert(configuration.multiViewEnabled, 'Cannot removeView when multiView is not enabled');
         return EnginePlatformDispatcher.instance.viewManager.unregisterView(viewId);
       }
     );
