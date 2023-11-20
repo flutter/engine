@@ -6,7 +6,6 @@
 
 #include <utility>
 
-#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/skia/include/core/SkScalar.h"
@@ -92,10 +91,6 @@ void SemanticsUpdateBuilder::updateNode(
   node.thickness = thickness;
   node.identifier = std::move(identifier);
   node.label = std::move(label);
-
-  // FML_LOG(ERROR) << "label: " << node.label
-  //                << ", identifier: " << node.identifier;
-
   pushStringAttributes(node.labelAttributes, labelAttributes);
   node.value = std::move(value);
   pushStringAttributes(node.valueAttributes, valueAttributes);
