@@ -158,6 +158,13 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
   UIActivityViewController* activityViewController =
       [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare
                                          applicationActivities:nil] autorelease];
+
+  if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    activityViewController.popoverPresentationController.sourceView = engineViewController.view;
+    activityViewController.popoverPresentationController.sourceRect = CGRectMake(CGRectGetWidth(engineViewController.view.bounds)/2, CGRectGetHeight(engineViewController.view.bounds)/2, 0, 0);
+    activityViewController.popoverPresentationController.permittedArrowDirections = UIPopoverArrowDirection();
+  }
+
   [engineViewController presentViewController:activityViewController animated:YES completion:nil];
 }
 
