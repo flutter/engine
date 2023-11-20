@@ -358,8 +358,12 @@ class FlutterView {
   /// then obtain a [Scene] object, which you can display to the user via this
   /// [render] function.
   ///
-  /// If the view is configured with loose [physicalConstraints] a `size`
-  /// satisfying those constraints must be provided.
+  /// If the view is configured with loose [physicalConstraints] (i.e.
+  /// [ViewConstraints.isTight] returns false) a `size` satisfying those
+  /// constraints must be provided. This method does not check that the provided
+  /// `size` actually meets the constraints (this should be done in a heigher
+  /// level), but an illegal `size` may result in undefined rendering behavior.
+  /// If no `size` is provided, [physicalSize] is used instead.
   ///
   /// See also:
   ///
@@ -368,7 +372,6 @@ class FlutterView {
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
   void render(Scene scene, {Size? size}) {
-    assert((size != null && physicalConstraints.isSatisfiedBy(size)) || (size == null && physicalConstraints.isTight));
     // Duplicated calls or calls outside of onBeginFrame/onDrawFrame (indicated
     // by _renderedViews being null) are ignored. See _renderedViews.
     // TODO(dkwingsmt): We should change this skip into an assertion.
