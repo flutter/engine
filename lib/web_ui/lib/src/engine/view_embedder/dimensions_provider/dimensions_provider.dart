@@ -29,11 +29,12 @@ abstract class DimensionsProvider {
   DimensionsProvider();
 
   /// Creates the appropriate DimensionsProvider depending on the incoming [hostElement].
-  factory DimensionsProvider.create({DomElement? hostElement}) {
-    if (hostElement != null) {
-      return CustomElementDimensionsProvider(hostElement);
-    } else {
+  factory DimensionsProvider.create(
+      {required DomElement hostElement, bool isFullPage = false}) {
+    if (isFullPage) {
       return FullPageDimensionsProvider();
+    } else {
+      return CustomElementDimensionsProvider(hostElement);
     }
   }
 

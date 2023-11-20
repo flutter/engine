@@ -6,12 +6,13 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 /// A class that can rasterize [LayerTree]s into a given [Surface].
-class ViewRenderer {
-  ViewRenderer(this.view);
+class Rasterizer {
+  Rasterizer(this.view);
 
   final ui.FlutterView view;
-
   final CompositorContext context = CompositorContext();
+  final RenderCanvasFactory renderCanvasFactory = RenderCanvasFactory();
+  final HtmlViewEmbedder viewEmbedder = HtmlViewEmbedder();
 
   ui.Size _currentFrameSize = ui.Size.zero;
 

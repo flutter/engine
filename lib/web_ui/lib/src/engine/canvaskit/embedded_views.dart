@@ -17,18 +17,19 @@ import 'embedded_views_diff.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
+import 'rasterizer.dart';
 import 'render_canvas.dart';
 import 'render_canvas_factory.dart';
 import 'renderer.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
-  HtmlViewEmbedder._();
+  HtmlViewEmbedder(this.view, this.rasterizer);
 
-  /// The [HtmlViewEmbedder] singleton.
-  static HtmlViewEmbedder instance = HtmlViewEmbedder._();
+  final ui.FlutterView view;
+  final Rasterizer rasterizer;
 
-  DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
+  DomElement get skiaSceneHost => (view as EngineFlutterView).dom.sceneHost;
 
   /// The context for the current frame.
   EmbedderFrameContext _context = EmbedderFrameContext();

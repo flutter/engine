@@ -43,8 +43,10 @@ import 'style_manager.dart';
 ///   +- <style>
 ///
 class DomManager {
-  factory DomManager({required double devicePixelRatio}) {
-    final DomElement rootElement = domDocument.createElement(DomManager.flutterViewTagName);
+  factory DomManager(
+      {required double devicePixelRatio, DomElement? hostElement}) {
+    final DomElement rootElement =
+        hostElement ?? domDocument.createElement(DomManager.flutterViewTagName);
     final DomElement platformViewsHost = domDocument.createElement(DomManager.glassPaneTagName);
     final DomShadowRoot renderingHost = _attachShadowRoot(platformViewsHost);
     final DomElement sceneHost = domDocument.createElement(DomManager.sceneHostTagName);

@@ -14,26 +14,6 @@ class RenderCanvasFactory {
     }());
   }
 
-  /// The lazy-initialized singleton surface factory.
-  ///
-  /// [debugClear] causes this singleton to be reinitialized.
-  static RenderCanvasFactory get instance =>
-      _instance ??= RenderCanvasFactory();
-
-  /// Returns the raw (potentially uninitialized) value of the singleton.
-  ///
-  /// Useful in tests for checking the lifecycle of this class.
-  static RenderCanvasFactory? get debugUninitializedInstance => _instance;
-
-  // Override the current instance with a new one.
-  //
-  // This should only be used in tests.
-  static void debugSetInstance(RenderCanvasFactory newInstance) {
-    _instance = newInstance;
-  }
-
-  static RenderCanvasFactory? _instance;
-
   /// The base canvas to paint on. This is the default canvas which will be
   /// painted to. If there are no platform views, then this canvas will render
   /// the entire scene.
@@ -137,6 +117,5 @@ class RenderCanvasFactory {
     baseCanvas.dispose();
     _liveCanvases.clear();
     _cache.clear();
-    _instance = null;
   }
 }

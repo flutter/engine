@@ -9,7 +9,8 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
+import '../engine.dart'
+    show DimensionsProvider, registerHotRestartListener, renderer;
 import 'display.dart';
 import 'dom.dart';
 import 'mouse/context_menu.dart';
@@ -43,18 +44,18 @@ base class EngineFlutterView implements ui.FlutterView {
   factory EngineFlutterView(
     int viewId,
     EnginePlatformDispatcher platformDispatcher,
-    DomElement hostElement,
+    DomManager domManager,
   ) = _EngineFlutterViewImpl;
 
   EngineFlutterView._(
     this.viewId,
     this.platformDispatcher,
-    // This is nullable to accommodate the legacy `EngineFlutterWindow`. In
-    // multi-view mode, the host element is required for each view (as reflected
-    // by the public `EngineFlutterView` constructor).
-    DomElement? hostElement,
-  )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
-        _dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
+    DomManager domManager,
+    bool isFullPage,
+  )   : embeddingStrategy = EmbeddingStrategy.create(
+            hostElement: domManager.rootElement, isFullPage: isFullPage),
+        _dimensionsProvider = DimensionsProvider.create(
+            hostElement: domManager.rootElement, isFullPage: isFullPage) {
     platformDispatcher.registerView(this);
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
@@ -76,7 +77,8 @@ base class EngineFlutterView implements ui.FlutterView {
   void render(ui.Scene scene) => platformDispatcher.render(scene, this);
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void updateSemantics(ui.SemanticsUpdate update) =>
+      platformDispatcher.updateSemantics(update);
 
   // TODO(yjbanov): How should this look like for multi-view?
   //                https://github.com/flutter/flutter/issues/137445
@@ -148,7 +150,8 @@ base class EngineFlutterView implements ui.FlutterView {
   ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
 
   @override
-  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
+  List<ui.DisplayFeature> get displayFeatures =>
+      _viewConfiguration.displayFeatures;
 
   @override
   EngineFlutterDisplay get display => EngineFlutterDisplay.instance;
@@ -163,10 +166,10 @@ base class EngineFlutterView implements ui.FlutterView {
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
+    int viewId,
+    EnginePlatformDispatcher platformDispatcher,
+    DomManager domManager,
+  ) : super._(viewId, platformDispatcher, domManager, false) {
     registerHotRestartListener(() {
       // TODO(harryterkelsen): What should we do about this in multi-view?
       renderer.clearFragmentProgramCache();
@@ -176,12 +179,13 @@ final class _EngineFlutterViewImpl extends EngineFlutterView {
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
-final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
+final class EngineFlutterWindow extends EngineFlutterView
+    implements ui.SingletonFlutterWindow {
   EngineFlutterWindow(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
+    int viewId,
+    EnginePlatformDispatcher platformDispatcher,
+    DomManager domManager,
+  ) : super._(viewId, platformDispatcher, domManager, true) {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
@@ -223,7 +227,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   double get textScaleFactor => platformDispatcher.textScaleFactor;
 
   @override
-  bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
+  bool get nativeSpellCheckServiceDefined =>
+      platformDispatcher.nativeSpellCheckServiceDefined;
 
   @override
   bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
@@ -232,7 +237,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   bool get alwaysUse24HourFormat => platformDispatcher.alwaysUse24HourFormat;
 
   @override
-  ui.VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
+  ui.VoidCallback? get onTextScaleFactorChanged =>
+      platformDispatcher.onTextScaleFactorChanged;
   @override
   set onTextScaleFactorChanged(ui.VoidCallback? callback) {
     platformDispatcher.onTextScaleFactorChanged = callback;
@@ -242,7 +248,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   ui.Brightness get platformBrightness => platformDispatcher.platformBrightness;
 
   @override
-  ui.VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
+  ui.VoidCallback? get onPlatformBrightnessChanged =>
+      platformDispatcher.onPlatformBrightnessChanged;
   @override
   set onPlatformBrightnessChanged(ui.VoidCallback? callback) {
     platformDispatcher.onPlatformBrightnessChanged = callback;
@@ -252,7 +259,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   String? get systemFontFamily => platformDispatcher.systemFontFamily;
 
   @override
-  ui.VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;
+  ui.VoidCallback? get onSystemFontFamilyChanged =>
+      platformDispatcher.onSystemFontFamilyChanged;
   @override
   set onSystemFontFamilyChanged(ui.VoidCallback? callback) {
     platformDispatcher.onSystemFontFamilyChanged = callback;
@@ -280,7 +288,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   }
 
   @override
-  ui.PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
+  ui.PointerDataPacketCallback? get onPointerDataPacket =>
+      platformDispatcher.onPointerDataPacket;
   @override
   set onPointerDataPacket(ui.PointerDataPacketCallback? callback) {
     platformDispatcher.onPointerDataPacket = callback;
@@ -303,7 +312,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   bool get semanticsEnabled => platformDispatcher.semanticsEnabled;
 
   @override
-  ui.VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
+  ui.VoidCallback? get onSemanticsEnabledChanged =>
+      platformDispatcher.onSemanticsEnabledChanged;
   @override
   set onSemanticsEnabledChanged(ui.VoidCallback? callback) {
     platformDispatcher.onSemanticsEnabledChanged = callback;
@@ -318,7 +328,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   set onFrameDataChanged(ui.VoidCallback? callback) {}
 
   @override
-  ui.AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
+  ui.AccessibilityFeatures get accessibilityFeatures =>
+      platformDispatcher.accessibilityFeatures;
 
   @override
   ui.VoidCallback? get onAccessibilityFeaturesChanged =>
@@ -338,14 +349,16 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   }
 
   @override
-  ui.PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
+  ui.PlatformMessageCallback? get onPlatformMessage =>
+      platformDispatcher.onPlatformMessage;
   @override
   set onPlatformMessage(ui.PlatformMessageCallback? callback) {
     platformDispatcher.onPlatformMessage = callback;
   }
 
   @override
-  void setIsolateDebugName(String name) => ui.PlatformDispatcher.instance.setIsolateDebugName(name);
+  void setIsolateDebugName(String name) =>
+      ui.PlatformDispatcher.instance.setIsolateDebugName(name);
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
@@ -451,7 +464,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   Future<bool> handleNavigationMessage(ByteData? data) async {
     return _waitInTheLine(() async {
       final MethodCall decoded = const JSONMethodCodec().decodeMethodCall(data);
-      final Map<String, dynamic>? arguments = decoded.arguments as Map<String, dynamic>?;
+      final Map<String, dynamic>? arguments =
+          decoded.arguments as Map<String, dynamic>?;
       switch (decoded.method) {
         case 'selectMultiEntryHistory':
           await _useMultiEntryBrowserHistory();
@@ -475,7 +489,9 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
             path = Uri.decodeComponent(
               Uri(
                 path: uri.path.isEmpty ? '/' : uri.path,
-                queryParameters: uri.queryParametersAll.isEmpty ? null : uri.queryParametersAll,
+                queryParameters: uri.queryParametersAll.isEmpty
+                    ? null
+                    : uri.queryParametersAll,
                 fragment: uri.fragment.isEmpty ? null : uri.fragment,
               ).toString(),
             );
@@ -534,11 +550,14 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     if (_physicalSize != null) {
       final ui.Size current = _dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
-      if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
+      if (_physicalSize!.height != current.height &&
+          _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the
         // opposite after the rotation and vice versa.
-        if ((_physicalSize!.height > _physicalSize!.width && current.height < current.width) ||
-            (_physicalSize!.width > _physicalSize!.height && current.width < current.height)) {
+        if ((_physicalSize!.height > _physicalSize!.width &&
+                current.height < current.width) ||
+            (_physicalSize!.width > _physicalSize!.height &&
+                current.width < current.height)) {
           // Rotation detected
           return true;
         }
@@ -591,6 +610,7 @@ EngineFlutterWindow get window {
   );
   return _window!;
 }
+
 EngineFlutterWindow? _window;
 
 /// Initializes the [window] (aka the implicit view), if it's not already
@@ -598,10 +618,14 @@ EngineFlutterWindow? _window;
 EngineFlutterWindow ensureImplicitViewInitialized({
   DomElement? hostElement,
 }) {
+  final DomManager domManager = DomManager(
+    devicePixelRatio: EngineFlutterDisplay.instance.devicePixelRatio,
+    hostElement: hostElement,
+  );
   return _window ??= EngineFlutterWindow(
     kImplicitViewId,
     EnginePlatformDispatcher.instance,
-    hostElement,
+    domManager,
   );
 }
 
