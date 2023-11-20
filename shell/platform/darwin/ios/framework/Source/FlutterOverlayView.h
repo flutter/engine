@@ -13,6 +13,7 @@
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/shell.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#include "fml/platform/darwin/cf_utils.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
@@ -27,8 +28,9 @@
 /// FlutterOverlay view contains the backing stores for the rest. The overlay
 /// views also handle touch propagation and the like for touches that occurs
 /// either on overlays or otherwise may be intercepted by the platform views.
-@interface FlutterOverlayView : UIView
-
+@interface FlutterOverlayView : UIView {
+  fml::CFRef<CGColorSpaceRef> colorSpaceRef;
+}
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 

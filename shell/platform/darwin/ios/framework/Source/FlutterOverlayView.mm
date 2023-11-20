@@ -58,9 +58,8 @@
 #pragma clang diagnostic pop
     layer.pixelFormat = pixelFormat;
     if (pixelFormat == MTLPixelFormatRGBA16Float) {
-      auto srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
-      layer.colorspace = srgb;
-      CGColorSpaceRelease(srgb);
+      self->colorSpaceRef = fml::CFRef(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB));
+      layer.colorspace = self->colorSpaceRef;
     }
   }
   return self;
