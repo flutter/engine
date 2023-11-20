@@ -525,14 +525,15 @@ public class PlatformPlugin {
           // able to retrieve text from URI.
           Uri itemUri = item.getUri();
           if (itemUri != null) {
-            if (itemUri.getScheme() == "content://") {
+            String uriScheme = itemUri.getScheme();
+            if (uriScheme == "content://") {
               // Ensure text can be received from content URI. FileNotFoundException
               // will be thrown if not, in which case we return null.
               activity
                   .getContentResolver()
                   .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
             } else {
-              Log.w(TAG, "Clipboard item contains a Uri with a scheme that is unhandled.");
+              Log.w(TAG, "Clipboard item contains a Uri with scheme '"+ uriScheme + "'that is unhandled.");
               return null;
             }
           } else {
@@ -540,8 +541,8 @@ public class PlatformPlugin {
             return null;
           }
         }
-        // Safely return clipbaord item into text by returning itemText or text retrieved
-        // from its URI.
+        // Safely return clipboard data coerced into text; will return either
+        // itemText or text retrieved from its URI.
         return item.coerceToText(activity);
       }
     } catch (SecurityException e) {

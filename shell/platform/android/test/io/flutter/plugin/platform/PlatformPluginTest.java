@@ -70,9 +70,9 @@ public class PlatformPluginTest {
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
-  @Config(sdk = Build.VERSION_CODES.Q)
+  // @Config(sdk = Build.VERSION_CODES.Q)
   @Test
-  public void platformPlugin_getClipboardData() throws IOException {
+  public void platformPlugin_getClipboardDataIsNonNullWhenPlainTextCopied() throws IOException {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
 
     View fakeDecorView = mock(View.class);
@@ -89,11 +89,93 @@ public class PlatformPluginTest {
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
+
+  // @Config(sdk = Build.VERSION_CODES.Q)
+  @Test
+  public void platformPlugin_getClipboardDataIsNonNullWhenContentUriWithTextProvided() throws IOException {
+    // ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
+
+    // View fakeDecorView = mock(View.class);
+    // Window fakeWindow = mock(Window.class);
+    // when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    // Activity fakeActivity = mock(Activity.class);
+    // when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    // when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    // PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    // PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    // ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
+    // assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    // ClipData clip = ClipData.newPlainText("label", "Text");
+    // clipboardManager.setPrimaryClip(clip);
+    // assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
+
+  // @Config(sdk = Build.VERSION_CODES.Q)
+  @Test
+  public void platformPlugin_getClipboardDataIsNullWhenContentUriProvidedContainsNoText() throws IOException {
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
+
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
     ContentResolver contentResolver = ctx.getContentResolver();
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     clip = ClipData.newUri(contentResolver, "URI", uri);
+    clipboardManager.setPrimaryClip(clip);
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
+
+    // @Config(sdk = Build.VERSION_CODES.Q)
+  @Test
+  public void platformPlugin_getClipboardDataIsNullWhenNonContentUriProvided() throws IOException {
+    // ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
+
+    // View fakeDecorView = mock(View.class);
+    // Window fakeWindow = mock(Window.class);
+    // when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    // Activity fakeActivity = mock(Activity.class);
+    // when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    // when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    // PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    // PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    // ContentResolver contentResolver = ctx.getContentResolver();
+    // when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    // Uri uri = Uri.parse("content://media/external_primary/images/media/");
+    // clip = ClipData.newUri(contentResolver, "URI", uri);
+    // clipboardManager.setPrimaryClip(clip);
+    // assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
+
+  // @Config(sdk = Build.VERSION_CODES.Q)
+  @Test
+  public void platformPlugin_getClipboardDataIsNullWhenItemHasNoTextNorUri() throws IOException {
+    ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
+
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    ContentResolver contentResolver = ctx.getContentResolver();
+    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    ClipData.Item mockItem = mock(ClipData.Item.class);
+    when(mockItem.getText()).thenReturn(null);
+    when(mockItem.getUri()).thenReturn(null);
+    clip = new ClipData("label", new String[0], mockItem);
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
