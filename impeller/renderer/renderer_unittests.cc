@@ -1261,9 +1261,11 @@ TEST_P(RendererTest, StencilMask) {
 TEST_P(RendererTest, CanPreAllocateCommands) {
   auto context = GetContext();
   auto cmd_buffer = context->CreateCommandBuffer();
-  auto render_target_cache = std::make_shared<RenderTargetAllocator>(GetContext()->GetResourceAllocator());
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
 
-  auto render_target = RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
   auto render_pass = cmd_buffer->CreateRenderPass(render_target);
 
   render_pass->ReserveCommands(100u);
