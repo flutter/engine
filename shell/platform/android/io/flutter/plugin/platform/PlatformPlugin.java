@@ -11,6 +11,7 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.net.Uri;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
@@ -521,12 +522,22 @@ public class PlatformPlugin {
         CharSequence itemText = item.getText();
         if (itemText == null) {
           // Clipboard does not contain text, so check whether or not we will be
-          // able to retrieve text from URI. FileNotFoundException will be thrown
-          // if not, and then null will be returned.
-          if (item.getUri() != null) {
-            activity
-                .getContentResolver()
-                .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+          // able to retrieve text from URI.
+          Uri itemUri = item.getUri();
+          if (itemUri != null) {
+            if (itemUri.getScheme() == "content://") {
+              // Ensure text can be received from content URI. FileNotFoundException
+              // will be thrown if not, in which case we return null.
+              activity
+                  .getContentResolver()
+                  .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+            } else {
+              Log.w(TAG, "Clipboard item contains a Uri with a scheme that is unhandled.");
+              return null;
+            }
+          } else {
+            Log.w(TAG, "Clipboard item contained no textual content nor a URI to retrieve it from.");
+            return null;
           }
         }
         // Safely return clipbaord item into text by returning itemText or text retrieved
@@ -542,6 +553,7 @@ public class PlatformPlugin {
           e);
       return null;
     } catch (FileNotFoundException e) {
+      Log.w(TAG, "Clipboard text was unable to be received from content URI.");
       return null;
     }
 
