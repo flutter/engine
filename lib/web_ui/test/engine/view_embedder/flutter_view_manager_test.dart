@@ -10,15 +10,12 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
 import '../../common/matchers.dart';
-import '../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => doTests);
 }
 
 Future<void> doTests() async {
-  await bootstrapAndRunApp();
-
   group('FlutterViewManager', () {
     int nextViewId = 1; // We keep track of this so we don't have to unregister from PlatformDispatcher.
 

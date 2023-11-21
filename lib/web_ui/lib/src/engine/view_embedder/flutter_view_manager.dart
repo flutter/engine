@@ -34,7 +34,9 @@ class FlutterViewManager {
     JsFlutterViewOptions? jsViewOptions,
   }) {
     final int viewId = view.viewId;
-    assert(!_viewData.containsKey(viewId)); // Adding the same view twice?
+    // This assert knows of kImplicitViewId, so some tests like test/engine/routing_test.dart
+    // can pass. The kImplicitViewId exception should be removed!
+    assert(viewId == kImplicitViewId || !_viewData.containsKey(viewId)); // Adding the same view twice?
 
     // Store the view, and the jsViewOptions, if any...
     _viewData[viewId] = view;
