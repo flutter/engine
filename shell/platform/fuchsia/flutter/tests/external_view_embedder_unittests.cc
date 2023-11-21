@@ -58,6 +58,7 @@ constexpr static fuchsia::ui::composition::BlendMode kFirstLayerBlendMode{
     fuchsia::ui::composition::BlendMode::SRC};
 constexpr static fuchsia::ui::composition::BlendMode kUpperLayerBlendMode{
     fuchsia::ui::composition::BlendMode::SRC_OVER};
+constexpr static int64_t kImplicitViewId = 0;
 
 class FakeSurfaceProducerSurface : public SurfaceProducerSurface {
  public:
