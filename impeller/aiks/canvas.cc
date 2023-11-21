@@ -199,8 +199,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   }
 
   if (!paint.mask_blur_descriptor.has_value() ||
-      paint.mask_blur_descriptor->style !=
-          FilterContents::BlurStyle::kNormal) {
+      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
     return false;
   }
 
