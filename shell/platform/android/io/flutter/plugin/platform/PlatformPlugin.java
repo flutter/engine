@@ -12,6 +12,7 @@ import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.content.Intent;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
@@ -144,6 +145,11 @@ public class PlatformPlugin {
         @Override
         public boolean clipboardHasStrings() {
           return PlatformPlugin.this.clipboardHasStrings();
+        }
+
+        @Override
+        public void share(@NonNull String text) {
+          PlatformPlugin.this.share(text);
         }
       };
 
@@ -569,5 +575,14 @@ public class PlatformPlugin {
       return false;
     }
     return description.hasMimeType("text/*");
+  }
+
+  private void share(@NonNull String text) {
+    Intent intent = new Intent();
+    intent.setAction(Intent.ACTION_SEND);
+    intent.setType("text/plain");
+    intent.putExtra(Intent.EXTRA_TEXT, text);
+
+    activity.startActivity(Intent.createChooser(intent, null));
   }
 }
