@@ -163,6 +163,7 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
                                          applicationActivities:nil] autorelease];
 
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    // TODO(louisehsu): consider moving this to TextInputPlugin as functionality is very similar
     // On iPad, the share screen is presented in a popover view, and requires a CGRect
     FlutterTextInputPlugin* _textInputPlugin = [_engine.get() textInputPlugin];
     UITextRange* range = _textInputPlugin.textInputView.selectedTextRange;
