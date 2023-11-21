@@ -1412,7 +1412,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     NSData* encodedMessage = [[FlutterJSONMessageCodec sharedInstance] encode:annotatedEvent];
 
     OCMVerify([mockMessenger sendOnChannel:@"flutter/accessibility" message:encodedMessage]);
+    latch.Signal();
   });
+  latch.Wait();
 
   [engine stopMocking];
 }
