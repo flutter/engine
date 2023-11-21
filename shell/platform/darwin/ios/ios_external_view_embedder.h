@@ -36,9 +36,9 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareView(int64_t flutter_view_id,
-                   SkISize frame_size,
-                   double device_pixel_ratio) override;
+  void PrepareFlutterView(int64_t flutter_view_id,
+                          SkISize frame_size,
+                          double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -54,9 +54,10 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
   DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitView(GrDirectContext* context,
-                  const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                  std::unique_ptr<SurfaceFrame> frame) override;
+  void SubmitFlutterView(
+      GrDirectContext* context,
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
+      std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,

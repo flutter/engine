@@ -386,7 +386,8 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
 //
 //   1. At the start of a frame, call |BeginFrame|, then |SetUsedThisFrame| to
 //      true.
-//   2. For each view to be drawn, call |PrepareView|, then |SubmitView|.
+//   2. For each view to be drawn, call |PrepareFlutterView|, then
+//   |SubmitFlutterView|.
 //   3. At the end of a frame, if |GetUsedThisFrame| is true, call |EndFrame|.
 class ExternalViewEmbedder {
   // TODO(cyanglaz): Make embedder own the `EmbeddedViewParams`.
@@ -402,7 +403,7 @@ class ExternalViewEmbedder {
   // from the on-screen render target.
   virtual DlCanvas* GetRootCanvas() = 0;
 
-  // Call this in-lieu of |SubmitView| to clear pre-roll state and
+  // Call this in-lieu of |SubmitFlutterView| to clear pre-roll state and
   // sets the stage for the next pre-roll.
   virtual void CancelFrame() = 0;
 
@@ -431,16 +432,16 @@ class ExternalViewEmbedder {
   virtual DlCanvas* CompositeEmbeddedView(int64_t platform_view_id) = 0;
 
   // Prepare for a view to be drawn.
-  virtual void PrepareView(int64_t flutter_view_id,
-                           SkISize frame_size,
-                           double device_pixel_ratio) = 0;
+  virtual void PrepareFlutterView(int64_t flutter_view_id,
+                                  SkISize frame_size,
+                                  double device_pixel_ratio) = 0;
 
   // Implementers must submit the frame by calling frame.Submit().
   //
   // This method can mutate the root Skia canvas before submitting the frame.
   //
   // It can also allocate frames for overlay surfaces to compose hybrid views.
-  virtual void SubmitView(
+  virtual void SubmitFlutterView(
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
       std::unique_ptr<SurfaceFrame> frame);

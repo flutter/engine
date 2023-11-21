@@ -656,8 +656,8 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
 
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
-    external_view_embedder_->PrepareView(view_id, layer_tree.frame_size(),
-                                         device_pixel_ratio);
+    external_view_embedder_->PrepareFlutterView(
+        view_id, layer_tree.frame_size(), device_pixel_ratio);
     // TODO(dkwingsmt): Add view ID here.
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
@@ -698,7 +698,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     // for accurate performance metrics.
     if (frame->framebuffer_info().supports_partial_repaint &&
         !layer_tree.is_leaf_layer_tracing_enabled()) {
-      // Disable partial repaint if external_view_embedder_ SubmitView is
+      // Disable partial repaint if external_view_embedder_ SubmitFlutterView is
       // involved - ExternalViewEmbedder unconditionally clears the entire
       // surface and also partial repaint with platform view present is
       // something that still need to be figured out.
@@ -744,7 +744,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     if (external_view_embedder_ &&
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
-      external_view_embedder_->SubmitView(
+      external_view_embedder_->SubmitFlutterView(
           surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
     } else {
       frame->Submit();

@@ -56,9 +56,10 @@ void EmbedderExternalViewEmbedder::BeginFrame(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::PrepareView(int64_t flutter_view_id,
-                                               SkISize frame_size,
-                                               double device_pixel_ratio) {
+void EmbedderExternalViewEmbedder::PrepareFlutterView(
+    int64_t flutter_view_id,
+    SkISize frame_size,
+    double device_pixel_ratio) {
   // TODO(dkwingsmt): This class only supports rendering into the implicit
   // view. Properly support multi-view in the future.
   // https://github.com/flutter/flutter/issues/135530 item 4
@@ -131,7 +132,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 }
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::SubmitView(
+void EmbedderExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {

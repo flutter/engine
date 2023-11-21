@@ -77,9 +77,9 @@ class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareView(int64_t flutter_view_id,
-                   SkISize frame_size,
-                   double device_pixel_ratio) override;
+  void PrepareFlutterView(int64_t flutter_view_id,
+                          SkISize frame_size,
+                          double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(bool should_resubmit_frame,
@@ -87,9 +87,10 @@ class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
                     raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void SubmitView(GrDirectContext* context,
-                  const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                  std::unique_ptr<flutter::SurfaceFrame> frame) override;
+  void SubmitFlutterView(
+      GrDirectContext* context,
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
+      std::unique_ptr<flutter::SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }
