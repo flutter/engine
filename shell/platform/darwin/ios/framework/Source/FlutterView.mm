@@ -20,7 +20,6 @@
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
   BOOL _isWideGamutEnabled;
-  MTLPixelFormat _pixelFormat;
 }
 
 - (instancetype)init {
@@ -46,9 +45,16 @@
 }
 
 - (MTLPixelFormat)pixelFormat {
-  return _pixelFormat;
+  if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+// It is a known Apple bug that CAMetalLayer incorrectly reports its supported
+// SDKs. It is, in fact, available since iOS 8.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+    CAMetalLayer* layer = (CAMetalLayer*)self.layer;
+    return layer.pixelFormat;
+  }
+  return MTLPixelFormatBGRA8Unorm;
 }
-
 - (BOOL)isWideGamutSupported {
   if (![_delegate isUsingImpeller]) {
     return NO;
@@ -121,12 +127,8 @@ static void PrintWideGamutWarningOnce() {
       // F16 was chosen over BGRA10_XR since Skia does not support decoding
       // BGRA10_XR.
       layer.pixelFormat = MTLPixelFormatRGBA16Float;
-      _pixelFormat = MTLPixelFormatRGBA16Float;
-    } else {
-      if (_isWideGamutEnabled && !isWideGamutSupported) {
-        PrintWideGamutWarningOnce();
-      }
-      _pixelFormat = layer.pixelFormat;
+    } else if (_isWideGamutEnabled && !isWideGamutSupported) {
+      PrintWideGamutWarningOnce();
     }
   }
 
