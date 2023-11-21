@@ -17,7 +17,7 @@
 namespace flutter {
 namespace gpu {
 
-IMPLEMENT_WRAPPERTYPEINFO(gpu, DeviceBuffer);
+IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, DeviceBuffer);
 
 DeviceBuffer::DeviceBuffer(
     std::shared_ptr<impeller::DeviceBuffer> device_buffer)

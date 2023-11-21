@@ -23,3 +23,5 @@ part 'src/formats.dart';
 part 'src/context.dart';
 part 'src/buffer.dart';
 part 'src/texture.dart';
+part 'src/shader.dart';
+part 'src/shader_library.dart';

@@ -14,7 +14,7 @@
 namespace flutter {
 namespace gpu {
 
-IMPLEMENT_WRAPPERTYPEINFO(gpu, Context);
+IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, Context);
 
 std::shared_ptr<impeller::Context> Context::default_context_;
 

@@ -11,7 +11,7 @@
 namespace flutter {
 namespace gpu {
 
-IMPLEMENT_WRAPPERTYPEINFO(gpu, HostBuffer);
+IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, HostBuffer);
 
 HostBuffer::HostBuffer() : host_buffer_(impeller::HostBuffer::Create()) {}
 

@@ -159,3 +159,11 @@ void textureAsImageThrowsWhenNotShaderReadable() {
   assert(exception!.contains(
       'Only shader readable Flutter GPU textures can be used as UI Images'));
 }
+
+@pragma('vm:entry-point')
+void canCreateShaderLibrary() {
+  final gpu.ShaderLibrary? library = gpu.ShaderLibrary.fromAsset('playground');
+  assert(library != null);
+  final gpu.Shader? shader = library!['UnlitVertex'];
+  assert(shader != null);
+}

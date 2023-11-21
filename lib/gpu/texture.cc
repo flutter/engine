@@ -15,7 +15,7 @@
 namespace flutter {
 namespace gpu {
 
-IMPLEMENT_WRAPPERTYPEINFO(gpu, Texture);
+IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, Texture);
 
 Texture::Texture(std::shared_ptr<impeller::Texture> texture)
     : texture_(std::move(texture)) {}

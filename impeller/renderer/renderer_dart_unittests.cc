@@ -8,29 +8,47 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/fml/backtrace.h"
-#include "flutter/fml/command_line.h"
 #include "flutter/lib/gpu/context.h"
-#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/gpu/shader.h"
+#include "flutter/lib/gpu/shader_library.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/runtime/isolate_configuration.h"
 #include "flutter/testing/dart_fixture.h"
 #include "flutter/testing/dart_isolate_runner.h"
-#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
-#include "impeller/fixtures/box_fade.frag.h"
-#include "impeller/fixtures/box_fade.vert.h"
+#include "fml/memory/ref_ptr.h"
 #include "impeller/playground/playground_test.h"
-#include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 #include "gtest/gtest.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
 namespace testing {
+
+// This helper is for piggybacking on the RuntimeStage infrastructure for
+// testing shaders/pipelines before the full shader bundle importer is finished.
+static fml::RefPtr<flutter::gpu::Shader> OpenRuntimeStageAsShader(
+    const std::string& fixture_name) {
+  auto fixture = flutter::testing::OpenFixtureAsMapping(fixture_name);
+  assert(fixture);
+  RuntimeStage stage(std::move(fixture));
+  return flutter::gpu::Shader::Make(
+      stage.GetEntrypoint(), static_cast<ShaderStage>(stage.GetShaderStage()),
+      stage.GetCodeMapping(), stage.GetUniforms());
+}
+
+static void InstantiateTestShaderLibrary() {
+  flutter::gpu::ShaderLibrary::ShaderMap shaders;
+  shaders["UnlitVertex"] =
+      OpenRuntimeStageAsShader("flutter_gpu_unlit.vert.iplr");
+  shaders["UnlitFragment"] =
+      OpenRuntimeStageAsShader("flutter_gpu_unlit.frag.iplr");
+  auto library =
+      flutter::gpu::ShaderLibrary::MakeFromShaders(std::move(shaders));
+  flutter::gpu::ShaderLibrary::SetOverride(library);
+}
 
 class RendererDartTest : public PlaygroundTest,
                          public flutter::testing::DartFixture {
@@ -51,6 +69,8 @@ class RendererDartTest : public PlaygroundTest,
     // Sneak the context into the Flutter GPU API.
     assert(GetContext() != nullptr);
     flutter::gpu::Context::SetOverrideContext(GetContext());
+
+    InstantiateTestShaderLibrary();
 
     return isolate_.get();
   }
@@ -139,6 +159,8 @@ DART_TEST_CASE(canOverwriteTexture);
 DART_TEST_CASE(textureOverwriteThrowsForWrongBufferSize);
 DART_TEST_CASE(textureAsImageReturnsAValidUIImageHandle);
 DART_TEST_CASE(textureAsImageThrowsWhenNotShaderReadable);
+
+DART_TEST_CASE(canCreateShaderLibrary);
 
 }  // namespace testing
 }  // namespace impeller
