@@ -86,8 +86,9 @@ public class PlatformPluginTest {
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
-    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     ClipData clip = ClipData.newPlainText("label", "Text");
+
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
@@ -107,11 +108,11 @@ public class PlatformPluginTest {
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
     ContentResolver contentResolver = mock(ContentResolver.class);
-    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
     ClipData.Item mockItem = mock(ClipData.Item.class);
     Uri mockUri = mock(Uri.class);
 
+    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
     when(mockUri.getScheme()).thenReturn("content");
     when(mockItem.getText()).thenReturn(null);
     when(mockItem.getUri()).thenReturn(mockUri);
@@ -120,6 +121,8 @@ public class PlatformPluginTest {
     when(mockItem.coerceToText(fakeActivity)).thenReturn("something non-null");
 
     ClipData clip = new ClipData("label", new String[0], mockItem);
+
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
@@ -140,9 +143,12 @@ public class PlatformPluginTest {
 
     ContentResolver contentResolver = ctx.getContentResolver();
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
+
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     ClipData clip = ClipData.newUri(contentResolver, "URI", uri);
+
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
@@ -162,9 +168,12 @@ public class PlatformPluginTest {
 
     ContentResolver contentResolver = ctx.getContentResolver();
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
+
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+
     Uri uri = Uri.parse("file:///");
     ClipData clip = ClipData.newUri(contentResolver, "URI", uri);
+
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
@@ -184,9 +193,12 @@ public class PlatformPluginTest {
 
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
     ClipData.Item mockItem = mock(ClipData.Item.class);
+
     when(mockItem.getText()).thenReturn(null);
     when(mockItem.getUri()).thenReturn(null);
+
     ClipData clip = new ClipData("label", new String[0], mockItem);
+
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }

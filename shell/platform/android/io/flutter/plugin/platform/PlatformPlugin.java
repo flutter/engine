@@ -518,34 +518,37 @@ public class PlatformPlugin {
       if (clip == null) return null;
       if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
         ClipData.Item item = clip.getItemAt(0);
-        // First, try getting clipboard as text.
+        // First, try getting clipboard data as text; no further processing
+        // required if so.
         CharSequence itemText = item.getText();
+
         if (itemText == null) {
-          // Clipboard does not contain text, so check whether or not we will be
-          // able to retrieve text from URI.
+          // Clipboard data does not contain text, so check whether or not it
+          // contains a URI to extract text from.
           Uri itemUri = item.getUri();
-          if (itemUri != null) {
-            String uriScheme = itemUri.getScheme();
-            if (uriScheme.equals("content")) {
-              // Ensure text can be received from content URI. FileNotFoundException
-              // will be thrown if not, in which case we return null.
-              activity
-                  .getContentResolver()
-                  .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
-            } else {
-              Log.w(
-                  TAG,
-                  "Clipboard item contains a Uri with scheme '"
-                      + uriScheme
-                      + "'that is unhandled.");
-              return null;
-            }
-          } else {
+
+          if (itemUri == null) {
             Log.w(
                 TAG, "Clipboard item contained no textual content nor a URI to retrieve it from.");
             return null;
           }
+
+          // Clipboard data contains a URI to potentially check extract text
+          // from, but first ensure its scheme is content in order to do so.
+          String uriScheme = itemUri.getScheme();
+
+          if (!uriScheme.equals("content")) {
+            Log.w(
+                TAG,
+                "Clipboard item contains a Uri with scheme '" + uriScheme + "'that is unhandled.");
+            return null;
+          }
+
+          // Try extracting text from content URI; FileNotFoundException will be
+          // thrown if text cannot be extracted from the URI.
+          activity.getContentResolver().openTypedAssetFileDescriptor(itemUri, "text/*", null);
         }
+
         // Safely return clipboard data coerced into text; will return either
         // itemText or text retrieved from its URI.
         return item.coerceToText(activity);
