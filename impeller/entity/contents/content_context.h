@@ -63,8 +63,8 @@
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
-#include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur.frag.h"
+#include "impeller/entity/gaussian_blur.vert.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -130,8 +130,7 @@ using PositionUVPipeline =
 using TiledTexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using GaussianBlurPipeline =
-    RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurFragmentShader>;
+    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -776,8 +775,7 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
-  mutable Variants<GaussianBlurPipeline>
-      gaussian_blur_pipelines_;
+  mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
