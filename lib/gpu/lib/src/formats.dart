@@ -59,3 +59,40 @@ enum TextureCoordinateSystem {
   /// (0, 0) is the top-left of the image with +Y going down.
   renderToTexture,
 }
+
+enum BlendFactor {
+  zero,
+  one,
+  sourceColor,
+  oneMinusSourceColor,
+  sourceAlpha,
+  oneMinusSourceAlpha,
+  destinationColor,
+  oneMinusDestinationColor,
+  destinationAlpha,
+  oneMinusDestinationAlpha,
+  sourceAlphaSaturated,
+  blendColor,
+  oneMinusBlendColor,
+  blendAlpha,
+  oneMinusBlendAlpha,
+}
+
+enum BlendOperation {
+  add,
+  subtract,
+  reverseSubtract,
+}
+
+enum LoadAction {
+  dontCare,
+  load,
+  clear,
+}
+
+enum StoreAction {
+  dontCare,
+  store,
+  multisampleResolve,
+  storeAndMultisampleResolve,
+}

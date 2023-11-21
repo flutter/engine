@@ -22,6 +22,10 @@ Texture::Texture(std::shared_ptr<impeller::Texture> texture)
 
 Texture::~Texture() = default;
 
+std::shared_ptr<impeller::Texture> Texture::GetTexture() {
+  return texture_;
+}
+
 void Texture::SetCoordinateSystem(
     impeller::TextureCoordinateSystem coordinate_system) {
   texture_->SetCoordinateSystem(coordinate_system);

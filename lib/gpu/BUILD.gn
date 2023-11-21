@@ -32,6 +32,8 @@ source_set("gpu") {
 
   if (!is_fuchsia) {
     sources = [
+      "command_buffer.cc",
+      "command_buffer.h",
       "context.cc",
       "context.h",
       "device_buffer.cc",
@@ -40,6 +42,8 @@ source_set("gpu") {
       "export.h",
       "host_buffer.cc",
       "host_buffer.h",
+      "render_pass.cc",
+      "render_pass.h",
       "shader.cc",
       "shader.h",
       "shader_library.cc",

@@ -167,3 +167,14 @@ void canCreateShaderLibrary() {
   final gpu.Shader? shader = library!['UnlitVertex'];
   assert(shader != null);
 }
+
+@pragma('vm:entry-point')
+void canCreateRenderPass() {
+  final gpu.Texture? renderTexture =
+      gpu.gpuContext.createTexture(gpu.StorageMode.devicePrivate, 100, 100);
+  assert(renderTexture != null);
+
+  final gpu.CommandBuffer commandBuffer = gpu.gpuContext.createCommandBuffer();
+  final gpu.RenderPass renderPass = commandBuffer.createRenderPass(
+      colorAttachment: gpu.ColorAttachment(texture: renderTexture!));
+}

@@ -19,9 +19,11 @@ import 'dart:ui' as ui;
 
 export 'src/smoketest.dart';
 
-part 'src/formats.dart';
-part 'src/context.dart';
 part 'src/buffer.dart';
+part 'src/command_buffer.dart';
+part 'src/context.dart';
+part 'src/formats.dart';
 part 'src/texture.dart';
+part 'src/render_pass.dart';
 part 'src/shader.dart';
 part 'src/shader_library.dart';

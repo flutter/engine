@@ -162,5 +162,7 @@ DART_TEST_CASE(textureAsImageThrowsWhenNotShaderReadable);
 
 DART_TEST_CASE(canCreateShaderLibrary);
 
+DART_TEST_CASE(canCreateRenderPass);
+
 }  // namespace testing
 }  // namespace impeller
