@@ -28,9 +28,7 @@
 /// FlutterOverlay view contains the backing stores for the rest. The overlay
 /// views also handle touch propagation and the like for touches that occurs
 /// either on overlays or otherwise may be intercepted by the platform views.
-@interface FlutterOverlayView : UIView {
-  fml::CFRef<CGColorSpaceRef> colorSpaceRef;
-}
+@interface FlutterOverlayView : UIView
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 

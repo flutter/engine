@@ -20,7 +20,9 @@
 
 // This is mostly a duplication of FlutterView.
 // TODO(amirh): once GL support is in evaluate if we can merge this with FlutterView.
-@implementation FlutterOverlayView
+@implementation FlutterOverlayView {
+  fml::CFRef<CGColorSpaceRef> _colorSpaceRef;
+}
 
 - (instancetype)initWithFrame:(CGRect)frame {
   NSAssert(NO, @"FlutterOverlayView must init or initWithContentsScale");
@@ -58,8 +60,8 @@
 #pragma clang diagnostic pop
     layer.pixelFormat = pixelFormat;
     if (pixelFormat == MTLPixelFormatRGBA16Float) {
-      self->colorSpaceRef = fml::CFRef(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB));
-      layer.colorspace = self->colorSpaceRef;
+      self->_colorSpaceRef = fml::CFRef(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB));
+      layer.colorspace = self->_colorSpaceRef;
     }
   }
   return self;
