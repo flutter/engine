@@ -2517,6 +2517,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
 TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   Settings settings = CreateSettingsForFixture();
   std::unique_ptr<Shell> shell = CreateShell(settings);
+  int64_t view_id = kImplicitViewId;
 
   // 1. Construct a picture and a picture layer to be raster cached.
   sk_sp<DisplayList> display_list = MakeSizedDisplayList(10, 10);
@@ -2527,17 +2528,19 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
   // 2. Rasterize the picture and the picture layer in the raster cache.
   std::promise<bool> rasterized;
 
-  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      [&shell, &rasterized, &display_list, &display_list_layer] {
-        std::vector<RasterCacheItem*> raster_cache_items;
-        auto* compositor_context = shell->GetRasterizer()->compositor_context();
-        auto& raster_cache = compositor_context->raster_cache();
+  shell->GetTaskRunners().GetRasterTaskRunner()->PostTask([&shell, &rasterized,
+                                                           &display_list,
+                                                           &display_list_layer,
+                                                           view_id] {
+    std::vector<RasterCacheItem*> raster_cache_items;
+    auto* compositor_context = shell->GetRasterizer()->compositor_context();
+    auto& raster_cache = compositor_context->RasterCacheForView(view_id);
 
-        LayerStateStack state_stack;
-        FixedRefreshRateStopwatch raster_time;
-        FixedRefreshRateStopwatch ui_time;
-        PaintContext paint_context = {
-            // clang-format off
+    LayerStateStack state_stack;
+    FixedRefreshRateStopwatch raster_time;
+    FixedRefreshRateStopwatch ui_time;
+    PaintContext paint_context = {
+        // clang-format off
             .state_stack                   = state_stack,
             .canvas                        = nullptr,
             .gr_context                    = nullptr,

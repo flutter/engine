@@ -41,13 +41,12 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   }
 
   SkColorSpace* color_space = GetColorSpace(frame.canvas());
-  frame.context().raster_cache().SetCheckboardCacheImages(
+  frame.raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   LayerStateStack state_stack;
   state_stack.set_preroll_delegate(cull_rect,
                                    frame.root_surface_transformation());
-  RasterCache* cache =
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+  RasterCache* cache = ignore_raster_cache ? nullptr : &frame.raster_cache();
   raster_cache_items_.clear();
 
   PrerollContext context = {
@@ -125,8 +124,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
   }
 
   SkColorSpace* color_space = GetColorSpace(frame.canvas());
-  RasterCache* cache =
-      ignore_raster_cache ? nullptr : &frame.context().raster_cache();
+  RasterCache* cache = ignore_raster_cache ? nullptr : &frame.raster_cache();
   PaintContext context = {
       // clang-format off
       .state_stack                   = state_stack,

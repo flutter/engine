@@ -16,11 +16,15 @@
 
 namespace flutter {
 namespace testing {
+
+static constexpr int64_t kImplicitViewId = 0;
+
 class LayerTreeTest : public CanvasTest {
  public:
   LayerTreeTest()
       : root_transform_(SkMatrix::Translate(1.0f, 1.0f)),
-        scoped_frame_(compositor_context_.AcquireFrame(nullptr,
+        scoped_frame_(compositor_context_.AcquireFrame(kImplicitViewId,
+                                                       nullptr,
                                                        &mock_canvas(),
                                                        nullptr,
                                                        root_transform_,

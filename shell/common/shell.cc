@@ -1868,7 +1868,10 @@ bool Shell::OnServiceProtocolEstimateRasterCacheMemory(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
-  const auto& raster_cache = rasterizer_->compositor_context()->raster_cache();
+  // TODO(dkwingsmt): Estimate all raster caches here.
+  const auto& raster_cache =
+      rasterizer_->compositor_context()->RasterCacheForView(
+          kFlutterImplicitViewId);
   response->SetObject();
   response->AddMember("type", "EstimateRasterCacheMemory",
                       response->GetAllocator());

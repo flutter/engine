@@ -178,6 +178,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 
 void Rasterizer::CollectView(int64_t view_id) {
   view_records_.erase(view_id);
+  compositor_context_->CollectView(view_id);
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {
@@ -629,7 +630,8 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   }
   // TODO(dkwingsmt): Pass in raster cache(s) for all views.
   // See https://github.com/flutter/flutter/issues/135530, item 4.
-  frame_timings_recorder.RecordRasterEnd(&compositor_context_->raster_cache());
+  frame_timings_recorder.RecordRasterEnd(
+      &compositor_context_->RasterCacheForView(kFlutterImplicitViewId));
   FireNextFrameCallbackIfPresent();
 
   if (surface_->GetContext()) {
@@ -680,6 +682,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
   auto root_surface_canvas =
       embedder_root_canvas ? embedder_root_canvas : frame->Canvas();
   auto compositor_frame = compositor_context_->AcquireFrame(
+      view_id,                        // view ID
       surface_->GetContext(),         // skia GrContext
       root_surface_canvas,            // root surface canvas
       external_view_embedder_.get(),  // external view embedder
@@ -691,7 +694,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       surface_->GetAiksContext().get()  // aiks context
   );
   if (compositor_frame) {
-    compositor_context_->raster_cache().BeginFrame();
+    compositor_context_->RasterCacheForView(view_id).BeginFrame();
 
     std::unique_ptr<FrameDamage> damage;
     // when leaf layer tracing is enabled we wish to repaint the whole frame
@@ -753,7 +756,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
     // Do not update raster cache metrics for kResubmit because that status
     // indicates that the frame was not actually painted.
     if (frame_status != RasterStatus::kResubmit) {
-      compositor_context_->raster_cache().EndFrame();
+      compositor_context_->RasterCacheForView(view_id).EndFrame();
     }
 
     if (frame_status == RasterStatus::kResubmit) {
@@ -785,9 +788,9 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
-  auto frame = compositor_context.AcquireFrame(nullptr, &canvas, nullptr,
-                                               root_surface_transformation,
-                                               false, true, nullptr, nullptr);
+  auto frame = compositor_context.AcquireFrame(
+      view_id, nullptr, &canvas, nullptr, root_surface_transformation, false,
+      true, nullptr, nullptr);
   frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
@@ -806,6 +809,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 }
 
 sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
+    int64_t view_id,
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context,
     GrDirectContext* surface_context,
@@ -839,6 +843,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   }
 
   auto frame = compositor_context.AcquireFrame(
+      view_id,                      // view ID
       surface_context,              // skia context
       canvas,                       // canvas
       nullptr,                      // view embedder
@@ -862,8 +867,8 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   // when the shell protocol supports multi-views.
   // https://github.com/flutter/flutter/issues/135534
   // https://github.com/flutter/flutter/issues/135535
-  auto* layer_tree = GetLastLayerTree(kFlutterImplicitViewId);
-  if (layer_tree == nullptr) {
+  int64_t view_id = kFlutterImplicitViewId;
+  if (last_tree == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};
   }
@@ -877,17 +882,20 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   switch (type) {
     case ScreenshotType::SkiaPicture:
       format = "ScreenshotType::SkiaPicture";
-      data = ScreenshotLayerTreeAsPicture(layer_tree, *compositor_context_);
+      data = ScreenshotLayerTreeAsPicture(view_id, layer_tree,
+                                          *compositor_context_);
       break;
     case ScreenshotType::UncompressedImage:
       format = "ScreenshotType::UncompressedImage";
-      data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
-                                        surface_context, false);
+      data = ScreenshotLayerTreeAsImage(view_id, layer_tree,
+                                        *compositor_context_, surface_context,
+                                        false);
       break;
     case ScreenshotType::CompressedImage:
       format = "ScreenshotType::CompressedImage";
-      data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
-                                        surface_context, true);
+      data = ScreenshotLayerTreeAsImage(view_id, layer_tree,
+                                        *compositor_context_, surface_context,
+                                        true);
       break;
     case ScreenshotType::SurfaceData: {
       Surface::SurfaceData surface_data = surface_->GetSurfaceData();

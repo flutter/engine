@@ -73,6 +73,7 @@ void CompositorContext::EndFrame(ScopedFrame& frame,
 }
 
 std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
+    int64_t view_id,
     GrDirectContext* gr_context,
     DlCanvas* canvas,
     ExternalViewEmbedder* view_embedder,
@@ -83,15 +84,16 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
         raster_thread_merger,  // NOLINT(performance-unnecessary-value-param)
     impeller::AiksContext* aiks_context) {
   return std::make_unique<ScopedFrame>(
-      *this, gr_context, canvas, view_embedder, root_surface_transformation,
-      instrumentation_enabled, surface_supports_readback, raster_thread_merger,
-      aiks_context);
+      *this, gr_context, canvas, RasterCacheForView(view_id), view_embedder,
+      root_surface_transformation, instrumentation_enabled,
+      surface_supports_readback, raster_thread_merger, aiks_context);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
     CompositorContext& context,
     GrDirectContext* gr_context,
     DlCanvas* canvas,
+    RasterCache& raster_cache,
     ExternalViewEmbedder* view_embedder,
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
@@ -100,6 +102,7 @@ CompositorContext::ScopedFrame::ScopedFrame(
     impeller::AiksContext* aiks_context)
     : context_(context),
       gr_context_(gr_context),
+      raster_cache_(raster_cache),
       canvas_(canvas),
       aiks_context_(aiks_context),
       view_embedder_(view_embedder),
@@ -224,12 +227,25 @@ bool CompositorContext::ShouldPerformPartialRepaint(
 
 void CompositorContext::OnGrContextCreated() {
   texture_registry_->OnGrContextCreated();
-  raster_cache_.Clear();
+  raster_caches_.clear();
 }
 
 void CompositorContext::OnGrContextDestroyed() {
   texture_registry_->OnGrContextDestroyed();
-  raster_cache_.Clear();
+  raster_caches_.clear();
+}
+
+RasterCache& CompositorContext::RasterCacheForView(double view_id) {
+  auto found_iter = raster_caches_.find(view_id);
+  if (found_iter != raster_caches_.end()) {
+    return *found_iter->second;
+  }
+  auto new_iter = raster_caches_.emplace(view_id, new RasterCache()).first;
+  return *new_iter->second;
+}
+
+void CompositorContext::CollectView(double view_id) {
+  raster_caches_.erase(view_id);
 }
 
 }  // namespace flutter

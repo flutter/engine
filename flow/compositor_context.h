@@ -110,6 +110,7 @@ class CompositorContext {
     ScopedFrame(CompositorContext& context,
                 GrDirectContext* gr_context,
                 DlCanvas* canvas,
+                RasterCache& raster_cache,
                 ExternalViewEmbedder* view_embedder,
                 const SkMatrix& root_surface_transformation,
                 bool instrumentation_enabled,
@@ -124,6 +125,8 @@ class CompositorContext {
     ExternalViewEmbedder* view_embedder() { return view_embedder_; }
 
     CompositorContext& context() const { return context_; }
+
+    RasterCache& raster_cache() const { return raster_cache_; }
 
     const SkMatrix& root_surface_transformation() const {
       return root_surface_transformation_;
@@ -151,6 +154,7 @@ class CompositorContext {
 
     CompositorContext& context_;
     GrDirectContext* gr_context_;
+    RasterCache& raster_cache_;
     DlCanvas* canvas_;
     impeller::AiksContext* aiks_context_;
     ExternalViewEmbedder* view_embedder_;
@@ -169,6 +173,7 @@ class CompositorContext {
   virtual ~CompositorContext();
 
   virtual std::unique_ptr<ScopedFrame> AcquireFrame(
+      int64_t view_id,
       GrDirectContext* gr_context,
       DlCanvas* canvas,
       ExternalViewEmbedder* view_embedder,
@@ -182,7 +187,9 @@ class CompositorContext {
 
   void OnGrContextDestroyed();
 
-  RasterCache& raster_cache() { return raster_cache_; }
+  RasterCache& RasterCacheForView(double view_id);
+
+  void CollectView(double view_id);
 
   std::shared_ptr<TextureRegistry> texture_registry() {
     return texture_registry_;
@@ -195,7 +202,7 @@ class CompositorContext {
   LayerSnapshotStore& snapshot_store() { return layer_snapshot_store_; }
 
  private:
-  RasterCache raster_cache_;
+  std::unordered_map<int64_t, std::unique_ptr<RasterCache>> raster_caches_;
   std::shared_ptr<TextureRegistry> texture_registry_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
