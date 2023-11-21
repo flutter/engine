@@ -266,8 +266,7 @@ bool SurfaceMTL::Present() const {
     } else {
       // The drawable is not actual metal drawable so it can't be present
       // through the command buffer.
-
-      id drawable = drawable_;
+      id<CAMetalDrawable> drawable = drawable_;
       [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> buffer) {
         [drawable present];
       }];
