@@ -175,7 +175,7 @@ Future<void> testMain() async {
     final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
     expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
     expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
-  });
+  }, skip: domIntl.v8BreakIterator == null); // Intended: Intl.v8breakiterator is needed for correctly breaking grapheme clusters.
 
   test('Can disable rounding hack', () {
     if (!ParagraphBuilder.shouldDisableRoundingHack) {
