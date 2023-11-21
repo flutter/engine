@@ -169,7 +169,7 @@ void canCreateShaderLibrary() {
 }
 
 @pragma('vm:entry-point')
-void canCreateRenderPass() {
+void canCreateRenderPassAndSubmit() {
   final gpu.Texture? renderTexture =
       gpu.gpuContext.createTexture(gpu.StorageMode.devicePrivate, 100, 100);
   assert(renderTexture != null);
@@ -177,4 +177,6 @@ void canCreateRenderPass() {
   final gpu.CommandBuffer commandBuffer = gpu.gpuContext.createCommandBuffer();
   final gpu.RenderPass renderPass = commandBuffer.createRenderPass(
       colorAttachment: gpu.ColorAttachment(texture: renderTexture!));
+
+  commandBuffer.submit();
 }

@@ -42,7 +42,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   /// Creates a new RenderPass.
   RenderPass._(CommandBuffer commandBuffer, ColorAttachment colorAttachment,
       StencilAttachment? stencilAttachment) {
-    _initialize(commandBuffer);
+    _initialize();
     String? error;
     error = _setColorAttachment(
         colorAttachment.loadAction.index,
@@ -63,16 +63,18 @@ base class RenderPass extends NativeFieldWrapperClass1 {
         throw Exception(error);
       }
     }
-    error = _begin();
+    error = _begin(commandBuffer);
     if (error != null) {
       throw Exception(error);
     }
   }
 
+
+
   /// Wrap with native counterpart.
-  @Native<Void Function(Handle, Pointer<Void>)>(
+  @Native<Void Function(Handle)>(
       symbol: 'InternalFlutterGpu_RenderPass_Initialize')
-  external void _initialize(CommandBuffer commandBuffer);
+  external void _initialize();
 
   @Native<Handle Function(Pointer<Void>, Int, Int, Int, Pointer<Void>, Handle)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetColorAttachment')
@@ -84,7 +86,7 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   external String? _setStencilAttachment(
       int loadAction, int storeAction, int clearStencil, Texture texture);
 
-  @Native<Handle Function(Pointer<Void>)>(
+  @Native<Handle Function(Pointer<Void>, Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Begin')
-  external String? _begin();
+  external String? _begin(CommandBuffer commandBuffer);
 }

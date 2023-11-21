@@ -21,17 +21,16 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
   FML_FRIEND_MAKE_REF_COUNTED(RenderPass);
 
  public:
-  explicit RenderPass(std::weak_ptr<impeller::CommandBuffer> command_buffer);
+  RenderPass();
 
   impeller::Command& GetCommand();
   impeller::RenderTarget& GetRenderTarget();
 
-  bool Begin();
+  bool Begin(flutter::gpu::CommandBuffer& command_buffer);
 
   ~RenderPass() override;
 
  private:
-  std::weak_ptr<impeller::CommandBuffer> command_buffer_;
   impeller::RenderTarget render_target_;
   impeller::Command command_;
   std::shared_ptr<impeller::RenderPass> render_pass_;
@@ -49,9 +48,7 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 extern "C" {
 
 FLUTTER_GPU_EXPORT
-extern void InternalFlutterGpu_RenderPass_Initialize(
-    Dart_Handle wrapper,
-    flutter::gpu::CommandBuffer* command_buffer_wrapper);
+extern void InternalFlutterGpu_RenderPass_Initialize(Dart_Handle wrapper);
 
 FLUTTER_GPU_EXPORT
 extern Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
@@ -72,6 +69,7 @@ extern Dart_Handle InternalFlutterGpu_RenderPass_SetStencilAttachment(
 
 FLUTTER_GPU_EXPORT
 extern Dart_Handle InternalFlutterGpu_RenderPass_Begin(
-    flutter::gpu::RenderPass* wrapper);
+    flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::CommandBuffer* command_buffer);
 
 }  // extern "C"

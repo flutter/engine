@@ -14,8 +14,7 @@ namespace gpu {
 
 IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, RenderPass);
 
-RenderPass::RenderPass(std::weak_ptr<impeller::CommandBuffer> command_buffer)
-    : command_buffer_(std::move(command_buffer)) {}
+RenderPass::RenderPass() = default;
 
 impeller::Command& RenderPass::GetCommand() {
   return command_;
@@ -25,13 +24,14 @@ impeller::RenderTarget& RenderPass::GetRenderTarget() {
   return render_target_;
 }
 
-bool RenderPass::Begin() {
-  auto buffer = command_buffer_.lock();
-  if (!buffer) {
+bool RenderPass::Begin(flutter::gpu::CommandBuffer& command_buffer) {
+  render_pass_ =
+      command_buffer.GetCommandBuffer()->CreateRenderPass(render_target_);
+  if (!render_pass_) {
     return false;
   }
-  render_pass_ = buffer->CreateRenderPass(render_target_);
-  return !!render_pass_;
+  command_buffer.AddRenderPass(render_pass_);
+  return true;
 }
 
 RenderPass::~RenderPass() = default;
@@ -50,11 +50,8 @@ static impeller::Color ToImpellerColor(uint32_t argb) {
 /// Exports
 ///
 
-void InternalFlutterGpu_RenderPass_Initialize(
-    Dart_Handle wrapper,
-    flutter::gpu::CommandBuffer* command_buffer_wrapper) {
-  auto res = fml::MakeRefCounted<flutter::gpu::RenderPass>(
-      command_buffer_wrapper->GetCommandBuffer());
+void InternalFlutterGpu_RenderPass_Initialize(Dart_Handle wrapper) {
+  auto res = fml::MakeRefCounted<flutter::gpu::RenderPass>();
   res->AssociateWithDartWrapper(wrapper);
 }
 
@@ -96,8 +93,9 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetStencilAttachment(
 }
 
 Dart_Handle InternalFlutterGpu_RenderPass_Begin(
-    flutter::gpu::RenderPass* wrapper) {
-  if (!wrapper->Begin()) {
+    flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::CommandBuffer* command_buffer) {
+  if (!wrapper->Begin(*command_buffer)) {
     return tonic::ToDart("Failed to begin RenderPass");
   }
   return Dart_Null();

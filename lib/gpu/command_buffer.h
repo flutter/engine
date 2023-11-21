@@ -7,9 +7,7 @@
 #include "flutter/lib/gpu/context.h"
 #include "flutter/lib/gpu/export.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "impeller/core/formats.h"
 #include "impeller/renderer/command_buffer.h"
-#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 namespace gpu {
@@ -24,10 +22,17 @@ class CommandBuffer : public RefCountedDartWrappable<CommandBuffer> {
 
   std::shared_ptr<impeller::CommandBuffer> GetCommandBuffer();
 
+  void AddRenderPass(std::shared_ptr<impeller::RenderPass> render_pass);
+
+  bool Submit();
+  bool Submit(
+      const impeller::CommandBuffer::CompletionCallback& completion_callback);
+
   ~CommandBuffer() override;
 
  private:
   std::shared_ptr<impeller::CommandBuffer> command_buffer_;
+  std::vector<std::shared_ptr<impeller::RenderPass>> encodables_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBuffer);
 };
@@ -45,5 +50,10 @@ FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_CommandBuffer_Initialize(
     Dart_Handle wrapper,
     flutter::gpu::Context* contextWrapper);
+
+FLUTTER_GPU_EXPORT
+extern Dart_Handle InternalFlutterGpu_CommandBuffer_Submit(
+    flutter::gpu::CommandBuffer* wrapper,
+    Dart_Handle completion_callback);
 
 }  // extern "C"
