@@ -264,12 +264,14 @@ bool SurfaceMTL::Present() const {
       [command_buffer waitUntilScheduled];
       [drawable_ present];
     } else {
-      [command_buffer commit];
-
       // The drawable is not actual metal drawable so it can't be present
       // through the command buffer.
-      [command_buffer waitUntilScheduled];
-      [drawable_ present];
+
+      id drawable = drawable_;
+      [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> buffer) {
+        [drawable present];
+      }];
+      [command_buffer commit];
     }
   }
 
