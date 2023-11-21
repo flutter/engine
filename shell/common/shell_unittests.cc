@@ -2550,11 +2550,11 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
-            // clang-format on
-        };
+        // clang-format on
+    };
 
-        PrerollContext preroll_context = {
-            // clang-format off
+    PrerollContext preroll_context = {
+        // clang-format off
             .raster_cache                  = &raster_cache,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
@@ -2567,42 +2567,38 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .has_platform_view             = false,
             .has_texture_layer             = false,
             .raster_cached_entries         = &raster_cache_items,
-            // clang-format on
-        };
+        // clang-format on
+    };
 
-        // 2.1. Rasterize the picture. Call Draw multiple times to pass the
-        // access threshold (default to 3) so a cache can be generated.
-        MockCanvas dummy_canvas;
-        DlPaint paint;
-        bool picture_cache_generated;
-        DisplayListRasterCacheItem display_list_raster_cache_item(
-            display_list, SkPoint(), true, false);
-        for (int i = 0; i < 4; i += 1) {
-          SkMatrix matrix = SkMatrix::I();
-          state_stack.set_preroll_delegate(matrix);
-          display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
-          display_list_raster_cache_item.PrerollFinalize(&preroll_context,
-                                                         matrix);
-          picture_cache_generated =
-              display_list_raster_cache_item.need_caching();
-          state_stack.set_delegate(&dummy_canvas);
-          display_list_raster_cache_item.TryToPrepareRasterCache(paint_context);
-          display_list_raster_cache_item.Draw(paint_context, &dummy_canvas,
-                                              &paint);
-        }
-        ASSERT_TRUE(picture_cache_generated);
+    // 2.1. Rasterize the picture. Call Draw multiple times to pass the
+    // access threshold (default to 3) so a cache can be generated.
+    MockCanvas dummy_canvas;
+    DlPaint paint;
+    bool picture_cache_generated;
+    DisplayListRasterCacheItem display_list_raster_cache_item(
+        display_list, SkPoint(), true, false);
+    for (int i = 0; i < 4; i += 1) {
+      SkMatrix matrix = SkMatrix::I();
+      state_stack.set_preroll_delegate(matrix);
+      display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
+      display_list_raster_cache_item.PrerollFinalize(&preroll_context, matrix);
+      picture_cache_generated = display_list_raster_cache_item.need_caching();
+      state_stack.set_delegate(&dummy_canvas);
+      display_list_raster_cache_item.TryToPrepareRasterCache(paint_context);
+      display_list_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
+    }
+    ASSERT_TRUE(picture_cache_generated);
 
-        // 2.2. Rasterize the picture layer.
-        LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
-        state_stack.set_preroll_delegate(SkMatrix::I());
-        layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
-        layer_raster_cache_item.PrerollFinalize(&preroll_context,
-                                                SkMatrix::I());
-        state_stack.set_delegate(&dummy_canvas);
-        layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
-        layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
-        rasterized.set_value(true);
-      });
+    // 2.2. Rasterize the picture layer.
+    LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
+    state_stack.set_preroll_delegate(SkMatrix::I());
+    layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
+    layer_raster_cache_item.PrerollFinalize(&preroll_context, SkMatrix::I());
+    state_stack.set_delegate(&dummy_canvas);
+    layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
+    layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
+    rasterized.set_value(true);
+  });
   rasterized.get_future().wait();
 
   // 3. Call the service protocol and check its output.

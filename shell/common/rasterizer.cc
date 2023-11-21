@@ -775,6 +775,7 @@ Rasterizer::ViewRecord& Rasterizer::EnsureViewRecord(int64_t view_id) {
 }
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
+    int64_t view_id,
     flutter::LayerTree* tree,
     flutter::CompositorContext& compositor_context) {
   FML_DCHECK(tree != nullptr);
@@ -868,7 +869,8 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   // https://github.com/flutter/flutter/issues/135534
   // https://github.com/flutter/flutter/issues/135535
   int64_t view_id = kFlutterImplicitViewId;
-  if (last_tree == nullptr) {
+  auto* layer_tree = GetLastLayerTree(view_id);
+  if (layer_tree == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};
   }
@@ -887,15 +889,13 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
       break;
     case ScreenshotType::UncompressedImage:
       format = "ScreenshotType::UncompressedImage";
-      data = ScreenshotLayerTreeAsImage(view_id, layer_tree,
-                                        *compositor_context_, surface_context,
-                                        false);
+      data = ScreenshotLayerTreeAsImage(
+          view_id, layer_tree, *compositor_context_, surface_context, false);
       break;
     case ScreenshotType::CompressedImage:
       format = "ScreenshotType::CompressedImage";
-      data = ScreenshotLayerTreeAsImage(view_id, layer_tree,
-                                        *compositor_context_, surface_context,
-                                        true);
+      data = ScreenshotLayerTreeAsImage(
+          view_id, layer_tree, *compositor_context_, surface_context, true);
       break;
     case ScreenshotType::SurfaceData: {
       Surface::SurfaceData surface_data = surface_->GetSurfaceData();
