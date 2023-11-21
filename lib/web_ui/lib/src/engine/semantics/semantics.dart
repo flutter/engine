@@ -2216,9 +2216,40 @@ class EngineSemanticsOwner {
     return object;
   }
 
+  // Checks the consistency of the semantics node tree against the {ID: node}
+  // map. The two must be in total agreement. Every node in the map must be
+  // somewhere in the tree.
+  (bool, String) _computeNodeMapConsistencyMessage() {
+    final Map<int, List<int>> liveIds = <int, List<int>>{};
+
+    final SemanticsObject? root = _semanticsTree[0];
+    if (root != null) {
+      root.visitDepthFirst((SemanticsObject child) {
+        liveIds[child.id] = child._childrenInTraversalOrder?.toList() ?? const <int>[];
+      });
+    }
+
+    final bool isConsistent = _semanticsTree.keys.every(liveIds.keys.contains);
+    final String heading = 'The semantics node map is ${isConsistent ? 'consistent' : 'inconsistent'}';
+    final StringBuffer message = StringBuffer('$heading:\n');
+    message.writeln('  Nodes in tree:');
+    for (final MapEntry<int, List<int>> entry in liveIds.entries) {
+      message.writeln('    ${entry.key}: ${entry.value}');
+    }
+    message.writeln('  Nodes in map: [${_semanticsTree.keys.join(', ')}]');
+
+    return (isConsistent, message.toString());
+  }
+
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
     EngineSemantics.instance.willUpdateSemantics();
+
+    (bool, String)? preUpdateNodeMapConsistency;
+    assert(() {
+      preUpdateNodeMapConsistency = _computeNodeMapConsistencyMessage();
+      return true;
+    }());
 
     _phase = SemanticsUpdatePhase.updating;
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
@@ -2252,16 +2283,19 @@ class EngineSemanticsOwner {
       // Validate that the node map only contains live elements, i.e. descendants
       // of the root node. If a node is not reachable from the root, it should
       // have been removed from the map.
-      final List<int> liveIds = <int>[];
-      root.visitDepthFirst((SemanticsObject child) {
-        liveIds.add(child.id);
-      });
-      assert(
-        _semanticsTree.keys.every(liveIds.contains),
-        'The semantics node map is inconsistent:\n'
-        '  Nodes in tree: [${liveIds.join(', ')}]\n'
-        '  Nodes in map : [${_semanticsTree.keys.join(', ')}]'
-      );
+      final (bool isConsistent, String description) = _computeNodeMapConsistencyMessage();
+      if (!isConsistent) {
+        // Use StateError because AssertionError escapes line breaks, but this
+        // error message is very detailed and it needs line breaks for
+        // legibility.
+        throw StateError('''
+Semantics node map was inconsistent after update:
+
+BEFORE: ${preUpdateNodeMapConsistency?.$2}
+
+AFTER: $description
+''');
+      }
 
       // Validate that each node in the final tree is self-consistent.
       _semanticsTree.forEach((int? id, SemanticsObject object) {
