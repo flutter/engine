@@ -64,8 +64,7 @@
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
 #include "impeller/entity/gaussian_blur.vert.h"
-#include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
-#include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/gaussian_blur.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -130,12 +129,9 @@ using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
-using GaussianBlurDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurNoalphaDecalFragmentShader>;
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurNoalphaNodecalFragmentShader>;
+                    GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -422,14 +418,9 @@ class ContentContext {
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurDecalPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_noalpha_decal_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
+    return GetPipeline(gaussian_blur_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
@@ -785,10 +776,8 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
-  mutable Variants<GaussianBlurDecalPipeline>
-      gaussian_blur_noalpha_decal_pipelines_;
   mutable Variants<GaussianBlurPipeline>
-      gaussian_blur_noalpha_nodecal_pipelines_;
+      gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>

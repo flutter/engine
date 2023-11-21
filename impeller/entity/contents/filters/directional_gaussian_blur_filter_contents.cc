@@ -225,15 +225,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     input_descriptor.mag_filter = MinMagFilter::kLinear;
     input_descriptor.min_filter = MinMagFilter::kLinear;
 
-    bool has_decal_specialization =
-        tile_mode_ == Entity::TileMode::kDecal &&
-        !renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
-
-    if (has_decal_specialization) {
-      cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
-    } else {
-      cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-    }
+    cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
 
     FS::BindTextureSampler(
         cmd, input_snapshot->texture,

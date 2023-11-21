@@ -317,12 +317,11 @@ ContentContext::ContentContext(
   texture_pipelines_.CreateDefault(*context_, options);
   position_uv_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options);
-  gaussian_blur_noalpha_decal_pipelines_.CreateDefault(*context_,
-                                                       options_trianglestrip);
-  gaussian_blur_noalpha_nodecal_pipelines_.CreateDefault(*context_,
-                                                         options_trianglestrip);
+  gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                         {supports_decal});
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                             {supports_decal});
   color_matrix_color_filter_pipelines_.CreateDefault(*context_,
                                                      options_trianglestrip);
   linear_to_srgb_filter_pipelines_.CreateDefault(*context_,

@@ -8,6 +8,8 @@ precision mediump float;
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 
+layout(constant_id = 0) const int supports_decal = 1;
+
 // These values must correspond to the order of the items in the
 // 'FilterContents::MorphType' enum class.
 const float16_t kMorphTypeDilate = 0.0hf;
@@ -19,7 +21,6 @@ uniform FragInfo {
   f16vec2 uv_offset;
   float16_t radius;
   float16_t morph_type;
-  float supports_decal_sampler_address_mode;
 }
 frag_info;
 
@@ -34,15 +35,11 @@ void main() {
     vec2 texture_coords = v_texture_coords + frag_info.uv_offset * i;
 
     f16vec4 color;
-#ifdef IMPELLER_TARGET_OPENGLES
-    if (frag_info.supports_decal_sampler_address_mode > 0.0) {
+    if (supports_decal == 1) {
       color = texture(texture_sampler, texture_coords);
     } else {
       color = IPHalfSampleDecal(texture_sampler, texture_coords);
     }
-#else
-    color = texture(texture_sampler, texture_coords);
-#endif
 
     if (frag_info.morph_type == kMorphTypeDilate) {
       result = max(color, result);
