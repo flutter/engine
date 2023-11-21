@@ -21,7 +21,7 @@ class ClipContents final : public Contents {
 
   ~ClipContents();
 
-  void SetGeometry(std::unique_ptr<Geometry> geometry);
+  void SetGeometry(const std::shared_ptr<Geometry>& geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
@@ -48,7 +48,7 @@ class ClipContents final : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
  private:
-  std::unique_ptr<Geometry> geometry_;
+  std::shared_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
   ClipContents(const ClipContents&) = delete;
@@ -65,7 +65,7 @@ class ClipRestoreContents final : public Contents {
   /// @brief  The area on the pass texture where this clip restore will be
   ///         applied. If unset, the entire pass texture will be restored.
   ///
-  /// @note   This rectangle is not transformed by the entity's transformation.
+  /// @note   This rectangle is not transformed by the entity's transform.
   void SetRestoreCoverage(std::optional<Rect> coverage);
 
   // |Contents|
