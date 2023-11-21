@@ -45,7 +45,7 @@ BENCHMARK_F(DartNativeBenchmarks, TimeToFirstNativeMessageFromIsolateInNewVM)
 
     ThreadHost thread_host("io.flutter.test.DartNativeBenchmarks.",
                            ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
-                               ThreadHost::Type::UI);
+                               ThreadHost::Type::kUi);
     TaskRunners task_runners(
         "test",
         thread_host.platform_thread->GetTaskRunner(),  // platform
@@ -82,7 +82,7 @@ BENCHMARK_F(DartNativeBenchmarks, MultipleDartToNativeMessages)
 
     ThreadHost thread_host("io.flutter.test.DartNativeBenchmarks.",
                            ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
-                               ThreadHost::Type::UI);
+                               ThreadHost::Type::kUi);
     TaskRunners task_runners(
         "test",
         thread_host.platform_thread->GetTaskRunner(),  // platform

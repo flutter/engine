@@ -793,7 +793,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::kRaster |
+  uint32_t threadHostType = flutter::ThreadHost::Type::kUi | flutter::ThreadHost::Type::kRaster |
                             flutter::ThreadHost::Type::kIo;
 
   if ([FlutterEngine isProfilerEnabled]) {
@@ -805,7 +805,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   host_config.ui_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::UI, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
                                 fml::Thread::ThreadPriority::kDisplay);
 
   host_config.raster_config =

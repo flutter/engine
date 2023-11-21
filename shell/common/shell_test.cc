@@ -58,7 +58,7 @@ FrameContent ViewContent::ImplicitView(double width,
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
-                       ThreadHost::Type::UI | ThreadHost::Type::kRaster) {}
+                       ThreadHost::Type::kUi | ThreadHost::Type::kRaster) {}
 
 void ShellTest::SendPlatformMessage(Shell* shell,
                                     std::unique_ptr<PlatformMessage> message) {

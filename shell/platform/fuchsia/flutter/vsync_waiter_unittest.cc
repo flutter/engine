@@ -26,7 +26,7 @@ TEST(VSyncWaiterFuchsia, FrameScheduledForStartTime) {
 
   ThreadHost thread_host =
       ThreadHost(prefix, flutter::ThreadHost::Type::kRaster |
-                             flutter::ThreadHost::Type::UI |
+                             flutter::ThreadHost::Type::kUi |
                              flutter::ThreadHost::Type::kIo);
   const flutter::TaskRunners task_runners(
       prefix,                                      // Dart thread labels
