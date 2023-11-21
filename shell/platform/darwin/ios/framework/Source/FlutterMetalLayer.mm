@@ -211,6 +211,20 @@ extern CFTimeInterval display_link_target;
                                                                    surface:surface];
       return drawable;
     } else {
+      // Make sure raster thread doesn't have too many drawables in flight.
+      if (_availableDrawables.count == 0) {
+        CFTimeInterval start = CACurrentMediaTime();
+        while (_availableDrawables.count == 0 && CACurrentMediaTime() - start < 0.1) {
+          usleep(100);
+        }
+        CFTimeInterval elapsed = CACurrentMediaTime() - start;
+        if (_availableDrawables.count == 0) {
+          NSLog(@"Waited %f seconds for a drawable, giving up.", elapsed);
+          return nil;
+        } else {
+          NSLog(@"Had to wait %f seconds for a drawable", elapsed);
+        }
+      }
       // Return first drawable that is not in use or the one that was presented
       // the longest time ago.
       FlutterDrawable* res = nil;
@@ -223,10 +237,7 @@ extern CFTimeInterval display_link_target;
           res = drawable;
         }
       }
-      if (res != nil) {
-        [_availableDrawables removeObject:res];
-      }
-      return res;
+      [_availableDrawables removeObject:res];
     }
   }
 }
