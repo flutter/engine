@@ -135,8 +135,7 @@ extern CFTimeInterval display_link_target;
 
 - (void)didEnterBackground:(id)notification {
   [_availableDrawables removeAllObjects];
-  _totalDrawables = 0;
-  self.contents = nil;
+  _totalDrawables = _front != nil ? 1 : 0;
   _displayLink.paused = YES;
 }
 
