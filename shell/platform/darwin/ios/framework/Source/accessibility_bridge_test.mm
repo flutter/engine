@@ -1411,7 +1411,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     NSDictionary<NSString*, id>* annotatedEvent = @{@"type" : @"didGainFocus", @"nodeId" : @123};
     NSData* encodedMessage = [[FlutterJSONMessageCodec sharedInstance] encode:annotatedEvent];
 
-    OCMVerify([mockMessenger sendOnChannel:@"flutter/accessibility" message:encodedMessage]);
+    OCMVerify([messenger sendOnChannel:@"flutter/accessibility" message:encodedMessage]);
     latch.Signal();
   });
   latch.Wait();
