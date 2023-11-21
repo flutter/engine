@@ -155,6 +155,28 @@ Future<void> testMain() async {
     expect(bottomRight?.writingDirection, TextDirection.ltr);
   });
 
+  test('Glyph metrics with grapheme split into different runs', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      maxLines: 1,
+    ))..addText('A') // The base charater A.
+      ..addText('̀'); // The diacritical grave accent, which should combine with the base character to form a single grapheme.
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
+    expect(paragraph.getGlyphInfoAt(1)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
+    expect(paragraph.getGlyphInfoAt(1)?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
+
+    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
+    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
+  });
+
   test('Can disable rounding hack', () {
     if (!ParagraphBuilder.shouldDisableRoundingHack) {
       ParagraphBuilder.setDisableRoundingHack(true);

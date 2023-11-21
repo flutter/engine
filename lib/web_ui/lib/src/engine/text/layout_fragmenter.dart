@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_interop';
 import 'dart:math' as math;
 
-import 'package:ui/src/engine/dom.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
@@ -116,7 +114,7 @@ abstract class _CombinedFragment extends TextFragment {
 
   final LineBreakType type;
 
-  ui.TextDirection? get textDirection => _textDirection;
+  ui.TextDirection get textDirection => _textDirection!;
   ui.TextDirection? _textDirection;
 
   final FragmentFlow fragmentFlow;
@@ -207,7 +205,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         start,
         index,
         LineBreakType.prohibited,
-        textDirection,
+        _textDirection,
         fragmentFlow,
         span,
         trailingNewlines: trailingNewlines - secondTrailingNewlines,
@@ -217,7 +215,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         index,
         end,
         type,
-        textDirection,
+        _textDirection,
         fragmentFlow,
         span,
         trailingNewlines: secondTrailingNewlines,
@@ -367,7 +365,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     top,
     line.left + right,
     bottom,
-    textDirection!,
+    textDirection,
   );
 
   /// Whether or not the trailing spaces of this fragment are part of trailing
@@ -384,20 +382,20 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   ui.TextBox toPaintingTextBox() {
     if (_isPartOfTrailingSpacesInLine) {
       // For painting, we exclude the width of trailing spaces from the box.
-      return textDirection! == ui.TextDirection.ltr
+      return textDirection == ui.TextDirection.ltr
           ? ui.TextBox.fromLTRBD(
               line.left + left,
               top,
               line.left + right - widthOfTrailingSpaces,
               bottom,
-              textDirection!,
+              textDirection,
             )
           : ui.TextBox.fromLTRBD(
               line.left + left + widthOfTrailingSpaces,
               top,
               line.left + right,
               bottom,
-              textDirection!,
+              textDirection,
             );
     }
     return _textBoxIncludingTrailingSpaces;
@@ -449,7 +447,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     }
 
     final double left, right;
-    if (textDirection! == ui.TextDirection.ltr) {
+    if (textDirection == ui.TextDirection.ltr) {
       // Example: let's say the text is "Loremipsum" and we want to get the box
       // for "rem". In this case, `before` is the width of "Lo", and `after`
       // is the width of "ipsum".
@@ -490,7 +488,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
       top,
       line.left + right,
       bottom,
-      textDirection!,
+      textDirection,
     );
   }
 
@@ -594,57 +592,49 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return x;
   }
 
-  // This is the fallback graphme breaker that is only used if Intl.Segmenter()
-  // is not supported so _fromDomSegmenter can't be called. This implementation
-  // breaks the text into UTF-16 codepoints instead of graphme clusters.
-  List<int> _fallbackGraphemeStartIterable(String fragmentText) {
-    final List<int> graphemeStarts = <int>[];
-    bool precededByHighSurrogate = false;
-    for (int i = 0; i < fragmentText.length; i++) {
-      final int maskedCodeUnit = fragmentText.codeUnitAt(i) & 0xFC00;
-      // Only skip `i` if it points to a low surrogate in a valid surrogate pair.
-      if (maskedCodeUnit != 0xDC00 || !precededByHighSurrogate) {
-        graphemeStarts.add(start + i);
-      }
-      precededByHighSurrogate = maskedCodeUnit == 0xD800;
+  // [start, end).map((index) => line.graphemeStarts[index]) gives an ascending
+  // list of UTF16 offsets of graphemes that start in this fragment.
+  //
+  // Returns null if this fragment contains no grapheme starts.
+  late final (int, int)? graphemeStartIndexRange = _getBreaksRange();
+  (int, int)? _getBreaksRange() {
+    if (end == start) {
+      return null;
     }
-    return graphemeStarts;
+    final List<int> lineGraphemeBreaks = line.graphemeStarts;
+    assert(end > start);
+    assert(line.graphemeStarts.isNotEmpty);
+    final int startIndex = line.graphemeStartIndexBefore(start, 0, lineGraphemeBreaks.length);
+    final int endIndex = end == start + 1
+      ? startIndex + 1
+      : line.graphemeStartIndexBefore(end - 1, startIndex, lineGraphemeBreaks.length) + 1;
+    final int firstGraphemeStart = lineGraphemeBreaks[startIndex];
+    return firstGraphemeStart > start
+      ? (endIndex == startIndex + 1 ? null : (startIndex + 1, endIndex))
+      : (startIndex, endIndex);
   }
 
-  // This will be called at most once to lazily populate _graphemeStarts.
-  List<int> _fromDomSegmenter(String fragmentText) {
-    final DomSegmenter domSegmenter = DomSegmenter(
-      <JSAny?>[].toJS,
-      <String, String>{'granularity':  'grapheme'}.toJSAnyDeep,
-    );
-    final List<int> graphemeStarts = <int>[];
-    final Iterator<DomSegment> segments = domSegmenter.segment(fragmentText).iterator();
-    while (segments.moveNext()) {
-      graphemeStarts.add(segments.current.index + start);
-    }
-    assert(graphemeStarts.isEmpty || graphemeStarts.first == start);
-    return graphemeStarts;
+  /// Whether the first codepoints of this fragment is not a valid grapheme start,
+  /// and belongs in the the previous fragment.
+  ///
+  /// This is the result of a known bug: in rare circumstances, a grapheme is
+  /// split into different fragments. To workaround this we ignore the trailing
+  /// part of the grapheme during hit-testing, by adjusting the leading offset of
+  /// a fragment to the leading edge of the first grapheme start in that fragment.
+  //
+  // TODO(LongCatIsLooong): Grapheme clusters should not be separately even
+  // when they are in different runs. Also document the recommendation to use
+  // U+25CC or U+00A0 for showing nonspacing marks in isolation.
+  bool get hasLeadingBrokenGrapheme {
+    final int? graphemeStartIndexRangeStart = graphemeStartIndexRange?.$1;
+    return graphemeStartIndexRangeStart == null || line.graphemeStarts[graphemeStartIndexRangeStart] != start;
   }
 
-  // This List contains an ascending sequence of UTF16 offsets that points to
-  // grapheme starts within the fragment. Each UTF16 offset is relative to the
-  // start of the paragraph, instead of the start of the fragment.
-  late final List<int> _graphemeStarts = _breakFragmentText(
-    _spanometer.paragraph.plainText.substring(start, end),
-  );
-  List<int> _breakFragmentText(String text) {
-    final List<int> graphemeStarts = domIntl.Segmenter == null ? _fallbackGraphemeStartIterable(text) : _fromDomSegmenter(text);
-    // Add the end index of the fragment to the list if the text is not empty.
-    if (graphemeStarts.isNotEmpty) {
-      graphemeStarts.add(end);
-    }
-    return graphemeStarts;
-  }
-
-  // Returns the GlyphInfo within the range [_graphemeStarts[startIndex], _graphemeStarts[endIndex]),
-  // that's visually closeset to the given horizontal offset `x` (in the paragraph's coordinates).
+  /// Returns the GlyphInfo within the range [line.graphemeStarts[startIndex], line.graphemeStarts[endIndex]),
+  /// that's visually closeset to the given horizontal offset `x` (in the paragraph's coordinates).
   ui.GlyphInfo _getClosestCharacterInRange(double x, int startIndex, int endIndex) {
-    final ui.TextRange fullRange = ui.TextRange(start: _graphemeStarts[startIndex], end: _graphemeStarts[endIndex]);
+    final List<int> graphemeStartIndices = line.graphemeStarts;
+    final ui.TextRange fullRange = ui.TextRange(start: graphemeStartIndices[startIndex], end: graphemeStartIndices[endIndex]);
     final ui.TextBox fullBox = toTextBox(start: fullRange.start, end: fullRange.end);
     if (startIndex + 1 == endIndex) {
       return ui.GlyphInfo(fullBox.toRect(), fullRange, fullBox.direction);
@@ -678,12 +668,12 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     // there can only be one writing direction in the fragment.
     final ui.TextRange range = switch ((fullBox.direction, x <= left)) {
       (ui.TextDirection.ltr, true) || (ui.TextDirection.rtl, false) => ui.TextRange(
-        start: _graphemeStarts[startIndex],
-        end: _graphemeStarts[startIndex + 1],
+        start: graphemeStartIndices[startIndex],
+        end: graphemeStartIndices[startIndex + 1],
       ),
       (ui.TextDirection.ltr, false) || (ui.TextDirection.rtl, true) => ui.TextRange(
-        start: _graphemeStarts[endIndex - 1],
-        end: _graphemeStarts[endIndex],
+        start: graphemeStartIndices[endIndex - 1],
+        end: graphemeStartIndices[endIndex],
       ),
     };
     assert(!range.isCollapsed);
@@ -691,40 +681,16 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     return ui.GlyphInfo(box.toRect(), range, box.direction);
   }
 
-  /// Returns the UTF-16 range of the character that encloses the code unit at
-  /// the given offset.
-  ui.TextRange? getCharacterRangeAt(int codeUnitOffset) {
-    if (end == start) {
-      return null;
-    }
-    final List<int> graphemeStarts = _graphemeStarts;
-    assert(graphemeStarts.length >= 2);
-
-    int previousStart = graphemeStarts.first;
-    if (previousStart > codeUnitOffset) {
-      return null;
-    }
-    for (int i = 1; i < graphemeStarts.length; i += 1) {
-      final int newStart = graphemeStarts[i];
-      if (newStart > codeUnitOffset) {
-        return ui.TextRange(start: previousStart, end: newStart);
-      }
-      previousStart = newStart;
-    }
-    return null;
-  }
-
   /// Returns the GlyphInfo of the character in the fragment that is closest to
   /// the given offset x.
-  ui.GlyphInfo? getClosestCharacterBox(double x) {
-    if (end == start) {
-      return null;
-    }
-    if (end - start == 1 || _graphemeStarts.length <= 2) {
-      final ui.TextBox box = toTextBox(start: start, end: end);
-      return ui.GlyphInfo(box.toRect(), ui.TextRange(start: start, end: end), box.direction);
-    }
-    return _getClosestCharacterInRange(x, 0, _graphemeStarts.length - 1);
+  ui.GlyphInfo getClosestCharacterBox(double x) {
+    assert(end > start);
+    assert(graphemeStartIndexRange != null);
+    // The force ! is safe here because this method is only called by
+    // LayoutService.getClosestGlyphInfo which checks this fragment has at least
+    // one grapheme start before calling this method.
+    final (int rangeStart, int rangeEnd) = graphemeStartIndexRange!;
+    return _getClosestCharacterInRange(x, rangeStart, rangeEnd);
   }
 }
 
