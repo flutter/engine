@@ -1364,7 +1364,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                  UIAccessibilityLayoutChangedNotification);
 }
 
-
 - (void)testAccessibilityObjectDidBecomeFocused {
   flutter::MockDelegate mock_delegate;
   auto thread = std::make_unique<fml::Thread>("AccessibilityBridgeTest");
@@ -1406,14 +1405,13 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     XCTAssertTrue(bridge.get());
     OCMVerify([messenger setMessageHandlerOnChannel:@"flutter/accessibility"
                                binaryMessageHandler:[OCMArg isNotNil]]);
-    
+
     bridge->AccessibilityObjectDidBecomeFocused(123);
 
     NSDictionary<NSString*, id>* annotatedEvent = @{@"type" : @"didGainFocus", @"nodeId" : @123};
     NSData* encodedMessage = [[FlutterJSONMessageCodec sharedInstance] encode:annotatedEvent];
 
-    OCMVerify([mockMessenger sendOnChannel:@"flutter/accessibility"
-                            message:encodedMessage]);
+    OCMVerify([mockMessenger sendOnChannel:@"flutter/accessibility" message:encodedMessage]);
   });
 
   [engine stopMocking];
