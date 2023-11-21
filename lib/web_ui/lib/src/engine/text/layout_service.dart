@@ -296,7 +296,7 @@ class TextLayoutService {
       sandwichStart = null;
 
       if (i < line.fragments.length){
-        previousDirection = line.fragments[i].textDirection;
+        previousDirection = line.fragments[i].textDirection!;
       }
     }
   }
@@ -429,7 +429,7 @@ class TextLayoutService {
     final bool closestGraphemeStartInFragment = !fragment.hasLeadingBrokenGrapheme
                                              || dx <= fragment.line.left
                                              || fragment.line.left + fragment.line.width <= dx
-                                             || switch (fragment.textDirection) {
+                                             || switch (fragment.textDirection!) {
                                                // If dx is closer to the trailing edge, no need to check other fragments.
                                                ui.TextDirection.ltr => dx >= (fragment.left + fragment.right) / 2,
                                                ui.TextDirection.rtl => dx <= (fragment.left + fragment.right) / 2,
@@ -438,7 +438,7 @@ class TextLayoutService {
     if (closestGraphemeStartInFragment) {
       return candidate1;
     }
-    final bool searchLeft = switch (fragment.textDirection) {
+    final bool searchLeft = switch (fragment.textDirection!) {
       ui.TextDirection.ltr => true,
       ui.TextDirection.rtl => false,
     };

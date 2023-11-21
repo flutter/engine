@@ -114,7 +114,7 @@ abstract class _CombinedFragment extends TextFragment {
 
   final LineBreakType type;
 
-  ui.TextDirection get textDirection => _textDirection!;
+  ui.TextDirection? get textDirection => _textDirection;
   ui.TextDirection? _textDirection;
 
   final FragmentFlow fragmentFlow;
@@ -205,7 +205,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         start,
         index,
         LineBreakType.prohibited,
-        _textDirection,
+        textDirection,
         fragmentFlow,
         span,
         trailingNewlines: trailingNewlines - secondTrailingNewlines,
@@ -215,7 +215,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         index,
         end,
         type,
-        _textDirection,
+        textDirection,
         fragmentFlow,
         span,
         trailingNewlines: secondTrailingNewlines,
@@ -365,7 +365,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     top,
     line.left + right,
     bottom,
-    textDirection,
+    textDirection!,
   );
 
   /// Whether or not the trailing spaces of this fragment are part of trailing
@@ -382,20 +382,20 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
   ui.TextBox toPaintingTextBox() {
     if (_isPartOfTrailingSpacesInLine) {
       // For painting, we exclude the width of trailing spaces from the box.
-      return textDirection == ui.TextDirection.ltr
+      return textDirection! == ui.TextDirection.ltr
           ? ui.TextBox.fromLTRBD(
               line.left + left,
               top,
               line.left + right - widthOfTrailingSpaces,
               bottom,
-              textDirection,
+              textDirection!,
             )
           : ui.TextBox.fromLTRBD(
               line.left + left + widthOfTrailingSpaces,
               top,
               line.left + right,
               bottom,
-              textDirection,
+              textDirection!,
             );
     }
     return _textBoxIncludingTrailingSpaces;
@@ -447,7 +447,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
     }
 
     final double left, right;
-    if (textDirection == ui.TextDirection.ltr) {
+    if (textDirection! == ui.TextDirection.ltr) {
       // Example: let's say the text is "Loremipsum" and we want to get the box
       // for "rem". In this case, `before` is the width of "Lo", and `after`
       // is the width of "ipsum".
@@ -488,7 +488,7 @@ mixin _FragmentBox on _CombinedFragment, _FragmentMetrics, _FragmentPosition {
       top,
       line.left + right,
       bottom,
-      textDirection,
+      textDirection!,
     );
   }
 
