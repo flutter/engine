@@ -668,7 +668,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setImportantForAccessibility(isImportant(semanticsNode));
     }
 
-    // Work around for https://github.com/flutter/flutter/issues/2101
+    // Work around for https://github.com/flutter/flutter/issues/21030
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");
     }
@@ -1166,6 +1166,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
+
+          HashMap<String, Object> message = new HashMap<>();
+          message.put("type", "didGainFocus");
+          message.put("nodeId", semanticsNode.id);
+          accessibilityChannel.channel.send(message);
+
           sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
           if (semanticsNode.hasAction(Action.INCREASE)
@@ -2362,7 +2368,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // The textual description of the backing widget's tooltip.
     //
-    // The tooltip is attached through AccessibilityNodInfo.setTooltipText if
+    // The tooltip is attached through AccessibilityNodeInfo.setTooltipText if
     // API level >= 28; otherwise, this is attached to the end of content description.
     @Nullable private String tooltip;
 
