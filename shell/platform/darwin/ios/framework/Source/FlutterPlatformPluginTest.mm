@@ -373,7 +373,7 @@ FLUTTER_ASSERT_ARC
 - (void)testStatusBarHiddenUpdate {
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
   OCMStub([bundleMock objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"])
-    .andReturn(@NO);
+      .andReturn(@NO);
   id mockApplication = OCMClassMock([UIApplication class]);
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
@@ -381,21 +381,21 @@ FLUTTER_ASSERT_ARC
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   [engine runWithEntrypoint:nil];
   FlutterViewController* flutterViewController =
-  [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
   std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
-  std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
+      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
 
   // Update to hidden.
   FlutterPlatformPlugin* plugin = [engine platformPlugin];
 
   XCTestExpectation* enableSystemUIOverlaysCalled =
-  [self expectationWithDescription:@"setEnabledSystemUIOverlays"];
+      [self expectationWithDescription:@"setEnabledSystemUIOverlays"];
   FlutterResult resultSet = ^(id result) {
     [enableSystemUIOverlaysCalled fulfill];
   };
   FlutterMethodCall* methodCallSet =
-  [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
-                                    arguments:@[ @"SystemUiOverlay.bottom" ]];
+      [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
+                                        arguments:@[ @"SystemUiOverlay.bottom" ]];
   [plugin handleMethodCall:methodCallSet result:resultSet];
   [self waitForExpectationsWithTimeout:1 handler:nil];
 #if not APPLICATION_EXTENSION_API_ONLY
@@ -409,8 +409,8 @@ FLUTTER_ASSERT_ARC
     [enableSystemUIOverlaysCalled2 fulfill];
   };
   FlutterMethodCall* methodCallSet2 =
-  [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
-                                    arguments:@[ @"SystemUiOverlay.top" ]];
+      [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setEnabledSystemUIOverlays"
+                                        arguments:@[ @"SystemUiOverlay.top" ]];
   [plugin handleMethodCall:methodCallSet2 result:resultSet2];
   [self waitForExpectationsWithTimeout:1 handler:nil];
 #if not APPLICATION_EXTENSION_API_ONLY
@@ -425,7 +425,7 @@ FLUTTER_ASSERT_ARC
 - (void)testStatusBarStyle {
   id bundleMock = OCMPartialMock([NSBundle mainBundle]);
   OCMStub([bundleMock objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"])
-    .andReturn(@NO);
+      .andReturn(@NO);
   id mockApplication = OCMClassMock([UIApplication class]);
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
@@ -446,9 +446,7 @@ FLUTTER_ASSERT_ARC
   };
   FlutterMethodCall* methodCallSet =
       [FlutterMethodCall methodCallWithMethodName:@"SystemChrome.setSystemUIOverlayStyle"
-                                        arguments:@{
-        @"statusBarBrightness": @"Brightness.dark"
-      }];
+                                        arguments:@{@"statusBarBrightness" : @"Brightness.dark"}];
   [plugin handleMethodCall:methodCallSet result:resultSet];
   [self waitForExpectationsWithTimeout:1 handler:nil];
 
@@ -460,6 +458,5 @@ FLUTTER_ASSERT_ARC
   [mockApplication stopMocking];
   [bundleMock stopMocking];
 }
-
 
 @end
