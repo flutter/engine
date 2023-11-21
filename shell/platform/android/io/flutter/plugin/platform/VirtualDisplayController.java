@@ -215,7 +215,6 @@ class VirtualDisplayController {
       View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
     renderTarget.resize(width, height);
     // On Android versions 31+ resizing of a Virtual Display's Presentation is natively supported.
-    // Fix in: https://github.com/flutter/flutter/issues/128920
     virtualDisplay.resize(width, height, densityDpi);
     embeddedView.postDelayed(onNewSizeFrameAvailable, 0);
   }
