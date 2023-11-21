@@ -93,7 +93,8 @@ public class PlatformPluginTest {
   }
 
   @Test
-  public void platformPlugin_getClipboardDataIsNonNullWhenContentUriWithTextProvided() throws IOException {
+  public void platformPlugin_getClipboardDataIsNonNullWhenContentUriWithTextProvided()
+      throws IOException {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
 
     View fakeDecorView = mock(View.class);
@@ -114,7 +115,8 @@ public class PlatformPluginTest {
     when(mockUri.getScheme()).thenReturn("content");
     when(mockItem.getText()).thenReturn(null);
     when(mockItem.getUri()).thenReturn(mockUri);
-    when(contentResolver.openTypedAssetFileDescriptor(any(Uri.class), any(), any())).thenReturn(mock(AssetFileDescriptor.class));
+    when(contentResolver.openTypedAssetFileDescriptor(any(Uri.class), any(), any()))
+        .thenReturn(mock(AssetFileDescriptor.class));
     when(mockItem.coerceToText(fakeActivity)).thenReturn("something non-null");
 
     ClipData clip = new ClipData("label", new String[0], mockItem);
@@ -123,7 +125,8 @@ public class PlatformPluginTest {
   }
 
   @Test
-  public void platformPlugin_getClipboardDataIsNullWhenContentUriProvidedContainsNoText() throws IOException {
+  public void platformPlugin_getClipboardDataIsNullWhenContentUriProvidedContainsNoText()
+      throws IOException {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
 
     View fakeDecorView = mock(View.class);

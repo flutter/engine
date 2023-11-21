@@ -533,11 +533,16 @@ public class PlatformPlugin {
                   .getContentResolver()
                   .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
             } else {
-              Log.w(TAG, "Clipboard item contains a Uri with scheme '"+ uriScheme + "'that is unhandled.");
+              Log.w(
+                  TAG,
+                  "Clipboard item contains a Uri with scheme '"
+                      + uriScheme
+                      + "'that is unhandled.");
               return null;
             }
           } else {
-            Log.w(TAG, "Clipboard item contained no textual content nor a URI to retrieve it from.");
+            Log.w(
+                TAG, "Clipboard item contained no textual content nor a URI to retrieve it from.");
             return null;
           }
         }
