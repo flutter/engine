@@ -53,6 +53,7 @@ extern CFTimeInterval display_link_target;
   __weak FlutterMetalLayer* _layer;
   NSUInteger _drawableId;
   IOSurface* _surface;
+  CFTimeInterval _presentedTime;
 }
 
 - (instancetype)initWithTexture:(id<MTLTexture>)texture
@@ -61,6 +62,7 @@ extern CFTimeInterval display_link_target;
                         surface:(IOSurface*)surface;
 
 @property(readonly) IOSurface* surface;
+@property(readwrite, nonatomic) CFTimeInterval presentedTime;
 
 @end
 
@@ -190,7 +192,7 @@ extern CFTimeInterval display_link_target;
     // we really need to. With triple buffering at 120Hz that results in about
     // 2-3 milliseconds wait time at beginning of display link callback.
     // With four buffers this number gets close to zero.
-    if (_totalDrawables < 4) {
+    if (_totalDrawables < 3) {
       ++_totalDrawables;
       IOSurface* surface = [self createIOSurface];
       MTLTextureDescriptor* textureDescriptor =
@@ -209,28 +211,24 @@ extern CFTimeInterval display_link_target;
                                                                    surface:surface];
       return drawable;
     } else {
-      FlutterDrawable* res;
-      CFTimeInterval start = CACurrentMediaTime();
-
-      while (true) {
-        for (FlutterDrawable* drawable in _availableDrawables) {
-          if (!drawable.surface.inUse) {
-            res = drawable;
-            [_availableDrawables removeObject:drawable];
-            goto done;
-          }
+      // Return first drawable that is not in use or the one that was presented
+      // the longest time ago.
+      FlutterDrawable* res = nil;
+      for (FlutterDrawable* drawable in _availableDrawables) {
+        if (!drawable.surface.isInUse) {
+          res = drawable;
+          break;
         }
-        usleep(10);
+        if (res == nil || drawable.presentedTime < res.presentedTime) {
+          res = drawable;
+        }
       }
-    done:
-      CFTimeInterval duration = CACurrentMediaTime() - start;
-      if (duration > 0.003) {
-        NSLog(@"Getting drawable took %f", duration);
+      if (res != nil) {
+        [_availableDrawables removeObject:res];
       }
       return res;
     }
   }
-  return nil;
 }
 
 - (void)presentOnMainThread:(FlutterDrawable*)drawable {
@@ -241,6 +239,7 @@ extern CFTimeInterval display_link_target;
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
   self.contents = drawable.surface;
+  drawable.presentedTime = CACurrentMediaTime();
   [CATransaction commit];
   _displayLink.paused = NO;
   _displayLinkPauseCountdown = 0;
@@ -268,6 +267,8 @@ extern CFTimeInterval display_link_target;
 
 @implementation FlutterDrawable
 
+@synthesize presentedTime = _presentedTime;
+
 - (instancetype)initWithTexture:(id<MTLTexture>)texture
                           layer:(FlutterMetalLayer*)layer
                      drawableId:(NSUInteger)drawableId
@@ -291,10 +292,6 @@ extern CFTimeInterval display_link_target;
   return (id)self->_layer;
 }
 #pragma clang diagnostic pop
-
-- (CFTimeInterval)presentedTime {
-  return 0;
-}
 
 - (NSUInteger)drawableID {
   return self->_drawableId;
