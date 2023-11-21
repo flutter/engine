@@ -16,6 +16,10 @@ IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, RenderPass);
 
 RenderPass::RenderPass() = default;
 
+const std::weak_ptr<const impeller::Context>& RenderPass::GetContext() const {
+  return render_pass_->GetContext();
+}
+
 impeller::Command& RenderPass::GetCommand() {
   return command_;
 }

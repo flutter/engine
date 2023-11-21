@@ -23,7 +23,10 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
  public:
   RenderPass();
 
+  const std::weak_ptr<const impeller::Context>& GetContext() const;
+
   impeller::Command& GetCommand();
+
   impeller::RenderTarget& GetRenderTarget();
 
   bool Begin(flutter::gpu::CommandBuffer& command_buffer);

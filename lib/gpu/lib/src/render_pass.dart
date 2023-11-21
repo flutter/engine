@@ -69,8 +69,6 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     }
   }
 
-
-
   /// Wrap with native counterpart.
   @Native<Void Function(Handle)>(
       symbol: 'InternalFlutterGpu_RenderPass_Initialize')

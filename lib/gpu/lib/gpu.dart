@@ -25,5 +25,6 @@ part 'src/context.dart';
 part 'src/formats.dart';
 part 'src/texture.dart';
 part 'src/render_pass.dart';
+part 'src/render_pipeline.dart';
 part 'src/shader.dart';
 part 'src/shader_library.dart';

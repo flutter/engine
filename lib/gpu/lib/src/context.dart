@@ -99,6 +99,11 @@ base class GpuContext extends NativeFieldWrapperClass1 {
     return CommandBuffer._(this);
   }
 
+  RenderPipeline createRenderPipeline(
+      Shader vertexShader, Shader fragmentShader) {
+    return RenderPipeline._(this, vertexShader, fragmentShader);
+  }
+
   /// Associates the default Impeller context with this Context.
   @Native<Handle Function(Handle)>(
       symbol: 'InternalFlutterGpu_Context_InitializeDefault')

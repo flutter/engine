@@ -6,17 +6,12 @@
 
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "flutter/lib/gpu/context.h"
-#include "flutter/lib/gpu/export.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
-#include "impeller/core/formats.h"
 #include "impeller/core/runtime_types.h"
 #include "impeller/core/shader_types.h"
-#include "impeller/renderer/shader_function.h"
-#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 namespace gpu {
