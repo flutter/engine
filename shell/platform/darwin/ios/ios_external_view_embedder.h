@@ -36,7 +36,7 @@ class IOSExternalViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareView(int64_t native_view_id,
+  void PrepareView(int64_t flutter_view_id,
                    SkISize frame_size,
                    double device_pixel_ratio) override;
 

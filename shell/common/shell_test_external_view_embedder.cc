@@ -45,7 +45,7 @@ void ShellTestExternalViewEmbedder::BeginFrame(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
-void ShellTestExternalViewEmbedder::PrepareView(int64_t native_view_id,
+void ShellTestExternalViewEmbedder::PrepareView(int64_t flutter_view_id,
                                                 SkISize frame_size,
                                                 double device_pixel_ratio) {
   visited_platform_views_.clear();

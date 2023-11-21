@@ -56,13 +56,13 @@ void EmbedderExternalViewEmbedder::BeginFrame(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
-void EmbedderExternalViewEmbedder::PrepareView(int64_t native_view_id,
+void EmbedderExternalViewEmbedder::PrepareView(int64_t flutter_view_id,
                                                SkISize frame_size,
                                                double device_pixel_ratio) {
   // TODO(dkwingsmt): This class only supports rendering into the implicit
   // view. Properly support multi-view in the future.
   // https://github.com/flutter/flutter/issues/135530 item 4
-  FML_DCHECK(native_view_id == kFlutterImplicitViewId);
+  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   Reset();
 
   pending_frame_size_ = frame_size;

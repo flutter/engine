@@ -114,7 +114,7 @@ void ExternalViewEmbedder::BeginFrame(
 }
 
 // |ExternalViewEmbedder|
-void ExternalViewEmbedder::PrepareView(int64_t native_view_id,
+void ExternalViewEmbedder::PrepareView(int64_t flutter_view_id,
                                        SkISize frame_size,
                                        double device_pixel_ratio) {
   // Reset for new view.
