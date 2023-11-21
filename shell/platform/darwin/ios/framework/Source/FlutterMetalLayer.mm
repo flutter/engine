@@ -78,8 +78,16 @@ extern CFTimeInterval display_link_target;
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
     [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(didEnterBackground:)
+                                                 name:UIApplicationDidEnterBackgroundNotification
+                                               object:nil];
   }
   return self;
+}
+
+- (void)dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)setMaxRefreshRate:(double)refreshRate forceMax:(BOOL)forceMax {
@@ -120,9 +128,16 @@ extern CFTimeInterval display_link_target;
 
 - (void)setDrawableSize:(CGSize)drawableSize {
   [_availableDrawables removeAllObjects];
-  _front = nullptr;
+  _front = nil;
   _totalDrawables = 0;
   _drawableSize = drawableSize;
+}
+
+- (void)didEnterBackground:(id)notification {
+  [_availableDrawables removeAllObjects];
+  _totalDrawables = 0;
+  self.contents = nil;
+  _displayLink.paused = YES;
 }
 
 - (CGSize)drawableSize {
