@@ -526,7 +526,7 @@ public class PlatformPlugin {
           Uri itemUri = item.getUri();
           if (itemUri != null) {
             String uriScheme = itemUri.getScheme();
-            if (uriScheme == "content://") {
+            if (uriScheme.equals("content")) {
               // Ensure text can be received from content URI. FileNotFoundException
               // will be thrown if not, in which case we return null.
               activity
