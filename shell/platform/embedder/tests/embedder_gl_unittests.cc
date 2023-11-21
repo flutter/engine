@@ -45,6 +45,8 @@ namespace testing {
 
 using EmbedderTest = testing::EmbedderTest;
 
+static constexpr int64_t kImplicitViewId = 0;
+
 TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kVulkanContext);
   EmbedderConfigBuilder builder(context);
@@ -318,7 +320,8 @@ TEST_F(EmbedderTest, RasterCacheDisabledWithPlatformViews) {
   const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
   shell.GetTaskRunners().GetRasterTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
-        shell.GetRasterizer()->compositor_context()->raster_cache();
+        shell.GetRasterizer()->compositor_context()->RasterCacheForView(
+            kImplicitViewId);
     // 3 layers total, but one of them had the platform view. So the cache
     // should only have 2 entries.
     ASSERT_EQ(raster_cache.GetCachedEntriesCount(), 2u);
@@ -404,7 +407,8 @@ TEST_F(EmbedderTest, RasterCacheEnabled) {
   const flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
   shell.GetTaskRunners().GetRasterTaskRunner()->PostTask([&] {
     const flutter::RasterCache& raster_cache =
-        shell.GetRasterizer()->compositor_context()->raster_cache();
+        shell.GetRasterizer()->compositor_context()->RasterCacheForView(
+            kImplicitViewId);
     ASSERT_EQ(raster_cache.GetCachedEntriesCount(), 1u);
     verify.CountDown();
   });
