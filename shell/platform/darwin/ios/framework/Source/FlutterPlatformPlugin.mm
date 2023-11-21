@@ -163,11 +163,12 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
                                          applicationActivities:nil] autorelease];
 
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-    // TODO(louisehsu): consider moving this to TextInputPlugin as functionality is very similar
     // On iPad, the share screen is presented in a popover view, and requires a CGRect
     FlutterTextInputPlugin* _textInputPlugin = [_engine.get() textInputPlugin];
     UITextRange* range = _textInputPlugin.textInputView.selectedTextRange;
 
+    // firstRectForRange cannot be used here as it's current implementation does
+    // not always return the full rect of the range.
     CGRect firstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
         caretRectForPosition:(FlutterTextPosition*)range.start];
     CGRect transformedRectLeft = [(FlutterTextInputView*)_textInputPlugin.textInputView
@@ -178,9 +179,11 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
         localRectFromFrameworkTransform:lastRect];
 
     activityViewController.popoverPresentationController.sourceView = engineViewController.view;
+    // In case of RTL Language, get the minimum x coordinate
     activityViewController.popoverPresentationController.sourceRect =
-        CGRectMake(transformedRectLeft.origin.x, transformedRectLeft.origin.y,
-                   transformedRectRight.origin.x - transformedRectLeft.origin.x,
+        CGRectMake(fmin(transformedRectLeft.origin.x, transformedRectRight.origin.x),
+                   transformedRectLeft.origin.y,
+                   abs(transformedRectRight.origin.x - transformedRectLeft.origin.x),
                    transformedRectLeft.size.height);
   }
 
