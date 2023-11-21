@@ -15,8 +15,6 @@ LineGeometry::LineGeometry(Point p0, Point p1, Scalar width, Cap cap)
   FML_DCHECK(cap != Cap::kRound);
 }
 
-LineGeometry::~LineGeometry() = default;
-
 bool LineGeometry::ComputeCorners(Point corners[4],
                                   const Matrix& transform,
                                   bool extend_endpoints) const {
@@ -55,12 +53,11 @@ bool LineGeometry::ComputeCorners(Point corners[4],
 
 GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
-                                               RenderPass& pass) {
+                                               RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
 
   Point corners[4];
-  if (!ComputeCorners(corners, entity.GetTransformation(),
-                      cap_ == Cap::kSquare)) {
+  if (!ComputeCorners(corners, entity.GetTransform(), cap_ == Cap::kSquare)) {
     return {};
   }
 
@@ -74,7 +71,7 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -84,14 +81,13 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
                                                  Matrix effect_transform,
                                                  const ContentContext& renderer,
                                                  const Entity& entity,
-                                                 RenderPass& pass) {
+                                                 RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
   Point corners[4];
-  if (!ComputeCorners(corners, entity.GetTransformation(),
-                      cap_ == Cap::kSquare)) {
+  if (!ComputeCorners(corners, entity.GetTransform(), cap_ == Cap::kSquare)) {
     return {};
   }
 
@@ -111,7 +107,7 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

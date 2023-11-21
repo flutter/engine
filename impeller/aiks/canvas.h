@@ -10,7 +10,6 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/aiks/image.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
@@ -23,7 +22,6 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
@@ -31,7 +29,7 @@ namespace impeller {
 class Entity;
 
 struct CanvasStackEntry {
-  Matrix xformation;
+  Matrix transform;
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
   size_t clip_depth = 0u;
@@ -77,17 +75,17 @@ class Canvas {
 
   void RestoreToCount(size_t count);
 
-  const Matrix& GetCurrentTransformation() const;
+  const Matrix& GetCurrentTransform() const;
 
   const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
-  void Transform(const Matrix& xformation);
+  void Transform(const Matrix& transform);
 
-  void Concat(const Matrix& xformation);
+  void Concat(const Matrix& transform);
 
-  void PreConcat(const Matrix& xformation);
+  void PreConcat(const Matrix& transform);
 
   void Translate(const Vector3& offset);
 
@@ -164,7 +162,7 @@ class Canvas {
  private:
   std::unique_ptr<EntityPass> base_pass_;
   EntityPass* current_pass_ = nullptr;
-  std::deque<CanvasStackEntry> xformation_stack_;
+  std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
 
   void Initialize(std::optional<Rect> cull_rect);
@@ -175,7 +173,7 @@ class Canvas {
 
   size_t GetClipDepth() const;
 
-  void ClipGeometry(std::unique_ptr<Geometry> geometry,
+  void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
 
   void IntersectCulling(Rect clip_bounds);
