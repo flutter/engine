@@ -18,7 +18,6 @@ import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'platform_views/message_handler.dart';
 import 'semantics.dart';
-import 'semantics/accessibility.dart';
 import 'services.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
