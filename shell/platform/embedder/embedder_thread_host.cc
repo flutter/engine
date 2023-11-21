@@ -137,7 +137,7 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
   //
   // If/when more task runners are exposed, this mask will need to be updated.
   thread_host_config.SetUIConfig(MakeThreadConfig(
-      ThreadHost::Type::UI, fml::Thread::ThreadPriority::kDisplay));
+      ThreadHost::Type::kUi, fml::Thread::ThreadPriority::kDisplay));
   thread_host_config.SetIOConfig(MakeThreadConfig(
       ThreadHost::Type::kIo, fml::Thread::ThreadPriority::kBackground));
 
@@ -227,11 +227,11 @@ EmbedderThreadHost::CreateEngineManagedThreadHost(
   // Crate a thraed host config, and specified the thread name and priority.
   auto thread_host_config = ThreadHost::ThreadHostConfig(config_setter);
   thread_host_config.SetUIConfig(MakeThreadConfig(
-      flutter::ThreadHost::UI, fml::Thread::ThreadPriority::kDisplay));
+      flutter::ThreadHost::kUi, fml::Thread::ThreadPriority::kDisplay));
   thread_host_config.SetRasterConfig(MakeThreadConfig(
-      flutter::ThreadHost::RASTER, fml::Thread::ThreadPriority::kRaster));
+      flutter::ThreadHost::kRaster, fml::Thread::ThreadPriority::kRaster));
   thread_host_config.SetIOConfig(MakeThreadConfig(
-      flutter::ThreadHost::IO, fml::Thread::ThreadPriority::kBackground));
+      flutter::ThreadHost::kIo, fml::Thread::ThreadPriority::kBackground));
 
   // Create a thread host with the current thread as the platform thread and all
   // other threads managed.
