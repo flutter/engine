@@ -416,7 +416,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
   ]
 
   # Print if the machine is detected as "is_windows()"
-  print('is_windows() = %s, on sys_paltorm = %s' % is_windows(), sys_platform)
+  print('is_windows() = %s, on sys_paltorm = %s' % (is_windows(), sys_platform))
 
   if not is_windows():
     unittests += [
