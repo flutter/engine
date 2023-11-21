@@ -13,6 +13,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+// NOLINTNEXTLINE(google-build-namespaces)
 namespace {
 typedef void* _VoidPtr;
 }

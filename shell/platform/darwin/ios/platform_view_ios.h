@@ -142,7 +142,6 @@ class PlatformViewIOS final : public PlatformView {
   const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
   AccessibilityBridgeManager accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
-  fml::closure firstFrameCallback_;
   ScopedObserver dealloc_view_controller_observer_;
   std::vector<std::string> platform_resolved_locale_;
   std::shared_ptr<PlatformMessageHandlerIos> platform_message_handler_;
