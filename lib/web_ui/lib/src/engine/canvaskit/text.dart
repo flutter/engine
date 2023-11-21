@@ -9,8 +9,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-final bool _ckRequiresClientICU = canvasKit.ParagraphBuilder.RequiresClientICU();
-
 final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
 String? _effectiveFontFamily(String? fontFamily) {
   return ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)
@@ -902,7 +900,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   /// Builds the CkParagraph with the builder and deletes the builder.
   SkParagraph _buildSkParagraph() {
-    if (_ckRequiresClientICU) {
+    if (isChromiumVariant) {
       injectClientICU(_paragraphBuilder);
     }
     final SkParagraph result = _paragraphBuilder.build();

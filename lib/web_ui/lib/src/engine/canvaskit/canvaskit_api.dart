@@ -27,6 +27,9 @@ import 'renderer.dart';
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
 
+/// Whether the [canvasKit] being used is a Chromium variant.
+final bool isChromiumVariant = canvasKit.ParagraphBuilder.RequiresClientICU();
+
 bool get _enableCanvasKitChromiumInAutoMode => browserSupportsCanvaskitChromium;
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
@@ -76,8 +79,14 @@ extension CanvasKitExtension on CanvasKit {
   @JS('MakeAnimatedImageFromEncoded')
   external SkAnimatedImage? _MakeAnimatedImageFromEncoded(
       JSUint8Array imageData);
-  SkAnimatedImage? MakeAnimatedImageFromEncoded(Uint8List imageData) =>
-      _MakeAnimatedImageFromEncoded(imageData.toJS);
+  SkAnimatedImage? MakeAnimatedImageFromEncoded(Uint8List imageData) {
+    assert(
+      !isChromiumVariant,
+      'CanvasKit.MakeAnimatedImageFromEncoded cannot be used with the Chromium '
+      'build of CanvasKit.',
+    );
+    return  _MakeAnimatedImageFromEncoded(imageData.toJS);
+  }
 
   external SkShaderNamespace get Shader;
   external SkMaskFilterNamespace get MaskFilter;
@@ -1180,10 +1189,10 @@ extension SkImageExtension on SkImage {
                           matrix?.toJS);
 
   @JS('readPixels')
-  external JSUint8Array _readPixels(
+  external JSUint8Array? _readPixels(
       JSNumber srcX, JSNumber srcY, SkImageInfo imageInfo);
-  Uint8List readPixels(double srcX, double srcY, SkImageInfo imageInfo) =>
-      _readPixels(srcX.toJS, srcY.toJS, imageInfo).toDart;
+  Uint8List? readPixels(double srcX, double srcY, SkImageInfo imageInfo) =>
+      _readPixels(srcX.toJS, srcY.toJS, imageInfo)?.toDart;
 
   @JS('encodeToBytes')
   external JSUint8Array? _encodeToBytes();

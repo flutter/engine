@@ -30,9 +30,9 @@ void testMain() {
 
     _testCkAnimatedImage();
     _testForImageCodecs(useBrowserImageDecoder: false);
+    _testForImageCodecs(useBrowserImageDecoder: true);
 
     if (browserSupportsImageDecoder) {
-      _testForImageCodecs(useBrowserImageDecoder: true);
       _testCkBrowserImageDecoder();
     }
 
@@ -62,6 +62,19 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
   final List<String> warnings = <String>[];
   late void Function(String) oldPrintWarning;
 
+  final bool runGroup;
+  if (useBrowserImageDecoder) {
+    // We can only use browser codecs if the browser supports them.
+    runGroup = browserSupportsImageDecoder;
+  } else {
+    // We can only use wasm codecs if the CanvasKit build contains them.
+    runGroup = canvasKitContainsCodecs;
+  }
+
+  if (!runGroup) {
+    return;
+  }
+
   group('($mode)', () {
     setUp(() {
       browserSupportsImageDecoder = useBrowserImageDecoder;
@@ -83,96 +96,98 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       printWarning = oldPrintWarning;
     });
 
-    test('CkAnimatedImage can be explicitly disposed of', () {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
-      expect(image.debugDisposed, isFalse);
-      image.dispose();
-      expect(image.debugDisposed, isTrue);
+    group('[wasm codecs]', () {
+      test('CkAnimatedImage can be explicitly disposed of', () {
+        final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
+        expect(image.debugDisposed, isFalse);
+        image.dispose();
+        expect(image.debugDisposed, isTrue);
 
-      // Disallow usage after disposal
-      expect(() => image.frameCount, throwsAssertionError);
-      expect(() => image.repetitionCount, throwsAssertionError);
-      expect(() => image.getNextFrame(), throwsAssertionError);
+        // Disallow usage after disposal
+        expect(() => image.frameCount, throwsAssertionError);
+        expect(() => image.repetitionCount, throwsAssertionError);
+        expect(() => image.getNextFrame(), throwsAssertionError);
 
-      // Disallow double-dispose.
-      expect(() => image.dispose(), throwsAssertionError);
-    });
+        // Disallow double-dispose.
+        expect(() => image.dispose(), throwsAssertionError);
+      });
 
-    test('CkAnimatedImage iterates frames correctly', () async {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-      expect(image.frameCount, 3);
-      expect(image.repetitionCount, -1);
+      test('CkAnimatedImage iterates frames correctly', () async {
+        final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+        expect(image.frameCount, 3);
+        expect(image.repetitionCount, -1);
 
-      final ui.FrameInfo frame1 = await image.getNextFrame();
-      await expectFrameData(frame1, <int>[255, 0, 0, 255]);
-      final ui.FrameInfo frame2 = await image.getNextFrame();
-      await expectFrameData(frame2, <int>[0, 255, 0, 255]);
-      final ui.FrameInfo frame3 = await image.getNextFrame();
-      await expectFrameData(frame3, <int>[0, 0, 255, 255]);
-    });
+        final ui.FrameInfo frame1 = await image.getNextFrame();
+        await expectFrameData(frame1, <int>[255, 0, 0, 255]);
+        final ui.FrameInfo frame2 = await image.getNextFrame();
+        await expectFrameData(frame2, <int>[0, 255, 0, 255]);
+        final ui.FrameInfo frame3 = await image.getNextFrame();
+        await expectFrameData(frame3, <int>[0, 0, 255, 255]);
+      });
 
-    test('CkImage toString', () {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.toString(), '[1×1]');
-      image.dispose();
-    });
+      test('CkImage toString', () {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        expect(image.toString(), '[1×1]');
+        image.dispose();
+      });
 
-    test('CkImage can be explicitly disposed of', () {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.debugDisposed, isFalse);
-      expect(image.box.isDisposed, isFalse);
-      image.dispose();
-      expect(image.debugDisposed, isTrue);
-      expect(image.box.isDisposed, isTrue);
+      test('CkImage can be explicitly disposed of', () {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        expect(image.debugDisposed, isFalse);
+        expect(image.box.isDisposed, isFalse);
+        image.dispose();
+        expect(image.debugDisposed, isTrue);
+        expect(image.box.isDisposed, isTrue);
 
-      // Disallow double-dispose.
-      expect(() => image.dispose(), throwsAssertionError);
-    });
+        // Disallow double-dispose.
+        expect(() => image.dispose(), throwsAssertionError);
+      });
 
-    test('CkImage can be explicitly disposed of when cloned', () async {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      final CountedRef<CkImage, SkImage> box = image.box;
-      expect(box.refCount, 1);
-      expect(box.debugGetStackTraces().length, 1);
+      test('CkImage can be explicitly disposed of when cloned', () async {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        final CountedRef<CkImage, SkImage> box = image.box;
+        expect(box.refCount, 1);
+        expect(box.debugGetStackTraces().length, 1);
 
-      final CkImage clone = image.clone();
-      expect(box.refCount, 2);
-      expect(box.debugGetStackTraces().length, 2);
+        final CkImage clone = image.clone();
+        expect(box.refCount, 2);
+        expect(box.debugGetStackTraces().length, 2);
 
-      expect(image.isCloneOf(clone), isTrue);
-      expect(box.isDisposed, isFalse);
+        expect(image.isCloneOf(clone), isTrue);
+        expect(box.isDisposed, isFalse);
 
-      expect(skImage.isDeleted(), isFalse);
-      image.dispose();
-      expect(box.refCount, 1);
-      expect(box.isDisposed, isFalse);
+        expect(skImage.isDeleted(), isFalse);
+        image.dispose();
+        expect(box.refCount, 1);
+        expect(box.isDisposed, isFalse);
 
-      expect(skImage.isDeleted(), isFalse);
-      clone.dispose();
-      expect(box.refCount, 0);
-      expect(box.isDisposed, isTrue);
+        expect(skImage.isDeleted(), isFalse);
+        clone.dispose();
+        expect(box.refCount, 0);
+        expect(box.isDisposed, isTrue);
 
-      expect(skImage.isDeleted(), isTrue);
-      expect(box.debugGetStackTraces().length, 0);
-    });
+        expect(skImage.isDeleted(), isTrue);
+        expect(box.debugGetStackTraces().length, 0);
+      });
 
-    test('CkImage toByteData', () async {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
-              .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect((await image.toByteData()).lengthInBytes, greaterThan(0));
-      expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
-    });
+      test('CkImage toByteData', () async {
+        final SkImage skImage =
+            canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+                .makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        expect((await image.toByteData()).lengthInBytes, greaterThan(0));
+        expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
+      });
+    }, skip: !canvasKitContainsCodecs);
 
     test('toByteData with decodeImageFromPixels on videoFrame formats', () async {
       // This test ensures that toByteData() returns pixels that can be used by decodeImageFromPixels
@@ -297,27 +312,36 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('instantiateImageCodec with multi-frame image does not support targetWidth/targetHeight',
         () async {
-        final ui.Codec codec = await ui.instantiateImageCodec(
-          kAnimatedGif,
-          targetWidth: 2,
-          targetHeight: 3,
-        );
-        final ui.Image image = (await codec.getNextFrame()).image;
-
-        expect(
-        warnings,
-        containsAllInOrder(
-          <String>[
-            'targetWidth and targetHeight for multi-frame images not supported',
-          ],
-        ),
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        kAnimatedGif,
+        targetWidth: 2,
+        targetHeight: 3,
       );
+      final ui.Image image = (await codec.getNextFrame()).image;
+
+      if (browserSupportsImageDecoder) {
+        expect(warnings, isEmpty);
+
+        expect(image.width, 2);
+        expect(image.height, 3);
+      } else {
+        // This limitation is only applicable for wasm codecs.
+        expect(
+          warnings,
+          containsAllInOrder(
+            <String>[
+              'targetWidth and targetHeight for multi-frame images not supported',
+            ],
+          ),
+        );
 
         // expect the re-size did not happen, kAnimatedGif is [1x1]
         expect(image.width, 1);
         expect(image.height, 1);
-        image.dispose();
-        codec.dispose();
+      }
+
+      image.dispose();
+      codec.dispose();
     });
 
     test('skiaInstantiateWebImageCodec throws exception on request error',
@@ -796,31 +820,33 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
 /// Tests specific to WASM codecs bundled with CanvasKit.
 void _testCkAnimatedImage() {
-  test('ImageDecoder toByteData(PNG)', () async {
-    final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-    final ui.FrameInfo frame = await image.getNextFrame();
-    final ByteData? png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
-    expect(png, isNotNull);
-
-    // The precise PNG encoding is browser-specific, but we can check the file
-    // signature.
-    expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
-  });
-
-  test('CkAnimatedImage toByteData(RGBA)', () async {
-    final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-    const List<List<int>> expectedColors = <List<int>>[
-      <int>[255, 0, 0, 255],
-      <int>[0, 255, 0, 255],
-      <int>[0, 0, 255, 255],
-    ];
-    for (int i = 0; i < image.frameCount; i++) {
+  group('CkAnimatedImage', () {
+    test('toByteData(PNG)', () async {
+      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
       final ui.FrameInfo frame = await image.getNextFrame();
-      final ByteData? rgba = await frame.image.toByteData();
-      expect(rgba, isNotNull);
-      expect(rgba!.buffer.asUint8List(), expectedColors[i]);
-    }
-  });
+      final ByteData? png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+      expect(png, isNotNull);
+
+      // The precise PNG encoding is browser-specific, but we can check the file
+      // signature.
+      expect(detectContentType(png!.buffer.asUint8List()), 'image/png');
+    });
+
+    test('toByteData(RGBA)', () async {
+      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+      const List<List<int>> expectedColors = <List<int>>[
+        <int>[255, 0, 0, 255],
+        <int>[0, 255, 0, 255],
+        <int>[0, 0, 255, 255],
+      ];
+      for (int i = 0; i < image.frameCount; i++) {
+        final ui.FrameInfo frame = await image.getNextFrame();
+        final ByteData? rgba = await frame.image.toByteData();
+        expect(rgba, isNotNull);
+        expect(rgba!.buffer.asUint8List(), expectedColors[i]);
+      }
+    });
+  }, skip: !canvasKitContainsCodecs);
 }
 
 /// Tests specific to browser image codecs based functionality.

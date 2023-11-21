@@ -11,17 +11,34 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
-FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
-    [int? targetWidth, int? targetHeight]) {
-  // If we have either a target width or target height, use canvaskit to decode.
-  if (browserSupportsImageDecoder && (targetWidth == null && targetHeight == null)) {
-    return CkBrowserImageDecoder.create(
-      data: list,
-      debugSource: 'encoded image bytes',
+FutureOr<ui.Codec> skiaInstantiateImageCodec(
+  Uint8List list, [
+  int? targetWidth,
+  int? targetHeight,
+]) async {
+  if (!browserSupportsImageDecoder) {
+    return CkAnimatedImage.decodeFromBytes(
+      list,
+      'encoded image bytes',
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
     );
-  } else {
-    return CkAnimatedImage.decodeFromBytes(list, 'encoded image bytes', targetWidth: targetWidth, targetHeight: targetHeight);
   }
+
+  final CkBrowserImageDecoder baseDecoder = await CkBrowserImageDecoder.create(
+    data: list,
+    debugSource: 'encoded image bytes',
+  );
+
+  if (targetWidth == null && targetHeight == null) {
+    return baseDecoder;
+  }
+
+  return ResizingCodec(
+    baseDecoder,
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
+  );
 }
 
 void skiaDecodeImageFromPixels(

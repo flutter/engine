@@ -60,73 +60,75 @@ void testMain() {
       expect(gradient.getSkShader(ui.FilterQuality.none), isNotNull);
     });
 
-    test('Image shader initialize/dispose cycle', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      final CkImageShader imageShader = ui.ImageShader(
-        image,
-        ui.TileMode.clamp,
-        ui.TileMode.repeated,
-        Float64List.fromList(Matrix4.diagonal3Values(1, 2, 3).storage),
-      ) as CkImageShader;
-      expect(imageShader, isA<CkImageShader>());
+    group('[wasm codecs]', () {
+      test('Image shader initialize/dispose cycle', () {
+        final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        final CkImageShader imageShader = ui.ImageShader(
+          image,
+          ui.TileMode.clamp,
+          ui.TileMode.repeated,
+          Float64List.fromList(Matrix4.diagonal3Values(1, 2, 3).storage),
+        ) as CkImageShader;
+        expect(imageShader, isA<CkImageShader>());
 
-      final UniqueRef<SkShader> ref = imageShader.ref!;
-      expect(imageShader.debugDisposed, false);
-      expect(imageShader.getSkShader(ui.FilterQuality.none), same(ref.nativeObject));
-      expect(ref.isDisposed, false);
-      expect(image.debugDisposed, false);
-      imageShader.dispose();
-      expect(imageShader.debugDisposed, true);
-      expect(ref.isDisposed, true);
-      expect(imageShader.ref, isNull);
-      expect(image.debugDisposed, true);
-    });
+        final UniqueRef<SkShader> ref = imageShader.ref!;
+        expect(imageShader.debugDisposed, false);
+        expect(imageShader.getSkShader(ui.FilterQuality.none), same(ref.nativeObject));
+        expect(ref.isDisposed, false);
+        expect(image.debugDisposed, false);
+        imageShader.dispose();
+        expect(imageShader.debugDisposed, true);
+        expect(ref.isDisposed, true);
+        expect(imageShader.ref, isNull);
+        expect(image.debugDisposed, true);
+      });
 
-    test('Image shader withQuality', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      final CkImageShader imageShader = ui.ImageShader(
-        image,
-        ui.TileMode.clamp,
-        ui.TileMode.repeated,
-        Float64List.fromList(Matrix4.diagonal3Values(1, 2, 3).storage),
-      ) as CkImageShader;
-      expect(imageShader, isA<CkImageShader>());
+      test('Image shader withQuality', () {
+        final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
+        final CkImage image = CkImage(skImage);
+        final CkImageShader imageShader = ui.ImageShader(
+          image,
+          ui.TileMode.clamp,
+          ui.TileMode.repeated,
+          Float64List.fromList(Matrix4.diagonal3Values(1, 2, 3).storage),
+        ) as CkImageShader;
+        expect(imageShader, isA<CkImageShader>());
 
-      final UniqueRef<SkShader> ref1 = imageShader.ref!;
-      expect(imageShader.getSkShader(ui.FilterQuality.none), same(ref1.nativeObject));
+        final UniqueRef<SkShader> ref1 = imageShader.ref!;
+        expect(imageShader.getSkShader(ui.FilterQuality.none), same(ref1.nativeObject));
 
-      // Request the same quality as the default quality (none).
-      expect(imageShader.getSkShader(ui.FilterQuality.none), isNotNull);
-      final UniqueRef<SkShader> ref2 = imageShader.ref!;
-      expect(ref1, same(ref2));
-      expect(ref1.isDisposed, false);
-      expect(image.debugDisposed, false);
+        // Request the same quality as the default quality (none).
+        expect(imageShader.getSkShader(ui.FilterQuality.none), isNotNull);
+        final UniqueRef<SkShader> ref2 = imageShader.ref!;
+        expect(ref1, same(ref2));
+        expect(ref1.isDisposed, false);
+        expect(image.debugDisposed, false);
 
-      // Change quality to medium.
-      expect(imageShader.getSkShader(ui.FilterQuality.medium), isNotNull);
-      final UniqueRef<SkShader> ref3 = imageShader.ref!;
-      expect(ref1, isNot(same(ref3)));
-      expect(ref1.isDisposed, true, reason: 'The previous reference must be released to avoid a memory leak');
-      expect(image.debugDisposed, false);
-      expect(imageShader.ref!.nativeObject, same(ref3.nativeObject));
+        // Change quality to medium.
+        expect(imageShader.getSkShader(ui.FilterQuality.medium), isNotNull);
+        final UniqueRef<SkShader> ref3 = imageShader.ref!;
+        expect(ref1, isNot(same(ref3)));
+        expect(ref1.isDisposed, true, reason: 'The previous reference must be released to avoid a memory leak');
+        expect(image.debugDisposed, false);
+        expect(imageShader.ref!.nativeObject, same(ref3.nativeObject));
 
-      // Ask for medium again.
-      expect(imageShader.getSkShader(ui.FilterQuality.medium), isNotNull);
-      final UniqueRef<SkShader> ref4 = imageShader.ref!;
-      expect(ref4, same(ref3));
-      expect(ref3.isDisposed, false);
-      expect(image.debugDisposed, false);
-      expect(imageShader.ref!.nativeObject, same(ref4.nativeObject));
+        // Ask for medium again.
+        expect(imageShader.getSkShader(ui.FilterQuality.medium), isNotNull);
+        final UniqueRef<SkShader> ref4 = imageShader.ref!;
+        expect(ref4, same(ref3));
+        expect(ref3.isDisposed, false);
+        expect(image.debugDisposed, false);
+        expect(imageShader.ref!.nativeObject, same(ref4.nativeObject));
 
-      // Done with the shader.
-      imageShader.dispose();
-      expect(imageShader.debugDisposed, true);
-      expect(ref4.isDisposed, true);
-      expect(imageShader.ref, isNull);
-      expect(image.debugDisposed, true);
-    });
+        // Done with the shader.
+        imageShader.dispose();
+        expect(imageShader.debugDisposed, true);
+        expect(ref4.isDisposed, true);
+        expect(imageShader.ref, isNull);
+        expect(image.debugDisposed, true);
+      });
+    }, skip: !canvasKitContainsCodecs);
   });
 }
 

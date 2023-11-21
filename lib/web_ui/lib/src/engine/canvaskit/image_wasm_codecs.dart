@@ -20,7 +20,16 @@ import 'package:ui/ui.dart' as ui;
 /// Wraps `SkAnimatedImage`.
 class CkAnimatedImage implements ui.Codec {
   /// Decodes an image from a list of encoded bytes.
-  CkAnimatedImage.decodeFromBytes(this._bytes, this.src, {this.targetWidth, this.targetHeight}) {
+  CkAnimatedImage.decodeFromBytes(
+    this._bytes,
+    this.src, {
+    this.targetWidth,
+    this.targetHeight,
+  }) : assert(
+          !isChromiumVariant,
+          'CkAnimatedImage.decodeFromBytes cannot be used with the Chromium '
+          'build of CanvasKit.',
+        ) {
     final SkAnimatedImage skAnimatedImage = createSkAnimatedImage();
     _ref = UniqueRef<SkAnimatedImage>(this, skAnimatedImage, 'Codec');
   }

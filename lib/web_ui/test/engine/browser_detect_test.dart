@@ -183,9 +183,7 @@ void testMain() {
       intlSegmenter = Object().toJSBox; // Any non-null value.
       browserSupportsImageDecoder = false;
 
-      // TODO(mdebbar): we don't check image codecs for now.
-      // https://github.com/flutter/flutter/issues/122331
-      expect(browserSupportsCanvaskitChromium, isTrue);
+      expect(browserSupportsCanvaskitChromium, isFalse);
     });
 
     test('Detect browsers that do not support v8BreakIterator', () {
