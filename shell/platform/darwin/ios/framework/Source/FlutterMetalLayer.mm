@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include <IOSurface/IOSurfaceObjC.h>
 #include <Metal/Metal.h>
 #include <UIKit/UIKit.h>
@@ -281,9 +285,12 @@ extern CFTimeInterval display_link_target;
   return self->_texture;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 - (CAMetalLayer*)layer {
   return (id)self->_layer;
 }
+#pragma clang diagnostic pop
 
 - (CFTimeInterval)presentedTime {
   return 0;
