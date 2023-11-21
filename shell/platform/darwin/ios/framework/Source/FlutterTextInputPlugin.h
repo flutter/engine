@@ -163,6 +163,8 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
+- (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect;
+- (CGRect)caretRectForPosition:(UITextPosition*)position;
 @end
 
 @interface UIView (FindFirstResponder)

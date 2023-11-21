@@ -10,6 +10,8 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 
@@ -154,18 +156,31 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
 
 - (void)showShareViewController:(NSString*)content {
   UIViewController* engineViewController = [_engine.get() viewController];
+
   NSArray* itemsToShare = @[ content ?: [NSNull null] ];
   UIActivityViewController* activityViewController =
       [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare
                                          applicationActivities:nil] autorelease];
 
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    // On iPad, the share screen is presented in a popover view, and requires a CGRect
+    FlutterTextInputPlugin* _textInputPlugin = [_engine.get() textInputPlugin];
+    UITextRange* range = _textInputPlugin.textInputView.selectedTextRange;
+
+    CGRect firstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        caretRectForPosition:(FlutterTextPosition*)range.start];
+    CGRect transformedRectLeft = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        localRectFromFrameworkTransform:firstRect];
+    CGRect lastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        caretRectForPosition:(FlutterTextPosition*)range.end];
+    CGRect transformedRectRight = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        localRectFromFrameworkTransform:lastRect];
+
     activityViewController.popoverPresentationController.sourceView = engineViewController.view;
     activityViewController.popoverPresentationController.sourceRect =
-        CGRectMake(CGRectGetWidth(engineViewController.view.bounds) / 2,
-                   CGRectGetHeight(engineViewController.view.bounds) / 2, 0, 0);
-    activityViewController.popoverPresentationController.permittedArrowDirections =
-        UIPopoverArrowDirection();
+        CGRectMake(transformedRectLeft.origin.x, transformedRectLeft.origin.y,
+                   transformedRectRight.origin.x - transformedRectLeft.origin.x,
+                   transformedRectLeft.size.height);
   }
 
   [engineViewController presentViewController:activityViewController animated:YES completion:nil];
