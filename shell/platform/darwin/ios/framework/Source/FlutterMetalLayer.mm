@@ -28,6 +28,16 @@ extern CFTimeInterval display_link_target;
   // core animation only updates layers 60 times a second.
   CADisplayLink* _displayLink;
   NSUInteger _displayLinkPauseCountdown;
+
+  // Used to track whether the content was set during this display link.
+  // When unlocking phone the layer (main thread) display link and raster thread
+  // display link get out of sync for several seconds. Even worse, layer display
+  // link does not seem to reflect actual vsync. Forcing the layer link
+  // to max rate (instead range) temporarily seems to fix the issue.
+  BOOL _didSetContentsDuringThisDisplayLinkPeriod;
+
+  // Whether layer displayLink is forced to max rate.
+  BOOL _displayLinkForcedMaxRate;
 }
 
 - (void)presentDrawable:(FlutterDrawable*)drawable;
@@ -66,13 +76,13 @@ extern CFTimeInterval display_link_target;
     _availableDrawables = [[NSMutableSet alloc] init];
 
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
-    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate]];
+    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
   }
   return self;
 }
 
-- (void)setMaxRefreshRate:(double)refreshRate {
+- (void)setMaxRefreshRate:(double)refreshRate forceMax:(BOOL)forceMax {
   if (!DisplayLinkManager.maxRefreshRateEnabledOnIPhone) {
     return;
   }
@@ -80,16 +90,21 @@ extern CFTimeInterval display_link_target;
   double minFrameRate = fmax(maxFrameRate / 2, 60);
   if (@available(iOS 15.0, *)) {
     _displayLink.preferredFrameRateRange =
-        CAFrameRateRangeMake(minFrameRate, maxFrameRate, maxFrameRate);
+        CAFrameRateRangeMake(forceMax ? maxFrameRate : minFrameRate, maxFrameRate, maxFrameRate);
   } else {
     _displayLink.preferredFramesPerSecond = maxFrameRate;
   }
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
+  _didSetContentsDuringThisDisplayLinkPeriod = NO;
   // Do not pause immediately, this seems to prevent 120hz while touching.
-  if (_displayLinkPauseCountdown == 5) {
+  if (_displayLinkPauseCountdown == 3) {
     _displayLink.paused = YES;
+    if (_displayLinkForcedMaxRate) {
+      [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
+      _displayLinkForcedMaxRate = NO;
+    }
   } else {
     ++_displayLinkPauseCountdown;
   }
@@ -208,6 +223,12 @@ extern CFTimeInterval display_link_target;
   [CATransaction commit];
   _displayLink.paused = NO;
   _displayLinkPauseCountdown = 0;
+  if (_didSetContentsDuringThisDisplayLinkPeriod) {
+    _didSetContentsDuringThisDisplayLinkPeriod = YES;
+  } else if (!_displayLinkForcedMaxRate) {
+    _displayLinkForcedMaxRate = YES;
+    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:YES];
+  }
 }
 
 - (void)presentDrawable:(FlutterDrawable*)drawable {
