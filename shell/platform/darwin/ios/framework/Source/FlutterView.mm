@@ -147,6 +147,8 @@ static BOOL _forceSoftwareRendering;
 }
 
 + (Class)layerClass {
+  // return flutter::GetCoreAnimationLayerClassForRenderingAPI(
+  // flutter::GetRenderingAPIForProcess(FlutterView.forceSoftwareRendering));
   return [FlutterMetalLayer class];
 }
 

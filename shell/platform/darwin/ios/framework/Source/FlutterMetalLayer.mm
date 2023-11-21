@@ -119,10 +119,13 @@ extern CFTimeInterval display_link_target;
 }
 
 - (BOOL)isKindOfClass:(Class)aClass {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
   // Pretend that we're a CAMetalLayer so that the rest of Flutter plays along
   if ([aClass isEqual:[CAMetalLayer class]]) {
     return YES;
   }
+#pragma clang diagnostic pop
   return [super isKindOfClass:aClass];
 }
 
