@@ -8,8 +8,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+import '../../common/test_initialization.dart';
 import 'semantics_tester.dart';
 
 EngineSemantics semantics() => EngineSemantics.instance;
@@ -22,7 +22,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui_web.bootstrapEngine();
+  await bootstrapAndRunApp();
 
   test('EngineSemanticsOwner auto-enables semantics on update', () async {
     expect(semantics().semanticsEnabled, isFalse);
