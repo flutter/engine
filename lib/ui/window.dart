@@ -361,7 +361,7 @@ class FlutterView {
   /// If the view is configured with loose [physicalConstraints] (i.e.
   /// [ViewConstraints.isTight] returns false) a `size` satisfying those
   /// constraints must be provided. This method does not check that the provided
-  /// `size` actually meets the constraints (this should be done in a heigher
+  /// `size` actually meets the constraints (this should be done in a higher
   /// level), but an illegal `size` may result in undefined rendering behavior.
   /// If no `size` is provided, [physicalSize] is used instead.
   ///
