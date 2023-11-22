@@ -621,11 +621,13 @@ EngineFlutterWindow? _window;
 EngineFlutterWindow ensureImplicitViewInitialized({
   DomElement? hostElement,
 }) {
-  _window ??= EngineFlutterView.implicit(
-    EnginePlatformDispatcher.instance,
-    hostElement,
-  );
-  EnginePlatformDispatcher.instance.viewManager.registerView(_window!);
+  if (_window == null) {
+    _window = EngineFlutterView.implicit(
+      EnginePlatformDispatcher.instance,
+      hostElement,
+    );
+    EnginePlatformDispatcher.instance.viewManager.registerView(_window!);
+  }
   return _window!;
 }
 
