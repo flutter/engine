@@ -72,7 +72,6 @@ RenderPass::GetOrCreatePipeline() {
     FML_DCHECK(render_target_.HasColorAttachment(0))
         << "The render target has no color attachment. This should never "
            "happen.";
-    const auto& color = render_target_.GetColorAttachments().find(0)->second;
     color_desc_.format = render_target_.GetRenderTargetPixelFormat();
     pipeline_desc.SetColorAttachmentDescriptor(0, color_desc_);
   }
