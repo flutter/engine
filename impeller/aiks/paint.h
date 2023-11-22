@@ -70,7 +70,8 @@ struct Paint {
   /// @return     The filter-wrapped contents. If there are no filters that need
   ///             to be wrapped for the current paint configuration, the
   ///             original contents is returned.
-  std::shared_ptr<Contents> WithFilters(const std::shared_ptr<Contents>& input) const;
+  std::shared_ptr<Contents> WithFilters(
+      const std::shared_ptr<Contents>& input) const;
 
   /// @brief      Wrap this paint's configured filters to the given contents of
   ///             subpass target.
