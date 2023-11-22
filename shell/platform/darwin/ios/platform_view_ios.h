@@ -112,7 +112,7 @@ class PlatformViewIOS final : public PlatformView {
     ScopedObserver& operator=(const ScopedObserver&) = delete;
 
    private:
-    id<NSObject> observer_;
+    id<NSObject> observer_ = nil;
   };
 
   /// Wrapper that guarantees we communicate clearing Accessibility

@@ -23,7 +23,7 @@ std::unique_ptr<IOSContext> IOSContext::Create(
     IOSRenderingAPI api,
     IOSRenderingBackend backend,
     MsaaSampleCount msaa_samples,
-    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch) {
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   switch (api) {
     case IOSRenderingAPI::kSoftware:
       FML_CHECK(backend != IOSRenderingBackend::kImpeller)

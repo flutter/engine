@@ -13,10 +13,12 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-// NOLINTNEXTLINE(google-build-namespaces)
+// For whatever reason, NOLINTNEXTLINE is not working here.
+// NOLINTBEGIN(google-build-namespaces)
 namespace {
 typedef void* _VoidPtr;
 }
+// NOLINTEND(google-build-namespaces)
 
 typedef void (^FlutterSendKeyEvent)(const FlutterKeyEvent& /* event */,
                                     _Nullable FlutterKeyEventCallback /* callback */,

@@ -250,7 +250,7 @@ std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolv
   return out;
 }
 
-PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
+PlatformViewIOS::ScopedObserver::ScopedObserver() {}
 
 PlatformViewIOS::ScopedObserver::~ScopedObserver() {
   if (observer_) {

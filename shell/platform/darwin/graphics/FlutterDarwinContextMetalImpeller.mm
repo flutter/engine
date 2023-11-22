@@ -20,7 +20,7 @@
 FLUTTER_ASSERT_ARC
 
 static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
-    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch) {
+    std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
     std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
                                            impeller_entity_shaders_length),
