@@ -890,7 +890,8 @@ FLUTTER_ASSERT_ARC
   parent.childrenInTraversalOrder.push_back(2);
 
   {
-    flutter::testing::MockAccessibilityBridge* mock = new flutter::testing::MockAccessibilityBridge();
+    flutter::testing::MockAccessibilityBridge* mock =
+        new flutter::testing::MockAccessibilityBridge();
     mock->isVoiceOverRunningValue = true;
     fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(mock);
     fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
