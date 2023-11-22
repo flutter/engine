@@ -342,8 +342,7 @@ class CanvasKitRenderer implements Renderer {
       CkParagraphBuilder(style);
 
   @override
-  void renderScene(ui.Scene scene, [ui.FlutterView? view]) {
-    view ??= EnginePlatformDispatcher.instance.implicitView!;
+  void renderScene(ui.Scene scene, ui.FlutterView view) {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
@@ -354,6 +353,8 @@ class CanvasKitRenderer implements Renderer {
     frameTimingsOnBuildFinish();
     frameTimingsOnRasterStart();
 
+    // TODO(harryterkelsen): Create and dispose the Rasterizer when the views
+    // are registered/disposed.
     final Rasterizer rasterizer =
         _getRasterizerForView(view as EngineFlutterView);
 
@@ -365,7 +366,7 @@ class CanvasKitRenderer implements Renderer {
       <EngineFlutterView, Rasterizer>{};
   Rasterizer _getRasterizerForView(EngineFlutterView view) {
     return _rasterizers.putIfAbsent(view, () {
-      return Rasterizer(view);
+      return Rasterizer(view.dom.sceneHost);
     });
   }
 

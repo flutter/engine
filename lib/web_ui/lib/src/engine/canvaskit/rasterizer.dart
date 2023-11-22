@@ -7,13 +7,13 @@ import 'package:ui/ui.dart' as ui;
 
 /// A class that can rasterize [LayerTree]s into a given [Surface].
 class Rasterizer {
-  Rasterizer(this.view);
+  Rasterizer(this.sceneHost);
 
-  final EngineFlutterView view;
+  final DomElement sceneHost;
   final CompositorContext context = CompositorContext();
   final RenderCanvasFactory renderCanvasFactory = RenderCanvasFactory();
   late final HtmlViewEmbedder viewEmbedder =
-      HtmlViewEmbedder(view, this, renderCanvasFactory);
+      HtmlViewEmbedder(sceneHost, this, renderCanvasFactory);
 
   ui.Size _currentFrameSize = ui.Size.zero;
 
@@ -46,7 +46,7 @@ class Rasterizer {
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-    view.dom.sceneHost.prepend(renderCanvasFactory.baseCanvas.htmlElement);
+    sceneHost.prepend(renderCanvasFactory.baseCanvas.htmlElement);
     rasterizeToCanvas(renderCanvasFactory.baseCanvas,
         <CkPicture>[pictureRecorder.endRecording()]);
 

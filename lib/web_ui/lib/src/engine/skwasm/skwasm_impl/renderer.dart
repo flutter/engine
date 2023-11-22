@@ -399,7 +399,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<void> renderScene(ui.Scene scene, [ui.FlutterView? view]) =>
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) =>
       sceneView.renderScene(scene as EngineScene);
 
   @override

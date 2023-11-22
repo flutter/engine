@@ -17,7 +17,7 @@ EngineFlutterWindow get implicitView =>
     EnginePlatformDispatcher.instance.implicitView!;
 
 DomElement get platformViewsHost => implicitView.dom.platformViewsHost;
-DomElement get sceneElement => implicitView.dom.sceneHost;
+DomElement get sceneHost => implicitView.dom.sceneHost;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -47,7 +47,7 @@ void testMain() {
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
       final DomElement contents = platformViewsHost.querySelector('#view-0')!;
-      final DomElement slot = sceneElement.querySelector('slot')!;
+      final DomElement slot = sceneHost.querySelector('slot')!;
       final DomElement contentsHost = contents.parent!;
       final DomElement slotHost = slot.parent!;
 
@@ -78,11 +78,11 @@ void testMain() {
       CanvasKitRenderer.instance.renderScene(sb.build());
 
       expect(
-        sceneElement.querySelectorAll('#sk_path_defs').single,
+        sceneHost.querySelectorAll('#sk_path_defs').single,
         isNotNull,
       );
       expect(
-        sceneElement
+        sceneHost
             .querySelectorAll('#sk_path_defs')
             .single
             .querySelectorAll('clipPath')
@@ -90,15 +90,15 @@ void testMain() {
         isNotNull,
       );
       expect(
-        sceneElement.querySelectorAll('flt-clip').single.style.clipPath,
+        sceneHost.querySelectorAll('flt-clip').single.style.clipPath,
         'url("#svgClip1")',
       );
       expect(
-        sceneElement.querySelectorAll('flt-clip').single.style.width,
+        sceneHost.querySelectorAll('flt-clip').single.style.width,
         '100%',
       );
       expect(
-        sceneElement.querySelectorAll('flt-clip').single.style.height,
+        sceneHost.querySelectorAll('flt-clip').single.style.height,
         '100%',
       );
     });
@@ -122,7 +122,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       final DomElement slotHost =
-          sceneElement.querySelector('flt-platform-view-slot')!;
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         slotHost.style.transform,
@@ -145,7 +145,7 @@ void testMain() {
       CanvasKitRenderer.instance.renderScene(sb.build());
 
       final DomElement slotHost =
-          sceneElement.querySelector('flt-platform-view-slot')!;
+          sceneHost.querySelector('flt-platform-view-slot')!;
       final DomCSSStyleDeclaration style = slotHost.style;
 
       expect(style.transform, 'matrix(1, 0, 0, 1, 3, 4)');
@@ -190,7 +190,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       DomElement slotHost =
-          sceneElement.querySelector('flt-platform-view-slot')!;
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -210,7 +210,7 @@ void testMain() {
       CanvasKitRenderer.instance.renderScene(sb.build());
 
       // Transformations happen on the slot element.
-      slotHost = sceneElement.querySelector('flt-platform-view-slot')!;
+      slotHost = sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -239,7 +239,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       final DomElement slotHost =
-          sceneElement.querySelector('flt-platform-view-slot')!;
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -266,7 +266,7 @@ void testMain() {
 
       // Transformations happen on the slot element.
       final DomElement slotHost =
-          sceneElement.querySelector('flt-platform-view-slot')!;
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -715,7 +715,7 @@ void testMain() {
         CanvasKitRenderer.instance.renderScene(sb.build());
       }
 
-      final DomNode skPathDefs = sceneElement.querySelector('#sk_path_defs')!;
+      final DomNode skPathDefs = sceneHost.querySelector('#sk_path_defs')!;
 
       expect(skPathDefs.childNodes, hasLength(0));
 
@@ -976,7 +976,7 @@ void _expectSceneMatches(
   String? reason,
 }) {
   // Convert the scene elements to its corresponding array of _EmbeddedViewMarker
-  final List<_EmbeddedViewMarker> sceneElements = sceneElement.children
+  final List<_EmbeddedViewMarker> sceneElements = sceneHost.children
       .where((DomElement element) => element.tagName != 'svg')
       .map((DomElement element) =>
           _tagToViewMarker[element.tagName.toLowerCase()]!)

@@ -304,10 +304,9 @@ class HtmlRenderer implements Renderer {
       CanvasParagraphBuilder(style as EngineParagraphStyle);
 
   @override
-  void renderScene(ui.Scene scene, [ui.FlutterView? view]) {
-    final EngineFlutterView implicitView =
-        EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.setScene((scene as SurfaceScene).webOnlyRootElement!);
+  void renderScene(ui.Scene scene, ui.FlutterView view) {
+    final EngineFlutterView engineView = view as EngineFlutterView;
+    engineView.dom.setScene((scene as SurfaceScene).webOnlyRootElement!);
     frameTimingsOnRasterFinish();
   }
 
