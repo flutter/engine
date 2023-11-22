@@ -155,7 +155,7 @@ class FlutterView {
   /// This value does not take into account any on-screen keyboards or other
   /// system UI. If the constraints are tight, the [padding] and [viewInsets]
   /// properties provide information about how much of each side of the view may
-  /// be obscured by system UI. If the consraints are loose, this information
+  /// be obscured by system UI. If the constraints are loose, this information
   /// is not known upfront.
   ///
   /// See also:
