@@ -19,10 +19,6 @@ class RenderCanvasFactory {
   /// the entire scene.
   final RenderCanvas baseCanvas = RenderCanvas();
 
-  /// A surface used specifically for `Picture.toImage` when software rendering
-  /// is supported.
-  late final Surface pictureToImageSurface = Surface();
-
   /// Canvases created by this factory which are currently in use.
   final List<RenderCanvas> _liveCanvases = <RenderCanvas>[];
 

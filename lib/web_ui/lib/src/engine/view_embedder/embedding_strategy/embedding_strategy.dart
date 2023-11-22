@@ -18,12 +18,11 @@ import 'full_page_embedding_strategy.dart';
 ///   element, provided by the web app programmer through the engine
 ///   initialization.
 abstract class EmbeddingStrategy {
-  factory EmbeddingStrategy.create(
-      {required DomElement hostElement, bool isFullPage = false}) {
-    if (isFullPage) {
-      return FullPageEmbeddingStrategy();
-    } else {
+  factory EmbeddingStrategy.create({DomElement? hostElement}) {
+    if (hostElement != null) {
       return CustomElementEmbeddingStrategy(hostElement);
+    } else {
+      return FullPageEmbeddingStrategy();
     }
   }
 

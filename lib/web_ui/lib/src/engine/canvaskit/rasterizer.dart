@@ -9,10 +9,11 @@ import 'package:ui/ui.dart' as ui;
 class Rasterizer {
   Rasterizer(this.view);
 
-  final ui.FlutterView view;
+  final EngineFlutterView view;
   final CompositorContext context = CompositorContext();
   final RenderCanvasFactory renderCanvasFactory = RenderCanvasFactory();
-  final HtmlViewEmbedder viewEmbedder = HtmlViewEmbedder();
+  late final HtmlViewEmbedder viewEmbedder =
+      HtmlViewEmbedder(view, this, renderCanvasFactory);
 
   ui.Size _currentFrameSize = ui.Size.zero;
 
@@ -36,20 +37,19 @@ class Rasterizer {
 
     _currentFrameSize = layerTree.frameSize;
     CanvasKitRenderer.instance.offscreenSurface.acquireFrame(_currentFrameSize);
-    HtmlViewEmbedder.instance.frameSize = _currentFrameSize;
+    viewEmbedder.frameSize = _currentFrameSize;
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & _currentFrameSize);
     pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
     final Frame compositorFrame = context.acquireFrame(
-        pictureRecorder.recordingCanvas!, HtmlViewEmbedder.instance);
+        pictureRecorder.recordingCanvas!, viewEmbedder);
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-    CanvasKitRenderer.instance.sceneHost!
-        .prepend(RenderCanvasFactory.instance.baseCanvas.htmlElement);
-    rasterizeToCanvas(RenderCanvasFactory.instance.baseCanvas,
+    view.dom.sceneHost.prepend(renderCanvasFactory.baseCanvas.htmlElement);
+    rasterizeToCanvas(renderCanvasFactory.baseCanvas,
         <CkPicture>[pictureRecorder.endRecording()]);
 
-    HtmlViewEmbedder.instance.submitFrame();
+    viewEmbedder.submitFrame();
   }
 }

@@ -20,16 +20,16 @@ import 'picture_recorder.dart';
 import 'rasterizer.dart';
 import 'render_canvas.dart';
 import 'render_canvas_factory.dart';
-import 'renderer.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
-  HtmlViewEmbedder(this.view, this.rasterizer);
+  HtmlViewEmbedder(this.view, this.rasterizer, this.renderCanvasFactory);
 
-  final ui.FlutterView view;
+  final EngineFlutterView view;
   final Rasterizer rasterizer;
+  final RenderCanvasFactory renderCanvasFactory;
 
-  DomElement get skiaSceneHost => (view as EngineFlutterView).dom.sceneHost;
+  DomElement get skiaSceneHost => view.dom.sceneHost;
 
   /// The context for the current frame.
   EmbedderFrameContext _context = EmbedderFrameContext();
@@ -387,8 +387,7 @@ class HtmlViewEmbedder {
             _context.pictureRecorders[pictureRecorderIndex].endRecording());
         pictureRecorderIndex++;
       }
-      CanvasKitRenderer.instance.rasterizer
-          .rasterizeToCanvas(overlay, pictures);
+      rasterizer.rasterizeToCanvas(overlay, pictures);
     }
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
@@ -474,7 +473,7 @@ class HtmlViewEmbedder {
         }
       }
     } else {
-      RenderCanvasFactory.instance.removeSurfacesFromDom();
+      renderCanvasFactory.removeSurfacesFromDom();
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
 
@@ -529,7 +528,7 @@ class HtmlViewEmbedder {
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
       final RenderCanvas overlay = _overlays[viewId]!;
-      RenderCanvasFactory.instance.releaseCanvas(overlay);
+      renderCanvasFactory.releaseCanvas(overlay);
       _overlays.remove(viewId);
     }
   }
@@ -569,7 +568,7 @@ class HtmlViewEmbedder {
     if (diffResult == null) {
       // Everything is going to be explicitly recomposited anyway. Release all
       // the surfaces and assign an overlay to all the surfaces needing one.
-      RenderCanvasFactory.instance.releaseCanvases();
+      renderCanvasFactory.releaseCanvases();
       _overlays.clear();
       viewsNeedingOverlays.forEach(_initializeOverlay);
     } else {
@@ -639,7 +638,7 @@ class HtmlViewEmbedder {
     assert(!_overlays.containsKey(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    final RenderCanvas overlay = RenderCanvasFactory.instance.getCanvas();
+    final RenderCanvas overlay = renderCanvasFactory.getCanvas();
     _overlays[viewId] = overlay;
   }
 

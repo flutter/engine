@@ -47,6 +47,10 @@ class CanvasKitRenderer implements Renderer {
   set resourceCacheMaxBytes(int bytes) =>
       offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
 
+  /// A surface used specifically for `Picture.toImage` when software rendering
+  /// is supported.
+  final Surface pictureToImageSurface = Surface();
+
   @override
   Future<void> initialize() async {
     _initialized ??= () async {
@@ -63,14 +67,7 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    // CanvasKit uses a static scene element that never gets replaced, so it's
-    // added eagerly during initialization here and never touched, unless the
-    // system is reset due to hot restart or in a test.
-    DomElement _sceneHost = createDomElement('flt-scene');
-    // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
-    final EngineFlutterView implicitView =
-        EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.setScene(_sceneHost);
+    // No work is required.
   }
 
   @override
@@ -357,14 +354,35 @@ class CanvasKitRenderer implements Renderer {
     frameTimingsOnBuildFinish();
     frameTimingsOnRasterStart();
 
-    final Rasterizer rasterizer = _getRasterizerForView(view);
+    final Rasterizer rasterizer =
+        _getRasterizerForView(view as EngineFlutterView);
 
     rasterizer.draw((scene as LayerScene).layerTree);
     frameTimingsOnRasterFinish();
   }
 
-  final _rasterizers = <ui.FlutterView, Rasterizer>{};
-  Rasterizer _getRasterizerForView(ui.FlutterView view) {}
+  final Map<EngineFlutterView, Rasterizer> _rasterizers =
+      <EngineFlutterView, Rasterizer>{};
+  Rasterizer _getRasterizerForView(EngineFlutterView view) {
+    return _rasterizers.putIfAbsent(view, () {
+      return Rasterizer(view);
+    });
+  }
+
+  /// Returns the [Rasterizer] that has been created for the given [view].
+  /// Used in tests.
+  Rasterizer debugGetRasterizerForView(EngineFlutterView view) {
+    return _getRasterizerForView(view);
+  }
+
+  /// Resets the state of the renderer. Used in tests.
+  void debugClear() {
+    for (final Rasterizer rasterizer in _rasterizers.values) {
+      rasterizer.renderCanvasFactory.debugClear();
+      rasterizer.viewEmbedder.debugClear();
+    }
+    // TODO(harryterkelsen): Also delete the rasterizers?
+  }
 
   @override
   void clearFragmentProgramCache() {
