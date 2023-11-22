@@ -73,7 +73,7 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 @pragma('vm:entry-point')
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
-    byteData == null ? null : UnmodifiableByteDataView(byteData);
+    byteData?.asUnmodifiableView();
 
 /// A token that represents a root isolate.
 class RootIsolateToken {
@@ -308,9 +308,8 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  // A debug-only variable that stores the [FlutterView]s for which
-  // [FlutterView.render] has already been called during the current
-  // [onBeginFrame]/[onDrawFrame] callback sequence.
+  // The [FlutterView]s for which [FlutterView.render] has already been called
+  // during the current [onBeginFrame]/[onDrawFrame] callback sequence.
   //
   // It is null outside the scope of those callbacks indicating that calls to
   // [FlutterView.render] must be ignored. Furthermore, if a given [FlutterView]
@@ -320,16 +319,9 @@ class PlatformDispatcher {
   // Between [onBeginFrame] and [onDrawFrame] the properties value is
   // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
   // the gap between the two callbacks.
-  //
-  // In release build, this variable is null, and therefore the calling rule is
-  // not enforced. This is because the check might hurt cold startup delay;
-  // see https://github.com/flutter/engine/pull/46919.
-  Set<FlutterView>? _debugRenderedViews;
-  // A debug-only variable that temporarily stores the `_renderedViews` value
-  // between `_beginFrame` and `_drawFrame`.
-  //
-  // In release build, this variable is null.
-  Set<FlutterView>? _debugRenderedViewsBetweenCallbacks;
+  Set<FlutterView>? _renderedViews;
+  // The `_renderedViews` value between `_beginFrame` and `_drawFrame`.
+  Set<FlutterView>? _renderedViewsBetweenCallbacks;
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -351,12 +343,9 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _beginFrame(int microseconds) {
-    assert(_debugRenderedViews == null);
-    assert(_debugRenderedViewsBetweenCallbacks == null);
-    assert(() {
-      _debugRenderedViews = <FlutterView>{};
-      return true;
-    }());
+    assert(_renderedViews == null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = <FlutterView>{};
 
     _invoke1<Duration>(
       onBeginFrame,
@@ -364,13 +353,10 @@ class PlatformDispatcher {
       Duration(microseconds: microseconds),
     );
 
-    assert(_debugRenderedViews != null);
-    assert(_debugRenderedViewsBetweenCallbacks == null);
-    assert(() {
-      _debugRenderedViewsBetweenCallbacks = _debugRenderedViews;
-      _debugRenderedViews = null;
-      return true;
-    }());
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViewsBetweenCallbacks = _renderedViews;
+    _renderedViews = null;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -388,22 +374,16 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _drawFrame() {
-    assert(_debugRenderedViews == null);
-    assert(_debugRenderedViewsBetweenCallbacks != null);
-    assert(() {
-      _debugRenderedViews = _debugRenderedViewsBetweenCallbacks;
-      _debugRenderedViewsBetweenCallbacks = null;
-      return true;
-    }());
+    assert(_renderedViews == null);
+    assert(_renderedViewsBetweenCallbacks != null);
+    _renderedViews = _renderedViewsBetweenCallbacks;
+    _renderedViewsBetweenCallbacks = null;
 
     _invoke(onDrawFrame, _onDrawFrameZone);
 
-    assert(_debugRenderedViews != null);
-    assert(_debugRenderedViewsBetweenCallbacks == null);
-    assert(() {
-      _debugRenderedViews = null;
-      return true;
-    }());
+    assert(_renderedViews != null);
+    assert(_renderedViewsBetweenCallbacks == null);
+    _renderedViews = null;
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -526,11 +506,9 @@ class PlatformDispatcher {
 
   // If this value changes, update the encoding code in the following files:
   //
-  //  * key_data.h
-  //  * key.dart (ui)
-  //  * key.dart (web_ui)
-  //  * HardwareKeyboard.java
-  static const int _kKeyDataFieldCount = 5;
+  //  * key_data.h (kKeyDataFieldCount)
+  //  * KeyData.java (KeyData.FIELD_COUNT)
+  static const int _kKeyDataFieldCount = 6;
 
   // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
@@ -1484,7 +1462,7 @@ class _PlatformConfiguration {
 class _ViewConfiguration {
   const _ViewConfiguration({
     this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
+    this.size = Size.zero,
     this.viewInsets = ViewPadding.zero,
     this.viewPadding = ViewPadding.zero,
     this.systemGestureInsets = ViewPadding.zero,
@@ -1501,9 +1479,8 @@ class _ViewConfiguration {
   /// The pixel density of the output surface.
   final double devicePixelRatio;
 
-  /// The geometry requested for the view on the screen or within its parent
-  /// window, in logical pixels.
-  final Rect geometry;
+  /// The size requested for the view in logical pixels.
+  final Size size;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -1573,7 +1550,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[geometry: $geometry]';
+    return '$runtimeType[size: $size]';
   }
 }
 

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <variant>
 
@@ -46,7 +47,7 @@ struct CompilerBackend {
 
   spirv_cross::Compiler* GetCompiler();
 
-  operator bool() const;
+  explicit operator bool() const;
 
   enum class ExtendedResourceIndex {
     kPrimary,

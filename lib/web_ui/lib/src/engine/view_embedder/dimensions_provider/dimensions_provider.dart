@@ -4,9 +4,11 @@
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
+import '../../display.dart';
 import '../../dom.dart';
 import 'custom_element_dimensions_provider.dart';
 import 'full_page_dimensions_provider.dart';
@@ -39,7 +41,7 @@ abstract class DimensionsProvider {
   /// Returns the DPI reported by the browser.
   double getDevicePixelRatio() {
     // This is overridable in tests.
-    return window.devicePixelRatio;
+    return EngineFlutterDisplay.instance.devicePixelRatio;
   }
 
   /// Returns the [ui.Size] of the "viewport".
@@ -57,9 +59,16 @@ abstract class DimensionsProvider {
   /// Returns a Stream with the changes to [ui.Size] (when cheap to get).
   Stream<ui.Size?> get onResize;
 
+  /// Whether the [DimensionsProvider] instance has been closed or not.
+  @visibleForTesting
+  bool isClosed = false;
+
   /// Clears any resources grabbed by the DimensionsProvider instance.
   ///
   /// All internal event handlers will be disconnected, and the [onResize] Stream
   /// will be closed.
-  void close();
+  @mustCallSuper
+  void close() {
+    isClosed = true;
+  }
 }

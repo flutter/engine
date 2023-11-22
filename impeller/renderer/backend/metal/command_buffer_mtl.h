@@ -7,6 +7,7 @@
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/allocator.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
@@ -37,7 +38,11 @@ class CommandBufferMTL final : public CommandBuffer {
   void OnWaitUntilScheduled() override;
 
   // |CommandBuffer|
-  bool SubmitCommandsAsync(std::shared_ptr<RenderPass> render_pass) override;
+  bool EncodeAndSubmit(const std::shared_ptr<RenderPass>& render_pass) override;
+
+  // |CommandBuffer|
+  bool EncodeAndSubmit(const std::shared_ptr<BlitPass>& blit_ass,
+                       const std::shared_ptr<Allocator>& allocator) override;
 
   // |CommandBuffer|
   std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
@@ -48,7 +53,9 @@ class CommandBufferMTL final : public CommandBuffer {
   // |CommandBuffer|
   std::shared_ptr<ComputePass> OnCreateComputePass() override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferMTL);
+  CommandBufferMTL(const CommandBufferMTL&) = delete;
+
+  CommandBufferMTL& operator=(const CommandBufferMTL&) = delete;
 };
 
 }  // namespace impeller

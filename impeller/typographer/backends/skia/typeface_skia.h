@@ -15,7 +15,7 @@ namespace impeller {
 class TypefaceSkia final : public Typeface,
                            public BackendCast<TypefaceSkia, Typeface> {
  public:
-  TypefaceSkia(sk_sp<SkTypeface> typeface);
+  explicit TypefaceSkia(sk_sp<SkTypeface> typeface);
 
   ~TypefaceSkia() override;
 
@@ -33,7 +33,9 @@ class TypefaceSkia final : public Typeface,
  private:
   sk_sp<SkTypeface> typeface_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TypefaceSkia);
+  TypefaceSkia(const TypefaceSkia&) = delete;
+
+  TypefaceSkia& operator=(const TypefaceSkia&) = delete;
 };
 
 }  // namespace impeller

@@ -5,7 +5,6 @@
 #pragma once
 
 #include "flutter/display_list/image/dl_image.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/texture.h"
 
 namespace impeller {
@@ -58,7 +57,9 @@ class DlImageImpeller final : public flutter::DlImage {
   explicit DlImageImpeller(std::shared_ptr<Texture> texture,
                            OwningContext owning_context = OwningContext::kIO);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DlImageImpeller);
+  DlImageImpeller(const DlImageImpeller&) = delete;
+
+  DlImageImpeller& operator=(const DlImageImpeller&) = delete;
 };
 
 }  // namespace impeller

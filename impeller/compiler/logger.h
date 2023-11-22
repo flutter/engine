@@ -8,14 +8,13 @@
 #include <string>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 
 namespace impeller {
 namespace compiler {
 
 class AutoLogger {
  public:
-  AutoLogger(std::stringstream& logger) : logger_(logger) {}
+  explicit AutoLogger(std::stringstream& logger) : logger_(logger) {}
 
   ~AutoLogger() {
     logger_ << std::endl;
@@ -31,7 +30,9 @@ class AutoLogger {
  private:
   std::stringstream& logger_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AutoLogger);
+  AutoLogger(const AutoLogger&) = delete;
+
+  AutoLogger& operator=(const AutoLogger&) = delete;
 };
 
 #define COMPILER_ERROR(stream) \

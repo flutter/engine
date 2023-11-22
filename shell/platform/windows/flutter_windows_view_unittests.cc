@@ -131,6 +131,7 @@ class MockAngleSurfaceManager : public AngleSurfaceManager {
               (override));
   MOCK_METHOD(void, DestroySurface, (), (override));
 
+  MOCK_METHOD(bool, MakeCurrent, (), (override));
   MOCK_METHOD(void, SetVSyncEnabled, (bool), (override));
 
  private:
@@ -152,7 +153,7 @@ TEST(FlutterWindowsViewTest, SubMenuExpandedState) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -262,7 +263,7 @@ TEST(FlutterWindowsViewTest, Shutdown) {
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 }
 
 TEST(FlutterWindowsViewTest, KeySequence) {
@@ -273,7 +274,7 @@ TEST(FlutterWindowsViewTest, KeySequence) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   view.OnKey(kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, false,
              [](bool handled) {});
@@ -301,7 +302,7 @@ TEST(FlutterWindowsViewTest, EnableSemantics) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   view.OnUpdateSemanticsEnabled(true);
   EXPECT_TRUE(semantics_enabled);
@@ -318,7 +319,7 @@ TEST(FlutterWindowsViewTest, AddSemanticsNodeUpdate) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -417,7 +418,7 @@ TEST(FlutterWindowsViewTest, AddSemanticsNodeUpdateWithChildren) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -615,7 +616,7 @@ TEST(FlutterWindowsViewTest, NonZeroSemanticsRoot) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -747,7 +748,7 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -845,7 +846,7 @@ TEST(FlutterWindowsViewTest, WindowResizeTests) {
 
   FlutterWindowsView view(std::move(window_binding_handler));
   modifier.SetSurfaceManager(surface_manager.release());
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   fml::AutoResetWaitableEvent metrics_sent_latch;
   modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
@@ -877,7 +878,7 @@ TEST(FlutterWindowsViewTest, WindowRepaintTests) {
   EngineModifier modifier(engine.get());
 
   FlutterWindowsView view(std::make_unique<flutter::FlutterWindow>(100, 100));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
   view.CreateRenderSurface();
 
   bool schedule_frame_called = false;
@@ -908,7 +909,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -1054,7 +1055,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -1080,7 +1081,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
 
   {
     auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kSwitch);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kTrue);
 
@@ -1103,6 +1104,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_PRESSED);
+    EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_CHECKED);
 
     // Test similarly on UIA node.
     IRawElementProviderSimple* uia_node;
@@ -1128,7 +1130,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
 
   {
     auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kSwitch);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kFalse);
 
@@ -1145,6 +1147,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_PRESSED);
+    EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_CHECKED);
 
     // Test similarly on UIA node.
     IRawElementProviderSimple* uia_node;
@@ -1171,7 +1174,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   // Enable semantics to instantiate accessibility bridge.
   view.OnUpdateSemanticsEnabled(true);
@@ -1242,7 +1245,7 @@ TEST(FlutterWindowsViewTest, DisablesVSync) {
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   view.CreateRenderSurface();
 }
@@ -1271,7 +1274,7 @@ TEST(FlutterWindowsViewTest, EnablesVSync) {
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   view.CreateRenderSurface();
 }
@@ -1302,14 +1305,16 @@ TEST(FlutterWindowsViewTest, UpdatesVSyncOnDwmUpdates) {
   FlutterWindowsView view(std::move(window_binding_handler));
 
   InSequence s;
+  EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
+  EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
-  view.SetEngine(std::move(engine));
+  view.SetEngine(engine.get());
 
   view.GetEngine()->OnDwmCompositionChanged();
   view.GetEngine()->OnDwmCompositionChanged();

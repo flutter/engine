@@ -422,7 +422,6 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     required this.secondId,
   }) {
     _nextFrame = _firstFrame;
-    channelBuffers.setListener('flutter/lifecycle', _onPlatformMessage);
   }
 
   /// The platform view identifier to use for the first platform view.
@@ -438,7 +437,13 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     _nextFrame();
   }
 
+  bool _firstFrameBegan = false;
+
   void _firstFrame() {
+    if (!_firstFrameBegan) {
+      channelBuffers.setListener('flutter/lifecycle', _onPlatformMessage);
+    }
+    _firstFrameBegan = true;
     final SceneBuilder builder = SceneBuilder();
 
     builder.pushOffset(50, 600);
@@ -1758,6 +1763,7 @@ class PlatformViewsWithClipsScrolling extends Scenario
 }
 
 final Map<String, int> _createdPlatformViews = <String, int> {};
+final Map<String, bool> _calledToBeCreatedPlatformViews = <String, bool> {};
 
 /// Adds the platform view to the scene.
 ///
@@ -1787,6 +1793,10 @@ void addPlatformView(
     );
     return;
   }
+  if (_calledToBeCreatedPlatformViews.containsKey(platformViewKey)) {
+    return;
+  }
+  _calledToBeCreatedPlatformViews[platformViewKey] = true;
 
   final bool usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool? ?? false;
   final bool expectAndroidHybridCompositionFallback =

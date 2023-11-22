@@ -391,7 +391,7 @@ class SkwasmRenderer implements Renderer {
     }
     final SkwasmImageDecoder decoder = SkwasmImageDecoder(
       contentType: contentType,
-      dataSource: response.body,
+      dataSource: response.body as JSObject,
       debugSource: uri.toString(),
     );
     await decoder.initialize();
@@ -406,7 +406,9 @@ class SkwasmRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    embedder.addSceneToSceneHost(sceneView.sceneElement);
+    // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
+    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+    implicitView.dom.setScene(sceneView.sceneElement);
   }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
@@ -452,7 +454,7 @@ class SkwasmRenderer implements Renderer {
   @override
   ui.Image createImageFromImageBitmap(DomImageBitmap imageSource) {
     return SkwasmImage(imageCreateFromTextureSource(
-      imageSource,
+      imageSource as JSObject,
       imageSource.width.toDartInt,
       imageSource.height.toDartInt,
       surface.handle,

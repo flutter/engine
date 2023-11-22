@@ -79,7 +79,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
   // Restore the clip context after exiting this method since it's changed
   // below.
-  DlAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  DlAutoCanvasRestore save(background_canvas, /*do_save=*/true);
 
   for (size_t i = 0; i < current_frame_view_count; i++) {
     int64_t view_id = composition_order_[i];
@@ -212,7 +212,7 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
 
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   if (!FrameHasPlatformLayers()) {
     return PostPrerollResult::kSuccess;
   }
@@ -260,7 +260,7 @@ void AndroidExternalViewEmbedder::BeginFrame(
     SkISize frame_size,
     GrDirectContext* context,
     double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   Reset();
 
   // The surface size changed. Therefore, destroy existing surfaces as
@@ -286,7 +286,7 @@ void AndroidExternalViewEmbedder::CancelFrame() {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   surface_pool_->RecycleLayers();
   // JNI method must be called on the platform thread.
   if (raster_thread_merger->IsOnPlatformThread()) {

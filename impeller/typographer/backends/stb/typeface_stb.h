@@ -38,9 +38,11 @@ class TypefaceSTB final : public Typeface,
  private:
   std::unique_ptr<fml::Mapping> typeface_mapping_;
   std::unique_ptr<stbtt_fontinfo> font_info_;
-  bool is_valid_;
+  bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TypefaceSTB);
+  TypefaceSTB(const TypefaceSTB&) = delete;
+
+  TypefaceSTB& operator=(const TypefaceSTB&) = delete;
 };
 
 }  // namespace impeller

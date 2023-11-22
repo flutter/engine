@@ -12,6 +12,7 @@
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+#include "txt/platform.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
@@ -86,26 +87,11 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
                   .has_value());
 }
 
-static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
-  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
-  if (!mapping) {
-    return nullptr;
-  }
-  auto data = SkData::MakeWithProc(
-      mapping->GetMapping(), mapping->GetSize(),
-      [](const void* ptr, void* context) {
-        delete reinterpret_cast<fml::Mapping*>(context);
-      },
-      mapping.get());
-  mapping.release();
-  return data;
-}
-
 TEST_P(TypographerTest, LazyAtlasTracksColor) {
 #if FML_OS_MACOSX
-  auto mapping = OpenFixtureAsSkData("Apple Color Emoji.ttc");
+  auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color Emoji.ttc");
 #else
-  auto mapping = OpenFixtureAsSkData("NotoColorEmoji.ttf");
+  auto mapping = flutter::testing::OpenFixtureAsSkData("NotoColorEmoji.ttf");
 #endif
   ASSERT_TRUE(mapping);
   SkFont emoji_font(SkTypeface::MakeFromData(mapping), 50.0);
@@ -290,7 +276,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
 }
 
 TEST_P(TypographerTest, MaybeHasOverlapping) {
-  sk_sp<SkFontMgr> font_mgr = SkFontMgr::RefDefault();
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
   sk_sp<SkTypeface> typeface =
       font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
   SkFont sk_font(typeface, 0.5f);

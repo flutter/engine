@@ -9,7 +9,6 @@
 #include <string>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/buffer.h"
 #include "impeller/core/buffer_view.h"
@@ -134,7 +133,9 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
 
   HostBuffer();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(HostBuffer);
+  HostBuffer(const HostBuffer&) = delete;
+
+  HostBuffer& operator=(const HostBuffer&) = delete;
 };
 
 }  // namespace impeller

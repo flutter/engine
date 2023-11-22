@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -91,10 +92,9 @@ struct Bindings {
 ///             * Specify any stage bindings.
 ///             * (Optional) Specify a debug label.
 ///
-///             Command are very lightweight objects and can be created
-///             frequently and on demand. The resources referenced in commands
-///             views into buffers managed by other allocators and resource
-///             managers.
+///             Command can be created frequently and on demand. The resources
+///             referenced in commands views into buffers managed by other
+///             allocators and resource managers.
 ///
 struct Command : public ResourceBinder {
   //----------------------------------------------------------------------------
@@ -205,9 +205,7 @@ struct Command : public ResourceBinder {
 
   BufferView GetVertexBuffer() const;
 
-  constexpr explicit operator bool() const {
-    return pipeline && pipeline->IsValid();
-  }
+  bool IsValid() const { return pipeline && pipeline->IsValid(); }
 
  private:
   template <class T>

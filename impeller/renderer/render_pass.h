@@ -36,6 +36,13 @@ class RenderPass {
 
   void SetLabel(std::string label);
 
+  /// @brief Reserve [command_count] commands in the HAL command buffer.
+  ///
+  /// Note: this is not the native command buffer.
+  void ReserveCommands(size_t command_count) {
+    commands_.reserve(command_count);
+  }
+
   HostBuffer& GetTransientsBuffer();
 
   //----------------------------------------------------------------------------
@@ -79,7 +86,9 @@ class RenderPass {
   virtual bool OnEncodeCommands(const Context& context) const = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(RenderPass);
+  RenderPass(const RenderPass&) = delete;
+
+  RenderPass& operator=(const RenderPass&) = delete;
 };
 
 }  // namespace impeller

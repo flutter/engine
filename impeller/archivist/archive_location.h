@@ -7,7 +7,6 @@
 #include <optional>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archivable.h"
 #include "impeller/archivist/archive.h"
 #include "impeller/base/allocation.h"
@@ -166,7 +165,9 @@ class ArchiveLocation {
             const ArchiveDef& otherDef,
             Archivable& other);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveLocation);
+  ArchiveLocation(const ArchiveLocation&) = delete;
+
+  ArchiveLocation& operator=(const ArchiveLocation&) = delete;
 };
 
 }  // namespace impeller

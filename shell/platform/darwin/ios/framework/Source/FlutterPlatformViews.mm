@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <Metal/Metal.h>
 #import <UIKit/UIGestureRecognizerSubclass.h>
 
 #include <list>
@@ -14,6 +15,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
@@ -85,13 +87,15 @@ BOOL canApplyBlurBackdrop = YES;
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context) {
+    const std::shared_ptr<IOSContext>& ios_context,
+    MTLPixelFormat pixel_format) {
   if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view_wrapper;
+    fml::scoped_nsobject<UIView> overlay_view;
+    fml::scoped_nsobject<UIView> overlay_view_wrapper;
 
-    if (!gr_context) {
+    bool impeller_enabled = !!ios_context->GetImpellerContext();
+    if (!gr_context && !impeller_enabled) {
       overlay_view.reset([[FlutterOverlayView alloc] init]);
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] init]);
 
@@ -104,8 +108,10 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
           std::move(surface));
     } else {
       CGFloat screenScale = [UIScreen mainScreen].scale;
-      overlay_view.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
-      overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
+      overlay_view.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale
+                                                               pixelFormat:pixel_format]);
+      overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale
+                                                                       pixelFormat:pixel_format]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
       std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
@@ -173,7 +179,7 @@ UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
   return flutter_view_controller_.get();
 }
 
-void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult result) {
   if ([[call method] isEqualToString:@"create"]) {
     OnCreate(call, result);
   } else if ([[call method] isEqualToString:@"dispose"]) {
@@ -187,7 +193,7 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
   }
 }
 
-void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
 
   int64_t viewId = [args[@"id"] longLongValue];
@@ -252,7 +258,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   result(nil);
 }
 
-void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult result) {
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
@@ -268,7 +274,7 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
 }
 
 void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -286,7 +292,7 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
 }
 
 void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -681,7 +687,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   // Clipping the background canvas before drawing the picture recorders requires
   // saving and restoring the clip context.
-  DlAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  DlAutoCanvasRestore save(background_canvas, /*do_save=*/true);
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
@@ -735,13 +741,15 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         // on the overlay layer.
         background_canvas->ClipRect(joined_rect, DlCanvas::ClipOp::kDifference);
         // Get a new host layer.
-        std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
-                                                                   ios_context,               //
-                                                                   slice,                     //
-                                                                   joined_rect,               //
-                                                                   current_platform_view_id,  //
-                                                                   overlay_id                 //
-        );
+        std::shared_ptr<FlutterPlatformViewLayer> layer =
+            GetLayer(gr_context,                                      //
+                     ios_context,                                     //
+                     slice,                                           //
+                     joined_rect,                                     //
+                     current_platform_view_id,                        //
+                     overlay_id,                                      //
+                     ((FlutterView*)flutter_view_.get()).pixelFormat  //
+            );
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
         overlay_id++;
@@ -811,9 +819,11 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     EmbedderViewSlice* slice,
     SkRect rect,
     int64_t view_id,
-    int64_t overlay_id) {
+    int64_t overlay_id,
+    MTLPixelFormat pixel_format) {
   FML_DCHECK(flutter_view_);
-  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
+  std::shared_ptr<FlutterPlatformViewLayer> layer =
+      layer_pool_->GetLayer(gr_context, ios_context, pixel_format);
 
   UIView* overlay_view_wrapper = layer->overlay_view_wrapper.get();
   auto screenScale = [UIScreen mainScreen].scale;

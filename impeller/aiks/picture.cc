@@ -20,12 +20,12 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
     return std::nullopt;
   }
 
-  const auto translate = Matrix::MakeTranslation(-coverage.value().origin);
+  const auto translate = Matrix::MakeTranslation(-coverage->GetOrigin());
   auto texture =
-      RenderToTexture(context, ISize(coverage.value().size), translate);
+      RenderToTexture(context, ISize(coverage->GetSize()), translate);
   return impeller::Snapshot{
       .texture = std::move(texture),
-      .transform = Matrix::MakeTranslation(coverage.value().origin)};
+      .transform = Matrix::MakeTranslation(coverage->GetOrigin())};
 }
 
 std::shared_ptr<Image> Picture::ToImage(AiksContext& context,
@@ -45,9 +45,9 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
 
   pass->IterateAllEntities([&translate](auto& entity) -> bool {
     auto matrix = translate.has_value()
-                      ? translate.value() * entity.GetTransformation()
-                      : entity.GetTransformation();
-    entity.SetTransformation(matrix);
+                      ? translate.value() * entity.GetTransform()
+                      : entity.GetTransform();
+    entity.SetTransform(matrix);
     return true;
   });
 
