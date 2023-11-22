@@ -9,8 +9,8 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+import '../../common/test_initialization.dart';
 import 'semantics_tester.dart';
 
 void main() {
@@ -20,7 +20,15 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await ui_web.bootstrapEngine();
+  // TODO(yjbanov): see https://github.com/flutter/flutter/issues/138906
+  //                This test tests multi-view mode only, but currently there's
+  //                no way to cleanly boot into pure multi-view mode. As a
+  //                workaroud we boot into a mode that includes the implicit
+  //                view, but we then remove the implicit view.
+  await bootstrapAndRunApp();
+  final EngineFlutterWindow implicitView = EnginePlatformDispatcher.instance.implicitView!;
+  EnginePlatformDispatcher.instance.unregisterView(implicitView);
+  implicitView.dispose();
 
   test('Can create multiple views each with its own semantics tree', () async {
     EngineSemantics.instance.semanticsEnabled = true;
@@ -43,6 +51,8 @@ Future<void> testMain() async {
 
     // Check that we have both root nodes in the DOM (root nodes have id == 0)
     expect(domDocument.querySelectorAll('flutter-view'), hasLength(2));
+    expect(domDocument.querySelectorAll('flutter-view[flt-view-id="1"]'), hasLength(1));
+    expect(domDocument.querySelectorAll('flutter-view[flt-view-id="2"]'), hasLength(1));
     expect(domDocument.querySelectorAll('flt-semantics[id=flt-semantic-node-0]'), hasLength(2));
 
     // Check that each is attached to its own view
@@ -82,6 +92,26 @@ Future<void> testMain() async {
       ],
     );
     tester2.apply();
+
+    // Test that each view renders its own semantics tree.
+    expectSemanticsTree(
+      view1.semantics,
+      '''
+<sem style="filter: opacity(0%); color: rgba(0, 0, 0, 0)">
+  <sem-c>
+    <sem flt-tappable="" role="button"></sem>
+  </sem-c>
+</sem>''',
+    );
+    expectSemanticsTree(
+      view2.semantics,
+      '''
+<sem style="filter: opacity(0%); color: rgba(0, 0, 0, 0)">
+  <sem-c>
+    <sem aria-label="d"><input aria-valuemax="1" aria-valuemin="1" aria-valuenow="1" aria-valuetext="" role="slider"></sem>
+  </sem-c>
+</sem>
+''');
 
     // Remove the first view, but keep the second one.
     view1.dispose();

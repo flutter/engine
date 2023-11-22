@@ -43,7 +43,7 @@ import 'style_manager.dart';
 ///   +- <style>
 ///
 class DomManager {
-  factory DomManager({required double devicePixelRatio}) {
+  factory DomManager({required int viewId, required double devicePixelRatio}) {
     final DomElement rootElement = domDocument.createElement(DomManager.flutterViewTagName);
     final DomElement platformViewsHost = domDocument.createElement(DomManager.glassPaneTagName);
     final DomShadowRoot renderingHost = _attachShadowRoot(platformViewsHost);
@@ -53,9 +53,10 @@ class DomManager {
     final DomElement announcementsHost = createDomElement(DomManager.announcementsHostTagName);
 
     // Root element children.
-
+    rootElement.setAttribute('flt-view-id', viewId);
     rootElement.appendChild(platformViewsHost);
     rootElement.appendChild(textEditingHost);
+
     // The semantic host goes last because hit-test order-wise it must be
     // first. If semantics goes under the scene host, platform views will
     // obscure semantic elements.
