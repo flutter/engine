@@ -13,6 +13,7 @@
 + (double)displayRefreshRate;
 @end
 
+@class FlutterTexture;
 @class FlutterDrawable;
 
 extern CFTimeInterval display_link_target;
@@ -23,10 +24,10 @@ extern CFTimeInterval display_link_target;
 
   NSUInteger _nextDrawableId;
 
-  NSMutableSet<FlutterDrawable*>* _availableDrawables;
-  NSUInteger _totalDrawables;
+  NSMutableSet<FlutterTexture*>* _availableTextures;
+  NSUInteger _totalTextures;
 
-  FlutterDrawable* _front;
+  FlutterTexture* _front;
 
   // There must be a CADisplayLink scheduled *on main thread* otherwise
   // core animation only updates layers 60 times a second.
@@ -44,25 +45,103 @@ extern CFTimeInterval display_link_target;
   BOOL _displayLinkForcedMaxRate;
 }
 
-- (void)presentDrawable:(FlutterDrawable*)drawable;
+- (void)presentTexture:(FlutterTexture*)texture;
+- (void)returnTexture:(FlutterTexture*)texture;
 
 @end
 
-@interface FlutterDrawable : NSObject <CAMetalDrawable> {
+@interface FlutterTexture : NSObject {
   id<MTLTexture> _texture;
-  __weak FlutterMetalLayer* _layer;
-  NSUInteger _drawableId;
   IOSurface* _surface;
   CFTimeInterval _presentedTime;
 }
 
-- (instancetype)initWithTexture:(id<MTLTexture>)texture
-                          layer:(FlutterMetalLayer*)layer
-                     drawableId:(NSUInteger)drawableId
-                        surface:(IOSurface*)surface;
-
-@property(readonly) IOSurface* surface;
+@property(readonly, nonatomic) id<MTLTexture> texture;
+@property(readonly, nonatomic) IOSurface* surface;
 @property(readwrite, nonatomic) CFTimeInterval presentedTime;
+
+@end
+
+@implementation FlutterTexture
+
+@synthesize texture = _texture;
+@synthesize surface = _surface;
+@synthesize presentedTime = _presentedTime;
+
+- (instancetype)initWithTexture:(id<MTLTexture>)texture surface:(IOSurface*)surface {
+  if (self = [super init]) {
+    _texture = texture;
+    _surface = surface;
+  }
+  return self;
+}
+
+@end
+
+@interface FlutterDrawable : NSObject <CAMetalDrawable> {
+  FlutterTexture* _texture;
+  __weak FlutterMetalLayer* _layer;
+  NSUInteger _drawableId;
+  BOOL _presented;
+}
+
+- (instancetype)initWithTexture:(FlutterTexture*)texture
+                          layer:(FlutterMetalLayer*)layer
+                     drawableId:(NSUInteger)drawableId;
+
+@end
+
+@implementation FlutterDrawable
+
+- (instancetype)initWithTexture:(FlutterTexture*)texture
+                          layer:(FlutterMetalLayer*)layer
+                     drawableId:(NSUInteger)drawableId {
+  if (self = [super init]) {
+    _texture = texture;
+    _layer = layer;
+    _drawableId = drawableId;
+  }
+  return self;
+}
+
+- (id<MTLTexture>)texture {
+  return self->_texture.texture;
+}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
+- (CAMetalLayer*)layer {
+  return (id)self->_layer;
+}
+#pragma clang diagnostic pop
+
+- (NSUInteger)drawableID {
+  return self->_drawableId;
+}
+
+- (CFTimeInterval)presentedTime {
+  return 0;
+}
+
+- (void)present {
+  [_layer presentTexture:self->_texture];
+  self->_presented = YES;
+}
+
+- (void)dealloc {
+  if (!_presented) {
+    [_layer returnTexture:self->_texture];
+  }
+}
+
+- (void)addPresentedHandler:(nonnull MTLDrawablePresentedHandler)block {
+}
+
+- (void)presentAtTime:(CFTimeInterval)presentationTime {
+}
+
+- (void)presentAfterMinimumDuration:(CFTimeInterval)duration {
+}
 
 @end
 
@@ -79,7 +158,8 @@ extern CFTimeInterval display_link_target;
   if (self = [super init]) {
     _preferredDevice = MTLCreateSystemDefaultDevice();
     self.device = self.preferredDevice;
-    _availableDrawables = [[NSMutableSet alloc] init];
+    self.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    _availableTextures = [[NSMutableSet alloc] init];
 
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
     [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
@@ -136,15 +216,15 @@ extern CFTimeInterval display_link_target;
 }
 
 - (void)setDrawableSize:(CGSize)drawableSize {
-  [_availableDrawables removeAllObjects];
+  [_availableTextures removeAllObjects];
   _front = nil;
-  _totalDrawables = 0;
+  _totalTextures = 0;
   _drawableSize = drawableSize;
 }
 
 - (void)didEnterBackground:(id)notification {
-  [_availableDrawables removeAllObjects];
-  _totalDrawables = _front != nil ? 1 : 0;
+  [_availableTextures removeAllObjects];
+  _totalTextures = _front != nil ? 1 : 0;
   _displayLink.paused = YES;
 }
 
@@ -185,15 +265,15 @@ extern CFTimeInterval display_link_target;
   return (__bridge_transfer IOSurface*)res;
 }
 
-- (id<CAMetalDrawable>)nextDrawable {
+- (FlutterTexture*)nextTexture {
   @synchronized(self) {
     // IOSurface.isInUse to determine when compositor is done with the surface.
     // That a rather blunt instrument and we are probably waiting longer than
     // we really need to. With triple buffering at 120Hz that results in about
     // 2-3 milliseconds wait time at beginning of display link callback.
     // With four buffers this number gets close to zero.
-    if (_totalDrawables < 3) {
-      ++_totalDrawables;
+    if (_totalTextures < 3) {
+      ++_totalTextures;
       IOSurface* surface = [self createIOSurface];
       MTLTextureDescriptor* textureDescriptor =
           [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:_pixelFormat
@@ -205,20 +285,18 @@ extern CFTimeInterval display_link_target;
       id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDescriptor
                                                            iosurface:(__bridge IOSurfaceRef)surface
                                                                plane:0];
-      FlutterDrawable* drawable = [[FlutterDrawable alloc] initWithTexture:texture
-                                                                     layer:self
-                                                                drawableId:_nextDrawableId++
-                                                                   surface:surface];
-      return drawable;
+      FlutterTexture* flutterTexture = [[FlutterTexture alloc] initWithTexture:texture
+                                                                       surface:surface];
+      return flutterTexture;
     } else {
       // Make sure raster thread doesn't have too many drawables in flight.
-      if (_availableDrawables.count == 0) {
+      if (_availableTextures.count == 0) {
         CFTimeInterval start = CACurrentMediaTime();
-        while (_availableDrawables.count == 0 && CACurrentMediaTime() - start < 0.1) {
+        while (_availableTextures.count == 0 && CACurrentMediaTime() - start < 0.1) {
           usleep(100);
         }
         CFTimeInterval elapsed = CACurrentMediaTime() - start;
-        if (_availableDrawables.count == 0) {
+        if (_availableTextures.count == 0) {
           NSLog(@"Waited %f seconds for a drawable, giving up.", elapsed);
           return nil;
         } else {
@@ -227,31 +305,42 @@ extern CFTimeInterval display_link_target;
       }
       // Return first drawable that is not in use or the one that was presented
       // the longest time ago.
-      FlutterDrawable* res = nil;
-      for (FlutterDrawable* drawable in _availableDrawables) {
-        if (!drawable.surface.isInUse) {
-          res = drawable;
+      FlutterTexture* res = nil;
+      for (FlutterTexture* texture in _availableTextures) {
+        if (!texture.surface.isInUse) {
+          res = texture;
           break;
         }
-        if (res == nil || drawable.presentedTime < res.presentedTime) {
-          res = drawable;
+        if (res == nil || texture.presentedTime < res.presentedTime) {
+          res = texture;
         }
       }
-      [_availableDrawables removeObject:res];
+      [_availableTextures removeObject:res];
       return res;
     }
   }
 }
 
-- (void)presentOnMainThread:(FlutterDrawable*)drawable {
+- (id<CAMetalDrawable>)nextDrawable {
+  FlutterTexture* texture = [self nextTexture];
+  if (texture == nil) {
+    return nil;
+  }
+  FlutterDrawable* drawable = [[FlutterDrawable alloc] initWithTexture:texture
+                                                                 layer:self
+                                                            drawableId:_nextDrawableId++];
+  return drawable;
+}
+
+- (void)presentOnMainThread:(FlutterTexture*)texture {
   // This is needed otherwise frame gets skipped on touch begin / end. Go figure.
   // Might also be placebo
   [self setNeedsDisplay];
 
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
-  self.contents = drawable.surface;
-  drawable.presentedTime = CACurrentMediaTime();
+  self.contents = texture.surface;
+  texture.presentedTime = CACurrentMediaTime();
   [CATransaction commit];
   _displayLink.paused = NO;
   _displayLinkPauseCountdown = 0;
@@ -263,63 +352,26 @@ extern CFTimeInterval display_link_target;
   }
 }
 
-- (void)presentDrawable:(FlutterDrawable*)drawable {
+- (void)presentTexture:(FlutterTexture*)texture {
   @synchronized(self) {
     if (_front != nil) {
-      [_availableDrawables addObject:_front];
+      [_availableTextures addObject:_front];
     }
-    _front = drawable;
-    dispatch_async(dispatch_get_main_queue(), ^{
-      [self presentOnMainThread:drawable];
-    });
+    _front = texture;
+    if ([NSThread isMainThread]) {
+      [self presentOnMainThread:texture];
+    } else {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [self presentOnMainThread:texture];
+      });
+    }
   }
 }
 
-@end
-
-@implementation FlutterDrawable
-
-@synthesize presentedTime = _presentedTime;
-
-- (instancetype)initWithTexture:(id<MTLTexture>)texture
-                          layer:(FlutterMetalLayer*)layer
-                     drawableId:(NSUInteger)drawableId
-                        surface:(IOSurface*)surface {
-  if (self = [super init]) {
-    _texture = texture;
-    _layer = layer;
-    _drawableId = drawableId;
-    _surface = surface;
+- (void)returnTexture:(FlutterTexture*)texture {
+  @synchronized(self) {
+    [_availableTextures addObject:texture];
   }
-  return self;
-}
-
-- (id<MTLTexture>)texture {
-  return self->_texture;
-}
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
-- (CAMetalLayer*)layer {
-  return (id)self->_layer;
-}
-#pragma clang diagnostic pop
-
-- (NSUInteger)drawableID {
-  return self->_drawableId;
-}
-
-- (void)present {
-  [_layer presentDrawable:self];
-}
-
-- (void)addPresentedHandler:(nonnull MTLDrawablePresentedHandler)block {
-}
-
-- (void)presentAtTime:(CFTimeInterval)presentationTime {
-}
-
-- (void)presentAfterMinimumDuration:(CFTimeInterval)duration {
 }
 
 @end
