@@ -279,11 +279,6 @@ static MTLPixelFormat _defaultPixelFormat = MTLPixelFormatBGRA8Unorm;
 
 - (FlutterTexture*)nextTexture {
   @synchronized(self) {
-    // IOSurface.isInUse to determine when compositor is done with the surface.
-    // That a rather blunt instrument and we are probably waiting longer than
-    // we really need to. With triple buffering at 120Hz that results in about
-    // 2-3 milliseconds wait time at beginning of display link callback.
-    // With four buffers this number gets close to zero.
     if (_totalTextures < 3) {
       ++_totalTextures;
       IOSurface* surface = [self createIOSurface];
@@ -304,7 +299,7 @@ static MTLPixelFormat _defaultPixelFormat = MTLPixelFormatBGRA8Unorm;
       // Make sure raster thread doesn't have too many drawables in flight.
       if (_availableTextures.count == 0) {
         CFTimeInterval start = CACurrentMediaTime();
-        while (_availableTextures.count == 0 && CACurrentMediaTime() - start < 0.1) {
+        while (_availableTextures.count == 0 && CACurrentMediaTime() - start < 1.0) {
           usleep(100);
         }
         CFTimeInterval elapsed = CACurrentMediaTime() - start;
