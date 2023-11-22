@@ -98,7 +98,7 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   void render(ui.Scene scene, {ui.Size? size}) {
     assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
-    // TODO(goderbauer): Resepct the provided size when "physicalConstraints" are not allways tight. See TODO on "physicalConstraints".
+    // TODO(goderbauer): Respect the provided size when "physicalConstraints" are not always tight. See TODO on "physicalConstraints".
     platformDispatcher.render(scene, this);
   }
 
