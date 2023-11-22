@@ -48,7 +48,7 @@
 
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkTypeface.h"
-#include "third_party/skia/include/ports/SkFontMgr_empty.h"
+#include "txt/platform.h"
 
 static const unsigned char kAhemFont[] = {
     0x00, 0x01, 0x00, 0x00, 0x00, 0x0b, 0x00, 0x80, 0x00, 0x03, 0x00, 0x30,
@@ -1625,7 +1625,7 @@ namespace flutter {
 std::vector<sk_sp<SkTypeface>> GetTestFontData() {
   std::vector<sk_sp<SkTypeface>> typefaces;
 #if EMBED_TEST_FONT_DATA
-  sk_sp<SkFontMgr> font_mgr = SkFontMgr_New_Custom_Empty();
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
   typefaces.push_back(font_mgr->makeFromStream(
       SkMemoryStream::MakeDirect(kFlutterTestFont, kFlutterTestFontLength)));
   typefaces.push_back(font_mgr->makeFromStream(
