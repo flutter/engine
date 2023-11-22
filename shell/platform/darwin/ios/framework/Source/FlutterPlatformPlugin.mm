@@ -163,7 +163,8 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
                                          applicationActivities:nil] autorelease];
 
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
-    // On iPad, the share screen is presented in a popover view, and requires a CGRect
+    // On iPad, the share screen is presented in a popover view, and requires a
+    // sourceView and sourceRect
     FlutterTextInputPlugin* _textInputPlugin = [_engine.get() textInputPlugin];
     UITextRange* range = _textInputPlugin.textInputView.selectedTextRange;
 
@@ -171,20 +172,20 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
     // not always return the full rect of the range.
     CGRect firstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
         caretRectForPosition:(FlutterTextPosition*)range.start];
-    CGRect transformedRectLeft = [(FlutterTextInputView*)_textInputPlugin.textInputView
+    CGRect transformedFirstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
         localRectFromFrameworkTransform:firstRect];
     CGRect lastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
         caretRectForPosition:(FlutterTextPosition*)range.end];
-    CGRect transformedRectRight = [(FlutterTextInputView*)_textInputPlugin.textInputView
+    CGRect transformedLastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
         localRectFromFrameworkTransform:lastRect];
 
     activityViewController.popoverPresentationController.sourceView = engineViewController.view;
     // In case of RTL Language, get the minimum x coordinate
     activityViewController.popoverPresentationController.sourceRect =
-        CGRectMake(fmin(transformedRectLeft.origin.x, transformedRectRight.origin.x),
-                   transformedRectLeft.origin.y,
-                   abs(transformedRectRight.origin.x - transformedRectLeft.origin.x),
-                   transformedRectLeft.size.height);
+        CGRectMake(fmin(transformedFirstRect.origin.x, transformedLastRect.origin.x),
+                   transformedFirstRect.origin.y,
+                   abs(transformedLastRect.origin.x - transformedFirstRect.origin.x),
+                   transformedFirstRect.size.height);
   }
 
   [engineViewController presentViewController:activityViewController animated:YES completion:nil];
