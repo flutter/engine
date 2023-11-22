@@ -1865,7 +1865,7 @@ class EngineSemantics {
         _notifyGestureModeListeners();
       }
       for (final EngineFlutterView view in EnginePlatformDispatcher.instance.views) {
-        view.semantics.dispose();
+        view.semantics.reset();
       }
       _gestureModeClock?.datetime = null;
     }
@@ -2344,7 +2344,12 @@ AFTER: $description
 
   /// Removes the semantics tree for this view from the page and collects all
   /// resources.
-  void dispose() {
+  ///
+  /// The object remains usable after this operation, but because the previous
+  /// semantics tree is completely removed, partial udpates will not succeed as
+  /// they rely on the prior state of the tree. There is no distinction between
+  /// a full update and partial update, so the failure may be cryptic.
+  void reset() {
     final List<int> keys = _semanticsTree.keys.toList();
     final int len = keys.length;
     for (int i = 0; i < len; i++) {

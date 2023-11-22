@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
-
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -125,9 +123,8 @@ class Scrollable extends PrimaryRoleManager {
       };
       EngineSemantics.instance.addGestureModeListener(_gestureModeListener!);
 
-      final Zone zone = Zone.current;
       _scrollListener = createDomEventListener((_) {
-        zone.run(_recomputeScrollPosition);
+        _recomputeScrollPosition();
       });
       addEventListener('scroll', _scrollListener);
     }
