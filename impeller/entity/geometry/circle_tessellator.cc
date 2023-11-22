@@ -8,7 +8,7 @@
 
 namespace impeller {
 
-std::vector<Trig> CircleTessellator::trigs_[MAX_DIVISIONS_ + 1];
+std::vector<Trig> CircleTessellator::trigs_[kMaxDivisions + 1];
 
 size_t CircleTessellator::ComputeQuadrantDivisions(Scalar pixel_radius) {
   // Note: these values are approximated based on the values returned from
@@ -26,16 +26,17 @@ size_t CircleTessellator::ComputeQuadrantDivisions(Scalar pixel_radius) {
     return 9;
   }
   pixel_radius /= 4;
-  if (pixel_radius > (MAX_DIVISIONS_ - 1)) {
-    return MAX_DIVISIONS_;
+  if (pixel_radius > (kMaxDivisions - 1)) {
+    return kMaxDivisions;
   }
-  return static_cast<int>(ceil(pixel_radius));
+  return static_cast<size_t>(ceil(pixel_radius));
 }
 
 const std::vector<Trig>& CircleTessellator::GetTrigForDivisions(
     size_t divisions) {
-  FML_DCHECK(divisions > 0 && divisions <= MAX_DIVISIONS_);
+  FML_DCHECK(divisions > 0 && divisions <= kMaxDivisions);
   std::vector<Trig>& trigs = trigs_[divisions];
+  trigs.reserve(divisions + 1);
 
   if (trigs.empty()) {
     double angle_scale = kPiOver2 / divisions;

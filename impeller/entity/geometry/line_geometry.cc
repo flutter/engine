@@ -68,37 +68,58 @@ bool LineGeometry::ComputeCorners(Point corners[4],
 GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) const {
+  auto& host_buffer = pass.GetTransientsBuffer();
+  using VT = SolidFillVertexShader::PerVertexData;
+
   auto& transform = entity.GetTransform();
   auto radius = ComputeHalfWidth(transform);
 
-  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
-
+  size_t count;
+  BufferView vertex_buffer;
   if (cap_ == Cap::kRound) {
+    const Point& p0 = p0_;
+    const Point& p1 = p1_;
+
     CircleTessellator tessellator(transform, radius);
-    vtx_builder.Reserve(tessellator.GetCircleVertexCount());
-    tessellator.GenerateRoundCapLineTriangleStrip(
-        [&vtx_builder](const Point& p) {  //
-          vtx_builder.AppendVertex({.position = p});
-        },
-        p0_, p1_, radius);
+    count = tessellator.GetCircleVertexCount();
+    vertex_buffer =
+        host_buffer.Emplace(count * sizeof(VT), alignof(VT),
+                            [&tessellator, &p0, &p1, radius](uint8_t* buffer) {
+                              auto vertices = reinterpret_cast<VT*>(buffer);
+                              tessellator.GenerateRoundCapLineTriangleStrip(
+                                  [&vertices](const Point& p) {  //
+                                    *vertices++ = {
+                                        .position = p,
+                                    };
+                                  },
+                                  p0, p1, radius);
+                            });
   } else {
     Point corners[4];
     if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-      vtx_builder.Reserve(4);
-      vtx_builder.AppendVertex({.position = corners[0]});
-      vtx_builder.AppendVertex({.position = corners[1]});
-      vtx_builder.AppendVertex({.position = corners[2]});
-      vtx_builder.AppendVertex({.position = corners[3]});
+      count = 4;
+      vertex_buffer = host_buffer.Emplace(
+          count * sizeof(VT), alignof(VT), [&corners](uint8_t* buffer) {
+            auto vertices = reinterpret_cast<VT*>(buffer);
+            for (auto& corner : corners) {
+              *vertices++ = {
+                  .position = corner,
+              };
+            }
+          });
+    } else {
+      return {};
     }
-  }
-  if (!vtx_builder.HasVertices()) {
-    return {};
   }
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
-          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+          {
+              .vertex_buffer = vertex_buffer,
+              .vertex_count = count,
+              .index_type = IndexType::kNone,
+          },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,
@@ -111,44 +132,64 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
                                                  const ContentContext& renderer,
                                                  const Entity& entity,
                                                  RenderPass& pass) const {
+  auto& host_buffer = pass.GetTransientsBuffer();
+  using VT = TextureFillVertexShader::PerVertexData;
+
   auto& transform = entity.GetTransform();
   auto radius = ComputeHalfWidth(transform);
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
-  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vtx_builder;
 
+  size_t count;
+  BufferView vertex_buffer;
   if (cap_ == Cap::kRound) {
+    const Point& p0 = p0_;
+    const Point& p1 = p1_;
+
     CircleTessellator tessellator(transform, radius);
-    vtx_builder.Reserve(tessellator.GetCircleVertexCount());
-    tessellator.GenerateRoundCapLineTriangleStrip(
-        [&vtx_builder, &uv_transform](const Point& p) {
-          vtx_builder.AppendVertex({
-              .position = p,
-              .texture_coords = uv_transform * p,
-          });
-        },
-        p0_, p1_, radius);
+    count = tessellator.GetCircleVertexCount();
+    vertex_buffer = host_buffer.Emplace(
+        count * sizeof(VT), alignof(VT),
+        [&tessellator, &uv_transform, &p0, &p1, radius](uint8_t* buffer) {
+          auto vertices = reinterpret_cast<VT*>(buffer);
+          tessellator.GenerateRoundCapLineTriangleStrip(
+              [&vertices, &uv_transform](const Point& p) {  //
+                *vertices++ = {
+                    .position = p,
+                    .texture_coords = uv_transform * p,
+                };
+              },
+              p0, p1, radius);
+        });
   } else {
     Point corners[4];
     if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-      vtx_builder.Reserve(4);
-      for (auto& corner : corners) {
-        vtx_builder.AppendVertex({
-            .position = corner,
-            .texture_coords = uv_transform * corner,
-        });
-      }
+      count = 4;
+      vertex_buffer =
+          host_buffer.Emplace(count * sizeof(VT), alignof(VT),
+                              [&uv_transform, &corners](uint8_t* buffer) {
+                                auto vertices = reinterpret_cast<VT*>(buffer);
+                                for (auto& corner : corners) {
+                                  *vertices++ = {
+                                      .position = corner,
+                                      .texture_coords = uv_transform * corner,
+                                  };
+                                }
+                              });
+    } else {
+      return {};
     }
-  }
-  if (!vtx_builder.HasVertices()) {
-    return {};
   }
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
-          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+          {
+              .vertex_buffer = vertex_buffer,
+              .vertex_count = count,
+              .index_type = IndexType::kNone,
+          },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,

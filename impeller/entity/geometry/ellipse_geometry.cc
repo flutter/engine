@@ -18,20 +18,33 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
+  using VT = SolidFillVertexShader::PerVertexData;
 
-  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
-
+  Scalar radius = radius_;
+  const Point& center = center_;
   CircleTessellator tessellator(entity.GetTransform(), radius_);
-  vtx_builder.Reserve(tessellator.GetCircleVertexCount());
-  tessellator.GenerateCircleTriangleStrip(
-      [&vtx_builder](const Point& p) {  //
-        vtx_builder.AppendVertex({.position = p});
-      },
-      center_, radius_);
+  size_t count = tessellator.GetCircleVertexCount();
+  auto vertex_buffer =
+      host_buffer.Emplace(count * sizeof(VT), alignof(VT),
+                          [&tessellator, &center, radius](uint8_t* buffer) {
+                            auto vertices = reinterpret_cast<VT*>(buffer);
+                            tessellator.GenerateCircleTriangleStrip(
+                                [&vertices](const Point& p) {  //
+                                  *vertices++ = {
+                                      .position = p,
+                                  };
+                                },
+                                center, radius);
+                          });
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
+      .vertex_buffer =
+          {
+              .vertex_buffer = vertex_buffer,
+              .vertex_count = count,
+              .index_type = IndexType::kNone,
+          },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,
@@ -46,25 +59,37 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
-
+  using VT = TextureFillVertexShader::PerVertexData;
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
-  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vtx_builder;
 
+  Scalar radius = radius_;
+  const Point& center = center_;
   CircleTessellator tessellator(entity.GetTransform(), radius_);
-  vtx_builder.Reserve(tessellator.GetCircleVertexCount());
-  tessellator.GenerateCircleTriangleStrip(
-      [&vtx_builder, &uv_transform](const Point& p) {
-        vtx_builder.AppendVertex({
-            .position = p,
-            .texture_coords = uv_transform * p,
-        });
-      },
-      center_, radius_);
+  size_t count = tessellator.GetCircleVertexCount();
+  auto vertex_buffer = host_buffer.Emplace(
+      count * sizeof(VT), alignof(VT),
+      [&tessellator, &uv_transform, &center, radius](uint8_t* buffer) {
+        auto vertices = reinterpret_cast<VT*>(buffer);
+        tessellator.GenerateCircleTriangleStrip(
+            [&vertices, &uv_transform](const Point& p) {  //
+              *vertices++ = {
+                  .position = p,
+                  .texture_coords = uv_transform * p,
+              };
+            },
+            center, radius);
+      });
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
+      .vertex_buffer =
+          {
+              .vertex_buffer = vertex_buffer,
+              .vertex_count = count,
+              .index_type = IndexType::kNone,
+          },
+      // .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,

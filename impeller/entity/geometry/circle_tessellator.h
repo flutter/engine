@@ -16,7 +16,8 @@ namespace impeller {
 /// @brief  A structure to store the sine and cosine of an angle.
 struct Trig {
   /// Construct a Trig object from a given angle in radians.
-  Trig(Radians r) : cos(std::cos(r.radians)), sin(std::sin(r.radians)) {}
+  explicit Trig(Radians r)
+      : cos(std::cos(r.radians)), sin(std::sin(r.radians)) {}
 
   /// Construct a Trig object from the given cosine and sine values.
   Trig(double cos, double sin) : cos(cos), sin(sin) {}
@@ -128,9 +129,9 @@ class CircleTessellator {
   /// @return  The vector of (divisions + 1) trig values.
   static const std::vector<Trig>& GetTrigForDivisions(size_t divisions);
 
-  static constexpr int MAX_DIVISIONS_ = 35;
+  static constexpr int kMaxDivisions = 35;
 
-  static std::vector<Trig> trigs_[MAX_DIVISIONS_ + 1];
+  static std::vector<Trig> trigs_[kMaxDivisions + 1];
 };
 
 }  // namespace impeller
