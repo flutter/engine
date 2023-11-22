@@ -86,6 +86,10 @@ class RenderPass {
 
  protected:
   const std::weak_ptr<const Context> context_;
+  // The following properties: sample_count, pixel_format, and
+  // has_stencil_attachment are cached on the RenderTarget to speed up numerous
+  // lookups during rendering. This is safe as the RenderTarget itself is copied
+  // into the RenderTarget and only exposed as a const reference.
   const SampleCount sample_count_;
   const PixelFormat pixel_format_;
   const bool has_stencil_attachment_;
