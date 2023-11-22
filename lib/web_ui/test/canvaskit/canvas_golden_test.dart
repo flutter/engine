@@ -147,14 +147,14 @@ void testMain() {
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, picture);
       final LayerScene scene = builder.build();
-      CanvasKitRenderer.instance.renderScene(scene);
+      CanvasKitRenderer.instance.renderScene(scene, implicitView);
 
       // Now draw an empty layer tree and confirm that the red rectangle is
       // no longer drawn.
       final LayerSceneBuilder emptySceneBuilder = LayerSceneBuilder();
       emptySceneBuilder.pushOffset(0, 0);
       final LayerScene emptyScene = emptySceneBuilder.build();
-      CanvasKitRenderer.instance.renderScene(emptyScene);
+      CanvasKitRenderer.instance.renderScene(emptyScene, implicitView);
 
       await matchGoldenFile('canvaskit_empty_scene.png',
           region: const ui.Rect.fromLTRB(0, 0, 100, 100));
@@ -211,7 +211,7 @@ void testMain() {
       sb.pop();
 
       // The below line should not throw an error.
-      CanvasKitRenderer.instance.renderScene(sb.build());
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       await matchGoldenFile('cross_overlay_resources.png', region: const ui.Rect.fromLTRB(0, 0, 100, 100));
     });

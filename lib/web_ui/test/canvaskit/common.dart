@@ -32,6 +32,10 @@ void setUpCanvasKitTest() {
       .fallbackFontUrlPrefixOverride = null);
 }
 
+/// Convenience getter for the implicit view.
+ui.FlutterView get implicitView =>
+    EnginePlatformDispatcher.instance.implicitView!;
+
 /// Utility function for CanvasKit tests to draw pictures without
 /// the [CkPictureRecorder] boilerplate.
 CkPicture paintPicture(
@@ -47,7 +51,7 @@ Future<void> matchSceneGolden(
   LayerScene scene, {
   required ui.Rect region,
 }) async {
-  CanvasKitRenderer.instance.renderScene(scene);
+  CanvasKitRenderer.instance.renderScene(scene, implicitView);
   await matchGoldenFile(goldenFile, region: region);
 }
 
@@ -60,7 +64,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  CanvasKitRenderer.instance.renderScene(sb.build());
+  CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
   await matchGoldenFile(goldenFile, region: region);
 }
 
