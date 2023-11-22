@@ -238,6 +238,7 @@ extern CFTimeInterval display_link_target;
         }
       }
       [_availableDrawables removeObject:res];
+      return res;
     }
   }
 }
