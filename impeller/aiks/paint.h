@@ -70,7 +70,7 @@ struct Paint {
   /// @return     The filter-wrapped contents. If there are no filters that need
   ///             to be wrapped for the current paint configuration, the
   ///             original contents is returned.
-  std::shared_ptr<Contents> WithFilters(std::shared_ptr<Contents> input) const;
+  std::shared_ptr<Contents> WithFilters(const std::shared_ptr<Contents>& input) const;
 
   /// @brief      Wrap this paint's configured filters to the given contents of
   ///             subpass target.
@@ -81,7 +81,7 @@ struct Paint {
   ///             to be wrapped for the current paint configuration, the
   ///             original contents is returned.
   std::shared_ptr<Contents> WithFiltersForSubpassTarget(
-      std::shared_ptr<Contents> input,
+      const std::shared_ptr<Contents>& input,
       const Matrix& effect_transform = Matrix()) const;
 
   std::shared_ptr<Contents> CreateContentsForEntity(const Path& path = {},
@@ -93,7 +93,7 @@ struct Paint {
   /// @brief   Whether this paint has a color filter that can apply opacity
   bool HasColorFilter() const;
 
-  std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
+  std::shared_ptr<Contents> WithMaskBlur(const std::shared_ptr<Contents>& input,
                                          bool is_solid_color) const;
 
   std::shared_ptr<FilterContents> WithImageFilter(
@@ -103,7 +103,7 @@ struct Paint {
 
  private:
   std::shared_ptr<Contents> WithColorFilter(
-      std::shared_ptr<Contents> input,
+      const std::shared_ptr<Contents>& input,
       ColorFilterContents::AbsorbOpacity absorb_opacity =
           ColorFilterContents::AbsorbOpacity::kNo) const;
 };

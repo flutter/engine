@@ -50,10 +50,9 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
   // Attempt to apply the color filter on the CPU first.
   // Note: This is not just an optimization; some color sources rely on
   //       CPU-applied color filters to behave properly.
-  auto color_filter = GetColorFilter();
-  bool needs_color_filter = !!color_filter;
-  if (color_filter &&
-      contents->ApplyColorFilter(color_filter->GetCPUColorFilterProc())) {
+  bool needs_color_filter = HasColorFilter();
+  if (needs_color_filter &&
+      contents->ApplyColorFilter(GetColorFilter()->GetCPUColorFilterProc())) {
     needs_color_filter = false;
   }
 
@@ -70,33 +69,34 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
 }
 
 std::shared_ptr<Contents> Paint::WithFilters(
-    std::shared_ptr<Contents> input) const {
-  input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
+    const std::shared_ptr<Contents>& input) const {
+  auto color_filter =
+      WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
   auto image_filter =
-      WithImageFilter(input, Matrix(), Entity::RenderingMode::kDirect);
+      WithImageFilter(color_filter, Matrix(), Entity::RenderingMode::kDirect);
   if (image_filter) {
-    input = image_filter;
+    return image_filter;
   }
-  return input;
+  return color_filter;
 }
 
 std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
-    std::shared_ptr<Contents> input,
+    const std::shared_ptr<Contents>& input,
     const Matrix& effect_transform) const {
   auto image_filter =
       WithImageFilter(input, effect_transform, Entity::RenderingMode::kSubpass);
   if (image_filter) {
-    input = image_filter;
+    return WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
   }
-  input = WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
-  return input;
+  return WithColorFilter(input, ColorFilterContents::AbsorbOpacity::kYes);
 }
 
-std::shared_ptr<Contents> Paint::WithMaskBlur(std::shared_ptr<Contents> input,
-                                              bool is_solid_color) const {
+std::shared_ptr<Contents> Paint::WithMaskBlur(
+    const std::shared_ptr<Contents>& input,
+    bool is_solid_color) const {
   if (mask_blur_descriptor.has_value()) {
-    input = mask_blur_descriptor->CreateMaskBlur(FilterInput::Make(input),
-                                                 is_solid_color);
+    return mask_blur_descriptor->CreateMaskBlur(FilterInput::Make(input),
+                                                is_solid_color);
   }
   return input;
 }
@@ -115,7 +115,7 @@ std::shared_ptr<FilterContents> Paint::WithImageFilter(
 }
 
 std::shared_ptr<Contents> Paint::WithColorFilter(
-    std::shared_ptr<Contents> input,
+    const std::shared_ptr<Contents>& input,
     ColorFilterContents::AbsorbOpacity absorb_opacity) const {
   // Image input types will directly set their color filter,
   // if any. See `TiledTextureContents.SetColorFilter`.
