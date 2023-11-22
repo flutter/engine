@@ -6,6 +6,7 @@
 
 #include <string>
 
+#include "impeller/core/formats.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
@@ -71,8 +72,23 @@ class RenderPass {
   ///
   const std::vector<Command>& GetCommands() const { return commands_; }
 
+  //----------------------------------------------------------------------------
+  /// @brief      The sample count of the attached render target.
+  SampleCount GetSampleCount() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      The pixel format of the attached render target.
+  PixelFormat GetRenderTargetPixelFormat() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Whether the render target has an stencil attachment.
+  bool HasStencilAttachment() const;
+
  protected:
   const std::weak_ptr<const Context> context_;
+  const SampleCount sample_count_;
+  const PixelFormat pixel_format_;
+  const bool has_stencil_attachment_;
   const RenderTarget render_target_;
   std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;

@@ -9,6 +9,9 @@ namespace impeller {
 RenderPass::RenderPass(std::weak_ptr<const Context> context,
                        const RenderTarget& target)
     : context_(std::move(context)),
+      sample_count_(target.GetSampleCount()),
+      pixel_format_(target.GetRenderTargetPixelFormat()),
+      has_stencil_attachment_(target.GetStencilAttachment().has_value()),
       render_target_(target),
       transients_buffer_() {
   auto strong_context = context_.lock();
@@ -21,6 +24,18 @@ RenderPass::~RenderPass() {
   if (strong_context) {
     strong_context->GetHostBufferPool().Recycle(transients_buffer_);
   }
+}
+
+SampleCount RenderPass::GetSampleCount() const {
+  return sample_count_;
+}
+
+PixelFormat RenderPass::GetRenderTargetPixelFormat() const {
+  return pixel_format_;
+}
+
+bool RenderPass::HasStencilAttachment() const {
+  return has_stencil_attachment_;
 }
 
 const RenderTarget& RenderPass::GetRenderTarget() const {

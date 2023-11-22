@@ -19,11 +19,11 @@ namespace impeller {
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
+  opts.sample_count = pass.GetSampleCount();
   opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
+      pass.GetRenderTargetPixelFormat();
   opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+      pass.HasStencilAttachment();
   return opts;
 }
 
