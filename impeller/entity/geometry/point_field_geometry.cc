@@ -19,8 +19,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute() && false) {
-    FML_LOG(ERROR) << "Using compute";
+  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
   auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
@@ -44,8 +43,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute() && false) {
-    FML_LOG(ERROR) << "Using compute";
+  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
   }
