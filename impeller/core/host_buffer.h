@@ -119,12 +119,11 @@ class HostBuffer final : public Buffer {
 
   //----------------------------------------------------------------------------
   /// @brief Returns the size of the currently allocated HostBuffer memory in
-  /// bytes.
+  ///        bytes.
   size_t GetLength() const;
 
  private:
-  class HostBufferState : public Buffer, public Allocation {
-   public:
+  struct HostBufferState : public Buffer, public Allocation {
     std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
         Allocator& allocator) const override;
 
@@ -140,8 +139,6 @@ class HostBuffer final : public Buffer {
                                        size_t align);
 
     void Reset();
-
-    size_t GetSize() const;
 
     mutable std::shared_ptr<DeviceBuffer> device_buffer;
     mutable size_t device_buffer_generation = 0u;
