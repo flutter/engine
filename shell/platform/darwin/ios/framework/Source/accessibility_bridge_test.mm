@@ -1409,7 +1409,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     bridge->AccessibilityObjectDidBecomeFocused(123);
 
     NSDictionary<NSString*, id>* annotatedEvent = @{@"type" : @"didGainFocus", @"nodeId" : @123};
-    NSData* encodedMessage = [[FlutterJSONMessageCodec sharedInstance] encode:annotatedEvent];
+    NSData* encodedMessage = [[FlutterStandardMessageCodec sharedInstance] encode:annotatedEvent];
 
     OCMVerify([messenger sendOnChannel:@"flutter/accessibility" message:encodedMessage]);
     latch.Signal();
