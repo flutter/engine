@@ -87,48 +87,43 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   if (round_) {
     CircleTessellator tessellator(entity.GetTransform(), radius);
 
-    // Get polygon relative to {0, 0} so we can translate it to each point
-    // in turn.
-    std::vector<Point> vertices;
+    // Get triangulation relative to {0, 0} so we can translate it to each
+    // point in turn.
+    std::vector<Point> circle_vertices;
+    circle_vertices.reserve(tessellator.GetCircleVertexCount());
     tessellator.GenerateCircleTriangleStrip(
-        [&vertices](const Point& p) {  //
-          vertices.push_back(p);
+        [&circle_vertices](const Point& p) {  //
+          circle_vertices.push_back(p);
         },
         {}, radius);
-    FML_DCHECK(vertices.size() == tessellator.GetCircleVertexCount());
-    vtx_builder.Reserve(vertices.size() * points_.size());
+    FML_DCHECK(circle_vertices.size() == tessellator.GetCircleVertexCount());
 
-    bool first = true;
-    Point prev;
+    vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
     for (auto& center : points_) {
-      if (first) {
-        first = false;
-      } else {
-        vtx_builder.AppendVertex({prev});
-        vtx_builder.AppendVertex({center + vertices[0]});
+      if (vtx_builder.HasVertices()) {
+        vtx_builder.AppendVertex(vtx_builder.Last());
+        vtx_builder.AppendVertex({center + circle_vertices[0]});
       }
-      for (auto& vertex : vertices) {
-        prev = center + vertex;
-        vtx_builder.AppendVertex({prev});
+
+      for (auto& vertex : circle_vertices) {
+        vtx_builder.AppendVertex({center + vertex});
       }
     }
   } else {
-    vtx_builder.Reserve(6 * points_.size());
-    bool first = true;
-    Point prev;
+    vtx_builder.Reserve(6 * points_.size() - 2);
     for (auto& point : points_) {
-      if (first) {
-        first = false;
-      } else {
-        vtx_builder.AppendVertex({prev});
-        vtx_builder.AppendVertex({{point.x - radius, point.y - radius}});
+      auto first = Point(point.x - radius, point.y - radius);
+
+      if (vtx_builder.HasVertices()) {
+        vtx_builder.AppendVertex(vtx_builder.Last());
+        vtx_builder.AppendVertex({first});
       }
 
       // Z pattern from UL -> UR -> LL -> LR
-      vtx_builder.AppendVertex({{point.x - radius, point.y - radius}});
+      vtx_builder.AppendVertex({first});
       vtx_builder.AppendVertex({{point.x + radius, point.y - radius}});
       vtx_builder.AppendVertex({{point.x - radius, point.y + radius}});
-      vtx_builder.AppendVertex({prev = {point.x + radius, point.y + radius}});
+      vtx_builder.AppendVertex({{point.x + radius, point.y + radius}});
     }
   }
 

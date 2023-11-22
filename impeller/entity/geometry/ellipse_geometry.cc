@@ -19,21 +19,19 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
     RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
 
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
+
   CircleTessellator tessellator(entity.GetTransform(), radius_);
-  auto vertices = std::vector<Point>(tessellator.GetCircleVertexCount());
+  vtx_builder.Reserve(tessellator.GetCircleVertexCount());
   tessellator.GenerateCircleTriangleStrip(
-      [&vertices](const Point& p) { vertices.push_back(p); }, center_, radius_);
+      [&vtx_builder](const Point& p) {  //
+        vtx_builder.AppendVertex({.position = p});
+      },
+      center_, radius_);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer =
-          {
-              .vertex_buffer = host_buffer.Emplace(
-                  vertices.data(), vertices.size() * sizeof(Point),
-                  alignof(float)),
-              .vertex_count = vertices.size(),
-              .index_type = IndexType::kNone,
-          },
+      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,
@@ -51,26 +49,22 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
+  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vtx_builder;
 
   CircleTessellator tessellator(entity.GetTransform(), radius_);
-  auto vertices = std::vector<Point>(tessellator.GetCircleVertexCount());
+  vtx_builder.Reserve(tessellator.GetCircleVertexCount());
   tessellator.GenerateCircleTriangleStrip(
-      [&vertices, &uv_transform](const Point& p) {
-        vertices.push_back(p);
-        vertices.push_back(uv_transform * p);
+      [&vtx_builder, &uv_transform](const Point& p) {
+        vtx_builder.AppendVertex({
+            .position = p,
+            .texture_coords = uv_transform * p,
+        });
       },
       center_, radius_);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer =
-          {
-              .vertex_buffer = host_buffer.Emplace(
-                  vertices.data(), vertices.size() * sizeof(Point),
-                  alignof(float)),
-              .vertex_count = vertices.size() / 2,
-              .index_type = IndexType::kNone,
-          },
+      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,

@@ -68,44 +68,37 @@ bool LineGeometry::ComputeCorners(Point corners[4],
 GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) const {
-  std::vector<Point> vertices;
   auto& transform = entity.GetTransform();
   auto radius = ComputeHalfWidth(transform);
 
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
+
   if (cap_ == Cap::kRound) {
     CircleTessellator tessellator(transform, radius);
-    vertices.reserve(tessellator.GetCircleVertexCount());
+    vtx_builder.Reserve(tessellator.GetCircleVertexCount());
     tessellator.GenerateRoundCapLineTriangleStrip(
-        [&vertices](const Point& p) {  //
-          vertices.push_back(p);
+        [&vtx_builder](const Point& p) {  //
+          vtx_builder.AppendVertex({.position = p});
         },
         p0_, p1_, radius);
   } else {
     Point corners[4];
     if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-      vertices.reserve(4);
-      vertices.push_back(corners[0]);
-      vertices.push_back(corners[1]);
-      vertices.push_back(corners[2]);
-      vertices.push_back(corners[3]);
+      vtx_builder.Reserve(4);
+      vtx_builder.AppendVertex({.position = corners[0]});
+      vtx_builder.AppendVertex({.position = corners[1]});
+      vtx_builder.AppendVertex({.position = corners[2]});
+      vtx_builder.AppendVertex({.position = corners[3]});
     }
   }
-  if (vertices.empty()) {
+  if (!vtx_builder.HasVertices()) {
     return {};
   }
 
-  static_assert(sizeof(Point) == 2 * sizeof(float));
-  static_assert(alignof(Point) == alignof(float));
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
-          {
-              .vertex_buffer = pass.GetTransientsBuffer().Emplace(
-                  vertices.data(), vertices.size() * sizeof(Point),
-                  alignof(Point)),
-              .vertex_count = vertices.size(),
-              .index_type = IndexType::kNone,
-          },
+          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,
@@ -118,52 +111,44 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
                                                  const ContentContext& renderer,
                                                  const Entity& entity,
                                                  RenderPass& pass) const {
-  std::vector<Point> vertices;
   auto& transform = entity.GetTransform();
   auto radius = ComputeHalfWidth(transform);
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
+  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vtx_builder;
 
   if (cap_ == Cap::kRound) {
     CircleTessellator tessellator(transform, radius);
-    vertices.reserve(tessellator.GetCircleVertexCount() * 2);
+    vtx_builder.Reserve(tessellator.GetCircleVertexCount());
     tessellator.GenerateRoundCapLineTriangleStrip(
-        [&vertices, &uv_transform](const Point& p) {
-          vertices.push_back(p);
-          vertices.push_back(uv_transform * p);
+        [&vtx_builder, &uv_transform](const Point& p) {
+          vtx_builder.AppendVertex({
+              .position = p,
+              .texture_coords = uv_transform * p,
+          });
         },
         p0_, p1_, radius);
   } else {
     Point corners[4];
     if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-      vertices.reserve(8);
-      vertices.push_back(corners[0]);
-      vertices.push_back(uv_transform * corners[0]);
-      vertices.push_back(corners[1]);
-      vertices.push_back(uv_transform * corners[1]);
-      vertices.push_back(corners[2]);
-      vertices.push_back(uv_transform * corners[2]);
-      vertices.push_back(corners[3]);
-      vertices.push_back(uv_transform * corners[3]);
+      vtx_builder.Reserve(4);
+      for (auto& corner : corners) {
+        vtx_builder.AppendVertex({
+            .position = corner,
+            .texture_coords = uv_transform * corner,
+        });
+      }
     }
   }
-  if (vertices.empty()) {
+  if (!vtx_builder.HasVertices()) {
     return {};
   }
 
-  static_assert(sizeof(Point) == 2 * sizeof(float));
-  static_assert(alignof(Point) == alignof(float));
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
-          {
-              .vertex_buffer = pass.GetTransientsBuffer().Emplace(
-                  vertices.data(), vertices.size() * sizeof(Point),
-                  alignof(Point)),
-              .vertex_count = vertices.size() / 2,
-              .index_type = IndexType::kNone,
-          },
+          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,
