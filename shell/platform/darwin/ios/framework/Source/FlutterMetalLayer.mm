@@ -16,11 +16,12 @@
 @class FlutterTexture;
 @class FlutterDrawable;
 
-extern CFTimeInterval display_link_target;
+static MTLPixelFormat _defaultPixelFormat = MTLPixelFormatBGRA8Unorm;
 
 @interface FlutterMetalLayer () {
   id<MTLDevice> _preferredDevice;
   CGSize _drawableSize;
+  MTLPixelFormat _pixelFormat;
 
   NSUInteger _nextDrawableId;
 
@@ -149,7 +150,6 @@ extern CFTimeInterval display_link_target;
 
 @synthesize preferredDevice = _preferredDevice;
 @synthesize device = _device;
-@synthesize pixelFormat = _pixelFormat;
 @synthesize framebufferOnly = _framebufferOnly;
 @synthesize colorspace = _colorspace;
 @synthesize wantsExtendedDynamicRangeContent = _wantsExtendedDynamicRangeContent;
@@ -158,7 +158,7 @@ extern CFTimeInterval display_link_target;
   if (self = [super init]) {
     _preferredDevice = MTLCreateSystemDefaultDevice();
     self.device = self.preferredDevice;
-    self.pixelFormat = MTLPixelFormatBGRA8Unorm;
+    _pixelFormat = _defaultPixelFormat;
     _availableTextures = [[NSMutableSet alloc] init];
 
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
@@ -170,6 +170,18 @@ extern CFTimeInterval display_link_target;
                                                object:nil];
   }
   return self;
+}
+
+- (MTLPixelFormat)pixelFormat {
+  return _pixelFormat;
+}
+
+- (void)setPixelFormat:(MTLPixelFormat)pixelFormat {
+  _pixelFormat = pixelFormat;
+
+  // FlutterView updates pixel format on it's layer, but the overlay views
+  // don't - they get correct pixel format right magically.
+  _defaultPixelFormat = pixelFormat;
 }
 
 - (void)dealloc {
