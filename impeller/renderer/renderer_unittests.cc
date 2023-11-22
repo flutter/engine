@@ -1288,6 +1288,8 @@ TEST_P(RendererTest, CanLookupRenderTargetProperties) {
             render_target.GetRenderTargetPixelFormat());
   EXPECT_EQ(render_pass->HasStencilAttachment(),
             render_target.GetStencilAttachment().has_value());
+  EXPECT_EQ(render_pass->GetRenderTargetSize(),
+            render_target.GetRenderTargetSize());
 }
 
 }  // namespace testing
