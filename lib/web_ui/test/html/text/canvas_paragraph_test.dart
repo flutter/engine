@@ -806,7 +806,7 @@ Future<void> testMain() async {
     builder.addPicture(ui.Offset.zero, picture);
     final ui.Scene scene = builder.build();
 
-    ui.PlatformDispatcher.instance.render(scene);
+    (ui.PlatformDispatcher.instance as EnginePlatformDispatcher).render(scene);
 
     picture.dispose();
     scene.dispose();

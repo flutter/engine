@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart' show EnginePlatformDispatcher;
 import 'package:ui/ui.dart' as ui;
 
 /// Tests frame timings in a renderer-agnostic way.
@@ -21,7 +22,7 @@ Future<void> runFrameTimingsTest() async {
     sceneBuilder
       ..pushOffset(0, 0)
       ..pop();
-    ui.PlatformDispatcher.instance.render(sceneBuilder.build());
+    (ui.PlatformDispatcher.instance as EnginePlatformDispatcher).render(sceneBuilder.build());
     frameDone.complete();
   };
 

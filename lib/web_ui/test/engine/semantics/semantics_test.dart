@@ -2497,7 +2497,7 @@ void _testPlatformView() {
       width: 20,
       height: 30,
     );
-    ui.PlatformDispatcher.instance.render(sceneBuilder.build());
+    (ui.PlatformDispatcher.instance as EnginePlatformDispatcher).render(sceneBuilder.build());
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;

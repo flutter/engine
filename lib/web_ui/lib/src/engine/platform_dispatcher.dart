@@ -752,14 +752,23 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   @override
-  void render(ui.Scene scene, [ui.FlutterView? view]) {
-    assert(view != null || implicitView != null,
-        'Calling render without a FlutterView');
-    if (view == null && implicitView == null) {
+  void render(ui.Scene scene, { ui.FlutterView? view, ui.Size? size }) {
+    final ui.FlutterView? target = view ?? implicitView;
+
+    assert(target != null, 'Calling render without a FlutterView');
+
+    if (target == null) {
       // If there is no view to render into, then this is a no-op.
       return;
     }
-    renderer.renderScene(scene, view ?? implicitView!);
+
+    if (size != null && view is EngineFlutterView) {
+      view.dom.rootElement.style
+        ..width = '${size.width / view.devicePixelRatio}px'
+        ..height = '${size.height / view.devicePixelRatio}px';
+    }
+
+    renderer.renderScene(scene, target);
   }
 
   /// Additional accessibility features that may be enabled by the platform.
