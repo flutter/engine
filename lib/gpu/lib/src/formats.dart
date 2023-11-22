@@ -96,3 +96,12 @@ enum StoreAction {
   multisampleResolve,
   storeAndMultisampleResolve,
 }
+
+enum ShaderStage {
+  unknown,
+  vertex,
+  fragment,
+  tessellationControl,
+  tessellationEvaluation,
+  compute,
+}

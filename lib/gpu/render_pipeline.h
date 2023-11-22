@@ -4,14 +4,10 @@
 
 #pragma once
 
-#include <memory>
-
 #include "flutter/lib/gpu/context.h"
 #include "flutter/lib/gpu/export.h"
-#include "flutter/lib/gpu/render_pass.h"
 #include "flutter/lib/gpu/shader.h"
 #include "flutter/lib/ui/dart_wrapper.h"
-#include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 
 namespace flutter {
@@ -27,10 +23,8 @@ class RenderPipeline : public RefCountedDartWrappable<RenderPipeline> {
 
   ~RenderPipeline() override;
 
-  /// Lookup an Impeller pipeline by building a descriptor based on the current
-  /// command state of the given Flutter GPU RenderPass.
-  std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
-  GetOrCreatePipeline(const RenderPass& render_pass);
+  void BindToPipelineDescriptor(impeller::ShaderLibrary& library,
+                                impeller::PipelineDescriptor& desc);
 
  private:
   fml::RefPtr<flutter::gpu::Shader> vertex_shader_;

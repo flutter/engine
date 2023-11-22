@@ -17,6 +17,10 @@ HostBuffer::HostBuffer() : host_buffer_(impeller::HostBuffer::Create()) {}
 
 HostBuffer::~HostBuffer() = default;
 
+std::shared_ptr<impeller::HostBuffer> HostBuffer::GetBuffer() {
+  return host_buffer_;
+}
+
 size_t HostBuffer::EmplaceBytes(const tonic::DartByteData& byte_data) {
   auto view =
       host_buffer_->Emplace(byte_data.data(), byte_data.length_in_bytes(),

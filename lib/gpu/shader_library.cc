@@ -6,13 +6,50 @@
 
 #include <utility>
 
-#include "dart_api.h"
+#include "flutter/lib/gpu/fixtures.h"
 #include "flutter/lib/gpu/shader.h"
+#include "fml/mapping.h"
 #include "fml/memory/ref_ptr.h"
-#include "tonic/converter/dart_converter.h"
+#include "impeller/renderer/vertex_descriptor.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace flutter {
 namespace gpu {
+
+// ===[ BEGIN MEMES ]===========================================================
+static fml::RefPtr<Shader> OpenRuntimeStageAsShader(
+    std::shared_ptr<fml::Mapping> payload,
+    const std::shared_ptr<impeller::VertexDescriptor>& vertex_desc) {
+  impeller::RuntimeStage stage(std::move(payload));
+  return Shader::Make(stage.GetEntrypoint(),
+                      ToShaderStage(stage.GetShaderStage()),
+                      stage.GetCodeMapping(), stage.GetUniforms(), vertex_desc);
+}
+
+static void InstantiateTestShaderLibrary() {
+  ShaderLibrary::ShaderMap shaders;
+  auto vertex_desc = std::make_shared<impeller::VertexDescriptor>();
+  vertex_desc->SetStageInputs(
+      // TODO(bdero): The stage inputs need to be packed into the flatbuffer.
+      FlutterGPUUnlitVertexShader::kAllShaderStageInputs,
+      // TODO(bdero): Make the vertex attribute layout fully configurable.
+      //              When encoding commands, allow for specifying a stride,
+      //              type, and vertex buffer slot for each attribute.
+      //              Provide a way to lookup vertex attribute slot locations by
+      //              name from the shader.
+      FlutterGPUUnlitVertexShader::kInterleavedBufferLayout);
+  shaders["UnlitVertex"] = OpenRuntimeStageAsShader(
+      std::make_shared<fml::NonOwnedMapping>(kFlutterGPUUnlitVertIPLR,
+                                             kFlutterGPUUnlitVertIPLRLength),
+      vertex_desc);
+  shaders["UnlitFragment"] = OpenRuntimeStageAsShader(
+      std::make_shared<fml::NonOwnedMapping>(kFlutterGPUUnlitFragIPLR,
+                                             kFlutterGPUUnlitFragIPLRLength),
+      nullptr);
+  auto library = ShaderLibrary::MakeFromShaders(std::move(shaders));
+  ShaderLibrary::SetOverride(library);
+}
+// ===[ END MEMES ]=============================================================
 
 IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, ShaderLibrary);
 
@@ -21,11 +58,16 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::override_shader_library_;
 fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromAsset(
     const std::string& name,
     std::string& out_error) {
+  // ===========================================================================
+  // This is a temporary hack to get the shader library populated in the
+  // framework before the shader bundle format is landed!
+  InstantiateTestShaderLibrary();
+  // ===========================================================================
+
   if (override_shader_library_) {
     return override_shader_library_;
   }
   // TODO(bdero): Load the ShaderLibrary asset.
-  // auto res = fml::MakeRefCounted<flutter::gpu::ShaderLibrary>();
   out_error = "Shader bundle asset unimplemented";
   return nullptr;
 }

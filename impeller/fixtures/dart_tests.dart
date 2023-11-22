@@ -168,6 +168,20 @@ void canCreateShaderLibrary() {
   assert(shader != null);
 }
 
+gpu.RenderPipeline createUnlitRenderPipeline() {
+  final gpu.ShaderLibrary? library = gpu.ShaderLibrary.fromAsset('playground');
+  assert(library != null);
+  final gpu.Shader? vertex = library!['UnlitVertex'];
+  assert(vertex != null);
+  final gpu.Shader? fragment = library['UnlitFragment'];
+  assert(fragment != null);
+  return gpu.gpuContext.createRenderPipeline(vertex!, fragment!);
+}
+
+ByteData float32(List<double> values) {
+  return Float32List.fromList(values).buffer.asByteData();
+}
+
 @pragma('vm:entry-point')
 void canCreateRenderPassAndSubmit() {
   final gpu.Texture? renderTexture =
@@ -175,8 +189,34 @@ void canCreateRenderPassAndSubmit() {
   assert(renderTexture != null);
 
   final gpu.CommandBuffer commandBuffer = gpu.gpuContext.createCommandBuffer();
-  final gpu.RenderPass renderPass = commandBuffer.createRenderPass(
+  final gpu.RenderPass encoder = commandBuffer.createRenderPass(
       colorAttachment: gpu.ColorAttachment(texture: renderTexture!));
+
+  final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
+  encoder.bindPipeline(pipeline);
+
+  final gpu.HostBuffer transients = gpu.HostBuffer();
+  final gpu.BufferView vertices = transients.emplace(float32(<double>[
+    -0.5, -0.5, //
+    0.5, 0.5, //
+    0.5, -0.5, //
+  ]));
+  final gpu.BufferView color =
+      transients.emplace(float32(<double>[0, 1, 0, 1])); // rgba
+  final gpu.BufferView mvp = transients.emplace(float32(<double>[
+    1, 0, 0, 0, //
+    0, 1, 0, 0, //
+    0, 0, 1, 0, //
+    0, 0, 0, 1, //
+  ]));
+  encoder.bindVertexBuffer(vertices, 3);
+
+  final gpu.UniformSlot? colorSlot =
+      pipeline.vertexShader.getUniformSlot('color');
+  final gpu.UniformSlot? mvpSlot = pipeline.vertexShader.getUniformSlot('mvp');
+  encoder.bindUniform(mvpSlot!, mvp);
+  encoder.bindUniform(colorSlot!, color);
+  encoder.draw();
 
   commandBuffer.submit();
 }

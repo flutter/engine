@@ -5,12 +5,7 @@
 #include "flutter/lib/gpu/render_pipeline.h"
 
 #include "flutter/lib/gpu/shader.h"
-#include "flutter/lib/ui/painting/image.h"
-#include "fml/mapping.h"
-#include "impeller/core/allocator.h"
-#include "impeller/core/formats.h"
-#include "impeller/display_list/dl_image_impeller.h"
-#include "third_party/tonic/typed_data/dart_byte_data.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 
 namespace flutter {
 namespace gpu {
@@ -23,12 +18,16 @@ RenderPipeline::RenderPipeline(
     : vertex_shader_(std::move(vertex_shader)),
       fragment_shader_(std::move(fragment_shader)) {}
 
-RenderPipeline::~RenderPipeline() = default;
+void RenderPipeline::BindToPipelineDescriptor(
+    impeller::ShaderLibrary& library,
+    impeller::PipelineDescriptor& desc) {
+  desc.SetVertexDescriptor(vertex_shader_->GetVertexDescriptor());
 
-std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
-RenderPipeline::GetOrCreatePipeline(const RenderPass& render_pass) {
-  return nullptr;
+  desc.AddStageEntrypoint(vertex_shader_->GetFunctionFromLibrary(library));
+  desc.AddStageEntrypoint(fragment_shader_->GetFunctionFromLibrary(library));
 }
+
+RenderPipeline::~RenderPipeline() = default;
 
 }  // namespace gpu
 }  // namespace flutter

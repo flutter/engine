@@ -11,7 +11,6 @@
 #include "flutter/lib/gpu/shader.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
-#include "impeller/renderer/shader_function.h"
 
 namespace flutter {
 namespace gpu {

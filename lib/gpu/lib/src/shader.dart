@@ -6,12 +6,30 @@
 
 part of flutter_gpu;
 
-@pragma('vm:entry-point')
+base class UniformSlot {
+  UniformSlot(this.slotId, this.shaderStage);
+
+  int slotId;
+  ShaderStage shaderStage;
+}
+
 base class Shader extends NativeFieldWrapperClass1 {
-  // This class is created by the engine, and should not be instantiated
-  // or extended directly.
-  //
   // [Shader] handles are instantiated when interacting with a [ShaderLibrary].
-  @pragma('vm:entry-point')
   Shader._();
+
+  UniformSlot? getUniformSlot(String name) {
+    int slot = _getUniformSlot(name);
+    if (slot < 0) {
+      return null;
+    }
+    return UniformSlot(slot, ShaderStage.values[_getShaderStage()]);
+  }
+
+  @Native<Int Function(Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_Shader_GetShaderStage')
+  external int _getShaderStage();
+
+  @Native<Int Function(Pointer<Void>, Handle)>(
+      symbol: 'InternalFlutterGpu_Shader_GetUniformSlot')
+  external int _getUniformSlot(String name);
 }

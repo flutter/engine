@@ -69,6 +69,58 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     }
   }
 
+  void bindPipeline(RenderPipeline pipeline) {
+    _bindPipeline(pipeline);
+  }
+
+  void bindVertexBuffer(BufferView bufferView, int vertexCount) {
+    switch (bufferView.buffer.runtimeType) {
+      case DeviceBuffer:
+        _bindVertexBufferDevice(bufferView.buffer as DeviceBuffer,
+            bufferView.offsetInBytes, bufferView.lengthInBytes, vertexCount);
+        break;
+      case HostBuffer:
+        _bindVertexBufferHost(bufferView.buffer as HostBuffer,
+            bufferView.offsetInBytes, bufferView.lengthInBytes, vertexCount);
+        break;
+      default:
+        throw Exception("Invalid buffer type");
+    }
+  }
+
+  void bindUniform(UniformSlot slot, BufferView bufferView) {
+    bool success;
+    switch (bufferView.buffer.runtimeType) {
+      case DeviceBuffer:
+        success = _bindUniformDevice(
+            slot.shaderStage.index,
+            slot.slotId,
+            bufferView.buffer as DeviceBuffer,
+            bufferView.offsetInBytes,
+            bufferView.lengthInBytes);
+        break;
+      case HostBuffer:
+        success = _bindUniformHost(
+            slot.shaderStage.index,
+            slot.slotId,
+            bufferView.buffer as HostBuffer,
+            bufferView.offsetInBytes,
+            bufferView.lengthInBytes);
+        break;
+      default:
+        throw Exception("Invalid buffer type");
+    }
+    if (!success) {
+      throw Exception("Failed to bind uniform slot");
+    }
+  }
+
+  void draw() {
+    if (!_draw()) {
+      throw Exception("Failed to append draw");
+    }
+  }
+
   /// Wrap with native counterpart.
   @Native<Void Function(Handle)>(
       symbol: 'InternalFlutterGpu_RenderPass_Initialize')
@@ -87,4 +139,32 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   @Native<Handle Function(Pointer<Void>, Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Begin')
   external String? _begin(CommandBuffer commandBuffer);
+
+  @Native<Void Function(Pointer<Void>, Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindPipeline')
+  external void _bindPipeline(RenderPipeline pipeline);
+
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindVertexBufferDevice')
+  external void _bindVertexBufferDevice(DeviceBuffer buffer, int offsetInBytes,
+      int lengthInBytes, int vertexCount);
+
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindVertexBufferHost')
+  external void _bindVertexBufferHost(
+      HostBuffer buffer, int offsetInBytes, int lengthInBytes, int vertexCount);
+
+  @Native<Bool Function(Pointer<Void>, Int, Int, Pointer<Void>, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindUniformDevice')
+  external bool _bindUniformDevice(int stage, int slotId, DeviceBuffer buffer,
+      int offsetInBytes, int lengthInBytes);
+
+  @Native<Bool Function(Pointer<Void>, Int, Int, Pointer<Void>, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindUniformHost')
+  external bool _bindUniformHost(int stage, int slotId, HostBuffer buffer,
+      int offsetInBytes, int lengthInBytes);
+
+  @Native<Bool Function(Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_RenderPass_Draw')
+  external bool _draw();
 }
