@@ -353,8 +353,9 @@ class CanvasKitRenderer implements Renderer {
     frameTimingsOnBuildFinish();
     frameTimingsOnRasterStart();
 
-    // TODO(harryterkelsen): Create and dispose the Rasterizer when the views
-    // are registered/disposed.
+    // TODO(https://github.com/flutter/flutter/issues/138926): Use
+    // `FlutterViewManager.onViewsChanged` to manage the lifecycle of
+    // Rasterizers.
     final Rasterizer rasterizer =
         _getRasterizerForView(view as EngineFlutterView);
 
@@ -382,7 +383,6 @@ class CanvasKitRenderer implements Renderer {
       rasterizer.renderCanvasFactory.debugClear();
       rasterizer.viewEmbedder.debugClear();
     }
-    // TODO(harryterkelsen): Also delete the rasterizers?
   }
 
   @override

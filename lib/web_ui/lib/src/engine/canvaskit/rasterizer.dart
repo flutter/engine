@@ -5,7 +5,7 @@
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-/// A class that can rasterize [LayerTree]s into a given [Surface].
+/// A class that can rasterize [LayerTree]s into a given `sceneHost` element.
 class Rasterizer {
   Rasterizer(this.sceneHost);
 
