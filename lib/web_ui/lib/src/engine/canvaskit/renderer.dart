@@ -40,6 +40,10 @@ class CanvasKitRenderer implements Renderer {
   @override
   SkiaFontCollection get fontCollection => _fontCollection;
 
+  /// The scene host, where the root canvas and overlay canvases are added to.
+  DomElement? _sceneHost;
+  DomElement? get sceneHost => _sceneHost;
+
   /// This is an SkSurface backed by an OffScreenCanvas. This single Surface is
   /// used to render to many RenderCanvases to produce the rendered scene.
   final Surface offscreenSurface = Surface();
@@ -67,7 +71,7 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    // No work is required.
+    // No work required.
   }
 
   @override
@@ -80,14 +84,12 @@ class CanvasKitRenderer implements Renderer {
     List<ui.Offset>? textureCoordinates,
     List<ui.Color>? colors,
     List<int>? indices,
-  }) =>
-      CkVertices(
-        mode,
-        positions,
-        textureCoordinates: textureCoordinates,
-        colors: colors,
-        indices: indices,
-      );
+  }) => CkVertices(
+    mode,
+    positions,
+    textureCoordinates: textureCoordinates,
+    colors: colors,
+    indices: indices);
 
   @override
   ui.Vertices createVerticesRaw(
@@ -96,18 +98,16 @@ class CanvasKitRenderer implements Renderer {
     Float32List? textureCoordinates,
     Int32List? colors,
     Uint16List? indices,
-  }) =>
-      CkVertices.raw(
-        mode,
-        positions,
-        textureCoordinates: textureCoordinates,
-        colors: colors,
-        indices: indices,
-      );
+  }) => CkVertices.raw(
+    mode,
+    positions,
+    textureCoordinates: textureCoordinates,
+    colors: colors,
+    indices: indices);
 
   @override
   ui.Canvas createCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) =>
-      CanvasKitCanvas(recorder, cullRect);
+    CanvasKitCanvas(recorder, cullRect);
 
   @override
   ui.Gradient createLinearGradient(
@@ -116,9 +116,8 @@ class CanvasKitRenderer implements Renderer {
     List<ui.Color> colors, [
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
-    Float32List? matrix4,
-  ]) =>
-      CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4);
+    Float32List? matrix4
+  ]) => CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4);
 
   @override
   ui.Gradient createRadialGradient(
@@ -128,8 +127,7 @@ class CanvasKitRenderer implements Renderer {
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-  ]) =>
-      CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix4);
+  ]) => CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix4);
 
   @override
   ui.Gradient createConicalGradient(
@@ -137,13 +135,19 @@ class CanvasKitRenderer implements Renderer {
     double focalRadius,
     ui.Offset center,
     double radius,
-    List<ui.Color> colors, [
-    List<double>? colorStops,
+    List<ui.Color> colors,
+    [List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
-    Float32List? matrix,
-  ]) =>
-      CkGradientConical(focal, focalRadius, center, radius, colors, colorStops,
-          tileMode, matrix);
+    Float32List? matrix]
+  ) => CkGradientConical(
+    focal,
+    focalRadius,
+    center,
+    radius,
+    colors,
+    colorStops,
+    tileMode,
+    matrix);
 
   @override
   ui.Gradient createSweepGradient(
@@ -153,10 +157,8 @@ class CanvasKitRenderer implements Renderer {
     ui.TileMode tileMode = ui.TileMode.clamp,
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
-    Float32List? matrix4,
-  ]) =>
-      CkGradientSweep(
-          center, colors, colorStops, tileMode, startAngle, endAngle, matrix4);
+    Float32List? matrix4
+  ]) => CkGradientSweep(center, colors, colorStops, tileMode, startAngle, endAngle, matrix4);
 
   @override
   ui.PictureRecorder createPictureRecorder() => CkPictureRecorder();
@@ -168,37 +170,31 @@ class CanvasKitRenderer implements Renderer {
   ui.ImageFilter createBlurImageFilter({
     double sigmaX = 0.0,
     double sigmaY = 0.0,
-    ui.TileMode tileMode = ui.TileMode.clamp,
-  }) =>
-      CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
+    ui.TileMode tileMode = ui.TileMode.clamp
+  }) => CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
 
   @override
-  ui.ImageFilter createDilateImageFilter(
-      {double radiusX = 0.0, double radiusY = 0.0}) {
+  ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.dilate not implemented for CanvasKit.');
+    throw UnimplementedError('ImageFilter.dilate not implemented for CanvasKit.');
   }
 
   @override
-  ui.ImageFilter createErodeImageFilter(
-      {double radiusX = 0.0, double radiusY = 0.0}) {
+  ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
     // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError(
-        'ImageFilter.erode not implemented for CanvasKit.');
+    throw UnimplementedError('ImageFilter.erode not implemented for CanvasKit.');
   }
 
   @override
-  ui.ImageFilter createMatrixImageFilter(Float64List matrix4,
-          {ui.FilterQuality filterQuality = ui.FilterQuality.low}) =>
-      CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
+  ui.ImageFilter createMatrixImageFilter(
+    Float64List matrix4, {
+    ui.FilterQuality filterQuality = ui.FilterQuality.low
+  }) => CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
 
   @override
-  ui.ImageFilter composeImageFilters(
-      {required ui.ImageFilter outer, required ui.ImageFilter inner}) {
-    // TODO(ferhat): add implementation
-    throw UnimplementedError(
-        'ImageFilter.compose not implemented for CanvasKit.');
+  ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner}) {
+  // TODO(ferhat): add implementation
+    throw UnimplementedError('ImageFilter.compose not implemented for CanvasKit.');
   }
 
   @override
@@ -206,19 +202,25 @@ class CanvasKitRenderer implements Renderer {
     Uint8List list, {
     int? targetWidth,
     int? targetHeight,
-    bool allowUpscaling = true,
-  }) async =>
-      skiaInstantiateImageCodec(list, targetWidth, targetHeight);
+    bool allowUpscaling = true
+  }) async => skiaInstantiateImageCodec(
+    list,
+    targetWidth,
+    targetHeight
+  );
 
   @override
-  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri,
-          {ui_web.ImageCodecChunkCallback? chunkCallback}) =>
-      skiaInstantiateWebImageCodec(uri.toString(), chunkCallback);
+  Future<ui.Codec> instantiateImageCodecFromUrl(
+    Uri uri, {
+    ui_web.ImageCodecChunkCallback? chunkCallback
+  }) => skiaInstantiateWebImageCodec(uri.toString(), chunkCallback);
 
   @override
   ui.Image createImageFromImageBitmap(DomImageBitmap imageBitmap) {
-    final SkImage? skImage =
-        canvasKit.MakeLazyImageFromImageBitmap(imageBitmap, true);
+    final SkImage? skImage = canvasKit.MakeLazyImageFromImageBitmap(
+      imageBitmap,
+      true
+    );
     if (skImage == null) {
       throw Exception('Failed to convert image bitmap to an SkImage.');
     }
@@ -235,19 +237,18 @@ class CanvasKitRenderer implements Renderer {
     int? rowBytes,
     int? targetWidth,
     int? targetHeight,
-    bool allowUpscaling = true,
-  }) =>
-      skiaDecodeImageFromPixels(
-        pixels,
-        width,
-        height,
-        format,
-        callback,
-        rowBytes: rowBytes,
-        targetWidth: targetWidth,
-        targetHeight: targetHeight,
-        allowUpscaling: allowUpscaling,
-      );
+    bool allowUpscaling = true
+  }) => skiaDecodeImageFromPixels(
+    pixels,
+    width,
+    height,
+    format,
+    callback,
+    rowBytes: rowBytes,
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
+    allowUpscaling: allowUpscaling
+  );
 
   @override
   ui.ImageShader createImageShader(
@@ -255,9 +256,8 @@ class CanvasKitRenderer implements Renderer {
     ui.TileMode tmx,
     ui.TileMode tmy,
     Float64List matrix4,
-    ui.FilterQuality? filterQuality,
-  ) =>
-      CkImageShader(image, tmx, tmy, matrix4, filterQuality);
+    ui.FilterQuality? filterQuality
+  ) => CkImageShader(image, tmx, tmy, matrix4, filterQuality);
 
   @override
   ui.Path createPath() => CkPath();
@@ -267,7 +267,7 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) =>
-      CkPath.combine(op, path1, path2);
+    CkPath.combine(op, path1, path2);
 
   @override
   ui.TextStyle createTextStyle({
@@ -291,31 +291,30 @@ class CanvasKitRenderer implements Renderer {
     ui.Paint? foreground,
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
-    List<ui.FontVariation>? fontVariations,
-  }) =>
-      CkTextStyle(
-        color: color,
-        decoration: decoration,
-        decorationColor: decorationColor,
-        decorationStyle: decorationStyle,
-        decorationThickness: decorationThickness,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        textBaseline: textBaseline,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        locale: locale,
-        background: background as CkPaint?,
-        foreground: foreground as CkPaint?,
-        shadows: shadows,
-        fontFeatures: fontFeatures,
-        fontVariations: fontVariations,
-      );
+    List<ui.FontVariation>? fontVariations
+  }) => CkTextStyle(
+    color: color,
+    decoration: decoration,
+    decorationColor: decorationColor,
+    decorationStyle: decorationStyle,
+    decorationThickness: decorationThickness,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    textBaseline: textBaseline,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    letterSpacing: letterSpacing,
+    wordSpacing: wordSpacing,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    locale: locale,
+    background: background as CkPaint?,
+    foreground: foreground as CkPaint?,
+    shadows: shadows,
+    fontFeatures: fontFeatures,
+    fontVariations: fontVariations,
+  );
 
   @override
   ui.ParagraphStyle createParagraphStyle({
@@ -330,23 +329,22 @@ class CanvasKitRenderer implements Renderer {
     ui.FontStyle? fontStyle,
     ui.StrutStyle? strutStyle,
     String? ellipsis,
-    ui.Locale? locale,
-  }) =>
-      CkParagraphStyle(
-        textAlign: textAlign,
-        textDirection: textDirection,
-        maxLines: maxLines,
-        fontFamily: fontFamily,
-        fontSize: fontSize,
-        height: height,
-        textHeightBehavior: textHeightBehavior,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        strutStyle: strutStyle,
-        ellipsis: ellipsis,
-        locale: locale,
-        applyRoundingHack: !ui.ParagraphBuilder.shouldDisableRoundingHack,
-      );
+    ui.Locale? locale
+  }) => CkParagraphStyle(
+    textAlign: textAlign,
+    textDirection: textDirection,
+    maxLines: maxLines,
+    fontFamily: fontFamily,
+    fontSize: fontSize,
+    height: height,
+    textHeightBehavior: textHeightBehavior,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    strutStyle: strutStyle,
+    ellipsis: ellipsis,
+    locale: locale,
+    applyRoundingHack: !ui.ParagraphBuilder.shouldDisableRoundingHack,
+  );
 
   @override
   ui.StrutStyle createStrutStyle({
@@ -358,23 +356,22 @@ class CanvasKitRenderer implements Renderer {
     double? leading,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
-    bool? forceStrutHeight,
-  }) =>
-      CkStrutStyle(
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        leading: leading,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        forceStrutHeight: forceStrutHeight,
-      );
+    bool? forceStrutHeight
+  }) => CkStrutStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    leading: leading,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    forceStrutHeight: forceStrutHeight,
+  );
 
   @override
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
-      CkParagraphBuilder(style);
+    CkParagraphBuilder(style);
 
   @override
   void renderScene(ui.Scene scene, ui.FlutterView view) {
@@ -400,6 +397,7 @@ class CanvasKitRenderer implements Renderer {
 
   final Map<EngineFlutterView, Rasterizer> _rasterizers =
       <EngineFlutterView, Rasterizer>{};
+  
   Rasterizer _getRasterizerForView(EngineFlutterView view) {
     return _rasterizers.putIfAbsent(view, () {
       return Rasterizer(view.dom.sceneHost);
@@ -425,16 +423,14 @@ class CanvasKitRenderer implements Renderer {
     _programs.clear();
   }
 
-  static final Map<String, Future<ui.FragmentProgram>> _programs =
-      <String, Future<ui.FragmentProgram>>{};
+  static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
 
   @override
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     if (_programs.containsKey(assetKey)) {
       return _programs[assetKey]!;
     }
-    return _programs[assetKey] =
-        ui_web.assetManager.load(assetKey).then((ByteData data) {
+    return _programs[assetKey] = ui_web.assetManager.load(assetKey).then((ByteData data) {
       return CkFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
@@ -449,17 +445,16 @@ class CanvasKitRenderer implements Renderer {
     required double width,
     required double left,
     required double baseline,
-    required int lineNumber,
-  }) =>
-      EngineLineMetrics(
-        hardBreak: hardBreak,
-        ascent: ascent,
-        descent: descent,
-        unscaledAscent: unscaledAscent,
-        height: height,
-        width: width,
-        left: left,
-        baseline: baseline,
-        lineNumber: lineNumber,
-      );
+    required int lineNumber
+  }) => EngineLineMetrics(
+    hardBreak: hardBreak,
+    ascent: ascent,
+    descent: descent,
+    unscaledAscent: unscaledAscent,
+    height: height,
+    width: width,
+    left: left,
+    baseline: baseline,
+    lineNumber: lineNumber
+  );
 }
