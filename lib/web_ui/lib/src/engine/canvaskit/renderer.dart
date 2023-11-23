@@ -81,10 +81,13 @@ class CanvasKitRenderer implements Renderer {
     List<ui.Color>? colors,
     List<int>? indices,
   }) =>
-      CkVertices(mode, positions,
-          textureCoordinates: textureCoordinates,
-          colors: colors,
-          indices: indices);
+      CkVertices(
+        mode,
+        positions,
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices,
+      );
 
   @override
   ui.Vertices createVerticesRaw(
@@ -94,10 +97,13 @@ class CanvasKitRenderer implements Renderer {
     Int32List? colors,
     Uint16List? indices,
   }) =>
-      CkVertices.raw(mode, positions,
-          textureCoordinates: textureCoordinates,
-          colors: colors,
-          indices: indices);
+      CkVertices.raw(
+        mode,
+        positions,
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices,
+      );
 
   @override
   ui.Canvas createCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) =>
@@ -105,10 +111,13 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   ui.Gradient createLinearGradient(
-          ui.Offset from, ui.Offset to, List<ui.Color> colors,
-          [List<double>? colorStops,
-          ui.TileMode tileMode = ui.TileMode.clamp,
-          Float32List? matrix4]) =>
+    ui.Offset from,
+    ui.Offset to,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix4,
+  ]) =>
       CkGradientLinear(from, to, colors, colorStops, tileMode, matrix4);
 
   @override
@@ -123,21 +132,29 @@ class CanvasKitRenderer implements Renderer {
       CkGradientRadial(center, radius, colors, colorStops, tileMode, matrix4);
 
   @override
-  ui.Gradient createConicalGradient(ui.Offset focal, double focalRadius,
-          ui.Offset center, double radius, List<ui.Color> colors,
-          [List<double>? colorStops,
-          ui.TileMode tileMode = ui.TileMode.clamp,
-          Float32List? matrix]) =>
+  ui.Gradient createConicalGradient(
+    ui.Offset focal,
+    double focalRadius,
+    ui.Offset center,
+    double radius,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    Float32List? matrix,
+  ]) =>
       CkGradientConical(focal, focalRadius, center, radius, colors, colorStops,
           tileMode, matrix);
 
   @override
-  ui.Gradient createSweepGradient(ui.Offset center, List<ui.Color> colors,
-          [List<double>? colorStops,
-          ui.TileMode tileMode = ui.TileMode.clamp,
-          double startAngle = 0.0,
-          double endAngle = math.pi * 2,
-          Float32List? matrix4]) =>
+  ui.Gradient createSweepGradient(
+    ui.Offset center,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    double startAngle = 0.0,
+    double endAngle = math.pi * 2,
+    Float32List? matrix4,
+  ]) =>
       CkGradientSweep(
           center, colors, colorStops, tileMode, startAngle, endAngle, matrix4);
 
@@ -148,10 +165,11 @@ class CanvasKitRenderer implements Renderer {
   ui.SceneBuilder createSceneBuilder() => LayerSceneBuilder();
 
   @override
-  ui.ImageFilter createBlurImageFilter(
-          {double sigmaX = 0.0,
-          double sigmaY = 0.0,
-          ui.TileMode tileMode = ui.TileMode.clamp}) =>
+  ui.ImageFilter createBlurImageFilter({
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+  }) =>
       CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
 
   @override
@@ -184,10 +202,12 @@ class CanvasKitRenderer implements Renderer {
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodec(Uint8List list,
-          {int? targetWidth,
-          int? targetHeight,
-          bool allowUpscaling = true}) async =>
+  Future<ui.Codec> instantiateImageCodec(
+    Uint8List list, {
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true,
+  }) async =>
       skiaInstantiateImageCodec(list, targetWidth, targetHeight);
 
   @override
@@ -206,25 +226,37 @@ class CanvasKitRenderer implements Renderer {
   }
 
   @override
-  void decodeImageFromPixels(Uint8List pixels, int width, int height,
-          ui.PixelFormat format, ui.ImageDecoderCallback callback,
-          {int? rowBytes,
-          int? targetWidth,
-          int? targetHeight,
-          bool allowUpscaling = true}) =>
-      skiaDecodeImageFromPixels(pixels, width, height, format, callback,
-          rowBytes: rowBytes,
-          targetWidth: targetWidth,
-          targetHeight: targetHeight,
-          allowUpscaling: allowUpscaling);
+  void decodeImageFromPixels(
+    Uint8List pixels,
+    int width,
+    int height,
+    ui.PixelFormat format,
+    ui.ImageDecoderCallback callback, {
+    int? rowBytes,
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true,
+  }) =>
+      skiaDecodeImageFromPixels(
+        pixels,
+        width,
+        height,
+        format,
+        callback,
+        rowBytes: rowBytes,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling,
+      );
 
   @override
   ui.ImageShader createImageShader(
-          ui.Image image,
-          ui.TileMode tmx,
-          ui.TileMode tmy,
-          Float64List matrix4,
-          ui.FilterQuality? filterQuality) =>
+    ui.Image image,
+    ui.TileMode tmx,
+    ui.TileMode tmy,
+    Float64List matrix4,
+    ui.FilterQuality? filterQuality,
+  ) =>
       CkImageShader(image, tmx, tmy, matrix4, filterQuality);
 
   @override
@@ -238,28 +270,29 @@ class CanvasKitRenderer implements Renderer {
       CkPath.combine(op, path1, path2);
 
   @override
-  ui.TextStyle createTextStyle(
-          {ui.Color? color,
-          ui.TextDecoration? decoration,
-          ui.Color? decorationColor,
-          ui.TextDecorationStyle? decorationStyle,
-          double? decorationThickness,
-          ui.FontWeight? fontWeight,
-          ui.FontStyle? fontStyle,
-          ui.TextBaseline? textBaseline,
-          String? fontFamily,
-          List<String>? fontFamilyFallback,
-          double? fontSize,
-          double? letterSpacing,
-          double? wordSpacing,
-          double? height,
-          ui.TextLeadingDistribution? leadingDistribution,
-          ui.Locale? locale,
-          ui.Paint? background,
-          ui.Paint? foreground,
-          List<ui.Shadow>? shadows,
-          List<ui.FontFeature>? fontFeatures,
-          List<ui.FontVariation>? fontVariations}) =>
+  ui.TextStyle createTextStyle({
+    ui.Color? color,
+    ui.TextDecoration? decoration,
+    ui.Color? decorationColor,
+    ui.TextDecorationStyle? decorationStyle,
+    double? decorationThickness,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.TextBaseline? textBaseline,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    ui.Locale? locale,
+    ui.Paint? background,
+    ui.Paint? foreground,
+    List<ui.Shadow>? shadows,
+    List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations,
+  }) =>
       CkTextStyle(
         color: color,
         decoration: decoration,
@@ -285,19 +318,20 @@ class CanvasKitRenderer implements Renderer {
       );
 
   @override
-  ui.ParagraphStyle createParagraphStyle(
-          {ui.TextAlign? textAlign,
-          ui.TextDirection? textDirection,
-          int? maxLines,
-          String? fontFamily,
-          double? fontSize,
-          double? height,
-          ui.TextHeightBehavior? textHeightBehavior,
-          ui.FontWeight? fontWeight,
-          ui.FontStyle? fontStyle,
-          ui.StrutStyle? strutStyle,
-          String? ellipsis,
-          ui.Locale? locale}) =>
+  ui.ParagraphStyle createParagraphStyle({
+    ui.TextAlign? textAlign,
+    ui.TextDirection? textDirection,
+    int? maxLines,
+    String? fontFamily,
+    double? fontSize,
+    double? height,
+    ui.TextHeightBehavior? textHeightBehavior,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.StrutStyle? strutStyle,
+    String? ellipsis,
+    ui.Locale? locale,
+  }) =>
       CkParagraphStyle(
         textAlign: textAlign,
         textDirection: textDirection,
@@ -315,16 +349,17 @@ class CanvasKitRenderer implements Renderer {
       );
 
   @override
-  ui.StrutStyle createStrutStyle(
-          {String? fontFamily,
-          List<String>? fontFamilyFallback,
-          double? fontSize,
-          double? height,
-          ui.TextLeadingDistribution? leadingDistribution,
-          double? leading,
-          ui.FontWeight? fontWeight,
-          ui.FontStyle? fontStyle,
-          bool? forceStrutHeight}) =>
+  ui.StrutStyle createStrutStyle({
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    double? leading,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    bool? forceStrutHeight,
+  }) =>
       CkStrutStyle(
         fontFamily: fontFamily,
         fontFamilyFallback: fontFamilyFallback,
@@ -405,24 +440,26 @@ class CanvasKitRenderer implements Renderer {
   }
 
   @override
-  ui.LineMetrics createLineMetrics(
-          {required bool hardBreak,
-          required double ascent,
-          required double descent,
-          required double unscaledAscent,
-          required double height,
-          required double width,
-          required double left,
-          required double baseline,
-          required int lineNumber}) =>
+  ui.LineMetrics createLineMetrics({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double unscaledAscent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+  }) =>
       EngineLineMetrics(
-          hardBreak: hardBreak,
-          ascent: ascent,
-          descent: descent,
-          unscaledAscent: unscaledAscent,
-          height: height,
-          width: width,
-          left: left,
-          baseline: baseline,
-          lineNumber: lineNumber);
+        hardBreak: hardBreak,
+        ascent: ascent,
+        descent: descent,
+        unscaledAscent: unscaledAscent,
+        height: height,
+        width: width,
+        left: left,
+        baseline: baseline,
+        lineNumber: lineNumber,
+      );
 }
