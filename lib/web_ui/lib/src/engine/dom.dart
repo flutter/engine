@@ -3669,7 +3669,11 @@ bool browserSupportsOffscreenCanvas = _offscreenCanvasConstructor != null;
 @JS('window.createImageBitmap')
 external JSAny? get _createImageBitmapFunction;
 
-bool browserSupportsCreateImageBitmap = _createImageBitmapFunction != null;
+/// Set to `true` to disable `createImageBitmap` support. Used in tests.
+bool debugDisableCreateImageBitmapSupport = false;
+
+bool browserSupportsCreateImageBitmap =
+    !debugDisableCreateImageBitmapSupport || _createImageBitmapFunction != null;
 
 @JS()
 @staticInterop
