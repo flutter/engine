@@ -397,7 +397,7 @@ class CanvasKitRenderer implements Renderer {
 
   final Map<EngineFlutterView, Rasterizer> _rasterizers =
       <EngineFlutterView, Rasterizer>{};
-  
+ 
   Rasterizer _getRasterizerForView(EngineFlutterView view) {
     return _rasterizers.putIfAbsent(view, () {
       return Rasterizer(view.dom.sceneHost);
