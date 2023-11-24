@@ -126,6 +126,8 @@ namespace {
 struct PlatformView {
   EmbedderExternalView::ViewIdentifier view_identifier;
   const EmbeddedViewParams* params;
+
+  // The frame of the platform view, after clipping, in screen coordinates.
   SkRect clipped_frame;
 
   explicit PlatformView(const EmbedderExternalView* view) {
@@ -160,8 +162,15 @@ struct PlatformView {
   }
 };
 
+/// Each layer will result in a single physical surface that contains Flutter
+/// contents. It may contain multiple platform views and the slices
+/// that would be otherwise rendered between these platform views will be
+/// collapsed into this layer, as long as it does not intersect any of the
+/// platform views.
 class Layer {
  public:
+  /// Returns whether the rectangle intersects any of the platform views of
+  /// this layer.
   bool IntersectsPlatformView(const SkRect& rect) {
     for (auto& platform_view : platform_views_) {
       if (platform_view.clipped_frame.intersects(rect)) {
@@ -171,6 +180,8 @@ class Layer {
     return false;
   }
 
+  /// Returns whether the region intersects any of the platform views of this
+  /// layer.
   bool IntersectsPlatformView(const DlRegion& region) {
     for (auto& platform_view : platform_views_) {
       if (region.intersects(platform_view.clipped_frame.roundOut())) {
@@ -180,18 +191,24 @@ class Layer {
     return false;
   }
 
+  /// Returns whether the rectangle intersects any of the Flutter contents of
+  /// this layer.
   bool IntersectsFlutterContents(const SkRect& rect) {
     return flutter_contents_region_.intersects(rect.roundOut());
   }
 
+  /// Returns whether the region intersects any of the Flutter contents of this
+  /// layer.
   bool IntersectsFlutterContents(const DlRegion& region) {
     return flutter_contents_region_.intersects(region);
   }
 
+  /// Adds a platform view to this layer.
   void AddPlatformView(const PlatformView& platform_view) {
     platform_views_.push_back(platform_view);
   }
 
+  /// Adds Flutter contents to this layer.
   void AddFlutterContents(EmbedderExternalView* contents,
                           const DlRegion& contents_region) {
     flutter_contents_.push_back(contents);
@@ -207,6 +224,8 @@ class Layer {
     render_target_ = std::move(target);
   }
 
+  /// Renders this layer Flutter contents to the render target previously
+  /// assigned with SetRenderTarget.
   void RenderFlutterContents() {
     FML_DCHECK(has_flutter_contents());
     if (render_target_) {
@@ -218,6 +237,8 @@ class Layer {
     }
   }
 
+  /// Returns platform views for this layer. In Z-order the platform views are
+  /// positioned *below* this layer's Flutter contents.
   const std::vector<PlatformView>& platform_views() const {
     return platform_views_;
   }
@@ -236,12 +257,24 @@ class Layer {
   std::unique_ptr<EmbedderRenderTarget> render_target_;
 };
 
+/// A layout builder is responsible for building an optimized list of Layers
+/// from a list of `EmbedderExternalView`s. Single EmbedderExternalView contains
+/// at most one platform view and at most one layer of Flutter contents.
+/// LayerBuilder is responsible for producing as few Layers from the list of
+/// EmbedderExternalViews as possible while maintaining identical visual result.
+///
+/// Implements https://flutter.dev/go/optimized-platform-view-layers
 class LayerBuilder {
  public:
   explicit LayerBuilder(SkISize frame_size) : frame_size_(frame_size) {
     layers_.push_back(Layer());
   }
 
+  /// Adds the platform view and/or flutter contents from the
+  /// EmbedderExternalView instance.
+  ///
+  /// This will try to add the content and platform view to an existing layer
+  /// if possible. If not, a new layer will be created.
   void AddExternalView(EmbedderExternalView* view) {
     if (view->HasPlatformView()) {
       PlatformView platform_view(view);
@@ -252,6 +285,7 @@ class LayerBuilder {
     }
   }
 
+  /// Prepares the render targets for all layers that have Flutter contents.
   void PrepareBackingStore(
       const std::function<std::unique_ptr<EmbedderRenderTarget>(
           FlutterBackingStoreConfig)>& target_provider) {
@@ -263,6 +297,8 @@ class LayerBuilder {
     }
   }
 
+  /// Renders all layers with Flutter contents to their respective render
+  /// targets.
   void Render() {
     for (auto& layer : layers_) {
       if (layer.has_flutter_contents()) {
@@ -271,6 +307,7 @@ class LayerBuilder {
     }
   }
 
+  /// Populates EmbedderLayers from layer builder's layers.
   void PushLayers(EmbedderLayers& layers) {
     for (auto& layer : layers_) {
       for (auto& view : layer.platform_views()) {
@@ -286,6 +323,7 @@ class LayerBuilder {
     }
   }
 
+  /// Removes the render targets from layers and returns them for collection.
   std::vector<std::unique_ptr<EmbedderRenderTarget>>
   ClearAndCollectRenderTargets() {
     std::vector<std::unique_ptr<EmbedderRenderTarget>> result;
@@ -311,8 +349,16 @@ class LayerBuilder {
                                                                 region);
   }
 
+  /// Returns the deepest layer to which the platform view can be added. That
+  /// would be (whichever comes first):
+  /// - First layer from back that has platform view that intersects with this
+  ///   view
+  /// - Very last layer from back that has surface that doesn't intersect with
+  ///   this. That is because layer content renders on top of the platform view.
   Layer& GetLayerForPlatformView(PlatformView view) {
     for (auto iter = layers_.rbegin(); iter != layers_.rend(); ++iter) {
+      // This layer has surface that intersects with this view. That means we
+      // went one too far and need the layer before this.
       if (iter->IntersectsFlutterContents(view.clipped_frame)) {
         if (iter == layers_.rbegin()) {
           layers_.emplace_back();
@@ -329,6 +375,8 @@ class LayerBuilder {
     return layers_.front();
   }
 
+  /// Finds layer to which the Flutter content can be added. That would
+  /// be first layer from back that has any intersection with this region.
   Layer& GetLayerForFlutterContentsRegion(const DlRegion& region) {
     for (auto iter = layers_.rbegin(); iter != layers_.rend(); ++iter) {
       if (iter->IntersectsPlatformView(region) ||
@@ -345,7 +393,6 @@ class LayerBuilder {
 
 };  // namespace
 
-// https://flutter.dev/go/optimized-platform-view-layers
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
