@@ -339,7 +339,7 @@ extern CFTimeInterval display_link_target;
   [CATransaction commit];
   _displayLink.paused = NO;
   _displayLinkPauseCountdown = 0;
-  if (_didSetContentsDuringThisDisplayLinkPeriod) {
+  if (!_didSetContentsDuringThisDisplayLinkPeriod) {
     _didSetContentsDuringThisDisplayLinkPeriod = YES;
   } else if (!_displayLinkForcedMaxRate) {
     _displayLinkForcedMaxRate = YES;
