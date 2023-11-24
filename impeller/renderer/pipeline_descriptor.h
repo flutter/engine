@@ -128,6 +128,10 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   const std::vector<int32_t>& GetSpecializationConstants() const;
 
+  void SetHasSubpassDependency(bool value) { has_subpass_dependency_ = value; }
+
+  bool GetHasSubpassDependency() const { return has_subpass_dependency_; }
+
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -146,6 +150,7 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
+  bool has_subpass_dependency_ = false;
   std::vector<int32_t> specialization_constants_;
 };
 

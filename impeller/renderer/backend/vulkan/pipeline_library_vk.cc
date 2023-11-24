@@ -19,6 +19,8 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
 #include "impeller/renderer/backend/vulkan/vertex_descriptor_vk.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -28,6 +30,7 @@ PipelineLibraryVK::PipelineLibraryVK(
     fml::UniqueFD cache_directory,
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
     : device_holder_(device_holder),
+      supports_framebuffer_fetch_(caps->SupportsFramebufferFetch()),
       pso_cache_(std::make_shared<PipelineCacheVK>(std::move(caps),
                                                    device_holder,
                                                    std::move(cache_directory))),
@@ -78,10 +81,12 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
 ///
 static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     const vk::Device& device,
-    const PipelineDescriptor& desc) {
+    const PipelineDescriptor& desc,
+    bool supports_framebuffer_fetch) {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
+  std::vector<vk::AttachmentReference> subpass_color_ref;
   vk::AttachmentReference depth_stencil_ref = kUnusedAttachmentReference;
 
   color_refs.resize(desc.GetMaxColorAttacmentBindIndex() + 1,
@@ -96,6 +101,8 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     attachments.emplace_back(
         CreatePlaceholderAttachmentDescription(color.format, sample_count));
   }
+  subpass_color_ref.push_back(vk::AttachmentReference{
+      static_cast<uint32_t>(0), vk::ImageLayout::eColorAttachmentOptimal});
 
   if (auto depth = desc.GetDepthStencilAttachmentDescriptor();
       depth.has_value()) {
@@ -115,6 +122,18 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
 
   vk::SubpassDescription subpass_desc;
   subpass_desc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+
+  std::vector<vk::SubpassDependency> subpass_dependencies;
+
+  // If the device supports framebuffer fetch, compatibility pipelines are
+  // always created with the self reference and rasterization order flag. This
+  // ensures that all compiled pipelines are compatible with a render pass that
+  // contains a framebuffer fetch shader (advanced blends).
+  if (supports_framebuffer_fetch) {
+    subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
+                              eRasterizationOrderAttachmentColorAccessARM);
+    subpass_desc.setInputAttachments(subpass_color_ref);
+  }
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
 
@@ -122,6 +141,7 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
   render_pass_desc.setAttachments(attachments);
   render_pass_desc.setPSubpasses(&subpass_desc);
   render_pass_desc.setSubpassCount(1u);
+  render_pass_desc.setDependencies(subpass_dependencies);
 
   auto [result, pass] = device.createRenderPassUnique(render_pass_desc);
   if (result != vk::Result::eSuccess) {
@@ -368,8 +388,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  auto render_pass =
-      CreateCompatRenderPassForPipeline(strong_device->GetDevice(), desc);
+  auto render_pass = CreateCompatRenderPassForPipeline(
+      strong_device->GetDevice(), desc, supports_framebuffer_fetch_);
   if (render_pass) {
     pipeline_info.setBasePipelineHandle(VK_NULL_HANDLE);
     pipeline_info.setSubpass(0);
@@ -417,6 +437,26 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
     auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
     desc_bindings.push_back(vk_desc_layout);
+  }
+  // Add subpass dependency binding.
+  if (desc.GetHasSubpassDependency()) {
+    vk::DescriptorSetLayoutBinding binding;
+    // _record scratch, freeze frame_
+    //
+    // I bet you're wondering where I got this number? Well its one less than
+    // the smallest fragment binding listed in the generated header for the
+    // framebuffer fetch shader. In order to look this up for real, we need to
+    // add support for this data to impellerc, but more importantly, we need to
+    // resolve trying to share a generated header across all platforms. Only the
+    // header generated from a shader compiled with Vulkan semantics will have
+    // this binding, but today its unspecified if we use the GLES or Metal
+    // version based on host platform. To that end, it would be safer to leave
+    // this as a hardcoded value until such a time as the bindings are fixed.
+    binding.binding = 64u;
+    binding.descriptorCount = 1u;
+    binding.descriptorType = vk::DescriptorType::eInputAttachment;
+    binding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+    desc_bindings.push_back(binding);
   }
 
   vk::DescriptorSetLayoutCreateInfo descs_layout_info;

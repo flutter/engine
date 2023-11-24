@@ -6,6 +6,7 @@
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -19,7 +20,8 @@ DescriptorPoolVK::~DescriptorPoolVK() = default;
 
 static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
                                            uint32_t image_count,
-                                           uint32_t buffer_count) {
+                                           uint32_t buffer_count,
+                                           uint32_t subpass_count) {
   TRACE_EVENT0("impeller", "CreateDescriptorPool");
   std::vector<vk::DescriptorPoolSize> pools = {};
   if (image_count > 0) {
@@ -32,8 +34,12 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
     pools.emplace_back(vk::DescriptorPoolSize{
         vk::DescriptorType::eStorageBuffer, buffer_count});
   }
+  if (subpass_count > 0) {
+    pools.emplace_back(vk::DescriptorPoolSize{
+        vk::DescriptorType::eInputAttachment, subpass_count});
+  }
   vk::DescriptorPoolCreateInfo pool_info;
-  pool_info.setMaxSets(image_count + buffer_count);
+  pool_info.setMaxSets(image_count + buffer_count + subpass_count);
   pool_info.setPoolSizes(pools);
   auto [result, pool] = device.createDescriptorPoolUnique(pool_info);
   if (result != vk::Result::eSuccess) {
@@ -46,14 +52,15 @@ fml::StatusOr<std::vector<vk::DescriptorSet>>
 DescriptorPoolVK::AllocateDescriptorSets(
     uint32_t buffer_count,
     uint32_t sampler_count,
+    uint32_t subpass_count,
     const std::vector<vk::DescriptorSetLayout>& layouts) {
   std::shared_ptr<const DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {
     return fml::Status(fml::StatusCode::kUnknown, "No device");
   }
 
-  auto new_pool =
-      CreatePool(strong_device->GetDevice(), sampler_count, buffer_count);
+  auto new_pool = CreatePool(strong_device->GetDevice(), sampler_count,
+                             buffer_count, subpass_count);
   if (!new_pool) {
     return fml::Status(fml::StatusCode::kUnknown,
                        "Failed to create descriptor pool");

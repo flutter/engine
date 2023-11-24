@@ -16,7 +16,8 @@ namespace impeller {
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
-    const std::vector<Command>& commands);
+    const std::vector<Command>& commands,
+    const vk::ImageView& image_view);
 
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,

@@ -21,6 +21,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
 #include "vulkan/vulkan_to_string.hpp"
 
@@ -96,7 +97,8 @@ static void SetTextureLayout(
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
-    const std::shared_ptr<CommandBufferVK>& command_buffer) const {
+    const std::shared_ptr<CommandBufferVK>& command_buffer,
+    bool supports_framebuffer_fetch) const {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -160,6 +162,16 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setResolveAttachments(resolve_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
+
+  std::vector<vk::SubpassDependency> subpass_dependencies;
+  std::vector<vk::AttachmentReference> subpass_color_ref;
+  subpass_color_ref.push_back(vk::AttachmentReference{
+      static_cast<uint32_t>(0), vk::ImageLayout::eColorAttachmentOptimal});
+  if (supports_framebuffer_fetch) {
+    subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
+                              eRasterizationOrderAttachmentColorAccessARM);
+    subpass_desc.setInputAttachments(subpass_color_ref);
+  }
 
   vk::RenderPassCreateInfo render_pass_desc;
   render_pass_desc.setAttachments(attachments);
@@ -245,7 +257,6 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   const auto target_size = render_target_.GetRenderTargetSize();
   fb_info.width = target_size.width;
   fb_info.height = target_size.height;
-
   fb_info.layers = 1u;
 
   std::vector<vk::ImageView> attachments;
@@ -495,7 +506,9 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  auto render_pass = CreateVKRenderPass(vk_context, command_buffer);
+  auto render_pass = CreateVKRenderPass(
+      vk_context, command_buffer,
+      vk_context.GetCapabilities()->SupportsFramebufferFetch());
   if (!render_pass) {
     VALIDATION_LOG << "Could not create renderpass.";
     return false;
@@ -521,8 +534,10 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  auto desc_sets_result =
-      AllocateAndBindDescriptorSets(vk_context, encoder, commands_);
+  auto color_image_view =
+      TextureVK::Cast(*render_target_.GetRenderTargetTexture()).GetImageView();
+  auto desc_sets_result = AllocateAndBindDescriptorSets(
+      vk_context, encoder, commands_, color_image_view);
   if (!desc_sets_result.ok()) {
     return false;
   }

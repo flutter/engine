@@ -135,6 +135,8 @@ struct Command : public ResourceBinder {
   ///
   IndexType index_type = IndexType::kUnknown;
 
+  bool bind_framebuffer = false;
+
 #ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------
   /// The debugging label to use for the command.
