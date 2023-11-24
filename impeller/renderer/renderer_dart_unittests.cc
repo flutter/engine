@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/core/shader_types.h"
-#include "impeller/renderer/vertex_descriptor.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <memory>
@@ -19,9 +17,11 @@
 #include "flutter/testing/dart_isolate_runner.h"
 #include "flutter/testing/testing.h"
 #include "fml/memory/ref_ptr.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/fixtures/flutter_gpu_unlit.vert.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_descriptor.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
 #include "gtest/gtest.h"
