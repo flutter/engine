@@ -165,8 +165,9 @@ struct PlatformView {
 /// Each layer will result in a single physical surface that contains Flutter
 /// contents. It may contain multiple platform views and the slices
 /// that would be otherwise rendered between these platform views will be
-/// collapsed into this layer, as long as it does not intersect any of the
+/// collapsed into this layer, as long as they do not intersect any of the
 /// platform views.
+/// In Z order the Flutter contents of Layer is above the platform views.
 class Layer {
  public:
   /// Returns whether the rectangle intersects any of the platform views of
@@ -259,9 +260,10 @@ class Layer {
 
 /// A layout builder is responsible for building an optimized list of Layers
 /// from a list of `EmbedderExternalView`s. Single EmbedderExternalView contains
-/// at most one platform view and at most one layer of Flutter contents.
-/// LayerBuilder is responsible for producing as few Layers from the list of
-/// EmbedderExternalViews as possible while maintaining identical visual result.
+/// at most one platform view and at most one layer of Flutter contents
+/// ('slice'). LayerBuilder is responsible for producing as few Layers from the
+/// list of EmbedderExternalViews as possible while maintaining identical visual
+/// result.
 ///
 /// Implements https://flutter.dev/go/optimized-platform-view-layers
 class LayerBuilder {
