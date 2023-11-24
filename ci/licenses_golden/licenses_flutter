@@ -5580,6 +5580,7 @@ ORIGIN: ../../../flutter/lib/gpu/device_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/device_buffer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/export.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/export.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/gpu/fixtures.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/fixtures.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/host_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/host_buffer.h + ../../../flutter/LICENSE
