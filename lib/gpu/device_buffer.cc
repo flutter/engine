@@ -5,6 +5,7 @@
 #include "flutter/lib/gpu/device_buffer.h"
 
 #include "dart_api.h"
+#include "flutter/lib/gpu/formats.h"
 #include "fml/mapping.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/device_buffer_descriptor.h"
@@ -53,7 +54,8 @@ bool InternalFlutterGpu_DeviceBuffer_Initialize(
     int storage_mode,
     int size_in_bytes) {
   impeller::DeviceBufferDescriptor desc;
-  desc.storage_mode = static_cast<impeller::StorageMode>(storage_mode);
+  desc.storage_mode = flutter::gpu::ToImpellerStorageMode(
+      static_cast<flutter::gpu::FlutterGPUStorageMode>(storage_mode));
   desc.size = size_in_bytes;
   auto device_buffer =
       gpu_context->GetContext()->GetResourceAllocator()->CreateBuffer(desc);

@@ -10,7 +10,7 @@ base class ColorAttachment {
   ColorAttachment(
       {this.loadAction = LoadAction.clear,
       this.storeAction = StoreAction.store,
-      this.clearColor = const ui.Color(0),
+      this.clearColor = const ui.Color(0x00000000),
       required this.texture,
       this.resolveTexture = null});
 
@@ -74,42 +74,13 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   }
 
   void bindVertexBuffer(BufferView bufferView, int vertexCount) {
-    switch (bufferView.buffer.runtimeType) {
-      case DeviceBuffer:
-        _bindVertexBufferDevice(bufferView.buffer as DeviceBuffer,
-            bufferView.offsetInBytes, bufferView.lengthInBytes, vertexCount);
-        break;
-      case HostBuffer:
-        _bindVertexBufferHost(bufferView.buffer as HostBuffer,
-            bufferView.offsetInBytes, bufferView.lengthInBytes, vertexCount);
-        break;
-      default:
-        throw Exception("Invalid buffer type");
-    }
+    bufferView.buffer._bindAsVertexBuffer(
+        this, bufferView.offsetInBytes, bufferView.lengthInBytes, vertexCount);
   }
 
   void bindUniform(UniformSlot slot, BufferView bufferView) {
-    bool success;
-    switch (bufferView.buffer.runtimeType) {
-      case DeviceBuffer:
-        success = _bindUniformDevice(
-            slot.shaderStage.index,
-            slot.slotId,
-            bufferView.buffer as DeviceBuffer,
-            bufferView.offsetInBytes,
-            bufferView.lengthInBytes);
-        break;
-      case HostBuffer:
-        success = _bindUniformHost(
-            slot.shaderStage.index,
-            slot.slotId,
-            bufferView.buffer as HostBuffer,
-            bufferView.offsetInBytes,
-            bufferView.lengthInBytes);
-        break;
-      default:
-        throw Exception("Invalid buffer type");
-    }
+    bool success = bufferView.buffer._bindAsUniform(
+        this, slot, bufferView.offsetInBytes, bufferView.lengthInBytes);
     if (!success) {
       throw Exception("Failed to bind uniform slot");
     }

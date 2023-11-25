@@ -42,6 +42,8 @@ source_set("gpu") {
       "export.h",
       "fixtures.cc",
       "fixtures.h",
+      "formats.cc",
+      "formats.h",
       "host_buffer.cc",
       "host_buffer.h",
       "render_pass.cc",

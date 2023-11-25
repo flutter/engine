@@ -6,6 +6,10 @@
 
 part of flutter_gpu;
 
+// ATTENTION! ATTENTION! ATTENTION!
+// All enum classes defined in this file must exactly match the contents and
+// order of the corresponding enums defined in `gpu/formats.h`.
+
 /// Specifies where an allocation resides and how it may be used.
 enum StorageMode {
   /// Allocations can be mapped onto the hosts address space and also be used by
@@ -98,10 +102,6 @@ enum StoreAction {
 }
 
 enum ShaderStage {
-  unknown,
   vertex,
   fragment,
-  tessellationControl,
-  tessellationEvaluation,
-  compute,
 }

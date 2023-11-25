@@ -7,10 +7,10 @@
 part of flutter_gpu;
 
 base class UniformSlot {
-  UniformSlot(this.slotId, this.shaderStage);
+  const UniformSlot(this.slotId, this.shaderStage);
 
-  int slotId;
-  ShaderStage shaderStage;
+  final int slotId;
+  final ShaderStage shaderStage;
 }
 
 base class Shader extends NativeFieldWrapperClass1 {

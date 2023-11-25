@@ -4,7 +4,8 @@
 
 #include "flutter/lib/gpu/render_pass.h"
 
-#include "dart_api.h"
+#include "flutter/lib/gpu/formats.h"
+#include "flutter/lib/gpu/render_pipeline.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -12,7 +13,6 @@
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/pipeline_library.h"
-#include "lib/gpu/render_pipeline.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -143,8 +143,10 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     flutter::gpu::Texture* texture,
     Dart_Handle resolve_texture_wrapper) {
   impeller::ColorAttachment desc;
-  desc.load_action = static_cast<impeller::LoadAction>(load_action);
-  desc.store_action = static_cast<impeller::StoreAction>(store_action);
+  desc.load_action = flutter::gpu::ToImpellerLoadAction(
+      static_cast<flutter::gpu::FlutterGPULoadAction>(load_action));
+  desc.store_action = flutter::gpu::ToImpellerStoreAction(
+      static_cast<flutter::gpu::FlutterGPUStoreAction>(store_action));
   desc.clear_color = ToImpellerColor(static_cast<uint32_t>(clear_color));
   desc.texture = texture->GetTexture();
   if (!Dart_IsNull(resolve_texture_wrapper)) {
@@ -164,8 +166,10 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetStencilAttachment(
     int clear_stencil,
     flutter::gpu::Texture* texture) {
   impeller::StencilAttachment desc;
-  desc.load_action = static_cast<impeller::LoadAction>(load_action);
-  desc.store_action = static_cast<impeller::StoreAction>(store_action);
+  desc.load_action = flutter::gpu::ToImpellerLoadAction(
+      static_cast<flutter::gpu::FlutterGPULoadAction>(load_action));
+  desc.store_action = flutter::gpu::ToImpellerStoreAction(
+      static_cast<flutter::gpu::FlutterGPUStoreAction>(store_action));
   desc.clear_stencil = clear_stencil;
   desc.texture = texture->GetTexture();
   wrapper->GetRenderTarget().SetStencilAttachment(desc);
@@ -240,7 +244,9 @@ static bool BindUniform(flutter::gpu::RenderPass* wrapper,
   // even use it for anything.
   slot.ext_res_0 = slot_id;
   return command.BindResource(
-      static_cast<impeller::ShaderStage>(stage), slot, metadata,
+      flutter::gpu::ToImpellerShaderStage(
+          static_cast<flutter::gpu::FlutterGPUShaderStage>(stage)),
+      slot, metadata,
       impeller::BufferView{
           .buffer = buffer->GetBuffer(),
           .range = impeller::Range(offset_in_bytes, length_in_bytes),
