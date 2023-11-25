@@ -289,6 +289,30 @@ void testMain() {
       expect(ui.PlatformDispatcher.instance.textScaleFactor,
           findBrowserTextScaleFactor());
     });
+
+    test('disposes all its views', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view3 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2)
+        ..registerView(view3);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+      expect(view3.isDisposed, isFalse);
+
+      dispatcher.dispose();
+      expect(view1.isDisposed, isTrue);
+      expect(view2.isDisposed, isTrue);
+      expect(view3.isDisposed, isTrue);
+    });
   });
 }
 

@@ -17,6 +17,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
 #include "impeller/entity/contents/filters/matrix_filter_contents.h"
@@ -55,6 +56,20 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     Sigma sigma_y,
     BlurStyle blur_style,
     Entity::TileMode tile_mode) {
+  constexpr bool use_new_filter =
+#ifdef IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER
+      true;
+#else
+      false;
+#endif
+
+  // TODO(https://github.com/flutter/flutter/issues/131580): Remove once the new
+  // blur handles all cases.
+  if (use_new_filter) {
+    auto blur = std::make_shared<GaussianBlurFilterContents>(sigma_x.sigma);
+    blur->SetInputs({input});
+    return blur;
+  }
   std::shared_ptr<FilterContents> x_blur = MakeDirectionalGaussianBlur(
       /*input=*/input,
       /*sigma=*/sigma_x,
@@ -188,8 +203,7 @@ std::optional<Rect> FilterContents::GetLocalCoverage(
 
 std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
   Entity entity_with_local_transform = entity;
-  entity_with_local_transform.SetTransformation(
-      GetTransform(entity.GetTransformation()));
+  entity_with_local_transform.SetTransform(GetTransform(entity.GetTransform()));
 
   return GetLocalCoverage(entity_with_local_transform);
 }
@@ -240,7 +254,7 @@ std::optional<Rect> FilterContents::GetSourceCoverage(
   }
 
   std::optional<Rect> inputs_coverage;
-  for (auto input : inputs_) {
+  for (const auto& input : inputs_) {
     auto input_coverage = input->GetSourceCoverage(
         effect_transform, filter_input_coverage.value());
     if (!input_coverage.has_value()) {
@@ -256,8 +270,7 @@ std::optional<Entity> FilterContents::GetEntity(
     const Entity& entity,
     const std::optional<Rect>& coverage_hint) const {
   Entity entity_with_local_transform = entity;
-  entity_with_local_transform.SetTransformation(
-      GetTransform(entity.GetTransformation()));
+  entity_with_local_transform.SetTransform(GetTransform(entity.GetTransform()));
 
   auto coverage = GetLocalCoverage(entity_with_local_transform);
   if (!coverage.has_value() || coverage->IsEmpty()) {

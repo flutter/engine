@@ -12,6 +12,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/sync_switch.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
@@ -66,7 +67,6 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsCompute(true)
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
-      .SetSupportsReadFromOnscreenTexture(true)
       .SetSupportsDeviceTransientTextures(true)
       .Build();
 }
@@ -391,8 +391,8 @@ id<MTLCommandBuffer> ContextMTL::CreateMTLCommandBuffer(
   return buffer;
 }
 
-void ContextMTL::StoreTaskForGPU(std::function<void()> task) {
-  tasks_awaiting_gpu_.emplace_back(std::move(task));
+void ContextMTL::StoreTaskForGPU(const std::function<void()>& task) {
+  tasks_awaiting_gpu_.emplace_back(task);
   while (tasks_awaiting_gpu_.size() > kMaxTasksAwaitingGPU) {
     tasks_awaiting_gpu_.front()();
     tasks_awaiting_gpu_.pop_front();

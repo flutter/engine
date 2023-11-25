@@ -33,6 +33,7 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/surface.h"
@@ -399,11 +400,10 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   ASSERT_EQ(Tessellator::Result::kSuccess,
             Tessellator{}.Tessellate(
-                FillType::kPositive,
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath()
-                    .CreatePolyline(1.0f),
+                    .TakePath(FillType::kPositive),
+                1.0f,
                 [&builder](const float* vertices, size_t vertices_count,
                            const uint16_t* indices, size_t indices_count) {
                   for (auto i = 0u; i < vertices_count * 2; i += 2) {
@@ -1256,6 +1256,40 @@ TEST_P(RendererTest, StencilMask) {
     return true;
   };
   OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanPreAllocateCommands) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  render_pass->ReserveCommands(100u);
+
+  EXPECT_EQ(render_pass->GetCommands().capacity(), 100u);
+}
+
+TEST_P(RendererTest, CanLookupRenderTargetProperties) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  EXPECT_EQ(render_pass->GetSampleCount(), render_target.GetSampleCount());
+  EXPECT_EQ(render_pass->GetRenderTargetPixelFormat(),
+            render_target.GetRenderTargetPixelFormat());
+  EXPECT_EQ(render_pass->HasStencilAttachment(),
+            render_target.GetStencilAttachment().has_value());
+  EXPECT_EQ(render_pass->GetRenderTargetSize(),
+            render_target.GetRenderTargetSize());
 }
 
 }  // namespace testing
