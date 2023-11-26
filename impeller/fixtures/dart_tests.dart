@@ -189,8 +189,13 @@ void canCreateRenderPassAndSubmit() {
   assert(renderTexture != null);
 
   final gpu.CommandBuffer commandBuffer = gpu.gpuContext.createCommandBuffer();
-  final gpu.RenderPass encoder = commandBuffer.createRenderPass(
-      colorAttachment: gpu.ColorAttachment(texture: renderTexture!));
+
+  final gpu.RenderTarget renderTarget = gpu.RenderTarget(
+    colorAttachments: <gpu.ColorAttachment>[
+      gpu.ColorAttachment(texture: renderTexture!)
+    ],
+  );
+  final gpu.RenderPass encoder = commandBuffer.createRenderPass(renderTarget);
 
   final gpu.RenderPipeline pipeline = createUnlitRenderPipeline();
   encoder.bindPipeline(pipeline);

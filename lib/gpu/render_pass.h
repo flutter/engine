@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include "flutter/lib/gpu/command_buffer.h"
 #include "flutter/lib/gpu/export.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
@@ -64,7 +66,7 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   // Pipeline descriptor layout state. We always keep track of this state, but
   // we'll only apply it as necessary to match the RenderTarget.
-  impeller::ColorAttachmentDescriptor color_desc_;
+  std::map<size_t, impeller::ColorAttachmentDescriptor> color_descriptors_;
   impeller::StencilAttachmentDescriptor stencil_front_desc_;
   impeller::StencilAttachmentDescriptor stencil_back_desc_;
   impeller::DepthAttachmentDescriptor depth_desc_;
@@ -90,6 +92,7 @@ extern void InternalFlutterGpu_RenderPass_Initialize(Dart_Handle wrapper);
 FLUTTER_GPU_EXPORT
 extern Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     flutter::gpu::RenderPass* wrapper,
+    int color_attachment_index,
     int load_action,
     int store_action,
     int clear_color,

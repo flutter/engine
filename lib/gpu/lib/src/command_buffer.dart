@@ -14,10 +14,8 @@ base class CommandBuffer extends NativeFieldWrapperClass1 {
     _initialize(gpuContext);
   }
 
-  RenderPass createRenderPass(
-      {required ColorAttachment colorAttachment,
-      DepthStencilAttachment? depthStencilAttachment = null}) {
-    return RenderPass._(this, colorAttachment, depthStencilAttachment);
+  RenderPass createRenderPass(RenderTarget renderTarget) {
+    return RenderPass._(this, renderTarget);
   }
 
   void submit({CompletionCallback? completionCallback}) {

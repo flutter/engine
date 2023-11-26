@@ -68,12 +68,17 @@ std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>>
 RenderPass::GetOrCreatePipeline() {
   // Infer the pipeline layout based on the shape of the RenderTarget.
   auto pipeline_desc = pipeline_descriptor_;
-  {
-    FML_DCHECK(render_target_.HasColorAttachment(0))
-        << "The render target has no color attachment. This should never "
-           "happen.";
-    color_desc_.format = render_target_.GetRenderTargetPixelFormat();
-    pipeline_desc.SetColorAttachmentDescriptor(0, color_desc_);
+  for (const auto& it : render_target_.GetColorAttachments()) {
+    auto color_desc_it = color_descriptors_.find(it.first);
+    if (color_desc_it == color_descriptors_.end()) {
+      color_descriptors_[it.first] = {
+          .format = render_target_.GetRenderTargetPixelFormat()};
+    } else {
+      color_desc_it->second.format =
+          render_target_.GetRenderTargetPixelFormat();
+    }
+
+    pipeline_desc.SetColorAttachmentDescriptors(color_descriptors_);
   }
 
   {
@@ -147,6 +152,7 @@ void InternalFlutterGpu_RenderPass_Initialize(Dart_Handle wrapper) {
 
 Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     flutter::gpu::RenderPass* wrapper,
+    int color_attachment_index,
     int load_action,
     int store_action,
     int clear_color,
@@ -165,7 +171,7 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
             resolve_texture_wrapper);
     desc.resolve_texture = resolve_texture->GetTexture();
   }
-  wrapper->GetRenderTarget().SetColorAttachment(desc, 0);
+  wrapper->GetRenderTarget().SetColorAttachment(desc, color_attachment_index);
   return Dart_Null();
 }
 
