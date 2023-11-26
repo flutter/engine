@@ -26,7 +26,7 @@ static fml::RefPtr<Shader> OpenRuntimeStageAsShader(
                       stage.GetCodeMapping(), stage.GetUniforms(), vertex_desc);
 }
 
-static void InstantiateTestShaderLibrary() {
+static fml::RefPtr<ShaderLibrary> InstantiateTestShaderLibrary() {
   ShaderLibrary::ShaderMap shaders;
   {
     auto vertex_desc = std::make_shared<impeller::VertexDescriptor>();
@@ -57,7 +57,7 @@ static void InstantiateTestShaderLibrary() {
         nullptr);
   }
   auto library = ShaderLibrary::MakeFromShaders(std::move(shaders));
-  ShaderLibrary::SetOverride(library);
+  return library;
 }
 // ===[ END MEMES ]=============================================================
 
@@ -72,7 +72,7 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromAsset(
   // This is a temporary hack to get the shader library populated in the
   // framework before the shader bundle format is landed!
   if (!override_shader_library_) {
-    InstantiateTestShaderLibrary();
+    return InstantiateTestShaderLibrary();
   }
   // ===========================================================================
 
