@@ -15,6 +15,8 @@ LineGeometry::LineGeometry(Point p0, Point p1, Scalar width, Cap cap)
   FML_DCHECK(cap != Cap::kRound);
 }
 
+LineGeometry::~LineGeometry() = default;
+
 bool LineGeometry::ComputeCorners(Point corners[4],
                                   const Matrix& transform,
                                   bool extend_endpoints) const {

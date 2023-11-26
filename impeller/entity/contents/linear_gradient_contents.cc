@@ -89,7 +89,7 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
                                  0.5 / gradient_texture->GetSize().height);
 
   auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+      GetGeometry().GetPositionBuffer(renderer, entity, pass);
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
@@ -160,7 +160,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetClipDepth();
 
   auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+      GetGeometry().GetPositionBuffer(renderer, entity, pass);
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
     options.stencil_compare = CompareFunction::kEqual;

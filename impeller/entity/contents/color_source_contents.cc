@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/color_source_contents.h"
 
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 
@@ -14,12 +15,16 @@ ColorSourceContents::ColorSourceContents() = default;
 
 ColorSourceContents::~ColorSourceContents() = default;
 
-void ColorSourceContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
+void ColorSourceContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
   geometry_ = std::move(geometry);
 }
 
-const std::shared_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
-  return geometry_;
+const Geometry& ColorSourceContents::GetGeometry() const {
+  return *geometry_;
+}
+
+std::unique_ptr<Geometry> ColorSourceContents::TakeGeometry() {
+  return std::move(geometry_);
 }
 
 void ColorSourceContents::SetOpacityFactor(Scalar alpha) {

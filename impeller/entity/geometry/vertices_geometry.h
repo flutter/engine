@@ -24,7 +24,7 @@ class VerticesGeometry final : public Geometry {
                    Rect bounds,
                    VerticesGeometry::VertexMode vertex_mode);
 
-  ~VerticesGeometry() = default;
+  ~VerticesGeometry() override;
 
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
@@ -53,6 +53,8 @@ class VerticesGeometry final : public Geometry {
   bool HasTextureCoordinates() const;
 
   std::optional<Rect> GetTextureCoordinateCoverge() const;
+
+  std::unique_ptr<VerticesGeometry> Clone() const;
 
  private:
   void NormalizeIndices();

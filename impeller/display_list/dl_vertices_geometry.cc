@@ -28,7 +28,7 @@ static VerticesGeometry::VertexMode ToVertexMode(flutter::DlVertexMode mode) {
   };
 }
 
-std::shared_ptr<impeller::VerticesGeometry> MakeVertices(
+std::unique_ptr<impeller::VerticesGeometry> MakeVertices(
     const flutter::DlVertices* vertices) {
   auto bounds = ToRect(vertices->bounds());
   auto mode = ToVertexMode(vertices->mode());
@@ -58,7 +58,7 @@ std::shared_ptr<impeller::VerticesGeometry> MakeVertices(
           skia_conversions::ToPoint(vertices->texture_coordinates()[i]));
     }
   }
-  return std::make_shared<VerticesGeometry>(
+  return std::make_unique<VerticesGeometry>(
       positions, indices, texture_coordinates, colors, bounds, mode);
 }
 

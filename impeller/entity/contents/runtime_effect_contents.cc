@@ -107,7 +107,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   ///
 
   auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+      GetGeometry().GetPositionBuffer(renderer, entity, pass);
 
   //--------------------------------------------------------------------------
   /// Get or create runtime stage pipeline.

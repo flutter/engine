@@ -44,7 +44,7 @@ class Serializer {
 
   void Write(const std::shared_ptr<TextFrame>& text_frame) {}
 
-  void Write(const std::shared_ptr<VerticesGeometry>& vertices) {}
+  void Write(std::unique_ptr<VerticesGeometry> vertices) {}
 
   void Write(const BlendMode& blend_mode) {}
 
@@ -222,9 +222,9 @@ TEST(CanvasRecorder, DrawTextFrame) {
 
 TEST(CanvasRecorder, DrawVertices) {
   CanvasRecorder<Serializer> recorder;
-  auto geometry = std::shared_ptr<VerticesGeometry>(
+  auto geometry = std::unique_ptr<VerticesGeometry>(
       new VerticesGeometry({}, {}, {}, {}, {}, {}));
-  recorder.DrawVertices(geometry, {}, {});
+  recorder.DrawVertices(std::move(geometry), {}, {});
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kDrawVertices);
 }
 

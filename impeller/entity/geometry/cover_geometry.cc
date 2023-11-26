@@ -10,6 +10,8 @@ namespace impeller {
 
 CoverGeometry::CoverGeometry() = default;
 
+CoverGeometry::~CoverGeometry() = default;
+
 GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) const {

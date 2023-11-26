@@ -11,6 +11,8 @@ FillPathGeometry::FillPathGeometry(const Path& path,
                                    std::optional<Rect> inner_rect)
     : path_(path), inner_rect_(inner_rect) {}
 
+FillPathGeometry::~FillPathGeometry() = default;
+
 GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,

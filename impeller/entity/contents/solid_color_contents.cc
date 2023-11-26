@@ -38,11 +38,9 @@ std::optional<Rect> SolidColorContents::GetCoverage(
     return std::nullopt;
   }
 
-  auto geometry = GetGeometry();
-  if (geometry == nullptr) {
-    return std::nullopt;
-  }
-  return geometry->GetCoverage(entity.GetTransform());
+  auto& geometry = GetGeometry();
+  // NULL CHECK?
+  return geometry.GetCoverage(entity.GetTransform());
 };
 
 bool SolidColorContents::Render(const ContentContext& renderer,
@@ -57,7 +55,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetClipDepth();
 
   auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+      GetGeometry().GetPositionBuffer(renderer, entity, pass);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -98,7 +96,7 @@ std::optional<Color> SolidColorContents::AsBackgroundColor(
     const Entity& entity,
     ISize target_size) const {
   Rect target_rect = Rect::MakeSize(target_size);
-  return GetGeometry()->CoversArea(entity.GetTransform(), target_rect)
+  return GetGeometry().CoversArea(entity.GetTransform(), target_rect)
              ? GetColor()
              : std::optional<Color>();
 }

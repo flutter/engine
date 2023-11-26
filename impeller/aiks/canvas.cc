@@ -329,7 +329,7 @@ void Canvas::ClipRect(const Rect& rect, Entity::ClipOperation clip_op) {
     return;  // This clip will do nothing, so skip it.
   }
 
-  ClipGeometry(geometry, clip_op);
+  ClipGeometry(std::move(geometry), clip_op);
   switch (clip_op) {
     case Entity::ClipOperation::kIntersect:
       IntersectCulling(rect);
@@ -365,7 +365,7 @@ void Canvas::ClipRRect(const Rect& rect,
     return;  // This clip will do nothing, so skip it.
   }
 
-  ClipGeometry(geometry, clip_op);
+  ClipGeometry(std::move(geometry), clip_op);
   switch (clip_op) {
     case Entity::ClipOperation::kIntersect:
       IntersectCulling(rect);
@@ -390,10 +390,10 @@ void Canvas::ClipRRect(const Rect& rect,
   }
 }
 
-void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
+void Canvas::ClipGeometry(std::unique_ptr<Geometry> geometry,
                           Entity::ClipOperation clip_op) {
   auto contents = std::make_shared<ClipContents>();
-  contents->SetGeometry(geometry);
+  contents->SetGeometry(std::move(geometry));
   contents->SetClipOperation(clip_op);
 
   Entity entity;
@@ -599,24 +599,23 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-static bool UseColorSourceContents(
-    const std::shared_ptr<VerticesGeometry>& vertices,
-    const Paint& paint) {
+static bool UseColorSourceContents(const VerticesGeometry& vertices,
+                                   const Paint& paint) {
   // If there are no vertex color or texture coordinates. Or if there
   // are vertex coordinates then only if the contents are an image or
   // a solid color.
-  if (vertices->HasVertexColors()) {
+  if (vertices.HasVertexColors()) {
     return false;
   }
-  if (vertices->HasTextureCoordinates() &&
+  if (vertices.HasTextureCoordinates() &&
       (paint.color_source.GetType() == ColorSource::Type::kImage ||
        paint.color_source.GetType() == ColorSource::Type::kColor)) {
     return true;
   }
-  return !vertices->HasTextureCoordinates();
+  return !vertices.HasTextureCoordinates();
 }
 
-void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
+void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                           BlendMode blend_mode,
                           const Paint& paint) {
   // Override the blend mode with kDestination in order to match the behavior
@@ -633,8 +632,8 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   // If there are no vertex color or texture coordinates. Or if there
   // are vertex coordinates then only if the contents are an image.
-  if (UseColorSourceContents(vertices, paint)) {
-    auto contents = paint.CreateContentsForGeometry(vertices);
+  if (UseColorSourceContents(*vertices, paint)) {
+    auto contents = paint.CreateContentsForGeometry(std::move(vertices));
     entity.SetContents(paint.WithFilters(std::move(contents)));
     GetCurrentPass().AddEntity(entity);
     return;
@@ -643,8 +642,10 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   auto src_paint = paint;
   src_paint.color = paint.color.WithAlpha(1.0);
 
+  // TODO(jonahwilliams): move this logic into vertices contents to
+  // remove the unnecessary clone here.
   std::shared_ptr<Contents> src_contents =
-      src_paint.CreateContentsForGeometry(vertices);
+      src_paint.CreateContentsForGeometry(vertices->Clone());
   if (vertices->HasTextureCoordinates()) {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
@@ -670,7 +671,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   auto contents = std::make_shared<VerticesContents>();
   contents->SetAlpha(paint.color.alpha);
   contents->SetBlendMode(blend_mode);
-  contents->SetGeometry(vertices);
+  contents->SetGeometry(std::move(vertices));
   contents->SetSourceContents(std::move(src_contents));
   entity.SetContents(paint.WithFilters(std::move(contents)));
 

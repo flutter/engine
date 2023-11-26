@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry/vertices_geometry.h"
 
+#include <memory>
 #include <utility>
 
 #include <utility>
@@ -66,6 +67,8 @@ VerticesGeometry::VerticesGeometry(std::vector<Point> vertices,
       vertex_mode_(vertex_mode) {
   NormalizeIndices();
 }
+
+VerticesGeometry::~VerticesGeometry() = default;
 
 PrimitiveType VerticesGeometry::GetPrimitiveType() const {
   switch (vertex_mode_) {
@@ -300,6 +303,12 @@ GeometryVertexType VerticesGeometry::GetVertexType() const {
 std::optional<Rect> VerticesGeometry::GetCoverage(
     const Matrix& transform) const {
   return bounds_.TransformBounds(transform);
+}
+
+std::unique_ptr<VerticesGeometry> VerticesGeometry::Clone() const {
+  return std::make_unique<VerticesGeometry>(vertices_, indices_,
+                                            texture_coordinates_, colors_,
+                                            bounds_, vertex_mode_);
 }
 
 }  // namespace impeller

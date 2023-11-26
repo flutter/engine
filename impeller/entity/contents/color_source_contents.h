@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include "flutter/fml/macros.h"
+#include <memory>
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/geometry/path.h"
 
 namespace impeller {
 
@@ -39,12 +38,18 @@ class ColorSourceContents : public Contents {
   //----------------------------------------------------------------------------
   /// @brief  Set the geometry that this contents will use to render.
   ///
-  void SetGeometry(std::shared_ptr<Geometry> geometry);
+  void SetGeometry(std::unique_ptr<Geometry> geometry);
 
   //----------------------------------------------------------------------------
   /// @brief  Get the geometry that this contents will use to render.
   ///
-  const std::shared_ptr<Geometry>& GetGeometry() const;
+  const Geometry& GetGeometry() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief  Get the geometry that this contents will use to render and
+  ///         move it out of the contents.
+  ///
+  std::unique_ptr<Geometry> TakeGeometry();
 
   //----------------------------------------------------------------------------
   /// @brief  Set the effect transform for this color source.
@@ -102,7 +107,7 @@ class ColorSourceContents : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
  private:
-  std::shared_ptr<Geometry> geometry_;
+  std::unique_ptr<Geometry> geometry_;
   Matrix inverse_matrix_;
   Scalar opacity_ = 1.0;
   Scalar inherited_opacity_ = 1.0;

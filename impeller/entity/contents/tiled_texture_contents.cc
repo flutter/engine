@@ -133,7 +133,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  auto geometry_result = GetGeometry()->GetPositionUVBuffer(
+  auto geometry_result = GetGeometry().GetPositionUVBuffer(
       Rect::MakeSize(texture_size), GetInverseEffectTransform(), renderer,
       entity, pass);
   bool uses_emulated_tile_mode =
@@ -242,7 +242,7 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     bool msaa_enabled,
     const std::string& label) const {
   if (GetInverseEffectTransform().IsIdentity() &&
-      GetGeometry()->IsAxisAlignedRect()) {
+      GetGeometry().IsAxisAlignedRect()) {
     auto coverage = GetCoverage(entity);
     if (!coverage.has_value()) {
       return std::nullopt;
