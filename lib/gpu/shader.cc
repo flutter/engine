@@ -6,10 +6,10 @@
 
 #include <utility>
 
+#include "flutter/lib/gpu/formats.h"
 #include "fml/make_copyable.h"
 #include "impeller/renderer/shader_function.h"
 #include "impeller/renderer/shader_library.h"
-#include "lib/gpu/shader_library.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -92,7 +92,8 @@ int Shader::GetUniformSlot(const std::string& name) const {
 ///
 
 int InternalFlutterGpu_Shader_GetShaderStage(flutter::gpu::Shader* wrapper) {
-  return static_cast<int>(wrapper->GetShaderStage());
+  return static_cast<int>(
+      flutter::gpu::FromImpellerShaderStage(wrapper->GetShaderStage()));
 }
 
 int InternalFlutterGpu_Shader_GetUniformSlot(flutter::gpu::Shader* wrapper,

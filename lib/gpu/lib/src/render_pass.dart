@@ -10,55 +10,61 @@ base class ColorAttachment {
   ColorAttachment(
       {this.loadAction = LoadAction.clear,
       this.storeAction = StoreAction.store,
-      this.clearColor = const ui.Color(0x00000000),
+      this.clearValue = const ui.Color(0x00000000),
       required this.texture,
       this.resolveTexture = null});
 
   LoadAction loadAction;
   StoreAction storeAction;
-  ui.Color clearColor;
+  ui.Color clearValue;
   Texture texture;
   Texture? resolveTexture;
 }
 
-base class StencilAttachment {
-  StencilAttachment(
-      {this.loadAction = LoadAction.clear,
-      this.storeAction = StoreAction.dontCare,
-      this.clearStencil = 0,
+base class DepthStencilAttachment {
+  DepthStencilAttachment(
+      {this.depthLoadAction = LoadAction.clear,
+      this.depthStoreAction = StoreAction.dontCare,
+      this.depthClearValue = 0,
+      this.stencilLoadAction = LoadAction.clear,
+      this.stencilStoreAction = StoreAction.dontCare,
+      this.stencilClearValue = 0,
       required this.texture});
+  LoadAction depthLoadAction;
+  StoreAction depthStoreAction;
+  double depthClearValue;
 
-  LoadAction loadAction;
-  StoreAction storeAction;
-  int clearStencil;
+  LoadAction stencilLoadAction;
+  StoreAction stencilStoreAction;
+  int stencilClearValue;
+
   Texture texture;
 }
-
-/// A descriptor for RenderPass creation. Defines the output targets for raster
-/// pipelines.
-base class RenderTarget {}
 
 base class RenderPass extends NativeFieldWrapperClass1 {
   /// Creates a new RenderPass.
   RenderPass._(CommandBuffer commandBuffer, ColorAttachment colorAttachment,
-      StencilAttachment? stencilAttachment) {
+      DepthStencilAttachment? depthStencilAttachment) {
     _initialize();
     String? error;
     error = _setColorAttachment(
         colorAttachment.loadAction.index,
         colorAttachment.storeAction.index,
-        colorAttachment.clearColor.value,
+        colorAttachment.clearValue.value,
         colorAttachment.texture,
         colorAttachment.resolveTexture);
     if (error != null) {
       throw Exception(error);
     }
-    if (stencilAttachment != null) {
-      error = _setStencilAttachment(
-          stencilAttachment.loadAction.index,
-          stencilAttachment.storeAction.index,
-          stencilAttachment.clearStencil,
-          stencilAttachment.texture);
+    if (depthStencilAttachment != null) {
+      error = _setDepthStencilAttachment(
+          depthStencilAttachment.depthLoadAction.index,
+          depthStencilAttachment.depthStoreAction.index,
+          depthStencilAttachment.depthClearValue,
+          depthStencilAttachment.stencilLoadAction.index,
+          depthStencilAttachment.stencilStoreAction.index,
+          depthStencilAttachment.stencilClearValue,
+          depthStencilAttachment.texture);
       if (error != null) {
         throw Exception(error);
       }
@@ -102,10 +108,18 @@ base class RenderPass extends NativeFieldWrapperClass1 {
   external String? _setColorAttachment(int loadAction, int storeAction,
       int clearColor, Texture texture, Texture? resolveTexture);
 
-  @Native<Handle Function(Pointer<Void>, Int, Int, Int, Pointer<Void>)>(
-      symbol: 'InternalFlutterGpu_RenderPass_SetStencilAttachment')
-  external String? _setStencilAttachment(
-      int loadAction, int storeAction, int clearStencil, Texture texture);
+  @Native<
+          Handle Function(
+              Pointer<Void>, Int, Int, Float, Int, Int, Int, Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetDepthStencilAttachment')
+  external String? _setDepthStencilAttachment(
+      int depthLoadAction,
+      int depthStoreAction,
+      double depthClearValue,
+      int stencilLoadAction,
+      int stencilStoreAction,
+      int stencilClearValue,
+      Texture texture);
 
   @Native<Handle Function(Pointer<Void>, Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Begin')

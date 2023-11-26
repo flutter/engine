@@ -76,19 +76,29 @@ RenderPass::GetOrCreatePipeline() {
     pipeline_desc.SetColorAttachmentDescriptor(0, color_desc_);
   }
 
-  if (auto stencil = render_target_.GetStencilAttachment()) {
-    pipeline_desc.SetStencilPixelFormat(
-        stencil->texture->GetTextureDescriptor().format);
-    pipeline_desc.SetStencilAttachmentDescriptors(stencil_front_desc_,
-                                                  stencil_back_desc_);
-  } else {
-    pipeline_desc.ClearStencilAttachments();
+  {
+    auto stencil = render_target_.GetStencilAttachment();
+    if (stencil && impeller::IsStencilWritable(
+                       stencil->texture->GetTextureDescriptor().format)) {
+      pipeline_desc.SetStencilPixelFormat(
+          stencil->texture->GetTextureDescriptor().format);
+      pipeline_desc.SetStencilAttachmentDescriptors(stencil_front_desc_,
+                                                    stencil_back_desc_);
+    } else {
+      pipeline_desc.ClearStencilAttachments();
+    }
   }
 
-  if (auto depth = render_target_.GetDepthAttachment()) {
-    pipeline_desc.SetDepthStencilAttachmentDescriptor(depth_desc_);
-  } else {
-    pipeline_desc.ClearDepthAttachment();
+  {
+    auto depth = render_target_.GetDepthAttachment();
+    if (depth && impeller::IsDepthWritable(
+                     depth->texture->GetTextureDescriptor().format)) {
+      pipeline_desc.SetDepthPixelFormat(
+          depth->texture->GetTextureDescriptor().format);
+      pipeline_desc.SetDepthStencilAttachmentDescriptor(depth_desc_);
+    } else {
+      pipeline_desc.ClearDepthAttachment();
+    }
   }
 
   auto& context = *GetContext().lock();
@@ -159,20 +169,36 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
   return Dart_Null();
 }
 
-Dart_Handle InternalFlutterGpu_RenderPass_SetStencilAttachment(
+Dart_Handle InternalFlutterGpu_RenderPass_SetDepthStencilAttachment(
     flutter::gpu::RenderPass* wrapper,
-    int load_action,
-    int store_action,
-    int clear_stencil,
+    int depth_load_action,
+    int depth_store_action,
+    float depth_clear_value,
+    int stencil_load_action,
+    int stencil_store_action,
+    int stencil_clear_value,
     flutter::gpu::Texture* texture) {
-  impeller::StencilAttachment desc;
-  desc.load_action = flutter::gpu::ToImpellerLoadAction(
-      static_cast<flutter::gpu::FlutterGPULoadAction>(load_action));
-  desc.store_action = flutter::gpu::ToImpellerStoreAction(
-      static_cast<flutter::gpu::FlutterGPUStoreAction>(store_action));
-  desc.clear_stencil = clear_stencil;
-  desc.texture = texture->GetTexture();
-  wrapper->GetRenderTarget().SetStencilAttachment(desc);
+  {
+    impeller::DepthAttachment desc;
+    desc.load_action = flutter::gpu::ToImpellerLoadAction(
+        static_cast<flutter::gpu::FlutterGPULoadAction>(depth_load_action));
+    desc.store_action = flutter::gpu::ToImpellerStoreAction(
+        static_cast<flutter::gpu::FlutterGPUStoreAction>(depth_store_action));
+    desc.clear_depth = stencil_clear_value;
+    desc.texture = texture->GetTexture();
+    wrapper->GetRenderTarget().SetDepthAttachment(desc);
+  }
+  {
+    impeller::StencilAttachment desc;
+    desc.load_action = flutter::gpu::ToImpellerLoadAction(
+        static_cast<flutter::gpu::FlutterGPULoadAction>(stencil_load_action));
+    desc.store_action = flutter::gpu::ToImpellerStoreAction(
+        static_cast<flutter::gpu::FlutterGPUStoreAction>(stencil_store_action));
+    desc.clear_stencil = stencil_clear_value;
+    desc.texture = texture->GetTexture();
+    wrapper->GetRenderTarget().SetStencilAttachment(desc);
+  }
+
   return Dart_Null();
 }
 

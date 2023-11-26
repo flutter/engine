@@ -16,8 +16,8 @@ base class CommandBuffer extends NativeFieldWrapperClass1 {
 
   RenderPass createRenderPass(
       {required ColorAttachment colorAttachment,
-      StencilAttachment? stencilAttachment = null}) {
-    return RenderPass._(this, colorAttachment, stencilAttachment);
+      DepthStencilAttachment? depthStencilAttachment = null}) {
+    return RenderPass._(this, colorAttachment, depthStencilAttachment);
   }
 
   void submit({CompletionCallback? completionCallback}) {

@@ -97,11 +97,14 @@ extern Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     Dart_Handle resolve_texture_wrapper);
 
 FLUTTER_GPU_EXPORT
-extern Dart_Handle InternalFlutterGpu_RenderPass_SetStencilAttachment(
+extern Dart_Handle InternalFlutterGpu_RenderPass_SetDepthStencilAttachment(
     flutter::gpu::RenderPass* wrapper,
-    int load_action,
-    int store_action,
-    int clear_stencil,
+    int depth_load_action,
+    int depth_store_action,
+    float depth_clear_value,
+    int stencil_load_action,
+    int stencil_store_action,
+    int stencil_clear_value,
     flutter::gpu::Texture* texture);
 
 FLUTTER_GPU_EXPORT
