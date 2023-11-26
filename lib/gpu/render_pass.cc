@@ -57,6 +57,11 @@ impeller::ColorAttachmentDescriptor& RenderPass::GetColorAttachmentDescriptor(
   return color->second;
 }
 
+impeller::DepthAttachmentDescriptor&
+RenderPass::GetDepthAttachmentDescriptor() {
+  return depth_desc_;
+}
+
 impeller::VertexBuffer& RenderPass::GetVertexBuffer() {
   return vertex_buffer_;
 }
@@ -190,7 +195,7 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetDepthStencilAttachment(
     impeller::DepthAttachment desc;
     desc.load_action = flutter::gpu::ToImpellerLoadAction(depth_load_action);
     desc.store_action = flutter::gpu::ToImpellerStoreAction(depth_store_action);
-    desc.clear_depth = stencil_clear_value;
+    desc.clear_depth = depth_clear_value;
     desc.texture = texture->GetTexture();
     wrapper->GetRenderTarget().SetDepthAttachment(desc);
   }
@@ -426,6 +431,21 @@ void InternalFlutterGpu_RenderPass_SetColorBlendEquation(
       flutter::gpu::ToImpellerBlendFactor(source_alpha_blend_factor);
   color.dst_alpha_blend_factor =
       flutter::gpu::ToImpellerBlendFactor(destination_alpha_blend_factor);
+}
+
+void InternalFlutterGpu_RenderPass_SetDepthWriteEnable(
+    flutter::gpu::RenderPass* wrapper,
+    bool enable) {
+  auto& depth = wrapper->GetDepthAttachmentDescriptor();
+  depth.depth_write_enabled = true;
+}
+
+void InternalFlutterGpu_RenderPass_SetDepthCompareOperation(
+    flutter::gpu::RenderPass* wrapper,
+    int compare_operation) {
+  auto& depth = wrapper->GetDepthAttachmentDescriptor();
+  depth.depth_compare =
+      flutter::gpu::ToImpellerCompareFunction(compare_operation);
 }
 
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {

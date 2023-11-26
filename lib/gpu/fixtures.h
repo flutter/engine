@@ -43,21 +43,35 @@ extern unsigned char kFlutterGPUUnlitFragIPLR[];
 
 struct FlutterGPUTextureVertexShader {
   struct PerVertexData {
-    impeller::Point position;  // (offset 0, size 8)
-    impeller::Vector4 color;   // (offset 8, size 16)
-  };                           // struct PerVertexData (size 24)
+    impeller::Vector3 position;      // (offset 0, size 12)
+    impeller::Point texture_coords;  // (offset 12, size 8)
+    impeller::Vector4 color;         // (offset 20, size 16)
+  };                                 // struct PerVertexData (size 36)
+
+  static constexpr auto kInputTextureCoords = impeller::ShaderStageIOSlot{
+      // texture_coords
+      "texture_coords",              // name
+      1u,                            // attribute location
+      0u,                            // attribute set
+      0u,                            // attribute binding
+      impeller::ShaderType::kFloat,  // type
+      32u,                           // bit width of type
+      2u,                            // vec size
+      1u,                            // number of columns
+      12u,                           // offset for interleaved layout
+  };
 
   static constexpr auto kInputColor = impeller::ShaderStageIOSlot{
       // color
       "color",                       // name
-      1u,                            // attribute location
+      2u,                            // attribute location
       0u,                            // attribute set
       0u,                            // attribute binding
       impeller::ShaderType::kFloat,  // type
       32u,                           // bit width of type
       4u,                            // vec size
       1u,                            // number of columns
-      8u,                            // offset for interleaved layout
+      20u,                           // offset for interleaved layout
   };
 
   static constexpr auto kInputPosition = impeller::ShaderStageIOSlot{
@@ -68,15 +82,16 @@ struct FlutterGPUTextureVertexShader {
       0u,                            // attribute binding
       impeller::ShaderType::kFloat,  // type
       32u,                           // bit width of type
-      2u,                            // vec size
+      3u,                            // vec size
       1u,                            // number of columns
       0u,                            // offset for interleaved layout
   };
 
-  static constexpr std::array<const impeller::ShaderStageIOSlot*, 2>
+  static constexpr std::array<const impeller::ShaderStageIOSlot*, 3>
       kAllShaderStageInputs = {
-          &kInputColor,     // color
-          &kInputPosition,  // position
+          &kInputTextureCoords,  // texture_coords
+          &kInputColor,          // color
+          &kInputPosition,       // position
   };
 
   static constexpr auto kInterleavedLayout = impeller::ShaderStageBufferLayout{
@@ -87,7 +102,7 @@ struct FlutterGPUTextureVertexShader {
       kInterleavedBufferLayout = {&kInterleavedLayout};
 };
 
-constexpr unsigned int kFlutterGPUTextureVertIPLRLength = 1016;
+constexpr unsigned int kFlutterGPUTextureVertIPLRLength = 920;
 extern unsigned char kFlutterGPUTextureVertIPLR[];
 
 constexpr unsigned int kFlutterGPUTextureFragIPLRLength = 800;

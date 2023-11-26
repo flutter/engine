@@ -27,7 +27,7 @@ base class DepthStencilAttachment {
   DepthStencilAttachment({
     this.depthLoadAction = LoadAction.clear,
     this.depthStoreAction = StoreAction.dontCare,
-    this.depthClearValue = 0,
+    this.depthClearValue = 0.0,
     this.stencilLoadAction = LoadAction.clear,
     this.stencilStoreAction = StoreAction.dontCare,
     this.stencilClearValue = 0,
@@ -203,6 +203,14 @@ base class RenderPass extends NativeFieldWrapperClass1 {
         equation.destinationAlphaBlendFactor.index);
   }
 
+  void setDepthWriteEnable(bool enable) {
+    _setDepthWriteEnable(enable);
+  }
+
+  void setDepthCompareOperation(CompareFunction compareFunction) {
+    _setDepthCompareOperation(compareFunction.index);
+  }
+
   void draw() {
     if (!_draw()) {
       throw Exception("Failed to append draw");
@@ -307,6 +315,14 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       int alphaBlendOperation,
       int sourceAlphaBlendFactor,
       int destinationAlphaBlendFactor);
+
+  @Native<Void Function(Pointer<Void>, Bool)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetDepthWriteEnable')
+  external void _setDepthWriteEnable(bool enable);
+
+  @Native<Void Function(Pointer<Void>, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetDepthCompareOperation')
+  external void _setDepthCompareOperation(int compareOperation);
 
   @Native<Bool Function(Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Draw')
