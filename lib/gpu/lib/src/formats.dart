@@ -105,3 +105,19 @@ enum ShaderStage {
   vertex,
   fragment,
 }
+
+enum MinMagFilter {
+  nearest,
+  linear,
+}
+
+enum MipFilter {
+  nearest,
+  linear,
+}
+
+enum SamplerAddressMode {
+  clampToEdge,
+  repeat,
+  mirror,
+}

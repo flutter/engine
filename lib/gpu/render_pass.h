@@ -158,6 +158,22 @@ extern bool InternalFlutterGpu_RenderPass_BindUniformHost(
     int length_in_bytes);
 
 FLUTTER_GPU_EXPORT
+extern bool InternalFlutterGpu_RenderPass_BindTexture(
+    flutter::gpu::RenderPass* wrapper,
+    int stage,
+    int slot_id,
+    flutter::gpu::Texture* texture,
+    int min_filter,
+    int mag_filter,
+    int mip_filter,
+    int width_address_mode,
+    int height_address_mode);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_ClearBindings(
+    flutter::gpu::RenderPass* wrapper);
+
+FLUTTER_GPU_EXPORT
 extern void InternalFlutterGpu_RenderPass_SetColorBlendEnable(
     flutter::gpu::RenderPass* wrapper,
     int color_attachment_index,

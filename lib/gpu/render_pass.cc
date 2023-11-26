@@ -9,10 +9,12 @@
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "impeller/renderer/sampler_library.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -300,6 +302,50 @@ bool InternalFlutterGpu_RenderPass_BindUniformHost(
     int length_in_bytes) {
   return BindUniform(wrapper, stage, slot_id, host_buffer, offset_in_bytes,
                      length_in_bytes);
+}
+
+bool InternalFlutterGpu_RenderPass_BindTexture(
+    flutter::gpu::RenderPass* wrapper,
+    int stage,
+    int slot_id,
+    flutter::gpu::Texture* texture,
+    int min_filter,
+    int mag_filter,
+    int mip_filter,
+    int width_address_mode,
+    int height_address_mode) {
+  auto& command = wrapper->GetCommand();
+
+  // TODO(113715): Populate this metadata once GLES is able to handle
+  //               non-struct uniform names.
+  impeller::ShaderMetadata metadata;
+
+  impeller::SamplerDescriptor sampler_desc;
+  sampler_desc.min_filter = flutter::gpu::ToImpellerMinMagFilter(min_filter);
+  sampler_desc.mag_filter = flutter::gpu::ToImpellerMinMagFilter(mag_filter);
+  sampler_desc.mip_filter = flutter::gpu::ToImpellerMipFilter(mip_filter);
+  sampler_desc.width_address_mode =
+      flutter::gpu::ToImpellerSamplerAddressMode(width_address_mode);
+  sampler_desc.height_address_mode =
+      flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
+  auto sampler = wrapper->GetContext().lock()->GetSamplerLibrary()->GetSampler(
+      sampler_desc);
+
+  impeller::SampledImageSlot image_slot;
+  image_slot.texture_index = slot_id;
+  image_slot.sampler_index = slot_id;
+  return command.BindResource(flutter::gpu::ToImpellerShaderStage(stage),
+                              image_slot, metadata, texture->GetTexture(),
+                              sampler);
+}
+
+void InternalFlutterGpu_RenderPass_ClearBindings(
+    flutter::gpu::RenderPass* wrapper) {
+  auto& command = wrapper->GetCommand();
+  command.vertex_count = 0;
+  command.vertex_bindings = {};
+  command.fragment_bindings = {};
+  command.index_buffer = {};
 }
 
 void InternalFlutterGpu_RenderPass_SetColorBlendEnable(

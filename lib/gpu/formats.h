@@ -318,5 +318,65 @@ constexpr FlutterGPUShaderStage FromImpellerShaderStage(
   }
 }
 
+enum class FlutterGPUMinMagFilter {
+  kNearest,
+  kLinear,
+};
+
+constexpr impeller::MinMagFilter ToImpellerMinMagFilter(
+    FlutterGPUMinMagFilter value) {
+  switch (value) {
+    case FlutterGPUMinMagFilter::kNearest:
+      return impeller::MinMagFilter::kNearest;
+    case FlutterGPUMinMagFilter::kLinear:
+      return impeller::MinMagFilter::kLinear;
+  }
+}
+
+constexpr impeller::MinMagFilter ToImpellerMinMagFilter(int value) {
+  return ToImpellerMinMagFilter(static_cast<FlutterGPUMinMagFilter>(value));
+}
+
+enum class FlutterGPUMipFilter {
+  kNearest,
+  kLinear,
+};
+
+constexpr impeller::MipFilter ToImpellerMipFilter(FlutterGPUMipFilter value) {
+  switch (value) {
+    case FlutterGPUMipFilter::kNearest:
+      return impeller::MipFilter::kNearest;
+    case FlutterGPUMipFilter::kLinear:
+      return impeller::MipFilter::kLinear;
+  }
+}
+
+constexpr impeller::MipFilter ToImpellerMipFilter(int value) {
+  return ToImpellerMipFilter(static_cast<FlutterGPUMipFilter>(value));
+}
+
+enum class FlutterGPUSamplerAddressMode {
+  kClampToEdge,
+  kRepeat,
+  kMirror,
+};
+
+constexpr impeller::SamplerAddressMode ToImpellerSamplerAddressMode(
+    FlutterGPUSamplerAddressMode value) {
+  switch (value) {
+    case FlutterGPUSamplerAddressMode::kClampToEdge:
+      return impeller::SamplerAddressMode::kClampToEdge;
+    case FlutterGPUSamplerAddressMode::kRepeat:
+      return impeller::SamplerAddressMode::kRepeat;
+    case FlutterGPUSamplerAddressMode::kMirror:
+      return impeller::SamplerAddressMode::kMirror;
+  }
+}
+
+constexpr impeller::SamplerAddressMode ToImpellerSamplerAddressMode(int value) {
+  return ToImpellerSamplerAddressMode(
+      static_cast<FlutterGPUSamplerAddressMode>(value));
+}
+
 }  // namespace gpu
 }  // namespace flutter

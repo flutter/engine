@@ -7,29 +7,32 @@
 part of flutter_gpu;
 
 base class ColorAttachment {
-  ColorAttachment(
-      {this.loadAction = LoadAction.clear,
-      this.storeAction = StoreAction.store,
-      this.clearValue = const ui.Color(0x00000000),
-      required this.texture,
-      this.resolveTexture = null});
+  ColorAttachment({
+    this.loadAction = LoadAction.clear,
+    this.storeAction = StoreAction.store,
+    this.clearValue = const ui.Color(0x00000000),
+    required this.texture,
+    this.resolveTexture = null,
+  });
 
   LoadAction loadAction;
   StoreAction storeAction;
   ui.Color clearValue;
+
   Texture texture;
   Texture? resolveTexture;
 }
 
 base class DepthStencilAttachment {
-  DepthStencilAttachment(
-      {this.depthLoadAction = LoadAction.clear,
-      this.depthStoreAction = StoreAction.dontCare,
-      this.depthClearValue = 0,
-      this.stencilLoadAction = LoadAction.clear,
-      this.stencilStoreAction = StoreAction.dontCare,
-      this.stencilClearValue = 0,
-      required this.texture});
+  DepthStencilAttachment({
+    this.depthLoadAction = LoadAction.clear,
+    this.depthStoreAction = StoreAction.dontCare,
+    this.depthClearValue = 0,
+    this.stencilLoadAction = LoadAction.clear,
+    this.stencilStoreAction = StoreAction.dontCare,
+    this.stencilClearValue = 0,
+    required this.texture,
+  });
 
   LoadAction depthLoadAction;
   StoreAction depthStoreAction;
@@ -59,6 +62,22 @@ base class ColorBlendEquation {
   BlendOperation alphaBlendOperation;
   BlendFactor sourceAlphaBlendFactor;
   BlendFactor destinationAlphaBlendFactor;
+}
+
+base class SamplerOptions {
+  SamplerOptions({
+    this.minFilter = MinMagFilter.nearest,
+    this.magFilter = MinMagFilter.nearest,
+    this.mipFilter = MipFilter.nearest,
+    this.widthAddressMode = SamplerAddressMode.clampToEdge,
+    this.heightAddressMode = SamplerAddressMode.clampToEdge,
+  });
+
+  MinMagFilter minFilter;
+  MinMagFilter magFilter;
+  MipFilter mipFilter;
+  SamplerAddressMode widthAddressMode;
+  SamplerAddressMode heightAddressMode;
 }
 
 base class RenderTarget {
@@ -134,8 +153,32 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     bool success = bufferView.buffer._bindAsUniform(
         this, slot, bufferView.offsetInBytes, bufferView.lengthInBytes);
     if (!success) {
-      throw Exception("Failed to bind uniform slot");
+      throw Exception("Failed to bind uniform");
     }
+  }
+
+  void bindTexture(UniformSlot slot, Texture texture,
+      {SamplerOptions? sampler}) {
+    if (sampler == null) {
+      sampler = SamplerOptions();
+    }
+
+    bool success = _bindTexture(
+        slot.shaderStage.index,
+        slot.slotId,
+        texture,
+        sampler.minFilter.index,
+        sampler.magFilter.index,
+        sampler.mipFilter.index,
+        sampler.widthAddressMode.index,
+        sampler.heightAddressMode.index);
+    if (!success) {
+      throw Exception("Failed to bind texture");
+    }
+  }
+
+  void clearBindings() {
+    _clearBindings();
   }
 
   void setColorBlendEnable(bool enable, {int colorAttachmentIndex = 0}) {
@@ -216,6 +259,23 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       symbol: 'InternalFlutterGpu_RenderPass_BindUniformHost')
   external bool _bindUniformHost(int stage, int slotId, HostBuffer buffer,
       int offsetInBytes, int lengthInBytes);
+
+  @Native<
+      Bool Function(Pointer<Void>, Int, Int, Pointer<Void>, Int, Int, Int, Int,
+          Int)>(symbol: 'InternalFlutterGpu_RenderPass_BindTexture')
+  external bool _bindTexture(
+      int stage,
+      int slotId,
+      Texture texture,
+      int minFilter,
+      int magFilter,
+      int mipFilter,
+      int widthAddressMode,
+      int heightAddressMode);
+
+  @Native<Void Function(Pointer<Void>)>(
+      symbol: 'InternalFlutterGpu_RenderPass_ClearBindings')
+  external void _clearBindings();
 
   @Native<Void Function(Pointer<Void>, Int, Bool)>(
       symbol: 'InternalFlutterGpu_RenderPass_SetColorBlendEnable')
