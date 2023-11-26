@@ -30,6 +30,7 @@ base class DepthStencilAttachment {
       this.stencilStoreAction = StoreAction.dontCare,
       this.stencilClearValue = 0,
       required this.texture});
+
   LoadAction depthLoadAction;
   StoreAction depthStoreAction;
   double depthClearValue;
@@ -41,9 +42,45 @@ base class DepthStencilAttachment {
   Texture texture;
 }
 
+base class ColorBlendEquation {
+  ColorBlendEquation({
+    this.colorBlendOperation = BlendOperation.add,
+    this.sourceColorBlendFactor = BlendFactor.one,
+    this.destinationColorBlendFactor = BlendFactor.oneMinusSourceAlpha,
+    this.alphaBlendOperation = BlendOperation.add,
+    this.sourceAlphaBlendFactor = BlendFactor.one,
+    this.destinationAlphaBlendFactor = BlendFactor.oneMinusSourceAlpha,
+  });
+
+  BlendOperation colorBlendOperation;
+  BlendFactor sourceColorBlendFactor;
+  BlendFactor destinationColorBlendFactor;
+
+  BlendOperation alphaBlendOperation;
+  BlendFactor sourceAlphaBlendFactor;
+  BlendFactor destinationAlphaBlendFactor;
+}
+
 base class RenderTarget {
-  RenderTarget({required this.colorAttachments, this.depthStencilAttachment});
-  List<ColorAttachment> colorAttachments;
+  RenderTarget(
+      {List<ColorAttachment>? colorAttachments, this.depthStencilAttachment}) {
+    if (colorAttachments != null) {
+      colorAttachments = colorAttachments;
+      return;
+    }
+    colorAttachments = <ColorAttachment>[];
+  }
+
+  RenderTarget.singleColor(
+      {ColorAttachment? colorAttachment, this.depthStencilAttachment}) {
+    if (colorAttachment != null) {
+      colorAttachments = <ColorAttachment>[colorAttachment];
+      return;
+    }
+    colorAttachments = <ColorAttachment>[];
+  }
+
+  late List<ColorAttachment> colorAttachments;
   DepthStencilAttachment? depthStencilAttachment;
 }
 
@@ -99,6 +136,22 @@ base class RenderPass extends NativeFieldWrapperClass1 {
     if (!success) {
       throw Exception("Failed to bind uniform slot");
     }
+  }
+
+  void setColorBlendEnable(bool enable, {int colorAttachmentIndex = 0}) {
+    _setColorBlendEnable(colorAttachmentIndex, enable);
+  }
+
+  void setColorBlendEquation(ColorBlendEquation equation,
+      {int colorAttachmentIndex = 0}) {
+    _setColorBlendEquation(
+        colorAttachmentIndex,
+        equation.colorBlendOperation.index,
+        equation.sourceColorBlendFactor.index,
+        equation.destinationColorBlendFactor.index,
+        equation.alphaBlendOperation.index,
+        equation.sourceAlphaBlendFactor.index,
+        equation.destinationAlphaBlendFactor.index);
   }
 
   void draw() {
@@ -163,6 +216,21 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       symbol: 'InternalFlutterGpu_RenderPass_BindUniformHost')
   external bool _bindUniformHost(int stage, int slotId, HostBuffer buffer,
       int offsetInBytes, int lengthInBytes);
+
+  @Native<Void Function(Pointer<Void>, Int, Bool)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetColorBlendEnable')
+  external void _setColorBlendEnable(int colorAttachmentIndex, bool enable);
+
+  @Native<Void Function(Pointer<Void>, Int, Int, Int, Int, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_SetColorBlendEquation')
+  external void _setColorBlendEquation(
+      int colorAttachmentIndex,
+      int colorBlendOperation,
+      int sourceColorBlendFactor,
+      int destinationColorBlendFactor,
+      int alphaBlendOperation,
+      int sourceAlphaBlendFactor,
+      int destinationAlphaBlendFactor);
 
   @Native<Bool Function(Pointer<Void>)>(
       symbol: 'InternalFlutterGpu_RenderPass_Draw')

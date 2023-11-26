@@ -46,6 +46,15 @@ const impeller::RenderTarget& RenderPass::GetRenderTarget() const {
   return render_target_;
 }
 
+impeller::ColorAttachmentDescriptor& RenderPass::GetColorAttachmentDescriptor(
+    size_t color_attachment_index) {
+  auto color = color_descriptors_.find(color_attachment_index);
+  if (color == color_descriptors_.end()) {
+    return color_descriptors_[color_attachment_index] = {};
+  }
+  return color->second;
+}
+
 impeller::VertexBuffer& RenderPass::GetVertexBuffer() {
   return vertex_buffer_;
 }
@@ -69,17 +78,10 @@ RenderPass::GetOrCreatePipeline() {
   // Infer the pipeline layout based on the shape of the RenderTarget.
   auto pipeline_desc = pipeline_descriptor_;
   for (const auto& it : render_target_.GetColorAttachments()) {
-    auto color_desc_it = color_descriptors_.find(it.first);
-    if (color_desc_it == color_descriptors_.end()) {
-      color_descriptors_[it.first] = {
-          .format = render_target_.GetRenderTargetPixelFormat()};
-    } else {
-      color_desc_it->second.format =
-          render_target_.GetRenderTargetPixelFormat();
-    }
-
-    pipeline_desc.SetColorAttachmentDescriptors(color_descriptors_);
+    auto& color = GetColorAttachmentDescriptor(it.first);
+    color.format = render_target_.GetRenderTargetPixelFormat();
   }
+  pipeline_desc.SetColorAttachmentDescriptors(color_descriptors_);
 
   {
     auto stencil = render_target_.GetStencilAttachment();
@@ -159,10 +161,8 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetColorAttachment(
     flutter::gpu::Texture* texture,
     Dart_Handle resolve_texture_wrapper) {
   impeller::ColorAttachment desc;
-  desc.load_action = flutter::gpu::ToImpellerLoadAction(
-      static_cast<flutter::gpu::FlutterGPULoadAction>(load_action));
-  desc.store_action = flutter::gpu::ToImpellerStoreAction(
-      static_cast<flutter::gpu::FlutterGPUStoreAction>(store_action));
+  desc.load_action = flutter::gpu::ToImpellerLoadAction(load_action);
+  desc.store_action = flutter::gpu::ToImpellerStoreAction(store_action);
   desc.clear_color = ToImpellerColor(static_cast<uint32_t>(clear_color));
   desc.texture = texture->GetTexture();
   if (!Dart_IsNull(resolve_texture_wrapper)) {
@@ -186,20 +186,17 @@ Dart_Handle InternalFlutterGpu_RenderPass_SetDepthStencilAttachment(
     flutter::gpu::Texture* texture) {
   {
     impeller::DepthAttachment desc;
-    desc.load_action = flutter::gpu::ToImpellerLoadAction(
-        static_cast<flutter::gpu::FlutterGPULoadAction>(depth_load_action));
-    desc.store_action = flutter::gpu::ToImpellerStoreAction(
-        static_cast<flutter::gpu::FlutterGPUStoreAction>(depth_store_action));
+    desc.load_action = flutter::gpu::ToImpellerLoadAction(depth_load_action);
+    desc.store_action = flutter::gpu::ToImpellerStoreAction(depth_store_action);
     desc.clear_depth = stencil_clear_value;
     desc.texture = texture->GetTexture();
     wrapper->GetRenderTarget().SetDepthAttachment(desc);
   }
   {
     impeller::StencilAttachment desc;
-    desc.load_action = flutter::gpu::ToImpellerLoadAction(
-        static_cast<flutter::gpu::FlutterGPULoadAction>(stencil_load_action));
-    desc.store_action = flutter::gpu::ToImpellerStoreAction(
-        static_cast<flutter::gpu::FlutterGPUStoreAction>(stencil_store_action));
+    desc.load_action = flutter::gpu::ToImpellerLoadAction(stencil_load_action);
+    desc.store_action =
+        flutter::gpu::ToImpellerStoreAction(stencil_store_action);
     desc.clear_stencil = stencil_clear_value;
     desc.texture = texture->GetTexture();
     wrapper->GetRenderTarget().SetStencilAttachment(desc);
@@ -276,9 +273,7 @@ static bool BindUniform(flutter::gpu::RenderPass* wrapper,
   // even use it for anything.
   slot.ext_res_0 = slot_id;
   return command.BindResource(
-      flutter::gpu::ToImpellerShaderStage(
-          static_cast<flutter::gpu::FlutterGPUShaderStage>(stage)),
-      slot, metadata,
+      flutter::gpu::ToImpellerShaderStage(stage), slot, metadata,
       impeller::BufferView{
           .buffer = buffer->GetBuffer(),
           .range = impeller::Range(offset_in_bytes, length_in_bytes),
@@ -305,6 +300,38 @@ bool InternalFlutterGpu_RenderPass_BindUniformHost(
     int length_in_bytes) {
   return BindUniform(wrapper, stage, slot_id, host_buffer, offset_in_bytes,
                      length_in_bytes);
+}
+
+void InternalFlutterGpu_RenderPass_SetColorBlendEnable(
+    flutter::gpu::RenderPass* wrapper,
+    int color_attachment_index,
+    bool enable) {
+  auto& color = wrapper->GetColorAttachmentDescriptor(color_attachment_index);
+  color.blending_enabled = enable;
+}
+
+void InternalFlutterGpu_RenderPass_SetColorBlendEquation(
+    flutter::gpu::RenderPass* wrapper,
+    int color_attachment_index,
+    int color_blend_operation,
+    int source_color_blend_factor,
+    int destination_color_blend_factor,
+    int alpha_blend_operation,
+    int source_alpha_blend_factor,
+    int destination_alpha_blend_factor) {
+  auto& color = wrapper->GetColorAttachmentDescriptor(color_attachment_index);
+  color.color_blend_op =
+      flutter::gpu::ToImpellerBlendOperation(color_blend_operation);
+  color.src_color_blend_factor =
+      flutter::gpu::ToImpellerBlendFactor(source_color_blend_factor);
+  color.dst_color_blend_factor =
+      flutter::gpu::ToImpellerBlendFactor(destination_color_blend_factor);
+  color.alpha_blend_op =
+      flutter::gpu::ToImpellerBlendOperation(alpha_blend_operation);
+  color.src_alpha_blend_factor =
+      flutter::gpu::ToImpellerBlendFactor(source_alpha_blend_factor);
+  color.dst_alpha_blend_factor =
+      flutter::gpu::ToImpellerBlendFactor(destination_alpha_blend_factor);
 }
 
 bool InternalFlutterGpu_RenderPass_Draw(flutter::gpu::RenderPass* wrapper) {

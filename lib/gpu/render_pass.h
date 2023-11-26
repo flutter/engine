@@ -40,6 +40,9 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
   impeller::RenderTarget& GetRenderTarget();
   const impeller::RenderTarget& GetRenderTarget() const;
 
+  impeller::ColorAttachmentDescriptor& GetColorAttachmentDescriptor(
+      size_t color_attachment_index);
+
   impeller::VertexBuffer& GetVertexBuffer();
 
   bool Begin(flutter::gpu::CommandBuffer& command_buffer);
@@ -153,6 +156,23 @@ extern bool InternalFlutterGpu_RenderPass_BindUniformHost(
     flutter::gpu::HostBuffer* host_buffer,
     int offset_in_bytes,
     int length_in_bytes);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetColorBlendEnable(
+    flutter::gpu::RenderPass* wrapper,
+    int color_attachment_index,
+    bool enable);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_SetColorBlendEquation(
+    flutter::gpu::RenderPass* wrapper,
+    int color_attachment_index,
+    int color_blend_operation,
+    int source_color_blend_factor,
+    int destination_color_blend_factor,
+    int alpha_blend_operation,
+    int source_alpha_blend_factor,
+    int destination_alpha_blend_factor);
 
 FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_Draw(
