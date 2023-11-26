@@ -61,7 +61,9 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromAsset(
   // ===========================================================================
   // This is a temporary hack to get the shader library populated in the
   // framework before the shader bundle format is landed!
-  InstantiateTestShaderLibrary();
+  if (!override_shader_library_) {
+    InstantiateTestShaderLibrary();
+  }
   // ===========================================================================
 
   if (override_shader_library_) {
