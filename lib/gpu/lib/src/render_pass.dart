@@ -149,6 +149,12 @@ base class RenderPass extends NativeFieldWrapperClass1 {
         this, bufferView.offsetInBytes, bufferView.lengthInBytes, vertexCount);
   }
 
+  void bindIndexBuffer(
+      BufferView bufferView, IndexType indexType, int indexCount) {
+    bufferView.buffer._bindAsIndexBuffer(this, bufferView.offsetInBytes,
+        bufferView.lengthInBytes, indexType, indexCount);
+  }
+
   void bindUniform(UniformSlot slot, BufferView bufferView) {
     bool success = bufferView.buffer._bindAsUniform(
         this, slot, bufferView.offsetInBytes, bufferView.lengthInBytes);
@@ -249,6 +255,16 @@ base class RenderPass extends NativeFieldWrapperClass1 {
       symbol: 'InternalFlutterGpu_RenderPass_BindVertexBufferHost')
   external void _bindVertexBufferHost(
       HostBuffer buffer, int offsetInBytes, int lengthInBytes, int vertexCount);
+
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindIndexBufferDevice')
+  external void _bindIndexBufferDevice(DeviceBuffer buffer, int offsetInBytes,
+      int lengthInBytes, int indexType, int indexCount);
+
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int, Int, Int, Int)>(
+      symbol: 'InternalFlutterGpu_RenderPass_BindIndexBufferHost')
+  external void _bindIndexBufferHost(HostBuffer buffer, int offsetInBytes,
+      int lengthInBytes, int indexType, int indexCount);
 
   @Native<Bool Function(Pointer<Void>, Int, Int, Pointer<Void>, Int, Int)>(
       symbol: 'InternalFlutterGpu_RenderPass_BindUniformDevice')

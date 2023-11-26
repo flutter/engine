@@ -234,7 +234,17 @@ static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
       .buffer = buffer->GetBuffer(),
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
-  vertex_buffer.vertex_count = vertex_count;
+  // If the index type is set, then the `vertex_count` becomes the index
+  // count... So don't overwrite the count if it's already been set when binding
+  // the index buffer.
+  // TODO(bdero): Consider just doing a more traditional API with
+  //              draw(vertexCount) and drawIndexed(indexCount). This is fine,
+  //              but overall it would be a bit more explicit and we wouldn't
+  //              have to document this behavior where the presence of the index
+  //              buffer always takes precedent.
+  if (vertex_buffer.index_type == impeller::IndexType::kNone) {
+    vertex_buffer.vertex_count = vertex_count;
+  }
 }
 
 void InternalFlutterGpu_RenderPass_BindVertexBufferDevice(
@@ -255,6 +265,44 @@ void InternalFlutterGpu_RenderPass_BindVertexBufferHost(
     int vertex_count) {
   BindVertexBuffer(wrapper, host_buffer, offset_in_bytes, length_in_bytes,
                    vertex_count);
+}
+
+template <typename TBuffer>
+static void BindIndexBuffer(flutter::gpu::RenderPass* wrapper,
+                            TBuffer* buffer,
+                            int offset_in_bytes,
+                            int length_in_bytes,
+                            int index_type,
+                            int index_count) {
+  auto& vertex_buffer = wrapper->GetVertexBuffer();
+  vertex_buffer.index_buffer = impeller::BufferView{
+      .buffer = buffer->GetBuffer(),
+      .range = impeller::Range(offset_in_bytes, length_in_bytes),
+  };
+  vertex_buffer.index_type = flutter::gpu::ToImpellerIndexType(index_type);
+  vertex_buffer.vertex_count = index_count;
+}
+
+void InternalFlutterGpu_RenderPass_BindIndexBufferDevice(
+    flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::DeviceBuffer* device_buffer,
+    int offset_in_bytes,
+    int length_in_bytes,
+    int index_type,
+    int index_count) {
+  BindIndexBuffer(wrapper, device_buffer, offset_in_bytes, length_in_bytes,
+                  index_type, index_count);
+}
+
+void InternalFlutterGpu_RenderPass_BindIndexBufferHost(
+    flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::HostBuffer* host_buffer,
+    int offset_in_bytes,
+    int length_in_bytes,
+    int index_type,
+    int index_count) {
+  BindIndexBuffer(wrapper, host_buffer, offset_in_bytes, length_in_bytes,
+                  index_type, index_count);
 }
 
 template <typename TBuffer>

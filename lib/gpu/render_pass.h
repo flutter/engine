@@ -140,6 +140,24 @@ extern void InternalFlutterGpu_RenderPass_BindVertexBufferHost(
     int vertex_count);
 
 FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_BindIndexBufferDevice(
+    flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::DeviceBuffer* device_buffer,
+    int offset_in_bytes,
+    int length_in_bytes,
+    int index_type,
+    int index_count);
+
+FLUTTER_GPU_EXPORT
+extern void InternalFlutterGpu_RenderPass_BindIndexBufferHost(
+    flutter::gpu::RenderPass* wrapper,
+    flutter::gpu::HostBuffer* host_buffer,
+    int offset_in_bytes,
+    int length_in_bytes,
+    int index_type,
+    int index_count);
+
+FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_BindUniformDevice(
     flutter::gpu::RenderPass* wrapper,
     int stage,

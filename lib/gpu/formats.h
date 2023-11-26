@@ -378,5 +378,51 @@ constexpr impeller::SamplerAddressMode ToImpellerSamplerAddressMode(int value) {
       static_cast<FlutterGPUSamplerAddressMode>(value));
 }
 
+enum class FlutterGPUIndexType {
+  k16bit,
+  k32bit,
+};
+
+constexpr impeller::IndexType ToImpellerIndexType(FlutterGPUIndexType value) {
+  switch (value) {
+    case FlutterGPUIndexType::k16bit:
+      return impeller::IndexType::k16bit;
+    case FlutterGPUIndexType::k32bit:
+      return impeller::IndexType::k32bit;
+  }
+}
+
+constexpr impeller::IndexType ToImpellerIndexType(int value) {
+  return ToImpellerIndexType(static_cast<FlutterGPUIndexType>(value));
+}
+
+enum class FlutterGPUPrimitiveType {
+  kTriangle,
+  kTriangleStrip,
+  kLine,
+  kLineStrip,
+  kPoint,
+};
+
+constexpr impeller::PrimitiveType ToImpellerPrimitiveType(
+    FlutterGPUPrimitiveType value) {
+  switch (value) {
+    case FlutterGPUPrimitiveType::kTriangle:
+      return impeller::PrimitiveType::kTriangle;
+    case FlutterGPUPrimitiveType::kTriangleStrip:
+      return impeller::PrimitiveType::kTriangleStrip;
+    case FlutterGPUPrimitiveType::kLine:
+      return impeller::PrimitiveType::kLine;
+    case FlutterGPUPrimitiveType::kLineStrip:
+      return impeller::PrimitiveType::kLineStrip;
+    case FlutterGPUPrimitiveType::kPoint:
+      return impeller::PrimitiveType::kPoint;
+  }
+}
+
+constexpr impeller::PrimitiveType ToImpellerPrimitiveType(int value) {
+  return ToImpellerPrimitiveType(static_cast<FlutterGPUPrimitiveType>(value));
+}
+
 }  // namespace gpu
 }  // namespace flutter

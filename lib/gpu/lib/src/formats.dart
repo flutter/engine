@@ -121,3 +121,16 @@ enum SamplerAddressMode {
   repeat,
   mirror,
 }
+
+enum IndexType {
+  int16,
+  int32,
+}
+
+enum PrimitiveType {
+  triangle,
+  triangleStrip,
+  line,
+  lineStrip,
+  point,
+}
