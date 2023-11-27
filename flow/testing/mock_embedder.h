@@ -30,7 +30,7 @@ class MockViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareFlutterView(int64_t native_view_id,
+  void PrepareFlutterView(int64_t flutter_view_id,
                           SkISize frame_size,
                           double device_pixel_ratio) override;
 

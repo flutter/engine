@@ -29,7 +29,7 @@ void MockViewEmbedder::BeginFrame(
     const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
-void MockViewEmbedder::PrepareFlutterView(int64_t native_view_id,
+void MockViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,
                                           SkISize frame_size,
                                           double device_pixel_ratio) {}
 

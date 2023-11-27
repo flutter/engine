@@ -268,12 +268,12 @@ void AndroidExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::PrepareFlutterView(
-    int64_t native_view_id,
+    int64_t flutter_view_id,
     SkISize frame_size,
     double device_pixel_ratio) {
   // TODO(dkwingsmt): This class only supports rendering into the implicit view.
   // Properly support multi-view in the future.
-  FML_DCHECK(native_view_id == kFlutterImplicitViewId);
+  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   Reset();
 
   // The surface size changed. Therefore, destroy existing surfaces as
