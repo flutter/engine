@@ -1,8 +1,6 @@
-
 # Android CPU Profiling
 
-Android devices have different performance characteristics than iOS devices, and I've found that CPU traces frequently reveal surprising performance issues, such as https://github.com/flutter/engine/pull/48303 . This document describes the steps to capture an equivalent [flame graph](https://cacm.acm.org/magazines/2016/6/202665-the-flame-graph/abstract) on your local Android device.
-
+Android devices have different performance characteristics than iOS devices, CPU traces frequently reveal surprising performance issues, such as https://github.com/flutter/engine/pull/48303 . This document describes the steps to capture an equivalent [flame graph](https://cacm.acm.org/magazines/2016/6/202665-the-flame-graph/abstract) on your local Android device.
 
 1. Build Local Engine with Symbols
 
@@ -10,12 +8,11 @@ Add the `--no-stripped` flag to the gn config when building the android engine.
 
 Example config:
 
-`gn --no-lto --no-goma --runtime-mode=profile --android --android-cpu=arm64 --no-stripped`
-
+ `gn --no-lto --no-goma --runtime-mode=profile --android --android-cpu=arm64 --no-stripped`
 
 2. Configure Gradle to not remove strip sources
 
-In the flutter project file android/app/build.gradle, add the following line under the android block:
+In the flutter project file `android/app/build.gradle` , add the following line under the android block:
 
 ```
     packagingOptions{
@@ -23,10 +20,10 @@ In the flutter project file android/app/build.gradle, add the following line und
     }
 ```
 
-3. `flutter run` the app with the local engine flags.
+3. `flutter run` the app with the local engine flags (`--local-engine`,  `--local-engine-host`,  `--local-engine-src-path`).
 4. Open Android Studio.
 
-You can create a new blank project if you don't have one already. You do not need to open the application project nor do you need to run the App through Android Studio. In fact, its much easier if you do not do those things.
+You can create a new blank project if you don't have one already. You do not need to open the application project nor do you need to run the App through Android Studio. In fact, it's much easier if you do not do those things.
 
 5. Open the Profiler Tab
 
