@@ -20,7 +20,7 @@ const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 500);
 void testMain() {
   group('BackdropFilter', () {
     setUpCanvasKitTest();
-    window.debugOverrideDevicePixelRatio(1.0);
+    EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
 
     test('blur renders to the edges', () async {
       // Make a checkerboard picture so we can see the blur.
@@ -49,7 +49,7 @@ void testMain() {
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, checkerboard);
       builder.pushBackdropFilter(ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10));
-      CanvasKitRenderer.instance.rasterizer.draw(builder.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(builder.build(), implicitView);
       await matchGoldenFile('canvaskit_backdropfilter_blur_edges.png',
           region: region);
     });
