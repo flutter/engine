@@ -191,7 +191,7 @@ void canCreateRenderPassAndSubmit() {
   final gpu.CommandBuffer commandBuffer = gpu.gpuContext.createCommandBuffer();
 
   final gpu.RenderTarget renderTarget = gpu.RenderTarget.singleColor(
-    colorAttachment: gpu.ColorAttachment(texture: renderTexture!),
+    gpu.ColorAttachment(texture: renderTexture!),
   );
   final gpu.RenderPass encoder = commandBuffer.createRenderPass(renderTarget);
 

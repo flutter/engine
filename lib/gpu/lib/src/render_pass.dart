@@ -85,17 +85,11 @@ base class RenderTarget {
       {this.colorAttachments = const <ColorAttachment>[],
       this.depthStencilAttachment});
 
-  factory RenderTarget.singleColor(
-      {ColorAttachment? colorAttachment,
-      DepthStencilAttachment? depthStencilAttachment}) {
-    List<ColorAttachment> colors = [];
-    if (colorAttachment != null) {
-      colors.add(colorAttachment);
-    }
-    return new RenderTarget(
-        colorAttachments: colors,
-        depthStencilAttachment: depthStencilAttachment);
-  }
+  RenderTarget.singleColor(ColorAttachment colorAttachment,
+      {DepthStencilAttachment? depthStencilAttachment})
+      : this(
+            colorAttachments: [colorAttachment],
+            depthStencilAttachment: depthStencilAttachment);
 
   final List<ColorAttachment> colorAttachments;
   final DepthStencilAttachment? depthStencilAttachment;
