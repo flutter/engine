@@ -9,8 +9,10 @@
 namespace impeller {
 
 namespace {
-size_t DrawRect() {
-  Canvas canvas;
+
+using CanvasCallback = size_t (*)(Canvas&);
+
+size_t DrawRect(Canvas& canvas) {
   for (auto i = 0; i < 500; i++) {
     canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100),
                     {.color = Color::DarkKhaki()});
@@ -18,16 +20,14 @@ size_t DrawRect() {
   return 500;
 }
 
-size_t DrawCircle() {
-  Canvas canvas;
+size_t DrawCircle(Canvas& canvas) {
   for (auto i = 0; i < 500; i++) {
     canvas.DrawCircle({100, 100}, 5, {.color = Color::DarkKhaki()});
   }
   return 500;
 }
 
-size_t DrawLine() {
-  Canvas canvas;
+size_t DrawLine(Canvas& canvas) {
   for (auto i = 0; i < 500; i++) {
     canvas.DrawLine({0, 0}, {100, 100}, {.color = Color::DarkKhaki()});
   }
@@ -41,12 +41,15 @@ size_t DrawLine() {
 template <class... Args>
 static void BM_CanvasRecord(benchmark::State& state, Args&&... args) {
   auto args_tuple = std::make_tuple(std::move(args)...);
-  auto test_proc = std::get<decltype(&DrawRect)>(args_tuple);
+  auto test_proc = std::get<CanvasCallback>(args_tuple);
 
   size_t op_count = 0u;
   size_t canvas_count = 0u;
   while (state.KeepRunning()) {
-    op_count += test_proc();
+    // A new canvas is allocated for each iteration to avoid the benchmark
+    // becoming a measurement of only the entity vector re-allocation time.
+    Canvas canvas;
+    op_count += test_proc(canvas);
     canvas_count++;
   }
   state.counters["TotalOpCount"] = op_count;
