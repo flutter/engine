@@ -13,7 +13,7 @@ typedef void* _VoidPtr;
 
 typedef void (^FlutterSendEmbedderKeyEvent)(const FlutterKeyEvent& /* event */,
                                             _Nullable FlutterKeyEventCallback /* callback */,
-                                            _Nullable _VoidPtr /* user_data */);
+                                            void* _Nullable /* user_data */);
 
 /**
  * A primary responder of |FlutterKeyboardManager| that handles events by
