@@ -120,5 +120,6 @@ impeller_component("aiks_unittests_golden") {
     "//flutter/impeller/scene",
     "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
     "//flutter/testing:testing_lib",
+    "//flutter/third_party/txt",
   ]
 }
