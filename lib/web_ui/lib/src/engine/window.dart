@@ -31,6 +31,8 @@ const bool debugPrintPlatformMessages = false;
 /// The view ID for the implicit flutter view provided by the platform.
 const int kImplicitViewId = 0;
 
+int _nextViewId = kImplicitViewId + 1;
+
 /// Represents all views in the Flutter Web Engine.
 ///
 /// In addition to everything defined in [ui.FlutterView], this class adds
@@ -41,7 +43,6 @@ base class EngineFlutterView implements ui.FlutterView {
   /// The [hostElement] parameter specifies the container in the DOM into which
   /// the Flutter view will be rendered.
   factory EngineFlutterView(
-    int viewId,
     EnginePlatformDispatcher platformDispatcher,
     DomElement hostElement,
   ) = _EngineFlutterViewImpl;
@@ -54,12 +55,17 @@ base class EngineFlutterView implements ui.FlutterView {
     // by the public `EngineFlutterView` constructor).
     DomElement? hostElement,
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
-        _dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
-    platformDispatcher.registerView(this);
+        dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
     embeddingStrategy.attachGlassPane(dom.rootElement);
+    registerHotRestartListener(dispose);
   }
+
+  static EngineFlutterWindow implicit(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) => EngineFlutterWindow._(platformDispatcher, hostElement);
 
   @override
   final int viewId;
@@ -72,11 +78,34 @@ base class EngineFlutterView implements ui.FlutterView {
 
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
-  @override
-  void render(ui.Scene scene) => platformDispatcher.render(scene, this);
+  /// Whether this [EngineFlutterView] has been disposed or not.
+  bool isDisposed = false;
+
+  /// Disposes of the [EngineFlutterView] instance and undoes all of its DOM
+  /// tree and any event listeners.
+  @mustCallSuper
+  void dispose() {
+    if (isDisposed) {
+      return;
+    }
+    isDisposed = true;
+    dimensionsProvider.close();
+    dom.rootElement.remove();
+    // TODO(harryterkelsen): What should we do about this in multi-view?
+    renderer.clearFragmentProgramCache();
+  }
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void render(ui.Scene scene) {
+    assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    platformDispatcher.render(scene, this);
+  }
+
+  @override
+  void updateSemantics(ui.SemanticsUpdate update) {
+    assert(!isDisposed, 'Trying to update semantics on a disposed EngineFlutterView.');
+    platformDispatcher.updateSemantics(update);
+  }
 
   // TODO(yjbanov): How should this look like for multi-view?
   //                https://github.com/flutter/flutter/issues/137445
@@ -122,7 +151,7 @@ base class EngineFlutterView implements ui.FlutterView {
     }());
 
     if (!override) {
-      _physicalSize = _dimensionsProvider.computePhysicalSize();
+      _physicalSize = dimensionsProvider.computePhysicalSize();
     }
   }
 
@@ -156,40 +185,34 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   double get devicePixelRatio => display.devicePixelRatio;
 
-  final DimensionsProvider _dimensionsProvider;
+  @visibleForTesting
+  final DimensionsProvider dimensionsProvider;
 
-  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
+  Stream<ui.Size?> get onResize => dimensionsProvider.onResize;
 }
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
-    registerHotRestartListener(() {
-      // TODO(harryterkelsen): What should we do about this in multi-view?
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
-  }
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement hostElement,
+  ) : super._(_nextViewId++, platformDispatcher, hostElement);
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
-  EngineFlutterWindow(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
+  EngineFlutterWindow._(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) : super._(kImplicitViewId, platformDispatcher, hostElement) {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
-    registerHotRestartListener(() {
-      _browserHistory?.dispose();
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _browserHistory?.dispose();
   }
 
   @override
@@ -508,7 +531,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
+    _viewInsets = dimensionsProvider.computeKeyboardInsets(
       _physicalSize!.height,
       isEditingOnMobile,
     );
@@ -532,7 +555,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
-      final ui.Size current = _dimensionsProvider.computePhysicalSize();
+      final ui.Size current = dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
       if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the
@@ -598,11 +621,14 @@ EngineFlutterWindow? _window;
 EngineFlutterWindow ensureImplicitViewInitialized({
   DomElement? hostElement,
 }) {
-  return _window ??= EngineFlutterWindow(
-    kImplicitViewId,
-    EnginePlatformDispatcher.instance,
-    hostElement,
-  );
+  if (_window == null) {
+    _window = EngineFlutterView.implicit(
+      EnginePlatformDispatcher.instance,
+      hostElement,
+    );
+    EnginePlatformDispatcher.instance.viewManager.registerView(_window!);
+  }
+  return _window!;
 }
 
 /// The Web implementation of [ui.ViewPadding].
