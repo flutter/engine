@@ -189,6 +189,7 @@ TEST_P(GaussianBlurFilterContentsTest,
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
   Entity entity;
+  // Rotate around the top left corner, then push it over to (100, 100).
   entity.SetTransform(Matrix::MakeTranslation({400, 100, 0}) *
                       Matrix::MakeRotationZ(Degrees(90.0)));
   std::optional<Entity> result =
