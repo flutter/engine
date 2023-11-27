@@ -81,26 +81,24 @@ base class SamplerOptions {
 }
 
 base class RenderTarget {
-  RenderTarget(
-      {List<ColorAttachment>? colorAttachments, this.depthStencilAttachment}) {
-    if (colorAttachments != null) {
-      colorAttachments = colorAttachments;
-      return;
-    }
-    colorAttachments = <ColorAttachment>[];
-  }
+  const RenderTarget(
+      {this.colorAttachments = const <ColorAttachment>[],
+      this.depthStencilAttachment});
 
-  RenderTarget.singleColor(
-      {ColorAttachment? colorAttachment, this.depthStencilAttachment}) {
+  factory RenderTarget.singleColor(
+      {ColorAttachment? colorAttachment,
+      DepthStencilAttachment? depthStencilAttachment}) {
+    List<ColorAttachment> colors = [];
     if (colorAttachment != null) {
-      colorAttachments = <ColorAttachment>[colorAttachment];
-      return;
+      colors.add(colorAttachment);
     }
-    colorAttachments = <ColorAttachment>[];
+    return new RenderTarget(
+        colorAttachments: colors,
+        depthStencilAttachment: depthStencilAttachment);
   }
 
-  late List<ColorAttachment> colorAttachments;
-  DepthStencilAttachment? depthStencilAttachment;
+  final List<ColorAttachment> colorAttachments;
+  final DepthStencilAttachment? depthStencilAttachment;
 }
 
 base class RenderPass extends NativeFieldWrapperClass1 {
