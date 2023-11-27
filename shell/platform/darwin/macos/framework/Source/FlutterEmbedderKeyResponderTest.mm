@@ -13,7 +13,7 @@
 @interface TestKeyEvent : NSObject
 @property(nonatomic) FlutterKeyEvent* data;
 @property(nonatomic) FlutterKeyEventCallback callback;
-@property(nonatomic) _VoidPtr userData;
+@property(nonatomic) void* userData;
 - (nonnull instancetype)initWithEvent:(const FlutterKeyEvent*)event
                              callback:(nullable FlutterKeyEventCallback)callback
                              userData:(nullable void*)userData;
