@@ -531,22 +531,10 @@ public class PlatformPlugin {
             Log.w(
                 TAG, "Clipboard item contained no textual content nor a URI to retrieve it from.");
             return null;
-          }
-
-          // Clipboard data contains a URI to potentially check extract text
-          // from, but first ensure its scheme is content in order to do so.
-          String uriScheme = itemUri.getScheme();
-
-          if (!uriScheme.equals("content")) {
-            Log.w(
-                TAG,
-                "Clipboard item contains a Uri with scheme '" + uriScheme + "'that is unhandled.");
+          } else if (!canExtractTextFromUri(itemUri)) {
+            Log.w(TAG, "Clipboard text was unable to be received from content URI.");
             return null;
           }
-
-          // Try extracting text from content URI; FileNotFoundException will be
-          // thrown if text cannot be extracted from the URI.
-          activity.getContentResolver().openTypedAssetFileDescriptor(itemUri, "text/*", null);
         }
 
         // Safely return clipboard data coerced into text; will return either
@@ -561,12 +549,28 @@ public class PlatformPlugin {
               + "https://developer.android.com/guide/topics/permissions/overview",
           e);
       return null;
-    } catch (FileNotFoundException e) {
-      Log.w(TAG, "Clipboard text was unable to be received from content URI.");
-      return null;
     }
 
     return null;
+  }
+
+  private boolean canExtractTextFromUri(Uri uri) {
+    // Will only try to extract text from URI if it has the content scheme.
+    String uriScheme = uri.getScheme();
+
+    if (!uriScheme.equals("content")) {
+      Log.w(TAG, "Clipboard item contains a Uri with scheme '" + uriScheme + "'that is unhandled.");
+      return false;
+    }
+
+    try {
+      activity.getContentResolver().openTypedAssetFileDescriptor(uri, "text/*", null);
+    } catch (FileNotFoundException e) {
+      return false;
+    }
+
+    // Text can successfully be extracted from content URI.
+    return true;
   }
 
   private void setClipboardData(String text) {
