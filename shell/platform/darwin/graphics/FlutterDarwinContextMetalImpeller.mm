@@ -34,7 +34,7 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
                                              impeller_framebuffer_blend_shaders_length),
   };
   auto context = impeller::ContextMTL::Create(
-      shader_mappings, std::move(is_gpu_disabled_sync_switch), "Impeller Library");
+      shader_mappings, is_gpu_disabled_sync_switch, "Impeller Library");
   if (!context) {
     FML_LOG(ERROR) << "Could not create Metal Impeller Context.";
     return nullptr;

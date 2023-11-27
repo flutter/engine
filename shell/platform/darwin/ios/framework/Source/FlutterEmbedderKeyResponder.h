@@ -7,6 +7,8 @@
 
 #import <Foundation/NSObject.h>
 #import <UIKit/UIKit.h>
+
+// NOLINTBEGIN(google-build-namespaces)
 #include "fml/memory/weak_ptr.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
@@ -14,7 +16,6 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 
 // For whatever reason, NOLINTNEXTLINE is not working here.
-// NOLINTBEGIN(google-build-namespaces)
 namespace {
 typedef void* _VoidPtr;
 }
