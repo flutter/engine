@@ -730,8 +730,9 @@ abstract class SemanticsUpdateBuilder {
   /// [PlatformDispatcher.onSemanticsActionEvent] callback might be called with
   /// an action that is no longer possible.
   ///
-  /// The `identifier` is a string that describes the node for UI automation.
-  /// It's not exposed to users.
+  /// The `identifier` is a string that describes the node for UI automation
+  /// tools that work by querying the accessibility hierarchy, such as Android
+  /// UI Automator, iOS XCUITest, or Appium. It's not exposed to users.
   ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
@@ -1068,8 +1069,9 @@ abstract class SemanticsUpdateBuilderNew {
   /// [PlatformDispatcher.onSemanticsActionEvent] callback might be called with
   /// an action that is no longer possible.
   ///
-  /// The `identifier` is a string that describes the node for UI automation.
-  /// It's not exposed to users.
+  /// The `identifier` is a string that describes the node for UI automation
+  /// tools that work by querying the accessibility hierarchy, such as Android
+  /// UI Automator, iOS XCUITest, or Appium. It's not exposed to users.
   ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
