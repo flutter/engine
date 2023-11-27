@@ -6,6 +6,7 @@
 #include "fml/status_or.h"
 #include "gmock/gmock.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
+#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/renderer/testing/mocks.h"
@@ -222,6 +223,43 @@ TEST_P(GaussianBlurFilterContentsTest, CalculateUVsSimple) {
   EXPECT_TRUE(uvs_bounds.has_value());
   if (uvs_bounds.has_value()) {
     EXPECT_TRUE(RectNear(uvs_bounds.value(), Rect::MakeXYWH(0, 0, 1, 1)));
+  }
+}
+
+TEST_P(GaussianBlurFilterContentsTest, TextureContentsWithDestinationRect) {
+  TextureDescriptor desc = {
+      .storage_mode = StorageMode::kDevicePrivate,
+      .format = PixelFormat::kB8G8R8A8UNormInt,
+      .size = ISize(100, 100),
+  };
+
+  std::shared_ptr<Texture> texture = MakeTexture(desc);
+  auto texture_contents = std::make_shared<TextureContents>();
+  texture_contents->SetSourceRect(Rect::MakeSize(texture->GetSize()));
+  texture_contents->SetTexture(texture);
+  texture_contents->SetDestinationRect(Rect::MakeXYWH(
+      50, 40, texture->GetSize().width, texture->GetSize().height));
+
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  auto contents = std::make_unique<GaussianBlurFilterContents>(sigma_radius_1);
+  contents->SetInputs({FilterInput::Make(texture_contents)});
+  std::shared_ptr<ContentContext> renderer = GetContentContext();
+
+  Entity entity;
+  std::optional<Entity> result =
+      contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
+  EXPECT_TRUE(result.has_value());
+  if (result.has_value()) {
+    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+    std::optional<Rect> result_coverage = result.value().GetCoverage();
+    std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
+    EXPECT_TRUE(result_coverage.has_value());
+    EXPECT_TRUE(contents_coverage.has_value());
+    if (result_coverage.has_value() && contents_coverage.has_value()) {
+      EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
+      EXPECT_TRUE(RectNear(result_coverage.value(),
+                           Rect::MakeLTRB(49.f, 39.f, 151.f, 141.f)));
+    }
   }
 }
 

@@ -257,7 +257,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   return Entity::FromSnapshot(
       Snapshot{
           .texture = pass3_out_texture,
-          .transform = entity.GetTransform() *
+          .transform = input_snapshot->transform *
                        Matrix::MakeTranslation({-padding.x, -padding.y, 0}) *
                        Matrix::MakeScale(padded_size /
                                          Vector2(pass1_out_texture->GetSize())),
