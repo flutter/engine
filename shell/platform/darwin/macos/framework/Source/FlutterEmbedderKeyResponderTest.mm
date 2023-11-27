@@ -16,7 +16,7 @@
 @property(nonatomic) _VoidPtr userData;
 - (nonnull instancetype)initWithEvent:(const FlutterKeyEvent*)event
                              callback:(nullable FlutterKeyEventCallback)callback
-                             userData:(nullable _VoidPtr)userData;
+                             userData:(nullable void*)userData;
 - (BOOL)hasCallback;
 - (void)respond:(BOOL)handled;
 @end
@@ -24,7 +24,7 @@
 @implementation TestKeyEvent
 - (instancetype)initWithEvent:(const FlutterKeyEvent*)event
                      callback:(nullable FlutterKeyEventCallback)callback
-                     userData:(nullable _VoidPtr)userData {
+                     userData:(nullable void*)userData {
   self = [super init];
   _data = new FlutterKeyEvent(*event);
   if (event->character != nullptr) {
