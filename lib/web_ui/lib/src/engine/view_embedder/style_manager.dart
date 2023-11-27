@@ -186,7 +186,8 @@ void applyGlobalCssRulesToSheet(
       $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:hover,
       $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:focus,
       $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:active {
-        opacity: 0 !important;
+        // opacity: 0 !important;
+        -webkit-transition-delay: 99999s
       }
     ''', sheet.cssRules.length);
   }
