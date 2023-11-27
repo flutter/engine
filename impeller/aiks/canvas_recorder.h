@@ -8,43 +8,43 @@
 
 #include "impeller/aiks/canvas.h"
 
-#define FLT_CANVAS_RECORDER_OP_ARG(name) CanvasRecorderOp::name, &Canvas::name
+#define FLT_CANVAS_RECORDER_OP_ARG(name) \
+  CanvasRecorderOp::k##name, &Canvas::name
 
 namespace impeller {
-
 /// TODO(tbd): These are very similar to `flutter::DisplayListOpType`. When
 /// golden tests can be written at a higher level, migrate these to
 /// flutter::DisplayListOpType.
 enum CanvasRecorderOp : uint16_t {
-  New,
-  Save,
-  SaveLayer,
-  Restore,
-  RestoreToCount,
-  ResetTransform,
-  Transform,
-  Concat,
-  PreConcat,
-  Translate,
-  Scale2,
-  Scale3,
-  Skew,
-  Rotate,
-  DrawPath,
-  DrawPaint,
-  DrawRect,
-  DrawRRect,
-  DrawCircle,
-  DrawPoints,
-  DrawImage,
-  DrawImageRect,
-  ClipPath,
-  ClipRect,
-  ClipRRect,
-  DrawPicture,
-  DrawTextFrame,
-  DrawVertices,
-  DrawAtlas,
+  kNew,
+  kSave,
+  kSaveLayer,
+  kRestore,
+  kRestoreToCount,
+  kResetTransform,
+  kTransform,
+  kConcat,
+  kPreConcat,
+  kTranslate,
+  kScale2,
+  kScale3,
+  kSkew,
+  kRotate,
+  kDrawPath,
+  kDrawPaint,
+  kDrawRect,
+  kDrawRRect,
+  kDrawCircle,
+  kDrawPoints,
+  kDrawImage,
+  kDrawImageRect,
+  kClipPath,
+  kClipRect,
+  kClipRRect,
+  kDrawPicture,
+  kDrawTextFrame,
+  kDrawVertices,
+  kDrawAtlas,
 };
 
 // Canvas recorder should only be used when IMPELLER_TRACE_CANVAS is defined
@@ -58,14 +58,14 @@ enum CanvasRecorderOp : uint16_t {
 template <typename Serializer>
 class CanvasRecorder {
  public:
-  CanvasRecorder() : canvas_() { serializer_.Write(CanvasRecorderOp::New); }
+  CanvasRecorder() : canvas_() { serializer_.Write(CanvasRecorderOp::kNew); }
 
   explicit CanvasRecorder(Rect cull_rect) : canvas_(cull_rect) {
-    serializer_.Write(CanvasRecorderOp::New);
+    serializer_.Write(CanvasRecorderOp::kNew);
   }
 
   explicit CanvasRecorder(IRect cull_rect) : canvas_(cull_rect) {
-    serializer_.Write(CanvasRecorderOp::New);
+    serializer_.Write(CanvasRecorderOp::kNew);
   }
 
   ~CanvasRecorder() {}
@@ -92,11 +92,12 @@ class CanvasRecorder {
   }
 
   //////////////////////////////////////////////////////////////////////////////
-  // Canvas Static Polymorphism ////////////////////////////////////////////////
+  // Canvas Static Polymorphism
+  // ////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   void Save() {
-    return ExecuteAndSerialize(CanvasRecorderOp::Save, &Canvas::Save);
+    return ExecuteAndSerialize(CanvasRecorderOp::kSave, &Canvas::Save);
   }
 
   void SaveLayer(
@@ -118,8 +119,8 @@ class CanvasRecorder {
                                count);
   }
 
-  const Matrix& GetCurrentTransformation() const {
-    return canvas_.GetCurrentTransformation();
+  const Matrix& GetCurrentTransform() const {
+    return canvas_.GetCurrentTransform();
   }
 
   const std::optional<Rect> GetCurrentLocalCullingBounds() const {
@@ -130,18 +131,18 @@ class CanvasRecorder {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ResetTransform));
   }
 
-  void Transform(const Matrix& xformation) {
+  void Transform(const Matrix& transform) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Transform),
-                               xformation);
+                               transform);
   }
 
-  void Concat(const Matrix& xformation) {
-    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Concat), xformation);
+  void Concat(const Matrix& transform) {
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Concat), transform);
   }
 
-  void PreConcat(const Matrix& xformation) {
+  void PreConcat(const Matrix& transform) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(PreConcat),
-                               xformation);
+                               transform);
   }
 
   void Translate(const Vector3& offset) {
@@ -150,13 +151,13 @@ class CanvasRecorder {
 
   void Scale(const Vector2& scale) {
     return ExecuteAndSerialize(
-        CanvasRecorderOp::Scale2,
+        CanvasRecorderOp::kScale2,
         static_cast<void (Canvas::*)(const Vector2&)>(&Canvas::Scale), scale);
   }
 
   void Scale(const Vector3& scale) {
     return ExecuteAndSerialize(
-        CanvasRecorderOp::Scale3,
+        CanvasRecorderOp::kScale3,
         static_cast<void (Canvas::*)(const Vector3&)>(&Canvas::Scale), scale);
   }
 

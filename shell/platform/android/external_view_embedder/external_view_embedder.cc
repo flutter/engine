@@ -63,11 +63,11 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int64_t view_id) const {
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::SubmitView(
+void AndroidExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
-  TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitView");
+  TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFlutterView");
 
   if (!FrameHasPlatformLayers()) {
     frame->Submit();
@@ -105,15 +105,15 @@ void AndroidExternalViewEmbedder::SubmitView(
       // The rect above the `current_view_rect`
       SkRect partial_joined_rect = SkRect::MakeEmpty();
       // Each rect corresponds to a native view that renders Flutter UI.
-      std::list<SkRect> intersection_rects =
-          slice->searchNonOverlappingDrawnRects(current_view_rect);
+      std::vector<SkIRect> intersection_rects =
+          slice->region(current_view_rect).getRects();
 
       // Limit the number of native views, so it doesn't grow forever.
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
-      for (const SkRect& rect : intersection_rects) {
-        partial_joined_rect.join(rect);
+      for (const SkIRect& rect : intersection_rects) {
+        partial_joined_rect.join(SkRect::Make(rect));
       }
       // Get the intersection rect with the `current_view_rect`,
       partial_joined_rect.intersect(current_view_rect);
@@ -267,9 +267,10 @@ void AndroidExternalViewEmbedder::BeginFrame(
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::PrepareView(int64_t native_view_id,
-                                              SkISize frame_size,
-                                              double device_pixel_ratio) {
+void AndroidExternalViewEmbedder::PrepareFlutterView(
+    int64_t native_view_id,
+    SkISize frame_size,
+    double device_pixel_ratio) {
   // TODO(dkwingsmt): This class only supports rendering into the implicit view.
   // Properly support multi-view in the future.
   FML_DCHECK(native_view_id == kFlutterImplicitViewId);

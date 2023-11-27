@@ -19,11 +19,9 @@ namespace impeller {
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  opts.sample_count = pass.GetSampleCount();
+  opts.color_attachment_pixel_format = pass.GetRenderTargetPixelFormat();
+  opts.has_stencil_attachment = pass.HasStencilAttachment();
   return opts;
 }
 
@@ -87,9 +85,9 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
+        sub_entity.SetTransform(
             Matrix::MakeTranslation(Vector3(-coverage->origin)) *
-            entity.GetTransformation());
+            entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
       msaa_enabled);

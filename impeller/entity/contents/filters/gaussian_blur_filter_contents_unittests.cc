@@ -80,7 +80,7 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithTexture) {
           desc);
   FilterInput::Vector inputs = {FilterInput::Make(texture)};
   Entity entity;
-  entity.SetTransformation(Matrix::MakeTranslation({100, 100, 0}));
+  entity.SetTransform(Matrix::MakeTranslation({100, 100, 0}));
   std::optional<Rect> coverage =
       contents.GetFilterCoverage(inputs, entity, /*effect_transform=*/Matrix());
   ASSERT_EQ(coverage, Rect::MakeLTRB(99, 99, 201, 201));
@@ -98,7 +98,7 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithEffectTransform) {
           desc);
   FilterInput::Vector inputs = {FilterInput::Make(texture)};
   Entity entity;
-  entity.SetTransformation(Matrix::MakeTranslation({100, 100, 0}));
+  entity.SetTransform(Matrix::MakeTranslation({100, 100, 0}));
   std::optional<Rect> coverage = contents.GetFilterCoverage(
       inputs, entity, /*effect_transform=*/Matrix::MakeScale({2.0, 2.0, 1.0}));
   ASSERT_EQ(coverage, Rect::MakeLTRB(100 - 2, 100 - 2, 200 + 2, 200 + 2));
@@ -135,13 +135,10 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
     EXPECT_TRUE(result_coverage.has_value());
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
-      // TODO(gaaclarke): This test won't pass until the blur_radius is used to
-      //                  expand the coverage. See note inside of
-      //                  gaussian_blur_filter_contents.cc.
-      // EXPECT_TRUE(RectNear(result_coverage.value(),
-      //                      contents_coverage.value()));
+      EXPECT_TRUE(RectNear(contents_coverage.value(),
+                           Rect::MakeLTRB(-1, -1, 101, 101)));
       EXPECT_TRUE(
-          RectNear(result_coverage.value(), Rect::MakeLTRB(0, 0, 100, 100)));
+          RectNear(result_coverage.value(), Rect::MakeLTRB(-1, -1, 101, 101)));
     }
   }
 }
@@ -159,7 +156,7 @@ TEST_P(GaussianBlurFilterContentsTest,
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeTranslation({100, 200, 0}));
+  entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
   std::optional<Entity> result =
       contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
   EXPECT_TRUE(result.has_value());
@@ -170,15 +167,10 @@ TEST_P(GaussianBlurFilterContentsTest,
     EXPECT_TRUE(result_coverage.has_value());
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
-      // TODO(gaaclarke): This test won't pass until the blur_radius is used to
-      //                  expand the coverage. See note inside of
-      //                  gaussian_blur_filter_contents.cc.
-      // EXPECT_TRUE(RectNear(result_coverage.value(),
-      //                      contents_coverage.value()));
       EXPECT_TRUE(RectNear(contents_coverage.value(),
                            Rect::MakeLTRB(99, 199, 201, 301)));
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeLTRB(100, 200, 200, 300)));
+      EXPECT_TRUE(
+          RectNear(result_coverage.value(), Rect::MakeLTRB(99, 199, 201, 301)));
     }
   }
 }
@@ -196,8 +188,8 @@ TEST_P(GaussianBlurFilterContentsTest,
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeTranslation({400, 100, 0}) *
-                           Matrix::MakeRotationZ(Degrees(90.0)));
+  entity.SetTransform(Matrix::MakeTranslation({400, 100, 0}) *
+                      Matrix::MakeRotationZ(Degrees(90.0)));
   std::optional<Entity> result =
       contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
   EXPECT_TRUE(result.has_value());
@@ -208,15 +200,10 @@ TEST_P(GaussianBlurFilterContentsTest,
     EXPECT_TRUE(result_coverage.has_value());
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
-      // TODO(gaaclarke): This test won't pass until the blur_radius is used to
-      //                  expand the coverage. See note inside of
-      //                  gaussian_blur_filter_contents.cc.
-      // EXPECT_TRUE(RectNear(result_coverage.value(),
-      //                      contents_coverage.value()));
       EXPECT_TRUE(RectNear(contents_coverage.value(),
                            Rect::MakeLTRB(99, 99, 401, 501)));
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeLTRB(100, 100, 400, 500)));
+      EXPECT_TRUE(
+          RectNear(result_coverage.value(), Rect::MakeLTRB(99, 99, 401, 501)));
     }
   }
 }
