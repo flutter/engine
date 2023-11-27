@@ -8,18 +8,15 @@
 #import <Foundation/NSObject.h>
 #import <UIKit/UIKit.h>
 
-// NOLINTBEGIN(google-build-namespaces)
 #include "fml/memory/weak_ptr.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-// For whatever reason, NOLINTNEXTLINE is not working here.
-namespace {
+namespace {  // NOLINT(google-build-namespaces)
 typedef void* _VoidPtr;
 }
-// NOLINTEND(google-build-namespaces)
 
 typedef void (^FlutterSendKeyEvent)(const FlutterKeyEvent& /* event */,
                                     _Nullable FlutterKeyEventCallback /* callback */,
