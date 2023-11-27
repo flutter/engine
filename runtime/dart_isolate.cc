@@ -5,9 +5,9 @@
 #include "flutter/runtime/dart_isolate.h"
 
 #include <cstdlib>
+#include <iostream>
 #include <tuple>
 #include <utility>
-#include <iostream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/posix_wrappers.h"
@@ -15,6 +15,7 @@
 #include "flutter/lib/io/dart_io.h"
 #include "flutter/lib/ui/dart_runtime_hooks.h"
 #include "flutter/lib/ui/dart_ui.h"
+#include "flutter/lib/ui/window/platform_isolate.h"
 #include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/dart_plugin_registrant.h"
 #include "flutter/runtime/dart_service_isolate.h"
@@ -290,17 +291,12 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const fml::closure& isolate_shutdown_callback,
     const UIDartState::Context& context,
     const DartIsolate* spawning_isolate) {
-  return CreateIsolate(
-    settings,
-    true,  // is_root_isolate
-    std::move(isolate_snapshot),
-    std::move(platform_configuration),
-    flags,
-    isolate_create_callback,
-    isolate_shutdown_callback,
-    context,
-    spawning_isolate
-  );
+  return CreateIsolate(settings,
+                       true,  // is_root_isolate
+                       std::move(isolate_snapshot),
+                       std::move(platform_configuration), flags,
+                       isolate_create_callback, isolate_shutdown_callback,
+                       context, spawning_isolate);
 }
 
 std::weak_ptr<DartIsolate> DartIsolate::CreateIsolate(
@@ -330,9 +326,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateIsolate(
               )));
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
-      std::shared_ptr<DartIsolate>(new DartIsolate(settings,
-                                                   is_root_isolate,
-                                                   context)));
+      std::shared_ptr<DartIsolate>(
+          new DartIsolate(settings, is_root_isolate, context)));
 
   DartErrorString error;
   Dart_Isolate vm_isolate = nullptr;
@@ -446,12 +441,26 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     Dart_SetCurrentUserTag(Dart_NewUserTag("AppStartUp"));
   }
 
-  std::cout << "Creating isolate: " << Dart_DebugNameToCString() << std::endl;
-  const bool is_platform_isolate = strstr(Dart_DebugNameToCString(), "PlatformIsolate") != NULL;
+  Dart_EnterScope();
+  std::cout << "Creating isolate: "
+            << GetTaskRunners().GetPlatformTaskRunner().get() << '\t'
+            << PlatformIsolateNativeApi::global_platform_task_runner.get()
+            << '\t' << GetTaskRunners().GetUITaskRunner().get() << std::endl;
+  const char* name = Dart_DebugNameToCString();
+  std::cout << "    debug name: " << std::endl;
+  if (name == NULL) {
+    name = "";
+  }
+  std::cout << "        " << name << std::endl;
+  std::cout << "    is_platform_isolate: " << std::endl;
+  const bool is_platform_isolate = strstr(name, "PlatformIsolate") != NULL;
+  std::cout << "        " << is_platform_isolate << std::endl;
+  Dart_ExitScope();
   SetMessageHandlingTaskRunner(
-      is_platform_isolate ?
-          GetTaskRunners().GetUITaskRunner() :
-          GetTaskRunners().GetPlatformTaskRunner());
+      is_platform_isolate
+          ? PlatformIsolateNativeApi::global_platform_task_runner
+          : GetTaskRunners().GetUITaskRunner());
+  std::cout << "Done creating isolate" << std::endl;
 
   if (tonic::CheckAndHandleError(
           Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag))) {
@@ -508,7 +517,7 @@ void DartIsolate::LoadLoadingUnitError(intptr_t loading_unit_id,
 
 void DartIsolate::SetMessageHandlingTaskRunner(
     const fml::RefPtr<fml::TaskRunner>& runner) {
-  if (!IsRootIsolate() || !runner) {
+  if (!runner) {
     return;
   }
 

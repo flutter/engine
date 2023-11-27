@@ -9,7 +9,10 @@ namespace flutter {
 
 class PlatformIsolateNativeApi {
  public:
-  static Dart_Handle Spawn(Dart_Handle entry_point, Dart_Handle message);
+  //   static Dart_Handle Spawn(Dart_Handle entry_point, Dart_Handle message);
+  static uint32_t GetCurrentThreadId();
+
+  static fml::RefPtr<fml::TaskRunner> global_platform_task_runner;
 };
 
 }  // namespace flutter

@@ -18,4 +18,7 @@ class PlatformIsolate {
   // @Native<Handle Function(Handle, Handle)>(symbol: 'PlatformIsolateNativeApi::Spawn')
   // external static Future<Isolate> _spawn<T>(
   //     void entryPoint(T message), T message);
+
+  @Native<Uint32 Function()>(symbol: 'PlatformIsolateNativeApi::GetCurrentThreadId')
+  external static int getCurrentThreadId();
 }

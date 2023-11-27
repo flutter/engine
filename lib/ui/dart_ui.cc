@@ -113,6 +113,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
   V(PlatformConfigurationNativeApi::SendChannelUpdate, 2)             \
   V(PlatformConfigurationNativeApi::GetScaledFontSize, 2)             \
+  V(PlatformIsolateNativeApi::GetCurrentThreadId, 0)                  \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
@@ -120,7 +121,7 @@ typedef CanvasPath Path;
   V(DartRuntimeHooks::GetCallbackFromHandle, 1)                       \
   V(DartPluginRegistrant_EnsureInitialized, 0)                        \
   V(Vertices::init, 6)
-  // V(PlatformIsolateNativeApi::Spawn, 2)                               \
+// V(PlatformIsolateNativeApi::Spawn, 2)                               \
 
 // List of native instance methods used as @Native functions.
 // Items are tuples of ('class_name', 'method_name', 'parameter_count'), where:
