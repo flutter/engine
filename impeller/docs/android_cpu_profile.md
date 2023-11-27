@@ -12,7 +12,7 @@ Example config:
 
 2. Configure Gradle to not remove strip sources
 
-In the flutter project file `android/app/build.gradle` , add the following line under the android block:
+In the flutter project file `android/app/build.gradle` , add the following line under the `android` block:
 
 ```
     packagingOptions{
