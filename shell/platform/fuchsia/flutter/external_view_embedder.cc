@@ -114,9 +114,9 @@ void ExternalViewEmbedder::BeginFrame(
 }
 
 // |ExternalViewEmbedder|
-void ExternalViewEmbedder::PrepareView(int64_t native_view_id,
-                                       SkISize frame_size,
-                                       double device_pixel_ratio) {
+void ExternalViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,
+                                              SkISize frame_size,
+                                              double device_pixel_ratio) {
   // Reset for new view.
   Reset();
   frame_size_ = frame_size;
@@ -135,11 +135,11 @@ void ExternalViewEmbedder::EndFrame(
   TRACE_EVENT0("flutter", "ExternalViewEmbedder::EndFrame");
 }
 
-void ExternalViewEmbedder::SubmitView(
+void ExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<flutter::SurfaceFrame> frame) {
-  TRACE_EVENT0("flutter", "ExternalViewEmbedder::SubmitView");
+  TRACE_EVENT0("flutter", "ExternalViewEmbedder::SubmitFlutterView");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;
 

@@ -12,7 +12,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../common/test_initialization.dart';
+import '../common/matchers.dart';
 
 const int kPhysicalKeyA = 0x00070004;
 const int kLogicalKeyA = 0x00000000061;
@@ -22,17 +22,18 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await bootstrapAndRunApp();
-
   late EngineFlutterWindow myWindow;
+  final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher.instance;
 
   setUp(() {
-    myWindow = EngineFlutterWindow(99, EnginePlatformDispatcher.instance, createDomHTMLDivElement());
+    myWindow = EngineFlutterView.implicit(dispatcher, createDomHTMLDivElement());
+    dispatcher.viewManager.registerView(myWindow);
   });
 
   tearDown(() async {
+    dispatcher.viewManager.unregisterView(myWindow.viewId);
     await myWindow.resetHistory();
-    EnginePlatformDispatcher.instance.unregisterView(myWindow);
+    myWindow.dispose();
   });
 
   test('onTextScaleFactorChanged preserves the zone', () {
@@ -427,8 +428,6 @@ Future<void> testMain() async {
       localeChangedCount += 1;
     };
 
-    ensureFlutterViewEmbedderInitialized();
-
     // We populate the initial list of locales automatically (only test that we
     // got some locales; some contributors may be in different locales, so we
     // can't test the exact contents).
@@ -462,5 +461,79 @@ Future<void> testMain() async {
     });
 
     await expectLater(completer.future, completes);
+  });
+
+  test('auto-view-id', () {
+    final DomElement host = createDomHTMLDivElement();
+    final EngineFlutterView implicit1 = EngineFlutterView.implicit(dispatcher, host);
+    final EngineFlutterView implicit2 = EngineFlutterView.implicit(dispatcher, host);
+
+    expect(implicit1.viewId, kImplicitViewId);
+    expect(implicit2.viewId, kImplicitViewId);
+
+    final EngineFlutterView view1 = EngineFlutterView(dispatcher, host);
+    final EngineFlutterView view2 = EngineFlutterView(dispatcher, host);
+    final EngineFlutterView view3 = EngineFlutterView(dispatcher, host);
+
+    expect(view1.viewId, isNot(kImplicitViewId));
+    expect(view2.viewId, isNot(kImplicitViewId));
+    expect(view3.viewId, isNot(kImplicitViewId));
+
+    expect(view1.viewId, isNot(view2.viewId));
+    expect(view2.viewId, isNot(view3.viewId));
+    expect(view3.viewId, isNot(view1.viewId));
+
+    implicit1.dispose();
+    implicit2.dispose();
+    view1.dispose();
+    view2.dispose();
+    view3.dispose();
+  });
+
+  test('registration', () {
+    final DomHTMLDivElement host = createDomHTMLDivElement();
+    final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+    expect(dispatcher.viewManager.views, isEmpty);
+
+    // Creating the view shouldn't register it.
+    final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+    expect(dispatcher.viewManager.views, isEmpty);
+    dispatcher.viewManager.registerView(view);
+    expect(dispatcher.viewManager.views, <EngineFlutterView>[view]);
+
+    // Disposing the view shouldn't unregister it.
+    view.dispose();
+    expect(dispatcher.viewManager.views, <EngineFlutterView>[view]);
+
+    dispatcher.dispose();
+  });
+
+  test('dispose', () {
+    final DomHTMLDivElement host = createDomHTMLDivElement();
+    final EngineFlutterView view =
+        EngineFlutterView(EnginePlatformDispatcher.instance, host);
+
+    // First, let's make sure the view's root element was inserted into the
+    // host, and the dimensions provider is active.
+    expect(view.dom.rootElement.parentElement, host);
+    expect(view.dimensionsProvider.isClosed, isFalse);
+
+    // Now, let's dispose the view and make sure its root element was removed,
+    // and the dimensions provider is closed.
+    view.dispose();
+    expect(view.dom.rootElement.parentElement, isNull);
+    expect(view.dimensionsProvider.isClosed, isTrue);
+
+    // Can't render into a disposed view.
+    expect(
+      () => view.render(ui.SceneBuilder().build()),
+      throwsAssertionError,
+    );
+
+    // Can't update semantics on a disposed view.
+    expect(
+      () => view.updateSemantics(ui.SemanticsUpdateBuilder().build()),
+      throwsAssertionError,
+    );
   });
 }

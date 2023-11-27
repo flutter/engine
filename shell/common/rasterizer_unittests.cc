@@ -96,7 +96,7 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
        const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
       (override));
   MOCK_METHOD(void,
-              PrepareView,
+              PrepareFlutterView,
               (int64_t native_view_id,
                SkISize frame_size,
                double device_pixel_ratio),
@@ -112,7 +112,7 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
       (override));
   MOCK_METHOD(DlCanvas*, CompositeEmbeddedView, (int64_t view_id), (override));
   MOCK_METHOD(void,
-              SubmitView,
+              SubmitFlutterView,
               (GrDirectContext * context,
                const std::shared_ptr<impeller::AiksContext>& aiks_context,
                std::unique_ptr<SurfaceFrame> frame),
@@ -153,8 +153,9 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -183,8 +184,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -221,12 +223,12 @@ TEST(RasterizerTest,
                          /*raster_thread_merger=*/
                          fml::RefPtr<fml::RasterThreadMerger>(nullptr)))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*native_view_id=*/kImplicitViewId,
+                                 /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitView).Times(1);
+  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(1);
   EXPECT_CALL(
       *external_view_embedder,
       EndFrame(/*should_resubmit_frame=*/false,
@@ -261,8 +263,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -296,12 +299,12 @@ TEST(
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*native_view_id=*/kImplicitViewId,
+                                 /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitView).Times(0);
+  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(0);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -332,8 +335,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
@@ -374,12 +378,12 @@ TEST(
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*native_view_id=*/kImplicitViewId,
+                                 /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitView).Times(1);
+  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(1);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -405,8 +409,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
@@ -455,12 +460,12 @@ TEST(RasterizerTest,
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(2);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*native_view_id=*/kImplicitViewId,
+                                 /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
       .Times(2);
-  EXPECT_CALL(*external_view_embedder, SubmitView).Times(2);
+  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(2);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(2);
@@ -478,13 +483,13 @@ TEST(RasterizerTest,
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
 
-  // The Draw() will respectively call BeginFrame(), SubmitView() and
+  // The Draw() will respectively call BeginFrame(), SubmitFlutterView() and
   // EndFrame() one time.
   ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
   rasterizer->Draw(pipeline);
 
-  // The DrawLastLayerTrees() will respectively call BeginFrame(), SubmitView()
-  // and EndFrame() one more time, totally 2 times.
+  // The DrawLastLayerTrees() will respectively call BeginFrame(),
+  // SubmitFlutterView() and EndFrame() one more time, totally 2 times.
   rasterizer->DrawLastLayerTrees(CreateFinishedBuildRecorder());
 }
 
@@ -492,8 +497,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -539,8 +545,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -568,10 +575,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(0);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareView(/*native_view_id=*/kImplicitViewId, /*frame_size=*/SkISize(),
-                  /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*native_view_id=*/kImplicitViewId,
+                                 /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
       .Times(0);
   EXPECT_CALL(
       *external_view_embedder,
@@ -607,8 +614,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -651,8 +659,9 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -688,14 +697,14 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
                                                   /*raster_thread_merger=*/_))
       .Times(1);
   EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*native_view_id=*/0, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/1.5))
+              PrepareFlutterView(/*native_view_id=*/0, /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/1.5))
       .Times(1);
   EXPECT_CALL(*external_view_embedder,
-              PrepareView(/*native_view_id=*/1, /*frame_size=*/SkISize(),
-                          /*device_pixel_ratio=*/2.0))
+              PrepareFlutterView(/*native_view_id=*/1, /*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitView).Times(2);
+  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(2);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -726,8 +735,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -786,8 +796,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -847,8 +858,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -907,8 +919,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -966,8 +979,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1024,8 +1038,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1111,8 +1126,9 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1173,8 +1189,9 @@ TEST(RasterizerTest, TeardownNoSurface) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1199,8 +1216,8 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+                             ThreadHost::Type::kIo | ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1288,8 +1305,8 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+                             ThreadHost::Type::kIo | ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),

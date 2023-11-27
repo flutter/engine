@@ -322,7 +322,8 @@ ContentContext::ContentContext(
   gaussian_blur_noalpha_nodecal_pipelines_.CreateDefault(*context_,
                                                          options_trianglestrip);
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                             {supports_decal});
   color_matrix_color_filter_pipelines_.CreateDefault(*context_,
                                                      options_trianglestrip);
   linear_to_srgb_filter_pipelines_.CreateDefault(*context_,
@@ -339,6 +340,9 @@ ContentContext::ContentContext(
 #if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     texture_external_pipelines_.CreateDefault(*context_, options);
+  }
+  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+    tiled_texture_external_pipelines_.CreateDefault(*context_, options);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
   if (context_->GetCapabilities()->SupportsCompute()) {

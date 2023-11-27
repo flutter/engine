@@ -21,9 +21,8 @@ void DisplayListEmbedderViewSlice::end_recording() {
   builder_ = nullptr;
 }
 
-std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
-    const SkRect& query) const {
-  return display_list_->rtree()->searchAndConsolidateRects(query);
+const DlRegion& DisplayListEmbedderViewSlice::getRegion() const {
+  return display_list_->rtree()->region();
 }
 
 void DisplayListEmbedderViewSlice::render_into(DlCanvas* canvas) {
@@ -42,7 +41,7 @@ bool DisplayListEmbedderViewSlice::recording_ended() {
   return builder_ == nullptr;
 }
 
-void ExternalViewEmbedder::SubmitView(
+void ExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
