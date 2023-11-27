@@ -51,6 +51,9 @@ Future<void> matchSceneGolden(
   LayerScene scene, {
   required ui.Rect region,
 }) async {
+  // TODO(https://github.com/flutter/flutter/issues/137073): Enforce the render
+  //     rule. Render can only be called in the scope of `onBeginFrame` or
+  //     `onDrawFrame`.
   CanvasKitRenderer.instance.renderScene(scene, implicitView);
   await matchGoldenFile(goldenFile, region: region);
 }
