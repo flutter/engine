@@ -16,11 +16,10 @@ EmbedderRenderTargetCache::GetRenderTarget(
   auto compatible_target = cached_render_targets_.find(descriptor);
   if (compatible_target == cached_render_targets_.end()) {
     return nullptr;
-  } else {
-    auto target = std::move(compatible_target->second);
-    cached_render_targets_.erase(compatible_target);
-    return target;
   }
+  auto target = std::move(compatible_target->second);
+  cached_render_targets_.erase(compatible_target);
+  return target;
 }
 
 std::set<std::unique_ptr<EmbedderRenderTarget>>

@@ -131,7 +131,7 @@ struct PlatformView {
   SkRect clipped_frame;
 
   explicit PlatformView(const EmbedderExternalView* view) {
-    assert(view->HasPlatformView());
+    FML_DCHECK(view->HasPlatformView());
     view_identifier = view->GetViewIdentifier();
     params = view->GetEmbeddedViewParams();
 
@@ -140,23 +140,35 @@ struct PlatformView {
     for (auto i = params->mutatorsStack().Begin();
          i != params->mutatorsStack().End(); ++i) {
       const auto& m = *i;
-      if (m->GetType() == MutatorType::kTransform) {
-        transform.preConcat(m->GetMatrix());
-      } else if (m->GetType() == MutatorType::kClipRect) {
-        auto rect = transform.mapRect(m->GetRect());
-        if (!clipped_frame.intersect(rect)) {
-          clipped_frame = SkRect::MakeEmpty();
+      switch (m->GetType()) {
+        case kClipRect: {
+          auto rect = transform.mapRect(m->GetRect());
+          if (!clipped_frame.intersect(rect)) {
+            clipped_frame = SkRect::MakeEmpty();
+          }
+          break;
         }
-      } else if (m->GetType() == MutatorType::kClipRRect) {
-        auto rect = transform.mapRect(m->GetRRect().getBounds());
-        if (!clipped_frame.intersect(rect)) {
-          clipped_frame = SkRect::MakeEmpty();
+        case kClipRRect: {
+          auto rect = transform.mapRect(m->GetRRect().getBounds());
+          if (!clipped_frame.intersect(rect)) {
+            clipped_frame = SkRect::MakeEmpty();
+          }
+          break;
         }
-      } else if (m->GetType() == MutatorType::kClipPath) {
-        auto rect = transform.mapRect(m->GetPath().getBounds());
-        if (!clipped_frame.intersect(rect)) {
-          clipped_frame = SkRect::MakeEmpty();
+        case kClipPath: {
+          auto rect = transform.mapRect(m->GetPath().getBounds());
+          if (!clipped_frame.intersect(rect)) {
+            clipped_frame = SkRect::MakeEmpty();
+          }
+          break;
         }
+        case kTransform: {
+          transform.preConcat(m->GetMatrix());
+          break;
+        }
+        case kOpacity:
+        case kBackdropFilter:
+          break;
       }
     }
   }
@@ -254,8 +266,8 @@ class Layer {
   std::vector<PlatformView> platform_views_;
   std::vector<EmbedderExternalView*> flutter_contents_;
   DlRegion flutter_contents_region_;
-  friend class LayerBuilder;
   std::unique_ptr<EmbedderRenderTarget> render_target_;
+  friend class LayerBuilder;
 };
 
 /// A layout builder is responsible for building an optimized list of Layers
@@ -344,7 +356,7 @@ class LayerBuilder {
   }
 
   void AddFlutterContents(EmbedderExternalView* contents) {
-    assert(contents->HasEngineRenderedContents());
+    FML_DCHECK(contents->HasEngineRenderedContents());
 
     DlRegion region = contents->GetDlRegion();
     GetLayerForFlutterContentsRegion(region).AddFlutterContents(contents,
@@ -420,9 +432,8 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
     }
     if (target != nullptr) {
       return target;
-    } else {
-      return create_render_target_callback_(context, aiks_context, config);
     }
+    return create_render_target_callback_(context, aiks_context, config);
   });
 
   // This is where unused render targets will be collected. Control may flow to
