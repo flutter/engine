@@ -72,6 +72,7 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithTexture) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
+      .storage_mode = StorageMode::kDevicePrivate,
   };
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1);
@@ -90,6 +91,7 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithEffectTransform) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
+      .storage_mode = StorageMode::kDevicePrivate,
   };
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1);
@@ -117,6 +119,7 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
+      .storage_mode = StorageMode::kDevicePrivate,
   };
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
@@ -148,6 +151,7 @@ TEST_P(GaussianBlurFilterContentsTest,
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
+      .storage_mode = StorageMode::kDevicePrivate,
   };
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
@@ -180,6 +184,7 @@ TEST_P(GaussianBlurFilterContentsTest,
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(400, 300),
+      .storage_mode = StorageMode::kDevicePrivate,
   };
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
@@ -212,6 +217,7 @@ TEST_P(GaussianBlurFilterContentsTest, CalculateUVsSimple) {
   TextureDescriptor desc = {
       .format = PixelFormat::kB8G8R8A8UNormInt,
       .size = ISize(100, 100),
+      .storage_mode = StorageMode::kDevicePrivate,
   };
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   auto filter_input = FilterInput::Make(texture);
