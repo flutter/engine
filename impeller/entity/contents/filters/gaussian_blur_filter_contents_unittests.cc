@@ -263,7 +263,8 @@ TEST_P(GaussianBlurFilterContentsTest, TextureContentsWithDestinationRect) {
   }
 }
 
-TEST_P(GaussianBlurFilterContentsTest, TextureContentsWithDestinationRectScaled) {
+TEST_P(GaussianBlurFilterContentsTest,
+       TextureContentsWithDestinationRectScaled) {
   TextureDescriptor desc = {
       .storage_mode = StorageMode::kDevicePrivate,
       .format = PixelFormat::kB8G8R8A8UNormInt,

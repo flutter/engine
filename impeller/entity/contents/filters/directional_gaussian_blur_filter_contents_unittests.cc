@@ -207,7 +207,8 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest,
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       // TODO(tbd): Coverage and result rects do no match in this case.
-      // EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
+      // EXPECT_TRUE(RectNear(result_coverage.value(),
+      // contents_coverage.value()));
 
       // The precision on this blur is kind of off, thus the tolerance.
       EXPECT_NEAR(contents_coverage.value().GetLeft(), 98.f, 0.1f);
