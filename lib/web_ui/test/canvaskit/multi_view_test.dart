@@ -30,7 +30,7 @@ void testMain() {
       final LayerScene scene = sb.build();
       CanvasKitRenderer.instance.renderScene(scene, implicitView);
 
-      final EngineFlutterView anotherView = EngineFlutterView(2,
+      final EngineFlutterView anotherView = EngineFlutterView(
           EnginePlatformDispatcher.instance, createDomElement('another-view'));
       CanvasKitRenderer.instance.renderScene(scene, anotherView);
     });

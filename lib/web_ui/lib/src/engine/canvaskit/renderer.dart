@@ -385,9 +385,9 @@ class CanvasKitRenderer implements Renderer {
     frameTimingsOnBuildFinish();
     frameTimingsOnRasterStart();
 
-    // TODO(https://github.com/flutter/flutter/issues/138926): Use
-    // `FlutterViewManager.onViewsChanged` to manage the lifecycle of
-    // Rasterizers.
+    // TODO(harryterkelsen): Use `FlutterViewManager.onViewsChanged` to manage
+    // the lifecycle of Rasterizers,
+    // https://github.com/flutter/flutter/issues/137073.
     final Rasterizer rasterizer =
         _getRasterizerForView(view as EngineFlutterView);
 
