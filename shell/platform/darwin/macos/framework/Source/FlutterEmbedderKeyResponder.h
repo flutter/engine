@@ -7,10 +7,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
-namespace {
-typedef void* _VoidPtr;
-}
-
 typedef void (^FlutterSendEmbedderKeyEvent)(const FlutterKeyEvent& /* event */,
                                             _Nullable FlutterKeyEventCallback /* callback */,
                                             void* _Nullable /* user_data */);
