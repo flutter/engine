@@ -9,9 +9,7 @@
 #include <memory>
 
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
-#include "impeller/compiler/compiler.h"
 #include "impeller/compiler/include_dir.h"
 #include "impeller/compiler/types.h"
 
@@ -26,6 +24,7 @@ struct Switches {
   SourceType input_type = SourceType::kUnknown;
   std::string sl_file_name = "";
   bool iplr = false;
+  std::string iplr_bundle = "";
   std::string spirv_file_name = "";
   std::string reflection_json_name = "";
   std::string reflection_header_name = "";

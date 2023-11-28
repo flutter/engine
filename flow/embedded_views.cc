@@ -18,12 +18,12 @@ DlCanvas* DisplayListEmbedderViewSlice::canvas() {
 
 void DisplayListEmbedderViewSlice::end_recording() {
   display_list_ = builder_->Build();
+  FML_DCHECK(display_list_->has_rtree());
   builder_ = nullptr;
 }
 
-std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
-    const SkRect& query) const {
-  return display_list_->rtree()->searchAndConsolidateRects(query);
+const DlRegion& DisplayListEmbedderViewSlice::getRegion() const {
+  return display_list_->rtree()->region();
 }
 
 void DisplayListEmbedderViewSlice::render_into(DlCanvas* canvas) {

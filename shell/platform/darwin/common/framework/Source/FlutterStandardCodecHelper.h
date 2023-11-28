@@ -13,8 +13,11 @@
 extern "C" {
 #endif
 
+// NOLINTBEGIN(google-runtime-int)
+
 // Note: Update FlutterStandardFieldIsStandardType if this changes.
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterStandardFieldNil,
   FlutterStandardFieldTrue,
   FlutterStandardFieldFalse,
@@ -30,6 +33,7 @@ typedef enum {
   FlutterStandardFieldList,
   FlutterStandardFieldMap,
   FlutterStandardFieldFloat32Data,
+  // NOLINTEND(readability-identifier-naming)
 } FlutterStandardField;
 
 static inline bool FlutterStandardFieldIsStandardType(uint8_t field) {
@@ -38,6 +42,7 @@ static inline bool FlutterStandardFieldIsStandardType(uint8_t field) {
 }
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterStandardCodecObjcTypeNil,
   FlutterStandardCodecObjcTypeNSNumber,
   FlutterStandardCodecObjcTypeNSString,
@@ -46,7 +51,10 @@ typedef enum {
   FlutterStandardCodecObjcTypeNSArray,
   FlutterStandardCodecObjcTypeNSDictionary,
   FlutterStandardCodecObjcTypeUnknown,
+  // NOLINTEND(readability-identifier-naming)
 } FlutterStandardCodecObjcType;
+
+// NOLINTBEGIN(google-objc-function-naming)
 
 ///////////////////////////////////////////////////////////////////////////////
 ///\name Reader Helpers
@@ -104,6 +112,9 @@ bool FlutterStandardCodecHelperWriteNumber(CFMutableDataRef data,
                                            CFNumberRef number);
 
 ///@}
+
+// NOLINTEND(google-objc-function-naming)
+// NOLINTEND(google-runtime-int)
 
 #if defined(__cplusplus)
 }

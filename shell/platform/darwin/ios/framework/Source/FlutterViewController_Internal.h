@@ -5,7 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 
-#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
+#include "flutter/fml/time/time_point.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
@@ -19,18 +20,23 @@ class FlutterPlatformViewsController;
 }
 
 FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 
 FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
 typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterKeyboardModeHidden = 0,
   FlutterKeyboardModeDocked = 1,
   FlutterKeyboardModeFloating = 2,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
@@ -51,7 +57,7 @@ typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
  */
 @property(nonatomic, assign, readwrite) BOOL prefersStatusBarHidden;
 
-- (fml::WeakPtr<FlutterViewController>)getWeakPtr;
+- (fml::WeakNSObject<FlutterViewController>)getWeakNSObject;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;
 // Send touches to the Flutter Engine while forcing the change type to be cancelled.
