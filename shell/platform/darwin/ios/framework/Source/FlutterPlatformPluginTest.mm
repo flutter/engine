@@ -162,7 +162,7 @@
 }
 
 - (void)testShareScreenInvokedOnIPad {
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   [engine runWithEntrypoint:nil];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
@@ -170,9 +170,8 @@
   XCTestExpectation* presentExpectation =
       [self expectationWithDescription:@"Share view controller presented on iPad"];
 
-  FlutterViewController* engineViewController = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                      nibName:nil
-                                                                                       bundle:nil];
+  FlutterViewController* engineViewController =
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
   FlutterViewController* mockEngineViewController = OCMPartialMock(engineViewController);
   OCMStub([mockEngineViewController
       presentViewController:[OCMArg isKindOfClass:[UIActivityViewController class]]
