@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.ClipData;
-import android.content.ClipData.Item;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
@@ -108,12 +107,19 @@ public class PlatformPluginTest {
 
     // Still return text when the AssetFileDescriptor throws an IOException.
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
-    ClipDescription clipDescription = new ClipDescription("label", new String[] {ClipDescription.MIMETYPE_TEXT_PLAIN, ClipDescription.MIMETYPE_TEXT_URILIST});
+    ClipDescription clipDescription =
+        new ClipDescription(
+            "label",
+            new String[] {
+              ClipDescription.MIMETYPE_TEXT_PLAIN, ClipDescription.MIMETYPE_TEXT_URILIST
+            });
     ClipData.Item clipDataItem = new ClipData.Item("Text", null, uri);
     ClipData clipData = new ClipData(clipDescription, clipDataItem);
     clipboardManager.setPrimaryClip(clipData);
     AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
-    doReturn(fakeAssetFileDescriptor).when(contentResolver).openTypedAssetFileDescriptor(eq(uri), anyString(), eq(null));
+    doReturn(fakeAssetFileDescriptor)
+        .when(contentResolver)
+        .openTypedAssetFileDescriptor(eq(uri), anyString(), eq(null));
     doThrow(new IOException()).when(fakeAssetFileDescriptor).close();
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     verify(fakeAssetFileDescriptor).close();
