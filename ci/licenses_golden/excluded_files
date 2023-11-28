@@ -172,6 +172,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
@@ -697,6 +698,7 @@
 ../../../flutter/third_party/rapidjson/test
 ../../../flutter/third_party/shaderc/.clang-format
 ../../../flutter/third_party/shaderc/.git
+../../../flutter/third_party/shaderc/.github
 ../../../flutter/third_party/shaderc/.gitignore
 ../../../flutter/third_party/shaderc/AUTHORS
 ../../../flutter/third_party/shaderc/Android.mk
