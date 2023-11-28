@@ -199,13 +199,6 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
   }
 
   const auto shader_resources = compiler_->get_shader_resources();
-  // Subpass inputs.
-  {
-    auto& subpass_inputs = root["subpass_inputs"] = nlohmann::json::array_t{};
-    for (const auto& subpass_input : shader_resources.subpass_inputs) {
-      //
-    }
-  }
 
   // Uniform and storage buffers.
   {

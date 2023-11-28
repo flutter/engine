@@ -123,12 +123,11 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
   vk::SubpassDescription subpass_desc;
   subpass_desc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 
-  std::vector<vk::SubpassDependency> subpass_dependencies;
-
   // If the device supports framebuffer fetch, compatibility pipelines are
   // always created with the self reference and rasterization order flag. This
   // ensures that all compiled pipelines are compatible with a render pass that
   // contains a framebuffer fetch shader (advanced blends).
+  std::vector<vk::SubpassDependency> subpass_dependencies;
   if (supports_framebuffer_fetch) {
     subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
                               eRasterizationOrderAttachmentColorAccessARM);
