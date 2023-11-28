@@ -3,12 +3,15 @@
 // found in the LICENSE file.
 
 #include <GLES3/gl3.h>
+#include <media/NdkImageReader.h>
 #include <memory>
 
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_vk.h"
+#include "fml/logging.h"
+#include "shell/platform/android/ndk_helpers.h"
 #include "shell/platform/android/surface_texture_external_texture.h"
 
 namespace flutter {
@@ -26,7 +29,18 @@ SurfaceTextureExternalTextureVK::~SurfaceTextureExternalTextureVK() {}
 void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
                                                    const SkRect& bounds) {
   if (state_ == AttachmentState::kUninitialized) {
-    // TODO: Create an ImageReader.
+    AImageReader* image_reader;
+    media_status_t status = NDKHelpers::AImageReader_new(
+        /*width=*/bounds.width(),
+        /*height=*/bounds.height(),
+        /*format=*/AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM,
+        /*maxImages=*/1,
+        /*reader=*/&image_reader);
+    if (status != AMEDIA_OK) {
+      FML_LOG(ERROR) << "Failed to create ImageReader.";
+      return;
+    }
+    FML_DCHECK(image_reader != nullptr);
   }
 
   // TODO: Blit the image from the SurfaceTexture to the ImageReader.

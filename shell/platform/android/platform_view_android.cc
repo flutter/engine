@@ -20,6 +20,7 @@
 #include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
+#include "shell/platform/android/surface_texture_external_texture_vk.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
 #include "flutter/shell/platform/android/image_external_texture_vk.h"
@@ -343,6 +344,11 @@ void PlatformViewAndroid::RegisterExternalTexture(
       RegisterTexture(std::make_shared<SurfaceTextureExternalTextureGL>(
           texture_id, surface_texture, jni_facade_));
     }
+  } else if (android_context_->RenderingApi() == AndroidRenderingAPI::kVulkan) {
+    RegisterTexture(std::make_shared<SurfaceTextureExternalTextureVK>(
+        std::static_pointer_cast<impeller::ContextVK>(
+            android_context_->GetImpellerContext()),
+        texture_id, surface_texture, jni_facade_));
   } else {
     FML_LOG(INFO) << "Attempted to use a SurfaceTextureExternalTexture with an "
                      "unsupported rendering API.";
