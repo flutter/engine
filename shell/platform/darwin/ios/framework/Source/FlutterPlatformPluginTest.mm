@@ -164,8 +164,8 @@
 - (void)testShareScreenInvokedOnIPad {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
   [engine runWithEntrypoint:nil];
-  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory =
-      std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(engine);
+  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
+      std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
 
   XCTestExpectation* presentExpectation =
       [self expectationWithDescription:@"Share view controller presented on iPad"];
@@ -183,7 +183,7 @@
   OCMStub([mockTraitCollection userInterfaceIdiom]).andReturn(UIUserInterfaceIdiomPad);
 
   FlutterPlatformPlugin* plugin =
-      [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakNSObject()];
+      [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->WeakPtrFactory()];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Share.invoke"
