@@ -285,9 +285,9 @@ TEST_P(GaussianBlurFilterContentsTest,
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
   Entity entity;
+  entity.SetTransform(Matrix::MakeScale({2.0, 2.0, 1.0}));
   std::optional<Entity> result =
       contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
-  entity.SetTransform(Matrix::MakeScale({2.0, 2.0, 1.0}));
   EXPECT_TRUE(result.has_value());
   if (result.has_value()) {
     EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
@@ -296,8 +296,7 @@ TEST_P(GaussianBlurFilterContentsTest,
     EXPECT_TRUE(result_coverage.has_value());
     EXPECT_TRUE(contents_coverage.has_value());
     if (result_coverage.has_value() && contents_coverage.has_value()) {
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeLTRB(49.f, 39.f, 151.f, 141.f)));
+      EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
       EXPECT_TRUE(RectNear(contents_coverage.value(),
                            Rect::MakeLTRB(98.f, 78.f, 302.f, 282.f)));
     }

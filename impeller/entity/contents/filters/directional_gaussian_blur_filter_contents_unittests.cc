@@ -195,9 +195,9 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest,
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
   Entity entity;
+  entity.SetTransform(Matrix::MakeScale({2.0, 2.0, 1.0}));
   std::optional<Entity> result =
       contents->GetEntity(*renderer, entity, /*coverage_hint=*/{});
-  entity.SetTransform(Matrix::MakeScale({2.0, 2.0, 1.0}));
   EXPECT_TRUE(result.has_value());
   if (result.has_value()) {
     EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
@@ -208,10 +208,10 @@ TEST_P(DirectionalGaussianBlurFilterContentsTest,
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       // The precision on this blur is kind of off, thus the tolerance.
 
-      EXPECT_NEAR(result_coverage.value().GetLeft(), 49.f, 0.1f);
-      EXPECT_NEAR(result_coverage.value().GetTop(), 40.f, 0.001f);
-      EXPECT_NEAR(result_coverage.value().GetRight(), 151.f, 0.1f);
-      EXPECT_NEAR(result_coverage.value().GetBottom(), 140.f, 0.001f);
+      EXPECT_NEAR(result_coverage.value().GetLeft(), 98.f, 0.1f);
+      EXPECT_NEAR(result_coverage.value().GetTop(), 80.f, 0.001f);
+      EXPECT_NEAR(result_coverage.value().GetRight(), 302.f, 0.1f);
+      EXPECT_NEAR(result_coverage.value().GetBottom(), 280.f, 0.001f);
 
       EXPECT_NEAR(contents_coverage.value().GetLeft(), 98.f, 0.1f);
       EXPECT_NEAR(contents_coverage.value().GetTop(), 80.f, 0.001f);
