@@ -52,47 +52,30 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
   config.type = kOpenGL;
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->MakeCurrent();
+    FML_UNREACHABLE();
+    return false;
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->ClearContext();
+    FML_UNREACHABLE();
+    return false;
   };
   config.open_gl.present = [](void* user_data) -> bool {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->SwapBuffers();
+    FML_UNREACHABLE();
+    return false;
   };
   config.open_gl.fbo_reset_after_present = true;
   config.open_gl.fbo_with_frame_info_callback =
       [](void* user_data, const FlutterFrameInfo* info) -> uint32_t {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (host->view()) {
-      return host->view()->GetFrameBufferId(info->size.width,
-                                            info->size.height);
-    } else {
-      return kWindowFrameBufferID;
-    }
+    FML_UNREACHABLE();
+    return 0;
   };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
     return reinterpret_cast<void*>(eglGetProcAddress(what));
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->MakeResourceCurrent();
+    FML_UNREACHABLE();
+    return false;
   };
   config.open_gl.gl_external_texture_frame_callback =
       [](void* user_data, int64_t texture_id, size_t width, size_t height,
@@ -115,16 +98,12 @@ FlutterRendererConfig GetSoftwareRendererConfig() {
   FlutterRendererConfig config = {};
   config.type = kSoftware;
   config.software.struct_size = sizeof(config.software);
-  config.software.surface_present_callback = [](void* user_data,
-                                                const void* allocation,
-                                                size_t row_bytes,
-                                                size_t height) {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->PresentSoftwareBitmap(allocation, row_bytes, height);
-  };
+  config.software.surface_present_callback =
+      [](void* user_data, const void* allocation, size_t row_bytes,
+         size_t height) {
+        FML_UNREACHABLE();
+        return false;
+      };
   return config;
 }
 
@@ -213,7 +192,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   enable_impeller_ = std::find(switches.begin(), switches.end(),
                                "--enable-impeller=true") != switches.end();
 
-  surface_manager_ = AngleSurfaceManager::Create(enable_impeller_);
+  // Force software rendering.
+  surface_manager_ = nullptr;
   window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
   window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate(
       [](HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data,
@@ -392,6 +372,63 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   };
 
   args.custom_task_runners = &custom_task_runners;
+
+  FlutterCompositor compositor = {};
+  compositor.struct_size = sizeof(FlutterCompositor);
+  compositor.user_data = this;
+  compositor.create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,
+         FlutterBackingStore* backing_store_out, void* user_data) -> bool {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    void* allocation =
+        std::malloc(config->size.width * config->size.height * 4);
+    if (!allocation) {
+      return false;
+    }
+
+    // See: EmbedderTestBackingStoreProducer::CreateSoftware
+    backing_store_out->type = kFlutterBackingStoreTypeSoftware;
+    backing_store_out->software.allocation = allocation;
+    backing_store_out->software.destruction_callback = [](void* p) {
+      std::free(p);
+    };
+    backing_store_out->software.height = config->size.height;
+    backing_store_out->software.row_bytes = config->size.width * 4;
+    backing_store_out->user_data = nullptr;
+
+    return true;
+  };
+
+  compositor.collect_backing_store_callback =
+      [](const FlutterBackingStore* renderer, void* user_data) -> bool {
+    // Software backing store's destruction callback frees the allocation.
+    if (renderer->type == kFlutterBackingStoreTypeSoftware) {
+      return true;
+    }
+
+    FML_UNREACHABLE();
+    return false;
+  };
+
+  compositor.present_layers_callback = [](const FlutterLayer** layers,
+                                          size_t layers_count,
+                                          void* user_data) -> bool {
+    if (layers_count != 1 ||
+        layers[0]->type != kFlutterLayerContentTypeBackingStore ||
+        layers[0]->backing_store->type != kFlutterBackingStoreTypeSoftware) {
+      FML_UNREACHABLE();
+      return false;
+    }
+
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    const auto& backing_store = layers[0]->backing_store->software;
+    return host->view()->PresentSoftwareBitmap(backing_store.allocation,
+                                               backing_store.row_bytes,
+                                               backing_store.height);
+  };
+  args.compositor = &compositor;
 
   if (aot_data_) {
     args.aot_data = aot_data_.get();
