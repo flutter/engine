@@ -144,22 +144,22 @@ std::shared_ptr<Texture> MakeBlurSubpass(
   return out_texture;
 }
 
+}  // namespace
+
+GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
+    : sigma_(sigma) {}
+
 /// Calculate how much to scale down the texture depending on the blur radius.
 ///
 /// This value was extracted from Skia, see:
 ///  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/ganesh/GrBlurUtils.cpp#L2561-L2576
 ///  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/BlurUtils.h#L57
-Scalar CalculateScale(Scalar sigma) {
+Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
   if (sigma <= 4) {
     return 1.0;
   }
   return 4.0 / sigma;
 };
-
-}  // namespace
-
-GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
-    : sigma_(sigma) {}
 
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
