@@ -214,18 +214,25 @@ bool get isChrome110OrOlderOnWindows {
   if (debugIsChrome110OrOlderOnWindows != null) {
     return debugIsChrome110OrOlderOnWindows!;
   }
+  if (_cachedIsChrome110OrOlderOnWindows != null) {
+    return _cachedIsChrome110OrOlderOnWindows!;
+  }
   if (operatingSystem != OperatingSystem.windows) {
-    return false;
+    return _cachedIsChrome110OrOlderOnWindows = false;
   }
   final RegExp chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
   final RegExpMatch? match =
       chromeRegexp.firstMatch(domWindow.navigator.userAgent);
   if (match != null) {
     final int chromeVersion = int.parse(match.group(2)!);
-    return chromeVersion <= 110;
+    return _cachedIsChrome110OrOlderOnWindows = chromeVersion <= 110;
   }
-  return false;
+  return _cachedIsChrome110OrOlderOnWindows = false;
 }
+
+// Cache the result of checking if the app is running on Chrome 110 on Windows
+// since we check this on every frame.
+bool? _cachedIsChrome110OrOlderOnWindows;
 
 /// If set to true pretends that the current browser is iOS Safari.
 ///
