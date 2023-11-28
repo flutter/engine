@@ -204,8 +204,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
     return false;
   }
   // A blur sigma that is close to zero should not result in any shadow.
-  if (paint.mask_blur_descriptor->sigma.sigma <= kEhCloseEnough &&
-      paint.mask_blur_descriptor->sigma.sigma >= -kEhCloseEnough) {
+  if (std::fabs(paint.mask_blur_descriptor->sigma.sigma) <= kEhCloseEnough) {
     return true;
   }
 
