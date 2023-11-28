@@ -27,20 +27,21 @@ Future<void> testMain() async {
   //                view, but we then remove the implicit view.
   await bootstrapAndRunApp();
   final EngineFlutterWindow implicitView = EnginePlatformDispatcher.instance.implicitView!;
-  EnginePlatformDispatcher.instance.unregisterView(implicitView);
-  implicitView.dispose();
+  EnginePlatformDispatcher.instance.viewManager.disposeAndUnregisterView(implicitView.viewId);
 
   test('Can create multiple views each with its own semantics tree', () async {
     EngineSemantics.instance.semanticsEnabled = true;
 
     final DomElement host1 = createDomElement('view-host');
     domDocument.body!.append(host1);
-    final EngineFlutterView view1 = EngineFlutterView(1, EnginePlatformDispatcher.instance, host1);
+    final EngineFlutterView view1 = EngineFlutterView(EnginePlatformDispatcher.instance, host1);
+    EnginePlatformDispatcher.instance.viewManager.registerView(view1);
     final SemanticsTester tester1 = SemanticsTester(view1.semantics);
 
     final DomElement host2 = createDomElement('view-host');
     domDocument.body!.append(host2);
-    final EngineFlutterView view2 = EngineFlutterView(2, EnginePlatformDispatcher.instance, host2);
+    final EngineFlutterView view2 = EngineFlutterView(EnginePlatformDispatcher.instance, host2);
+    EnginePlatformDispatcher.instance.viewManager.registerView(view2);
     final SemanticsTester tester2 = SemanticsTester(view2.semantics);
 
     tester1.updateNode(id: 0);
@@ -51,8 +52,8 @@ Future<void> testMain() async {
 
     // Check that we have both root nodes in the DOM (root nodes have id == 0)
     expect(domDocument.querySelectorAll('flutter-view'), hasLength(2));
-    expect(domDocument.querySelectorAll('flutter-view[flt-view-id="1"]'), hasLength(1));
-    expect(domDocument.querySelectorAll('flutter-view[flt-view-id="2"]'), hasLength(1));
+    expect(domDocument.querySelectorAll('flutter-view[flt-view-id="${view1.viewId}"]'), hasLength(1));
+    expect(domDocument.querySelectorAll('flutter-view[flt-view-id="${view2.viewId}"]'), hasLength(1));
     expect(domDocument.querySelectorAll('flt-semantics[id=flt-semantic-node-0]'), hasLength(2));
 
     // Check that each is attached to its own view
@@ -114,7 +115,8 @@ Future<void> testMain() async {
 ''');
 
     // Remove the first view, but keep the second one.
-    view1.dispose();
+    EnginePlatformDispatcher.instance.viewManager.disposeAndUnregisterView(view1.viewId);
+
     expect(domDocument.querySelectorAll('flutter-view'), hasLength(1));
     expect(domDocument.querySelectorAll('flt-semantics[id=flt-semantic-node-0]'), hasLength(1));
     expect(domDocument.querySelectorAll('flt-semantics[id=flt-semantic-node-2]'), hasLength(1));
