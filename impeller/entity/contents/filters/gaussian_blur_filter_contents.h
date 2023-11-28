@@ -42,7 +42,7 @@ class GaussianBlurFilterContents final : public FilterContents {
                            const Entity& entity,
                            const ISize& pass_size);
 
-  /// Calculate the scale factor for the given sigma value.
+  /// Calculate the scale factor for the downsample pass given a sigma value.
   ///
   /// Visible for testing.
   static Scalar CalculateScale(Scalar sigma);
