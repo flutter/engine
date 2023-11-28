@@ -90,7 +90,7 @@ Tessellator::Result Tessellator::Tessellate(
 
     ::tessAddContour(tessellator,  // the C tessellator
                      kVertexSize,  //
-                     polyline.points->data() + start_point_index,  //
+                     polyline.points.data() + start_point_index,  //
                      sizeof(Point),                                //
                      end_point_index - start_point_index           //
     );
