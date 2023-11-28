@@ -350,8 +350,9 @@ void PlatformViewAndroid::RegisterExternalTexture(
             android_context_->GetImpellerContext()),
         texture_id, surface_texture, jni_facade_));
   } else {
-    FML_LOG(INFO) << "Attempted to use a SurfaceTextureExternalTexture with an "
-                     "unsupported rendering API.";
+    FML_LOG(ERROR)
+        << "Attempted to use a SurfaceTextureExternalTexture with an "
+           "unsupported rendering API.";
   }
 }
 

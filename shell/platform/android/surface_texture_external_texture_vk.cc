@@ -41,10 +41,15 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
       return;
     }
     FML_DCHECK(image_reader != nullptr);
+    FML_LOG(ERROR) << "Created ImageReader.";
   }
 
   // TODO: Blit the image from the SurfaceTexture to the ImageReader.
   // TODO: Take the hardware buffer from the ImageReader annd render as DlImage.
+}
+
+void SurfaceTextureExternalTextureVK::Detach() {
+  SurfaceTextureExternalTexture::Detach();
 }
 
 }  // namespace flutter
