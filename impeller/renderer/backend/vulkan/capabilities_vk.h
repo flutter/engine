@@ -21,6 +21,7 @@ class ContextVK;
 enum class OptionalDeviceExtensionVK : uint32_t {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_pipeline_creation_feedback.html
   kEXTPipelineCreationFeedback,
+  kARMRasterizationOrderAttachmentAccess,
   kEXTRasterizationOrderAttachmentAccess,
   kLast,
 };

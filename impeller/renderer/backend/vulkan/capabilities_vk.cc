@@ -157,6 +157,8 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
   switch (ext) {
     case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
       return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kARMRasterizationOrderAttachmentAccess:
+      return VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess:
       return VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
@@ -404,10 +406,17 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     });
   }
 
-  supports_framebuffer_fetch_ =
-      optional_device_extensions_.find(
-          OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess) !=
-      optional_device_extensions_.end();
+  {
+    supports_framebuffer_fetch_ =
+        optional_device_extensions_.find(
+            OptionalDeviceExtensionVK::
+                kARMRasterizationOrderAttachmentAccess) !=
+            optional_device_extensions_.end() ||
+        optional_device_extensions_.find(
+            OptionalDeviceExtensionVK::
+                kEXTRasterizationOrderAttachmentAccess) !=
+            optional_device_extensions_.end();
+  }
 
   return true;
 }
