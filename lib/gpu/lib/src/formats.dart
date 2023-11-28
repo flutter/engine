@@ -6,6 +6,10 @@
 
 part of flutter_gpu;
 
+// ATTENTION! ATTENTION! ATTENTION!
+// All enum classes defined in this file must exactly match the contents and
+// order of the corresponding enums defined in `gpu/formats.h`.
+
 /// Specifies where an allocation resides and how it may be used.
 enum StorageMode {
   /// Allocations can be mapped onto the hosts address space and also be used by
@@ -58,4 +62,127 @@ enum TextureCoordinateSystem {
   /// Default coordinate system.
   /// (0, 0) is the top-left of the image with +Y going down.
   renderToTexture,
+}
+
+enum BlendFactor {
+  zero,
+  one,
+  sourceColor,
+  oneMinusSourceColor,
+  sourceAlpha,
+  oneMinusSourceAlpha,
+  destinationColor,
+  oneMinusDestinationColor,
+  destinationAlpha,
+  oneMinusDestinationAlpha,
+  sourceAlphaSaturated,
+  blendColor,
+  oneMinusBlendColor,
+  blendAlpha,
+  oneMinusBlendAlpha,
+}
+
+enum BlendOperation {
+  add,
+  subtract,
+  reverseSubtract,
+}
+
+enum LoadAction {
+  dontCare,
+  load,
+  clear,
+}
+
+enum StoreAction {
+  dontCare,
+  store,
+  multisampleResolve,
+  storeAndMultisampleResolve,
+}
+
+enum ShaderStage {
+  vertex,
+  fragment,
+}
+
+enum MinMagFilter {
+  nearest,
+  linear,
+}
+
+enum MipFilter {
+  nearest,
+  linear,
+}
+
+enum SamplerAddressMode {
+  clampToEdge,
+  repeat,
+  mirror,
+}
+
+enum IndexType {
+  int16,
+  int32,
+}
+
+enum PrimitiveType {
+  triangle,
+  triangleStrip,
+  line,
+  lineStrip,
+  point,
+}
+
+enum CompareFunction {
+  /// Comparison test never passes.
+  never,
+
+  /// Comparison test passes always passes.
+  always,
+
+  /// Comparison test passes if new_value < current_value.
+  less,
+
+  /// Comparison test passes if new_value == current_value.
+  equal,
+
+  /// Comparison test passes if new_value <= current_value.
+  lessEqual,
+
+  /// Comparison test passes if new_value > current_value.
+  greater,
+
+  /// Comparison test passes if new_value != current_value.
+  notEqual,
+
+  /// Comparison test passes if new_value >= current_value.
+  greaterEqual,
+}
+
+enum StencilOperation {
+  /// Don't modify the current stencil value.
+  keep,
+
+  /// Reset the stencil value to zero.
+  zero,
+
+  /// Reset the stencil value to the reference value.
+  setToReferenceValue,
+
+  /// Increment the current stencil value by 1. Clamp it to the maximum.
+  incrementClamp,
+
+  /// Decrement the current stencil value by 1. Clamp it to zero.
+  decrementClamp,
+
+  /// Perform a logical bitwise invert on the current stencil value.
+  invert,
+
+  /// Increment the current stencil value by 1. If at maximum, set to zero.
+  incrementWrap,
+
+  /// Decrement the current stencil value by 1. If at zero, set to maximum.
+  decrementWrap,
 }
