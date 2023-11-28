@@ -139,7 +139,9 @@ Dart_Handle FileLoader::CanonicalizeURL(Dart_Handle library, Dart_Handle url) {
 
   if (string.find(kFileScheme) == 0u) {
     // CanonicalizeFileURL strips away the "file:" portion of the string.
-    auto res = "file:" + SanitizePath(CanonicalizeFileURL(string));
+    // Do not use SanitizePath so that we can preserve this as a URL.
+    auto res =
+        "file:" + SanitizeURIEscapedCharacters(CanonicalizeFileURL(string));
     return StdStringToDart(res);
   }
 
