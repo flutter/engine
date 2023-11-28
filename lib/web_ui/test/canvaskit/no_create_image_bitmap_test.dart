@@ -20,14 +20,15 @@ void testMain() {
     setUpCanvasKitTest();
     setUp(() async {
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
-      debugDisableCreateImageBitmapSupport = true;
     });
 
     tearDown(() {
       debugDisableCreateImageBitmapSupport = false;
+      debugIsChrome110OrOlderOnWindows = null;
     });
 
     test('can render without createImageBitmap', () async {
+      debugDisableCreateImageBitmapSupport = true;
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(region);
 
@@ -60,6 +61,15 @@ void testMain() {
         recorder.endRecording(),
         region: region,
       );
+    });
+
+    test(
+        'createImageBitmap support is disabled on '
+        'Windows on Chrome version 110 or older', () async {
+      debugIsChrome110OrOlderOnWindows = true;
+      debugDisableCreateImageBitmapSupport = false;
+
+      expect(browserSupportsCreateImageBitmap, isFalse);
     });
   });
 }
