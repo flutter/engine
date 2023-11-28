@@ -183,7 +183,7 @@
   OCMStub([mockTraitCollection userInterfaceIdiom]).andReturn(UIUserInterfaceIdiomPad);
 
   FlutterPlatformPlugin* plugin =
-      [[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->WeakPtrFactory()];
+      [[[FlutterPlatformPlugin alloc] initWithEngine:_weakFactory->GetWeakPtr()] autorelease];
   FlutterPlatformPlugin* mockPlugin = OCMPartialMock(plugin);
 
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"Share.invoke"
