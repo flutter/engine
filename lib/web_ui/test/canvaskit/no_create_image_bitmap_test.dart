@@ -29,6 +29,9 @@ void testMain() {
 
     test('can render without createImageBitmap', () async {
       debugDisableCreateImageBitmapSupport = true;
+
+      expect(browserSupportsCreateImageBitmap, isFalse);
+
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(region);
 
