@@ -1,4 +1,4 @@
-Signature: 8372c45dcf812095a6cb0f527eab520a
+Signature: 6ec3ca5733f89f5022ef0dbf017845e0
 
 ====================================================================================================
 LIBRARY: etc1
@@ -388,6 +388,7 @@ FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/FontConfigInterface.md
 FILE: ../../../flutter/third_party/skia/relnotes/NoYield.md
+FILE: ../../../flutter/third_party/skia/relnotes/mip_aliases.md
 FILE: ../../../flutter/third_party/skia/relnotes/shaper.md
 FILE: ../../../flutter/third_party/skia/relnotes/vksemaphore.md
 FILE: ../../../flutter/third_party/skia/relnotes/vulkan-mutable.md
