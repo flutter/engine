@@ -11,6 +11,8 @@
 #include "flutter/impeller/toolkit/egl/egl.h"
 
 #include <android/hardware_buffer.h>
+#include <media/NdkImageReader.h>
+#include <media/NdkMediaError.h>
 
 namespace flutter {
 
@@ -27,6 +29,11 @@ class NDKHelpers {
   static void AHardwareBuffer_release(AHardwareBuffer* buffer);
   static void AHardwareBuffer_describe(AHardwareBuffer* buffer,
                                        AHardwareBuffer_Desc* desc);
+  static media_status_t AImageReader_new(int32_t width,
+                                         int32_t height,
+                                         int32_t format,
+                                         int32_t maxImages,
+                                         AImageReader** reader);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 

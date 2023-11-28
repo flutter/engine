@@ -22,6 +22,11 @@ typedef void (*fp_AHardwareBuffer_acquire)(AHardwareBuffer* buffer);
 typedef void (*fp_AHardwareBuffer_release)(AHardwareBuffer* buffer);
 typedef void (*fp_AHardwareBuffer_describe)(AHardwareBuffer* buffer,
                                             AHardwareBuffer_Desc* desc);
+typedef media_status_t (*fp_AImageReader_new)(int32_t width,
+                                              int32_t height,
+                                              int32_t format,
+                                              int32_t maxImages,
+                                              AImageReader** reader);
 typedef EGLClientBuffer (*fp_eglGetNativeClientBufferANDROID)(
     AHardwareBuffer* buffer);
 
@@ -32,6 +37,11 @@ void (*_AHardwareBuffer_acquire)(AHardwareBuffer* buffer) = nullptr;
 void (*_AHardwareBuffer_release)(AHardwareBuffer* buffer) = nullptr;
 void (*_AHardwareBuffer_describe)(AHardwareBuffer* buffer,
                                   AHardwareBuffer_Desc* desc) = nullptr;
+media_status_t (*_AImageReader_new)(int32_t width,
+                                    int32_t height,
+                                    int32_t format,
+                                    int32_t maxImages,
+                                    AImageReader** reader) = nullptr;
 EGLClientBuffer (*_eglGetNativeClientBufferANDROID)(AHardwareBuffer* buffer) =
     nullptr;
 
@@ -65,6 +75,9 @@ void InitOnceCallback() {
       android
           ->ResolveFunction<fp_AHardwareBuffer_describe>(
               "AHardwareBuffer_describe")
+          .value_or(nullptr);
+  _AImageReader_new =
+      android->ResolveFunction<fp_AImageReader_new>("AImageReader_new")
           .value_or(nullptr);
 }
 
@@ -105,6 +118,16 @@ void NDKHelpers::AHardwareBuffer_describe(AHardwareBuffer* buffer,
   NDKHelpers::Init();
   FML_CHECK(_AHardwareBuffer_describe != nullptr);
   _AHardwareBuffer_describe(buffer, desc);
+}
+
+media_status_t NDKHelpers::AImageReader_new(int32_t width,
+                                            int32_t height,
+                                            int32_t format,
+                                            int32_t maxImages,
+                                            AImageReader** reader) {
+  NDKHelpers::Init();
+  FML_CHECK(_AImageReader_new != nullptr);
+  return _AImageReader_new(width, height, format, maxImages, reader);
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(
