@@ -217,7 +217,7 @@ bool get isChrome110OrOlderOnWindows {
   if (operatingSystem != OperatingSystem.windows) {
     return false;
   }
-  final RegExp chromeRegexp = RegExp(r'/Chrom(e|ium)\/([0-9]+)\./');
+  final RegExp chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
   final RegExpMatch? match =
       chromeRegexp.firstMatch(domWindow.navigator.userAgent);
   if (match != null) {
