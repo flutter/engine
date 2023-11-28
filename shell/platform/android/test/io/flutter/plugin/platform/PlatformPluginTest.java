@@ -56,7 +56,7 @@ import org.robolectric.shadows.ShadowLooper;
 public class PlatformPluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
 
-  @Config(sdk = 16)
+  @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
     View fakeDecorView = mock(View.class);
@@ -74,7 +74,7 @@ public class PlatformPluginTest {
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
-  @Config(sdk = 29)
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void platformPlugin_getClipboardData() throws IOException {
     ClipboardManager clipboardManager = ctx.getSystemService(ClipboardManager.class);
@@ -148,7 +148,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // ClipboardManager.getText
-  @Config(sdk = 28)
+  @Config(sdk = Build.VERSION_CODES.P)
   @Test
   public void platformPlugin_hasStrings() {
     ClipboardManager clipboardManager = spy(ctx.getSystemService(ClipboardManager.class));
@@ -202,7 +202,7 @@ public class PlatformPluginTest {
     verify(clipboardManager, never()).getText();
   }
 
-  @Config(sdk = 29)
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void setNavigationBarDividerColor() {
     View fakeDecorView = mock(View.class);
@@ -277,7 +277,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 30)
+  @Config(sdk = Build.VERSION_CODES.R)
   @Test
   public void setNavigationBarIconBrightness() {
     if (Build.VERSION.SDK_INT >= 30) {
@@ -324,7 +324,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 30)
+  @Config(sdk = Build.VERSION_CODES.R)
   @Test
   public void setStatusBarIconBrightness() {
     if (Build.VERSION.SDK_INT >= 30) {
@@ -371,7 +371,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_*, setSystemUiVisibility
-  @Config(sdk = 29)
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void setSystemUiMode() {
     View fakeDecorView = mock(View.class);
@@ -488,7 +488,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_*, setSystemUiVisibility
-  @Config(sdk = 28)
+  @Config(sdk = Build.VERSION_CODES.P)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
     View fakeDecorView = mock(View.class);
@@ -510,7 +510,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_NAVIGATION
-  @Config(sdk = 29)
+  @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
     View fakeDecorView = mock(View.class);

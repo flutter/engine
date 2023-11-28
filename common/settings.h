@@ -90,6 +90,9 @@ using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
 class DartIsolate;
 
+// TODO(https://github.com/flutter/flutter/issues/138750): Re-order fields to
+// reduce padding.
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 struct Settings {
   Settings();
 
@@ -217,9 +220,6 @@ struct Settings {
 #else
   bool enable_impeller = false;
 #endif
-
-  // Indicates if image reader backed platform views are disabled.
-  bool disable_image_reader_platform_views = false;
 
   // Requests a particular backend to be used (ex "opengles" or "vulkan")
   std::optional<std::string> impeller_backend;

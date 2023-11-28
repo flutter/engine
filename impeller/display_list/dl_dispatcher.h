@@ -5,7 +5,6 @@
 #pragma once
 
 #include "flutter/display_list/dl_op_receiver.h"
-#include "flutter/fml/macros.h"
 #include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/paint.h"
 
@@ -225,6 +224,10 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   Paint paint_;
   CanvasType canvas_;
   Matrix initial_matrix_;
+
+  static void SimplifyOrDrawPath(CanvasType& canvas,
+                                 const SkPath& path,
+                                 const Paint& paint);
 
   DlDispatcher(const DlDispatcher&) = delete;
 

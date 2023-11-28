@@ -180,8 +180,6 @@ static std::optional<Entity> AdvancedBlend(
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    blend_info.supports_decal_sampler_address_mode =
-        renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
         dst_sampler_descriptor);
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
@@ -354,8 +352,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    blend_info.supports_decal_sampler_address_mode =
-        renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
         dst_sampler_descriptor);
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
@@ -376,7 +372,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     FS::BindBlendInfo(cmd, blend_uniform);
 
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
+                     entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -385,7 +381,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
   };
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
@@ -478,8 +474,6 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    frag_info.supports_decal_sampler_address_mode =
-        renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
         dst_sampler_descriptor);
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
@@ -503,7 +497,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
+                     entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -513,7 +507,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);

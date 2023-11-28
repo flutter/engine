@@ -4,47 +4,18 @@
 
 #include "impeller/entity/geometry/geometry.h"
 
+#include <memory>
 #include <optional>
 
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
+#include "impeller/entity/geometry/line_geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/rect.h"
 
 namespace impeller {
-
-/// Given a convex polyline, create a triangle fan structure.
-std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-    Path::Polyline polyline) {
-  std::vector<Point> output;
-  std::vector<uint16_t> indices;
-
-  for (auto j = 0u; j < polyline.contours.size(); j++) {
-    auto [start, end] = polyline.GetContourPointBounds(j);
-    auto center = polyline.points[start];
-
-    // Some polygons will not self close and an additional triangle
-    // must be inserted, others will self close and we need to avoid
-    // inserting an extra triangle.
-    if (polyline.points[end - 1] == polyline.points[start]) {
-      end--;
-    }
-    output.emplace_back(center);
-    output.emplace_back(polyline.points[start + 1]);
-
-    for (auto i = start + 2; i < end; i++) {
-      const auto& point_b = polyline.points[i];
-      output.emplace_back(point_b);
-
-      indices.emplace_back(0);
-      indices.emplace_back(i - 1);
-      indices.emplace_back(i);
-    }
-  }
-  return std::make_pair(output, indices);
-}
 
 VertexBufferBuilder<TextureFillVertexShader::PerVertexData>
 ComputeUVGeometryCPU(
@@ -94,36 +65,32 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
-
-Geometry::Geometry() = default;
-
-Geometry::~Geometry() = default;
 
 GeometryResult Geometry::GetPositionUVBuffer(Rect texture_coverage,
                                              Matrix effect_transform,
                                              const ContentContext& renderer,
                                              const Entity& entity,
-                                             RenderPass& pass) {
+                                             RenderPass& pass) const {
   return {};
 }
 
-std::unique_ptr<Geometry> Geometry::MakeFillPath(
+std::shared_ptr<Geometry> Geometry::MakeFillPath(
     const Path& path,
     std::optional<Rect> inner_rect) {
-  return std::make_unique<FillPathGeometry>(path, inner_rect);
+  return std::make_shared<FillPathGeometry>(path, inner_rect);
 }
 
-std::unique_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
+std::shared_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
                                                    Scalar radius,
                                                    bool round) {
-  return std::make_unique<PointFieldGeometry>(std::move(points), radius, round);
+  return std::make_shared<PointFieldGeometry>(std::move(points), radius, round);
 }
 
-std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
+std::shared_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
                                                    Scalar stroke_width,
                                                    Scalar miter_limit,
                                                    Cap stroke_cap,
@@ -132,16 +99,23 @@ std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
   if (miter_limit < 0) {
     miter_limit = 4.0;
   }
-  return std::make_unique<StrokePathGeometry>(path, stroke_width, miter_limit,
+  return std::make_shared<StrokePathGeometry>(path, stroke_width, miter_limit,
                                               stroke_cap, stroke_join);
 }
 
-std::unique_ptr<Geometry> Geometry::MakeCover() {
-  return std::make_unique<CoverGeometry>();
+std::shared_ptr<Geometry> Geometry::MakeCover() {
+  return std::make_shared<CoverGeometry>();
 }
 
-std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
-  return std::make_unique<RectGeometry>(rect);
+std::shared_ptr<Geometry> Geometry::MakeRect(Rect rect) {
+  return std::make_shared<RectGeometry>(rect);
+}
+
+std::shared_ptr<Geometry> Geometry::MakeLine(Point p0,
+                                             Point p1,
+                                             Scalar width,
+                                             Cap cap) {
+  return std::make_shared<LineGeometry>(p0, p1, width, cap);
 }
 
 bool Geometry::CoversArea(const Matrix& transform, const Rect& rect) const {
