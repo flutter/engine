@@ -11,6 +11,7 @@
 #include "flutter/impeller/toolkit/egl/egl.h"
 
 #include <android/hardware_buffer.h>
+#include <jni.h>
 #include <media/NdkImageReader.h>
 #include <media/NdkMediaError.h>
 
@@ -47,7 +48,9 @@ class NDKHelpers {
   static media_status_t AImageReader_setImageListener(
       AImageReader* reader,
       AImageReader_ImageListener* listener);
-  static ANativeWindow* AImageReader_getWindow(AImageReader* reader);
+  static media_status_t AImageReader_getWindow(AImageReader* reader,
+                                               ANativeWindow** window);
+  static jobject ANativeWindow_toSurface(JNIEnv* env, ANativeWindow* window);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 

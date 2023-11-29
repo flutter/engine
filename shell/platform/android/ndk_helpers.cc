@@ -11,6 +11,7 @@
 #include <android/hardware_buffer.h>
 #include <android/native_window.h>
 #include <dlfcn.h>
+#include <media/NdkMediaError.h>
 
 namespace flutter {
 
@@ -31,7 +32,10 @@ typedef media_status_t (*fp_AImageReader_new)(int32_t width,
 typedef media_status_t (*fp_AImageReader_setImageListener)(
     AImageReader* reader,
     AImageReader_ImageListener* listener);
-typedef ANativeWindow* (*fp_AImageReader_getWindow)(AImageReader* reader);
+typedef media_status_t (*fp_AImageReader_getWindow)(AImageReader* reader,
+                                                    ANativeWindow** window);
+typedef jobject (*fp_ANativeWindow_toSurface)(JNIEnv* env,
+                                              ANativeWindow* window);
 typedef EGLClientBuffer (*fp_eglGetNativeClientBufferANDROID)(
     AHardwareBuffer* buffer);
 
@@ -50,7 +54,10 @@ media_status_t (*_AImageReader_new)(int32_t width,
 media_status_t (*_AImageReader_setImageListener)(
     AImageReader* reader,
     AImageReader_ImageListener* listener) = nullptr;
-ANativeWindow* (*_AImageReader_getWindow)(AImageReader* reader) = nullptr;
+media_status_t (*_AImageReader_getWindow)(AImageReader* reader,
+                                          ANativeWindow** window) = nullptr;
+jobject (*_ANativeWindow_toSurface)(JNIEnv* env,
+                                    ANativeWindow* window) = nullptr;
 EGLClientBuffer (*_eglGetNativeClientBufferANDROID)(AHardwareBuffer* buffer) =
     nullptr;
 
@@ -97,6 +104,10 @@ void InitOnceCallback() {
       android
           ->ResolveFunction<fp_AImageReader_getWindow>("AImageReader_getWindow")
           .value_or(nullptr);
+  _ANativeWindow_toSurface = android
+                                 ->ResolveFunction<fp_ANativeWindow_toSurface>(
+                                     "ANativeWindow_toSurface")
+                                 .value_or(nullptr);
 }
 
 }  // namespace
@@ -156,10 +167,18 @@ media_status_t NDKHelpers::AImageReader_setImageListener(
   return _AImageReader_setImageListener(reader, listener);
 }
 
-ANativeWindow* NDKHelpers::AImageReader_getWindow(AImageReader* reader) {
+media_status_t NDKHelpers::AImageReader_getWindow(AImageReader* reader,
+                                                  ANativeWindow** window) {
   NDKHelpers::Init();
   FML_CHECK(_AImageReader_getWindow != nullptr);
-  return _AImageReader_getWindow(reader);
+  return _AImageReader_getWindow(reader, window);
+}
+
+jobject NDKHelpers::ANativeWindow_toSurface(JNIEnv* env,
+                                            ANativeWindow* window) {
+  NDKHelpers::Init();
+  FML_CHECK(_ANativeWindow_toSurface != nullptr);
+  return _ANativeWindow_toSurface(env, window);
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(

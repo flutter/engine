@@ -6,11 +6,13 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_SURFACE_TEXTURE_EXTERNAL_TEXTURE_VK_H_
 
 #include <media/NdkImageReader.h>
+#include <memory>
 
 #include "flutter/shell/platform/android/surface_texture_external_texture.h"
 
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/toolkit/egl/surface.h"
 
 namespace flutter {
 
@@ -33,6 +35,7 @@ class SurfaceTextureExternalTextureVK final
 
   const std::shared_ptr<impeller::ContextVK> impeller_context_;
   std::shared_ptr<impeller::TextureVK> texture_;
+  std::unique_ptr<impeller::egl::Surface> surface_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceTextureExternalTextureVK);
 };
