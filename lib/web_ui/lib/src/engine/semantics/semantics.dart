@@ -1876,7 +1876,14 @@ class EngineSemantics {
   ///
   /// This method must be called prior to updating the semantics inside any
   /// individual view.
-  void willUpdateSemantics() {
+  ///
+  /// Automatically enables semantics in a production setting. In Flutter test
+  /// environment keeps engine semantics turned off due to tests frequently
+  /// sending inconsistent semantics updates.
+  ///
+  /// The caller is expected to check if [semanticsEnabled] is true prior to
+  /// actually updating the semantic DOM.
+  void didReceiveSemanticsUpdate() {
     if (!_semanticsEnabled) {
       if (ui_web.debugEmulateFlutterTesterEnvironment) {
         // Running Flutter widget tests in a fake environment. Don't enable
@@ -2243,7 +2250,11 @@ class EngineSemanticsOwner {
 
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
-    EngineSemantics.instance.willUpdateSemantics();
+    EngineSemantics.instance.didReceiveSemanticsUpdate();
+
+    if (!EngineSemantics.instance.semanticsEnabled) {
+      return;
+    }
 
     (bool, String)? preUpdateNodeMapConsistency;
     assert(() {
