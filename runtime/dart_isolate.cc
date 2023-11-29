@@ -211,10 +211,12 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
               )));
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
-      std::shared_ptr<DartIsolate>(new DartIsolate(settings,  // settings
-                                                   true,      // is_root_isolate
-                                                   context    // context
-                                                   )));
+      std::shared_ptr<DartIsolate>(new DartIsolate(
+          settings,           // settings
+          true,               // is_root_isolate
+          context,            // context
+          !!spawning_isolate  // spawn_in_group
+          )));
 
   DartErrorString error;
   Dart_Isolate vm_isolate = nullptr;
@@ -276,7 +278,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
 DartIsolate::DartIsolate(const Settings& settings,
                          bool is_root_isolate,
-                         const UIDartState::Context& context)
+                         const UIDartState::Context& context,
+                         bool spawn_in_group)
     : UIDartState(settings.task_observer_add,
                   settings.task_observer_remove,
                   settings.log_tag,
@@ -287,7 +290,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                   context),
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
-      domain_network_policy_(settings.domain_network_policy) {
+      domain_network_policy_(settings.domain_network_policy),
+      spawn_in_group_(spawn_in_group) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -548,13 +552,13 @@ bool DartIsolate::LoadKernel(const std::shared_ptr<const fml::Mapping>& mapping,
     return false;
   }
 
-  if (!mapping || mapping->GetSize() == 0) {
-    return false;
-  }
-
   tonic::DartState::Scope scope(this);
 
-  if (!child_isolate) {
+  if (!child_isolate && !spawn_in_group_) {
+    if (!mapping || mapping->GetSize() == 0) {
+      return false;
+    }
+
     // Use root library provided by kernel in favor of one provided by snapshot.
     Dart_SetRootLibrary(Dart_Null());
 
@@ -923,7 +927,7 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
       });
 
   if (*error) {
-    FML_LOG(ERROR) << "CreateDartIsolateGroup failed: " << error;
+    FML_LOG(ERROR) << "CreateDartIsolateGroup failed: " << *error;
   }
 
   return vm_isolate;
