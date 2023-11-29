@@ -606,21 +606,30 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
                            GetCurrentTaskRunner()   //
   );
 
-  ASSERT_TRUE(settings.application_kernels);
-  auto mappings = settings.application_kernels();
-  ASSERT_EQ(mappings.size(), 1u);
-
   size_t get_kernel_count = 0u;
-  // This feels a little brittle, but the alternative seems to be making
-  // DartIsolate have virtual methods so it can be mocked or exposing weird
-  // test-only API on IsolateConfiguration.
-  settings.application_kernels =
-      [&get_kernel_count, mapping = mappings.front().release()]() -> Mappings {
-    get_kernel_count++;
-    std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
-    kernel_mappings.emplace_back(std::unique_ptr<const fml::Mapping>(mapping));
-    return kernel_mappings;
-  };
+  if (DartVM::IsRunningPrecompiledCode()) {
+    ASSERT_TRUE(settings.application_kernels);
+    auto mappings = settings.application_kernels();
+    ASSERT_EQ(mappings.size(), 1u);
+
+    // This feels a little brittle, but the alternative seems to be making
+    // DartIsolate have virtual methods so it can be mocked or exposing weird
+    // test-only API on IsolateConfiguration.
+    settings.application_kernels =
+        [&get_kernel_count,
+         mapping = mappings.front().release()]() -> Mappings {
+      get_kernel_count++;
+      if (get_kernel_count > 1) {
+        FML_LOG(ERROR)
+            << "Unexpectedly got more than one call for the kernel mapping.";
+        abort();
+      }
+      std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
+      kernel_mappings.emplace_back(
+          std::unique_ptr<const fml::Mapping>(mapping));
+      return kernel_mappings;
+    };
+  }
 
   std::shared_ptr<DartIsolate> root_isolate;
   {
@@ -631,56 +640,56 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
     context.advisory_script_uri = "main.dart";
     context.advisory_script_entrypoint = "main";
     auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
-        vm_data->GetSettings(),              // settings
-        vm_data->GetIsolateSnapshot(),       // isolate snapshot
-        nullptr,                             // platform configuration
-        DartIsolate::Flags{},                // flags
-        nullptr,                             // root_isolate_create_callback
-        settings.isolate_create_callback,    // isolate create callback
-        settings.isolate_shutdown_callback,  // isolate shutdown callback
-        "main",                              // dart entrypoint
-        std::nullopt,                        // dart entrypoint library
-        {},                                  // dart entrypoint arguments
-        std::move(isolate_configuration),    // isolate configuration
-        context                              // engine context
-    );
+        /*settings=*/vm_data->GetSettings(),
+        /*isolate_snapshot=*/vm_data->GetIsolateSnapshot(),
+        /*platform_configuration=*/nullptr,
+        /*flags=*/DartIsolate::Flags{},
+        /*root_isolate_create_callback=*/nullptr,
+        /*isolate_create_callback=*/settings.isolate_create_callback,
+        /*isolate_shutdown_callback=*/settings.isolate_shutdown_callback,
+        /*dart_entrypoint=*/"main",
+        /*dart_entrypoint_library=*/std::nullopt,
+        /*dart_entrypoint_arguments=*/{},
+        /*isolate_configuration=*/std::move(isolate_configuration),
+        /*context=*/context);
     root_isolate = weak_isolate.lock();
   }
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
-  ASSERT_EQ(get_kernel_count, 1u);
+  if (DartVM::IsRunningPrecompiledCode()) {
+    ASSERT_EQ(get_kernel_count, 1u);
+  }
 
   {
     auto isolate_configuration = IsolateConfiguration::InferFromSettings(
-        settings,                                          //
-        /*asset_manager=*/nullptr,                         //
-        /*io_worker=*/nullptr,                             //
-        /*launch_type=*/IsolateLaunchType::kExistingGroup  //
-    );
+        /*settings=*/settings,
+        /*asset_manager=*/nullptr,
+        /*io_worker=*/nullptr,
+        /*launch_type=*/IsolateLaunchType::kExistingGroup);
 
     UIDartState::Context context(task_runners);
     context.advisory_script_uri = "main.dart";
     context.advisory_script_entrypoint = "main";
     auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
-        vm_data->GetSettings(),              // settings
-        vm_data->GetIsolateSnapshot(),       // isolate snapshot
-        nullptr,                             // platform configuration
-        DartIsolate::Flags{},                // flags
-        nullptr,                             // root_isolate_create_callback
-        settings.isolate_create_callback,    // isolate create callback
-        settings.isolate_shutdown_callback,  // isolate shutdown callback
-        "main",                              // dart entrypoint
-        std::nullopt,                        // dart entrypoint library
-        {},                                  // dart entrypoint arguments
-        std::move(isolate_configuration),    // isolate configuration
-        context,                             // engine context
-        root_isolate.get()                   // spawning_isolate
-    );
+        /*settings=*/vm_data->GetSettings(),
+        /*isolate_snapshot=*/vm_data->GetIsolateSnapshot(),
+        /*platform_configuration=*/nullptr,
+        /*flags=*/DartIsolate::Flags{},
+        /*root_isolate_create_callback=*/nullptr,
+        /*isolate_create_callback=*/settings.isolate_create_callback,
+        /*isolate_shutdown_callback=*/settings.isolate_shutdown_callback,
+        /*dart_entrypoint=*/"main",
+        /*dart_entrypoint_library=*/std::nullopt,
+        /*dart_entrypoint_arguments=*/{},
+        /*isolate_configuration=*/std::move(isolate_configuration),
+        /*context=*/context,
+        /*spawning_isolate=*/root_isolate.get());
     auto spawned_isolate = weak_isolate.lock();
     ASSERT_TRUE(spawned_isolate);
     ASSERT_EQ(spawned_isolate->GetPhase(), DartIsolate::Phase::Running);
-    ASSERT_EQ(get_kernel_count, 1u);
-
+    if (DartVM::IsRunningPrecompiledCode()) {
+      ASSERT_EQ(get_kernel_count, 1u);
+    }
     ASSERT_TRUE(spawned_isolate->Shutdown());
   }
 

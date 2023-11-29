@@ -29,7 +29,6 @@ namespace flutter {
 class DartVM;
 class DartIsolateGroupData;
 class IsolateConfiguration;
-enum class IsolateLaunchType;
 
 //------------------------------------------------------------------------------
 /// @brief      Represents an instance of a live isolate. An isolate is a

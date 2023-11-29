@@ -212,11 +212,10 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(
-          settings,           // settings
-          true,               // is_root_isolate
-          context,            // context
-          !!spawning_isolate  // spawn_in_group
-          )));
+          /*settings=*/settings,
+          /*is_root_isolate=*/true,
+          /*context=*/context,
+          /*is_spawning_in_group=*/!!spawning_isolate)));
 
   DartErrorString error;
   Dart_Isolate vm_isolate = nullptr;
@@ -279,7 +278,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 DartIsolate::DartIsolate(const Settings& settings,
                          bool is_root_isolate,
                          const UIDartState::Context& context,
-                         bool spawn_in_group)
+                         bool is_spawning_in_group)
     : UIDartState(settings.task_observer_add,
                   settings.task_observer_remove,
                   settings.log_tag,
@@ -291,7 +290,7 @@ DartIsolate::DartIsolate(const Settings& settings,
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
       domain_network_policy_(settings.domain_network_policy),
-      spawn_in_group_(spawn_in_group) {
+      is_spawning_in_group_(is_spawning_in_group) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -554,7 +553,7 @@ bool DartIsolate::LoadKernel(const std::shared_ptr<const fml::Mapping>& mapping,
 
   tonic::DartState::Scope scope(this);
 
-  if (!child_isolate && !spawn_in_group_) {
+  if (!child_isolate && !is_spawning_in_group_) {
     if (!mapping || mapping->GetSize() == 0) {
       return false;
     }
