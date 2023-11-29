@@ -59,11 +59,12 @@ public class PlatformChannelTest {
     ArgumentCaptor<String> valueCapture = ArgumentCaptor.forClass(String.class);
     doNothing().when(mockMessageHandler).share(valueCapture.capture());
 
-    MethodCall methodCall = new MethodCall("Share.invoke", "Flutter");
+    final String expectedContent = "Flutter";
+    MethodCall methodCall = new MethodCall("Share.invoke", expectedContent);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
     fakePlatformChannel.parsingMethodCallHandler.onMethodCall(methodCall, mockResult);
 
-    assertEquals("Flutter", valueCapture.getValue());
+    assertEquals(valueCapture.getValue(), expectedContent);
     verify(mockResult).success(null);
   }
 }
