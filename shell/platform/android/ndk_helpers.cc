@@ -29,6 +29,12 @@ typedef media_status_t (*fp_AImageReader_new)(int32_t width,
                                               int32_t format,
                                               int32_t maxImages,
                                               AImageReader** reader);
+typedef media_status_t (*fp_AImageReader_newWithUsage)(int32_t width,
+                                                       int32_t height,
+                                                       int32_t format,
+                                                       uint64_t usage,
+                                                       int32_t maxImages,
+                                                       AImageReader** reader);
 typedef media_status_t (*fp_AImageReader_setImageListener)(
     AImageReader* reader,
     AImageReader_ImageListener* listener);
@@ -55,6 +61,12 @@ media_status_t (*_AImageReader_new)(int32_t width,
                                     int32_t format,
                                     int32_t maxImages,
                                     AImageReader** reader) = nullptr;
+media_status_t (*_AImageReader_newWithUsage)(int32_t width,
+                                             int32_t height,
+                                             int32_t format,
+                                             uint64_t usage,
+                                             int32_t maxImages,
+                                             AImageReader** reader) = nullptr;
 media_status_t (*_AImageReader_setImageListener)(
     AImageReader* reader,
     AImageReader_ImageListener* listener) = nullptr;
@@ -102,6 +114,11 @@ void InitOnceCallback() {
           .value_or(nullptr);
   _AImageReader_new =
       android->ResolveFunction<fp_AImageReader_new>("AImageReader_new")
+          .value_or(nullptr);
+  _AImageReader_newWithUsage =
+      android
+          ->ResolveFunction<fp_AImageReader_newWithUsage>(
+              "AImageReader_newWithUsage")
           .value_or(nullptr);
   _AImageReader_setImageListener =
       android
@@ -175,6 +192,18 @@ media_status_t NDKHelpers::AImageReader_new(int32_t width,
   NDKHelpers::Init();
   FML_CHECK(_AImageReader_new != nullptr);
   return _AImageReader_new(width, height, format, maxImages, reader);
+}
+
+media_status_t NDKHelpers::AImageReader_newWithUsage(int32_t width,
+                                                     int32_t height,
+                                                     int32_t format,
+                                                     uint64_t usage,
+                                                     int32_t maxImages,
+                                                     AImageReader** reader) {
+  NDKHelpers::Init();
+  FML_CHECK(_AImageReader_newWithUsage != nullptr);
+  return _AImageReader_newWithUsage(width, height, format, usage, maxImages,
+                                    reader);
 }
 
 media_status_t NDKHelpers::AImageReader_setImageListener(

@@ -45,6 +45,12 @@ class NDKHelpers {
                                          int32_t format,
                                          int32_t maxImages,
                                          AImageReader** reader);
+  static media_status_t AImageReader_newWithUsage(int32_t width,
+                                                  int32_t height,
+                                                  int32_t format,
+                                                  uint64_t usage,
+                                                  int32_t maxImages,
+                                                  AImageReader** reader);
   static media_status_t AImageReader_setImageListener(
       AImageReader* reader,
       AImageReader_ImageListener* listener);
