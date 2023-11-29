@@ -401,7 +401,7 @@ class SkwasmRenderer implements Renderer {
   // TODO(harryterkelsen): Add multiview support,
   // https://github.com/flutter/flutter/issues/137073.
   @override
-  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) =>
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view, { ui.Size? size }) =>
       sceneView.renderScene(scene as EngineScene);
 
   @override

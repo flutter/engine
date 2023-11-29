@@ -767,7 +767,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         ..height = '${size.height / view.devicePixelRatio}px';
     }
 
-    renderer.renderScene(scene, target);
+    renderer.renderScene(scene, target, size: size);
   }
 
   /// Additional accessibility features that may be enabled by the platform.

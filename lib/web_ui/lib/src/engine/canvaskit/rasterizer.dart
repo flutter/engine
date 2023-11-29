@@ -30,8 +30,8 @@ class Rasterizer {
 
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.
-  void draw(LayerTree layerTree) {
-    final ui.Size frameSize = view.physicalSize;
+  void draw(LayerTree layerTree, { ui.Size? size }) {
+    final ui.Size frameSize = size ?? view.physicalSize;
     if (frameSize.isEmpty) {
       // Available drawing area is empty. Skip drawing.
       return;
