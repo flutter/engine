@@ -264,7 +264,7 @@ bool SurfaceMTL::Present() const {
       [command_buffer waitUntilScheduled];
       [drawable_ present];
     } else {
-      // Check whether FlutterMetalLayer is being used.
+      // Check whether CAMetalLayer or FlutterMetalLayer is being used.
       if (drawable_.layer.class == [CAMetalLayer class]) {
         [command_buffer presentDrawable:drawable_];
       } else {
