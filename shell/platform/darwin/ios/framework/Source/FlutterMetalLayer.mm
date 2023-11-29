@@ -6,6 +6,7 @@
 #include <Metal/Metal.h>
 #include <UIKit/UIKit.h>
 
+#include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
 
 @interface DisplayLinkManager : NSObject
@@ -367,6 +368,21 @@ extern CFTimeInterval display_link_target;
   @synchronized(self) {
     [_availableTextures addObject:texture];
   }
+}
+
++ (BOOL)enabled {
+  static BOOL enabled = NO;
+  static BOOL didCheckInfoPlist = NO;
+  if (!didCheckInfoPlist) {
+    didCheckInfoPlist = YES;
+    NSNumber* use_flutter_metal_layer =
+        [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTUseFlutterMetalLayer"];
+    if (use_flutter_metal_layer != nil && [use_flutter_metal_layer boolValue]) {
+      enabled = YES;
+      FML_LOG(WARNING) << "Using FlutterMetalLayer. This is an experimental feature.";
+    }
+  }
+  return enabled;
 }
 
 @end

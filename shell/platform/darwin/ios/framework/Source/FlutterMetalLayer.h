@@ -19,4 +19,8 @@
 
 - (nullable id<CAMetalDrawable>)nextDrawable;
 
+/// Returns whether the Metal layer is enabled.
+/// This is controlled by FLTUseFlutterMetalLayer value in Info.plist.
++ (BOOL)enabled;
+
 @end

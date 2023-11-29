@@ -66,14 +66,7 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
       return [CALayer class];
     case IOSRenderingAPI::kMetal:
       if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
-        NSNumber* use_flutter_metal_layer =
-            [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTUseFlutterMetalLayer"];
-        if (use_flutter_metal_layer != nil && [use_flutter_metal_layer boolValue]) {
-          static bool did_log = false;
-          if (!did_log) {
-            did_log = true;
-            FML_LOG(WARNING) << "Using FlutterMetalLayer. This is an experimental feature.";
-          }
+        if ([FlutterMetalLayer enabled]) {
           return [FlutterMetalLayer class];
         } else {
           return [CAMetalLayer class];
