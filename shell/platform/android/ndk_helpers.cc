@@ -34,8 +34,12 @@ typedef media_status_t (*fp_AImageReader_setImageListener)(
     AImageReader_ImageListener* listener);
 typedef media_status_t (*fp_AImageReader_getWindow)(AImageReader* reader,
                                                     ANativeWindow** window);
+typedef media_status_t (*fp_AImageReader_acquireNextImage)(AImageReader* reader,
+                                                           AImage** image);
 typedef jobject (*fp_ANativeWindow_toSurface)(JNIEnv* env,
                                               ANativeWindow* window);
+typedef media_status_t (*fp_AImage_getHardwareBuffer)(AImage* image,
+                                                      AHardwareBuffer** buffer);
 typedef EGLClientBuffer (*fp_eglGetNativeClientBufferANDROID)(
     AHardwareBuffer* buffer);
 
@@ -56,8 +60,12 @@ media_status_t (*_AImageReader_setImageListener)(
     AImageReader_ImageListener* listener) = nullptr;
 media_status_t (*_AImageReader_getWindow)(AImageReader* reader,
                                           ANativeWindow** window) = nullptr;
+media_status_t (*_AImageReader_acquireLatestImage)(AImageReader* reader,
+                                                   AImage** image) = nullptr;
 jobject (*_ANativeWindow_toSurface)(JNIEnv* env,
                                     ANativeWindow* window) = nullptr;
+media_status_t (*_AImage_getHardwareBuffer)(AImage* image,
+                                            AHardwareBuffer** buffer) = nullptr;
 EGLClientBuffer (*_eglGetNativeClientBufferANDROID)(AHardwareBuffer* buffer) =
     nullptr;
 
@@ -108,6 +116,16 @@ void InitOnceCallback() {
                                  ->ResolveFunction<fp_ANativeWindow_toSurface>(
                                      "ANativeWindow_toSurface")
                                  .value_or(nullptr);
+  _AImageReader_acquireLatestImage =
+      android
+          ->ResolveFunction<fp_AImageReader_acquireNextImage>(
+              "AImageReader_acquireLatestImage")
+          .value_or(nullptr);
+  _AImage_getHardwareBuffer =
+      android
+          ->ResolveFunction<fp_AImage_getHardwareBuffer>(
+              "AImage_getHardwareBuffer")
+          .value_or(nullptr);
 }
 
 }  // namespace
@@ -174,11 +192,25 @@ media_status_t NDKHelpers::AImageReader_getWindow(AImageReader* reader,
   return _AImageReader_getWindow(reader, window);
 }
 
+media_status_t NDKHelpers::AImageReader_acquireLatestImage(AImageReader* reader,
+                                                           AImage** image) {
+  NDKHelpers::Init();
+  FML_CHECK(_AImageReader_acquireLatestImage != nullptr);
+  return _AImageReader_acquireLatestImage(reader, image);
+}
+
 jobject NDKHelpers::ANativeWindow_toSurface(JNIEnv* env,
                                             ANativeWindow* window) {
   NDKHelpers::Init();
   FML_CHECK(_ANativeWindow_toSurface != nullptr);
   return _ANativeWindow_toSurface(env, window);
+}
+
+media_status_t NDKHelpers::AImage_getHardwareBuffer(AImage* image,
+                                                    AHardwareBuffer** buffer) {
+  NDKHelpers::Init();
+  FML_CHECK(_AImage_getHardwareBuffer != nullptr);
+  return _AImage_getHardwareBuffer(image, buffer);
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(

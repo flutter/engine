@@ -50,7 +50,11 @@ class NDKHelpers {
       AImageReader_ImageListener* listener);
   static media_status_t AImageReader_getWindow(AImageReader* reader,
                                                ANativeWindow** window);
+  static media_status_t AImageReader_acquireLatestImage(AImageReader* reader,
+                                                        AImage** image);
   static jobject ANativeWindow_toSurface(JNIEnv* env, ANativeWindow* window);
+  static media_status_t AImage_getHardwareBuffer(AImage* image,
+                                                 AHardwareBuffer** buffer);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <GLES3/gl3.h>
+#include <media/NdkImage.h>
 #include <media/NdkImageReader.h>
 #include <memory>
 
@@ -11,6 +12,7 @@
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_vk.h"
 #include "fml/logging.h"
+#include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/toolkit/egl/config.h"
 #include "impeller/toolkit/egl/context.h"
 #include "impeller/toolkit/egl/display.h"
@@ -39,7 +41,7 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
         /*width=*/bounds.width(),
         /*height=*/bounds.height(),
         /*format=*/AIMAGE_FORMAT_RGBA_8888,
-        /*maxImages=*/1,
+        /*maxImages=*/2,
         /*reader=*/&reader);
     if (status != AMEDIA_OK || !reader) {
       FML_LOG(ERROR) << "Failed to create image reader.";
@@ -68,57 +70,91 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
       FML_LOG(ERROR) << "Failed to get window from image reader.";
       return;
     }
-    // JNIEnv* env = fml::jni::AttachCurrentThread();
-    // auto surface = NDKHelpers::ANativeWindow_toSurface(env, window);
-    // if (!surface) {
-    //   FML_LOG(ERROR) << "Failed to get surface from window.";
-    //   return;
-    // }
 
     // TODO: Create an EGL display once per context.
-    auto egl = impeller::egl::Display();
-    if (!egl.IsValid()) {
+    egl_ = std::make_unique<impeller::egl::Display>();
+    if (!egl_->IsValid()) {
       FML_LOG(ERROR) << "Failed to create EGL display.";
       return;
     }
 
     // Create a context.
+    // These values are basically copied from android_context_gl_impeller.cc.
     auto desc = impeller::egl::ConfigDescriptor{
         .api = impeller::egl::API::kOpenGLES2,
-        .samples = impeller::egl::Samples::kOne,
+        .samples = impeller::egl::Samples::kFour,
         .color_format = impeller::egl::ColorFormat::kRGBA8888,
         .stencil_bits = impeller::egl::StencilBits::kEight,
         .depth_bits = impeller::egl::DepthBits::kZero,
     };
-    auto config = egl.ChooseConfig(desc);
-    if (!config) {
+    auto config = egl_->ChooseConfig(desc);
+    if (!config || !config->IsValid()) {
       FML_LOG(ERROR) << "Failed to choose EGL config.";
       return;
     }
-    auto context = egl.CreateContext(*config, nullptr);
-    if (!context) {
+    auto context = egl_->CreateContext(*config, nullptr);
+    if (!context || !context->IsValid()) {
       FML_LOG(ERROR) << "Failed to create EGL context.";
       return;
     }
 
     // Create a surface from the image reader.
-    surface_ = egl.CreateWindowSurface(*config, window);
-    if (!surface_) {
+    surface_ = egl_->CreateWindowSurface(*config, window);
+    if (!surface_ || !surface_->IsValid()) {
       FML_LOG(ERROR) << "Failed to create EGL surface.";
       return;
     }
 
-    // TODO: Remove. This is just to prevent assertion errors.
-    state_ = AttachmentState::kAttached;
+    // "Call to OpenGL ES API with no current context".
+    FML_LOG(ERROR) << "Surface: " << surface_->GetHandle();
+    if (!context->MakeCurrent(*surface_)) {
+      FML_LOG(ERROR) << "Failed to make EGL context current.";
+      return;
+    }
+
+    // TODO: Create the GLES proc table once.
+    gl_ = std::make_unique<impeller::ProcTableGLES>(
+        impeller::egl::CreateProcAddressResolver());
+    if (!gl_->IsValid()) {
+      FML_LOG(ERROR) << "Could not create OpenGL proc table.";
+      return;
+    }
+
+    // Create a GLES texture and attach it.
+    GLuint handle = GL_NONE;
+    gl_->GenTextures(1u, &handle);
+    gl_->BindTexture(GL_TEXTURE_EXTERNAL_OES, handle);
+    Attach(handle);
   }
 
-  // TODO: Blit the image from the SurfaceTexture to the ImageReader.
+  // Blit the image from the image reader to the surface.
+  surface_->Present();
 
   // TODO: Take the hardware buffer from the ImageReader annd render as DlImage.
+
+  if (state_ == AttachmentState::kUninitialized) {
+    state_ = AttachmentState::kAttached;
+  }
 }
 
 void SurfaceTextureExternalTextureVK::OnImageAvailable(AImageReader* reader) {
   FML_LOG(ERROR) << "::OnImageAvailable";
+
+  // Get the image from the image reader.
+  AImage* image = nullptr;
+  auto status = NDKHelpers::AImageReader_acquireLatestImage(reader, &image);
+  if (status != AMEDIA_OK || !image) {
+    FML_LOG(ERROR) << "Failed to acquire next image.";
+    return;
+  }
+
+  // Get the hardware buffer from the image.
+  AHardwareBuffer* buffer = nullptr;
+  status = NDKHelpers::AImage_getHardwareBuffer(image, &buffer);
+  if (status != AMEDIA_OK || !buffer) {
+    FML_LOG(ERROR) << "Failed to get hardware buffer.";
+    return;
+  }
 }
 
 void SurfaceTextureExternalTextureVK::Detach() {

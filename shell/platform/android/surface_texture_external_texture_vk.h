@@ -12,6 +12,8 @@
 
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/backend/gles/proc_table_gles.h"
+#include "impeller/toolkit/egl/display.h"
 #include "impeller/toolkit/egl/surface.h"
 
 namespace flutter {
@@ -35,7 +37,13 @@ class SurfaceTextureExternalTextureVK final
 
   const std::shared_ptr<impeller::ContextVK> impeller_context_;
   std::shared_ptr<impeller::TextureVK> texture_;
+
+  // Backed by ImageReader.
   std::unique_ptr<impeller::egl::Surface> surface_;
+
+  // Proc table for GL functions.
+  std::unique_ptr<impeller::ProcTableGLES> gl_;
+  std::unique_ptr<impeller::egl::Display> egl_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceTextureExternalTextureVK);
 };
