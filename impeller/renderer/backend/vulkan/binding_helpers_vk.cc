@@ -137,7 +137,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     buffer_count += command.vertex_bindings.buffers.size();
     buffer_count += command.fragment_bindings.buffers.size();
     samplers_count += command.fragment_bindings.sampled_images.size();
-    subpass_count += command.bind_framebuffer ? 1 : 0;
+    subpass_count += command.pipeline->GetDescriptor().GetHasSubpassDependency() ? 1 : 0;
 
     layouts.emplace_back(
         PipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
@@ -178,7 +178,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
                          "Failed to bind texture or buffer.");
     }
 
-    if (command.bind_framebuffer) {
+    if (command.pipeline->GetDescriptor().GetHasSubpassDependency()) {
       vk::DescriptorImageInfo image_info;
       image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
       image_info.sampler = VK_NULL_HANDLE;
