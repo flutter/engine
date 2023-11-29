@@ -138,6 +138,8 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
 }
 
 void SurfaceTextureExternalTextureVK::OnImageAvailable(AImageReader* reader) {
+  // TODO: I think I need to discard the previous image/buffer.
+
   FML_LOG(ERROR) << "::OnImageAvailable";
 
   // Get the image from the image reader.
