@@ -51,11 +51,8 @@ static vk::AttachmentDescription CreateAttachmentDescription(
     store_action = StoreAction::kStore;
   }
 
-  if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
-      current_layout != vk::ImageLayout::eUndefined) {
-    // Note: This should incur a barrier.
-    current_layout = vk::ImageLayout::eGeneral;
-  }
+  // Always transition to general.
+  current_layout = vk::ImageLayout::eGeneral;
 
   return CreateAttachmentDescription(desc.format,        //
                                      desc.sample_count,  //
@@ -127,8 +124,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     SetTextureLayout(color, attachments.back(), command_buffer,
                      &Attachment::texture);
     if (color.resolve_texture) {
-      resolve_refs[bind_point] = vk::AttachmentReference{
-          static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
+      resolve_refs[bind_point] =
+          vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
+                                  vk::ImageLayout::eColorAttachmentOptimal};
       attachments.emplace_back(
           CreateAttachmentDescription(color, &Attachment::resolve_texture));
       SetTextureLayout(color, attachments.back(), command_buffer,
@@ -534,10 +532,10 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  auto color_image_view =
-      TextureVK::Cast(*render_target_.GetRenderTargetTexture()).GetImageView();
+  const auto& color_image_vk =
+      TextureVK::Cast(*render_target_.GetRenderTargetTexture());
   auto desc_sets_result = AllocateAndBindDescriptorSets(
-      vk_context, encoder, commands_, color_image_view);
+      vk_context, encoder, commands_, color_image_vk);
   if (!desc_sets_result.ok()) {
     return false;
   }

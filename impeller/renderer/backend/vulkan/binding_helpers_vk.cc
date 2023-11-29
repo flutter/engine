@@ -119,7 +119,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands,
-    const vk::ImageView& image_view) {
+    const TextureVK& input_attachment) {
   if (commands.empty()) {
     return std::vector<vk::DescriptorSet>{};
   }
@@ -181,9 +181,9 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
 
     if (command.pipeline->GetDescriptor().GetHasSubpassDependency()) {
       vk::DescriptorImageInfo image_info;
-      image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+      image_info.imageLayout = vk::ImageLayout::eGeneral;
       image_info.sampler = VK_NULL_HANDLE;
-      image_info.imageView = image_view;
+      image_info.imageView = input_attachment.GetImageView();
       images.push_back(image_info);
 
       vk::WriteDescriptorSet write_set;

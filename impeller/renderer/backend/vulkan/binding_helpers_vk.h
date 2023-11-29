@@ -8,6 +8,7 @@
 
 #include "fml/status_or.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_command.h"
 
@@ -17,7 +18,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands,
-    const vk::ImageView& image_view);
+    const TextureVK& input_attachment);
 
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,

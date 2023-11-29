@@ -112,7 +112,6 @@ class CapabilitiesVK final : public Capabilities,
   bool supports_compute_subgroups_ = false;
   bool supports_device_transient_textures_ = false;
   bool supports_framebuffer_fetch_ = false;
-  ;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;
