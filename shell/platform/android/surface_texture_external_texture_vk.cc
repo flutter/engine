@@ -155,6 +155,8 @@ void SurfaceTextureExternalTextureVK::OnImageAvailable(AImageReader* reader) {
     FML_LOG(ERROR) << "Failed to get hardware buffer.";
     return;
   }
+
+  FML_LOG(ERROR) << "Hardware buffer: " << buffer;
 }
 
 void SurfaceTextureExternalTextureVK::Detach() {
