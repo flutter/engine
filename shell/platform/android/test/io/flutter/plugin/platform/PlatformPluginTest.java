@@ -41,7 +41,6 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel.SystemChromeSt
 import io.flutter.plugin.platform.PlatformPlugin.PlatformPluginDelegate;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -54,106 +53,129 @@ import org.robolectric.shadows.ShadowLooper;
 @RunWith(RobolectricTestRunner.class)
 public class PlatformPluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
-
-  private View fakeDecorView = mock(View.class);
-  private Window fakeWindow = mock(Window.class);
-  private Activity fakeActivity = mock(Activity.class);
-  private PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
-  private PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
-  private PlatformPlugin testPlatformPlugin = new PlatformPlugin(fakeActivity, mockPlatformChannel);
-  private PlatformPlugin testPlatformPluginWithDelegate =
-      new PlatformPlugin(fakeActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+  private final PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
 
   private ClipboardManager clipboardManager;
   private ClipboardContentFormat clipboardFormat;
 
-  @Before
-  public void setUp() {
-    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
-    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
-  }
-
-  public void setUpForTextClipboardTests() {
+  public void setUpForTextClipboardTests(Activity mockActivity) {
     clipboardManager = spy(ctx.getSystemService(ClipboardManager.class));
-    when(fakeActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
+    when(mockActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
     clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
   }
 
   @Config(sdk = Build.VERSION_CODES.KITKAT)
   @Test
   public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
     // HEAVY_IMPACT haptic response is only available on "M" (23) and later.
-    testPlatformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.HEAVY_IMPACT);
+    platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.HEAVY_IMPACT);
 
     // SELECTION_CLICK haptic response is only available on "LOLLIPOP" (21) and later.
-    testPlatformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
+    platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
   @Test
   public void platformPlugin_getClipboardDataIsNonNullWhenPlainTextCopied() throws IOException {
-    setUpForTextClipboardTests();
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
     ClipData clip = ClipData.newPlainText("label", "Text");
 
-    assertNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     clipboardManager.setPrimaryClip(clip);
-    assertNotNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @Test
   public void platformPlugin_getClipboardDataIsNonNullWhenContentUriWithTextProvided()
       throws IOException {
-    setUpForTextClipboardTests();
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
     ContentResolver contentResolver = mock(ContentResolver.class);
     ClipData.Item mockItem = mock(ClipData.Item.class);
     Uri mockUri = mock(Uri.class);
 
-    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    when(mockActivity.getContentResolver()).thenReturn(contentResolver);
     when(mockUri.getScheme()).thenReturn("content");
     when(mockItem.getText()).thenReturn(null);
     when(mockItem.getUri()).thenReturn(mockUri);
     when(contentResolver.openTypedAssetFileDescriptor(any(Uri.class), any(), any()))
         .thenReturn(mock(AssetFileDescriptor.class));
-    when(mockItem.coerceToText(fakeActivity)).thenReturn("something non-null");
+    when(mockItem.coerceToText(mockActivity)).thenReturn("something non-null");
 
     ClipData clip = new ClipData("label", new String[0], mockItem);
 
-    assertNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     clipboardManager.setPrimaryClip(clip);
-    assertNotNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @Test
   public void platformPlugin_getClipboardDataIsNullWhenContentUriProvidedContainsNoText()
       throws IOException {
-    setUpForTextClipboardTests();
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
     ContentResolver contentResolver = ctx.getContentResolver();
 
-    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    when(mockActivity.getContentResolver()).thenReturn(contentResolver);
 
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     ClipData clip = ClipData.newUri(contentResolver, "URI", uri);
 
     clipboardManager.setPrimaryClip(clip);
-    assertNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @Test
   public void platformPlugin_getClipboardDataIsNullWhenNonContentUriProvided() throws IOException {
-    setUpForTextClipboardTests();
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
     ContentResolver contentResolver = ctx.getContentResolver();
 
-    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    when(mockActivity.getContentResolver()).thenReturn(contentResolver);
 
     Uri uri = Uri.parse("file:///");
     ClipData clip = ClipData.newUri(contentResolver, "URI", uri);
 
     clipboardManager.setPrimaryClip(clip);
-    assertNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @Test
   public void platformPlugin_getClipboardDataIsNullWhenItemHasNoTextNorUri() throws IOException {
-    setUpForTextClipboardTests();
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
     ClipData.Item mockItem = mock(ClipData.Item.class);
 
     when(mockItem.getText()).thenReturn(null);
@@ -162,7 +184,7 @@ public class PlatformPluginTest {
     ClipData clip = new ClipData("label", new String[0], mockItem);
 
     clipboardManager.setPrimaryClip(clip);
-    assertNull(testPlatformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
   }
 
   @SuppressWarnings("deprecation")
@@ -170,41 +192,47 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.P)
   @Test
   public void platformPlugin_hasStrings() {
-    setUpForTextClipboardTests();
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
 
     // Plain text
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
-    assertTrue(testPlatformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
     // Empty plain text
     clip = ClipData.newPlainText("", "");
     clipboardManager.setPrimaryClip(clip);
     // Without actually accessing clipboard data (preferred behavior), it is not possible to
     // distinguish between empty and non-empty string contents.
-    assertTrue(testPlatformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
     // HTML text
     clip = ClipData.newHtmlText("motto", "Don't be evil", "<b>Don't</b> be evil");
     clipboardManager.setPrimaryClip(clip);
-    assertTrue(testPlatformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
     // Text MIME type
     clip = new ClipData("label", new String[] {"text/something"}, new ClipData.Item("content"));
     clipboardManager.setPrimaryClip(clip);
-    assertTrue(testPlatformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    assertTrue(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
     // Other MIME type
     clip =
         new ClipData(
             "label", new String[] {"application/octet-stream"}, new ClipData.Item("content"));
     clipboardManager.setPrimaryClip(clip);
-    assertFalse(testPlatformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+    assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
     if (Build.VERSION.SDK_INT >= 28) {
       // Empty clipboard
       clipboardManager.clearPrimaryClip();
-      assertFalse(testPlatformPlugin.mPlatformMessageHandler.clipboardHasStrings());
+      assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
     }
 
     // Verify that the clipboard contents are never accessed.
@@ -215,6 +243,13 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void setNavigationBarDividerColor() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
     if (Build.VERSION.SDK_INT >= 28) {
       // Default style test
       SystemChromeStyle style =
@@ -227,7 +262,7 @@ public class PlatformPluginTest {
               0XFF006DB3, // systemNavigationBarDividerColor
               true); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindow).setStatusBarColor(0xFF000000);
       verify(fakeWindow).setNavigationBarColor(0XFFC70039);
@@ -247,7 +282,7 @@ public class PlatformPluginTest {
               0XFF006DB3, // systemNavigationBarDividerColor
               false); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindow).setStatusBarColor(0XFF006DB3);
       verify(fakeWindow).setNavigationBarColor(0XFF000000);
@@ -266,7 +301,7 @@ public class PlatformPluginTest {
               0XFF006DB3, // systemNavigationBarDividerColor
               null); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindow, times(2)).setStatusBarColor(0XFF006DB3);
       verify(fakeWindow, times(2)).setNavigationBarColor(0XFF000000);
@@ -282,6 +317,13 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.R)
   @Test
   public void setNavigationBarIconBrightness() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
     if (Build.VERSION.SDK_INT >= 30) {
       WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
@@ -296,7 +338,7 @@ public class PlatformPluginTest {
               null, // systemNavigationBarDividerColor
               null); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindowInsetsController)
           .setSystemBarsAppearance(0, APPEARANCE_LIGHT_NAVIGATION_BARS);
@@ -311,7 +353,7 @@ public class PlatformPluginTest {
               null, // systemNavigationBarDividerColor
               null); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindowInsetsController)
           .setSystemBarsAppearance(
@@ -322,6 +364,13 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.R)
   @Test
   public void setStatusBarIconBrightness() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
     if (Build.VERSION.SDK_INT >= 30) {
       WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
@@ -336,7 +385,7 @@ public class PlatformPluginTest {
               null, // systemNavigationBarDividerColor
               null); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindowInsetsController).setSystemBarsAppearance(0, APPEARANCE_LIGHT_STATUS_BARS);
 
@@ -350,7 +399,7 @@ public class PlatformPluginTest {
               null, // systemNavigationBarDividerColor
               null); // systemNavigationBarContrastEnforced
 
-      testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+      platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
 
       verify(fakeWindowInsetsController)
           .setSystemBarsAppearance(APPEARANCE_LIGHT_STATUS_BARS, APPEARANCE_LIGHT_STATUS_BARS);
@@ -362,8 +411,15 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void setSystemUiMode() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
     if (Build.VERSION.SDK_INT >= 28) {
-      testPlatformPlugin.mPlatformMessageHandler.showSystemUiMode(
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.LEAN_BACK);
       verify(fakeDecorView)
           .setSystemUiVisibility(
@@ -373,7 +429,7 @@ public class PlatformPluginTest {
                   | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                   | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
-      testPlatformPlugin.mPlatformMessageHandler.showSystemUiMode(
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.IMMERSIVE);
       verify(fakeDecorView)
           .setSystemUiVisibility(
@@ -384,7 +440,7 @@ public class PlatformPluginTest {
                   | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                   | View.SYSTEM_UI_FLAG_FULLSCREEN);
 
-      testPlatformPlugin.mPlatformMessageHandler.showSystemUiMode(
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.IMMERSIVE_STICKY);
       verify(fakeDecorView)
           .setSystemUiVisibility(
@@ -397,7 +453,7 @@ public class PlatformPluginTest {
     }
 
     if (Build.VERSION.SDK_INT >= 29) {
-      testPlatformPlugin.mPlatformMessageHandler.showSystemUiMode(
+      platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
       verify(fakeDecorView)
           .setSystemUiVisibility(
@@ -410,7 +466,7 @@ public class PlatformPluginTest {
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_FULLSCREEN
   @Test
-  public void setSystemUiModeListener_overlaysAreHidden() { // HANDLE DIFF
+  public void setSystemUiModeListener_overlaysAreHidden() {
     ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class);
     controller.setup();
     Activity fakeActivity = controller.get();
@@ -468,7 +524,14 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.P)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
-    testPlatformPlugin.mPlatformMessageHandler.showSystemUiMode(
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
+    platformPlugin.mPlatformMessageHandler.showSystemUiMode(
         PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
     verify(fakeDecorView, never())
         .setSystemUiVisibility(
@@ -482,11 +545,18 @@ public class PlatformPluginTest {
   @Config(sdk = Build.VERSION_CODES.Q)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+
     SystemChromeStyle style =
         new SystemChromeStyle(
             0XFF000000, Brightness.LIGHT, true, 0XFFC70039, Brightness.LIGHT, 0XFF006DB3, true);
 
-    testPlatformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
+    platformPlugin.mPlatformMessageHandler.setSystemUiOverlayStyle(style);
     verify(fakeWindow).addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
     verify(fakeWindow)
         .clearFlags(
@@ -496,30 +566,45 @@ public class PlatformPluginTest {
 
   @Test
   public void setFrameworkHandlesBackFlutterActivity() {
-    testPlatformPluginWithDelegate.mPlatformMessageHandler.setFrameworkHandlesBack(true);
+    Activity mockActivity = mock(Activity.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
+    platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBack(true);
 
     verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBack(true);
   }
 
   @Test
   public void popSystemNavigatorFlutterActivity() {
+    Activity mockActivity = mock(Activity.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
     when(mockPlatformPluginDelegate.popSystemNavigator()).thenReturn(false);
 
-    testPlatformPluginWithDelegate.mPlatformMessageHandler.popSystemNavigator();
+    platformPlugin.mPlatformMessageHandler.popSystemNavigator();
 
     verify(mockPlatformPluginDelegate, times(1)).popSystemNavigator();
-    verify(fakeActivity, times(1)).finish();
+    verify(mockActivity, times(1)).finish();
   }
 
   @Test
   public void doesNotDoAnythingByDefaultIfPopSystemNavigatorOverridden() {
+    Activity mockActivity = mock(Activity.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
     when(mockPlatformPluginDelegate.popSystemNavigator()).thenReturn(true);
 
-    testPlatformPluginWithDelegate.mPlatformMessageHandler.popSystemNavigator();
+    platformPlugin.mPlatformMessageHandler.popSystemNavigator();
 
     verify(mockPlatformPluginDelegate, times(1)).popSystemNavigator();
     // No longer perform the default action when overridden.
-    verify(fakeActivity, never()).finish();
+    verify(mockActivity, never()).finish();
   }
 
   @SuppressWarnings("deprecation")
@@ -539,6 +624,7 @@ public class PlatformPluginTest {
         };
     activity.getOnBackPressedDispatcher().addCallback(backCallback);
 
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
     when(mockPlatformPluginDelegate.popSystemNavigator()).thenReturn(false);
     PlatformPlugin platformPlugin =
         new PlatformPlugin(activity, mockPlatformChannel, mockPlatformPluginDelegate);
@@ -556,9 +642,12 @@ public class PlatformPluginTest {
   @Test
   public void doesNotDoAnythingByDefaultIfFragmentPopSystemNavigatorOverridden() {
     FragmentActivity activity = spy(Robolectric.setupActivity(FragmentActivity.class));
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
     when(mockPlatformPluginDelegate.popSystemNavigator()).thenReturn(true);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(activity, mockPlatformChannel, mockPlatformPluginDelegate);
 
-    testPlatformPluginWithDelegate.mPlatformMessageHandler.popSystemNavigator();
+    platformPlugin.mPlatformMessageHandler.popSystemNavigator();
 
     verify(mockPlatformPluginDelegate, times(1)).popSystemNavigator();
     // No longer perform the default action when overridden.
@@ -568,6 +657,7 @@ public class PlatformPluginTest {
   @Test
   public void setRequestedOrientationFlutterFragment() {
     FragmentActivity mockFragmentActivity = mock(FragmentActivity.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
     when(mockPlatformPluginDelegate.popSystemNavigator()).thenReturn(false);
     PlatformPlugin platformPlugin =
         new PlatformPlugin(mockFragmentActivity, mockPlatformChannel, mockPlatformPluginDelegate);
@@ -579,8 +669,12 @@ public class PlatformPluginTest {
 
   @Test
   public void performsDefaultBehaviorWhenNoDelegateProvided() {
-    testPlatformPlugin.mPlatformMessageHandler.popSystemNavigator();
+    Activity mockActivity = mock(Activity.class);
+    PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    verify(fakeActivity, times(1)).finish();
+    platformPlugin.mPlatformMessageHandler.popSystemNavigator();
+
+    verify(mockActivity, times(1)).finish();
   }
 }
