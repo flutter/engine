@@ -9,6 +9,7 @@
 #include "flutter/fml/logging.h"
 
 #include <android/hardware_buffer.h>
+#include <android/native_window.h>
 #include <dlfcn.h>
 
 namespace flutter {
@@ -27,6 +28,10 @@ typedef media_status_t (*fp_AImageReader_new)(int32_t width,
                                               int32_t format,
                                               int32_t maxImages,
                                               AImageReader** reader);
+typedef media_status_t (*fp_AImageReader_setImageListener)(
+    AImageReader* reader,
+    AImageReader_ImageListener* listener);
+typedef ANativeWindow* (*fp_AImageReader_getWindow)(AImageReader* reader);
 typedef EGLClientBuffer (*fp_eglGetNativeClientBufferANDROID)(
     AHardwareBuffer* buffer);
 
@@ -42,6 +47,10 @@ media_status_t (*_AImageReader_new)(int32_t width,
                                     int32_t format,
                                     int32_t maxImages,
                                     AImageReader** reader) = nullptr;
+media_status_t (*_AImageReader_setImageListener)(
+    AImageReader* reader,
+    AImageReader_ImageListener* listener) = nullptr;
+ANativeWindow* (*_AImageReader_getWindow)(AImageReader* reader) = nullptr;
 EGLClientBuffer (*_eglGetNativeClientBufferANDROID)(AHardwareBuffer* buffer) =
     nullptr;
 
@@ -78,6 +87,15 @@ void InitOnceCallback() {
           .value_or(nullptr);
   _AImageReader_new =
       android->ResolveFunction<fp_AImageReader_new>("AImageReader_new")
+          .value_or(nullptr);
+  _AImageReader_setImageListener =
+      android
+          ->ResolveFunction<fp_AImageReader_setImageListener>(
+              "AImageReader_setImageListener")
+          .value_or(nullptr);
+  _AImageReader_getWindow =
+      android
+          ->ResolveFunction<fp_AImageReader_getWindow>("AImageReader_getWindow")
           .value_or(nullptr);
 }
 
@@ -128,6 +146,20 @@ media_status_t NDKHelpers::AImageReader_new(int32_t width,
   NDKHelpers::Init();
   FML_CHECK(_AImageReader_new != nullptr);
   return _AImageReader_new(width, height, format, maxImages, reader);
+}
+
+media_status_t NDKHelpers::AImageReader_setImageListener(
+    AImageReader* reader,
+    AImageReader_ImageListener* listener) {
+  NDKHelpers::Init();
+  FML_CHECK(_AImageReader_setImageListener != nullptr);
+  return _AImageReader_setImageListener(reader, listener);
+}
+
+ANativeWindow* NDKHelpers::AImageReader_getWindow(AImageReader* reader) {
+  NDKHelpers::Init();
+  FML_CHECK(_AImageReader_getWindow != nullptr);
+  return _AImageReader_getWindow(reader);
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(

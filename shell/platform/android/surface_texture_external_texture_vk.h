@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_SURFACE_TEXTURE_EXTERNAL_TEXTURE_VK_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_SURFACE_TEXTURE_EXTERNAL_TEXTURE_VK_H_
 
+#include <media/NdkImageReader.h>
+
 #include "flutter/shell/platform/android/surface_texture_external_texture.h"
 
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
@@ -27,6 +29,7 @@ class SurfaceTextureExternalTextureVK final
   virtual void ProcessFrame(PaintContext& context,
                             const SkRect& bounds) override;
   virtual void Detach() override;
+  void OnImageAvailable(AImageReader* reader);
 
   const std::shared_ptr<impeller::ContextVK> impeller_context_;
   std::shared_ptr<impeller::TextureVK> texture_;

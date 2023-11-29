@@ -16,6 +16,16 @@
 
 namespace flutter {
 
+// TODO: Figure out how or where to store these type signatures.
+//
+// The actual definition (in NdkImageReader.h) is guarded by an __ANDROID_API__
+// check, so we can't reference it directly.
+typedef void AImageReader_ImageCallback(void* context, AImageReader* reader);
+typedef struct AImageReader_ImageListener {
+  void* context;
+  AImageReader_ImageCallback* onImageAvailable;
+} AImageReader_ImageListener;
+
 // A collection of NDK functions that are available depending on the version of
 // the Android SDK we are linked with at runtime.
 class NDKHelpers {
@@ -34,6 +44,10 @@ class NDKHelpers {
                                          int32_t format,
                                          int32_t maxImages,
                                          AImageReader** reader);
+  static media_status_t AImageReader_setImageListener(
+      AImageReader* reader,
+      AImageReader_ImageListener* listener);
+  static ANativeWindow* AImageReader_getWindow(AImageReader* reader);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 
