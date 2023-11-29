@@ -653,7 +653,8 @@ public class PlatformPluginTest {
         .when(() -> Intent.createChooser(intentCaptor.capture(), any()))
         .thenReturn(choosenIntent);
 
-    platformPlugin.mPlatformMessageHandler.share("Flutter");
+    final String expectedContent = "Flutter";
+    platformPlugin.mPlatformMessageHandler.share(expectedContent);
 
     // Activity.startActivity should have been called.
     verify(mockActivity, times(1)).startActivity(choosenIntent);
@@ -663,6 +664,6 @@ public class PlatformPluginTest {
     Intent sendToIntent = intentCaptor.getValue();
     assertEquals(sendToIntent.getAction(), Intent.ACTION_SEND);
     assertEquals(sendToIntent.getType(), "text/plain");
-    assertEquals(sendToIntent.getStringExtra(Intent.EXTRA_TEXT), "Flutter");
+    assertEquals(sendToIntent.getStringExtra(Intent.EXTRA_TEXT), expectedContent);
   }
 }
