@@ -376,10 +376,10 @@
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
   // Enabling system UI overlays to update status bar.
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   [engine runWithEntrypoint:nil];
   FlutterViewController* flutterViewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
 
@@ -427,10 +427,10 @@
   id mockApplication = OCMClassMock([UIApplication class]);
   OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
 
-  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:nil];
+  FlutterEngine* engine = [[[FlutterEngine alloc] initWithName:@"test" project:nil] autorelease];
   [engine runWithEntrypoint:nil];
   FlutterViewController* flutterViewController =
-      [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+      [[[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil] autorelease];
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory =
       std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(engine);
   XCTAssertFalse(flutterViewController.prefersStatusBarHidden);
