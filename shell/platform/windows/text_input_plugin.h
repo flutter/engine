@@ -51,7 +51,7 @@ class TextInputPlugin {
 
   // Called on an IME compose commit event.
   //
-  // Triggered when the user triggers a commits of the current composing text
+  // Triggered when the user triggers a commit of the current composing text
   // while using a multi-step input method such as in CJK text input. Composing
   // continues with the next keypress.
   virtual void ComposeCommitHook();
