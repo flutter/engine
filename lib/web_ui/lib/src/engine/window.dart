@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
+import 'package:ui/src/engine/configuration.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -13,6 +14,7 @@ import '../engine.dart' show DimensionsProvider, registerHotRestartListener, ren
 import 'browser_detection.dart';
 import 'display.dart';
 import 'dom.dart';
+import 'js_interop/js_app.dart' show JsViewConstraints, JsViewConstraintsExtension;
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
@@ -48,17 +50,26 @@ base class EngineFlutterView implements ui.FlutterView {
   /// the Flutter view will be rendered.
   factory EngineFlutterView(
     EnginePlatformDispatcher platformDispatcher,
-    DomElement hostElement,
+    DomElement hostElement, {
+      JsViewConstraints? viewConstraints,
+    }
   ) = _EngineFlutterViewImpl;
 
   EngineFlutterView._(
-    this.viewId,
     this.platformDispatcher,
-    // This is nullable to accommodate the legacy `EngineFlutterWindow`. In
-    // multi-view mode, the host element is required for each view (as reflected
-    // by the public `EngineFlutterView` constructor).
-    DomElement? hostElement,
-  )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
+    {
+      // This is configurable for the implicit view that sets it to a specific
+      // kImplicitViewId value. Otherwise, this could be auto-incremental and
+      // not configurable.
+      required this.viewId,
+      // This is nullable to accommodate the legacy `EngineFlutterWindow`. In
+      // multi-view mode, the host element is required for each view (as reflected
+      // by the public `EngineFlutterView` constructor).
+      DomElement? hostElement,
+      JsViewConstraints? viewConstraints,
+    }
+  )   : _jsViewConstraints = viewConstraints,
+        embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
         dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
@@ -134,14 +145,10 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final PointerBinding pointerBinding;
 
-  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
   @override
-  ViewConstraints get physicalConstraints => ViewConstraints(
-    // minHeight: 50,
-    // maxHeight: physicalSize.height,
-    minWidth: physicalSize.width,
-    maxWidth: physicalSize.width,
-  );
+  ViewConstraints get physicalConstraints => ViewConstraints.fromJsOptions(_jsViewConstraints, physicalSize);
+  // The configured constraints used to compute the actual physicalConstraints.
+  final JsViewConstraints? _jsViewConstraints;
 
   late final EngineSemanticsOwner semantics = EngineSemanticsOwner(dom.semanticsHost);
 
@@ -271,17 +278,19 @@ base class EngineFlutterView implements ui.FlutterView {
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    EnginePlatformDispatcher platformDispatcher,
-    DomElement hostElement,
-  ) : super._(_nextViewId++, platformDispatcher, hostElement);
+    super.platformDispatcher,
+    DomElement hostElement, {
+      super.viewConstraints,
+    }
+  ) : super._(viewId: _nextViewId++, hostElement: hostElement);
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
   EngineFlutterWindow._(
-    EnginePlatformDispatcher platformDispatcher,
+    super.platformDispatcher,
     DomElement? hostElement,
-  ) : super._(kImplicitViewId, platformDispatcher, hostElement) {
+  ) : super._(viewId: kImplicitViewId, hostElement: hostElement) {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
@@ -696,11 +705,51 @@ class ViewConstraints implements ui.ViewConstraints {
     this.maxHeight = double.infinity,
   });
 
+  factory ViewConstraints.fromJsOptions(JsViewConstraints? constraints, ui.Size? size) {
+    if (size == null) {
+      return const ViewConstraints();
+    }
+    if (constraints == null) {
+      return ViewConstraints.tight(size);
+    }
+    return ViewConstraints(
+      minWidth: _computeMinValue(constraints.minWidth, size.width),
+      minHeight: _computeMinValue(constraints.minHeight, size.height),
+      maxWidth: _computeMaxValue(constraints.maxWidth, size.width),
+      maxHeight: _computeMaxValue(constraints.maxHeight, size.height),
+    );
+  }
+
   ViewConstraints.tight(ui.Size size)
     : minWidth = size.width,
       maxWidth = size.width,
       minHeight = size.height,
       maxHeight = size.height;
+
+  // Computes the "min" value for a constraint that takes into account user configuration
+  // and the actual available size.
+  //
+  // Returns the configured userValue, unless it's null (not passed) in which it returns
+  // the actual physicalSize.
+  static double _computeMinValue(double? userValue, double physicalSize) {
+    assert(userValue == null || userValue >= 0, 'Minimum constraint cannot be less than 0');
+    return userValue ?? physicalSize;
+  }
+
+  // Computes the "max" value for a constraint that takes into account user configuration
+  // and the available size.
+  //
+  // Returns the configured userValue unless:
+  //  * It is null, in which case it returns the physicalSize
+  //  * It is `-1`, in which case it returns "infinity" / unconstrained.
+  static double _computeMaxValue(double? userValue, double physicalSize) {
+    assert(userValue == null || userValue >= -1, 'Maximum constraint must be greater than 0 (or -1 for unconstrained)');
+    return switch (userValue) {
+      null => physicalSize,
+      -1 => double.infinity,
+      _ => userValue,
+    };
+  }
 
   @override
   final double minWidth;

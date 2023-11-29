@@ -44,10 +44,10 @@ class JsViewConstraints {}
 
 /// The attributes of a [JsViewConstraints] object.
 extension JsViewConstraintsExtension on JsViewConstraints {
-  external double get maxHeight;
-  external double get maxWidth;
-  external double get minHeight;
-  external double get minWidth;
+  external double? get maxHeight;
+  external double? get maxWidth;
+  external double? get minHeight;
+  external double? get minWidth;
 }
 
 /// The public JS API of a running Flutter Web App.

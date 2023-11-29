@@ -751,7 +751,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  @override
   void render(ui.Scene scene, { ui.FlutterView? view, ui.Size? size }) {
     final ui.FlutterView? target = view ?? implicitView;
 
