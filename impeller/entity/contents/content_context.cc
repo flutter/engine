@@ -222,62 +222,63 @@ ContentContext::ContentContext(
     framebuffer_blend_color_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kColor), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_colorburn_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kColorBurn), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_colordodge_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kColorDodge), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_darken_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kDarken), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_difference_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kDifference), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_exclusion_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kExclusion), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_hardlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kHardLight), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_hue_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<int32_t>(BlendSelectValues::kHue), supports_decal}, true);
+        {static_cast<int32_t>(BlendSelectValues::kHue), supports_decal},
+        UseSubpassInput::kYes);
     framebuffer_blend_lighten_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kLighten), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kLuminosity), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_multiply_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kMultiply), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_overlay_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kOverlay), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_saturation_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kSaturation), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_screen_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kScreen), supports_decal},
-        true);
+        UseSubpassInput::kYes);
     framebuffer_blend_softlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<int32_t>(BlendSelectValues::kSoftLight), supports_decal},
-        true);
+        UseSubpassInput::kYes);
   }
 
   blend_color_pipelines_.CreateDefault(

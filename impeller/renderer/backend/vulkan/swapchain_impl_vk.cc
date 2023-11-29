@@ -225,7 +225,7 @@ SwapchainImplVK::SwapchainImplVK(
   // With framebuffer fetch the engine may readback from the onscreen
   // attachment.
   if (context->GetCapabilities()->SupportsFramebufferFetch()) {
-      swapchain_info.imageUsage |= vk::ImageUsageFlagBits::eInputAttachment;
+    swapchain_info.imageUsage |= vk::ImageUsageFlagBits::eInputAttachment;
   }
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();

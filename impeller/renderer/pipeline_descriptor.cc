@@ -45,7 +45,7 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, cull_mode_);
   fml::HashCombineSeed(seed, primitive_type_);
   fml::HashCombineSeed(seed, polygon_mode_);
-  fml::HashCombineSeed(seed, has_subpass_dependency_);
+  fml::HashCombineSeed(seed, use_subpass_input_);
   return seed;
 }
 
@@ -67,7 +67,7 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
          primitive_type_ == other.primitive_type_ &&
          polygon_mode_ == other.polygon_mode_ &&
          specialization_constants_ == other.specialization_constants_ &&
-         has_subpass_dependency_ == other.has_subpass_dependency_;
+         use_subpass_input_ == other.use_subpass_input_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
