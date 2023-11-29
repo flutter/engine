@@ -127,13 +127,13 @@ class TextInputPluginTest : public WindowsTest {
   MockFlutterWindowsView* view() { return view_.get(); }
   MockWindowBindingHandler* window() { return window_; }
 
-  void use_headless_engine() {
+  void UseHeadlessEngine() {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     engine_ = builder.Build();
   }
 
-  void use_engine_with_view() {
+  void UseEngineWithView() {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     auto window = std::make_unique<MockWindowBindingHandler>();
@@ -157,7 +157,7 @@ class TextInputPluginTest : public WindowsTest {
 };
 
 TEST_F(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   auto handled_message = CreateResponse(true);
   auto unhandled_message = CreateResponse(false);
@@ -182,7 +182,7 @@ TEST_F(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
 }
 
 TEST_F(TextInputPluginTest, ClearClientResetsComposing) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger([](const std::string& channel,
                                    const uint8_t* message, size_t message_size,
@@ -201,7 +201,7 @@ TEST_F(TextInputPluginTest, ClearClientResetsComposing) {
 
 // Verify that clear client fails if in headless mode.
 TEST_F(TextInputPluginTest, ClearClientRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger([](const std::string& channel,
                                    const uint8_t* message, size_t message_size,
@@ -228,7 +228,7 @@ TEST_F(TextInputPluginTest, ClearClientRequiresView) {
 // Verify that the embedder sends state update messages to the framework during
 // IME composing.
 TEST_F(TextInputPluginTest, VerifyComposingSendStateUpdate) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   bool sent_message = false;
   TestBinaryMessenger messenger(
@@ -284,7 +284,7 @@ TEST_F(TextInputPluginTest, VerifyComposingSendStateUpdate) {
 }
 
 TEST_F(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   // Store messages as std::string for convenience.
   std::vector<std::string> messages;
@@ -342,7 +342,7 @@ TEST_F(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
 
 // Regression test for https://github.com/flutter/flutter/issues/125879.
 TEST_F(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   std::vector<std::vector<uint8_t>> messages;
 
@@ -389,7 +389,7 @@ TEST_F(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
 }
 
 TEST_F(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   auto handled_message = CreateResponse(true);
   auto unhandled_message = CreateResponse(false);
@@ -447,7 +447,7 @@ TEST_F(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
 
 // Regression test for https://github.com/flutter/flutter/issues/123749
 TEST_F(TextInputPluginTest, CompositionCursorPos) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   int selection_base = -1;
   TestBinaryMessenger messenger([&](const std::string& channel,
@@ -506,7 +506,7 @@ TEST_F(TextInputPluginTest, CompositionCursorPos) {
 }
 
 TEST_F(TextInputPluginTest, TransformCursorRect) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   // A position of `EditableText`.
   double view_x = 100;
@@ -577,7 +577,7 @@ TEST_F(TextInputPluginTest, TransformCursorRect) {
 }
 
 TEST_F(TextInputPluginTest, SetMarkedTextRectRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger([](const std::string& channel,
                                    const uint8_t* message, size_t message_size,
