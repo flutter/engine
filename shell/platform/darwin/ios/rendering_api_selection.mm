@@ -14,6 +14,8 @@
 
 #include "flutter/fml/logging.h"
 
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
+
 namespace flutter {
 
 #if SHELL_ENABLE_METAL
@@ -64,7 +66,18 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
       return [CALayer class];
     case IOSRenderingAPI::kMetal:
       if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
-        return [CAMetalLayer class];
+        NSNumber* use_flutter_metal_layer =
+            [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTUseFlutterMetalLayer"];
+        if (use_flutter_metal_layer != nil && [use_flutter_metal_layer boolValue]) {
+          static bool did_log = false;
+          if (!did_log) {
+            did_log = true;
+            FML_LOG(WARNING) << "Using FlutterMetalLayer. This is an experimental feature.";
+          }
+          return [FlutterMetalLayer class];
+        } else {
+          return [CAMetalLayer class];
+        }
       }
       FML_CHECK(false) << "Metal availability should already have been checked";
       break;
