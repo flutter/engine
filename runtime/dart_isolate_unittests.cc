@@ -607,7 +607,7 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
   );
 
   size_t get_kernel_count = 0u;
-  if (DartVM::IsRunningPrecompiledCode()) {
+  if (!DartVM::IsRunningPrecompiledCode()) {
     ASSERT_TRUE(settings.application_kernels);
     auto mappings = settings.application_kernels();
     ASSERT_EQ(mappings.size(), 1u);
@@ -656,7 +656,7 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
   }
   ASSERT_TRUE(root_isolate);
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
-  if (DartVM::IsRunningPrecompiledCode()) {
+  if (!DartVM::IsRunningPrecompiledCode()) {
     ASSERT_EQ(get_kernel_count, 1u);
   }
 
@@ -687,7 +687,7 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
     auto spawned_isolate = weak_isolate.lock();
     ASSERT_TRUE(spawned_isolate);
     ASSERT_EQ(spawned_isolate->GetPhase(), DartIsolate::Phase::Running);
-    if (DartVM::IsRunningPrecompiledCode()) {
+    if (!DartVM::IsRunningPrecompiledCode()) {
       ASSERT_EQ(get_kernel_count, 1u);
     }
     ASSERT_TRUE(spawned_isolate->Shutdown());
