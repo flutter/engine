@@ -11,7 +11,11 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
+<<<<<<< HEAD
 import android.net.Uri;
+=======
+import android.content.res.AssetFileDescriptor;
+>>>>>>> upstream/main
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
@@ -26,6 +30,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 /** Android implementation of the platform plugin. */
@@ -513,6 +518,7 @@ public class PlatformPlugin {
 
     if (!clipboard.hasPrimaryClip()) return null;
 
+    CharSequence itemText = null;
     try {
       ClipData clip = clipboard.getPrimaryClip();
       if (clip == null) return null;
@@ -520,7 +526,7 @@ public class PlatformPlugin {
         ClipData.Item item = clip.getItemAt(0);
         // First, try getting clipboard data as text; no further processing
         // required if so.
-        CharSequence itemText = item.getText();
+        itemText = item.getText();
 
         if (itemText == null) {
           // Clipboard data does not contain text, so check whether or not it
@@ -549,6 +555,9 @@ public class PlatformPlugin {
               + "https://developer.android.com/guide/topics/permissions/overview",
           e);
       return null;
+    } catch (IOException e) {
+      Log.w(TAG, "Failed to close AssetFileDescriptor while accessing clipboard data.", e);
+      return charSequence;
     }
 
     return null;
@@ -564,7 +573,8 @@ public class PlatformPlugin {
     }
 
     try {
-      activity.getContentResolver().openTypedAssetFileDescriptor(uri, "text/*", null);
+      AssetFileDescriptor assetFileDescriptor = activity.getContentResolver().openTypedAssetFileDescriptor(uri, "text/*", null);
+      if (assetFileDescriptor != null) assetFileDescriptor.close();
     } catch (FileNotFoundException e) {
       return false;
     }
