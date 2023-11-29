@@ -137,7 +137,8 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     buffer_count += command.vertex_bindings.buffers.size();
     buffer_count += command.fragment_bindings.buffers.size();
     samplers_count += command.fragment_bindings.sampled_images.size();
-    subpass_count += command.pipeline->GetDescriptor().GetHasSubpassDependency() ? 1 : 0;
+    subpass_count +=
+        command.pipeline->GetDescriptor().GetHasSubpassDependency() ? 1 : 0;
 
     layouts.emplace_back(
         PipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
