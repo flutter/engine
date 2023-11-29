@@ -11,6 +11,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -289,6 +290,8 @@ constexpr vk::DescriptorType ToVKDescriptorType(DescriptorType type) {
     case DescriptorType::kSampler:
       return vk::DescriptorType::eSampler;
       break;
+    case DescriptorType::kInputAttachment:
+      return vk::DescriptorType::eInputAttachment;
   }
 
   FML_UNREACHABLE();

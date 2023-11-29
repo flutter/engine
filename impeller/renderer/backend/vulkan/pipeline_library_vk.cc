@@ -437,26 +437,6 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     auto vk_desc_layout = ToVKDescriptorSetLayoutBinding(layout);
     desc_bindings.push_back(vk_desc_layout);
   }
-  // Add subpass dependency binding.
-  if (desc.GetHasSubpassDependency()) {
-    vk::DescriptorSetLayoutBinding binding;
-    // _record scratch, freeze frame_
-    //
-    // I bet you're wondering where I got this number? Well its one less than
-    // the smallest fragment binding listed in the generated header for the
-    // framebuffer fetch shader. In order to look this up for real, we need to
-    // add support for this data to impellerc, but more importantly, we need to
-    // resolve trying to share a generated header across all platforms. Only the
-    // header generated from a shader compiled with Vulkan semantics will have
-    // this binding, but today its unspecified if we use the GLES or Metal
-    // version based on host platform. To that end, it would be safer to leave
-    // this as a hardcoded value until such a time as the bindings are fixed.
-    binding.binding = 64u;
-    binding.descriptorCount = 1u;
-    binding.descriptorType = vk::DescriptorType::eInputAttachment;
-    binding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-    desc_bindings.push_back(binding);
-  }
 
   vk::DescriptorSetLayoutCreateInfo descs_layout_info;
   descs_layout_info.setBindings(desc_bindings);
