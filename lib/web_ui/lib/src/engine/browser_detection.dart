@@ -210,6 +210,8 @@ bool get isIOS15 {
 ///
 /// These versions of Chrome have a bug on Windows which causes
 /// rendering to be flipped upside down.
+// TODO(harryterkelsen): Remove this check once we stop supporting Chrome 110
+// and earlier, https://github.com/flutter/flutter/issues/139186.
 bool get isChrome110OrOlderOnWindows {
   if (debugIsChrome110OrOlderOnWindows != null) {
     return debugIsChrome110OrOlderOnWindows!;
