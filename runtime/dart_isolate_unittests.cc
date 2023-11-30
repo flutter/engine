@@ -649,7 +649,7 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
         /*isolate_shutdown_callback=*/settings.isolate_shutdown_callback,
         /*dart_entrypoint=*/"main",
         /*dart_entrypoint_library=*/std::nullopt,
-        /*dart_entrypoint_arguments=*/{},
+        /*dart_entrypoint_args=*/{},
         /*isolate_configuration=*/std::move(isolate_configuration),
         /*context=*/context);
     root_isolate = weak_isolate.lock();
@@ -680,7 +680,7 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
         /*isolate_shutdown_callback=*/settings.isolate_shutdown_callback,
         /*dart_entrypoint=*/"main",
         /*dart_entrypoint_library=*/std::nullopt,
-        /*dart_entrypoint_arguments=*/{},
+        /*dart_entrypoint_args=*/{},
         /*isolate_configuration=*/std::move(isolate_configuration),
         /*context=*/context,
         /*spawning_isolate=*/root_isolate.get());
