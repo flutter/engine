@@ -200,9 +200,24 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  Scalar blur_radius = CalculateBlurRadius(sigma_);
+  Scalar desired_scalar = CalculateScale(sigma_);
+  // TODO(jonahwilliams): if scaling value is 1.0, then skip the downsample
+  // pass.
+
+  Vector2 downsample_scalar(desired_scalar, desired_scalar);
+  Vector2 padding(ceil(blur_radius), ceil(blur_radius));
+
+  std::optional<Rect> expanded_coverage_hint;
+  if (coverage_hint.has_value()) {
+    Matrix transform = entity.GetTransform() * effect_transform.Basis();
+    Vector2 transformed_padding = (transform * padding).Abs();
+    expanded_coverage_hint = coverage_hint->Expand(transformed_padding);
+  }
+
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
-                             /*coverage_limit=*/coverage_hint);
+                             /*coverage_limit=*/expanded_coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -211,14 +226,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
                                 entity.GetClipDepth());  // No blur to render.
   }
-
-  Scalar blur_radius = CalculateBlurRadius(sigma_);
-  Scalar desired_scalar = CalculateScale(sigma_);
-  // TODO(jonahwilliams): if scaling value is 1.0, then skip the downsample
-  // pass.
-
-  Vector2 downsample_scalar(desired_scalar, desired_scalar);
-  Vector2 padding(ceil(blur_radius), ceil(blur_radius));
 
   Vector2 padded_size =
       Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
