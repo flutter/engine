@@ -85,8 +85,52 @@ size_t CircleTessellator::ComputeQuadrantDivisions(Scalar pixel_radius) {
   if (radius_index < kPrecomputedDivisionCount) {
     return kPrecomputedDivisions[radius_index];
   }
+
+  // For a circle with N divisions per quadrant, the maximum deviation of
+  // the polgyon approximation from the true circle will be at the center
+  // of the base of each triangular pie slice. We can compute that distance
+  // by finding the midpoint of the line of the first slice and compare
+  // its distance from the center of the circle to the radius. We will aim
+  // to have the length of that bisector to be within |kCircleTolerance|
+  // from the radius in pixels.
+  //
+  // Each vertex will appear at an angle of:
+  //   theta(i) = (kPi / 2) * (i / N)  // for i in [0..N]
+  // with each point falling at:
+  //   point(i) = r * (cos(theta), sin(theta))
+  // If we consider the unit circle to simplify the calculations below then
+  // we need to scale the tolerance from its absolute quantity into a unit
+  // circle fraction:
+  //   k = tolerance / radius
+  // Using this scaled tolerance below to avoid multiplying by the radius
+  // throughout all of the math, we have:
+  //   first point = (1, 0)   // theta(0) == 0
+  //   theta = kPi / 2 / N    // theta(1)
+  //   second point = (cos(theta), sin(theta)) = (c, s)
+  //   midpoint = (first + second) * 0.5 = ((1 + c)/2, s/2)
+  //   |midpoint| = sqrt((1 + c)*(1 + c)/4 + s*s/4)
+  //     = sqrt((1 + c + c + c*c + s*s) / 4)
+  //     = sqrt((1 + 2c + 1) / 4)
+  //     = sqrt((2 + 2c) / 4)
+  //     = sqrt((1 + c) / 2)
+  //     = cos(theta / 2)     // using half-angle cosine formula
+  //   error = 1 - |midpoint| = 1 - cos(theta / 2)
+  //   cos(theta/2) = 1 - error
+  //   theta/2 = acos(1 - error)
+  //   kPi / 2 / N / 2 = acos(1 - error)
+  //   kPi / 4 / acos(1 - error) = N
+  // Since we need error <= k, we want divisions >= N, so we use:
+  //   N = ceil(kPi / 4 / acos(1 - k))
+  //
+  // Math is confirmed in https://math.stackexchange.com/a/4132095
+  // (keeping in mind that we are computing quarter circle divisions here)
+  // which also points out a performance optimization that is accurate
+  // to within an over-estimation of 1 division would be:
+  //   N = ceil(kPi / 4 / sqrt(2 * k))
+  // Since we have precomputed the divisions for radii up to 1024, we can
+  // afford to be more accurate using the acos formula here for larger radii.
   double k = kCircleTolerance / pixel_radius;
-  return ceil(kPi / sqrt(2 * k) / 4);
+  return ceil(kPiOver4 / std::acos(1 - k));
 }
 
 const std::vector<Trig>& CircleTessellator::GetTrigsForDivisions(

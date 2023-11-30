@@ -21,7 +21,10 @@ TEST(CircleTessellator, DivisionVertexCounts) {
     EXPECT_EQ(tessellator.GetCircleVertexCount(), (quadrant_divisions + 1) * 4)
         << "transform = " << transform << ", radius = " << radius;
 
-    double angle = kPi * 0.5 / quadrant_divisions;
+    // Confirm the approximation error is within the currently accepted
+    // |kCircleTolerance| value advertised by |CircleTessellator|.
+    // (With an additional 1% tolerance for floating point rounding.)
+    double angle = kPiOver2 / quadrant_divisions;
     Point first = {radius, 0};
     Point next = {static_cast<Scalar>(cos(angle) * radius),
                   static_cast<Scalar>(sin(angle) * radius)};
