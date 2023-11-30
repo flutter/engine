@@ -243,6 +243,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   Scalar desired_scalar = CalculateScale(sigma_);
+  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
+  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
+  // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
   Vector2 padded_size =
       Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
