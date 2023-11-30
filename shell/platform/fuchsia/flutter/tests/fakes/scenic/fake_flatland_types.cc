@@ -109,6 +109,10 @@ BufferCollectionTokenPair BufferCollectionTokenPair::New() {
   return token_pair;
 }
 
+}  // namespace flutter_runner::testing
+
+namespace fuchsia::math {
+
 bool FakeView::operator==(const FakeView& other) const {
   return view_token == other.view_token && view_ref == other.view_ref &&
          view_ref_control == other.view_ref_control &&
@@ -177,4 +181,4 @@ FakeGraph FakeGraph::Clone() const {
   return clone;
 }
 
-}  // namespace flutter_runner::testing
+}  // namespace fuchsia::math
