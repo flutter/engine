@@ -318,9 +318,6 @@ CapabilitiesVK::GetEnabledDeviceFeatures(
   // necessarily a big deal if we don't have this feature.
   required.fillModeNonSolid = device_features.fillModeNonSolid;
 
-  // This is required for multisample framebuffer fetch.
-  required.sampleRateShading = device_features.sampleRateShading;
-
   return required;
 }
 
@@ -418,9 +415,7 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
          optional_device_extensions_.find(
              OptionalDeviceExtensionVK::
                  kEXTRasterizationOrderAttachmentAccess) !=
-             optional_device_extensions_.end()) &&
-        device.getFeatures().sampleRateShading;
-    FML_LOG(ERROR) << supports_framebuffer_fetch_;
+             optional_device_extensions_.end());
   }
 
   return true;

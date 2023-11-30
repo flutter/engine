@@ -220,7 +220,6 @@ SwapchainImplVK::SwapchainImplVK(
   // blit targets.
   swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
                               vk::ImageUsageFlagBits::eTransferDst;
-
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
   // If we set the clipped value to true, Vulkan expects we will never read back

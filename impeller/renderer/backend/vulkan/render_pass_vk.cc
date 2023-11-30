@@ -51,8 +51,11 @@ static vk::AttachmentDescription CreateAttachmentDescription(
     store_action = StoreAction::kStore;
   }
 
-  // Always transition to general.
+  // if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
+  //     current_layout != vk::ImageLayout::eUndefined) {
+  //   // Note: This should incur a barrier.
   current_layout = vk::ImageLayout::eGeneral;
+  // }
 
   return CreateAttachmentDescription(desc.format,        //
                                      desc.sample_count,  //
@@ -123,9 +126,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     SetTextureLayout(color, attachments.back(), command_buffer,
                      &Attachment::texture);
     if (color.resolve_texture) {
-      resolve_refs[bind_point] =
-          vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
-                                  vk::ImageLayout::eColorAttachmentOptimal};
+      resolve_refs[bind_point] = vk::AttachmentReference{
+          static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
       attachments.emplace_back(
           CreateAttachmentDescription(color, &Attachment::resolve_texture));
       SetTextureLayout(color, attachments.back(), command_buffer,
