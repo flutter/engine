@@ -10,29 +10,10 @@
 #include "flutter/impeller/geometry/matrix.h"
 #include "flutter/impeller/geometry/point.h"
 #include "flutter/impeller/geometry/scalar.h"
+#include "flutter/impeller/geometry/trig.h"
+#include "flutter/impeller/tessellator/tessellator.h"
 
 namespace impeller {
-
-/// @brief  A structure to store the sine and cosine of an angle.
-struct Trig {
-  /// Construct a Trig object from a given angle in radians.
-  explicit Trig(Radians r)
-      : cos(std::cos(r.radians)), sin(std::sin(r.radians)) {}
-
-  /// Construct a Trig object from the given cosine and sine values.
-  Trig(double cos, double sin) : cos(cos), sin(sin) {}
-
-  double cos;
-  double sin;
-
-  Vector2 operator*(Scalar radius) const {
-    return Vector2(cos * radius, sin * radius);
-  }
-
-  Vector2 interpolate(Vector2 start_vector, Vector2 end_vector) {
-    return start_vector * cos + end_vector * sin;
-  }
-};
 
 using TessellatedPointProc = std::function<void(const Point& p)>;
 
@@ -55,17 +36,27 @@ using TessellatedPointProc = std::function<void(const Point& p)>;
 ///         triangles are rendered for maximum tessellation fidelity.
 class CircleTessellator {
  public:
+  /// @brief   The pixel tolerance used by the algorighm to determine how
+  ///          many divisions to create for a circle.
+  ///
+  ///          No point on the polygon of vertices should deviate from the
+  ///          true circle by more than this tolerance.
+  static constexpr Scalar kCircleTolerance = 0.1;
+
   /// @brief   Constructs a CircleTessellator that produces enough segments
   ///          to reasonably approximate a circle with a specified |radius|
   ///          when viewed under the specified |transform|.
-  constexpr CircleTessellator(const Matrix& transform, Scalar radius)
-      : CircleTessellator(transform.GetMaxBasisLength() * radius) {}
+  CircleTessellator(std::shared_ptr<Tessellator>& tessellator,
+                    const Matrix& transform,
+                    Scalar radius)
+      : CircleTessellator(tessellator, transform.GetMaxBasisLength() * radius) {
+  }
 
   ~CircleTessellator() = default;
 
   /// @brief   Return the number of divisions computed by the algorithm for
   ///          a single quarter circle.
-  size_t GetQuadrantDivisionCount() const { return quadrant_divisions_; }
+  size_t GetQuadrantDivisionCount() const { return trigs_.size() - 1; }
 
   /// @brief   Return the number of vertices that will be generated to
   ///          tessellate a full circle with a triangle strip.
@@ -74,7 +65,7 @@ class CircleTessellator {
   ///          to hold the vertices that will be produced by the
   ///          |GenerateCircleTriangleStrip| and
   ///          |GenerateRoundCapLineTriangleStrip| methods.
-  size_t GetCircleVertexCount() const { return (quadrant_divisions_ + 1) * 4; }
+  size_t GetCircleVertexCount() const { return trigs_.size() * 4; }
 
   /// @brief   Generate the vertices for a triangle strip that covers the
   ///          circle at a given |radius| from a given |center|, delivering
@@ -101,13 +92,16 @@ class CircleTessellator {
                                          Scalar radius) const;
 
  private:
-  const size_t quadrant_divisions_;
+  const std::vector<Trig>& trigs_;
+  std::vector<Trig> temp_trigs_;
 
   /// @brief   Constructs a CircleTessellator that produces enough segments
   ///          to reasonably approximate a circle with a specified radius
   ///          in pixels.
-  constexpr explicit CircleTessellator(Scalar pixel_radius)
-      : quadrant_divisions_(ComputeQuadrantDivisions(pixel_radius)) {}
+  explicit CircleTessellator(std::shared_ptr<Tessellator>& tessellator,
+                             Scalar pixel_radius)
+      : trigs_(GetTrigsForDivisions(tessellator,
+                                    ComputeQuadrantDivisions(pixel_radius))) {}
 
   CircleTessellator(const CircleTessellator&) = delete;
 
@@ -127,11 +121,12 @@ class CircleTessellator {
   ///          contain (divisions + 1) values.
   ///
   /// @return  The vector of (divisions + 1) trig values.
-  static const std::vector<Trig>& GetTrigForDivisions(size_t divisions);
+  const std::vector<Trig>& GetTrigsForDivisions(
+      std::shared_ptr<Tessellator>& tessellator,
+      size_t divisions);
 
-  static constexpr int kMaxDivisions = 35;
-
-  static std::vector<Trig> trigs_[kMaxDivisions + 1];
+  static constexpr int kPrecomputedDivisionCount = 1024;
+  static int kPrecomputedDivisions[kPrecomputedDivisionCount];
 };
 
 }  // namespace impeller

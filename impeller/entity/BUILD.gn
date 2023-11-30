@@ -191,8 +191,6 @@ impeller_component("entity") {
     "entity_pass_delegate.h",
     "entity_pass_target.cc",
     "entity_pass_target.h",
-    "geometry/circle_tessellator.cc",
-    "geometry/circle_tessellator.h",
     "geometry/cover_geometry.cc",
     "geometry/cover_geometry.h",
     "geometry/ellipse_geometry.cc",
@@ -270,7 +268,6 @@ impeller_component("entity_unittests") {
     "entity_playground.cc",
     "entity_playground.h",
     "entity_unittests.cc",
-    "geometry/circle_tessellator_unittests.cc",
     "geometry/geometry_unittests.cc",
     "render_target_cache_unittests.cc",
   ]

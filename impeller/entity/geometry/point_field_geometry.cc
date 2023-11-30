@@ -4,7 +4,7 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
-#include "flutter/impeller/entity/geometry/circle_tessellator.h"
+#include "flutter/impeller/tessellator/circle_tessellator.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 
@@ -83,7 +83,8 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
 
   if (round_) {
-    CircleTessellator tessellator(entity.GetTransform(), radius);
+    std::shared_ptr<Tessellator> t = renderer.GetTessellator();
+    CircleTessellator tessellator(t, entity.GetTransform(), radius_);
 
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.

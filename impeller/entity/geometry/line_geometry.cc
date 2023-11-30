@@ -4,7 +4,7 @@
 
 #include "impeller/entity/geometry/line_geometry.h"
 
-#include "flutter/impeller/entity/geometry/circle_tessellator.h"
+#include "flutter/impeller/tessellator/circle_tessellator.h"
 
 namespace impeller {
 
@@ -80,7 +80,8 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
     const Point& p0 = p0_;
     const Point& p1 = p1_;
 
-    CircleTessellator tessellator(transform, radius);
+    std::shared_ptr<Tessellator> t = renderer.GetTessellator();
+    CircleTessellator tessellator(t, entity.GetTransform(), radius);
     count = tessellator.GetCircleVertexCount();
     vertex_buffer =
         host_buffer.Emplace(count * sizeof(VT), alignof(VT),
@@ -147,7 +148,8 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
     const Point& p0 = p0_;
     const Point& p1 = p1_;
 
-    CircleTessellator tessellator(transform, radius);
+    std::shared_ptr<Tessellator> t = renderer.GetTessellator();
+    CircleTessellator tessellator(t, entity.GetTransform(), radius);
     count = tessellator.GetCircleVertexCount();
     vertex_buffer = host_buffer.Emplace(
         count * sizeof(VT), alignof(VT),

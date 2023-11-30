@@ -4,7 +4,7 @@
 
 #include "impeller/entity/geometry/ellipse_geometry.h"
 
-#include "flutter/impeller/entity/geometry/circle_tessellator.h"
+#include "flutter/impeller/tessellator/circle_tessellator.h"
 
 namespace impeller {
 
@@ -22,7 +22,8 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
 
   Scalar radius = radius_;
   const Point& center = center_;
-  CircleTessellator tessellator(entity.GetTransform(), radius_);
+  std::shared_ptr<Tessellator> t = renderer.GetTessellator();
+  CircleTessellator tessellator(t, entity.GetTransform(), radius_);
   size_t count = tessellator.GetCircleVertexCount();
   auto vertex_buffer =
       host_buffer.Emplace(count * sizeof(VT), alignof(VT),
@@ -65,7 +66,8 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
 
   Scalar radius = radius_;
   const Point& center = center_;
-  CircleTessellator tessellator(entity.GetTransform(), radius_);
+  std::shared_ptr<Tessellator> t = renderer.GetTessellator();
+  CircleTessellator tessellator(t, entity.GetTransform(), radius_);
   size_t count = tessellator.GetCircleVertexCount();
   auto vertex_buffer = host_buffer.Emplace(
       count * sizeof(VT), alignof(VT),
