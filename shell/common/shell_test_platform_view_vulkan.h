@@ -43,13 +43,14 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     // |Surface|
     std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
 
+    // |Surface|
     SkMatrix GetRootTransformation() const override;
 
     // |Surface|
     GrDirectContext* GetContext() override;
 
    private:
-    bool valid_;
+    bool valid_ = false;
     fml::RefPtr<vulkan::VulkanProcTable> vk_;
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder_;

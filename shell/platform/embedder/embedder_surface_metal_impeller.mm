@@ -16,7 +16,10 @@
 #include "impeller/entity/mtl/framebuffer_blend_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
-#include "impeller/scene/shaders/mtl/scene_shaders.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/shaders/mtl/scene_shaders.h"  // nogncheck
+#endif                                                 // IMPELLER_ENABLE_3D
 
 FLUTTER_ASSERT_NOT_ARC
 
@@ -29,26 +32,27 @@ EmbedderSurfaceMetalImpeller::EmbedderSurfaceMetalImpeller(
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
       metal_dispatch_table_(std::move(metal_dispatch_table)),
-      external_view_embedder_(std::move(external_view_embedder)),
-      concurrent_loop_(fml::ConcurrentMessageLoop::Create()) {
+      external_view_embedder_(std::move(external_view_embedder)) {
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
-      std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
-                                             impeller_entity_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
-                                             impeller_scene_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_data,
-                                             impeller_modern_shaders_length),
-      std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
-                                             impeller_framebuffer_blend_shaders_length),
+    std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_data,
+                                           impeller_entity_shaders_length),
+#if IMPELLER_ENABLE_3D
+    std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
+                                           impeller_scene_shaders_length),
+#endif  // IMPELLER_ENABLE_3D
+    std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_data,
+                                           impeller_modern_shaders_length),
+    std::make_shared<fml::NonOwnedMapping>(impeller_framebuffer_blend_shaders_data,
+                                           impeller_framebuffer_blend_shaders_length),
   };
   context_ = impeller::ContextMTL::Create(
       (id<MTLDevice>)device,                     // device
       (id<MTLCommandQueue>)command_queue,        // command_queue
       shader_mappings,                           // shader_libraries_data
-      concurrent_loop_->GetTaskRunner(),         // worker_task_runner
       std::make_shared<fml::SyncSwitch>(false),  // is_gpu_disabled_sync_switch
       "Impeller Library"                         // library_label
   );
+  FML_LOG(ERROR) << "Using the Impeller rendering backend (Metal).";
 
   valid_ = !!context_;
 }
@@ -73,6 +77,10 @@ std::unique_ptr<Surface> EmbedderSurfaceMetalImpeller::CreateGPUSurface()
   }
 
   return surface;
+}
+
+std::shared_ptr<impeller::Context> EmbedderSurfaceMetalImpeller::CreateImpellerContext() const {
+  return context_;
 }
 
 GPUCAMetalLayerHandle EmbedderSurfaceMetalImpeller::GetCAMetalLayer(

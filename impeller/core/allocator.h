@@ -4,12 +4,11 @@
 
 #pragma once
 
-#include <string>
-
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/texture.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/geometry/size.h"
 
 namespace impeller {
 
@@ -45,6 +44,10 @@ class Allocator {
 
   virtual ISize GetMaxTextureSizeSupported() const = 0;
 
+  /// @brief Increment an internal frame used to cycle through a ring buffer of
+  /// allocation pools.
+  virtual void DidAcquireSurfaceFrame();
+
  protected:
   Allocator();
 
@@ -55,7 +58,9 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
+  Allocator(const Allocator&) = delete;
+
+  Allocator& operator=(const Allocator&) = delete;
 };
 
 }  // namespace impeller

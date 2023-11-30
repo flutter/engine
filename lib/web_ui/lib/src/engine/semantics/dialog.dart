@@ -9,11 +9,19 @@ import '../util.dart';
 /// Provides accessibility for dialogs.
 ///
 /// See also [Role.dialog].
-class Dialog extends RoleManager {
-  Dialog(SemanticsObject semanticsObject) : super(Role.dialog, semanticsObject);
+class Dialog extends PrimaryRoleManager {
+  Dialog(SemanticsObject semanticsObject) : super.blank(PrimaryRole.dialog, semanticsObject) {
+    // The following secondary roles can coexist with dialog. Generic `RouteName`
+    // and `LabelAndValue` are not used by this role because when the dialog
+    // names its own route an `aria-label` is used instead of `aria-describedby`.
+    addFocusManagement();
+    addLiveRegion();
+  }
 
   @override
   void update() {
+    super.update();
+
     // If semantic object corresponding to the dialog also provides the label
     // for itself it is applied as `aria-label`. See also [describeBy].
     if (semanticsObject.namesRoute) {
@@ -30,8 +38,8 @@ class Dialog extends RoleManager {
         }
         return true;
       }());
-      semanticsObject.element.setAttribute('aria-label', label ?? '');
-      semanticsObject.setAriaRole('dialog', true);
+      setAttribute('aria-label', label ?? '');
+      setAriaRole('dialog');
     }
   }
 
@@ -43,8 +51,8 @@ class Dialog extends RoleManager {
       return;
     }
 
-    semanticsObject.setAriaRole('dialog', true);
-    semanticsObject.element.setAttribute(
+    setAriaRole('dialog');
+    setAttribute(
       'aria-describedby',
       routeName.semanticsObject.element.id,
     );
@@ -53,7 +61,10 @@ class Dialog extends RoleManager {
 
 /// Supplies a description for the nearest ancestor [Dialog].
 class RouteName extends RoleManager {
-  RouteName(SemanticsObject semanticsObject) : super(Role.routeName, semanticsObject);
+  RouteName(
+    SemanticsObject semanticsObject,
+    PrimaryRoleManager owner,
+  ) : super(Role.routeName, semanticsObject, owner);
 
   Dialog? _dialog;
 
@@ -68,6 +79,10 @@ class RouteName extends RoleManager {
     // semantics code. Since reparenting can be done with no update to either
     // the Dialog or RouteName we'd have to scan intermediate nodes for
     // structural changes.
+    if (!semanticsObject.namesRoute) {
+      return;
+    }
+
     if (semanticsObject.isLabelDirty) {
       final Dialog? dialog = _dialog;
       if (dialog != null) {
@@ -88,11 +103,11 @@ class RouteName extends RoleManager {
 
   void _lookUpNearestAncestorDialog() {
     SemanticsObject? parent = semanticsObject.parent;
-    while (parent != null && !parent.hasRole(Role.dialog)) {
+    while (parent != null && parent.primaryRole?.role != PrimaryRole.dialog) {
       parent = parent.parent;
     }
-    if (parent != null && parent.hasRole(Role.dialog)) {
-      _dialog = parent.getRole<Dialog>(Role.dialog);
+    if (parent != null && parent.primaryRole?.role == PrimaryRole.dialog) {
+      _dialog = parent.primaryRole! as Dialog;
     }
   }
 }

@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
 namespace impeller {
@@ -14,6 +15,7 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     vk::UniqueSurfaceKHR surface) {
   auto impl = SwapchainImplVK::Create(context, std::move(surface));
   if (!impl || !impl->IsValid()) {
+    VALIDATION_LOG << "Failed to create SwapchainVK implementation.";
     return nullptr;
   }
   return std::shared_ptr<SwapchainVK>(new SwapchainVK(std::move(impl)));
@@ -47,9 +49,10 @@ std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
   auto context = impl_->GetContext();
   auto [surface, old_swapchain] = impl_->DestroySwapchain();
 
-  auto new_impl = SwapchainImplVK::Create(context,             //
-                                          std::move(surface),  //
-                                          *old_swapchain       //
+  auto new_impl = SwapchainImplVK::Create(context,                   //
+                                          std::move(surface),        //
+                                          *old_swapchain,            //
+                                          impl_->GetLastTransform()  //
   );
   if (!new_impl || !new_impl->IsValid()) {
     VALIDATION_LOG << "Could not update swapchain.";

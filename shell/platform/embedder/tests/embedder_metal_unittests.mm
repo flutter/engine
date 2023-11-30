@@ -21,6 +21,7 @@
 #include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
@@ -63,8 +64,8 @@ static sk_sp<SkSurface> GetSurfaceFromTexture(const sk_sp<GrDirectContext>& skia
                                               void* texture) {
   GrMtlTextureInfo info;
   info.fTexture.reset([(id<MTLTexture>)texture retain]);
-  GrBackendTexture backend_texture(texture_size.width(), texture_size.height(), GrMipmapped::kNo,
-                                   info);
+  GrBackendTexture backend_texture(texture_size.width(), texture_size.height(),
+                                   skgpu::Mipmapped::kNo, info);
 
   return SkSurfaces::WrapBackendTexture(skia_context.get(), backend_texture,
                                         kTopLeft_GrSurfaceOrigin, 1, kBGRA_8888_SkColorType,
@@ -146,12 +147,26 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
           backing_store.type = kFlutterBackingStoreTypeMetal;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0, 0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -177,12 +192,26 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
           backing_store.type = kFlutterBackingStoreTypeMetal;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(2, 3, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -306,12 +335,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
           backing_store.type = kFlutterBackingStoreTypeMetal;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(0, 0, 800, 600),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[0], layer);
         }
@@ -338,12 +381,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
           backing_store.type = kFlutterBackingStoreTypeMetal;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(30, 30, 80, 180),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[2], layer);
         }
@@ -370,12 +427,26 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
           backing_store.type = kFlutterBackingStoreTypeMetal;
           backing_store.did_update = true;
 
+          FlutterRect paint_region_rects[] = {
+              FlutterRectMakeLTRB(50, 50, 100, 200),
+          };
+          FlutterRegion paint_region = {
+              .struct_size = sizeof(FlutterRegion),
+              .rects_count = 1,
+              .rects = paint_region_rects,
+          };
+          FlutterBackingStorePresentInfo present_info = {
+              .struct_size = sizeof(FlutterBackingStorePresentInfo),
+              .paint_region = &paint_region,
+          };
+
           FlutterLayer layer = {};
           layer.struct_size = sizeof(layer);
           layer.type = kFlutterLayerContentTypeBackingStore;
           layer.backing_store = &backing_store;
           layer.size = FlutterSizeMake(800.0, 600.0);
           layer.offset = FlutterPointMake(0.0, 0.0);
+          layer.backing_store_present_info = &present_info;
 
           ASSERT_EQ(*layers[4], layer);
         }

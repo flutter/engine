@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/ui.dart' as ui;
-
-import '../dom.dart';
 import 'semantics.dart';
 
 /// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.
@@ -28,8 +25,8 @@ import 'semantics.dart';
 /// This role manager does not manage images and text fields. See
 /// [ImageRoleManager] and [TextField].
 class LabelAndValue extends RoleManager {
-  LabelAndValue(SemanticsObject semanticsObject)
-      : super(Role.labelAndValue, semanticsObject);
+  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner)
+      : super(Role.labelAndValue, semanticsObject, owner);
 
   @override
   void update() {
@@ -64,40 +61,11 @@ class LabelAndValue extends RoleManager {
       combinedValue.write(semanticsObject.value);
     }
 
-    semanticsObject.element
-        .setAttribute('aria-label', combinedValue.toString());
-
-    // Assign one of three roles to the element: heading, group, text.
-    //
-    // - "group" is used when the node has children, irrespective of whether the
-    //   node is marked as a header or not. This is because marking a group
-    //   as a "heading" will prevent the AT from reaching its children.
-    // - "heading" is used when the framework explicitly marks the node as a
-    //   heading and the node does not have children.
-    // - "text" is used by default.
-    //
-    // As of October 24, 2022, "text" only has effect on Safari. Other browsers
-    // ignore it. Setting role="text" prevents Safari from treating the element
-    // as a "group" or "empty group". Other browsers still announce it as
-    // "group" or "empty group". However, other options considered produced even
-    // worse results, such as:
-    //
-    // - Ignore the size of the element and size the focus ring to the text
-    //   content, which is wrong. The HTML text size is irrelevant because
-    //   Flutter renders into canvas, so the focus ring looks wrong.
-    // - Read out the same label multiple times.
-    if (semanticsObject.hasChildren) {
-      semanticsObject.setAriaRole('group', true);
-    } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
-      semanticsObject.setAriaRole('heading', true);
-    } else {
-      semanticsObject.setAriaRole('text', true);
-    }
+    owner.setAttribute('aria-label', combinedValue.toString());
   }
 
   void _cleanUpDom() {
-    semanticsObject.element.removeAttribute('aria-label');
-    semanticsObject.clearAriaRole();
+    owner.removeAttribute('aria-label');
   }
 
   @override

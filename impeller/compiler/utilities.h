@@ -8,8 +8,6 @@
 #include <string>
 #include <string_view>
 
-#include "flutter/fml/macros.h"
-
 namespace impeller {
 namespace compiler {
 
@@ -28,6 +26,8 @@ std::string ConvertToCamelCase(std::string_view string);
 /// @brief  Ensure that the entrypoint name is a valid identifier in the target
 ///         language.
 std::string ConvertToEntrypointName(std::string_view string);
+
+bool StringStartsWith(const std::string& target, const std::string& prefix);
 
 }  // namespace compiler
 }  // namespace impeller

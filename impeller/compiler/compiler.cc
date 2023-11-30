@@ -4,6 +4,7 @@
 
 #include "impeller/compiler/compiler.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -14,11 +15,12 @@
 #include "flutter/fml/paths.h"
 #include "impeller/base/allocation.h"
 #include "impeller/compiler/compiler_backend.h"
+#include "impeller/compiler/constants.h"
 #include "impeller/compiler/includer.h"
 #include "impeller/compiler/logger.h"
 #include "impeller/compiler/spirv_compiler.h"
-#include "impeller/compiler/types.h"
 #include "impeller/compiler/uniform_sorter.h"
+#include "impeller/compiler/utilities.h"
 
 namespace impeller {
 namespace compiler {
@@ -69,18 +71,24 @@ static CompilerBackend CreateMSLCompiler(
   // metal backend of spirv-cross will order uniforms according to usage. To fix
   // this, we use the sorted order and the add_msl_resource_binding API to force
   // the ordering to match the declared order. Note that while this code runs
-  // for all compiled shaders, it will only affect fragment shaders due to the
-  // specified stage.
+  // for all compiled shaders, it will only affect vertex and fragment shaders
+  // due to the specified stage.
   auto floats =
       SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::Float);
   auto images =
       SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::SampledImage);
 
+  spv::ExecutionModel execution_model =
+      spv::ExecutionModel::ExecutionModelFragment;
+  if (source_options.type == SourceType::kVertexShader) {
+    execution_model = spv::ExecutionModel::ExecutionModelVertex;
+  }
+
   uint32_t buffer_offset = 0;
   uint32_t sampler_offset = 0;
   for (auto& float_id : floats) {
     sl_compiler->add_msl_resource_binding(
-        {.stage = spv::ExecutionModel::ExecutionModelFragment,
+        {.stage = execution_model,
          .basetype = spirv_cross::SPIRType::BaseType::Float,
          .desc_set = sl_compiler->get_decoration(float_id,
                                                  spv::DecorationDescriptorSet),
@@ -92,7 +100,7 @@ static CompilerBackend CreateMSLCompiler(
   }
   for (auto& image_id : images) {
     sl_compiler->add_msl_resource_binding({
-        .stage = spv::ExecutionModel::ExecutionModelFragment,
+        .stage = execution_model,
         .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
         .desc_set =
             sl_compiler->get_decoration(image_id, spv::DecorationDescriptorSet),
@@ -128,6 +136,23 @@ static CompilerBackend CreateVulkanCompiler(
 static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
                                           const SourceOptions& source_options) {
   auto gl_compiler = std::make_shared<spirv_cross::CompilerGLSL>(ir);
+
+  // Walk the variables and insert the external image extension if any of them
+  // begins with the external texture prefix. Unfortunately, we can't walk
+  // `gl_compiler->get_shader_resources().separate_samplers` until the compiler
+  // is further along.
+  //
+  // Unfortunately, we can't just let the shader author add this extension and
+  // use `samplerExternalOES` directly because compiling to spirv requires the
+  // source language profile to be at least 310 ES, but this extension is
+  // incompatible with ES 310+.
+  for (auto& id : ir.ids_for_constant_or_variable) {
+    if (StringStartsWith(ir.get_name(id), kExternalTexturePrefix)) {
+      gl_compiler->require_extension("GL_OES_EGL_image_external");
+      break;
+    }
+  }
+
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
@@ -137,6 +162,17 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
                              ? source_options.gles_language_version
                              : 100;
     sl_options.es = true;
+    if (source_options.require_framebuffer_fetch &&
+        source_options.type == SourceType::kFragmentShader) {
+      gl_compiler->remap_ext_framebuffer_fetch(0, 0, true);
+    }
+    gl_compiler->set_variable_type_remap_callback(
+        [&](const spirv_cross::SPIRType& type, const std::string& var_name,
+            std::string& name_of_type) {
+          if (StringStartsWith(var_name, kExternalTexturePrefix)) {
+            name_of_type = "samplerExternalOES";
+          }
+        });
   } else {
     sl_options.version = source_options.gles_language_version > 0
                              ? source_options.gles_language_version

@@ -56,10 +56,10 @@ void testParagraphStyle() {
   final ParagraphStyle ps3 = ParagraphStyle(fontWeight: FontWeight.w700, fontSize: 12.0, height: 123.0);
 
   test('ParagraphStyle toString works', () {
-    expect(ps0.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.ltr, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, ellipsis: unspecified, locale: unspecified)'));
-    expect(ps1.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.rtl, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, ellipsis: unspecified, locale: unspecified)'));
-    expect(ps2.toString(), equals('ParagraphStyle(textAlign: TextAlign.center, textDirection: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 10.0, height: 100.0x, ellipsis: unspecified, locale: unspecified)'));
-    expect(ps3.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: unspecified, fontWeight: FontWeight.w700, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 12.0, height: 123.0x, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps0.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.ltr, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps1.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: TextDirection.rtl, fontWeight: unspecified, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 14.0, height: unspecified, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps2.toString(), equals('ParagraphStyle(textAlign: TextAlign.center, textDirection: unspecified, fontWeight: FontWeight.w800, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 10.0, height: 100.0x, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
+    expect(ps3.toString(), equals('ParagraphStyle(textAlign: unspecified, textDirection: unspecified, fontWeight: FontWeight.w700, fontStyle: unspecified, maxLines: unspecified, textHeightBehavior: unspecified, fontFamily: unspecified, fontSize: 12.0, height: 123.0x, strutStyle: unspecified, ellipsis: unspecified, locale: unspecified)'));
   });
 }
 
@@ -195,20 +195,19 @@ void testTextRange() {
 
 void testLoadFontFromList() {
   test('loadFontFromList will send platform message after font is loaded', () async {
-    final PlatformMessageCallback? oldHandler = PlatformDispatcher.instance.onPlatformMessage;
-    late String actualName;
     late String message;
-    PlatformDispatcher.instance.onPlatformMessage = (String name, ByteData? data, PlatformMessageResponseCallback? callback) {
-      assert(data != null);
-      actualName = name;
-      final Uint8List list = data!.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-      message = utf8.decode(list);
-    };
+    channelBuffers.setListener(
+      'flutter/system',
+      (ByteData? data, PlatformMessageResponseCallback? callback) {
+        assert(data != null);
+        final Uint8List list = data!.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        message = utf8.decode(list);
+      },
+    );
     final Uint8List fontData = Uint8List(0);
     await loadFontFromList(fontData, fontFamily: 'fake');
-    PlatformDispatcher.instance.onPlatformMessage = oldHandler;
-    expect(actualName, 'flutter/system');
     expect(message, '{"type":"fontsChange"}');
+    channelBuffers.clearListener('flutter/system');
   });
 }
 
@@ -285,6 +284,26 @@ void testFontVariation() {
     final double wideWidth = wideParagraph.minIntrinsicWidth;
 
     expect(wideWidth, greaterThan(baseWidth));
+  });
+
+  test('FontVariation constructors', () async {
+    expect(const FontVariation.weight(123.0).axis, 'wght');
+    expect(const FontVariation.weight(123.0).value, 123.0);
+    expect(const FontVariation.width(123.0).axis, 'wdth');
+    expect(const FontVariation.width(123.0).value, 123.0);
+    expect(const FontVariation.slant(45.0).axis, 'slnt');
+    expect(const FontVariation.slant(45.0).value, 45.0);
+    expect(const FontVariation.opticalSize(67.0).axis, 'opsz');
+    expect(const FontVariation.opticalSize(67.0).value, 67.0);
+    expect(const FontVariation.italic(0.8).axis, 'ital');
+    expect(const FontVariation.italic(0.8).value, 0.8);
+  });
+
+  test('FontVariation.lerp', () async {
+    expect(FontVariation.lerp(const FontVariation.weight(100.0), const FontVariation.weight(300.0), 0.5), const FontVariation.weight(200.0));
+    expect(FontVariation.lerp(const FontVariation.slant(0.0), const FontVariation.slant(-80.0), 0.25), const FontVariation.slant(-20.0));
+    expect(FontVariation.lerp(const FontVariation.width(90.0), const FontVariation.italic(0.2), 0.1), const FontVariation.width(90.0));
+    expect(FontVariation.lerp(const FontVariation.width(90.0), const FontVariation.italic(0.2), 0.9), const FontVariation.italic(0.2));
   });
 }
 

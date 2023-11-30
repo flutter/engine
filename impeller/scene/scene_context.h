@@ -32,7 +32,8 @@ struct SceneContextOptions {
     }
   };
 
-  void ApplyToPipelineDescriptor(PipelineDescriptor& desc) const;
+  void ApplyToPipelineDescriptor(const Capabilities& capabilities,
+                                 PipelineDescriptor& desc) const;
 };
 
 class SceneContext {
@@ -57,6 +58,7 @@ class SceneContext {
     virtual ~PipelineVariants() = default;
 
     virtual std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
+        Context& context,
         SceneContextOptions opts) = 0;
   };
 
@@ -65,13 +67,20 @@ class SceneContext {
    public:
     explicit PipelineVariantsT(Context& context) {
       auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+      if (!desc.has_value()) {
+        is_valid_ = false;
+        return;
+      }
       // Apply default ContentContextOptions to the descriptor.
-      SceneContextOptions{}.ApplyToPipelineDescriptor(*desc);
+      SceneContextOptions{}.ApplyToPipelineDescriptor(
+          /*capabilities=*/*context.GetCapabilities(),
+          /*desc=*/desc.value());
       variants_[{}] = std::make_unique<PipelineT>(context, desc);
     };
 
-    // |PipelineCollection|
+    // |PipelineVariants|
     std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
+        Context& context,
         SceneContextOptions opts) {
       if (auto found = variants_.find(opts); found != variants_.end()) {
         return found->second->WaitAndGet();
@@ -83,8 +92,9 @@ class SceneContext {
       FML_CHECK(prototype != variants_.end());
 
       auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
-          [&opts, variants_count = variants_.size()](PipelineDescriptor& desc) {
-            opts.ApplyToPipelineDescriptor(desc);
+          [&context, &opts,
+           variants_count = variants_.size()](PipelineDescriptor& desc) {
+            opts.ApplyToPipelineDescriptor(*context.GetCapabilities(), desc);
             desc.SetLabel(
                 SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
           });
@@ -94,7 +104,10 @@ class SceneContext {
       return variant_pipeline;
     }
 
+    bool IsValid() const { return is_valid_; }
+
    private:
+    bool is_valid_ = true;
     std::unordered_map<SceneContextOptions,
                        std::unique_ptr<PipelineT>,
                        SceneContextOptions::Hash,
@@ -103,10 +116,19 @@ class SceneContext {
   };
 
   template <typename VertexShader, typename FragmentShader>
+  /// Creates a PipelineVariantsT for the given vertex and fragment shaders.
+  ///
+  /// If a pipeline could not be created, returns nullptr.
   std::unique_ptr<PipelineVariants> MakePipelineVariants(Context& context) {
+    auto pipeline =
+        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>(
+            context);
+    if (!pipeline.IsValid()) {
+      return nullptr;
+    }
     return std::make_unique<
         PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>>(
-        context);
+        std::move(pipeline));
   }
 
   std::unordered_map<PipelineKey,
@@ -122,7 +144,9 @@ class SceneContext {
   // Available for the lifetime of the scene context
   std::shared_ptr<Texture> placeholder_texture_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SceneContext);
+  SceneContext(const SceneContext&) = delete;
+
+  SceneContext& operator=(const SceneContext&) = delete;
 };
 
 }  // namespace scene

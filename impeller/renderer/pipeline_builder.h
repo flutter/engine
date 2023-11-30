@@ -48,8 +48,10 @@ struct PipelineBuilder {
   ///             context, a pipeline descriptor.
   ///
   static std::optional<PipelineDescriptor> MakeDefaultPipelineDescriptor(
-      const Context& context) {
+      const Context& context,
+      const std::vector<int>& constants = {}) {
     PipelineDescriptor desc;
+    desc.SetSpecializationConstants(constants);
     if (InitializePipelineDescriptorDefaults(context, desc)) {
       return {std::move(desc)};
     }
@@ -85,29 +87,12 @@ struct PipelineBuilder {
     // Setup the vertex descriptor from reflected information.
     {
       auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-      if (!vertex_descriptor->SetStageInputs(
-              VertexShader::kAllShaderStageInputs)) {
-        VALIDATION_LOG
-            << "Could not configure vertex descriptor for pipeline named '"
-            << VertexShader::kLabel << "'.";
-        return false;
-      }
-      if (!vertex_descriptor->RegisterDescriptorSetLayouts(
-              VertexShader::kDescriptorSetLayouts)) {
-        VALIDATION_LOG << "Cound not configure vertex descriptor set layout for"
-                          " pipeline named '"
-                       << VertexShader::kLabel << "'.";
-        return false;
-      }
-
-      if (!vertex_descriptor->RegisterDescriptorSetLayouts(
-              FragmentShader::kDescriptorSetLayouts)) {
-        VALIDATION_LOG << "Cound not configure vertex descriptor set layout for"
-                          " pipeline named '"
-                       << VertexShader::kLabel << "'.";
-        return false;
-      }
-
+      vertex_descriptor->SetStageInputs(VertexShader::kAllShaderStageInputs,
+                                        VertexShader::kInterleavedBufferLayout);
+      vertex_descriptor->RegisterDescriptorSetLayouts(
+          VertexShader::kDescriptorSetLayouts);
+      vertex_descriptor->RegisterDescriptorSetLayouts(
+          FragmentShader::kDescriptorSetLayouts);
       desc.SetVertexDescriptor(std::move(vertex_descriptor));
     }
 

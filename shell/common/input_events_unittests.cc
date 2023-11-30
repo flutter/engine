@@ -54,7 +54,12 @@ static void TestSimulatedInputEvents(
     bool restart_engine = false) {
   ///// Begin constructing shell ///////////////////////////////////////////////
   auto settings = fixture->CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = fixture->CreateShell(settings, true);
+  std::unique_ptr<Shell> shell = fixture->CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
+  });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");
@@ -122,11 +127,11 @@ static void TestSimulatedInputEvents(
         ShellTest::DispatchFakePointerData(shell.get());
         i += 1;
       }
-      ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
+      ShellTest::VSyncFlush(shell.get(), &will_draw_new_frame);
     }
     // Finally, issue a vsync for the pending event that may be generated duing
     // the last vsync.
-    ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
+    ShellTest::VSyncFlush(shell.get(), &will_draw_new_frame);
   });
 
   simulation.wait();
@@ -300,7 +305,12 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
 TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
   // Sets up shell with test fixture.
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings, true);
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
+  });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");
@@ -335,8 +345,7 @@ TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 3.0, 4.0);
   packet->SetPointerData(5, data);
   ShellTest::DispatchPointerData(shell.get(), std::move(packet));
-  bool will_draw_new_frame;
-  ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
+  ShellTest::VSyncFlush(shell.get());
 
   reportLatch.Wait();
   size_t expect_length = 6;
@@ -361,7 +370,12 @@ TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
 TEST_F(ShellTest, CanCorrectlySynthesizePointerPacket) {
   // Sets up shell with test fixture.
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings, true);
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
+  });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");
@@ -392,8 +406,7 @@ TEST_F(ShellTest, CanCorrectlySynthesizePointerPacket) {
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 3.0, 4.0);
   packet->SetPointerData(3, data);
   ShellTest::DispatchPointerData(shell.get(), std::move(packet));
-  bool will_draw_new_frame;
-  ShellTest::VSyncFlush(shell.get(), will_draw_new_frame);
+  ShellTest::VSyncFlush(shell.get());
 
   reportLatch.Wait();
   size_t expect_length = 6;

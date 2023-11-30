@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -25,14 +26,12 @@ Future<void> testMain() async {
   group('Title and Primary Color/Theme meta', () {
     test('is set on the document by platform message', () {
       // Run the unit test without emulating Flutter tester environment.
-      ui.debugEmulateFlutterTesterEnvironment = false;
+      ui_web.debugEmulateFlutterTesterEnvironment = false;
 
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/39159
-      domDocument.title = '';
       expect(domDocument.title, '');
       expect(getCssThemeColor(), isNull);
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',
@@ -49,7 +48,7 @@ Future<void> testMain() async {
       expect(domDocument.title, 'Title Test');
       expect(getCssThemeColor(), expectedPrimaryColor.toCssString());
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',
@@ -69,14 +68,14 @@ Future<void> testMain() async {
 
     test('supports null title and primaryColor', () {
       // Run the unit test without emulating Flutter tester environment.
-      ui.debugEmulateFlutterTesterEnvironment = false;
+      ui_web.debugEmulateFlutterTesterEnvironment = false;
 
       const ui.Color expectedNullColor = ui.Color(0xFF000000);
       // TODO(yjbanov): https://github.com/flutter/flutter/issues/39159
       domDocument.title = 'Something Else';
       expect(domDocument.title, 'Something Else');
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',
@@ -94,7 +93,7 @@ Future<void> testMain() async {
       domDocument.title = 'Something Else';
       expect(domDocument.title, 'Something Else');
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',

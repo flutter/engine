@@ -20,7 +20,9 @@ class GNTestCase(unittest.TestCase):
     self._expect_build_dir(['--debug'], 'out/Debug')
     self._expect_build_dir(['--release'], 'out/Release')
     self._expect_build_dir(['--ios'], 'out/ios_Debug')
+    self._expect_build_dir(['--ios'], 'out/ios_Debug_extension_safe')
     self._expect_build_dir(['--ios', '--release'], 'out/ios_Release')
+    self._expect_build_dir(['--ios'], 'out/ios_Release_extension_safe')
     self._expect_build_dir(['--android'], 'out/android_Debug')
     self._expect_build_dir(['--android', '--release'], 'out/android_Release')
 
@@ -34,6 +36,14 @@ class GNTestCase(unittest.TestCase):
         self._gn_args(['--ios', '--simulator'])['target_cpu'], 'x64'
     )
     self.assertEquals(self._gn_args(['--ios'])['target_cpu'], 'arm')
+
+  def test_cannot_use_android_and_enable_unittests(self):
+    with self.assertRaises(SystemExit):
+      self._gn_args(['--android', '--enable-unittests'])
+
+  def test_cannot_use_ios_and_enable_unittests(self):
+    with self.assertRaises(SystemExit):
+      self._gn_args(['--ios', '--enable-unittests'])
 
 
 if __name__ == '__main__':

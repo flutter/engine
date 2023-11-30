@@ -51,18 +51,41 @@ import 'canvaskit/renderer.dart';
 import 'dom.dart';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration =>
-  _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+FlutterConfiguration get configuration {
+  if (_debugConfiguration != null) {
+    return _debugConfiguration!;
+  }
+  return _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+}
 FlutterConfiguration? _configuration;
 
-/// Sets the given configuration as the current one.
+FlutterConfiguration? _debugConfiguration;
+
+/// Overrides the initial test configuration with new values coming from `newConfig`.
+///
+/// The initial test configuration (AKA `_jsConfiguration`) is set in the
+/// `test_platform.dart` file. See: `window.flutterConfiguration` in `_testBootstrapHandler`.
+///
+/// The result of calling this method each time is:
+///
+///     [configuration] = _jsConfiguration + newConfig
+///
+/// Subsequent calls to this method don't *add* more to an already overridden
+/// configuration; this method always starts from an original `_jsConfiguration`,
+/// and adds `newConfig` to it.
+///
+/// If `newConfig` is null, [configuration] resets to the initial `_jsConfiguration`.
 ///
 /// This must be called before the engine is initialized. Calling it after the
 /// engine is initialized will result in some of the properties not taking
 /// effect because they are consumed during initialization.
 @visibleForTesting
-void debugSetConfiguration(FlutterConfiguration configuration) {
-  _configuration = configuration;
+void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
+  if (newConfig != null) {
+    _debugConfiguration = configuration.withOverrides(newConfig);
+  } else {
+    _debugConfiguration = null;
+  }
 }
 
 /// Supplies Web Engine configuration properties.
@@ -94,6 +117,17 @@ class FlutterConfiguration {
       }
       return true;
     }());
+  }
+
+  FlutterConfiguration withOverrides(JsFlutterConfiguration? overrides) {
+    final JsFlutterConfiguration newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _configuration.jsify(),
+      overrides.jsify(),
+    ) as JsFlutterConfiguration;
+    final FlutterConfiguration newConfig = FlutterConfiguration();
+    newConfig._configuration = newJsConfig;
+    return newConfig;
   }
 
   bool _usedLegacyConfigStyle = false;
@@ -233,22 +267,6 @@ class FlutterConfiguration {
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
 
-  /// The maximum number of overlay surfaces that the CanvasKit renderer will use.
-  ///
-  /// Overlay surfaces are extra WebGL `<canvas>` elements used to paint on top
-  /// of platform views. Too many platform views can cause the browser to run
-  /// out of resources (memory, CPU, GPU) to handle the content efficiently.
-  /// The number of overlay surfaces is therefore limited.
-  ///
-  /// This value can be specified using either the `FLUTTER_WEB_MAXIMUM_SURFACES`
-  /// environment variable, or using the runtime configuration.
-  int get canvasKitMaximumSurfaces =>
-      _configuration?.canvasKitMaximumSurfaces?.toInt() ?? _defaultCanvasKitMaximumSurfaces;
-  static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_SURFACES',
-    defaultValue: 8,
-  );
-
   /// Set this flag to `true` to cause the engine to visualize the semantics tree
   /// on the screen for debugging.
   ///
@@ -268,6 +286,21 @@ class FlutterConfiguration {
   /// Returns the [hostElement] in which the Flutter Application is supposed
   /// to render, or `null` if the user hasn't specified anything.
   DomElement? get hostElement => _configuration?.hostElement;
+
+  /// Sets Flutter Web in "multi-view" mode.
+  ///
+  /// Multi-view mode allows apps to:
+  ///
+  ///  * Start without a `hostElement`.
+  ///  * Add/remove views (`hostElements`) from JS while the application is running.
+  ///  * ...
+  ///  * PROFIT?
+  bool get multiViewEnabled => _configuration?.multiViewEnabled ?? false;
+
+  /// Returns a `nonce` to allowlist the inline styles that Flutter web needs.
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce
+  String? get nonce => _configuration?.nonce;
 
   /// Returns the [requestedRendererType] to be used with the current Flutter
   /// application, normally 'canvaskit' or 'auto'.
@@ -290,8 +323,11 @@ external JsFlutterConfiguration? get _jsConfiguration;
 
 /// The JS bindings for the object that's set as `window.flutterConfiguration`.
 @JS()
+@anonymous
 @staticInterop
-class JsFlutterConfiguration {}
+class JsFlutterConfiguration {
+  external factory JsFlutterConfiguration();
+}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('assetBase')
@@ -310,15 +346,19 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external JSBoolean? get _canvasKitForceCpuOnly;
   bool? get canvasKitForceCpuOnly => _canvasKitForceCpuOnly?.toDart;
 
-  @JS('canvasKitMaximumSurfaces')
-  external JSNumber? get _canvasKitMaximumSurfaces;
-  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDart;
-
   @JS('debugShowSemanticsNodes')
   external JSBoolean? get _debugShowSemanticsNodes;
   bool? get debugShowSemanticsNodes => _debugShowSemanticsNodes?.toDart;
 
   external DomElement? get hostElement;
+
+  @JS('multiViewEnabled')
+  external JSBoolean? get _multiViewEnabled;
+  bool? get multiViewEnabled => _multiViewEnabled?.toDart;
+
+  @JS('nonce')
+  external JSString? get _nonce;
+  String? get nonce => _nonce?.toDart;
 
   @JS('renderer')
   external JSString? get _renderer;

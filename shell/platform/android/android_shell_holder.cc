@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
@@ -40,19 +41,22 @@ static void AndroidPlatformThreadConfigSetter(
   fml::Thread::SetCurrentThreadName(config);
   // set thread priority
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND: {
+    case fml::Thread::ThreadPriority::kBackground: {
+      fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
       if (::setpriority(PRIO_PROCESS, 0, 10) != 0) {
         FML_LOG(ERROR) << "Failed to set IO task runner priority";
       }
       break;
     }
-    case fml::Thread::ThreadPriority::DISPLAY: {
+    case fml::Thread::ThreadPriority::kDisplay: {
+      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
       if (::setpriority(PRIO_PROCESS, 0, -1) != 0) {
         FML_LOG(ERROR) << "Failed to set UI task runner priority";
       }
       break;
     }
-    case fml::Thread::ThreadPriority::RASTER: {
+    case fml::Thread::ThreadPriority::kRaster: {
+      fml::RequestAffinity(fml::CpuAffinity::kPerformance);
       // Android describes -8 as "most important display threads, for
       // compositing the screen and retrieving input events". Conservatively
       // set the raster thread to slightly lower priority than it.
@@ -66,6 +70,7 @@ static void AndroidPlatformThreadConfigSetter(
       break;
     }
     default:
+      fml::RequestAffinity(fml::CpuAffinity::kNotPerformance);
       if (::setpriority(PRIO_PROCESS, 0, 0) != 0) {
         FML_LOG(ERROR) << "Failed to set priority";
       }
@@ -85,22 +90,22 @@ AndroidShellHolder::AndroidShellHolder(
   auto thread_label = std::to_string(thread_host_count++);
 
   auto mask =
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO;
+      ThreadHost::Type::kUi | ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
 
   flutter::ThreadHost::ThreadHostConfig host_config(
       thread_label, mask, AndroidPlatformThreadConfigSetter);
   host_config.ui_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::UI, thread_label),
-      fml::Thread::ThreadPriority::DISPLAY);
+          flutter::ThreadHost::Type::kUi, thread_label),
+      fml::Thread::ThreadPriority::kDisplay);
   host_config.raster_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::RASTER, thread_label),
-      fml::Thread::ThreadPriority::RASTER);
+          flutter::ThreadHost::Type::kRaster, thread_label),
+      fml::Thread::ThreadPriority::kRaster);
   host_config.io_config = fml::Thread::ThreadConfig(
       flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-          flutter::ThreadHost::Type::IO, thread_label),
-      fml::Thread::ThreadPriority::NORMAL);
+          flutter::ThreadHost::Type::kIo, thread_label),
+      fml::Thread::ThreadPriority::kNormal);
 
   thread_host_ = std::make_shared<ThreadHost>(host_config);
 
@@ -109,10 +114,9 @@ AndroidShellHolder::AndroidShellHolder(
       [&jni_facade, &weak_platform_view](Shell& shell) {
         std::unique_ptr<PlatformViewAndroid> platform_view_android;
         platform_view_android = std::make_unique<PlatformViewAndroid>(
-            shell,                                  // delegate
-            shell.GetTaskRunners(),                 // task runners
-            shell.GetConcurrentWorkerTaskRunner(),  // worker task runner
-            jni_facade,                             // JNI interop
+            shell,                   // delegate
+            shell.GetTaskRunners(),  // task runners
+            jni_facade,              // JNI interop
             shell.GetSettings()
                 .enable_software_rendering,   // use software rendering
             shell.GetSettings().msaa_samples  // msaa sample count
@@ -346,6 +350,10 @@ void AndroidShellHolder::UpdateDisplayMetrics() {
   std::vector<std::unique_ptr<Display>> displays;
   displays.push_back(std::make_unique<AndroidDisplay>(jni_facade_));
   shell_->OnDisplayUpdates(std::move(displays));
+}
+
+void AndroidShellHolder::SetIsRenderingToImageView(bool value) {
+  platform_view_->SetIsRenderingToImageView(value);
 }
 
 }  // namespace flutter

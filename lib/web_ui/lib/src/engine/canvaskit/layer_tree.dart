@@ -21,9 +21,6 @@ class LayerTree {
   /// The root of the layer tree.
   final RootLayer rootLayer;
 
-  /// The size (in physical pixels) of the frame to paint this layer tree into.
-  final ui.Size frameSize = ui.window.physicalSize;
-
   /// The devicePixelRatio of the frame to paint this layer tree into.
   double? devicePixelRatio;
 
@@ -51,8 +48,6 @@ class LayerTree {
     final Iterable<CkCanvas> overlayCanvases =
         frame.viewEmbedder!.getOverlayCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
-    // Clear the canvases before painting
-    internalNodesCanvas.clear(const ui.Color(0x00000000));
     final PaintContext context = PaintContext(
       internalNodesCanvas,
       frame.canvas,
@@ -67,9 +62,9 @@ class LayerTree {
   /// Flattens the tree into a single [ui.Picture].
   ///
   /// This picture does not contain any platform views.
-  ui.Picture flatten() {
+  ui.Picture flatten(ui.Size size) {
     final CkPictureRecorder recorder = CkPictureRecorder();
-    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+    final CkCanvas canvas = recorder.beginRecording(ui.Offset.zero & size);
     final PrerollContext prerollContext = PrerollContext(null, null);
     rootLayer.preroll(prerollContext, Matrix4.identity());
 

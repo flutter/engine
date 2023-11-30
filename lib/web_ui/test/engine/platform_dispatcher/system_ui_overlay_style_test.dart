@@ -6,6 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -17,7 +18,7 @@ void testMain() {
   const MethodCodec codec = JSONMethodCodec();
 
   void sendSetSystemUIOverlayStyle({ui.Color? statusBarColor}) {
-    ui.window.sendPlatformMessage(
+    ui.PlatformDispatcher.instance.sendPlatformMessage(
       'flutter/platform',
       codec.encodeMethodCall(MethodCall(
         'SystemChrome.setSystemUIOverlayStyle',
@@ -38,7 +39,7 @@ void testMain() {
   group('SystemUIOverlayStyle', () {
     test('theme color is set / removed by platform message', () {
       // Run the unit test without emulating Flutter tester environment.
-      ui.debugEmulateFlutterTesterEnvironment = false;
+      ui_web.debugEmulateFlutterTesterEnvironment = false;
 
       expect(getCssThemeColor(), null);
 

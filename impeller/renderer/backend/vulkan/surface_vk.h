@@ -19,7 +19,7 @@ class SurfaceVK final : public Surface {
 
   static std::unique_ptr<SurfaceVK> WrapSwapchainImage(
       const std::shared_ptr<Context>& context,
-      const std::shared_ptr<SwapchainImageVK>& swapchain_image,
+      std::shared_ptr<SwapchainImageVK>& swapchain_image,
       SwapCallback swap_callback);
 
   // |Surface|
@@ -33,7 +33,9 @@ class SurfaceVK final : public Surface {
   // |Surface|
   bool Present() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceVK);
+  SurfaceVK(const SurfaceVK&) = delete;
+
+  SurfaceVK& operator=(const SurfaceVK&) = delete;
 };
 
 }  // namespace impeller

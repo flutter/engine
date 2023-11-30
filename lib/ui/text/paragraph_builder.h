@@ -30,7 +30,8 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                      double fontSize,
                      double height,
                      const std::u16string& ellipsis,
-                     const std::string& locale);
+                     const std::string& locale,
+                     bool applyRoundingHack);
 
   ~ParagraphBuilder() override;
 
@@ -76,9 +77,10 @@ class ParagraphBuilder : public RefCountedDartWrappable<ParagraphBuilder> {
                             double fontSize,
                             double height,
                             const std::u16string& ellipsis,
-                            const std::string& locale);
+                            const std::string& locale,
+                            bool applyRoundingHack);
 
-  std::unique_ptr<txt::ParagraphBuilder> m_paragraphBuilder;
+  std::unique_ptr<txt::ParagraphBuilder> m_paragraph_builder_;
 };
 
 }  // namespace flutter

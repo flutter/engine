@@ -136,6 +136,13 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
+              case "SystemNavigator.setFrameworkHandlesBack":
+                {
+                  boolean frameworkHandlesBack = (boolean) arguments;
+                  platformMessageHandler.setFrameworkHandlesBack(frameworkHandlesBack);
+                  result.success(null);
+                  break;
+                }
               case "SystemNavigator.pop":
                 platformMessageHandler.popSystemNavigator();
                 result.success(null);
@@ -180,6 +187,11 @@ public class PlatformChannel {
                   result.success(response);
                   break;
                 }
+              case "Share.invoke":
+                String text = (String) arguments;
+                platformMessageHandler.share(text);
+                result.success(null);
+                break;
               default:
                 result.notImplemented();
                 break;
@@ -510,6 +522,15 @@ public class PlatformChannel {
     void setSystemUiOverlayStyle(@NonNull SystemChromeStyle systemUiOverlayStyle);
 
     /**
+     * The Flutter application would or would not like to handle navigation pop events itself.
+     *
+     * <p>Relevant for registering and unregistering the app's OnBackInvokedCallback for the
+     * Predictive Back feature, for example as in {@link
+     * io.flutter.embedding.android.FlutterActivity}.
+     */
+    default void setFrameworkHandlesBack(boolean frameworkHandlesBack) {}
+
+    /**
      * The Flutter application would like to pop the top item off of the Android app's navigation
      * back stack.
      */
@@ -533,6 +554,13 @@ public class PlatformChannel {
      * can be pasted.
      */
     boolean clipboardHasStrings();
+
+    /**
+     * The Flutter application would like to share the given {@code text} using the Android standard
+     * intent action named {@code Intent.ACTION_SEND}. See:
+     * https://developer.android.com/reference/android/content/Intent.html#ACTION_SEND
+     */
+    void share(@NonNull String text);
   }
 
   /** Types of sounds the Android OS can play on behalf of an application. */

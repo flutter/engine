@@ -63,6 +63,9 @@ void Switches::PrintHelp(std::ostream& stream) {
          << std::endl;
   stream << "[optional] --iplr (causes --sl file to be emitted in iplr format)"
          << std::endl;
+  stream << "[optional] --iplr-bundle=<bundle_spec> (causes --sl file to be "
+            "emitted in the iplr bundle format)"
+         << std::endl;
   stream << "[optional] --reflection-json=<reflection_json_file>" << std::endl;
   stream << "[optional] --reflection-header=<reflection_header_file>"
          << std::endl;
@@ -70,11 +73,12 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional,multiple] --include=<include_directory>" << std::endl;
   stream << "[optional,multiple] --define=<define>" << std::endl;
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
-  stream << "[optional] --gles-language-verision=<number>" << std::endl;
+  stream << "[optional] --gles-language-version=<number>" << std::endl;
   stream << "[optional] --json" << std::endl;
   stream << "[optional] --use-half-textures (force openGL semantics when "
             "targeting metal)"
          << std::endl;
+  stream << "[optional] --require-framebuffer-fetch" << std::endl;
 }
 
 Switches::Switches() = default;
@@ -120,6 +124,7 @@ Switches::Switches(const fml::CommandLine& command_line)
       input_type(SourceTypeFromCommandLine(command_line)),
       sl_file_name(command_line.GetOptionValueWithDefault("sl", "")),
       iplr(command_line.HasOption("iplr")),
+      iplr_bundle(command_line.GetOptionValueWithDefault("iplr-bundle", "")),
       spirv_file_name(command_line.GetOptionValueWithDefault("spirv", "")),
       reflection_json_name(
           command_line.GetOptionValueWithDefault("reflection-json", "")),
@@ -136,7 +141,9 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("metal-version", "1.2")),
       entry_point(
           command_line.GetOptionValueWithDefault("entry-point", "main")),
-      use_half_textures(command_line.HasOption("use-half-textures")) {
+      use_half_textures(command_line.HasOption("use-half-textures")),
+      require_framebuffer_fetch(
+          command_line.HasOption("require-framebuffer-fetch")) {
   auto language =
       command_line.GetOptionValueWithDefault("source-language", "glsl");
   std::transform(language.begin(), language.end(), language.begin(),

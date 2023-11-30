@@ -9,6 +9,8 @@
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
 #endif
 
+#include <gmodule.h>
+
 #include "fl_message_codec.h"
 
 G_BEGIN_DECLS
@@ -25,13 +27,16 @@ G_BEGIN_DECLS
 #define FL_JSON_MESSAGE_CODEC_ERROR fl_json_message_codec_error_quark()
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_JSON_MESSAGE_CODEC_ERROR_INVALID_UTF8,
   FL_JSON_MESSAGE_CODEC_ERROR_INVALID_JSON,
   FL_JSON_MESSAGE_CODEC_ERROR_INVALID_OBJECT_KEY_TYPE,
+  // NOLINTEND(readability-identifier-naming)
 } FlJsonMessageCodecError;
 
 GQuark fl_json_message_codec_error_quark(void) G_GNUC_CONST;
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlJsonMessageCodec,
                      fl_json_message_codec,
                      FL,

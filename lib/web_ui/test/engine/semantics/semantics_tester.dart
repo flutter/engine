@@ -7,7 +7,7 @@ import 'dart:typed_data';
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/embedder.dart';
+import 'package:ui/src/engine/platform_dispatcher.dart';
 import 'package:ui/src/engine/semantics.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
@@ -22,7 +22,8 @@ import '../../common/matchers.dart';
 /// tree has moved outside of the shadowDOM as a workaround for a password
 /// autofill bug on Chrome.
 /// Ref: https://github.com/flutter/flutter/issues/87735
-DomElement get appHostNode => flutterViewEmbedder.flutterViewElement;
+DomElement get rootElement =>
+    EnginePlatformDispatcher.instance.implicitView!.dom.rootElement;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
@@ -301,7 +302,7 @@ class SemanticsTester {
       currentValueLength: currentValueLength ?? 0,
       textSelectionBase: textSelectionBase ?? 0,
       textSelectionExtent: textSelectionExtent ?? 0,
-      platformViewId: platformViewId ?? 0,
+      platformViewId: platformViewId ?? -1,
       scrollChildren: scrollChildren ?? 0,
       scrollIndex: scrollIndex ?? 0,
       scrollPosition: scrollPosition ?? 0,
@@ -344,29 +345,24 @@ class SemanticsTester {
     return owner.debugSemanticsTree![id]!;
   }
 
-  /// Locates the role manager of the semantics object with the give [id].
-  RoleManager? getRoleManager(int id, Role role) {
-    return getSemanticsObject(id).debugRoleManagerFor(role);
-  }
-
   /// Locates the [TextField] role manager of the semantics object with the give [id].
   TextField getTextField(int id) {
-    return getRoleManager(id, Role.textField)! as TextField;
+    return getSemanticsObject(id).primaryRole! as TextField;
   }
 }
 
 /// Verifies the HTML structure of the current semantics tree.
 void expectSemanticsTree(String semanticsHtml) {
-  const List<String> ignoredAttributes = <String>['pointer-events'];
+  const List<String> ignoredStyleProperties = <String>['pointer-events'];
   expect(
-    canonicalizeHtml(appHostNode.querySelector('flt-semantics')!.outerHTML!, ignoredAttributes: ignoredAttributes),
+    canonicalizeHtml(rootElement.querySelector('flt-semantics')!.outerHTML!, ignoredStyleProperties: ignoredStyleProperties),
     canonicalizeHtml(semanticsHtml),
   );
 }
 
 /// Finds the first HTML element in the semantics tree used for scrolling.
 DomElement? findScrollable() {
-  return appHostNode.querySelectorAll('flt-semantics').firstWhereOrNull(
+  return rootElement.querySelectorAll('flt-semantics').firstWhereOrNull(
     (DomElement? element) {
       return element!.style.overflow == 'hidden' ||
         element.style.overflowY == 'scroll' ||
@@ -375,7 +371,7 @@ DomElement? findScrollable() {
   );
 }
 
-/// Logs semantics actions dispatched to [ui.window].
+/// Logs semantics actions dispatched to [ui.PlatformDispatcher].
 class SemanticsActionLogger {
   SemanticsActionLogger() {
     _idLogController = StreamController<int>();
@@ -405,7 +401,7 @@ class SemanticsActionLogger {
   Stream<int> get idLog => _idLog;
   late Stream<int> _idLog;
 
-  /// The actions that were dispatched to [ui.window].
+  /// The actions that were dispatched to [ui.PlatformDispatcher].
   Stream<ui.SemanticsAction> get actionLog => _actionLog;
   late Stream<ui.SemanticsAction> _actionLog;
 }

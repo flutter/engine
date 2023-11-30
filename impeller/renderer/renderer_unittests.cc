@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/logging.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/device_buffer_descriptor.h"
@@ -32,6 +33,7 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/surface.h"
@@ -57,6 +59,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
 
   // Vertex buffer.
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -90,7 +93,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     assert(pipeline && pipeline->IsValid());
 
     Command cmd;
-    cmd.label = "Box";
+    DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = pipeline;
 
     cmd.BindVertices(vertex_buffer);
@@ -129,6 +132,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetWindingOrder(WindingOrder::kCounterClockwise);
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(pipeline);
@@ -184,7 +188,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     ImGui::End();
 
     Command cmd;
-    cmd.label = "Perspective Cube";
+    DEBUG_COMMAND_INFO(cmd, "Perspective Cube");
     cmd.pipeline = pipeline;
 
     cmd.BindVertices(vertex_buffer);
@@ -218,6 +222,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   auto desc = BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto box_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
@@ -245,7 +250,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
 
   SinglePassCallback callback = [&](RenderPass& pass) {
     Command cmd;
-    cmd.label = "Box";
+    DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = box_pipeline;
 
     cmd.BindVertices(vertex_buffer);
@@ -269,7 +274,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
         VS::BindUniformBuffer(
             cmd, pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-        if (!pass.AddCommand(cmd)) {
+        if (!pass.AddCommand(std::move(cmd))) {
           return false;
         }
       }
@@ -288,6 +293,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   using BoxPipelineBuilder = PipelineBuilder<VS, FS>;
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  pipeline_desc->SetSampleCount(SampleCount::kCount1);
+
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
@@ -357,7 +364,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   }
 
   Command cmd;
-  cmd.label = "Box";
+  DEBUG_COMMAND_INFO(cmd, "Box");
   cmd.pipeline = box_pipeline;
 
   cmd.BindVertices(vertex_buffer);
@@ -393,19 +400,18 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   ASSERT_EQ(Tessellator::Result::kSuccess,
             Tessellator{}.Tessellate(
-                FillType::kPositive,
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath()
-                    .CreatePolyline(1.0f),
-                [&builder](const float* vertices, size_t vertices_size,
-                           const uint16_t* indices, size_t indices_size) {
-                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    .TakePath(FillType::kPositive),
+                1.0f,
+                [&builder](const float* vertices, size_t vertices_count,
+                           const uint16_t* indices, size_t indices_count) {
+                  for (auto i = 0u; i < vertices_count * 2; i += 2) {
                     VS::PerVertexData data;
                     data.vtx = {vertices[i], vertices[i + 1]};
                     builder.AppendVertex(data);
                   }
-                  for (auto i = 0u; i < indices_size; i++) {
+                  for (auto i = 0u; i < indices_count; i++) {
                     builder.AppendIndex(indices[i]);
                   }
                   return true;
@@ -417,13 +423,15 @@ TEST_P(RendererTest, CanRenderInstanced) {
           ->GetPipelineLibrary()
           ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
                             *GetContext())
-                            ->SetSampleCount(SampleCount::kCount4))
+                            ->SetSampleCount(SampleCount::kCount4)
+                            .SetStencilAttachmentDescriptors(std::nullopt))
+
           .Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   Command cmd;
   cmd.pipeline = pipeline;
-  cmd.label = "InstancedDraw";
+  DEBUG_COMMAND_INFO(cmd, "InstancedDraw");
 
   static constexpr size_t kInstancesCount = 5u;
   VS::InstanceInfo<kInstancesCount> instances;
@@ -442,7 +450,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
     cmd.instance_count = kInstancesCount;
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   }));
 }
@@ -456,6 +464,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto mipmaps_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
@@ -527,7 +536,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
       pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
-        cmd.label = "Image";
+        DEBUG_COMMAND_INFO(cmd, "Image");
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -568,6 +577,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto mipmaps_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
@@ -651,7 +661,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
       pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
-        cmd.label = "Image";
+        DEBUG_COMMAND_INFO(cmd, "Image");
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -699,6 +709,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
   auto mipmaps_pipeline =
       context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
@@ -771,7 +782,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       pass->SetLabel("Playground Render Pass");
       {
         Command cmd;
-        cmd.label = "Image LOD";
+        DEBUG_COMMAND_INFO(cmd, "Image LOD");
         cmd.pipeline = mipmaps_pipeline;
 
         cmd.BindVertices(vertex_buffer);
@@ -815,6 +826,7 @@ TEST_P(RendererTest, TheImpeller) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
@@ -837,7 +849,7 @@ TEST_P(RendererTest, TheImpeller) {
 
     Command cmd;
     cmd.pipeline = pipeline;
-    cmd.label = "Impeller SDF scene";
+    DEBUG_COMMAND_INFO(cmd, "Impeller SDF scene");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
                          {Point(0, size.height)},
@@ -860,7 +872,7 @@ TEST_P(RendererTest, TheImpeller) {
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
     FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
 
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -875,6 +887,7 @@ TEST_P(RendererTest, ArrayUniforms) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
@@ -884,7 +897,7 @@ TEST_P(RendererTest, ArrayUniforms) {
 
     Command cmd;
     cmd.pipeline = pipeline;
-    cmd.label = "Google Dots";
+    DEBUG_COMMAND_INFO(cmd, "Google Dots");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
                          {Point(0, size.height)},
@@ -916,7 +929,7 @@ TEST_P(RendererTest, ArrayUniforms) {
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
 
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -931,6 +944,7 @@ TEST_P(RendererTest, InactiveUniforms) {
       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
   auto pipeline =
       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
@@ -940,7 +954,7 @@ TEST_P(RendererTest, InactiveUniforms) {
 
     Command cmd;
     cmd.pipeline = pipeline;
-    cmd.label = "Inactive Uniform";
+    DEBUG_COMMAND_INFO(cmd, "Inactive Uniform");
     VertexBufferBuilder<VS::PerVertexData> builder;
     builder.AddVertices({{Point()},
                          {Point(0, size.height)},
@@ -961,7 +975,7 @@ TEST_P(RendererTest, InactiveUniforms) {
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
 
-    pass.AddCommand(cmd);
+    pass.AddCommand(std::move(cmd));
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -1042,6 +1056,240 @@ TEST_P(RendererTest, VertexBufferBuilder) {
 
   ASSERT_EQ(vertex_builder.GetIndexCount(), 6u);
   ASSERT_EQ(vertex_builder.GetVertexCount(), 4u);
+}
+
+class CompareFunctionUIData {
+ public:
+  CompareFunctionUIData() {
+    labels_.push_back("Never");
+    functions_.push_back(CompareFunction::kNever);
+    labels_.push_back("Always");
+    functions_.push_back(CompareFunction::kAlways);
+    labels_.push_back("Less");
+    functions_.push_back(CompareFunction::kLess);
+    labels_.push_back("Equal");
+    functions_.push_back(CompareFunction::kEqual);
+    labels_.push_back("LessEqual");
+    functions_.push_back(CompareFunction::kLessEqual);
+    labels_.push_back("Greater");
+    functions_.push_back(CompareFunction::kGreater);
+    labels_.push_back("NotEqual");
+    functions_.push_back(CompareFunction::kNotEqual);
+    labels_.push_back("GreaterEqual");
+    functions_.push_back(CompareFunction::kGreaterEqual);
+    assert(labels_.size() == functions_.size());
+  }
+
+  const char* const* labels() const { return &labels_[0]; }
+
+  int size() const { return labels_.size(); }
+
+  int IndexOf(CompareFunction func) const {
+    for (size_t i = 0; i < functions_.size(); i++) {
+      if (functions_[i] == func) {
+        return i;
+      }
+    }
+    FML_UNREACHABLE();
+    return -1;
+  }
+
+  CompareFunction FunctionOf(int index) const { return functions_[index]; }
+
+ private:
+  std::vector<const char*> labels_;
+  std::vector<CompareFunction> functions_;
+};
+
+static const CompareFunctionUIData& CompareFunctionUI() {
+  static CompareFunctionUIData data;
+  return data;
+}
+
+TEST_P(RendererTest, StencilMask) {
+  using VS = BoxFadeVertexShader;
+  using FS = BoxFadeFragmentShader;
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+  using BoxFadePipelineBuilder = PipelineBuilder<VS, FS>;
+  auto desc = BoxFadePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  vertex_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
+
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(bridge && boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  static bool mirror = false;
+  static int stencil_reference_write = 0xFF;
+  static int stencil_reference_read = 0x1;
+  std::vector<uint8_t> stencil_contents;
+  static int last_stencil_contents_reference_value = 0;
+  static int current_front_compare =
+      CompareFunctionUI().IndexOf(CompareFunction::kLessEqual);
+  static int current_back_compare =
+      CompareFunctionUI().IndexOf(CompareFunction::kLessEqual);
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    auto buffer = context->CreateCommandBuffer();
+    if (!buffer) {
+      return false;
+    }
+    buffer->SetLabel("Playground Command Buffer");
+
+    {
+      // Configure the stencil attachment for the test.
+      RenderTarget::AttachmentConfig stencil_config;
+      stencil_config.load_action = LoadAction::kLoad;
+      stencil_config.store_action = StoreAction::kDontCare;
+      stencil_config.storage_mode = StorageMode::kHostVisible;
+      auto render_target_allocator =
+          RenderTargetAllocator(context->GetResourceAllocator());
+      render_target.SetupStencilAttachment(*context, render_target_allocator,
+                                           render_target.GetRenderTargetSize(),
+                                           true, "stencil", stencil_config);
+      // Fill the stencil buffer with an checkerboard pattern.
+      const auto target_width = render_target.GetRenderTargetSize().width;
+      const auto target_height = render_target.GetRenderTargetSize().height;
+      const size_t target_size = target_width * target_height;
+      if (stencil_contents.size() != target_size ||
+          last_stencil_contents_reference_value != stencil_reference_write) {
+        stencil_contents.resize(target_size);
+        last_stencil_contents_reference_value = stencil_reference_write;
+        for (int y = 0; y < target_height; y++) {
+          for (int x = 0; x < target_width; x++) {
+            const auto index = y * target_width + x;
+            const auto kCheckSize = 64;
+            const auto value =
+                (((y / kCheckSize) + (x / kCheckSize)) % 2 == 0) *
+                stencil_reference_write;
+            stencil_contents[index] = value;
+          }
+        }
+      }
+      if (!render_target.GetStencilAttachment()->texture->SetContents(
+              stencil_contents.data(), stencil_contents.size(), 0, false)) {
+        VALIDATION_LOG << "Could not upload stencil contents to device memory";
+        return false;
+      }
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Stencil Buffer");
+      ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+      ImGui::SliderInt("Stencil Write Value", &stencil_reference_write, 0,
+                       0xFF);
+      ImGui::SliderInt("Stencil Compare Value", &stencil_reference_read, 0,
+                       0xFF);
+      ImGui::Checkbox("Back face mode", &mirror);
+      ImGui::ListBox("Front face compare function", &current_front_compare,
+                     CompareFunctionUI().labels(), CompareFunctionUI().size());
+      ImGui::ListBox("Back face compare function", &current_back_compare,
+                     CompareFunctionUI().labels(), CompareFunctionUI().size());
+      ImGui::End();
+
+      StencilAttachmentDescriptor front;
+      front.stencil_compare =
+          CompareFunctionUI().FunctionOf(current_front_compare);
+      StencilAttachmentDescriptor back;
+      back.stencil_compare =
+          CompareFunctionUI().FunctionOf(current_back_compare);
+      desc->SetStencilAttachmentDescriptors(front, back);
+      auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+
+      assert(pipeline && pipeline->IsValid());
+
+      Command cmd;
+      DEBUG_COMMAND_INFO(cmd, "Box");
+      cmd.pipeline = pipeline;
+      cmd.stencil_reference = stencil_reference_read;
+
+      cmd.BindVertices(vertex_buffer);
+
+      VS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      if (mirror) {
+        uniforms.mvp = Matrix::MakeScale(Vector2(-1, 1)) * uniforms.mvp;
+      }
+      VS::BindUniformBuffer(
+          cmd, pass->GetTransientsBuffer().EmplaceUniform(uniforms));
+
+      FS::FrameInfo frame_info;
+      frame_info.current_time = GetSecondsElapsed();
+      frame_info.cursor_position = GetCursorPosition();
+      frame_info.window_size.x = GetWindowSize().width;
+      frame_info.window_size.y = GetWindowSize().height;
+
+      FS::BindFrameInfo(cmd,
+                        pass->GetTransientsBuffer().EmplaceUniform(frame_info));
+      FS::BindContents1(cmd, boston, sampler);
+      FS::BindContents2(cmd, bridge, sampler);
+      if (!pass->AddCommand(std::move(cmd))) {
+        return false;
+      }
+      pass->EncodeCommands();
+    }
+
+    if (!buffer->SubmitCommands()) {
+      return false;
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanPreAllocateCommands) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  render_pass->ReserveCommands(100u);
+
+  EXPECT_EQ(render_pass->GetCommands().capacity(), 100u);
+}
+
+TEST_P(RendererTest, CanLookupRenderTargetProperties) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  EXPECT_EQ(render_pass->GetSampleCount(), render_target.GetSampleCount());
+  EXPECT_EQ(render_pass->GetRenderTargetPixelFormat(),
+            render_target.GetRenderTargetPixelFormat());
+  EXPECT_EQ(render_pass->HasStencilAttachment(),
+            render_target.GetStencilAttachment().has_value());
+  EXPECT_EQ(render_pass->GetRenderTargetSize(),
+            render_target.GetRenderTargetSize());
 }
 
 }  // namespace testing

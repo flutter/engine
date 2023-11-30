@@ -15,8 +15,7 @@ namespace flutter {
 OpacityLayer::OpacityLayer(SkAlpha alpha, const SkPoint& offset)
     : CacheableContainerLayer(std::numeric_limits<int>::max(), true),
       alpha_(alpha),
-      offset_(offset),
-      children_can_accept_opacity_(false) {}
+      offset_(offset) {}
 
 void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
@@ -36,8 +35,6 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void OpacityLayer::Preroll(PrerollContext* context) {
-  FML_DCHECK(!layers().empty());  // We can't be a leaf.
-
   auto mutator = context->state_stack.save();
   mutator.translate(offset_);
   mutator.applyOpacity(SkRect(), DlColor::toOpacity(alpha_));

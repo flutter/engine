@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_util' as js_util;
+import 'dart:async';
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine/initialization.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'fake_asset_manager.dart';
 
@@ -16,20 +18,17 @@ void setUpUnitTests({
 }) {
   late final FakeAssetScope debugFontsScope;
   setUpAll(() async {
+    // The implicit view is needed for `debugEmulateFlutterTesterEnvironment`,
+    // `flutterViewEmbedder`, and `debugPhysicalSizeOverride`.
+    engine.ensureImplicitViewInitialized();
+
     if (emulateTesterEnvironment) {
-      ui.debugEmulateFlutterTesterEnvironment = true;
+      ui_web.debugEmulateFlutterTesterEnvironment = true;
     }
 
-    // Some of our tests rely on color emoji
-    final engine.FlutterConfiguration config = engine.FlutterConfiguration()
-      ..setUserConfiguration(
-        js_util.jsify(<String, Object?>{
-          'useColorEmoji': true,
-        }) as engine.JsFlutterConfiguration);
-    engine.debugSetConfiguration(config);
-
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
-    await engine.initializeEngine(assetManager: fakeAssetManager);
+    debugOnlyAssetManager = fakeAssetManager;
+    await bootstrapAndRunApp();
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     if (setUpTestViewDimensions) {
@@ -40,8 +39,8 @@ void setUpUnitTests({
       // we don't have an embedder yet this is the lowest-most layer we can put
       // this stuff in.
       const double devicePixelRatio = 3.0;
-      engine.window.debugOverrideDevicePixelRatio(devicePixelRatio);
-      engine.window.webOnlyDebugPhysicalSizeOverride =
+      engine.EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(devicePixelRatio);
+      engine.EnginePlatformDispatcher.instance.implicitView!.debugPhysicalSizeOverride =
           const ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
       engine.scheduleFrameCallback = () {};
     }
@@ -50,4 +49,10 @@ void setUpUnitTests({
   tearDownAll(() async {
     fakeAssetManager.popAssetScope(debugFontsScope);
   });
+}
+
+Future<void> bootstrapAndRunApp() async {
+  final Completer<void> completer = Completer<void>();
+  await ui_web.bootstrapEngine(runApp: () => completer.complete());
+  await completer.future;
 }

@@ -10,8 +10,8 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/aiks/image.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
@@ -22,7 +22,6 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
@@ -30,11 +29,11 @@ namespace impeller {
 class Entity;
 
 struct CanvasStackEntry {
-  Matrix xformation;
+  Matrix transform;
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
+  size_t clip_depth = 0u;
+  Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
   bool contains_clips = false;
 };
 
@@ -68,8 +67,7 @@ class Canvas {
 
   void SaveLayer(const Paint& paint,
                  std::optional<Rect> bounds = std::nullopt,
-                 const std::optional<Paint::ImageFilterProc>& backdrop_filter =
-                     std::nullopt);
+                 const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   bool Restore();
 
@@ -77,17 +75,17 @@ class Canvas {
 
   void RestoreToCount(size_t count);
 
-  const Matrix& GetCurrentTransformation() const;
+  const Matrix& GetCurrentTransform() const;
 
   const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
-  void Transform(const Matrix& xformation);
+  void Transform(const Matrix& transform);
 
-  void Concat(const Matrix& xformation);
+  void Concat(const Matrix& transform);
 
-  void PreConcat(const Matrix& xformation);
+  void PreConcat(const Matrix& transform);
 
   void Translate(const Vector3& offset);
 
@@ -103,9 +101,11 @@ class Canvas {
 
   void DrawPaint(const Paint& paint);
 
+  void DrawLine(const Point& p0, const Point& p1, const Paint& paint);
+
   void DrawRect(Rect rect, const Paint& paint);
 
-  void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint);
+  void DrawRRect(Rect rect, Point corner_radii, const Paint& paint);
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
@@ -135,12 +135,12 @@ class Canvas {
 
   void ClipRRect(
       const Rect& rect,
-      Scalar corner_radius,
+      Point corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawPicture(Picture picture);
+  void DrawPicture(const Picture& picture);
 
-  void DrawTextFrame(const TextFrame& text_frame,
+  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
                      const Paint& paint);
 
@@ -162,8 +162,7 @@ class Canvas {
  private:
   std::unique_ptr<EntityPass> base_pass_;
   EntityPass* current_pass_ = nullptr;
-  std::deque<CanvasStackEntry> xformation_stack_;
-  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+  std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
 
   void Initialize(std::optional<Rect> cull_rect);
@@ -172,9 +171,9 @@ class Canvas {
 
   EntityPass& GetCurrentPass();
 
-  size_t GetStencilDepth() const;
+  size_t GetClipDepth() const;
 
-  void ClipGeometry(std::unique_ptr<Geometry> geometry,
+  void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
 
   void IntersectCulling(Rect clip_bounds);
@@ -182,8 +181,7 @@ class Canvas {
 
   void Save(bool create_subpass,
             BlendMode = BlendMode::kSourceOver,
-            std::optional<EntityPass::BackdropFilterProc> backdrop_filter =
-                std::nullopt);
+            const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 
@@ -191,7 +189,9 @@ class Canvas {
                                Scalar corner_radius,
                                const Paint& paint);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
+  Canvas(const Canvas&) = delete;
+
+  Canvas& operator=(const Canvas&) = delete;
 };
 
 }  // namespace impeller

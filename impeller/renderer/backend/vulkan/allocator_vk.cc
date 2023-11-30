@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -14,67 +15,120 @@
 
 namespace impeller {
 
+static constexpr vk::Flags<vk::MemoryPropertyFlagBits>
+ToVKBufferMemoryPropertyFlags(StorageMode mode) {
+  switch (mode) {
+    case StorageMode::kHostVisible:
+      return vk::MemoryPropertyFlagBits::eHostVisible;
+    case StorageMode::kDevicePrivate:
+      return vk::MemoryPropertyFlagBits::eDeviceLocal;
+    case StorageMode::kDeviceTransient:
+      return vk::MemoryPropertyFlagBits::eLazilyAllocated;
+  }
+  FML_UNREACHABLE();
+}
+
+static VmaAllocationCreateFlags ToVmaAllocationBufferCreateFlags(
+    StorageMode mode) {
+  VmaAllocationCreateFlags flags = 0;
+  switch (mode) {
+    case StorageMode::kHostVisible:
+      flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+      flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
+      return flags;
+    case StorageMode::kDevicePrivate:
+      return flags;
+    case StorageMode::kDeviceTransient:
+      return flags;
+  }
+  FML_UNREACHABLE();
+}
+
+static PoolVMA CreateBufferPool(VmaAllocator allocator) {
+  vk::BufferCreateInfo buffer_info;
+  buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
+                      vk::BufferUsageFlagBits::eIndexBuffer |
+                      vk::BufferUsageFlagBits::eUniformBuffer |
+                      vk::BufferUsageFlagBits::eStorageBuffer |
+                      vk::BufferUsageFlagBits::eTransferSrc |
+                      vk::BufferUsageFlagBits::eTransferDst;
+  buffer_info.size = 1u;  // doesn't matter
+  buffer_info.sharingMode = vk::SharingMode::eExclusive;
+  auto buffer_info_native =
+      static_cast<vk::BufferCreateInfo::NativeType>(buffer_info);
+
+  VmaAllocationCreateInfo allocation_info = {};
+  allocation_info.usage = VMA_MEMORY_USAGE_AUTO;
+  allocation_info.preferredFlags = static_cast<VkMemoryPropertyFlags>(
+      ToVKBufferMemoryPropertyFlags(StorageMode::kHostVisible));
+  allocation_info.flags =
+      ToVmaAllocationBufferCreateFlags(StorageMode::kHostVisible);
+
+  uint32_t memTypeIndex;
+  auto result = vk::Result{vmaFindMemoryTypeIndexForBufferInfo(
+      allocator, &buffer_info_native, &allocation_info, &memTypeIndex)};
+  if (result != vk::Result::eSuccess) {
+    return {};
+  }
+
+  VmaPoolCreateInfo pool_create_info = {};
+  pool_create_info.memoryTypeIndex = memTypeIndex;
+  pool_create_info.flags = VMA_POOL_CREATE_IGNORE_BUFFER_IMAGE_GRANULARITY_BIT;
+
+  VmaPool pool = {};
+  result = vk::Result{::vmaCreatePool(allocator, &pool_create_info, &pool)};
+  if (result != vk::Result::eSuccess) {
+    return {};
+  }
+  return {allocator, pool};
+}
+
 AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
                          const std::shared_ptr<DeviceHolder>& device_holder,
                          const vk::Instance& instance,
-                         PFN_vkGetInstanceProcAddr get_instance_proc_address,
-                         PFN_vkGetDeviceProcAddr get_device_proc_address)
+                         const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
-  vk_ = fml::MakeRefCounted<vulkan::VulkanProcTable>(get_instance_proc_address);
-
-  auto instance_handle = vulkan::VulkanHandle<VkInstance>(instance);
-  if (!vk_->SetupInstanceProcAddresses(instance_handle)) {
-    return;
-  }
-
-  auto device_handle =
-      vulkan::VulkanHandle<VkDevice>(device_holder->GetDevice());
-  if (!vk_->SetupDeviceProcAddresses(device_handle)) {
-    return;
-  }
+  TRACE_EVENT0("impeller", "CreateAllocatorVK");
 
   auto limits = physical_device.getProperties().limits;
   max_texture_size_.width = max_texture_size_.height =
       limits.maxImageDimension2D;
 
   VmaVulkanFunctions proc_table = {};
-  proc_table.vkGetInstanceProcAddr = get_instance_proc_address;
-  proc_table.vkGetDeviceProcAddr = get_device_proc_address;
 
-#define PROVIDE_PROC(tbl, proc, provider) tbl.vk##proc = provider->proc;
-  PROVIDE_PROC(proc_table, GetPhysicalDeviceProperties, vk_);
-  PROVIDE_PROC(proc_table, GetPhysicalDeviceMemoryProperties, vk_);
-  PROVIDE_PROC(proc_table, AllocateMemory, vk_);
-  PROVIDE_PROC(proc_table, FreeMemory, vk_);
-  PROVIDE_PROC(proc_table, MapMemory, vk_);
-  PROVIDE_PROC(proc_table, UnmapMemory, vk_);
-  PROVIDE_PROC(proc_table, FlushMappedMemoryRanges, vk_);
-  PROVIDE_PROC(proc_table, InvalidateMappedMemoryRanges, vk_);
-  PROVIDE_PROC(proc_table, BindBufferMemory, vk_);
-  PROVIDE_PROC(proc_table, BindImageMemory, vk_);
-  PROVIDE_PROC(proc_table, GetBufferMemoryRequirements, vk_);
-  PROVIDE_PROC(proc_table, GetImageMemoryRequirements, vk_);
-  PROVIDE_PROC(proc_table, CreateBuffer, vk_);
-  PROVIDE_PROC(proc_table, DestroyBuffer, vk_);
-  PROVIDE_PROC(proc_table, CreateImage, vk_);
-  PROVIDE_PROC(proc_table, DestroyImage, vk_);
-  PROVIDE_PROC(proc_table, CmdCopyBuffer, vk_);
-
-#define PROVIDE_PROC_COALESCE(tbl, proc, provider) \
-  tbl.vk##proc##KHR = provider->proc ? provider->proc : provider->proc##KHR;
-  // See the following link for why we have to pick either KHR version or
-  // promoted non-KHR version:
-  // https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/issues/203
-  PROVIDE_PROC_COALESCE(proc_table, GetBufferMemoryRequirements2, vk_);
-  PROVIDE_PROC_COALESCE(proc_table, GetImageMemoryRequirements2, vk_);
-  PROVIDE_PROC_COALESCE(proc_table, BindBufferMemory2, vk_);
-  PROVIDE_PROC_COALESCE(proc_table, BindImageMemory2, vk_);
-  PROVIDE_PROC_COALESCE(proc_table, GetPhysicalDeviceMemoryProperties2, vk_);
-#undef PROVIDE_PROC_COALESCE
-
-#undef PROVIDE_PROC
+#define BIND_VMA_PROC(x) proc_table.x = VULKAN_HPP_DEFAULT_DISPATCHER.x;
+#define BIND_VMA_PROC_KHR(x)                                \
+  proc_table.x##KHR = VULKAN_HPP_DEFAULT_DISPATCHER.x       \
+                          ? VULKAN_HPP_DEFAULT_DISPATCHER.x \
+                          : VULKAN_HPP_DEFAULT_DISPATCHER.x##KHR;
+  BIND_VMA_PROC(vkGetInstanceProcAddr);
+  BIND_VMA_PROC(vkGetDeviceProcAddr);
+  BIND_VMA_PROC(vkGetPhysicalDeviceProperties);
+  BIND_VMA_PROC(vkGetPhysicalDeviceMemoryProperties);
+  BIND_VMA_PROC(vkAllocateMemory);
+  BIND_VMA_PROC(vkFreeMemory);
+  BIND_VMA_PROC(vkMapMemory);
+  BIND_VMA_PROC(vkUnmapMemory);
+  BIND_VMA_PROC(vkFlushMappedMemoryRanges);
+  BIND_VMA_PROC(vkInvalidateMappedMemoryRanges);
+  BIND_VMA_PROC(vkBindBufferMemory);
+  BIND_VMA_PROC(vkBindImageMemory);
+  BIND_VMA_PROC(vkGetBufferMemoryRequirements);
+  BIND_VMA_PROC(vkGetImageMemoryRequirements);
+  BIND_VMA_PROC(vkCreateBuffer);
+  BIND_VMA_PROC(vkDestroyBuffer);
+  BIND_VMA_PROC(vkCreateImage);
+  BIND_VMA_PROC(vkDestroyImage);
+  BIND_VMA_PROC(vkCmdCopyBuffer);
+  BIND_VMA_PROC_KHR(vkGetBufferMemoryRequirements2);
+  BIND_VMA_PROC_KHR(vkGetImageMemoryRequirements2);
+  BIND_VMA_PROC_KHR(vkBindBufferMemory2);
+  BIND_VMA_PROC_KHR(vkBindImageMemory2);
+  BIND_VMA_PROC_KHR(vkGetPhysicalDeviceMemoryProperties2);
+#undef BIND_VMA_PROC_KHR
+#undef BIND_VMA_PROC
 
   VmaAllocatorCreateInfo allocator_info = {};
   allocator_info.vulkanApiVersion = vulkan_api_version;
@@ -89,15 +143,15 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     VALIDATION_LOG << "Could not create memory allocator";
     return;
   }
-  allocator_ = allocator;
+  staging_buffer_pool_.reset(CreateBufferPool(allocator));
+  created_buffer_pool_ &= staging_buffer_pool_.is_valid();
+  allocator_.reset(allocator);
+  supports_memoryless_textures_ =
+      capabilities.SupportsDeviceTransientTextures();
   is_valid_ = true;
 }
 
-AllocatorVK::~AllocatorVK() {
-  if (allocator_) {
-    ::vmaDestroyAllocator(allocator_);
-  }
-}
+AllocatorVK::~AllocatorVK() = default;
 
 // |Allocator|
 bool AllocatorVK::IsValid() const {
@@ -109,9 +163,11 @@ ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   return max_texture_size_;
 }
 
-static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
-                                                         TextureUsageMask usage,
-                                                         StorageMode mode) {
+static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
+    PixelFormat format,
+    TextureUsageMask usage,
+    StorageMode mode,
+    bool supports_memoryless_textures) {
   vk::ImageUsageFlags vk_usage;
 
   switch (mode) {
@@ -119,7 +175,9 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
     case StorageMode::kDevicePrivate:
       break;
     case StorageMode::kDeviceTransient:
-      vk_usage |= vk::ImageUsageFlagBits::eTransientAttachment;
+      if (supports_memoryless_textures) {
+        vk_usage |= vk::ImageUsageFlagBits::eTransientAttachment;
+      }
       break;
   }
 
@@ -154,8 +212,8 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
   }
 
   if (mode != StorageMode::kDeviceTransient) {
-    // TODO (https://github.com/flutter/flutter/issues/121634):
-    // Add transfer usage flags to support blit passes
+    // Add transfer usage flags to support blit passes only if image isn't
+    // device transient.
     vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
                 vk::ImageUsageFlagBits::eTransferDst;
   }
@@ -167,41 +225,31 @@ static constexpr VmaMemoryUsage ToVMAMemoryUsage() {
   return VMA_MEMORY_USAGE_AUTO;
 }
 
-static constexpr VkMemoryPropertyFlags ToVKMemoryPropertyFlags(
-    StorageMode mode,
-    bool is_texture) {
+static constexpr vk::Flags<vk::MemoryPropertyFlagBits>
+ToVKTextureMemoryPropertyFlags(StorageMode mode,
+                               bool supports_memoryless_textures) {
   switch (mode) {
     case StorageMode::kHostVisible:
-      if (is_texture) {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-      } else {
-        return VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-      }
+      return vk::MemoryPropertyFlagBits::eHostVisible |
+             vk::MemoryPropertyFlagBits::eDeviceLocal;
     case StorageMode::kDevicePrivate:
-      return VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      return vk::MemoryPropertyFlagBits::eDeviceLocal;
     case StorageMode::kDeviceTransient:
-      return VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+      if (supports_memoryless_textures) {
+        return vk::MemoryPropertyFlagBits::eLazilyAllocated |
+               vk::MemoryPropertyFlagBits::eDeviceLocal;
+      }
+      return vk::MemoryPropertyFlagBits::eDeviceLocal;
   }
   FML_UNREACHABLE();
 }
 
-static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
-                                                           bool is_texture) {
+static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode) {
   VmaAllocationCreateFlags flags = 0;
   switch (mode) {
     case StorageMode::kHostVisible:
-      if (is_texture) {
-        flags |= {};
-      } else {
-        flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
-        flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
-      }
       return flags;
     case StorageMode::kDevicePrivate:
-      if (is_texture) {
-        flags |= VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-      }
       return flags;
     case StorageMode::kDeviceTransient:
       return flags;
@@ -211,10 +259,14 @@ static VmaAllocationCreateFlags ToVmaAllocationCreateFlags(StorageMode mode,
 
 class AllocatedTextureSourceVK final : public TextureSourceVK {
  public:
-  AllocatedTextureSourceVK(const TextureDescriptor& desc,
+  AllocatedTextureSourceVK(std::weak_ptr<ResourceManagerVK> resource_manager,
+                           const TextureDescriptor& desc,
                            VmaAllocator allocator,
-                           vk::Device device)
-      : TextureSourceVK(desc) {
+                           vk::Device device,
+                           bool supports_memoryless_textures)
+      : TextureSourceVK(desc), resource_(std::move(resource_manager)) {
+    FML_DCHECK(desc.format != PixelFormat::kUnknown);
+    TRACE_EVENT0("impeller", "CreateDeviceTexture");
     vk::ImageCreateInfo image_info;
     image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
@@ -230,14 +282,17 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;
     image_info.usage =
-        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode);
+        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode,
+                            supports_memoryless_textures);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo alloc_nfo = {};
 
     alloc_nfo.usage = ToVMAMemoryUsage();
-    alloc_nfo.preferredFlags = ToVKMemoryPropertyFlags(desc.storage_mode, true);
-    alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode, true);
+    alloc_nfo.preferredFlags =
+        static_cast<VkMemoryPropertyFlags>(ToVKTextureMemoryPropertyFlags(
+            desc.storage_mode, supports_memoryless_textures));
+    alloc_nfo.flags = ToVmaAllocationCreateFlags(desc.storage_mode);
 
     auto create_info_native =
         static_cast<vk::ImageCreateInfo::NativeType>(image_info);
@@ -269,12 +324,10 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
       }
     }
 
-    image_ = vk::Image{vk_image};
-    allocator_ = allocator;
-    allocation_ = allocation;
+    auto image = vk::Image{vk_image};
 
     vk::ImageViewCreateInfo view_info = {};
-    view_info.image = image_;
+    view_info.image = image;
     view_info.viewType = ToVKImageViewType(desc.type);
     view_info.format = image_info.format;
     view_info.subresourceRange.aspectMask = ToVKImageAspectFlags(desc.format);
@@ -296,41 +349,53 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                      << vk::to_string(result);
       return;
     }
-    image_view_ = std::move(image_view);
-
+    resource_.Swap(ImageResource(ImageVMA{allocator, allocation, image},
+                                 std::move(image_view)));
     is_valid_ = true;
   }
 
-  ~AllocatedTextureSourceVK() {
-    image_view_.reset();
-    if (image_) {
-      ::vmaDestroyImage(
-          allocator_,                                                  //
-          static_cast<typename decltype(image_)::NativeType>(image_),  //
-          allocation_                                                  //
-      );
-    }
-  }
+  ~AllocatedTextureSourceVK() = default;
 
   bool IsValid() const { return is_valid_; }
 
-  vk::Image GetImage() const override { return image_; }
+  vk::Image GetImage() const override { return resource_->image.get().image; }
 
-  vk::ImageView GetImageView() const override { return image_view_.get(); }
+  vk::ImageView GetImageView() const override {
+    return resource_->image_view.get();
+  }
 
  private:
-  vk::Image image_ = {};
-  VmaAllocator allocator_ = {};
-  VmaAllocation allocation_ = {};
-  vk::UniqueImageView image_view_;
+  struct ImageResource {
+    UniqueImageVMA image;
+    vk::UniqueImageView image_view;
+
+    ImageResource() = default;
+
+    ImageResource(ImageVMA p_image, vk::UniqueImageView p_image_view)
+        : image(p_image), image_view(std::move(p_image_view)) {}
+
+    ImageResource(ImageResource&& o) {
+      std::swap(image, o.image);
+      std::swap(image_view, o.image_view);
+    }
+
+    ImageResource(const ImageResource&) = delete;
+
+    ImageResource& operator=(const ImageResource&) = delete;
+  };
+
+  UniqueResourceVKT<ImageResource> resource_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatedTextureSourceVK);
+  AllocatedTextureSourceVK(const AllocatedTextureSourceVK&) = delete;
+
+  AllocatedTextureSourceVK& operator=(const AllocatedTextureSourceVK&) = delete;
 };
 
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
+  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateTexture");
   if (!IsValid()) {
     return nullptr;
   }
@@ -338,20 +403,32 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   if (!device_holder) {
     return nullptr;
   }
-  auto source =
-      std::make_shared<AllocatedTextureSourceVK>(desc,                       //
-                                                 allocator_,                 //
-                                                 device_holder->GetDevice()  //
-      );
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
+  auto source = std::make_shared<AllocatedTextureSourceVK>(
+      ContextVK::Cast(*context).GetResourceManager(),  //
+      desc,                                            //
+      allocator_.get(),                                //
+      device_holder->GetDevice(),                      //
+      supports_memoryless_textures_                    //
+  );
   if (!source->IsValid()) {
     return nullptr;
   }
   return std::make_shared<TextureVK>(context_, std::move(source));
 }
 
+void AllocatorVK::DidAcquireSurfaceFrame() {
+  frame_count_++;
+  raster_thread_id_ = std::this_thread::get_id();
+}
+
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
+  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
   buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
                       vk::BufferUsageFlagBits::eIndexBuffer |
@@ -366,14 +443,18 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
 
   VmaAllocationCreateInfo allocation_info = {};
   allocation_info.usage = ToVMAMemoryUsage();
-  allocation_info.preferredFlags =
-      ToVKMemoryPropertyFlags(desc.storage_mode, false);
-  allocation_info.flags = ToVmaAllocationCreateFlags(desc.storage_mode, false);
+  allocation_info.preferredFlags = static_cast<VkMemoryPropertyFlags>(
+      ToVKBufferMemoryPropertyFlags(desc.storage_mode));
+  allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
+  if (created_buffer_pool_ && desc.storage_mode == StorageMode::kHostVisible &&
+      raster_thread_id_ == std::this_thread::get_id()) {
+    allocation_info.pool = staging_buffer_pool_.get().pool;
+  }
 
   VkBuffer buffer = {};
   VmaAllocation buffer_allocation = {};
   VmaAllocationInfo buffer_allocation_info = {};
-  auto result = vk::Result{::vmaCreateBuffer(allocator_,              //
+  auto result = vk::Result{::vmaCreateBuffer(allocator_.get(),        //
                                              &buffer_info_native,     //
                                              &allocation_info,        //
                                              &buffer,                 //
@@ -387,12 +468,13 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     return {};
   }
 
-  return std::make_shared<DeviceBufferVK>(desc,                    //
-                                          context_,                //
-                                          allocator_,              //
-                                          buffer_allocation,       //
-                                          buffer_allocation_info,  //
-                                          vk::Buffer{buffer}       //
+  return std::make_shared<DeviceBufferVK>(
+      desc,                                            //
+      context_,                                        //
+      UniqueBufferVMA{BufferVMA{allocator_.get(),      //
+                                buffer_allocation,     //
+                                vk::Buffer{buffer}}},  //
+      buffer_allocation_info                           //
   );
 }
 

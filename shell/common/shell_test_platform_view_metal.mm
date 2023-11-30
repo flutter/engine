@@ -31,14 +31,12 @@ static fml::scoped_nsprotocol<id<MTLTexture>> CreateOffscreenTexture(id<MTLDevic
 // non-Objective-C TUs.
 class DarwinContextMetal {
  public:
-  explicit DarwinContextMetal(bool impeller,
-                              std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner,
-                              std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
+  explicit DarwinContextMetal(
+      bool impeller,
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
       : context_(impeller ? nil : [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]),
         impeller_context_(
-            impeller ? [[FlutterDarwinContextMetalImpeller alloc]
-                                    initWithTaskRunner:std::move(worker_task_runner)
-                           is_gpu_disabled_sync_switch:std::move(is_gpu_disabled_sync_switch)]
+            impeller ? [[FlutterDarwinContextMetalImpeller alloc] init:is_gpu_disabled_sync_switch]
                      : nil),
         offscreen_texture_(CreateOffscreenTexture(
             impeller ? [impeller_context_ context]->GetMTLDevice() : [context_ device])) {}
@@ -74,12 +72,10 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter,
     std::shared_ptr<ShellTestExternalViewEmbedder> shell_test_external_view_embedder,
-    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
     const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
     : ShellTestPlatformView(delegate, task_runners),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kMTLTexture),
       metal_context_(std::make_unique<DarwinContextMetal>(GetSettings().enable_impeller,
-                                                          worker_task_runner,
                                                           is_gpu_disabled_sync_switch)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
       vsync_clock_(std::move(vsync_clock)),

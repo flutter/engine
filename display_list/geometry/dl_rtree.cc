@@ -14,7 +14,7 @@ DlRTree::DlRTree(const SkRect rects[],
                  const int ids[],
                  bool p(int),
                  int invalid_id)
-    : leaf_count_(0), invalid_id_(invalid_id) {
+    : invalid_id_(invalid_id) {
   if (N <= 0) {
     FML_DCHECK(N >= 0);
     return;
@@ -173,7 +173,7 @@ std::list<SkRect> DlRTree::searchAndConsolidateRects(const SkRect& query,
     bounds(index).roundOut(&current_record_rect);
     rects.push_back(current_record_rect);
   }
-  DlRegion region(std::move(rects));
+  DlRegion region(rects);
 
   auto non_overlapping_rects = region.getRects(deband);
   std::list<SkRect> final_results;
@@ -198,6 +198,26 @@ void DlRTree::search(const Node& parent,
         search(node, query, results);
       }
     }
+  }
+}
+
+const DlRegion& DlRTree::region() const {
+  if (!region_) {
+    std::vector<SkIRect> rects;
+    rects.resize(leaf_count_);
+    for (int i = 0; i < leaf_count_; i++) {
+      nodes_[i].bounds.roundOut(&rects[i]);
+    }
+    region_.emplace(rects);
+  }
+  return *region_;
+}
+
+const SkRect& DlRTree::bounds() const {
+  if (!nodes_.empty()) {
+    return nodes_.back().bounds;
+  } else {
+    return kEmpty;
   }
 }
 

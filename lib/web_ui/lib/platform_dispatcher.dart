@@ -146,6 +146,8 @@ abstract class PlatformDispatcher {
 
   VoidCallback? get onFrameDataChanged => null;
   set onFrameDataChanged(VoidCallback? callback) {}
+
+  double scaleFontSize(double unscaledFontSize);
 }
 
 enum FramePhase {
@@ -284,6 +286,25 @@ abstract class ViewPadding {
   String toString() {
     return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+abstract class ViewConstraints {
+  const factory ViewConstraints({
+    double minWidth,
+    double maxWidth,
+    double minHeight,
+    double maxHeight,
+  }) = engine.ViewConstraints;
+
+  factory ViewConstraints.tight(Size size) = engine.ViewConstraints.tight;
+
+  double get minWidth;
+  double get maxWidth;
+  double get minHeight;
+  double get maxHeight;
+  bool isSatisfiedBy(Size size);
+  bool get isTight;
+  ViewConstraints operator/(double factor);
 }
 
 @Deprecated(

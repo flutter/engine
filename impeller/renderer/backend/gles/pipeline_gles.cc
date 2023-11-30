@@ -35,7 +35,7 @@ const HandleGLES& PipelineGLES::GetProgramHandle() const {
   return handle_;
 }
 
-const BufferBindingsGLES* PipelineGLES::GetBufferBindings() const {
+BufferBindingsGLES* PipelineGLES::GetBufferBindings() const {
   return buffer_bindings_.get();
 }
 
@@ -46,7 +46,8 @@ bool PipelineGLES::BuildVertexDescriptor(const ProcTableGLES& gl,
   }
   auto vtx_desc = std::make_unique<BufferBindingsGLES>();
   if (!vtx_desc->RegisterVertexStageInput(
-          gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs())) {
+          gl, GetDescriptor().GetVertexDescriptor()->GetStageInputs(),
+          GetDescriptor().GetVertexDescriptor()->GetStageLayouts())) {
     return false;
   }
   if (!vtx_desc->ReadUniformsBindings(gl, program)) {

@@ -9,7 +9,6 @@
 #include <string>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/buffer.h"
 #include "impeller/core/buffer_view.h"
@@ -17,9 +16,7 @@
 
 namespace impeller {
 
-class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
-                         public Allocation,
-                         public Buffer {
+class HostBuffer final : public Buffer {
  public:
   static std::shared_ptr<HostBuffer> Create();
 
@@ -111,11 +108,45 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
   ///
   BufferView Emplace(size_t length, size_t align, const EmplaceProc& cb);
 
+  //----------------------------------------------------------------------------
+  /// @brief Resets the contents of the HostBuffer to nothing so it can be
+  ///        reused.
+  void Reset();
+
+  //----------------------------------------------------------------------------
+  /// @brief Returns the capacity of the HostBuffer in memory in bytes.
+  size_t GetSize() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief Returns the size of the currently allocated HostBuffer memory in
+  ///        bytes.
+  size_t GetLength() const;
+
  private:
-  mutable std::shared_ptr<DeviceBuffer> device_buffer_;
-  mutable size_t device_buffer_generation_ = 0u;
-  size_t generation_ = 1u;
-  std::string label_;
+  struct HostBufferState : public Buffer, public Allocation {
+    std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
+        Allocator& allocator) const override;
+
+    [[nodiscard]] std::pair<uint8_t*, Range> Emplace(const void* buffer,
+                                                     size_t length);
+
+    std::pair<uint8_t*, Range> Emplace(size_t length,
+                                       size_t align,
+                                       const EmplaceProc& cb);
+
+    std::pair<uint8_t*, Range> Emplace(const void* buffer,
+                                       size_t length,
+                                       size_t align);
+
+    void Reset();
+
+    mutable std::shared_ptr<DeviceBuffer> device_buffer;
+    mutable size_t device_buffer_generation = 0u;
+    size_t generation = 1u;
+    std::string label;
+  };
+
+  std::shared_ptr<HostBufferState> state_ = std::make_shared<HostBufferState>();
 
   // |Buffer|
   std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
@@ -125,7 +156,9 @@ class HostBuffer final : public std::enable_shared_from_this<HostBuffer>,
 
   HostBuffer();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(HostBuffer);
+  HostBuffer(const HostBuffer&) = delete;
+
+  HostBuffer& operator=(const HostBuffer&) = delete;
 };
 
 }  // namespace impeller

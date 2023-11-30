@@ -29,19 +29,9 @@ uniform BlurInfo {
   // radius is used to limit how much of the function is integrated.
   float blur_sigma;
   float16_t blur_radius;
+  float16_t step_size;
 }
 blur_info;
-
-#if ENABLE_ALPHA_MASK
-uniform f16sampler2D alpha_mask_sampler;
-
-uniform MaskInfo {
-  float16_t src_factor;
-  float16_t inner_blur_factor;
-  float16_t outer_blur_factor;
-}
-mask_info;
-#endif
 
 f16vec4 Sample(f16sampler2D tex, vec2 coords) {
 #if ENABLE_DECAL_SPECIALIZATION
@@ -52,7 +42,6 @@ f16vec4 Sample(f16sampler2D tex, vec2 coords) {
 }
 
 in vec2 v_texture_coords;
-in vec2 v_src_texture_coords;
 
 out f16vec4 frag_color;
 
@@ -60,8 +49,13 @@ void main() {
   f16vec4 total_color = f16vec4(0.0hf);
   float16_t gaussian_integral = 0.0hf;
 
+  // Step by 2.0 as a performance optimization, relying on bilinear filtering in
+  // the sampler to blend the texels. Typically the space between pixels is
+  // calculated so their blended amounts match the gaussian coefficients. This
+  // just uses 0.5 as an optimization until the gaussian coefficients are
+  // calculated and passed in from the cpu.
   for (float16_t i = -blur_info.blur_radius; i <= blur_info.blur_radius;
-       i += 2.0hf) {
+       i += blur_info.step_size) {
     // Use the 32 bit Gaussian function because the 16 bit variation results in
     // quality loss/visible banding. Also, 16 bit variation internally breaks
     // down at a moderately high (but still reasonable) blur sigma of >255 when
@@ -76,19 +70,4 @@ void main() {
   }
 
   frag_color = total_color / gaussian_integral;
-
-#if ENABLE_ALPHA_MASK
-  f16vec4 src_color = Sample(alpha_mask_sampler,   // sampler
-                             v_src_texture_coords  // texture coordinates
-  );
-
-  float16_t blur_factor;
-  if (src_color.a > 0.0hf) {
-    blur_factor = mask_info.inner_blur_factor;
-  } else if (src_color.a == 0.0hf) {
-    blur_factor = mask_info.outer_blur_factor;
-  }
-
-  frag_color = frag_color * blur_factor + src_color * mask_info.src_factor;
-#endif
 }

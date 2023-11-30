@@ -14,12 +14,10 @@ PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
                                        bool round)
     : points_(std::move(points)), radius_(radius), round_(round) {}
 
-PointFieldGeometry::~PointFieldGeometry() = default;
-
 GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
@@ -33,7 +31,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -43,7 +41,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
@@ -61,7 +59,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -69,11 +67,11 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
 std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>>
 PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
                                          const Entity& entity,
-                                         RenderPass& pass) {
+                                         RenderPass& pass) const {
   if (radius_ < 0.0) {
     return std::nullopt;
   }
-  auto determinant = entity.GetTransformation().GetDeterminant();
+  auto determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return std::nullopt;
   }
@@ -82,7 +80,7 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   Scalar radius = std::max(radius_, min_size);
 
   auto vertices_per_geom = ComputeCircleDivisions(
-      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+      entity.GetTransform().GetMaxBasisLength() * radius, round_);
   auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
   auto total = points_per_circle * points_.size();
   auto radian_start = round_ ? 0.0f : 0.785398f;
@@ -127,12 +125,12 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     const Entity& entity,
     RenderPass& pass,
     std::optional<Rect> texture_coverage,
-    std::optional<Matrix> effect_transform) {
+    std::optional<Matrix> effect_transform) const {
   FML_DCHECK(renderer.GetDeviceCapabilities().SupportsCompute());
   if (radius_ < 0.0) {
     return {};
   }
-  auto determinant = entity.GetTransformation().GetDeterminant();
+  auto determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return {};
   }
@@ -141,7 +139,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   Scalar radius = std::max(radius_, min_size);
 
   auto vertices_per_geom = ComputeCircleDivisions(
-      entity.GetTransformation().GetMaxBasisLength() * radius, round_);
+      entity.GetTransform().GetMaxBasisLength() * radius, round_);
 
   auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
   auto total = points_per_circle * points_.size();
@@ -167,7 +165,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   {
     using PS = PointsComputeShader;
     ComputeCommand cmd;
-    cmd.label = "Points Geometry";
+    DEBUG_COMMAND_INFO(cmd, "Points Geometry");
     cmd.pipeline = renderer.GetPointComputePipeline();
 
     PS::FrameInfo frame_info;
@@ -201,7 +199,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     using UV = UvComputeShader;
 
     ComputeCommand cmd;
-    cmd.label = "UV Geometry";
+    DEBUG_COMMAND_INFO(cmd, "UV Geometry");
     cmd.pipeline = renderer.GetUvComputePipeline();
 
     UV::FrameInfo frame_info;
@@ -233,7 +231,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -287,8 +285,9 @@ std::optional<Rect> PointFieldGeometry::GetCoverage(
       right = std::max(right, it->x);
       bottom = std::max(bottom, it->y);
     }
-    return Rect::MakeLTRB(left - radius_, top - radius_, right + radius_,
-                          bottom + radius_);
+    auto coverage = Rect::MakeLTRB(left - radius_, top - radius_,
+                                   right + radius_, bottom + radius_);
+    return coverage.TransformBounds(transform);
   }
   return std::nullopt;
 }

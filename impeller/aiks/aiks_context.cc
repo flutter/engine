@@ -5,16 +5,20 @@
 #include "impeller/aiks/aiks_context.h"
 
 #include "impeller/aiks/picture.h"
+#include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
 
-AiksContext::AiksContext(std::shared_ptr<Context> context)
+AiksContext::AiksContext(
+    std::shared_ptr<Context> context,
+    std::shared_ptr<TypographerContext> typographer_context)
     : context_(std::move(context)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
 
-  content_context_ = std::make_unique<ContentContext>(context_);
+  content_context_ = std::make_unique<ContentContext>(
+      context_, std::move(typographer_context));
   if (!content_context_->IsValid()) {
     return;
   }

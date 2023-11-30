@@ -22,7 +22,7 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
   // TODO(dkwingsmt): This class only supports single-view for now. As more
   // classes are gradually converted to multi-view, it should get the view ID
   // from somewhere.
-  FlutterView* view = [view_provider_ viewForId:kFlutterDefaultViewId];
+  FlutterView* view = [view_provider_ viewForId:kFlutterImplicitViewId];
   if (!view) {
     return false;
   }
@@ -57,6 +57,13 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
         info.surface = surface;
         info.offset = CGPointMake(layer->offset.x, layer->offset.y);
         info.zIndex = i;
+        FlutterBackingStorePresentInfo* present_info = layer->backing_store_present_info;
+        if (present_info != nullptr && present_info->paint_region != nullptr) {
+          auto paint_region = present_info->paint_region;
+          // Safe because the size of FlutterRect is not expected to change.
+          info.paintRegion = std::vector<FlutterRect>(
+              paint_region->rects, paint_region->rects + paint_region->rects_count);
+        }
         [surfaces addObject:info];
       }
     }

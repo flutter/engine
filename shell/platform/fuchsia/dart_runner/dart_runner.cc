@@ -7,6 +7,7 @@
 #include <lib/async-loop/loop.h>
 #include <lib/async/default.h>
 #include <lib/syslog/global.h>
+#include <lib/vfs/cpp/pseudo_dir.h>
 #include <sys/stat.h>
 #include <zircon/status.h>
 #include <zircon/syscalls.h>
@@ -40,7 +41,7 @@ namespace {
 const char* kDartVMArgs[] = {
     // clang-format off
 
-    "--systrace_timeline",
+    "--timeline_recorder=systrace",
     "--timeline_streams=Compiler,Dart,Debugger,Embedder,GC,Isolate,VM",
 
 #if defined(AOT_RUNTIME)

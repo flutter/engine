@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -94,10 +95,11 @@ struct ShaderStageIOSlot {
   size_t bit_width;
   size_t vec_size;
   size_t columns;
+  size_t offset;
 
   constexpr size_t GetHash() const {
     return fml::HashCombine(name, location, set, binding, type, bit_width,
-                            vec_size, columns);
+                            vec_size, columns, offset);
   }
 
   constexpr bool operator==(const ShaderStageIOSlot& other) const {
@@ -108,7 +110,20 @@ struct ShaderStageIOSlot {
            type == other.type &&            //
            bit_width == other.bit_width &&  //
            vec_size == other.vec_size &&    //
-           columns == other.columns;
+           columns == other.columns &&      //
+           offset == other.offset;
+  }
+};
+
+struct ShaderStageBufferLayout {
+  size_t stride;
+  size_t binding;
+
+  constexpr size_t GetHash() const { return fml::HashCombine(stride, binding); }
+
+  constexpr bool operator==(const ShaderStageBufferLayout& other) const {
+    return stride == other.stride &&  //
+           binding == other.binding;
   }
 };
 

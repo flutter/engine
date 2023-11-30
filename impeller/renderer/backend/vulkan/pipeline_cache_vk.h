@@ -6,10 +6,8 @@
 
 #include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
-#include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
 
@@ -31,19 +29,22 @@ class PipelineCacheVK {
 
   vk::UniquePipeline CreatePipeline(const vk::ComputePipelineCreateInfo& info);
 
+  const CapabilitiesVK* GetCapabilities() const;
+
   void PersistCacheToDisk() const;
 
  private:
   const std::shared_ptr<const Capabilities> caps_;
   std::weak_ptr<DeviceHolder> device_holder_;
   const fml::UniqueFD cache_directory_;
-  mutable Mutex cache_mutex_;
-  vk::UniquePipelineCache cache_ IPLR_GUARDED_BY(cache_mutex_);
+  vk::UniquePipelineCache cache_;
   bool is_valid_ = false;
 
   std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineCacheVK);
+  PipelineCacheVK(const PipelineCacheVK&) = delete;
+
+  PipelineCacheVK& operator=(const PipelineCacheVK&) = delete;
 };
 
 }  // namespace impeller

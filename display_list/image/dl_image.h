@@ -10,8 +10,8 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
-#include "include/core/SkRefCnt.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/core/SkRefCnt.h"
 
 namespace impeller {
 class Texture;
@@ -131,7 +131,9 @@ class DlImage : public SkRefCnt {
 
   bool Equals(const DlImage& other) const { return Equals(&other); }
 
-  bool Equals(sk_sp<const DlImage> other) const { return Equals(other.get()); }
+  bool Equals(const sk_sp<const DlImage>& other) const {
+    return Equals(other.get());
+  }
 
  protected:
   DlImage();

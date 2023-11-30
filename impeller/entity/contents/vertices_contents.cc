@@ -4,12 +4,8 @@
 
 #include "vertices_contents.h"
 
-#include "impeller/core/formats.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/geometry/color.h"
@@ -23,7 +19,7 @@ VerticesContents::VerticesContents() = default;
 VerticesContents::~VerticesContents() = default;
 
 std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry_->GetCoverage(entity.GetTransform());
 };
 
 void VerticesContents::SetGeometry(std::shared_ptr<VerticesGeometry> geometry) {
@@ -57,8 +53,10 @@ bool VerticesContents::Render(const ContentContext& renderer,
     return true;
   }
   std::shared_ptr<Contents> src_contents = src_contents_;
+  src_contents->SetCoverageHint(GetCoverageHint());
   if (geometry_->HasTextureCoordinates()) {
     auto contents = std::make_shared<VerticesUVContents>(*this);
+    contents->SetCoverageHint(GetCoverageHint());
     if (!geometry_->HasVertexColors()) {
       contents->SetAlpha(alpha_);
       return contents->Render(renderer, entity, pass);
@@ -67,18 +65,22 @@ bool VerticesContents::Render(const ContentContext& renderer,
   }
 
   auto dst_contents = std::make_shared<VerticesColorContents>(*this);
+  dst_contents->SetCoverageHint(GetCoverageHint());
 
   std::shared_ptr<Contents> contents;
   if (blend_mode_ == BlendMode::kDestination) {
+    dst_contents->SetAlpha(alpha_);
     contents = dst_contents;
   } else {
     auto color_filter_contents = ColorFilterContents::MakeBlend(
         blend_mode_, {FilterInput::Make(dst_contents, false),
                       FilterInput::Make(src_contents, false)});
     color_filter_contents->SetAlpha(alpha_);
+    color_filter_contents->SetCoverageHint(GetCoverageHint());
     contents = color_filter_contents;
   }
 
+  FML_DCHECK(contents->GetCoverageHint() == GetCoverageHint());
   return contents->Render(renderer, entity, pass);
 }
 
@@ -108,18 +110,18 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   auto src_contents = parent_.GetSourceContents();
 
   auto snapshot =
-      src_contents->RenderToSnapshot(renderer,      // renderer
-                                     entity,        // entity
-                                     std::nullopt,  // coverage_limit
-                                     std::nullopt,  // sampler_descriptor
-                                     true,          // msaa_enabled
+      src_contents->RenderToSnapshot(renderer,           // renderer
+                                     entity,             // entity
+                                     GetCoverageHint(),  // coverage_limit
+                                     std::nullopt,       // sampler_descriptor
+                                     true,               // msaa_enabled
                                      "VerticesUVContents Snapshot");  // label
   if (!snapshot.has_value()) {
     return false;
   }
 
   Command cmd;
-  cmd.label = "VerticesUV";
+  DEBUG_COMMAND_INFO(cmd, "VerticesUV");
   auto& host_buffer = pass.GetTransientsBuffer();
   auto geometry = parent_.GetGeometry();
 
@@ -132,18 +134,15 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetTexturePipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale =
       snapshot->texture->GetYCoordScale();
+  frame_info.alpha = alpha_ * snapshot->opacity;
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-
-  FS::FragInfo frag_info;
-  frag_info.alpha = alpha_ * snapshot->opacity;
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
   FS::BindTextureSampler(cmd, snapshot->texture,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
@@ -176,7 +175,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   using FS = GeometryColorPipeline::FragmentShader;
 
   Command cmd;
-  cmd.label = "VerticesColors";
+  DEBUG_COMMAND_INFO(cmd, "VerticesColors");
   auto& host_buffer = pass.GetTransientsBuffer();
   auto geometry = parent_.GetGeometry();
 
@@ -185,7 +184,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;

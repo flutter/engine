@@ -6,12 +6,14 @@
 
 #include <sstream>
 
+#include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/golden_tests/golden_digest.h"
 #include "impeller/golden_tests/metal_screenshot.h"
-#include "impeller/golden_tests/metal_screenshoter.h"
+#include "impeller/golden_tests/metal_screenshotter.h"
 #include "impeller/golden_tests/working_directory.h"
 
 namespace impeller {
@@ -48,18 +50,22 @@ bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
 
 class GoldenTests : public ::testing::Test {
  public:
-  GoldenTests() : screenshoter_(new MetalScreenshoter()) {}
+  GoldenTests() : screenshotter_(new MetalScreenshotter()) {}
 
-  MetalScreenshoter& Screenshoter() { return *screenshoter_; }
+  MetalScreenshotter& Screenshotter() { return *screenshotter_; }
 
   void SetUp() override {
     testing::GoldenDigest::Instance()->AddDimension(
         "gpu_string",
-        Screenshoter().GetContext().GetContext()->DescribeGpuModel());
+        Screenshotter().GetPlayground().GetContext()->DescribeGpuModel());
   }
 
  private:
-  std::unique_ptr<MetalScreenshoter> screenshoter_;
+  // This must be placed before any other members that may use the
+  // autorelease pool.
+  fml::ScopedNSAutoreleasePool autorelease_pool_;
+
+  std::unique_ptr<MetalScreenshotter> screenshotter_;
 };
 
 TEST_F(GoldenTests, ConicalGradient) {
@@ -72,9 +78,12 @@ TEST_F(GoldenTests, ConicalGradient) {
 
   paint.stroke_width = 0.0;
   paint.style = Paint::Style::kFill;
-  canvas.DrawRect(Rect(10, 10, 250, 250), paint);
+  canvas.DrawRect(Rect::MakeXYWH(10, 10, 250, 250), paint);
   Picture picture = canvas.EndRecordingAsPicture();
-  auto screenshot = Screenshoter().MakeScreenshot(picture);
+
+  auto aiks_context =
+      AiksContext(Screenshotter().GetPlayground().GetContext(), nullptr);
+  auto screenshot = Screenshotter().MakeScreenshot(aiks_context, picture);
   ASSERT_TRUE(SaveScreenshot(std::move(screenshot)));
 }
 }  // namespace testing

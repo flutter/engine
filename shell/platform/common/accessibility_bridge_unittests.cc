@@ -205,40 +205,6 @@ TEST(AccessibilityBridgeTest, CanFireChildrenChangedCorrectly) {
               Contains(ui::AXEventGenerator::Event::SUBTREE_CREATED));
 }
 
-TEST(AccessibilityBridgeTest, CanRecreateNodeDelegates) {
-  std::shared_ptr<TestAccessibilityBridge> bridge =
-      std::make_shared<TestAccessibilityBridge>();
-
-  std::vector<int32_t> children{1};
-  FlutterSemanticsNode2 root = CreateSemanticsNode(0, "root", &children);
-  FlutterSemanticsNode2 child1 = CreateSemanticsNode(1, "child 1");
-
-  bridge->AddFlutterSemanticsNodeUpdate(root);
-  bridge->AddFlutterSemanticsNodeUpdate(child1);
-  bridge->CommitUpdates();
-
-  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0);
-  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1);
-  EXPECT_FALSE(root_node.expired());
-  EXPECT_FALSE(child1_node.expired());
-
-  bridge->RecreateNodeDelegates();
-
-  // Old tree is destroyed.
-  EXPECT_TRUE(root_node.expired());
-  EXPECT_TRUE(child1_node.expired());
-
-  // New tree still has the data.
-  auto new_root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-  auto new_child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
-  EXPECT_EQ(new_root_node->GetChildCount(), 1);
-  EXPECT_EQ(new_root_node->GetData().child_ids[0], 1);
-  EXPECT_EQ(new_root_node->GetName(), "root");
-
-  EXPECT_EQ(new_child1_node->GetChildCount(), 0);
-  EXPECT_EQ(new_child1_node->GetName(), "child 1");
-}
-
 TEST(AccessibilityBridgeTest, CanHandleSelectionChangeCorrectly) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
@@ -287,7 +253,7 @@ TEST(AccessibilityBridgeTest, DoesNotAssignEditableRootToSelectableText) {
       ax::mojom::BoolAttribute::kEditableRoot));
 }
 
-TEST(AccessibilityBridgeTest, ToggleHasToggleButtonRole) {
+TEST(AccessibilityBridgeTest, SwitchHasSwitchRole) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode2 root = CreateSemanticsNode(0, "root");
@@ -299,7 +265,7 @@ TEST(AccessibilityBridgeTest, ToggleHasToggleButtonRole) {
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-  EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
+  EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kSwitch);
 }
 
 TEST(AccessibilityBridgeTest, SliderHasSliderRole) {

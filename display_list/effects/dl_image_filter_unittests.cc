@@ -12,6 +12,9 @@
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "gtest/gtest.h"
 
+#include "third_party/skia/include/core/SkBlendMode.h"
+#include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkSamplingOptions.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
@@ -204,6 +207,23 @@ TEST(DisplayListImageFilter, BlurBounds) {
   SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   SkRect expected_output_bounds = input_bounds.makeOutset(15, 30);
   TestBounds(filter, input_bounds, expected_output_bounds);
+}
+
+TEST(DisplayListImageFilter, BlurZeroSigma) {
+  std::shared_ptr<DlImageFilter> filter =
+      DlBlurImageFilter::Make(0, 0, DlTileMode::kMirror);
+  ASSERT_EQ(filter, nullptr);
+  filter = DlBlurImageFilter::Make(3, SK_ScalarNaN, DlTileMode::kMirror);
+  ASSERT_EQ(filter, nullptr);
+  filter = DlBlurImageFilter::Make(SK_ScalarNaN, 3, DlTileMode::kMirror);
+  ASSERT_EQ(filter, nullptr);
+  filter =
+      DlBlurImageFilter::Make(SK_ScalarNaN, SK_ScalarNaN, DlTileMode::kMirror);
+  ASSERT_EQ(filter, nullptr);
+  filter = DlBlurImageFilter::Make(3, 0, DlTileMode::kMirror);
+  ASSERT_NE(filter, nullptr);
+  filter = DlBlurImageFilter::Make(0, 3, DlTileMode::kMirror);
+  ASSERT_NE(filter, nullptr);
 }
 
 TEST(DisplayListImageFilter, DilateConstructor) {

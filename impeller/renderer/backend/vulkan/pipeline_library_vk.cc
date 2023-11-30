@@ -4,11 +4,15 @@
 
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 
+#include <chrono>
+#include <cstdint>
 #include <optional>
+#include <sstream>
 
 #include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
+#include "impeller/base/timing.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -72,8 +76,9 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
 /// spec:
 /// https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/chap8.html#renderpass-compatibility
 ///
-static vk::UniqueRenderPass CreateRenderPass(const vk::Device& device,
-                                             const PipelineDescriptor& desc) {
+static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
+    const vk::Device& device,
+    const PipelineDescriptor& desc) {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -125,6 +130,13 @@ static vk::UniqueRenderPass CreateRenderPass(const vk::Device& device,
     return {};
   }
 
+  // This pass is not used with the render pass. It is only necessary to tell
+  // Vulkan the expected render pass layout. The actual pass will be created
+  // later during render pass setup and will need to be compatible with this
+  // one.
+  ContextVK::SetDebugName(device, pass.get(),
+                          "Compat Render Pass: " + desc.GetLabel());
+
   return std::move(pass);
 }
 
@@ -138,10 +150,108 @@ constexpr vk::FrontFace ToVKFrontFace(WindingOrder order) {
   FML_UNREACHABLE();
 }
 
+static vk::PipelineCreationFeedbackEXT EmptyFeedback() {
+  vk::PipelineCreationFeedbackEXT feedback;
+  // If the VK_PIPELINE_CREATION_FEEDBACK_VALID_BIT is not set in flags, an
+  // implementation must not set any other bits in flags, and the values of all
+  // other VkPipelineCreationFeedback data members are undefined.
+  feedback.flags = vk::PipelineCreationFeedbackFlagBits::eValid;
+  return feedback;
+}
+
+static void ReportPipelineCreationFeedbackToLog(
+    std::stringstream& stream,
+    const vk::PipelineCreationFeedbackEXT& feedback) {
+  const auto pipeline_cache_hit =
+      feedback.flags &
+      vk::PipelineCreationFeedbackFlagBits::eApplicationPipelineCacheHit;
+  const auto base_pipeline_accl =
+      feedback.flags &
+      vk::PipelineCreationFeedbackFlagBits::eBasePipelineAcceleration;
+  auto duration = std::chrono::duration_cast<MillisecondsF>(
+      std::chrono::nanoseconds{feedback.duration});
+  stream << "Time: " << duration.count() << "ms"
+         << " Cache Hit: " << static_cast<bool>(pipeline_cache_hit)
+         << " Base Accel: " << static_cast<bool>(base_pipeline_accl)
+         << " Thread: " << std::this_thread::get_id();
+}
+
+static void ReportPipelineCreationFeedbackToLog(
+    const PipelineDescriptor& desc,
+    const vk::PipelineCreationFeedbackCreateInfoEXT& feedback) {
+  std::stringstream stream;
+  stream << std::fixed << std::showpoint << std::setprecision(2);
+  stream << std::endl << ">>>>>>" << std::endl;
+  stream << "Pipeline '" << desc.GetLabel() << "' ";
+  ReportPipelineCreationFeedbackToLog(stream,
+                                      *feedback.pPipelineCreationFeedback);
+  if (feedback.pipelineStageCreationFeedbackCount != 0) {
+    stream << std::endl;
+  }
+  for (size_t i = 0, count = feedback.pipelineStageCreationFeedbackCount;
+       i < count; i++) {
+    stream << "\tStage " << i + 1 << ": ";
+    ReportPipelineCreationFeedbackToLog(
+        stream, feedback.pPipelineStageCreationFeedbacks[i]);
+    if (i != count - 1) {
+      stream << std::endl;
+    }
+  }
+  stream << std::endl << "<<<<<<" << std::endl;
+  FML_LOG(ERROR) << stream.str();
+}
+
+static void ReportPipelineCreationFeedbackToTrace(
+    const PipelineDescriptor& desc,
+    const vk::PipelineCreationFeedbackCreateInfoEXT& feedback) {
+  static int64_t gPipelineCacheHits = 0;
+  static int64_t gPipelineCacheMisses = 0;
+  static int64_t gPipelines = 0;
+  if (feedback.pPipelineCreationFeedback->flags &
+      vk::PipelineCreationFeedbackFlagBits::eApplicationPipelineCacheHit) {
+    gPipelineCacheHits++;
+  } else {
+    gPipelineCacheMisses++;
+  }
+  gPipelines++;
+  static constexpr int64_t kImpellerPipelineTraceID = 1988;
+  FML_TRACE_COUNTER("impeller",                                   //
+                    "PipelineCache",                              // series name
+                    kImpellerPipelineTraceID,                     // series ID
+                    "PipelineCacheHits", gPipelineCacheHits,      //
+                    "PipelineCacheMisses", gPipelineCacheMisses,  //
+                    "TotalPipelines", gPipelines                  //
+  );
+}
+
+static void ReportPipelineCreationFeedback(
+    const PipelineDescriptor& desc,
+    const vk::PipelineCreationFeedbackCreateInfoEXT& feedback) {
+  constexpr bool kReportPipelineCreationFeedbackToLogs = false;
+  constexpr bool kReportPipelineCreationFeedbackToTraces = true;
+  if (kReportPipelineCreationFeedbackToLogs) {
+    ReportPipelineCreationFeedbackToLog(desc, feedback);
+  }
+  if (kReportPipelineCreationFeedbackToTraces) {
+    ReportPipelineCreationFeedbackToTrace(desc, feedback);
+  }
+}
+
 std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     const PipelineDescriptor& desc) {
   TRACE_EVENT0("flutter", __FUNCTION__);
-  vk::GraphicsPipelineCreateInfo pipeline_info;
+  vk::StructureChain<vk::GraphicsPipelineCreateInfo,
+                     vk::PipelineCreationFeedbackCreateInfoEXT>
+      chain;
+
+  const auto& supports_pipeline_creation_feedback =
+      pso_cache_->GetCapabilities()->HasOptionalDeviceExtension(
+          OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback);
+  if (!supports_pipeline_creation_feedback) {
+    chain.unlink<vk::PipelineCreationFeedbackCreateInfoEXT>();
+  }
+
+  auto& pipeline_info = chain.get<vk::GraphicsPipelineCreateInfo>();
 
   //----------------------------------------------------------------------------
   /// Dynamic States
@@ -168,7 +278,15 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Shader Stages
   ///
+  const auto& constants = desc.GetSpecializationConstants();
+
+  std::vector<std::vector<vk::SpecializationMapEntry>> map_entries(
+      desc.GetStageEntrypoints().size());
+  std::vector<vk::SpecializationInfo> specialization_infos(
+      desc.GetStageEntrypoints().size());
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
+
+  size_t entrypoint_count = 0;
   for (const auto& entrypoint : desc.GetStageEntrypoints()) {
     auto stage = ToVKShaderStageFlagBits(entrypoint.first);
     if (!stage.has_value()) {
@@ -176,12 +294,31 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
                      << desc.GetLabel();
       return nullptr;
     }
+
+    std::vector<vk::SpecializationMapEntry>& entries =
+        map_entries[entrypoint_count];
+    for (auto i = 0u; i < constants.size(); i++) {
+      vk::SpecializationMapEntry entry;
+      entry.offset = (i * sizeof(int32_t));
+      entry.size = sizeof(int32_t);
+      entry.constantID = i;
+      entries.emplace_back(entry);
+    }
+
+    vk::SpecializationInfo& specialization_info =
+        specialization_infos[entrypoint_count];
+    specialization_info.setMapEntries(map_entries[entrypoint_count]);
+    specialization_info.setPData(constants.data());
+    specialization_info.setDataSize(sizeof(int32_t) * constants.size());
+
     vk::PipelineShaderStageCreateInfo info;
     info.setStage(stage.value());
     info.setPName("main");
     info.setModule(
         ShaderFunctionVK::Cast(entrypoint.second.get())->GetModule());
+    info.setPSpecializationInfo(&specialization_info);
     shader_stages.push_back(info);
+    entrypoint_count++;
   }
   pipeline_info.setStages(shader_stages);
 
@@ -231,7 +368,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  auto render_pass = CreateRenderPass(strong_device->GetDevice(), desc);
+  auto render_pass =
+      CreateCompatRenderPassForPipeline(strong_device->GetDevice(), desc);
   if (render_pass) {
     pipeline_info.setBasePipelineHandle(VK_NULL_HANDLE);
     pipeline_info.setSubpass(0);
@@ -243,31 +381,31 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Vertex Input Setup
   ///
-  vk::VertexInputBindingDescription binding_description;
-  // Only 1 stream of data is supported for now.
-  binding_description.setBinding(0);
-  binding_description.setInputRate(vk::VertexInputRate::eVertex);
-
   std::vector<vk::VertexInputAttributeDescription> attr_descs;
-  uint32_t offset = 0;
+  std::vector<vk::VertexInputBindingDescription> buffer_descs;
+
   const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
+  const auto& stage_buffer_layouts =
+      desc.GetVertexDescriptor()->GetStageLayouts();
   for (const ShaderStageIOSlot& stage_in : stage_inputs) {
     vk::VertexInputAttributeDescription attr_desc;
     attr_desc.setBinding(stage_in.binding);
     attr_desc.setLocation(stage_in.location);
     attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
-    attr_desc.setOffset(offset);
+    attr_desc.setOffset(stage_in.offset);
     attr_descs.push_back(attr_desc);
-    uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
-    offset += len;
   }
-
-  binding_description.setStride(offset);
+  for (const ShaderStageBufferLayout& layout : stage_buffer_layouts) {
+    vk::VertexInputBindingDescription binding_description;
+    binding_description.setBinding(layout.binding);
+    binding_description.setInputRate(vk::VertexInputRate::eVertex);
+    binding_description.setStride(layout.stride);
+    buffer_descs.push_back(binding_description);
+  }
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state;
   vertex_input_state.setVertexAttributeDescriptions(attr_descs);
-  vertex_input_state.setVertexBindingDescriptionCount(1);
-  vertex_input_state.setPVertexBindingDescriptions(&binding_description);
+  vertex_input_state.setVertexBindingDescriptions(buffer_descs);
 
   pipeline_info.setPVertexInputState(&vertex_input_state);
 
@@ -320,12 +458,27 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   pipeline_info.setPDepthStencilState(&depth_stencil_state);
 
   //----------------------------------------------------------------------------
+  /// Setup the optional pipeline creation feedback struct so we can understand
+  /// how Vulkan created the PSO.
+  ///
+  auto& feedback = chain.get<vk::PipelineCreationFeedbackCreateInfoEXT>();
+  auto pipeline_feedback = EmptyFeedback();
+  std::vector<vk::PipelineCreationFeedbackEXT> stage_feedbacks(
+      pipeline_info.stageCount, EmptyFeedback());
+  feedback.setPPipelineCreationFeedback(&pipeline_feedback);
+  feedback.setPipelineStageCreationFeedbacks(stage_feedbacks);
+
+  //----------------------------------------------------------------------------
   /// Finally, all done with the setup info. Create the pipeline itself.
   ///
   auto pipeline = pso_cache_->CreatePipeline(pipeline_info);
   if (!pipeline) {
     VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
     return nullptr;
+  }
+
+  if (supports_pipeline_creation_feedback) {
+    ReportPipelineCreationFeedback(desc, feedback);
   }
 
   ContextVK::SetDebugName(strong_device->GetDevice(), *pipeline_layout.value,

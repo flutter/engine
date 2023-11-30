@@ -22,7 +22,8 @@ DisplayList::DisplayList()
       unique_id_(0),
       bounds_({0, 0, 0, 0}),
       can_apply_group_opacity_(true),
-      is_ui_thread_safe_(true) {}
+      is_ui_thread_safe_(true),
+      modifies_transparent_black_(false) {}
 
 DisplayList::DisplayList(DisplayListStorage&& storage,
                          size_t byte_count,
@@ -32,6 +33,7 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
                          const SkRect& bounds,
                          bool can_apply_group_opacity,
                          bool is_ui_thread_safe,
+                         bool modifies_transparent_black,
                          sk_sp<const DlRTree> rtree)
     : storage_(std::move(storage)),
       byte_count_(byte_count),
@@ -42,6 +44,7 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
       bounds_(bounds),
       can_apply_group_opacity_(can_apply_group_opacity),
       is_ui_thread_safe_(is_ui_thread_safe),
+      modifies_transparent_black_(modifies_transparent_black),
       rtree_(std::move(rtree)) {}
 
 DisplayList::~DisplayList() {
@@ -150,17 +153,12 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
   if (cull_rect.isEmpty()) {
     return;
   }
-  if (cull_rect.contains(bounds())) {
+  if (!has_rtree() || cull_rect.contains(bounds())) {
     Dispatch(receiver);
     return;
   }
   const DlRTree* rtree = this->rtree().get();
   FML_DCHECK(rtree != nullptr);
-  if (rtree == nullptr) {
-    FML_LOG(ERROR) << "dispatched with culling rect on DL with no rtree";
-    Dispatch(receiver);
-    return;
-  }
   uint8_t* ptr = storage_.get();
   std::vector<int> rect_indices;
   rtree->search(cull_rect, &rect_indices);

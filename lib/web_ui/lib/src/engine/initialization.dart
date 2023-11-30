@@ -8,6 +8,7 @@ import 'dart:js_interop';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import 'package:web_test_fonts/web_test_fonts.dart';
 
 /// The mode the app is running in.
@@ -52,14 +53,6 @@ void debugEmulateHotRestart() {
   for (final ui.VoidCallback listener in _hotRestartListeners) {
     listener();
   }
-}
-
-/// Fully initializes the engine, including services and UI.
-Future<void> initializeEngine({
-  AssetManager? assetManager,
-}) async {
-  await initializeEngineServices(assetManager: assetManager);
-  await initializeEngineUi();
 }
 
 /// How far along the initialization process the engine is currently is.
@@ -114,7 +107,7 @@ void debugResetEngineInitializationState() {
 ///  * [initializeEngineUi], which is typically called after this function, and
 ///    puts UI elements on the page.
 Future<void> initializeEngineServices({
-  AssetManager? assetManager,
+  ui_web.AssetManager? assetManager,
   JsFlutterConfiguration? jsConfiguration
 }) async {
   if (_initializationState != DebugEngineInitializationState.uninitialized) {
@@ -168,7 +161,8 @@ Future<void> initializeEngineServices({
         // milliseconds as a double value, with sub-millisecond information
         // hidden in the fraction. So we first multiply it by 1000 to uncover
         // microsecond precision, and only then convert to `int`.
-        final int highResTimeMicroseconds = (1000 * highResTime.toDart).toInt();
+        final int highResTimeMicroseconds =
+            (1000 * highResTime.toDartDouble).toInt();
 
         // In Flutter terminology "building a frame" consists of "beginning
         // frame" and "drawing frame".
@@ -193,7 +187,7 @@ Future<void> initializeEngineServices({
     }
   };
 
-  assetManager ??= AssetManager(assetBase: configuration.assetBase);
+  assetManager ??= ui_web.AssetManager(assetBase: configuration.assetBase);
   _setAssetManager(assetManager);
 
   Future<void> initializeRendererCallback () async => renderer.initialize();
@@ -224,15 +218,20 @@ Future<void> initializeEngineUi() async {
   _initializationState = DebugEngineInitializationState.initializingUi;
 
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
-  MouseCursor.initialize();
-  ensureFlutterViewEmbedderInitialized();
+  if (!configuration.multiViewEnabled) {
+    ensureImplicitViewInitialized(hostElement: configuration.hostElement);
+    ensureFlutterViewEmbedderInitialized();
+  }
   _initializationState = DebugEngineInitializationState.initialized;
 }
 
-AssetManager get assetManager => _assetManager!;
-AssetManager? _assetManager;
+ui_web.AssetManager get engineAssetManager => _debugAssetManager ?? _assetManager!;
+ui_web.AssetManager? _assetManager;
+ui_web.AssetManager? _debugAssetManager;
 
-void _setAssetManager(AssetManager assetManager) {
+set debugOnlyAssetManager(ui_web.AssetManager? manager) => _debugAssetManager = manager;
+
+void _setAssetManager(ui_web.AssetManager assetManager) {
   if (assetManager == _assetManager) {
     return;
   }
@@ -243,7 +242,7 @@ void _setAssetManager(AssetManager assetManager) {
 Future<void> _downloadAssetFonts() async {
   renderer.fontCollection.clear();
 
-  if (ui.debugEmulateFlutterTesterEnvironment) {
+  if (ui_web.debugEmulateFlutterTesterEnvironment) {
     // Load the embedded test font before loading fonts from the assets so that
     // the embedded test font is the default (first) font.
     await renderer.fontCollection.loadFontFromList(
@@ -252,8 +251,8 @@ Future<void> _downloadAssetFonts() async {
     );
   }
 
-  if (_assetManager != null) {
-    await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(assetManager));
+  if (_debugAssetManager != null || _assetManager != null) {
+    await renderer.fontCollection.loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
   }
 }
 
@@ -269,8 +268,3 @@ set debugDisableFontFallbacks(bool value) {
   _debugDisableFontFallbacks = value;
 }
 bool _debugDisableFontFallbacks = false;
-
-/// The shared instance of PlatformViewManager shared across the engine to handle
-/// rendering of PlatformViews into the web app.
-// TODO(dit): How to make this overridable from tests?
-final PlatformViewManager platformViewManager = PlatformViewManager();

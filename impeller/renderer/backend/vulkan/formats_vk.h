@@ -4,11 +4,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "flutter/fml/macros.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -157,6 +159,8 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
       return vk::Format::eR16G16B16A16Sfloat;
     case PixelFormat::kS8UInt:
       return vk::Format::eS8Uint;
+    case PixelFormat::kD24UnormS8Uint:
+      return vk::Format::eD24UnormS8Uint;
     case PixelFormat::kD32FloatS8UInt:
       return vk::Format::eD32SfloatS8Uint;
     case PixelFormat::kR8UNormInt:
@@ -186,6 +190,8 @@ constexpr PixelFormat ToPixelFormat(vk::Format format) {
       return PixelFormat::kR16G16B16A16Float;
     case vk::Format::eS8Uint:
       return PixelFormat::kS8UInt;
+    case vk::Format::eD24UnormS8Uint:
+      return PixelFormat::kD24UnormS8Uint;
     case vk::Format::eD32SfloatS8Uint:
       return PixelFormat::kD32FloatS8UInt;
     case vk::Format::eR8Unorm:
@@ -385,6 +391,7 @@ constexpr bool PixelFormatIsDepthStencil(PixelFormat format) {
     case PixelFormat::kB10G10R10A10XR:
       return false;
     case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
     case PixelFormat::kD32FloatS8UInt:
       return true;
   }
@@ -416,6 +423,7 @@ constexpr AttachmentKind AttachmentKindFromFormat(PixelFormat format) {
       return AttachmentKind::kColor;
     case PixelFormat::kS8UInt:
       return AttachmentKind::kStencil;
+    case PixelFormat::kD24UnormS8Uint:
     case PixelFormat::kD32FloatS8UInt:
       return AttachmentKind::kDepthStencil;
   }
@@ -574,6 +582,7 @@ constexpr vk::ImageAspectFlags ToVKImageAspectFlags(PixelFormat format) {
       return vk::ImageAspectFlagBits::eColor;
     case PixelFormat::kS8UInt:
       return vk::ImageAspectFlagBits::eStencil;
+    case PixelFormat::kD24UnormS8Uint:
     case PixelFormat::kD32FloatS8UInt:
       return vk::ImageAspectFlagBits::eDepth |
              vk::ImageAspectFlagBits::eStencil;
@@ -588,6 +597,9 @@ constexpr uint32_t ToArrayLayerCount(TextureType type) {
       return 1u;
     case TextureType::kTextureCube:
       return 6u;
+    case TextureType::kTextureExternalOES:
+      VALIDATION_LOG
+          << "kTextureExternalOES can not be used with the Vulkan backend.";
   }
   FML_UNREACHABLE();
 }
@@ -599,6 +611,9 @@ constexpr vk::ImageViewType ToVKImageViewType(TextureType type) {
       return vk::ImageViewType::e2D;
     case TextureType::kTextureCube:
       return vk::ImageViewType::eCube;
+    case TextureType::kTextureExternalOES:
+      VALIDATION_LOG
+          << "kTextureExternalOES can not be used with the Vulkan backend.";
   }
   FML_UNREACHABLE();
 }
@@ -610,6 +625,9 @@ constexpr vk::ImageCreateFlags ToVKImageCreateFlags(TextureType type) {
       return {};
     case TextureType::kTextureCube:
       return vk::ImageCreateFlagBits::eCubeCompatible;
+    case TextureType::kTextureExternalOES:
+      VALIDATION_LOG
+          << "kTextureExternalOES can not be used with the Vulkan backend.";
   }
   FML_UNREACHABLE();
 }
@@ -638,20 +656,12 @@ constexpr vk::ImageAspectFlags ToImageAspectFlags(PixelFormat format) {
       return vk::ImageAspectFlagBits::eColor;
     case PixelFormat::kS8UInt:
       return vk::ImageAspectFlagBits::eStencil;
+    case PixelFormat::kD24UnormS8Uint:
     case PixelFormat::kD32FloatS8UInt:
       return vk::ImageAspectFlagBits::eDepth |
              vk::ImageAspectFlagBits::eStencil;
   }
   FML_UNREACHABLE();
 }
-
-struct LayoutTransition {
-  vk::CommandBuffer cmd_buffer = {};
-  vk::ImageLayout new_layout = vk::ImageLayout::eUndefined;
-  vk::PipelineStageFlags src_stage = vk::PipelineStageFlagBits::eNone;
-  vk::AccessFlags src_access = vk::AccessFlagBits::eNone;
-  vk::PipelineStageFlags dst_stage = vk::PipelineStageFlagBits::eNone;
-  vk::AccessFlags dst_access = vk::AccessFlagBits::eNone;
-};
 
 }  // namespace impeller

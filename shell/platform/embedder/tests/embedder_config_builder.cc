@@ -114,6 +114,7 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
     SetSemanticsCallbackHooks();
     SetLogMessageCallbackHook();
     SetLocalizationCallbackHooks();
+    SetChannelUpdateCallbackHook();
     AddCommandLineArgument("--disable-vm-service");
 
     if (preference == InitializationPreference::kSnapshotsInitialize ||
@@ -204,10 +205,18 @@ void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
 #endif
 }
 
-void EmbedderConfigBuilder::SetVulkanRendererConfig(SkISize surface_size) {
+void EmbedderConfigBuilder::SetVulkanRendererConfig(
+    SkISize surface_size,
+    std::optional<FlutterVulkanInstanceProcAddressCallback>
+        instance_proc_address_callback) {
 #ifdef SHELL_ENABLE_VULKAN
   renderer_config_.type = FlutterRendererType::kVulkan;
-  renderer_config_.vulkan = vulkan_renderer_config_;
+  FlutterVulkanRendererConfig vulkan_renderer_config = vulkan_renderer_config_;
+  if (instance_proc_address_callback.has_value()) {
+    vulkan_renderer_config.get_instance_proc_address_callback =
+        instance_proc_address_callback.value();
+  }
+  renderer_config_.vulkan = vulkan_renderer_config;
   context_.SetupSurface(surface_size);
 #endif
 }
@@ -261,6 +270,11 @@ void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
 void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
   project_args_.log_message_callback =
       EmbedderTestContext::GetLogMessageCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetChannelUpdateCallbackHook() {
+  project_args_.channel_update_callback =
+      context_.GetChannelUpdateCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetLogTag(std::string tag) {
@@ -513,13 +527,7 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
       static_cast<EmbedderTestContextVulkan&>(context_)
           .vulkan_context_->device_->GetQueueHandle();
   vulkan_renderer_config_.get_instance_proc_address_callback =
-      [](void* context, FlutterVulkanInstanceHandle instance,
-         const char* name) -> void* {
-    auto proc_addr = reinterpret_cast<EmbedderTestContextVulkan*>(context)
-                         ->vulkan_context_->vk_->GetInstanceProcAddr(
-                             reinterpret_cast<VkInstance>(instance), name);
-    return reinterpret_cast<void*>(proc_addr);
-  };
+      EmbedderTestContextVulkan::InstanceProcAddr;
   vulkan_renderer_config_.get_next_image_callback =
       [](void* context,
          const FlutterFrameInfo* frame_info) -> FlutterVulkanImage {

@@ -24,12 +24,6 @@ AccessibilityBridgeMac::AccessibilityBridgeMac(__weak FlutterEngine* flutter_eng
                                                __weak FlutterViewController* view_controller)
     : flutter_engine_(flutter_engine), view_controller_(view_controller) {}
 
-void AccessibilityBridgeMac::UpdateDefaultViewController(
-    __weak FlutterViewController* view_controller) {
-  view_controller_ = view_controller;
-  RecreateNodeDelegates();
-}
-
 void AccessibilityBridgeMac::OnAccessibilityEvent(
     ui::AXEventGenerator::TargetedEvent targeted_event) {
   if (!view_controller_.viewLoaded || !view_controller_.view.window) {
@@ -39,7 +33,7 @@ void AccessibilityBridgeMac::OnAccessibilityEvent(
   ui::AXNode* ax_node = targeted_event.node;
   std::vector<AccessibilityBridgeMac::NSAccessibilityEvent> events =
       MacOSEventsFromAXEvent(targeted_event.event_params.event, *ax_node);
-  for (AccessibilityBridgeMac::NSAccessibilityEvent event : events) {
+  for (const AccessibilityBridgeMac::NSAccessibilityEvent& event : events) {
     if (event.user_info != nil) {
       DispatchMacOSNotificationWithUserInfo(event.target, event.name, event.user_info);
     } else {

@@ -7,6 +7,7 @@
 
 #include <impeller/branching.glsl>
 #include <impeller/conversions.glsl>
+#include <impeller/tile_mode.glsl>
 #include <impeller/types.glsl>
 
 /// Sample from a texture.
@@ -34,13 +35,6 @@ vec4 IPSampleLinear(sampler2D texture_sampler,
   coords.y = mix(half_texel.y, 1 - half_texel.y, coords.y);
   return IPSample(texture_sampler, coords, y_coord_scale);
 }
-
-// These values must correspond to the order of the items in the
-// 'Entity::TileMode' enum class.
-const float kTileModeClamp = 0;
-const float kTileModeRepeat = 1;
-const float kTileModeMirror = 2;
-const float kTileModeDecal = 3;
 
 /// Remap a float using a tiling mode.
 ///
@@ -114,10 +108,11 @@ vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 float y_coord_scale,
                                 vec2 half_texel,
                                 float x_tile_mode,
-                                float y_tile_mode) {
+                                float y_tile_mode,
+                                vec4 decal_border_color) {
   if (x_tile_mode == kTileModeDecal && (coords.x < 0 || coords.x >= 1) ||
       y_tile_mode == kTileModeDecal && (coords.y < 0 || coords.y >= 1)) {
-    return vec4(0);
+    return decal_border_color;
   }
 
   return IPSampleLinear(tex, IPVec2Tile(coords, x_tile_mode, y_tile_mode),
@@ -152,9 +147,10 @@ vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 vec2 coords,
                                 float y_coord_scale,
                                 vec2 half_texel,
-                                float tile_mode) {
+                                float tile_mode,
+                                vec4 decal_border_color) {
   return IPSampleLinearWithTileMode(tex, coords, y_coord_scale, half_texel,
-                                    tile_mode, tile_mode);
+                                    tile_mode, tile_mode, decal_border_color);
 }
 
 #endif

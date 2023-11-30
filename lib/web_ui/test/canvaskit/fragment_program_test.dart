@@ -11,6 +11,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -182,11 +184,11 @@ const String kJsonIPLR = r'''
 
 void testMain() {
   setUpAll(() async {
-    await ui.webOnlyInitializePlatform();
+    await bootstrapAndRunApp();
   });
 
   test('FragmentProgram can be created from JSON IPLR bundle', () {
-    final Uint8List data = utf8.encode(kJsonIPLR) as Uint8List;
+    final Uint8List data = utf8.encode(kJsonIPLR);
     final CkFragmentProgram program = CkFragmentProgram.fromBytes('test', data);
 
     expect(program.effect, isNotNull);

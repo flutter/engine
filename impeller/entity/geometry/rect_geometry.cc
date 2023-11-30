@@ -8,11 +8,9 @@ namespace impeller {
 
 RectGeometry::RectGeometry(Rect rect) : rect_(rect) {}
 
-RectGeometry::~RectGeometry() = default;
-
 GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
-                                               RenderPass& pass) {
+                                               RenderPass& pass) const {
   auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
@@ -24,7 +22,7 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
               .index_type = IndexType::kNone,
           },
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -34,7 +32,7 @@ GeometryResult RectGeometry::GetPositionUVBuffer(Rect texture_coverage,
                                                  Matrix effect_transform,
                                                  const ContentContext& renderer,
                                                  const Entity& entity,
-                                                 RenderPass& pass) {
+                                                 RenderPass& pass) const {
   return ComputeUVGeometryForRect(rect_, texture_coverage, effect_transform,
                                   renderer, entity, pass);
 }
@@ -45,6 +43,18 @@ GeometryVertexType RectGeometry::GetVertexType() const {
 
 std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
+}
+
+bool RectGeometry::CoversArea(const Matrix& transform, const Rect& rect) const {
+  if (!transform.IsTranslationScaleOnly()) {
+    return false;
+  }
+  Rect coverage = rect_.TransformBounds(transform);
+  return coverage.Contains(rect);
+}
+
+bool RectGeometry::IsAxisAlignedRect() const {
+  return true;
 }
 
 }  // namespace impeller

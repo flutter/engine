@@ -30,11 +30,24 @@ namespace fml {
 // there's a small space cost to having even an empty class. )
 class ThreadChecker final {
  public:
+  static void DisableNextThreadCheckFailure() { disable_next_failure_ = true; }
+
+ private:
+  static thread_local bool disable_next_failure_;
+
+ public:
 #if defined(FML_OS_WIN)
   ThreadChecker() : self_(GetCurrentThreadId()) {}
   ~ThreadChecker() {}
 
-  bool IsCreationThreadCurrent() const { return GetCurrentThreadId() == self_; }
+  bool IsCreationThreadCurrent() const {
+    bool result = GetCurrentThreadId() == self_;
+    if (!result && disable_next_failure_) {
+      disable_next_failure_ = false;
+      return true;
+    }
+    return result;
+  }
 
  private:
   DWORD self_;
@@ -48,6 +61,10 @@ class ThreadChecker final {
   bool IsCreationThreadCurrent() const {
     pthread_t current_thread = pthread_self();
     bool is_creation_thread_current = !!pthread_equal(current_thread, self_);
+    if (disable_next_failure_ && !is_creation_thread_current) {
+      disable_next_failure_ = false;
+      return true;
+    }
 #ifdef __APPLE__
     // TODO(https://github.com/flutter/flutter/issues/45272): Implement for
     // other platforms.
@@ -58,9 +75,10 @@ class ThreadChecker final {
       if (0 == pthread_getname_np(current_thread, actual_thread,
                                   buffer_length) &&
           0 == pthread_getname_np(self_, expected_thread, buffer_length)) {
-        FML_DLOG(ERROR) << "IsCreationThreadCurrent expected thread: '"
-                        << expected_thread << "' actual thread:'"
-                        << actual_thread << "'";
+        FML_DLOG(ERROR) << "Object referenced on a thread other than the one "
+                           "on which it was created. Expected thread: '"
+                        << expected_thread << "'. Actual thread: '"
+                        << actual_thread << "'.";
       }
     }
 #endif  // __APPLE__

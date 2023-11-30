@@ -4,16 +4,18 @@
 
 print_usage () {
   echo "Usage:"
-  echo "  ./create_cipd_united_package.sh <VERSION_TAG> [PATH_TO_SDK_DIR]"
+  echo "  ./create_cipd_packages.sh <VERSION_TAG> [PATH_TO_SDK_DIR]"
   echo "    Downloads, packages, and uploads Android SDK packages where:"
-  echo "      - VERSION_TAG is the tag of the cipd packages, e.g. 28r6 or 31v1"
+  echo "      - VERSION_TAG is the tag of the cipd packages, e.g. 28r6 or 31v1. Must contain"
+  echo "                    only lowercase letters and numbers."
   echo "      - PATH_TO_SDK_DIR is the path to the sdk folder. If omitted, this defaults to"
   echo "                      your ANDROID_SDK_ROOT environment variable."
-  echo "  ./create_cipd_united_package.sh list"
+  echo "  ./create_cipd_packages.sh list"
   echo "    Lists the available packages for use in 'packages.txt'"
   echo ""
   echo "This script downloads the packages specified in packages.txt and uploads"
   echo "them to CIPD for linux, mac, and windows."
+  echo "To confirm you have write permissions run 'cipd acl-check flutter/android/sdk/all/ -writer'."
   echo ""
   echo "Manage the packages to download in 'packages.txt'. You can use"
   echo "'sdkmanager --list --include_obsolete' in cmdline-tools to list all available packages."
@@ -25,20 +27,27 @@ print_usage () {
   echo "and should only be run on linux or macos hosts."
 }
 
-# Validate version is provided
-if [[ $1 == "" ]]; then
+first_argument=$1
+# Validate version or argument is provided.
+if [[ $first_argument == "" ]]; then
   print_usage
   exit 1
 fi
 
-# Validate path contains depot_tools
+# Validate version contains only lower case letters and numbers.
+if ! [[ $first_argument =~ ^[[:lower:][:digit:]]+$ ]]; then
+  echo "Version tag can only consist of lower case letters and digits.";
+  print_usage
+  exit 1
+fi
+
+# Validate environment has cipd installed.
 if [[ `which cipd` == "" ]]; then
   echo "'cipd' command not found. depot_tools should be on the path."
   exit 1
 fi
 
 sdk_path=${2:-$ANDROID_SDK_ROOT}
-version_tag=$1
 
 # Validate directory contains all SDK packages
 if [[ ! -d "$sdk_path" ]]; then
@@ -46,6 +55,8 @@ if [[ ! -d "$sdk_path" ]]; then
   print_usage
   exit 1
 fi
+
+# Validate caller has cipd.
 if [[ ! -d "$sdk_path/cmdline-tools" ]]; then
   echo "SDK directory does not contain $sdk_path/cmdline-tools."
   print_usage
@@ -73,7 +84,7 @@ while [ ! -f "$sdkmanager_path" ]; do
 done
 
 # list available packages
-if [ $version_tag == "list" ]; then
+if [ $first_argument == "list" ]; then
   $sdkmanager_path  --list --include_obsolete
   exit 0
 fi
@@ -108,11 +119,21 @@ for platform in "${platforms[@]}"; do
   done
 
   # Special treatment for NDK to move to expected directory.
+  # Instead of the ndk being in `sdk/ndk/<major>.<minor>.<patch>/`, it will be
+  # in `ndk/`.
+  # This simplifies the build scripts, and enables version difference between
+  # the Dart and Flutter build while reusing the same build rules.
+  # See https://github.com/flutter/flutter/issues/136666#issuecomment-1805467578
   mv $upload_dir/sdk/ndk $upload_dir/ndk-bundle
   ndk_sub_paths=`find $upload_dir/ndk-bundle -maxdepth 1 -type d`
   ndk_sub_paths_arr=($ndk_sub_paths)
   mv ${ndk_sub_paths_arr[1]} $upload_dir/ndk
   rm -rf $upload_dir/ndk-bundle
+
+  if [[ ! -d "$upload_dir/ndk" ]]; then
+    echo "Failure to bundle ndk for platform"
+    exit 1
+  fi
 
   # Accept all licenses to ensure they are generated and uploaded.
   yes "y" | $sdkmanager_path --licenses --sdk_root=$sdk_root
@@ -129,11 +150,16 @@ for platform in "${platforms[@]}"; do
     if [[ $platform == "macosx" ]]; then
       cipd_name="mac-$arch"
     fi
-    echo "Uploading $cipd_name to CIPD"
-    cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$version_tag
+
+    echo "Uploading $upload_dir as $cipd_name to CIPD"
+    cipd create -in $upload_dir -name "flutter/android/sdk/all/$cipd_name" -install-mode copy -tag version:$first_argument
   done
 
   rm -rf $sdk_root
   rm -rf $upload_dir
+
+  # This variable changes the behvaior of sdkmanager.
+  # Unset to clean up after script.
+  unset REPO_OS_OVERRIDE
 done
 rm -rf $temp_dir

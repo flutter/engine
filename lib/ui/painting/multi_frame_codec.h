@@ -11,8 +11,6 @@
 
 #include <utility>
 
-using tonic::DartPersistentValue;
-
 namespace flutter {
 
 class MultiFrameCodec : public Codec {
@@ -51,12 +49,15 @@ class MultiFrameCodec : public Codec {
     // The non-const members and functions below here are only read or written
     // to on the IO thread. They are not safe to access or write on the UI
     // thread.
-    int nextFrameIndex_;
+    int nextFrameIndex_ = 0;
     // The last decoded frame that's required to decode any subsequent frames.
-    std::unique_ptr<SkBitmap> lastRequiredFrame_;
-
+    std::optional<SkBitmap> lastRequiredFrame_;
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
+
+    // The rectangle that should be cleared if the previous frame's disposal
+    // method was kRestoreBGColor.
+    std::optional<SkIRect> restoreBGColorRect_;
 
     std::pair<sk_sp<DlImage>, std::string> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,
@@ -65,7 +66,7 @@ class MultiFrameCodec : public Codec {
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue);
 
     void GetNextFrameAndInvokeCallback(
-        std::unique_ptr<DartPersistentValue> callback,
+        std::unique_ptr<tonic::DartPersistentValue> callback,
         const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
         fml::WeakPtr<GrDirectContext> resourceContext,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,

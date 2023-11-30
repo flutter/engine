@@ -27,13 +27,16 @@ namespace flutter {
 // destroy surfaces
 class AngleSurfaceManager {
  public:
-  static std::unique_ptr<AngleSurfaceManager> Create();
+  static std::unique_ptr<AngleSurfaceManager> Create(bool enable_impeller);
+
   virtual ~AngleSurfaceManager();
 
   // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
   // associated with window, in the appropriate format for display.
-  // Target represents the visual entity to bind to.  Width and
+  // Target represents the visual entity to bind to. Width and
   // height represent dimensions surface is created at.
+  //
+  // This binds |egl_context_| to the current thread.
   virtual bool CreateSurface(WindowsRenderTarget* render_target,
                              EGLint width,
                              EGLint height,
@@ -41,8 +44,10 @@ class AngleSurfaceManager {
 
   // Resizes backing surface from current size to newly requested size
   // based on width and height for the specific case when width and height do
-  // not match current surface dimensions.  Target represents the visual entity
+  // not match current surface dimensions. Target represents the visual entity
   // to bind to.
+  //
+  // This binds |egl_context_| to the current thread.
   virtual void ResizeSurface(WindowsRenderTarget* render_target,
                              EGLint width,
                              EGLint height,
@@ -55,11 +60,17 @@ class AngleSurfaceManager {
   // Releases the pass-in EGLSurface wrapping and backing resources if not null.
   virtual void DestroySurface();
 
-  // Binds egl_context_ to the current rendering thread and to the draw and read
-  // surfaces returning a boolean result reflecting success.
-  bool MakeCurrent();
+  // Check if the current thread has a context bound.
+  bool HasContextCurrent();
 
-  // Clears current egl_context_
+  // Binds |egl_context_| to the current rendering thread and to the draw and
+  // read surfaces returning a boolean result reflecting success.
+  virtual bool MakeCurrent();
+
+  // Unbinds the current EGL context from the current thread.
+  bool ClearCurrent();
+
+  // Clears the |egl_context_| draw and read surfaces.
   bool ClearContext();
 
   // Binds egl_resource_context_ to the current rendering thread and to the draw
@@ -88,10 +99,10 @@ class AngleSurfaceManager {
  protected:
   // Creates a new surface manager retaining reference to the passed-in target
   // for the lifetime of the manager.
-  AngleSurfaceManager();
+  explicit AngleSurfaceManager(bool enable_impeller);
 
  private:
-  bool Initialize();
+  bool Initialize(bool enable_impeller);
   void CleanUp();
 
   // Attempts to initialize EGL using ANGLE.

@@ -46,13 +46,13 @@
                 {
                     "language": "python3",
                     "name": "Host Tests for host_debug",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_debug",
                         "--type",
                         "engine"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -98,7 +98,7 @@
                     "include_paths": [
                         "out/host_release/zip_archives/windows-x64-release/windows-x64-flutter.zip"
                     ],
-                    "name": "host_profile",
+                    "name": "host_release",
                     "realm": "production"
                 }
             ],

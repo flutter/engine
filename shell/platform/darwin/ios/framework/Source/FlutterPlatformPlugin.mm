@@ -10,12 +10,19 @@
 #import <UIKit/UIKit.h>
 
 #include "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 
 namespace {
 
 constexpr char kTextPlainFormat[] = "text/plain";
 const UInt32 kKeyPressClickSoundId = 1306;
+
+#if not APPLICATION_EXTENSION_API_ONLY
+const NSString* searchURLPrefix = @"x-web-search://?";
+#endif
 
 }  // namespace
 
@@ -35,18 +42,59 @@ const char* const kOverlayStyleUpdateNotificationKey =
 
 using namespace flutter;
 
+static void SetStatusBarHiddenForSharedApplication(BOOL hidden) {
+#if not APPLICATION_EXTENSION_API_ONLY
+  [UIApplication sharedApplication].statusBarHidden = hidden;
+#else
+  FML_LOG(WARNING) << "Application based status bar styling is not available in app extension.";
+#endif
+}
+
+static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
+#if not APPLICATION_EXTENSION_API_ONLY
+  // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
+  // in favor of delegating to the view controller.
+  [[UIApplication sharedApplication] setStatusBarStyle:style];
+#else
+  FML_LOG(WARNING) << "Application based status bar styling is not available in app extension.";
+#endif
+}
+
+@interface FlutterPlatformPlugin ()
+
+/**
+ * @brief Whether the status bar appearance is based on the style preferred for this ViewController.
+ *
+ *        The default value is YES.
+ *        Explicitly add `UIViewControllerBasedStatusBarAppearance` as `false` in
+ *        info.plist makes this value to be false.
+ */
+@property(nonatomic, assign) BOOL enableViewControllerBasedStatusBarAppearance;
+
+@end
+
 @implementation FlutterPlatformPlugin {
-  fml::WeakPtr<FlutterEngine> _engine;
+  fml::WeakNSObject<FlutterEngine> _engine;
   // Used to detect whether this device has live text input ability or not.
   UITextField* _textField;
 }
 
-- (instancetype)initWithEngine:(fml::WeakPtr<FlutterEngine>)engine {
+- (instancetype)initWithEngine:(fml::WeakNSObject<FlutterEngine>)engine {
   FML_DCHECK(engine) << "engine must be set";
   self = [super init];
 
   if (self) {
     _engine = engine;
+    NSObject* infoValue = [[NSBundle mainBundle]
+        objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+    if (infoValue != nil && ![infoValue isKindOfClass:[NSNumber class]]) {
+      FML_LOG(ERROR) << "The value of UIViewControllerBasedStatusBarAppearance in info.plist must "
+                        "be a Boolean type.";
+    }
+#endif
+    _enableViewControllerBasedStatusBarAppearance =
+        (infoValue == nil || [(NSNumber*)infoValue boolValue]);
   }
 
   return self;
@@ -92,9 +140,70 @@ using namespace flutter;
     result([self clipboardHasStrings]);
   } else if ([method isEqualToString:@"LiveText.isLiveTextInputAvailable"]) {
     result(@([self isLiveTextInputAvailable]));
+  } else if ([method isEqualToString:@"SearchWeb.invoke"]) {
+    [self searchWeb:args];
+    result(nil);
+  } else if ([method isEqualToString:@"LookUp.invoke"]) {
+    [self showLookUpViewController:args];
+    result(nil);
+  } else if ([method isEqualToString:@"Share.invoke"]) {
+    [self showShareViewController:args];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
   }
+}
+
+- (void)showShareViewController:(NSString*)content {
+  UIViewController* engineViewController = [_engine.get() viewController];
+
+  NSArray* itemsToShare = @[ content ?: [NSNull null] ];
+  UIActivityViewController* activityViewController =
+      [[[UIActivityViewController alloc] initWithActivityItems:itemsToShare
+                                         applicationActivities:nil] autorelease];
+
+  if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+    // On iPad, the share screen is presented in a popover view, and requires a
+    // sourceView and sourceRect
+    FlutterTextInputPlugin* _textInputPlugin = [_engine.get() textInputPlugin];
+    UITextRange* range = _textInputPlugin.textInputView.selectedTextRange;
+
+    // firstRectForRange cannot be used here as it's current implementation does
+    // not always return the full rect of the range.
+    CGRect firstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        caretRectForPosition:(FlutterTextPosition*)range.start];
+    CGRect transformedFirstRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        localRectFromFrameworkTransform:firstRect];
+    CGRect lastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        caretRectForPosition:(FlutterTextPosition*)range.end];
+    CGRect transformedLastRect = [(FlutterTextInputView*)_textInputPlugin.textInputView
+        localRectFromFrameworkTransform:lastRect];
+
+    activityViewController.popoverPresentationController.sourceView = engineViewController.view;
+    // In case of RTL Language, get the minimum x coordinate
+    activityViewController.popoverPresentationController.sourceRect =
+        CGRectMake(fmin(transformedFirstRect.origin.x, transformedLastRect.origin.x),
+                   transformedFirstRect.origin.y,
+                   abs(transformedLastRect.origin.x - transformedFirstRect.origin.x),
+                   transformedFirstRect.size.height);
+  }
+
+  [engineViewController presentViewController:activityViewController animated:YES completion:nil];
+}
+
+- (void)searchWeb:(NSString*)searchTerm {
+#if APPLICATION_EXTENSION_API_ONLY
+  FML_LOG(WARNING) << "SearchWeb.invoke is not availabe in app extension.";
+#else
+  NSString* escapedText = [searchTerm
+      stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet
+                                                             URLHostAllowedCharacterSet]];
+  NSString* searchURL = [NSString stringWithFormat:@"%@%@", searchURLPrefix, escapedText];
+
+  [[UIApplication sharedApplication] openURL:[NSURL URLWithString:searchURL]
+                                     options:@{}
+                           completionHandler:nil];
+#endif
 }
 
 - (void)playSystemSound:(NSString*)soundType {
@@ -158,14 +267,7 @@ using namespace flutter;
 }
 
 - (void)setSystemChromeEnabledSystemUIOverlays:(NSArray*)overlays {
-  // Checks if the top status bar should be visible. This platform ignores all
-  // other overlays
-
-  // We opt out of view controller based status bar visibility since we want
-  // to be able to modify this on the fly. The key used is
-  // UIViewControllerBasedStatusBarAppearance
-  [UIApplication sharedApplication].statusBarHidden =
-      ![overlays containsObject:@"SystemUiOverlay.top"];
+  BOOL statusBarShouldBeHidden = ![overlays containsObject:@"SystemUiOverlay.top"];
   if ([overlays containsObject:@"SystemUiOverlay.bottom"]) {
     [[NSNotificationCenter defaultCenter]
         postNotificationName:FlutterViewControllerShowHomeIndicator
@@ -175,26 +277,36 @@ using namespace flutter;
         postNotificationName:FlutterViewControllerHideHomeIndicator
                       object:nil];
   }
+  if (self.enableViewControllerBasedStatusBarAppearance) {
+    [_engine.get() viewController].prefersStatusBarHidden = statusBarShouldBeHidden;
+  } else {
+    // Checks if the top status bar should be visible. This platform ignores all
+    // other overlays
+
+    // We opt out of view controller based status bar visibility since we want
+    // to be able to modify this on the fly. The key used is
+    // UIViewControllerBasedStatusBarAppearance.
+    SetStatusBarHiddenForSharedApplication(statusBarShouldBeHidden);
+  }
 }
 
 - (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
-  // Checks if the top status bar should be visible, reflected by edge to edge setting. This
-  // platform ignores all other system ui modes.
-
-  // We opt out of view controller based status bar visibility since we want
-  // to be able to modify this on the fly. The key used is
-  // UIViewControllerBasedStatusBarAppearance
-  [UIApplication sharedApplication].statusBarHidden =
-      ![mode isEqualToString:@"SystemUiMode.edgeToEdge"];
-  if ([mode isEqualToString:@"SystemUiMode.edgeToEdge"]) {
-    [[NSNotificationCenter defaultCenter]
-        postNotificationName:FlutterViewControllerShowHomeIndicator
-                      object:nil];
+  BOOL edgeToEdge = [mode isEqualToString:@"SystemUiMode.edgeToEdge"];
+  if (self.enableViewControllerBasedStatusBarAppearance) {
+    [_engine.get() viewController].prefersStatusBarHidden = !edgeToEdge;
   } else {
-    [[NSNotificationCenter defaultCenter]
-        postNotificationName:FlutterViewControllerHideHomeIndicator
-                      object:nil];
+    // Checks if the top status bar should be visible, reflected by edge to edge setting. This
+    // platform ignores all other system ui modes.
+
+    // We opt out of view controller based status bar visibility since we want
+    // to be able to modify this on the fly. The key used is
+    // UIViewControllerBasedStatusBarAppearance.
+    SetStatusBarHiddenForSharedApplication(!edgeToEdge);
   }
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:edgeToEdge ? FlutterViewControllerShowHomeIndicator
+                                      : FlutterViewControllerHideHomeIndicator
+                    object:nil];
 }
 
 - (void)restoreSystemChromeSystemUIOverlays {
@@ -220,20 +332,14 @@ using namespace flutter;
     return;
   }
 
-  NSNumber* infoValue = [[NSBundle mainBundle]
-      objectForInfoDictionaryKey:@"UIViewControllerBasedStatusBarAppearance"];
-  Boolean delegateToViewController = (infoValue == nil || [infoValue boolValue]);
-
-  if (delegateToViewController) {
-    // This notification is respected by the iOS embedder
+  if (self.enableViewControllerBasedStatusBarAppearance) {
+    // This notification is respected by the iOS embedder.
     [[NSNotificationCenter defaultCenter]
         postNotificationName:@(kOverlayStyleUpdateNotificationName)
                       object:nil
                     userInfo:@{@(kOverlayStyleUpdateNotificationKey) : @(statusBarStyle)}];
   } else {
-    // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
-    // in favor of delegating to the view controller
-    [[UIApplication sharedApplication] setStatusBarStyle:statusBarStyle];
+    SetStatusBarStyleForSharedApplication(statusBarStyle);
   }
 }
 
@@ -244,13 +350,23 @@ using namespace flutter;
   // It's also possible in an Add2App scenario that the FlutterViewController was presented
   // outside the context of a UINavigationController, and still wants to be popped.
 
-  UIViewController* engineViewController = [_engine.get() viewController];
+  FlutterViewController* engineViewController = [_engine.get() viewController];
   UINavigationController* navigationController = [engineViewController navigationController];
   if (navigationController) {
     [navigationController popViewControllerAnimated:isAnimated];
   } else {
-    UIViewController* rootViewController =
-        [UIApplication sharedApplication].keyWindow.rootViewController;
+    UIViewController* rootViewController = nil;
+#if APPLICATION_EXTENSION_API_ONLY
+    if (@available(iOS 15.0, *)) {
+      rootViewController =
+          [engineViewController flutterWindowSceneIfViewLoaded].keyWindow.rootViewController;
+    } else {
+      FML_LOG(WARNING)
+          << "rootViewController is not available in application extension prior to iOS 15.0.";
+    }
+#else
+    rootViewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+#endif
     if (engineViewController != rootViewController) {
       [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
     }
@@ -283,6 +399,15 @@ using namespace flutter;
 
 - (BOOL)isLiveTextInputAvailable {
   return [[self textField] canPerformAction:@selector(captureTextFromCamera:) withSender:nil];
+}
+
+- (void)showLookUpViewController:(NSString*)term {
+  UIViewController* engineViewController = [_engine.get() viewController];
+  UIReferenceLibraryViewController* referenceLibraryViewController =
+      [[[UIReferenceLibraryViewController alloc] initWithTerm:term] autorelease];
+  [engineViewController presentViewController:referenceLibraryViewController
+                                     animated:YES
+                                   completion:nil];
 }
 
 - (UITextField*)textField {

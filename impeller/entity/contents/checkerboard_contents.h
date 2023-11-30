@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 
 namespace impeller {
@@ -35,7 +34,9 @@ class CheckerboardContents final : public Contents {
   Color color_ = Color::Red().WithAlpha(0.25);
   Scalar square_size_ = 12;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CheckerboardContents);
+  CheckerboardContents(const CheckerboardContents&) = delete;
+
+  CheckerboardContents& operator=(const CheckerboardContents&) = delete;
 };
 
 }  // namespace impeller

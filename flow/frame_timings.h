@@ -14,9 +14,11 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 
-#define TRACE_EVENT_WITH_FRAME_NUMBER(recorder, category_group, name) \
-  TRACE_EVENT1(category_group, name, "frame_number",                  \
-               recorder->GetFrameNumberTraceArg())
+#define TRACE_EVENT_WITH_FRAME_NUMBER(recorder, category_group, name,       \
+                                      flow_id_count, flow_ids)              \
+  TRACE_EVENT1_WITH_FLOW_IDS(category_group, name, flow_id_count, flow_ids, \
+                             "frame_number",                                \
+                             recorder->GetFrameNumberTraceArg())
 
 namespace flutter {
 
@@ -29,6 +31,7 @@ class FrameTimingsRecorder {
  public:
   /// Various states that the recorder can be in. When created the recorder is
   /// in an unitialized state and transtions in sequential order of the states.
+  // After adding an item to this enum, modify StateToString accordingly.
   enum class State : uint32_t {
     kUninitialized,
     kVsync,
@@ -113,6 +116,15 @@ class FrameTimingsRecorder {
 
   /// Returns the recorded time from when `RecordRasterEnd` is called.
   FrameTiming GetRecordedTime() const;
+
+  /// Asserts in unopt builds that the recorder is current at the specified
+  /// state.
+  ///
+  /// Instead of adding a `GetState` method and asserting on the result, this
+  /// method prevents other logic from relying on the state.
+  ///
+  /// In opt builds, this call is a no-op.
+  void AssertInState(State state) const;
 
  private:
   FML_FRIEND_TEST(FrameTimingsRecorderTest, ThrowWhenRecordBuildBeforeVsync);

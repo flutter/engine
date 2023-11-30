@@ -18,6 +18,10 @@ class Context;
 class RenderPass;
 class RenderTarget;
 
+namespace testing {
+class CommandBufferMock;
+}
+
 //------------------------------------------------------------------------------
 /// @brief      A collection of encoded commands to be submitted to the GPU for
 ///             execution. A command buffer is obtained from a graphics
@@ -30,7 +34,7 @@ class RenderTarget;
 ///
 ///             A command buffer is only meant to be used on a single thread. If
 ///             a frame workload needs to be encoded from multiple threads,
-///             setup and record into multiple command buffers. The order of
+///             set up and record into multiple command buffers. The order of
 ///             submission of commands encoded in multiple command buffers can
 ///             be controlled via either the order in which the command buffers
 ///             were created, or, using the `ReserveSpotInQueue` command which
@@ -38,6 +42,8 @@ class RenderTarget;
 ///             different from the encoding order.
 ///
 class CommandBuffer {
+  friend class testing::CommandBufferMock;
+
  public:
   enum class Status {
     kPending,
@@ -74,8 +80,20 @@ class CommandBuffer {
   ///
   ///             A command buffer may only be committed once.
   ///
-  [[nodiscard]] virtual bool SubmitCommandsAsync(
-      std::shared_ptr<RenderPass> render_pass);
+  [[nodiscard]] virtual bool EncodeAndSubmit(
+      const std::shared_ptr<RenderPass>& render_pass);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Schedule the command encoded by blit passes within this
+  ///             command buffer on the GPU. The enqueing of this buffer is
+  ///             performed immediately but encoding is pushed to a worker
+  ///             thread if possible.
+  ///
+  ///             A command buffer may only be committed once.
+  ///
+  [[nodiscard]] virtual bool EncodeAndSubmit(
+      const std::shared_ptr<BlitPass>& blit_pass,
+      const std::shared_ptr<Allocator>& allocator);
 
   //----------------------------------------------------------------------------
   /// @brief      Force execution of pending GPU commands.
@@ -98,14 +116,14 @@ class CommandBuffer {
   ///
   /// @return     A valid blit pass or null.
   ///
-  std::shared_ptr<BlitPass> CreateBlitPass() const;
+  std::shared_ptr<BlitPass> CreateBlitPass();
 
   //----------------------------------------------------------------------------
   /// @brief      Create a compute pass to record compute commands into.
   ///
   /// @return     A valid compute pass or null.
   ///
-  std::shared_ptr<ComputePass> CreateComputePass() const;
+  std::shared_ptr<ComputePass> CreateComputePass();
 
  protected:
   std::weak_ptr<const Context> context_;
@@ -115,16 +133,18 @@ class CommandBuffer {
   virtual std::shared_ptr<RenderPass> OnCreateRenderPass(
       RenderTarget render_target) = 0;
 
-  virtual std::shared_ptr<BlitPass> OnCreateBlitPass() const = 0;
+  virtual std::shared_ptr<BlitPass> OnCreateBlitPass() = 0;
 
   [[nodiscard]] virtual bool OnSubmitCommands(CompletionCallback callback) = 0;
 
   virtual void OnWaitUntilScheduled() = 0;
 
-  virtual std::shared_ptr<ComputePass> OnCreateComputePass() const = 0;
+  virtual std::shared_ptr<ComputePass> OnCreateComputePass() = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandBuffer);
+  CommandBuffer(const CommandBuffer&) = delete;
+
+  CommandBuffer& operator=(const CommandBuffer&) = delete;
 };
 
 }  // namespace impeller

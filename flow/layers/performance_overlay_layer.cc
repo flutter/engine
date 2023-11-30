@@ -6,15 +6,26 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 
+#include "flow/stopwatch.h"
+#include "flow/stopwatch_dl.h"
+#include "flow/stopwatch_sk.h"
 #include "third_party/skia/include/core/SkFont.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
+#ifdef IMPELLER_SUPPORTS_RENDERING
+#include "impeller/typographer/backends/skia/text_frame_skia.h"  // nogncheck
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 namespace {
 
 void VisualizeStopWatch(DlCanvas* canvas,
+                        const bool impeller_enabled,
                         const Stopwatch& stopwatch,
                         SkScalar x,
                         SkScalar y,
@@ -29,14 +40,29 @@ void VisualizeStopWatch(DlCanvas* canvas,
 
   if (show_graph) {
     SkRect visualization_rect = SkRect::MakeXYWH(x, y, width, height);
-    stopwatch.Visualize(canvas, visualization_rect);
+    std::unique_ptr<StopwatchVisualizer> visualizer;
+
+    if (impeller_enabled) {
+      visualizer = std::make_unique<DlStopwatchVisualizer>(stopwatch);
+    } else {
+      visualizer = std::make_unique<SkStopwatchVisualizer>(stopwatch);
+    }
+
+    visualizer->Visualize(canvas, visualization_rect);
   }
 
   if (show_labels) {
     auto text = PerformanceOverlayLayer::MakeStatisticsText(
         stopwatch, label_prefix, font_path);
     // Historically SK_ColorGRAY (== 0xFF888888) was used here
-    DlPaint paint(0xFF888888);
+    DlPaint paint(DlColor(0xFF888888));
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled) {
+      canvas->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(text),
+                            x + label_x, y + height + label_y, paint);
+      return;
+    }
+#endif  // IMPELLER_SUPPORTS_RENDERING
     canvas->DrawTextBlob(text, x + label_x, y + height + label_y, paint);
   }
 }
@@ -49,7 +75,8 @@ sk_sp<SkTextBlob> PerformanceOverlayLayer::MakeStatisticsText(
     const std::string& font_path) {
   SkFont font;
   if (font_path != "") {
-    font = SkFont(SkTypeface::MakeFromFile(font_path.c_str()));
+    sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+    font = SkFont(font_mgr->makeFromFile(font_path.c_str()));
   }
   font.setSize(15);
 
@@ -100,12 +127,13 @@ void PerformanceOverlayLayer::Paint(PaintContext& context) const {
   auto mutator = context.state_stack.save();
 
   VisualizeStopWatch(
-      context.canvas, context.raster_time, x, y, width, height - padding,
-      options_ & kVisualizeRasterizerStatistics,
+      context.canvas, context.impeller_enabled, context.raster_time, x, y,
+      width, height - padding, options_ & kVisualizeRasterizerStatistics,
       options_ & kDisplayRasterizerStatistics, "Raster", font_path_);
 
-  VisualizeStopWatch(context.canvas, context.ui_time, x, y + height, width,
-                     height - padding, options_ & kVisualizeEngineStatistics,
+  VisualizeStopWatch(context.canvas, context.impeller_enabled, context.ui_time,
+                     x, y + height, width, height - padding,
+                     options_ & kVisualizeEngineStatistics,
                      options_ & kDisplayEngineStatistics, "UI", font_path_);
 }
 

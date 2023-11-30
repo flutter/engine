@@ -30,7 +30,7 @@ class TextureContents final : public Contents {
 
   void SetLabel(std::string label);
 
-  void SetRect(Rect rect);
+  void SetDestinationRect(Rect rect);
 
   void SetTexture(std::shared_ptr<Texture> texture);
 
@@ -78,7 +78,7 @@ class TextureContents final : public Contents {
  private:
   std::string label_;
 
-  Rect rect_;
+  Rect destination_rect_;
   bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;
@@ -88,7 +88,9 @@ class TextureContents final : public Contents {
   Scalar inherited_opacity_ = 1.0f;
   bool defer_applying_opacity_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureContents);
+  TextureContents(const TextureContents&) = delete;
+
+  TextureContents& operator=(const TextureContents&) = delete;
 };
 
 }  // namespace impeller

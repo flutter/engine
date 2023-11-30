@@ -81,8 +81,6 @@ source_set("common") {
   sources = [
     "animator.cc",
     "animator.h",
-    "canvas_spy.cc",
-    "canvas_spy.h",
     "context_options.cc",
     "context_options.h",
     "display_manager.cc",
@@ -132,9 +130,9 @@ source_set("common") {
     ":display",
     ":platform_message_handler",
     "//flutter/shell/version",
+    "//flutter/third_party/rapidjson",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
-    "//third_party/rapidjson",
   ]
 
   deps = [
@@ -145,9 +143,10 @@ source_set("common") {
     "//flutter/fml",
     "//flutter/lib/ui",
     "//flutter/runtime",
+    "//flutter/shell/common:base64",
     "//flutter/shell/profiling",
+    "//flutter/skia",
     "//third_party/dart/runtime:dart_api",
-    "//third_party/skia",
   ]
 
   if (impeller_supports_rendering) {
@@ -158,6 +157,15 @@ source_set("common") {
 
     deps += [ "//flutter/impeller" ]
   }
+}
+
+# These are in their own source_set to avoid a dependency cycle with //common/graphics
+source_set("base64") {
+  sources = [
+    "base64.cc",
+    "base64.h",
+  ]
+  deps = [ "//flutter/fml" ]
 }
 
 template("shell_host_executable") {
@@ -237,7 +245,6 @@ if (enable_unittests) {
     public_deps = [
       "//flutter/common/graphics",
       "//flutter/flow",
-      "//flutter/fml/dart",
       "//flutter/runtime",
       "//flutter/shell/common",
       "//flutter/testing",
@@ -248,10 +255,10 @@ if (enable_unittests) {
       "//flutter/assets",
       "//flutter/common",
       "//flutter/lib/ui",
+      "//flutter/skia",
       "//flutter/testing:dart",
       "//flutter/testing:fixture_test",
-      "//third_party/rapidjson",
-      "//third_party/skia",
+      "//flutter/third_party/rapidjson",
     ]
 
     public_configs = [
@@ -295,7 +302,7 @@ if (enable_unittests) {
 
     sources = [
       "animator_unittests.cc",
-      "canvas_spy_unittests.cc",
+      "base64_unittests.cc",
       "context_options_unittests.cc",
       "dl_op_spy_unittests.cc",
       "engine_unittests.cc",
@@ -315,6 +322,7 @@ if (enable_unittests) {
       ":shell_unittests_fixtures",
       "//flutter/assets",
       "//flutter/common/graphics",
+      "//flutter/shell/common:base64",
       "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
       "//flutter/testing:fixture_test",

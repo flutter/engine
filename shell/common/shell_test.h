@@ -29,30 +29,67 @@
 namespace flutter {
 namespace testing {
 
+// The signature of ViewContent::builder.
+using LayerTreeBuilder =
+    std::function<void(std::shared_ptr<ContainerLayer> root)>;
+struct ViewContent;
+// Defines the content to be rendered to all views of a frame in PumpOneFrame.
+using FrameContent = std::map<int64_t, ViewContent>;
+// Defines the content to be rendered to a view in PumpOneFrame.
+struct ViewContent {
+  flutter::ViewportMetrics viewport_metrics;
+  // Given the root layer, this callback builds the layer tree to be rasterized
+  // in PumpOneFrame.
+  LayerTreeBuilder builder;
+
+  // Build a frame with no views. This is useful when PumpOneFrame is used just
+  // to schedule the frame while the frame content is defined by other means.
+  static FrameContent NoViews();
+
+  // Build a frame with a single implicit view with the specific size and no
+  // content.
+  static FrameContent DummyView(double width = 1, double height = 1);
+
+  // Build a frame with a single implicit view with the specific viewport
+  // metrics and no content.
+  static FrameContent DummyView(flutter::ViewportMetrics viewport_metrics);
+
+  // Build a frame with a single implicit view with the specific size and
+  // content.
+  static FrameContent ImplicitView(double width,
+                                   double height,
+                                   LayerTreeBuilder builder);
+};
+
 class ShellTest : public FixtureTest {
  public:
+  struct Config {
+    // Required.
+    const Settings& settings;
+    // Defaults to GetTaskRunnersForFixture().
+    std::optional<TaskRunners> task_runners = {};
+    bool is_gpu_disabled = false;
+    // Defaults to calling ShellTestPlatformView::Create with the provided
+    // arguments.
+    Shell::CreateCallback<PlatformView> platform_view_create_callback;
+  };
+
   ShellTest();
 
   Settings CreateSettingsForFixture() override;
-  std::unique_ptr<Shell> CreateShell(const Settings& settings,
-                                     bool simulate_vsync = false);
   std::unique_ptr<Shell> CreateShell(
       const Settings& settings,
-      TaskRunners task_runners,
-      bool simulate_vsync = false,
-      const std::shared_ptr<ShellTestExternalViewEmbedder>&
-          shell_test_external_view_embedder = nullptr,
-      bool is_gpu_disabled = false,
-      ShellTestPlatformView::BackendType rendering_backend =
-          ShellTestPlatformView::BackendType::kDefaultBackend,
-      Shell::CreateCallback<PlatformView> platform_view_create_callback =
-          nullptr);
+      std::optional<TaskRunners> task_runners = {});
+  std::unique_ptr<Shell> CreateShell(const Config& config);
   void DestroyShell(std::unique_ptr<Shell> shell);
   void DestroyShell(std::unique_ptr<Shell> shell,
                     const TaskRunners& task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
   fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
+
+  void SendPlatformMessage(Shell* shell,
+                           std::unique_ptr<PlatformMessage> message);
 
   void SendEnginePlatformMessage(Shell* shell,
                                  std::unique_ptr<PlatformMessage> message);
@@ -65,24 +102,14 @@ class ShellTest : public FixtureTest {
   static void RestartEngine(Shell* shell, RunConfiguration configuration);
 
   /// Issue as many VSYNC as needed to flush the UI tasks so far, and reset
-  /// the `will_draw_new_frame` to true.
-  static void VSyncFlush(Shell* shell, bool& will_draw_new_frame);
-
-  /// Given the root layer, this callback builds the layer tree to be rasterized
-  /// in PumpOneFrame.
-  using LayerTreeBuilder =
-      std::function<void(std::shared_ptr<ContainerLayer> root)>;
+  /// the content of `will_draw_new_frame` to true if it's not nullptr.
+  static void VSyncFlush(Shell* shell, bool* will_draw_new_frame = nullptr);
 
   static void SetViewportMetrics(Shell* shell, double width, double height);
   static void NotifyIdle(Shell* shell, fml::TimeDelta deadline);
 
-  static void PumpOneFrame(Shell* shell,
-                           double width = 1,
-                           double height = 1,
-                           LayerTreeBuilder = {});
-  static void PumpOneFrame(Shell* shell,
-                           const flutter::ViewportMetrics& viewport_metrics,
-                           LayerTreeBuilder = {});
+  static void PumpOneFrame(Shell* shell);
+  static void PumpOneFrame(Shell* shell, FrameContent frame_content);
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
                                   std::unique_ptr<PointerDataPacket> packet);
@@ -129,6 +156,8 @@ class ShellTest : public FixtureTest {
 
   static size_t GetLiveTrackedPathCount(
       const std::shared_ptr<VolatilePathTracker>& tracker);
+
+  static void TurnOffGPU(Shell* shell, bool value);
 
  private:
   ThreadHost thread_host_;

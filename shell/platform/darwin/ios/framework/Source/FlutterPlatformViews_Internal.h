@@ -5,16 +5,16 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
+#include <Metal/Metal.h>
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 @class FlutterTouchInterceptingView;
 
@@ -56,7 +56,7 @@
 // in the pool. If there are none available, a new FlutterClippingMaskView is constructed. If the
 // capacity is reached, the newly constructed FlutterClippingMaskView is not added to the pool.
 //
-// Call |recycleMaskViews| to mark all the FlutterClippingMaskViews in the pool available.
+// Call |insertViewToPoolIfNeeded:| to return a maskView to the pool.
 @interface FlutterClippingMaskViewPool : NSObject
 
 // Initialize the pool with `capacity`. When the `capacity` is reached, a FlutterClippingMaskView is
@@ -66,8 +66,8 @@
 // Reuse a maskView from the pool, or allocate a new one.
 - (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
 
-// Mark all the maskViews available.
-- (void)recycleMaskViews;
+// Insert the `maskView` into the pool.
+- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskView*)maskView;
 
 @end
 
@@ -168,9 +168,9 @@ class FlutterPlatformViewLayerPool {
 
   // Gets a layer from the pool if available, or allocates a new one.
   // Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(
-      GrDirectContext* gr_context,
-      const std::shared_ptr<IOSContext>& ios_context);
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
+                                                     const std::shared_ptr<IOSContext>& ios_context,
+                                                     MTLPixelFormat pixel_format);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -232,9 +232,16 @@ class FlutterPlatformViewsController {
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
-  // a `FlutterPlatformView` object asscociated with the view_id cannot be found, the method
+  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
   // returns nil.
   UIView* GetPlatformViewByID(int64_t view_id);
+
+  // Returns the `FlutterTouchInterceptingView` with the view_id.
+  //
+  // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
+  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
+  // returns nil.
+  FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t view_id);
 
   PostPrerollResult PostPrerollAction(
       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
@@ -255,7 +262,7 @@ class FlutterPlatformViewsController {
                    const std::shared_ptr<IOSContext>& ios_context,
                    std::unique_ptr<SurfaceFrame> frame);
 
-  void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+  void OnMethodCall(FlutterMethodCall* call, FlutterResult result);
 
   // Returns the platform view id if the platform view (or any of its descendant view) is the first
   // responder. Returns -1 if no such platform view is found.
@@ -273,10 +280,10 @@ class FlutterPlatformViewsController {
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
-  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
-  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
-  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
-  void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
+  void OnCreate(FlutterMethodCall* call, FlutterResult result);
+  void OnDispose(FlutterMethodCall* call, FlutterResult result);
+  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult result);
+  void OnRejectGesture(FlutterMethodCall* call, FlutterResult result);
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 
@@ -291,20 +298,12 @@ class FlutterPlatformViewsController {
   int CountClips(const MutatorsStack& mutators_stack);
 
   void ClipViewSetMaskView(UIView* clipView);
+
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
   //
-  // Clips are applied to the super view with a CALayer mask. Transforms are applied to the
-  // current view that's at the head of the chain. For example the following mutators stack [T_1,
-  // C_2, T_3, T_4, C_5, T_6] where T denotes a transform and C denotes a clip, will result in the
-  // following UIView tree:
-  //
-  // C_2 -> C_5 -> PLATFORM_VIEW
-  // (PLATFORM_VIEW is a subview of C_5 which is a subview of C_2)
-  //
-  // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
-  //
-  // After each clip operation, we update the head to the super view of the current head.
+  // Clips are applied to the `embedded_view`'s super view(|ChildClippingView|) using a
+  // |FlutterClippingMaskView|. Transforms are applied to `embedded_view`
   //
   // The `bounding_rect` is the final bounding rect of the PlatformView
   // (EmbeddedViewParams::finalBoundingRect). If a clip mutator's rect contains the final bounding
@@ -312,6 +311,7 @@ class FlutterPlatformViewsController {
   void ApplyMutators(const MutatorsStack& mutators_stack,
                      UIView* embedded_view,
                      const SkRect& bounding_rect);
+
   void CompositeWithParams(int64_t view_id, const EmbeddedViewParams& params);
 
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
@@ -319,9 +319,10 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
-                                                     SkRect rect,
+                                                     SkIRect rect,
                                                      int64_t view_id,
-                                                     int64_t overlay_id);
+                                                     int64_t overlay_id,
+                                                     MTLPixelFormat pixel_format);
   // Removes overlay views and platform views that aren't needed in the current frame.
   // Must run on the platform thread.
   void RemoveUnusedLayers();
@@ -394,7 +395,7 @@ class FlutterPlatformViewsController {
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
-      gesture_recognizers_blocking_policies;
+      gesture_recognizers_blocking_policies_;
 
   bool catransaction_added_ = false;
 
@@ -433,6 +434,9 @@ class FlutterPlatformViewsController {
 
 // Get embedded view
 - (UIView*)embeddedView;
+
+// Sets flutterAccessibilityContainer as this view's accessibilityContainer.
+- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer;
 @end
 
 @interface UIView (FirstResponder)

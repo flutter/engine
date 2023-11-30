@@ -6,8 +6,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-class FakeAssetManager implements AssetManager {
+class FakeAssetManager implements ui_web.AssetManager {
   FakeAssetManager();
 
   @override
@@ -80,7 +81,7 @@ class FakeAssetScope {
       return fetcher();
     }
     if (_parent != null) {
-      return _parent!.getAssetData(assetKey);
+      return _parent.getAssetData(assetKey);
     }
     return null;
   }
@@ -89,7 +90,7 @@ class FakeAssetScope {
 FakeAssetManager fakeAssetManager = FakeAssetManager();
 
 ByteData stringAsUtf8Data(String string) {
-  return ByteData.view(Uint8List.fromList(utf8.encode(string)).buffer);
+  return ByteData.sublistView(utf8.encode(string));
 }
 
 const String ahemFontFamily = 'Ahem';

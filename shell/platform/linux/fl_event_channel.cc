@@ -18,6 +18,9 @@ struct _FlEventChannel {
   // Messenger to communicate on.
   FlBinaryMessenger* messenger;
 
+  // TRUE if the channel has been closed.
+  gboolean channel_closed;
+
   // Channel name.
   gchar* name;
 
@@ -36,9 +39,6 @@ struct _FlEventChannelResponseHandle {
 
   FlBinaryMessengerResponseHandle* response_handle;
 };
-
-// Added here to stop the compiler from optimizing this function away.
-G_MODULE_EXPORT GType fl_event_channel_get_type();
 
 G_DEFINE_TYPE(FlEventChannel, fl_event_channel, G_TYPE_OBJECT)
 
@@ -129,13 +129,14 @@ static void remove_handlers(FlEventChannel* self) {
 // Called when the channel handler is closed.
 static void channel_closed_cb(gpointer user_data) {
   g_autoptr(FlEventChannel) self = FL_EVENT_CHANNEL(user_data);
+  self->channel_closed = TRUE;
   remove_handlers(self);
 }
 
 static void fl_event_channel_dispose(GObject* object) {
   FlEventChannel* self = FL_EVENT_CHANNEL(object);
 
-  if (self->messenger != nullptr) {
+  if (!self->channel_closed) {
     fl_binary_messenger_set_message_handler_on_channel(
         self->messenger, self->name, nullptr, nullptr, nullptr);
   }

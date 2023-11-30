@@ -7,7 +7,6 @@
 #include <memory>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 
 namespace impeller {
@@ -90,7 +89,9 @@ class ArchiveStatement {
 
   bool ColumnIntegral(size_t index, int64_t& item);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveStatement);
+  ArchiveStatement(const ArchiveStatement&) = delete;
+
+  ArchiveStatement& operator=(const ArchiveStatement&) = delete;
 };
 
 }  // namespace impeller

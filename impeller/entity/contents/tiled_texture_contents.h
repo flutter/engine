@@ -45,19 +45,29 @@ class TiledTextureContents final : public ColorSourceContents {
   /// @param color_filter
   ///
   /// When applying a color filter to a tiled texture, we can reduce the
-  /// size and number of the subpasses required and the shader workloadby
+  /// size and number of the subpasses required and the shader workload by
   /// applying the filter to the untiled image and absorbing the opacity before
   /// tiling it into the final location.
   ///
   /// This may not be a performance improvement if the image is tiled into a
   /// much smaller size that its original texture size.
-  void SetColorFilter(std::optional<ColorFilterProc> color_filter);
+  void SetColorFilter(ColorFilterProc color_filter);
+
+  // |Contents|
+  std::optional<Snapshot> RenderToSnapshot(
+      const ContentContext& renderer,
+      const Entity& entity,
+      std::optional<Rect> coverage_limit = std::nullopt,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+      bool msaa_enabled = true,
+      const std::string& label = "Tiled Texture Snapshot") const override;
 
  private:
-  std::optional<std::shared_ptr<Texture>> CreateFilterTexture(
+  std::shared_ptr<Texture> CreateFilterTexture(
       const ContentContext& renderer) const;
 
-  SamplerDescriptor CreateDescriptor(const Capabilities& capabilities) const;
+  SamplerDescriptor CreateSamplerDescriptor(
+      const Capabilities& capabilities) const;
 
   bool UsesEmulatedTileMode(const Capabilities& capabilities) const;
 
@@ -65,9 +75,11 @@ class TiledTextureContents final : public ColorSourceContents {
   SamplerDescriptor sampler_descriptor_ = {};
   Entity::TileMode x_tile_mode_ = Entity::TileMode::kClamp;
   Entity::TileMode y_tile_mode_ = Entity::TileMode::kClamp;
-  std::optional<ColorFilterProc> color_filter_;
+  ColorFilterProc color_filter_ = nullptr;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TiledTextureContents);
+  TiledTextureContents(const TiledTextureContents&) = delete;
+
+  TiledTextureContents& operator=(const TiledTextureContents&) = delete;
 };
 
 }  // namespace impeller

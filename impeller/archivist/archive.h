@@ -9,9 +9,7 @@
 #include <optional>
 #include <string>
 #include <type_traits>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archivable.h"
 
 namespace impeller {
@@ -21,7 +19,7 @@ class ArchiveDatabase;
 
 class Archive {
  public:
-  Archive(const std::string& path);
+  explicit Archive(const std::string& path);
 
   ~Archive();
 
@@ -45,7 +43,7 @@ class Archive {
 
   template <class T,
             class = std::enable_if_t<std::is_base_of<Archivable, T>::value>>
-  [[nodiscard]] size_t Read(UnarchiveStep stepper) {
+  [[nodiscard]] size_t Read(const UnarchiveStep& stepper) {
     const ArchiveDef& def = T::kArchiveDefinition;
     return UnarchiveInstances(def, stepper);
   }
@@ -68,7 +66,9 @@ class Archive {
                             const UnarchiveStep& stepper,
                             PrimaryKey primary_key = std::nullopt);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Archive);
+  Archive(const Archive&) = delete;
+
+  Archive& operator=(const Archive&) = delete;
 };
 
 }  // namespace impeller

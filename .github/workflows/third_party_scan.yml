@@ -25,11 +25,11 @@ jobs:
       id-token: write
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           persist-credentials: false
       - name: "setup python"
-        uses: actions/setup-python@bd6b4b6205c4dbad673328db7b31b7fab9e241c0
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
         with:
           python-version: '3.7.7' # install the python version needed
       - name: "extract and flatten deps"
@@ -38,13 +38,13 @@ jobs:
         run: python ci/scan_flattened_deps.py
       # Upload the results as artifacts.
       - name: "Upload artifact"
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
         with:
           name: SARIF file
           path: osvReport.sarif
           retention-days: 5
       # Upload the results to GitHub's code scanning dashboard.
       - name: "Upload to security tab"
-        uses: github/codeql-action/upload-sarif@83f0fe6c4988d98a455712a27f0255212bba9bd4
+        uses: github/codeql-action/upload-sarif@cdcdbb579706841c47f7063dda365e292e5cad7a
         with:
           sarif_file: osvReport.sarif

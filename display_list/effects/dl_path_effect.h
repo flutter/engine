@@ -9,7 +9,7 @@
 
 #include "flutter/display_list/dl_attributes.h"
 #include "flutter/fml/logging.h"
-#include "include/core/SkRect.h"
+#include "third_party/skia/include/core/SkRect.h"
 
 namespace flutter {
 
@@ -104,7 +104,7 @@ class DlDashPathEffect final : public DlPathEffect {
     }
   }
 
-  DlDashPathEffect(const DlDashPathEffect* dash_effect)
+  explicit DlDashPathEffect(const DlDashPathEffect* dash_effect)
       : DlDashPathEffect(dash_effect->intervals(),
                          dash_effect->count_,
                          dash_effect->phase_) {}

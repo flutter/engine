@@ -46,10 +46,11 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
     Command cmd;
-    cmd.label = "sRGB to Linear Filter";
-    cmd.stencil_reference = entity.GetStencilDepth();
+    DEBUG_COMMAND_INFO(cmd, "sRGB to Linear Filter");
+    cmd.stencil_reference = entity.GetClipDepth();
 
     auto options = OptionsFromPassAndEntity(pass, entity);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     cmd.pipeline = renderer.GetSrgbToLinearFilterPipeline(options);
 
     auto size = input_snapshot->texture->GetSize();
@@ -58,10 +59,8 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0)},
         {Point(1, 0)},
-        {Point(1, 1)},
-        {Point(0, 0)},
-        {Point(1, 1)},
         {Point(0, 1)},
+        {Point(1, 1)},
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();
@@ -70,13 +69,16 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation() * input_snapshot->transform *
+                     entity.GetTransform() * input_snapshot->transform *
                      Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
-    frag_info.input_alpha = absorb_opacity ? input_snapshot->opacity : 1.0f;
+    frag_info.input_alpha =
+        absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
+            ? input_snapshot->opacity
+            : 1.0f;
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
@@ -88,14 +90,14 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

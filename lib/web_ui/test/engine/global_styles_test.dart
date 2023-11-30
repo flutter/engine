@@ -16,15 +16,22 @@ void testMain() {
   late DomHTMLStyleElement styleElement;
 
   setUp(() {
-    styleElement = createDomHTMLStyleElement();
-    domDocument.body!.append(styleElement);
+    styleElement = createDomHTMLStyleElement(null);
     applyGlobalCssRulesToSheet(
       styleElement,
       defaultCssFont: _kDefaultCssFont,
     );
   });
+
   tearDown(() {
     styleElement.remove();
+  });
+
+  test('createDomHTMLStyleElement sets a nonce value, when passed', () {
+    expect(styleElement.nonce, isEmpty);
+
+    final DomHTMLStyleElement style = createDomHTMLStyleElement('a-nonce-value');
+    expect(style.nonce, 'a-nonce-value');
   });
 
   test('(Self-test) hasCssRule can extract rules', () {
@@ -93,6 +100,7 @@ bool hasCssRule(
   required String selector,
   required String declaration,
 }) {
+  domDocument.body!.append(styleElement);
   assert(styleElement.sheet != null);
 
   // regexr.com/740ff
@@ -102,7 +110,10 @@ bool hasCssRule(
   final DomCSSStyleSheet sheet = styleElement.sheet! as DomCSSStyleSheet;
 
   // Check that the cssText of any rule matches the ruleLike RegExp.
-  return sheet.cssRules
+  final bool result = sheet.cssRules
       .map((DomCSSRule rule) => rule.cssText)
       .any((String rule) => ruleLike.hasMatch(rule));
+
+  styleElement.remove();
+  return result;
 }

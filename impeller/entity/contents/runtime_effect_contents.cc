@@ -44,6 +44,13 @@ bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
+// TODO(jonahwilliams): FragmentProgram API is not fully wired up on Android.
+// Disable until this is complete so that integration tests and benchmarks can
+// run m3 applications.
+#ifdef FML_OS_ANDROID
+  return true;
+#else
+
   auto context = renderer.GetContext();
   auto library = context->GetShaderLibrary();
 
@@ -118,9 +125,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
                                                ShaderStage::kFragment));
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-  if (!vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs)) {
-    VALIDATION_LOG << "Failed to set stage inputs for runtime effect pipeline.";
-  }
+  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
+                                    VS::kInterleavedBufferLayout);
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   desc.SetColorAttachmentDescriptor(
       0u, {.format = color_attachment_format, .blending_enabled = true});
@@ -145,9 +151,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   Command cmd;
-  cmd.label = "RuntimeEffectContents";
+  DEBUG_COMMAND_INFO(cmd, "RuntimeEffectContents");
   cmd.pipeline = pipeline;
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   //--------------------------------------------------------------------------
@@ -165,7 +171,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
   size_t buffer_offset = 0;
-  for (auto uniform : runtime_stage_->GetUniforms()) {
+  for (const auto& uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
     std::shared_ptr<ShaderMetadata> metadata =
@@ -219,7 +225,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   size_t sampler_index = 0;
-  for (auto uniform : runtime_stage_->GetUniforms()) {
+  for (const auto& uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
     ShaderMetadata metadata;
@@ -255,6 +261,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     return restore.Render(renderer, entity, pass);
   }
   return true;
+#endif  // FML_OS_ANDROID
 }
 
 }  // namespace impeller

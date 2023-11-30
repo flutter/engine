@@ -9,6 +9,8 @@ import 'dart:ui' as ui;
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
+import 'impeller_enabled.dart';
+
 void main() {
 
   test('Animation metadata', () async {
@@ -43,7 +45,11 @@ void main() {
       await codec.getNextFrame();
       fail('exception not thrown');
     } on Exception catch (e) {
-      expect(e.toString(), contains('Codec failed'));
+      if (impellerEnabled) {
+        expect(e.toString(), contains('Could not decompress image.'));
+      } else {
+        expect(e.toString(), contains('Codec failed'));
+      }
     }
   });
 
@@ -145,8 +151,9 @@ void main() {
     final ui.Image image = frameInfo.image;
     final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
 
+    final String fileName = impellerEnabled ? 'impeller_four_frame_with_reuse_end.png' : 'four_frame_with_reuse_end.png';
     final Uint8List goldenData = File(
-      path.join('flutter', 'lib', 'ui', 'fixtures', 'four_frame_with_reuse_end.png'),
+      path.join('flutter', 'lib', 'ui', 'fixtures', fileName),
     ).readAsBytesSync();
 
     expect(imageData.buffer.asUint8List(), goldenData);
@@ -170,8 +177,10 @@ void main() {
     final ui.Image image = frameInfo.image;
     final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
 
+    final String fileName = impellerEnabled ? 'impeller_heart_end.png' : 'heart_end.png';
+
     final Uint8List goldenData = File(
-      path.join('flutter', 'lib', 'ui', 'fixtures', 'heart_end.png'),
+      path.join('flutter', 'lib', 'ui', 'fixtures', fileName),
     ).readAsBytesSync();
 
     expect(imageData.buffer.asUint8List(), goldenData);
@@ -194,8 +203,10 @@ void main() {
         final ui.Image image = frameInfo.image;
         final ByteData imageData = (await image.toByteData(format: ui.ImageByteFormat.png))!;
 
+        final String fileName = impellerEnabled ? 'impeller_2_dispose_op_restore_previous.apng.$i.png' : '2_dispose_op_restore_previous.apng.$i.png';
+
         final Uint8List goldenData = File(
-          path.join('flutter', 'lib', 'ui', 'fixtures', '2_dispose_op_restore_previous.apng.$i.png'),
+          path.join('flutter', 'lib', 'ui', 'fixtures', fileName),
         ).readAsBytesSync();
 
         expect(imageData.buffer.asUint8List(), goldenData);
@@ -204,8 +215,6 @@ void main() {
   });
 
   test('Animated apng alpha type handling', () async {
-    // https://github.com/flutter/engine/pull/42153
-
     final Uint8List data = File(
       path.join('flutter', 'lib', 'ui', 'fixtures', 'alpha_animated.apng'),
     ).readAsBytesSync();
@@ -220,6 +229,29 @@ void main() {
     imageData = (await image.toByteData())!;
     expect(imageData.getUint32(0), 0x99000099);
   });
+
+  test('Animated apng background color restore', () async {
+    final Uint8List data = File(
+      path.join('flutter', 'lib', 'ui', 'fixtures', 'dispose_op_background.apng'),
+    ).readAsBytesSync();
+    final ui.Codec codec = await ui.instantiateImageCodec(data);
+
+    // First frame is solid red
+    ui.Image image = (await codec.getNextFrame()).image;
+    ByteData imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(0), 0xFF0000FF);
+
+    // Third frame is blue in the lower right corner.
+    await codec.getNextFrame();
+    image = (await codec.getNextFrame()).image;
+    imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(imageData.lengthInBytes - 4), 0x0000FFFF);
+
+    // Fourth frame is transparent in the lower right corner
+    image = (await codec.getNextFrame()).image;
+    imageData = (await image.toByteData())!;
+    expect(imageData.getUint32(imageData.lengthInBytes - 4), 0x00000000);
+  });
 }
 
 /// Returns a File handle to a file in the skia/resources directory.
@@ -229,7 +261,8 @@ File _getSkiaResource(String fileName) {
   // assuming the curent working directory is engine/src.
   // This is fragile and should be changed once the Platform.script issue is
   // resolved.
-  final String assetPath =
-    path.join('third_party', 'skia', 'resources', 'images', fileName);
+  final String assetPath = path.join(
+    'flutter', 'third_party', 'skia', 'resources', 'images', fileName,
+  );
   return File(assetPath);
 }

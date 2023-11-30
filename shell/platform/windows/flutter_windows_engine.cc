@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
+#include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
@@ -158,11 +159,15 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 FlutterWindowsEngine::FlutterWindowsEngine(
     const FlutterProjectBundle& project,
-    std::unique_ptr<WindowsRegistry> registry)
+    std::shared_ptr<WindowsProcTable> windows_proc_table)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
+      windows_proc_table_(std::move(windows_proc_table)),
       aot_data_(nullptr, nullptr),
-      windows_registry_(std::move(registry)),
       lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
+  if (windows_proc_table_ == nullptr) {
+    windows_proc_table_ = std::make_shared<WindowsProcTable>();
+  }
+
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -202,7 +207,13 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
   texture_registrar_ =
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
-  surface_manager_ = AngleSurfaceManager::Create();
+
+  // Check for impeller support.
+  auto& switches = project_->GetSwitches();
+  enable_impeller_ = std::find(switches.begin(), switches.end(),
+                               "--enable-impeller=true") != switches.end();
+
+  surface_manager_ = AngleSurfaceManager::Create(enable_impeller_);
   window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
   window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate(
       [](HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data,
@@ -342,7 +353,12 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                        void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    auto accessibility_bridge = host->accessibility_bridge().lock();
+    auto view = host->view();
+    if (!view) {
+      return;
+    }
+
+    auto accessibility_bridge = view->accessibility_bridge().lock();
     if (!accessibility_bridge) {
       return;
     }
@@ -365,6 +381,15 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       host->root_isolate_create_callback_();
     }
   };
+  args.channel_update_callback = [](const FlutterChannelUpdate* update,
+                                    void* user_data) {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    if (SAFE_ACCESS(update, channel, nullptr) != nullptr) {
+      std::string channel_name(update->channel);
+      host->OnChannelUpdate(std::move(channel_name),
+                            SAFE_ACCESS(update, listening, false));
+    }
+  };
 
   args.custom_task_runners = &custom_task_runners;
 
@@ -372,9 +397,25 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     args.aot_data = aot_data_.get();
   }
 
-  FlutterRendererConfig renderer_config = surface_manager_
-                                              ? GetOpenGLRendererConfig()
-                                              : GetSoftwareRendererConfig();
+  // The platform thread creates OpenGL contexts. These
+  // must be released to be used by the engine's threads.
+  FML_DCHECK(!surface_manager_ || !surface_manager_->HasContextCurrent());
+
+  FlutterRendererConfig renderer_config;
+
+  if (enable_impeller_) {
+    // Impeller does not support a Software backend. Avoid falling back and
+    // confusing the engine on which renderer is selected.
+    if (!surface_manager_) {
+      FML_LOG(ERROR) << "Could not create surface manager. Impeller backend "
+                        "does not support software rendering.";
+      return false;
+    }
+    renderer_config = GetOpenGLRendererConfig();
+  } else {
+    renderer_config = surface_manager_ ? GetOpenGLRendererConfig()
+                                       : GetSoftwareRendererConfig();
+  }
 
   auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
                                   &args, this, &engine_);
@@ -535,8 +576,7 @@ void FlutterWindowsEngine::HandlePlatformMessage(
 
   auto message = ConvertToDesktopMessage(*engine_message);
 
-  message_dispatcher_->HandleMessage(
-      message, [this] {}, [this] {});
+  message_dispatcher_->HandleMessage(message, [this] {}, [this] {});
 }
 
 void FlutterWindowsEngine::ReloadSystemFonts() {
@@ -564,15 +604,14 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SetLifecycleState(flutter::AppLifecycleState state) {
-  const char* state_name = flutter::AppLifecycleStateToString(state);
-  SendPlatformMessage("flutter/lifecycle",
-                      reinterpret_cast<const uint8_t*>(state_name),
-                      strlen(state_name), nullptr, nullptr);
+  if (lifecycle_manager_) {
+    lifecycle_manager_->SetLifecycleState(state);
+  }
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
   std::vector<LanguageInfo> languages =
-      GetPreferredLanguageInfo(*windows_registry_);
+      GetPreferredLanguageInfo(*windows_proc_table_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -611,7 +650,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
     BinaryMessenger* messenger,
     KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
     KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan) {
-  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>();
+  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>(messenger);
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyEmbedderHandler>(
           [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
@@ -621,6 +660,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
           get_key_state, map_vk_to_scan));
   keyboard_key_handler->AddDelegate(
       std::make_unique<KeyboardKeyChannelHandler>(messenger));
+  keyboard_key_handler->InitKeyboardChannel();
   return keyboard_key_handler;
 }
 
@@ -689,15 +729,6 @@ void FlutterWindowsEngine::OnPreEngineRestart() {
   }
 }
 
-gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeViewAccessible() {
-  auto bridge = accessibility_bridge().lock();
-  if (!bridge) {
-    return nullptr;
-  }
-
-  return bridge->GetChildOfAXFragmentRoot();
-}
-
 std::string FlutterWindowsEngine::GetExecutableName() const {
   std::pair<bool, std::string> result = fml::paths::GetExecutablePath();
   if (result.first) {
@@ -712,34 +743,27 @@ std::string FlutterWindowsEngine::GetExecutableName() const {
   return "Flutter";
 }
 
-void FlutterWindowsEngine::UpdateAccessibilityFeatures(
-    FlutterAccessibilityFeature flags) {
-  embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
+void FlutterWindowsEngine::UpdateAccessibilityFeatures() {
+  UpdateHighContrastMode();
 }
 
-void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
-  high_contrast_enabled_ = enabled;
-  int flags = EnabledAccessibilityFeatures();
-  if (enabled) {
-    flags |=
-        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
-  } else {
-    flags &=
-        ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
-  }
-  UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
-  settings_plugin_->UpdateHighContrastMode(enabled);
+void FlutterWindowsEngine::UpdateHighContrastMode() {
+  high_contrast_enabled_ = windows_proc_table_->GetHighContrastEnabled();
+
+  SendAccessibilityFeatures();
+  settings_plugin_->UpdateHighContrastMode(high_contrast_enabled_);
 }
 
-int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
+void FlutterWindowsEngine::SendAccessibilityFeatures() {
   int flags = 0;
-  if (high_contrast_enabled()) {
+
+  if (high_contrast_enabled_) {
     flags |=
         FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
   }
-  // As more accessibility features are enabled for Windows,
-  // the corresponding checks and flags should be added here.
-  return flags;
+
+  embedder_api_.UpdateAccessibilityFeatures(
+      engine_, static_cast<FlutterAccessibilityFeature>(flags));
 }
 
 void FlutterWindowsEngine::HandleAccessibilityMessage(
@@ -777,17 +801,33 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
   lifecycle_manager_->Quit(hwnd, wparam, lparam, exit_code);
 }
 
-std::weak_ptr<AccessibilityBridgeWindows>
-FlutterWindowsEngine::accessibility_bridge() {
-  return view_->accessibility_bridge();
-}
-
 void FlutterWindowsEngine::OnDwmCompositionChanged() {
   view_->OnDwmCompositionChanged();
 }
 
-void FlutterWindowsEngine::OnApplicationLifecycleEnabled() {
-  lifecycle_manager_->BeginProcessingClose();
+void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
+                                              WindowStateEvent event) {
+  lifecycle_manager_->OnWindowStateEvent(hwnd, event);
+}
+
+std::optional<LRESULT> FlutterWindowsEngine::ProcessExternalWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  if (lifecycle_manager_) {
+    return lifecycle_manager_->ExternalWindowMessage(hwnd, message, wparam,
+                                                     lparam);
+  }
+  return std::nullopt;
+}
+
+void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
+  if (name == "flutter/platform" && listening) {
+    lifecycle_manager_->BeginProcessingExit();
+  } else if (name == "flutter/lifecycle" && listening) {
+    lifecycle_manager_->BeginProcessingLifecycle();
+  }
 }
 
 }  // namespace flutter

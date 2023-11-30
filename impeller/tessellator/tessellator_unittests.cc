@@ -4,6 +4,7 @@
 
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
+#include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/tessellator/tessellator.h"
 
@@ -14,40 +15,37 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
     Tessellator t;
-    auto polyline = PathBuilder{}.TakePath().CreatePolyline(1.0f);
+    auto path = PathBuilder{}.TakePath(FillType::kPositive);
     Tessellator::Result result = t.Tessellate(
-        FillType::kPositive, polyline,
-        [](const float* vertices, size_t vertices_size, const uint16_t* indices,
-           size_t indices_size) { return true; });
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(polyline.points.size(), 0u);
     ASSERT_EQ(result, Tessellator::Result::kInputError);
   }
 
   // One point.
   {
     Tessellator t;
-    auto polyline =
-        PathBuilder{}.LineTo({0, 0}).TakePath().CreatePolyline(1.0f);
+    auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kPositive);
     Tessellator::Result result = t.Tessellate(
-        FillType::kPositive, polyline,
-        [](const float* vertices, size_t vertices_size, const uint16_t* indices,
-           size_t indices_size) { return true; });
-    ASSERT_EQ(polyline.points.size(), 1u);
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
+
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 
   // Two points.
   {
     Tessellator t;
-    auto polyline =
-        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath().CreatePolyline(1.0f);
+    auto path =
+        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
     Tessellator::Result result = t.Tessellate(
-        FillType::kPositive, polyline,
-        [](const float* vertices, size_t vertices_size, const uint16_t* indices,
-           size_t indices_size) { return true; });
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(polyline.points.size(), 2u);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 
@@ -59,28 +57,78 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
       auto coord = i * 1.0f;
       builder.AddLine({coord, coord}, {coord + 1, coord + 1});
     }
-    auto polyline = builder.TakePath().CreatePolyline(1.0f);
+    auto path = builder.TakePath(FillType::kPositive);
     Tessellator::Result result = t.Tessellate(
-        FillType::kPositive, polyline,
-        [](const float* vertices, size_t vertices_size, const uint16_t* indices,
-           size_t indices_size) { return true; });
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(polyline.points.size(), 2000u);
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 
   // Closure fails.
   {
     Tessellator t;
-    auto polyline =
-        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath().CreatePolyline(1.0f);
+    auto path =
+        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
     Tessellator::Result result = t.Tessellate(
-        FillType::kPositive, polyline,
-        [](const float* vertices, size_t vertices_size, const uint16_t* indices,
-           size_t indices_size) { return false; });
+        path, 1.0f,
+        [](const float* vertices, size_t vertices_count,
+           const uint16_t* indices, size_t indices_count) { return false; });
 
-    ASSERT_EQ(polyline.points.size(), 2u);
     ASSERT_EQ(result, Tessellator::Result::kInputError);
+  }
+
+  // More than uint16 points, odd fill mode.
+  {
+    Tessellator t;
+    PathBuilder builder = {};
+    for (auto i = 0; i < 1000; i++) {
+      builder.AddCircle(Point(i, i), 4);
+    }
+    auto path = builder.TakePath(FillType::kOdd);
+    bool no_indices = false;
+    size_t count = 0u;
+    Tessellator::Result result = t.Tessellate(
+        path, 1.0f,
+        [&no_indices, &count](const float* vertices, size_t vertices_count,
+                              const uint16_t* indices, size_t indices_count) {
+          no_indices = indices == nullptr;
+          count = vertices_count;
+          return true;
+        });
+
+    ASSERT_TRUE(no_indices);
+    ASSERT_TRUE(count >= USHRT_MAX);
+    ASSERT_EQ(result, Tessellator::Result::kSuccess);
+  }
+}
+
+TEST(TessellatorTest, TessellateConvex) {
+  {
+    Tessellator t;
+    // Sanity check simple rectangle.
+    auto pts = t.TessellateConvex(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), 1.0);
+
+    std::vector<Point> expected = {
+        {0, 0}, {10, 0}, {0, 10}, {10, 10},  //
+    };
+    EXPECT_EQ(pts, expected);
+  }
+
+  {
+    Tessellator t;
+    auto pts = t.TessellateConvex(PathBuilder{}
+                                      .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                                      .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                                      .TakePath(),
+                                  1.0);
+
+    std::vector<Point> expected = {{0, 0},   {10, 0},  {0, 10},  {10, 10},
+                                   {10, 10}, {20, 20}, {20, 20}, {30, 20},
+                                   {20, 30}, {30, 30}};
+    EXPECT_EQ(pts, expected);
   }
 }
 

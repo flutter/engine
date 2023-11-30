@@ -20,7 +20,7 @@ namespace testing {
 
 /**
  * @brief A RasterCacheResult implementation that represents a cached Layer or
- * SkPicture without the overhead of storage.
+ * DisplayList without the overhead of storage.
  *
  * This implementation is used by MockRasterCache only for testing proper usage
  * of the RasterCache in layer unit tests.
@@ -29,7 +29,9 @@ class MockRasterCacheResult : public RasterCacheResult {
  public:
   explicit MockRasterCacheResult(SkRect device_rect);
 
-  void draw(DlCanvas& canvas, const DlPaint* paint = nullptr) const override{};
+  void draw(DlCanvas& canvas,
+            const DlPaint* paint = nullptr,
+            bool preserve_rtree = false) const override{};
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
@@ -48,7 +50,7 @@ static std::vector<RasterCacheItem*> raster_cache_items_;
 
 /**
  * @brief A RasterCache implementation that simulates the act of rendering a
- * Layer or SkPicture without the overhead of rasterization or pixel storage.
+ * Layer or DisplayList without the overhead of rasterization or pixel storage.
  * This implementation is used only for testing proper usage of the RasterCache
  * in layer unit tests.
  */
@@ -82,7 +84,7 @@ class MockRasterCache : public RasterCache {
       .gr_context                    = nullptr,
       .view_embedder                 = nullptr,
       .state_stack                   = preroll_state_stack_,
-      .dst_color_space               = color_space_.get(),
+      .dst_color_space               = color_space_,
       .surface_needs_readback        = false,
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,
@@ -98,7 +100,7 @@ class MockRasterCache : public RasterCache {
       .state_stack                   = paint_state_stack_,
       .canvas                        = nullptr,
       .gr_context                    = nullptr,
-      .dst_color_space               = color_space_.get(),
+      .dst_color_space               = color_space_,
       .view_embedder                 = nullptr,
       .raster_time                   = raster_time_,
       .ui_time                       = ui_time_,

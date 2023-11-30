@@ -20,33 +20,53 @@ class MockBinaryMessenger {
   MockBinaryMessenger();
   ~MockBinaryMessenger();
 
+  // This was an existing use of operator overloading. It's against our style
+  // guide but enabling clang tidy on header files is a higher priority than
+  // fixing this.
+  // NOLINTNEXTLINE(google-explicit-constructor)
   operator FlBinaryMessenger*();
 
-  MOCK_METHOD5(fl_binary_messenger_set_message_handler_on_channel,
-               void(FlBinaryMessenger* messenger,
-                    const gchar* channel,
-                    FlBinaryMessengerMessageHandler handler,
-                    gpointer user_data,
-                    GDestroyNotify destroy_notify));
+  MOCK_METHOD(void,
+              fl_binary_messenger_set_message_handler_on_channel,
+              (FlBinaryMessenger * messenger,
+               const gchar* channel,
+               FlBinaryMessengerMessageHandler handler,
+               gpointer user_data,
+               GDestroyNotify destroy_notify));
 
-  MOCK_METHOD4(fl_binary_messenger_send_response,
-               gboolean(FlBinaryMessenger* messenger,
-                        FlBinaryMessengerResponseHandle* response_handle,
-                        GBytes* response,
-                        GError** error));
+  MOCK_METHOD(gboolean,
+              fl_binary_messenger_send_response,
+              (FlBinaryMessenger * messenger,
+               FlBinaryMessengerResponseHandle* response_handle,
+               GBytes* response,
+               GError** error));
 
-  MOCK_METHOD6(fl_binary_messenger_send_on_channel,
-               void(FlBinaryMessenger* messenger,
-                    const gchar* channel,
-                    GBytes* message,
-                    GCancellable* cancellable,
-                    GAsyncReadyCallback callback,
-                    gpointer user_data));
+  MOCK_METHOD(void,
+              fl_binary_messenger_send_on_channel,
+              (FlBinaryMessenger * messenger,
+               const gchar* channel,
+               GBytes* message,
+               GCancellable* cancellable,
+               GAsyncReadyCallback callback,
+               gpointer user_data));
 
-  MOCK_METHOD3(fl_binary_messenger_send_on_channel_finish,
-               GBytes*(FlBinaryMessenger* messenger,
-                       GAsyncResult* result,
-                       GError** error));
+  MOCK_METHOD(GBytes*,
+              fl_binary_messenger_send_on_channel_finish,
+              (FlBinaryMessenger * messenger,
+               GAsyncResult* result,
+               GError** error));
+
+  MOCK_METHOD(void,
+              fl_binary_messenger_resize_channel,
+              (FlBinaryMessenger * messenger,
+               const gchar* channel,
+               int64_t new_size));
+
+  MOCK_METHOD(void,
+              fl_binary_messenger_set_warns_on_channel_overflow,
+              (FlBinaryMessenger * messenger,
+               const gchar* channel,
+               bool warns));
 
   bool HasMessageHandler(const gchar* channel) const;
 
@@ -59,10 +79,10 @@ class MockBinaryMessenger {
  private:
   FlBinaryMessenger* instance_ = nullptr;
   std::unordered_map<std::string, FlBinaryMessengerMessageHandler>
-      message_handlers;
+      message_handlers_;
   std::unordered_map<std::string, FlBinaryMessengerResponseHandle*>
-      response_handles;
-  std::unordered_map<std::string, gpointer> user_datas;
+      response_handles_;
+  std::unordered_map<std::string, gpointer> user_datas_;
 };
 
 }  // namespace testing

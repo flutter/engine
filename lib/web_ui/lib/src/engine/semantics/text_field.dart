@@ -209,9 +209,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// browser gestures when in pointer mode. In Safari on iOS pointer events are
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
-class TextField extends RoleManager {
-  TextField(SemanticsObject semanticsObject)
-      : super(Role.textField, semanticsObject) {
+class TextField extends PrimaryRoleManager {
+  TextField(SemanticsObject semanticsObject) : super.blank(PrimaryRole.textField, semanticsObject) {
     _setupDomElement();
   }
 
@@ -276,7 +275,7 @@ class TextField extends RoleManager {
       ..left = '0'
       ..width = '${semanticsObject.rect!.width}px'
       ..height = '${semanticsObject.rect!.height}px';
-    semanticsObject.element.append(activeEditableElement);
+    append(activeEditableElement);
   }
 
   void _setupDomElement() {
@@ -302,7 +301,16 @@ class TextField extends RoleManager {
           }
 
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsObject.id, ui.SemanticsAction.tap, null);
+              semanticsObject.id, ui.SemanticsAction.didGainAccessibilityFocus, null);
+        }));
+    activeEditableElement.addEventListener('blur',
+        createDomEventListener((DomEvent event) {
+          if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
+            return;
+          }
+
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+              semanticsObject.id, ui.SemanticsAction.didLoseAccessibilityFocus, null);
         }));
   }
 
@@ -328,22 +336,21 @@ class TextField extends RoleManager {
       return;
     }
 
-    semanticsObject.element
-      ..setAttribute('role', 'textbox')
-      ..setAttribute('contenteditable', 'false')
-      ..setAttribute('tabindex', '0');
+    setAttribute('role', 'textbox');
+    setAttribute('contenteditable', 'false');
+    setAttribute('tabindex', '0');
 
     num? lastPointerDownOffsetX;
     num? lastPointerDownOffsetY;
 
-    semanticsObject.element.addEventListener('pointerdown',
+    addEventListener('pointerdown',
         createDomEventListener((DomEvent event) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
           lastPointerDownOffsetX = pointerEvent.clientX;
           lastPointerDownOffsetY = pointerEvent.clientY;
         }), true);
 
-    semanticsObject.element.addEventListener('pointerup',
+    addEventListener('pointerup',
         createDomEventListener((DomEvent event) {
       final DomPointerEvent pointerEvent = event as DomPointerEvent;
 
@@ -391,23 +398,25 @@ class TextField extends RoleManager {
     // represent the same text field. It will confuse VoiceOver, so `role` needs to
     // be assigned and removed, based on whether or not editableElement exists.
     activeEditableElement.focus();
-    semanticsObject.element.removeAttribute('role');
+    removeAttribute('role');
 
     activeEditableElement.addEventListener('blur',
         createDomEventListener((DomEvent event) {
-      semanticsObject.element.setAttribute('role', 'textbox');
+      setAttribute('role', 'textbox');
       activeEditableElement.remove();
       SemanticsTextEditingStrategy._instance?.deactivate(this);
 
       // Focus on semantics element before removing the editable element, so that
       // the user can continue navigating the page with the assistive technology.
-      semanticsObject.element.focus();
+      element.focus();
       editableElement = null;
     }));
   }
 
   @override
   void update() {
+    super.update();
+
     // Ignore the update if editableElement has not been created yet.
     // On iOS Safari, when the user dismisses the keyboard using the 'done' button,
     // we recieve a `blur` event from the browswer and a semantic update with
@@ -437,7 +446,7 @@ class TextField extends RoleManager {
       }
     }
 
-    final DomElement element = editableElement ?? semanticsObject.element;
+    final DomElement element = editableElement ?? this.element;
     if (semanticsObject.hasLabel) {
       element.setAttribute(
         'aria-label',

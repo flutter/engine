@@ -15,6 +15,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../common/matchers.dart';
+import '../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -22,7 +23,7 @@ void main() {
 
 void testMain() {
   setUpAll(() async {
-    await ui.webOnlyInitializePlatform();
+    await bootstrapAndRunApp();
   });
 
   group('SceneBuilder', () {
@@ -37,7 +38,7 @@ void testMain() {
     test('pushTransform implements surface lifecycle', () {
       testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
         return sceneBuilder.pushTransform(
-            (Matrix4.identity()..scale(domWindow.devicePixelRatio)).toFloat64());
+            (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64());
       }, () {
         return '''<s><flt-transform></flt-transform></s>''';
       });
@@ -476,7 +477,7 @@ void testMain() {
     // Pump an empty scene to reset it, otherwise the first frame will attempt
     // to diff left-overs from a previous test, which results in unpredictable
     // DOM mutations.
-    window.render(SurfaceSceneBuilder().build());
+    ui.PlatformDispatcher.instance.render(SurfaceSceneBuilder().build());
 
     // Renders a `string` by breaking it up into individual characters and
     // rendering each character into its own layer.

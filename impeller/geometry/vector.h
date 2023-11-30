@@ -14,6 +14,8 @@
 
 namespace impeller {
 
+// NOLINTBEGIN(google-explicit-constructor)
+
 struct Vector3 {
   union {
     struct {
@@ -50,6 +52,10 @@ struct Vector3 {
 
   constexpr Scalar Dot(const Vector3& other) const {
     return ((x * other.x) + (y * other.y) + (z * other.z));
+  }
+
+  constexpr Vector3 Abs() const {
+    return {std::fabs(x), std::fabs(y), std::fabs(z)};
   }
 
   constexpr Vector3 Cross(const Vector3& other) const {
@@ -319,5 +325,7 @@ inline std::ostream& operator<<(std::ostream& out, const impeller::Vector4& p) {
   out << "(" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
   return out;
 }
+
+// NOLINTEND(google-explicit-constructor)
 
 }  // namespace std

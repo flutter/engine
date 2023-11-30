@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
@@ -59,7 +58,7 @@ class VulkanWindow {
 
  private:
   bool valid_;
-  fml::RefPtr<VulkanProcTable> vk;
+  fml::RefPtr<VulkanProcTable> vk_;
   std::unique_ptr<VulkanApplication> application_;
   std::unique_ptr<VulkanDevice> logical_device_;
   std::unique_ptr<VulkanSurface> surface_;

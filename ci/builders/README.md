@@ -5,7 +5,7 @@ by defining a combination of *sub-builds*, *archives*, *generators* and *depende
 makes it simple to shard sub-builds by mapping build inputs to workflows, and listing
 the sub-build-generated artifacts explicitly. The Build Definition Language, Engine
 Recipes V2 and the generation of artifacts using GN+Ninja set the groundwork
-for efficient builds with dependency reusability.  
+for efficient builds with dependency reusability.
 
 **Author: Godofredo Contreras (godofredoc)**\
 **Go Link: flutter.dev/go/engine-build-definition-language**\
@@ -56,7 +56,7 @@ in the `config_name` under `properties`:
     properties:
       config_name: mac_android_aot_engine
       $flutter/osx_sdk : >-
-        { "sdk_version": "14e222b" }
+        { "sdk_version": "14e300c" }
 
 ```
 
@@ -105,6 +105,26 @@ A configuration file defines a top-level builder that will show up as a column
 in the
 [Flutter Dashboard](https://flutter-dashboard.appspot.com/#/build?repo=engine&branch=master).
 
+
+### Magic variables
+
+Magic variables are special environment variables that can be used as parameters
+for generators and test commands in the local and global contexts.
+
+Magic environment variables have the following limitations:
+only `${FLUTTER_LOGS_DIR}` is currently supported and it needs to be used
+alone within the parameter string(e.g. `["${FLUTTER_LOGS_DIR}"]` is OK
+but `["path=${FLUTTER_LOGS_DIR}"]` is not).
+
+The current list of supported magic variables is:
+
+* `${FLUTTER_LOGS_DIR}` - translated to the path of the temporary
+  folder where logs are being placed.
+* `${LUCI_WORKDIR}` - translated to the LUCI chroot working directory.
+* `${LUCI_CLEANUP}` - translated to the LUCI chroot temp directory.
+* `${REVISION}` - translated to the engine commit in postsubmit. In presubmit
+  it is translated to an empty string.
+
 ### Build
 
 A build is a dictionary with a gn command, a ninja command, zero or more
@@ -150,7 +170,8 @@ configuration.
   "type": "gcs",
   "include_paths": [
      "out/host_debug/zip_archives/linux-x64/artifacts.zip"
-  ]
+  ],
+  "realm": "production"
 }
 ```
 
@@ -176,6 +197,10 @@ cleanups. Gcs is expected for any artifacts being consumed by the flutter tool.
 given destination.
 * **cas_archive** - a boolean value indicating whether the build output will
 be archived to CAS or not. The default value is true.
+* **realm** - a string value of either `production` or `experimental`
+where production means the artifact will be uploaded to the location expected
+by the flutter tool and experimental will add an `experimental` prefix to the
+path to avoid interfering with production artifacts.
 
 #### Drone\_dimensions
 
@@ -278,7 +303,8 @@ configuration.
            "impeller-vulkan",
            "--engine-capture-core-dump"
        ],
-       "script": "flutter/testing/run_tests.py"
+       "script": "flutter/testing/run_tests.py",
+       "contexts": ["android_virtual_device"]
    }
 ]
 ```
@@ -291,9 +317,14 @@ default is empty which means no interpreter will be used to run the script
 and it is assumed the script is already an executable with the right
 permissions to run in the target platform.
 * **name** - the name of the step running the script.
-* **parameters** - flags or parameters passed to the script.
+* **parameters** - flags or parameters passed to the script. Parameters
+accept magic environment variables(placeholders replaced before executing
+the test).
 * **Script** - the path to the script to execute relative to the checkout
 directory.
+* **contexts** - a list of available contexts to add to the text execution step.
+The list of supported contexts can be found [here](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/flutter_deps/api.py#687). As of 06/20/23 two contexts are supported:
+"android_virtual_device" and "metric_center_token".
 
 The test scripts will run in a deferred context (failing the step only after
 logs have been uploaded). Tester and builder recipes provide an environment
@@ -301,6 +332,10 @@ variable called FLUTTER\_LOGS\_DIR pointing a temporary directory where the
 test runner can place any logs|artifacts needed to debug issues. At the end
 of the test execution the content of FLUTTER\_LOGS\_DIR will be uploaded to
 Google Cloud Storage before signaling the pass | fail test state.
+
+Contexts are free form python contexts that communicate with the test script
+through environment variables. E.g. metric_center_token saves an access token
+to an [environment variable "token_path"](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/token_util/api.py#14) for the test to access it.
 
 Note that to keep the recipes generic they don’t know anything about what
 the test script is doing and it is the responsibility of the test script to
@@ -374,9 +409,130 @@ be relative to the checkout directory.
 
 ### Global Tests
 
-Global tests follow the same format as build tests but defined at the top
-level. The main difference from local tests is that global tests have access
-to the sub-build artifacts.
+Tests in this section run on a separate bot as independent sub-builds.
+As opposed to tests running within builds, global tests have access to the
+the outputs of all the builds running in the same orchestrator build. A
+use case for global tests is to run flutter/framework tests using the
+artifacts generated by an specific engine build.
+
+Global tests currently support two different scenarios:
+
+* flutter/flutter tests with [tester](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipes/engine_v2/tester.py)
+  recipe. This workflow checks out flutter/flutter to run any of the existing
+  sharded tests using the engine artifacts archived to GCS.
+* complicated engine tests that require the outputs from multiple subbuilds
+  with [tester_engine](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipes/engine_v2/tester_engine.py).
+  This workflow checks out [flutter/engine] and operates over the dependencies passed to it using cas.
+
+Note: the supported scenarios can be later extended to support running devicelab tests although a
+[smart scheduler](https://github.com/flutter/flutter/issues/128294) is a prerequisite for
+it to be scalable(build/test separation model).
+
+Framework test example:
+
+```json
+{
+   "tests": [
+      {
+        "name": "web-tests-1",
+        "shard": "web_tests",
+        "subshard": "1",
+        "test_dependencies": [
+          {
+            "dependency": "chrome_and_driver",
+            "version": "version:111.0a"
+          }
+        ]
+      }
+    ]
+}
+```
+
+The property's description is as follows:
+
+* **name** the name that will be assigned to the sub-build.
+* **shard** the flutter/flutter shard test to run. The supported shard names can be found
+on the flutter framework [test.dart](https://github.com/flutter/flutter/blob/master/dev/bots/test.dart#L244).
+* **subshard** one of the accepted subshard values for shard. Sub-shards are defined as part
+of the shard implementation, please look at the corresponding shard implementation to find the
+accepted values.
+* **test_dependencies** a list of [dependencies](https://flutter.googlesource.com/recipes/+/refs/heads/main/recipe_modules/flutter_deps/api.py#75)
+  required for the test to run.
+
+Engine test example:
+
+```json
+{
+  "tests": [
+    {
+       "name": "test: clang_tidy android_debug_arm64",
+       "recipe": "engine_v2/tester_engine",
+       "drone_dimensions": [
+         "device_type=none",
+         "os=Linux"
+       ],
+       "dependencies": [
+         "host_debug",
+         "android_debug_arm64"
+       ],
+       "tasks": [
+         {
+            "name": "test: clang_tidy android_debug_arm64",
+            "parameters": [
+              "--variant",
+              "android_debug_arm64",
+              "--lint-all",
+              "--shard-id=0",
+              "--shard-variants=host_debug"
+            ],
+            "max_attempts": 1,
+            "script": "flutter/ci/clang_tidy.sh"
+         }
+       ]
+    }
+  ]
+}
+```
+
+The property's description is as follows:
+
+* **name** the name to assign to the sub-build.
+* **recipe** the recipe name to use if different than tester.
+* **drone_dimensions** a list of strings with key values to select the
+  bot where the test will run.
+* **dependencies** a list of build outputs required
+  by the test. These build outputs are referenced by the name of build
+  generating the output. This type of dependency is shared using CAS and
+  the contents are mounted in checkout/src/out. E.g. a build configuration
+  building the `host_engine` configuration will upload the content of
+  checkout/src/out/host_engine to CAS and a global test with a `host_engine`
+  dependency will mount the content of host engine in the same location of
+  the bot running the test.
+* **tasks** a list of dictionaries representing scripts and parameters to run them.
+
+Example task configuration:
+
+```json
+{
+    "name": "test: clang_tidy android_debug_arm64",
+    "parameters": [
+       "--variant",
+       "android_debug_arm64",
+       "--lint-all",
+       "--shard-id=0",
+       "--shard-variants=host_debug"
+    ],
+    "max_attempts": 1,
+    "script": "flutter/ci/clang_tidy.sh"
+}
+```
+
+The property's description is as follows:
+
+* **name** the name assigned to the step running the script.
+* **parameters** a list of parameters passed to the script execution.
+* **max_attempts** an integer with the maximum number of runs in case of failure.
+* **script** the path relative to checkout/src/ to run.
 
 ### Global Generators
 
@@ -387,20 +543,23 @@ new artifacts combining outputs of multiple sub-builds.
 ### Global Archives
 
 The archives component provides instructions to upload the artifacts generated
-by the global generators. Is a list of dictionaries with two keys: `source` and
-`destination`. `source` is a path relative to the checkout repository and
-`destination` is a relative path to &lt;bucket>/flutter/&lt;commit>.
+by the global generators. Is a list of dictionaries with three keys: `source` and
+`destination`, and `realm`. `source` is a path relative to the checkout repository,
+`destination` is a relative path to &lt;bucket>/flutter/&lt;commit>, and `realm` is
+a string with either `production` or `experimental` value.
+
+The realm value is used to build the destination path of the artifacts.
+`production` will upload the artifacts to the location expected by the flutter
+tool and `experimental` will add experimental as a prefix to the path to avoid
+interfering with the production artifacts.
 
 ```json
 "archives": [
     {
         "source": "out/debug/artifacts.zip",
-        "destination": "ios/artifacts.zip"
+        "destination": "ios/artifacts.zip",
+        "realm": "production"
     },
-    {
-        "source": "out/debug/ios-objcdoc.zip",
-        "destination": "ios-objcdoc.zip"
-    }
 ]
 ```
 

@@ -116,7 +116,7 @@ static void init_keyboard(FlView* self) {
   self->text_input_plugin = fl_text_input_plugin_new(
       messenger, im_context, FL_TEXT_INPUT_VIEW_DELEGATE(self));
   self->keyboard_manager =
-      fl_keyboard_manager_new(FL_KEYBOARD_VIEW_DELEGATE(self));
+      fl_keyboard_manager_new(messenger, FL_KEYBOARD_VIEW_DELEGATE(self));
 }
 
 static void init_scrolling(FlView* self) {
@@ -125,9 +125,18 @@ static void init_scrolling(FlView* self) {
 }
 
 // Converts a GDK button event into a Flutter event and sends it to the engine.
-static gboolean send_pointer_button_event(FlView* self, GdkEventButton* event) {
+static gboolean send_pointer_button_event(FlView* self, GdkEvent* event) {
+  guint event_time = gdk_event_get_time(event);
+  GdkEventType event_type = gdk_event_get_event_type(event);
+  GdkModifierType event_state = static_cast<GdkModifierType>(0);
+  gdk_event_get_state(event, &event_state);
+  guint event_button = 0;
+  gdk_event_get_button(event, &event_button);
+  gdouble event_x = 0.0, event_y = 0.0;
+  gdk_event_get_coords(event, &event_x, &event_y);
+
   int64_t button;
-  switch (event->button) {
+  switch (event_button) {
     case 1:
       button = kFlutterPointerButtonMousePrimary;
       break;
@@ -142,7 +151,7 @@ static gboolean send_pointer_button_event(FlView* self, GdkEventButton* event) {
   }
   int old_button_state = self->button_state;
   FlutterPointerPhase phase = kMove;
-  if (event->type == GDK_BUTTON_PRESS) {
+  if (event_type == GDK_BUTTON_PRESS) {
     // Drop the event if Flutter already thinks the button is down.
     if ((self->button_state & button) != 0) {
       return FALSE;
@@ -150,7 +159,7 @@ static gboolean send_pointer_button_event(FlView* self, GdkEventButton* event) {
     self->button_state ^= button;
 
     phase = old_button_state == 0 ? kDown : kMove;
-  } else if (event->type == GDK_BUTTON_RELEASE) {
+  } else if (event_type == GDK_BUTTON_RELEASE) {
     // Drop the event if Flutter already thinks the button is up.
     if ((self->button_state & button) == 0) {
       return FALSE;
@@ -165,15 +174,13 @@ static gboolean send_pointer_button_event(FlView* self, GdkEventButton* event) {
   }
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
-  fl_scrolling_manager_set_last_mouse_position(self->scrolling_manager,
-                                               event->x * scale_factor,
-                                               event->y * scale_factor);
+  fl_scrolling_manager_set_last_mouse_position(
+      self->scrolling_manager, event_x * scale_factor, event_y * scale_factor);
   fl_keyboard_manager_sync_modifier_if_needed(self->keyboard_manager,
-                                              event->state, event->time);
+                                              event_state, event_time);
   fl_engine_send_mouse_pointer_event(
-      self->engine, phase, event->time * kMicrosecondsPerMillisecond,
-      event->x * scale_factor, event->y * scale_factor, 0, 0,
-      self->button_state);
+      self->engine, phase, event_time * kMicrosecondsPerMillisecond,
+      event_x * scale_factor, event_y * scale_factor, 0, 0, self->button_state);
 
   return TRUE;
 }
@@ -240,8 +247,6 @@ static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
   g_clear_object(&self->scrolling_manager);
   init_keyboard(self);
   init_scrolling(self);
-  self->window_state =
-      gdk_window_get_state(gtk_widget_get_window(GTK_WIDGET(self)));
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -286,8 +291,9 @@ static void fl_view_keyboard_delegate_iface_init(
                                std::unique_ptr<FlKeyEvent> in_event) {
     FlKeyEvent* event = in_event.release();
     GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(event->origin);
-    GdkEventType type = gdk_event->type;
-    g_return_if_fail(type == GDK_KEY_PRESS || type == GDK_KEY_RELEASE);
+    GdkEventType event_type = gdk_event_get_event_type(gdk_event);
+    g_return_if_fail(event_type == GDK_KEY_PRESS ||
+                     event_type == GDK_KEY_RELEASE);
     gdk_event_put(gdk_event);
     fl_key_event_dispose(event);
   };
@@ -303,6 +309,12 @@ static void fl_view_keyboard_delegate_iface_init(
     FlView* self = FL_VIEW(view_delegate);
     g_return_val_if_fail(self->keymap != nullptr, 0);
     return gdk_keymap_lookup_key(self->keymap, key);
+  };
+
+  iface->get_keyboard_state =
+      [](FlKeyboardViewDelegate* view_delegate) -> GHashTable* {
+    FlView* self = FL_VIEW(view_delegate);
+    return fl_view_get_keyboard_state(self);
   };
 }
 
@@ -346,23 +358,27 @@ static void fl_view_text_input_delegate_iface_init(
 
 // Signal handler for GtkWidget::button-press-event
 static gboolean button_press_event_cb(GtkWidget* widget,
-                                      GdkEventButton* event,
+                                      GdkEventButton* button_event,
                                       FlView* self) {
+  GdkEvent* event = reinterpret_cast<GdkEvent*>(button_event);
+
   // Flutter doesn't handle double and triple click events.
-  if (event->type == GDK_DOUBLE_BUTTON_PRESS ||
-      event->type == GDK_TRIPLE_BUTTON_PRESS) {
+  GdkEventType event_type = gdk_event_get_event_type(event);
+  if (event_type == GDK_DOUBLE_BUTTON_PRESS ||
+      event_type == GDK_TRIPLE_BUTTON_PRESS) {
     return FALSE;
   }
 
-  check_pointer_inside(self, reinterpret_cast<GdkEvent*>(event));
+  check_pointer_inside(self, event);
 
   return send_pointer_button_event(self, event);
 }
 
 // Signal handler for GtkWidget::button-release-event
 static gboolean button_release_event_cb(GtkWidget* widget,
-                                        GdkEventButton* event,
+                                        GdkEventButton* button_event,
                                         FlView* self) {
+  GdkEvent* event = reinterpret_cast<GdkEvent*>(button_event);
   return send_pointer_button_event(self, event);
 }
 
@@ -381,44 +397,60 @@ static gboolean scroll_event_cb(GtkWidget* widget,
 
 // Signal handler for GtkWidget::motion-notify-event
 static gboolean motion_notify_event_cb(GtkWidget* widget,
-                                       GdkEventMotion* event,
+                                       GdkEventMotion* motion_event,
                                        FlView* self) {
+  GdkEvent* event = reinterpret_cast<GdkEvent*>(motion_event);
+
   if (self->engine == nullptr) {
     return FALSE;
   }
 
-  check_pointer_inside(self, reinterpret_cast<GdkEvent*>(event));
+  guint event_time = gdk_event_get_time(event);
+  GdkModifierType event_state = static_cast<GdkModifierType>(0);
+  gdk_event_get_state(event, &event_state);
+  gdouble event_x = 0.0, event_y = 0.0;
+  gdk_event_get_coords(event, &event_x, &event_y);
+
+  check_pointer_inside(self, event);
 
   gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
 
   fl_keyboard_manager_sync_modifier_if_needed(self->keyboard_manager,
-                                              event->state, event->time);
+                                              event_state, event_time);
   fl_engine_send_mouse_pointer_event(
       self->engine, self->button_state != 0 ? kMove : kHover,
-      event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
-      event->y * scale_factor, 0, 0, self->button_state);
+      event_time * kMicrosecondsPerMillisecond, event_x * scale_factor,
+      event_y * scale_factor, 0, 0, self->button_state);
 
   return TRUE;
 }
 
 // Signal handler for GtkWidget::enter-notify-event
 static gboolean enter_notify_event_cb(GtkWidget* widget,
-                                      GdkEventCrossing* event,
+                                      GdkEventCrossing* crossing_event,
                                       FlView* self) {
+  GdkEvent* event = reinterpret_cast<GdkEvent*>(crossing_event);
+
   if (self->engine == nullptr) {
     return FALSE;
   }
 
-  check_pointer_inside(self, reinterpret_cast<GdkEvent*>(event));
+  check_pointer_inside(self, event);
 
   return TRUE;
 }
 
 // Signal handler for GtkWidget::leave-notify-event
 static gboolean leave_notify_event_cb(GtkWidget* widget,
-                                      GdkEventCrossing* event,
+                                      GdkEventCrossing* crossing_event,
                                       FlView* self) {
-  if (event->mode != GDK_CROSSING_NORMAL) {
+  GdkEvent* event = reinterpret_cast<GdkEvent*>(crossing_event);
+
+  guint event_time = gdk_event_get_time(event);
+  gdouble event_x = 0.0, event_y = 0.0;
+  gdk_event_get_coords(event, &event_x, &event_y);
+
+  if (crossing_event->mode != GDK_CROSSING_NORMAL) {
     return FALSE;
   }
 
@@ -432,8 +464,8 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
   if (self->pointer_inside && self->button_state == 0) {
     gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
     fl_engine_send_mouse_pointer_event(
-        self->engine, kRemove, event->time * kMicrosecondsPerMillisecond,
-        event->x * scale_factor, event->y * scale_factor, 0, 0,
+        self->engine, kRemove, event_time * kMicrosecondsPerMillisecond,
+        event_x * scale_factor, event_y * scale_factor, 0, 0,
         self->button_state);
     self->pointer_inside = FALSE;
   }
@@ -522,6 +554,8 @@ static void realize_cb(GtkWidget* widget) {
   self->window_state_cb_id =
       g_signal_connect(toplevel_window, "window-state-event",
                        G_CALLBACK(window_state_event_cb), self);
+  self->window_state =
+      gdk_window_get_state(gtk_widget_get_window(toplevel_window));
 
   g_signal_connect(toplevel_window, "delete-event",
                    G_CALLBACK(window_delete_event_cb), self);
@@ -726,8 +760,6 @@ static void fl_view_class_init(FlViewClass* klass) {
 
 static void fl_view_init(FlView* self) {
   gtk_widget_set_can_focus(GTK_WIDGET(self), TRUE);
-  self->window_state = gdk_window_get_state(
-      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self))));
 }
 
 G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
@@ -753,4 +785,10 @@ void fl_view_set_textures(FlView* self,
   }
 
   fl_gl_area_queue_render(self->gl_area, textures);
+}
+
+GHashTable* fl_view_get_keyboard_state(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), nullptr);
+
+  return fl_keyboard_manager_get_pressed_state(self->keyboard_manager);
 }

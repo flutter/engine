@@ -2,67 +2,56 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:meta/meta.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../frame_reference.dart';
-import 'canvas.dart';
-import 'embedded_views.dart';
-import 'layer_tree.dart';
-import 'surface.dart';
-import 'surface_factory.dart';
-
-/// A class that can rasterize [LayerTree]s into a given [Surface].
+/// A class that can rasterize [LayerTree]s into a given `sceneHost` element.
 class Rasterizer {
-  final CompositorContext context = CompositorContext();
-  final List<ui.VoidCallback> _postFrameCallbacks = <ui.VoidCallback>[];
+  Rasterizer(this.view);
 
-  void setSkiaResourceCacheMaxBytes(int bytes) =>
-      SurfaceFactory.instance.baseSurface.setSkiaResourceCacheMaxBytes(bytes);
+  final EngineFlutterView view;
+  DomElement get sceneHost => view.dom.sceneHost;
+  final CompositorContext context = CompositorContext();
+  final RenderCanvasFactory renderCanvasFactory = RenderCanvasFactory();
+  late final HtmlViewEmbedder viewEmbedder =
+      HtmlViewEmbedder(sceneHost, this, renderCanvasFactory);
+
+  ui.Size _currentFrameSize = ui.Size.zero;
+
+  /// Render the given [pictures] so it is displayed by the given [canvas].
+  Future<void> rasterizeToCanvas(
+      RenderCanvas canvas, List<CkPicture> pictures) async {
+    await CanvasKitRenderer.instance.offscreenSurface.rasterizeToCanvas(
+      _currentFrameSize,
+      canvas,
+      pictures,
+    );
+  }
 
   /// Creates a new frame from this rasterizer's surface, draws the given
   /// [LayerTree] into it, and then submits the frame.
   void draw(LayerTree layerTree) {
-    try {
-      if (layerTree.frameSize.isEmpty) {
-        // Available drawing area is empty. Skip drawing.
-        return;
-      }
-
-      final SurfaceFrame frame =
-          SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize);
-      HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
-      final CkCanvas canvas = frame.skiaCanvas;
-      final Frame compositorFrame =
-          context.acquireFrame(canvas, HtmlViewEmbedder.instance);
-
-      compositorFrame.raster(layerTree, ignoreRasterCache: true);
-      SurfaceFactory.instance.baseSurface.addToScene();
-      frame.submit();
-      HtmlViewEmbedder.instance.submitFrame();
-    } finally {
-      _runPostFrameCallbacks();
+    final ui.Size frameSize = view.physicalSize;
+    if (frameSize.isEmpty) {
+      // Available drawing area is empty. Skip drawing.
+      return;
     }
-  }
 
-  void addPostFrameCallback(ui.VoidCallback callback) {
-    _postFrameCallbacks.add(callback);
-  }
+    _currentFrameSize = frameSize;
+    CanvasKitRenderer.instance.offscreenSurface.acquireFrame(_currentFrameSize);
+    viewEmbedder.frameSize = _currentFrameSize;
+    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    pictureRecorder.beginRecording(ui.Offset.zero & _currentFrameSize);
+    pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
+    final Frame compositorFrame = context.acquireFrame(
+        pictureRecorder.recordingCanvas!, viewEmbedder);
 
-  void _runPostFrameCallbacks() {
-    for (int i = 0; i < _postFrameCallbacks.length; i++) {
-      final ui.VoidCallback callback = _postFrameCallbacks[i];
-      callback();
-    }
-    for (int i = 0; i < frameReferences.length; i++) {
-      frameReferences[i].value = null;
-    }
-    frameReferences.clear();
-  }
+    compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-  /// Forces the post-frame callbacks to run. Useful in tests.
-  @visibleForTesting
-  void debugRunPostFrameCallbacks() {
-    _runPostFrameCallbacks();
+    sceneHost.prepend(renderCanvasFactory.baseCanvas.htmlElement);
+    rasterizeToCanvas(renderCanvasFactory.baseCanvas,
+        <CkPicture>[pictureRecorder.endRecording()]);
+
+    viewEmbedder.submitFrame();
   }
 }

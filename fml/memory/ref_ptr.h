@@ -108,6 +108,7 @@ class RefPtr final {
   // Destructor.
   ~RefPtr() {
     if (ptr_) {
+      // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDelete)
       ptr_->Release();
     }
   }
@@ -205,7 +206,7 @@ class RefPtr final {
 
   friend RefPtr<T> AdoptRef<T>(T*);
 
-  enum AdoptTag { ADOPT };
+  enum AdoptTag { kAdopt };
   RefPtr(T* ptr, AdoptTag) : ptr_(ptr) { FML_DCHECK(ptr_); }
 
   T* ptr_;
@@ -222,7 +223,7 @@ inline RefPtr<T> AdoptRef(T* ptr) {
 #ifndef NDEBUG
   ptr->Adopt();
 #endif
-  return RefPtr<T>(ptr, RefPtr<T>::ADOPT);
+  return RefPtr<T>(ptr, RefPtr<T>::kAdopt);
 }
 
 // Constructs a |RefPtr<T>| from a plain pointer (to an object that must

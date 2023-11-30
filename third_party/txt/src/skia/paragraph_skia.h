@@ -29,7 +29,8 @@ namespace txt {
 class ParagraphSkia : public Paragraph {
  public:
   ParagraphSkia(std::unique_ptr<skia::textlayout::Paragraph> paragraph,
-                std::vector<flutter::DlPaint>&& dl_paints);
+                std::vector<flutter::DlPaint>&& dl_paints,
+                bool impeller_enabled);
 
   virtual ~ParagraphSkia() = default;
 
@@ -49,6 +50,14 @@ class ParagraphSkia : public Paragraph {
 
   std::vector<LineMetrics>& GetLineMetrics() override;
 
+  bool GetLineMetricsAt(
+      int lineNumber,
+      skia::textlayout::LineMetrics* lineMetrics) const override;
+
+  size_t GetNumberOfLines() const override;
+
+  int GetLineNumberAt(size_t utf16Offset) const override;
+
   bool DidExceedMaxLines() override;
 
   void Layout(double width) override;
@@ -66,6 +75,15 @@ class ParagraphSkia : public Paragraph {
   PositionWithAffinity GetGlyphPositionAtCoordinate(double dx,
                                                     double dy) override;
 
+  bool GetGlyphInfoAt(
+      unsigned offset,
+      skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const override;
+
+  bool GetClosestGlyphInfoAtCoordinate(
+      double dx,
+      double dy,
+      skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const override;
+
   Range<size_t> GetWordBoundary(size_t offset) override;
 
  private:
@@ -75,6 +93,7 @@ class ParagraphSkia : public Paragraph {
   std::vector<flutter::DlPaint> dl_paints_;
   std::optional<std::vector<LineMetrics>> line_metrics_;
   std::vector<TextStyle> line_metrics_styles_;
+  const bool impeller_enabled_;
 };
 
 }  // namespace txt

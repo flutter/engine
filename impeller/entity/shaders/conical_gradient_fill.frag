@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+precision mediump float;
+
+#include <impeller/color.glsl>
 #include <impeller/gradient.glsl>
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
@@ -12,6 +15,7 @@ uniform FragInfo {
   highp vec2 center;
   float radius;
   float tile_mode;
+  vec4 decal_border_color;
   float texture_sampler_y_coord_scale;
   float alpha;
   vec2 half_texel;
@@ -33,9 +37,12 @@ void main() {
   }
 
   float t = res.x;
-  frag_color = IPSampleLinearWithTileMode(
-      texture_sampler, vec2(t, 0.5), frag_info.texture_sampler_y_coord_scale,
-      frag_info.half_texel, frag_info.tile_mode);
   frag_color =
-      vec4(frag_color.xyz * frag_color.a, frag_color.a) * frag_info.alpha;
+      IPSampleLinearWithTileMode(texture_sampler,                          //
+                                 vec2(t, 0.5),                             //
+                                 frag_info.texture_sampler_y_coord_scale,  //
+                                 frag_info.half_texel,                     //
+                                 frag_info.tile_mode,                      //
+                                 frag_info.decal_border_color);
+  frag_color = IPPremultiply(frag_color) * frag_info.alpha;
 }

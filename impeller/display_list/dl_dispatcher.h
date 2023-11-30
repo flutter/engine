@@ -5,8 +5,7 @@
 #pragma once
 
 #include "flutter/display_list/dl_op_receiver.h"
-#include "flutter/fml/macros.h"
-#include "impeller/aiks/canvas.h"
+#include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/paint.h"
 
 namespace impeller {
@@ -25,9 +24,6 @@ class DlDispatcher final : public flutter::DlOpReceiver {
 
   // |flutter::DlOpReceiver|
   void setAntiAlias(bool aa) override;
-
-  // |flutter::DlOpReceiver|
-  void setDither(bool dither) override;
 
   // |flutter::DlOpReceiver|
   void setDrawStyle(flutter::DlDrawStyle style) override;
@@ -213,6 +209,11 @@ class DlDispatcher final : public flutter::DlOpReceiver {
                     SkScalar y) override;
 
   // |flutter::DlOpReceiver|
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override;
+
+  // |flutter::DlOpReceiver|
   void drawShadow(const SkPath& path,
                   const flutter::DlColor color,
                   const SkScalar elevation,
@@ -221,10 +222,16 @@ class DlDispatcher final : public flutter::DlOpReceiver {
 
  private:
   Paint paint_;
-  Canvas canvas_;
+  CanvasType canvas_;
   Matrix initial_matrix_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DlDispatcher);
+  static void SimplifyOrDrawPath(CanvasType& canvas,
+                                 const SkPath& path,
+                                 const Paint& paint);
+
+  DlDispatcher(const DlDispatcher&) = delete;
+
+  DlDispatcher& operator=(const DlDispatcher&) = delete;
 };
 
 }  // namespace impeller

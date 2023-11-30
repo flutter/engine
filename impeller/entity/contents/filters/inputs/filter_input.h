@@ -10,12 +10,12 @@
 #include <vector>
 
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/entity.h"
 #include "impeller/geometry/rect.h"
 
 namespace impeller {
 
 class ContentContext;
-class Entity;
 class FilterContents;
 
 /// `FilterInput` is a lazy/single eval `Snapshot` which may be shared across
@@ -32,7 +32,8 @@ class FilterInput {
   using Vector = std::vector<FilterInput::Ref>;
   using Variant = std::variant<std::shared_ptr<FilterContents>,
                                std::shared_ptr<Contents>,
-                               std::shared_ptr<Texture>>;
+                               std::shared_ptr<Texture>,
+                               Rect>;
 
   virtual ~FilterInput();
 
@@ -55,13 +56,39 @@ class FilterInput {
 
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
 
+  virtual std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
+                                                const Rect& output_limit) const;
+
   /// @brief  Get the local transform of this filter input. This transform is
   ///         relative to the `Entity` transform space.
   virtual Matrix GetLocalTransform(const Entity& entity) const;
 
   /// @brief  Get the transform of this `FilterInput`. This is equivalent to
-  ///         calling `entity.GetTransformation() * GetLocalTransform()`.
+  ///         calling `entity.GetTransform() * GetLocalTransform()`.
   virtual Matrix GetTransform(const Entity& entity) const;
+
+  /// @see    `Contents::PopulateGlyphAtlas`
+  virtual void PopulateGlyphAtlas(
+      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
+      Scalar scale);
+
+  /// @see  `FilterContents::HasBasisTransforms`
+  virtual bool IsTranslationOnly() const;
+
+  /// @brief  Returns `true` unless this input is a `FilterInput`, which may
+  ///         take other inputs.
+  virtual bool IsLeaf() const;
+
+  /// @brief  Replaces the inputs of all leaf `FilterContents` with a new set
+  ///         of `inputs`.
+  /// @see    `FilterInput::IsLeaf`
+  virtual void SetLeafInputs(const FilterInput::Vector& inputs);
+
+  /// @brief  Sets the effect transform of filter inputs.
+  virtual void SetEffectTransform(const Matrix& matrix);
+
+  /// @brief  Turns on subpass mode for filter inputs.
+  virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 };
 
 }  // namespace impeller

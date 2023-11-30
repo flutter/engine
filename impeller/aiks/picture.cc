@@ -20,12 +20,12 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
     return std::nullopt;
   }
 
-  const auto translate = Matrix::MakeTranslation(-coverage.value().origin);
+  const auto translate = Matrix::MakeTranslation(-coverage->GetOrigin());
   auto texture =
-      RenderToTexture(context, ISize(coverage.value().size), translate);
+      RenderToTexture(context, ISize(coverage->GetSize()), translate);
   return impeller::Snapshot{
       .texture = std::move(texture),
-      .transform = Matrix::MakeTranslation(coverage.value().origin)};
+      .transform = Matrix::MakeTranslation(coverage->GetOrigin())};
 }
 
 std::shared_ptr<Image> Picture::ToImage(AiksContext& context,
@@ -45,19 +45,24 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
 
   pass->IterateAllEntities([&translate](auto& entity) -> bool {
     auto matrix = translate.has_value()
-                      ? translate.value() * entity.GetTransformation()
-                      : entity.GetTransformation();
-    entity.SetTransformation(matrix);
+                      ? translate.value() * entity.GetTransform()
+                      : entity.GetTransform();
+    entity.SetTransform(matrix);
     return true;
   });
 
   // This texture isn't host visible, but we might want to add host visible
   // features to Image someday.
   auto impeller_context = context.GetContext();
+  // Do not use the render target cache as the lifecycle of this texture
+  // will outlive a particular frame.
+  RenderTargetAllocator render_target_allocator =
+      RenderTargetAllocator(impeller_context->GetResourceAllocator());
   RenderTarget target;
   if (impeller_context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
         *impeller_context,        // context
+        render_target_allocator,  // allocator
         size,                     // size
         "Picture Snapshot MSAA",  // label
         RenderTarget::
@@ -67,6 +72,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
   } else {
     target = RenderTarget::CreateOffscreen(
         *impeller_context,                            // context
+        render_target_allocator,                      // allocator
         size,                                         // size
         "Picture Snapshot",                           // label
         RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config

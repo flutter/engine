@@ -17,7 +17,7 @@ namespace impeller {
 /// @brief      The glyph index in the typeface.
 ///
 struct Glyph {
-  enum class Type {
+  enum class Type : uint8_t {
     kPath,
     kBitmap,
   };
@@ -39,12 +39,18 @@ struct Glyph {
       : index(p_index), type(p_type), bounds(p_bounds) {}
 };
 
+// Many Glyph instances are instantiated, so care should be taken when
+// increasing the size.
+static_assert(sizeof(Glyph) == 20);
+
 }  // namespace impeller
 
 template <>
 struct std::hash<impeller::Glyph> {
   constexpr std::size_t operator()(const impeller::Glyph& g) const {
-    return fml::HashCombine(g.index, g.type);
+    static_assert(sizeof(g.index) == 2);
+    static_assert(sizeof(g.type) == 1);
+    return (static_cast<size_t>(g.type) << 16) | g.index;
   }
 };
 

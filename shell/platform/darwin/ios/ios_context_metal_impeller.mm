@@ -9,13 +9,10 @@
 namespace flutter {
 
 IOSContextMetalImpeller::IOSContextMetalImpeller(
-    std::shared_ptr<fml::ConcurrentTaskRunner> task_runner,
-    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
     : IOSContext(MsaaSampleCount::kFour),
       darwin_context_metal_impeller_(fml::scoped_nsobject<FlutterDarwinContextMetalImpeller>{
-          [[FlutterDarwinContextMetalImpeller alloc]
-                       initWithTaskRunner:std::move(task_runner)
-              is_gpu_disabled_sync_switch:std::move(is_gpu_disabled_sync_switch)]}) {}
+          [[FlutterDarwinContextMetalImpeller alloc] init:is_gpu_disabled_sync_switch]}) {}
 
 IOSContextMetalImpeller::~IOSContextMetalImpeller() = default;
 

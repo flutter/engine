@@ -4,19 +4,13 @@
 
 #include "impeller/renderer/backend/gles/blit_pass_gles.h"
 
-#include <algorithm>
 #include <memory>
 
 #include "flutter/fml/trace_event.h"
-#include "impeller/base/config.h"
-#include "impeller/base/validation.h"
+#include "fml/closure.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
-#include "impeller/renderer/backend/gles/device_buffer_gles.h"
-#include "impeller/renderer/backend/gles/formats_gles.h"
-#include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
-#include "impeller/renderer/backend/gles/texture_gles.h"
 
 namespace impeller {
 
@@ -42,7 +36,7 @@ void BlitPassGLES::OnSetLabel(std::string label) {
     const ReactorGLES& reactor,
     const std::vector<std::unique_ptr<BlitEncodeGLES>>& commands,
     const std::string& label) {
-  TRACE_EVENT0("impeller", __FUNCTION__);
+  TRACE_EVENT0("impeller", "BlitPassGLES::EncodeCommandsInReactor");
 
   if (commands.empty()) {
     return true;

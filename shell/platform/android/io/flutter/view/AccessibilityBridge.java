@@ -576,6 +576,11 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   }
 
   @VisibleForTesting
+  public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView) {
+    return AccessibilityNodeInfo.obtain(rootView);
+  }
+
+  @VisibleForTesting
   public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView, int virtualViewId) {
     return AccessibilityNodeInfo.obtain(rootView, virtualViewId);
   }
@@ -616,12 +621,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     if (virtualViewId == View.NO_ID) {
-      AccessibilityNodeInfo result = AccessibilityNodeInfo.obtain(rootAccessibilityView);
+      AccessibilityNodeInfo result = obtainAccessibilityNodeInfo(rootAccessibilityView);
       rootAccessibilityView.onInitializeAccessibilityNodeInfo(result);
       // TODO(mattcarroll): what does it mean for the semantics tree to contain or not contain
       //                    the root node ID?
       if (flutterSemanticsTree.containsKey(ROOT_NODE_ID)) {
         result.addChild(rootAccessibilityView, ROOT_NODE_ID);
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        result.setImportantForAccessibility(false);
       }
       return result;
     }
@@ -653,7 +661,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     AccessibilityNodeInfo result =
         obtainAccessibilityNodeInfo(rootAccessibilityView, virtualViewId);
-    // Work around for https://github.com/flutter/flutter/issues/2101
+
+    // Accessibility Scanner uses isImportantForAccessibility to decide whether to check
+    // or skip this node.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      result.setImportantForAccessibility(isImportant(semanticsNode));
+    }
+
+    // Work around for https://github.com/flutter/flutter/issues/21030
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
       result.setViewIdResourceName("");
     }
@@ -983,6 +998,19 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     return result;
   }
 
+  private boolean isImportant(SemanticsNode node) {
+    if (node.hasFlag(Flag.SCOPES_ROUTE)) {
+      return false;
+    }
+
+    if (node.getValueLabelHint() != null) {
+      return true;
+    }
+
+    // Return true if the node has had any user action (not including system actions)
+    return (node.actions & ~systemAction) != 0;
+  }
+
   /**
    * Get the bounds in screen with root FlutterView's offset.
    *
@@ -1138,6 +1166,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
           accessibilityChannel.dispatchSemanticsAction(
               virtualViewId, Action.DID_GAIN_ACCESSIBILITY_FOCUS);
+
+          HashMap<String, Object> message = new HashMap<>();
+          message.put("type", "didGainFocus");
+          message.put("nodeId", semanticsNode.id);
+          accessibilityChannel.channel.send(message);
+
           sendAccessibilityEvent(virtualViewId, AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED);
 
           if (semanticsNode.hasAction(Action.INCREASE)
@@ -2141,6 +2175,14 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
   }
 
+  // Actions that are triggered by Android OS, as opposed to user-triggered actions.
+  //
+  // This int is intended to be use in a bitwise comparison.
+  static int systemAction =
+      Action.DID_GAIN_ACCESSIBILITY_FOCUS.value
+          & Action.DID_LOSE_ACCESSIBILITY_FOCUS.value
+          & Action.SHOW_ON_SCREEN.value;
+
   // Must match SemanticsFlag in semantics.dart
   // https://github.com/flutter/engine/blob/main/lib/ui/semantics.dart
   /* Package */ enum Flag {
@@ -2169,7 +2211,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     IS_LINK(1 << 22),
     IS_SLIDER(1 << 23),
     IS_KEYBOARD_KEY(1 << 24),
-    IS_CHECK_STATE_MIXED(1 << 25);
+    IS_CHECK_STATE_MIXED(1 << 25),
+    HAS_EXPANDED_STATE(1 << 26),
+    IS_EXPANDED(1 << 27);
 
     final int value;
 
@@ -2324,7 +2368,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // The textual description of the backing widget's tooltip.
     //
-    // The tooltip is attached through AccessibilityNodInfo.setTooltipText if
+    // The tooltip is attached through AccessibilityNodeInfo.setTooltipText if
     // API level >= 28; otherwise, this is attached to the end of content description.
     @Nullable private String tooltip;
 

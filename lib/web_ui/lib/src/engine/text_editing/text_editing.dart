@@ -11,7 +11,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
+import '../mouse/prevent_default.dart';
 import '../platform_dispatcher.dart';
 import '../safe_browser_api.dart';
 import '../semantics.dart';
@@ -50,8 +50,9 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-DomElement get defaultTextEditingRoot =>
-    flutterViewEmbedder.textEditingHostNode;
+// TODO(mdebbar): There could be multiple views with multiple text editing hosts.
+//                https://github.com/flutter/flutter/issues/137344
+DomElement get defaultTextEditingRoot => EnginePlatformDispatcher.instance.implicitView!.dom.textEditingHost;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -101,8 +102,12 @@ void _setStaticStyleAttributes(DomHTMLElement domElement) {
 /// element.
 ///
 /// They are assigned once during the creation of the DOM element.
-void _hideAutofillElements(DomHTMLElement domElement,
-    {bool isOffScreen = false}) {
+void _styleAutofillElements(
+  DomHTMLElement domElement, {
+  bool isOffScreen = false,
+  bool shouldHideElement = true,
+  bool shouldDisablePointerEvents = false,
+}) {
   final DomCSSStyleDeclaration elementStyle = domElement.style;
   elementStyle
     ..whiteSpace = 'pre-wrap'
@@ -115,8 +120,6 @@ void _hideAutofillElements(DomHTMLElement domElement,
     ..outline = 'none'
     ..border = 'none'
     ..resize = 'none'
-    ..width = '0'
-    ..height = '0'
     ..textShadow = 'transparent'
     ..transformOrigin = '0 0 0';
 
@@ -124,6 +127,16 @@ void _hideAutofillElements(DomHTMLElement domElement,
     elementStyle
       ..top = '${offScreenOffset}px'
       ..left = '${offScreenOffset}px';
+  }
+
+  if (shouldHideElement) {
+    elementStyle
+      ..width = '0'
+      ..height = '0';
+  }
+
+  if (shouldDisablePointerEvents) {
+    elementStyle.pointerEvents = 'none';
   }
 
   if (browserHasAutofillOverlay()) {
@@ -191,17 +204,19 @@ class EngineAutofillForm {
     final Map<String, DomHTMLElement> elements = <String, DomHTMLElement>{};
     final Map<String, AutofillInfo> items = <String, AutofillInfo>{};
     final DomHTMLFormElement formElement = createDomHTMLFormElement();
+    final bool isSafariDesktopStrategy = textEditing.strategy is SafariDesktopTextEditingStrategy;
     DomHTMLElement? insertionReferenceNode;
 
     // Validation is in the framework side.
     formElement.noValidate = true;
     formElement.method = 'post';
     formElement.action = '#';
-    formElement.addEventListener('submit', createDomEventListener((DomEvent e) {
-      e.preventDefault();
-    }));
+    formElement.addEventListener('submit', preventDefaultListener);
 
-    _hideAutofillElements(formElement);
+    // We need to explicitly disable pointer events on the form in Safari Desktop,
+    // so that we don't have pointer event collisions if users hover over or click
+    // into the invisible autofill elements within the form.
+    _styleAutofillElements(formElement, shouldDisablePointerEvents: isSafariDesktopStrategy);
 
     // We keep the ids in a list then sort them later, in case the text fields'
     // locations are re-ordered on the framework side.
@@ -233,7 +248,16 @@ class EngineAutofillForm {
           final DomHTMLElement htmlElement = engineInputType.createDomElement();
           autofill.editingState.applyToDomElement(htmlElement);
           autofill.applyToDomElement(htmlElement);
-          _hideAutofillElements(htmlElement);
+
+          // Safari Desktop does not respect elements that are invisible (or
+          // have no size) and that leads to issues with autofill only partially
+          // working (ref: https://github.com/flutter/flutter/issues/71275).
+          // Thus, we have to make sure that the elements remain invisible to users,
+          // but not to Safari for autofill to work. Since these elements are
+          // sized and placed on the DOM, we also have to disable pointer events.
+          _styleAutofillElements(htmlElement,
+              shouldHideElement: !isSafariDesktopStrategy,
+              shouldDisablePointerEvents: isSafariDesktopStrategy);
 
           items[autofill.uniqueIdentifier] = autofill;
           elements[autofill.uniqueIdentifier] = htmlElement;
@@ -277,7 +301,7 @@ class EngineAutofillForm {
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
     final DomHTMLInputElement submitButton = createDomHTMLInputElement();
-    _hideAutofillElements(submitButton, isOffScreen: true);
+    _styleAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
 
@@ -297,13 +321,21 @@ class EngineAutofillForm {
   }
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
+    // Since we're disabling pointer events on the form to fix Safari autofill,
+    // we need to explicitly set pointer events on the active input element in
+    // order to calculate the correct pointer event offsets.
+    // See: https://github.com/flutter/flutter/issues/136006
+    if(textEditing.strategy is SafariDesktopTextEditingStrategy) {
+      mainTextEditingElement.style.pointerEvents = 'all';
+    }
+
     formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
     defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
     formsOnTheDom[formIdentifier] = formElement;
-    _hideAutofillElements(formElement, isOffScreen: true);
+    _styleAutofillElements(formElement, isOffScreen: true);
   }
 
   /// Listens to `onInput` event on the form fields.
@@ -522,7 +554,7 @@ class TextEditingDeltaState {
     if (isTextBeingRemoved) {
       // When text is deleted outside of the composing region or is cut using the native toolbar,
       // we calculate the length of the deleted text by comparing the new and old editing state lengths.
-      // If the deletion is backward, the length is susbtracted from the [deltaEnd]
+      // If the deletion is backward, the length is subtracted from the [deltaEnd]
       // that we set when beforeinput was fired to determine the [deltaStart].
       // If the deletion is forward, [deltaStart] is set to the new editing state baseOffset
       // and [deltaEnd] is set to [deltaStart] incremented by the length of the deletion.
@@ -536,9 +568,10 @@ class TextEditingDeltaState {
         newTextEditingDeltaState.deltaEnd = newTextEditingDeltaState.deltaStart + deletedLength;
       }
     } else if (isTextBeingChangedAtActiveSelection) {
+      final bool isPreviousSelectionInverted = lastEditingState!.baseOffset! > lastEditingState.extentOffset!;
       // When a selection of text is replaced by a copy/paste operation we set the starting range
       // of the delta to be the beginning of the selection of the previous editing state.
-      newTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
+      newTextEditingDeltaState.deltaStart = isPreviousSelectionInverted ? lastEditingState.extentOffset! : lastEditingState.baseOffset!;
     }
 
     // If we are composing then set the delta range to the composing region we
@@ -744,17 +777,31 @@ class EditingState {
   factory EditingState.fromDomElement(DomHTMLElement? domElement) {
     if (domInstanceOfString(domElement, 'HTMLInputElement')) {
       final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
-      return EditingState(
-          text: element.value,
-          baseOffset: element.selectionStart?.toInt(),
-          extentOffset: element.selectionEnd?.toInt());
+      if (element.selectionDirection == 'backward') {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionEnd?.toInt(),
+            extentOffset: element.selectionStart?.toInt());
+      } else {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionStart?.toInt(),
+            extentOffset: element.selectionEnd?.toInt());
+        }
     } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
       final DomHTMLTextAreaElement element = domElement! as
           DomHTMLTextAreaElement;
-      return EditingState(
-          text: element.value,
-          baseOffset: element.selectionStart?.toInt(),
-          extentOffset: element.selectionEnd?.toInt());
+      if (element.selectionDirection == 'backward') {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionEnd?.toInt(),
+            extentOffset: element.selectionStart?.toInt());
+      } else {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionStart?.toInt(),
+            extentOffset: element.selectionEnd?.toInt());
+      }
     } else {
       throw UnsupportedError('Initialized with unsupported input type');
     }
@@ -1077,24 +1124,35 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
   void placeElement() {
     geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
-      placeForm();
-      // On Safari Desktop, when a form is focused, it opens an autofill menu
-      // immediately.
-      // Flutter framework sends `setEditableSizeAndTransform` for informing
-      // the engine about the location of the text field. This call may arrive
-      // after the first `show` call, depending on the text input widget's
-      // implementation. Therefore form is placed, when
-      // `setEditableSizeAndTransform` method is called and focus called on the
-      // form only after placing it to the correct position and only once after
-      // that. Calling focus multiple times causes flickering.
-      focusedFormElement!.focus();
+      // We listen to pointerdown events on the Flutter View element and programatically
+      // focus our inputs. However, these inputs are focused before the pointerdown
+      // events conclude. Thus, the browser triggers a blur event immediately after
+      // focusing these inputs. This causes issues with Safari Desktop's autofill
+      // dialog (ref: https://github.com/flutter/flutter/issues/127960).
+      // In order to guarantee that we only focus after the pointerdown event concludes,
+      // we wrap the form autofill placement and focus logic in a zero-duration Timer.
+      // This ensures that our input doesn't have instantaneous focus/blur events
+      // occur on it and fixes the autofill dialog bug as a result.
+      Timer(Duration.zero, () {
+        placeForm();
+        // On Safari Desktop, when a form is focused, it opens an autofill menu
+        // immediately.
+        // Flutter framework sends `setEditableSizeAndTransform` for informing
+        // the engine about the location of the text field. This call may arrive
+        // after the first `show` call, depending on the text input widget's
+        // implementation. Therefore form is placed, when
+        // `setEditableSizeAndTransform` method is called and focus called on the
+        // form only after placing it to the correct position and only once after
+        // that. Calling focus multiple times causes flickering.
+        focusedFormElement!.focus();
 
-      // Set the last editing state if it exists, this is critical for a
-      // users ongoing work to continue uninterrupted when there is an update to
-      // the transform.
-      // If domElement is not focused cursor location will not be correct.
-      activeDomElement.focus();
-      lastEditingState?.applyToDomElement(activeDomElement);
+        // Set the last editing state if it exists, this is critical for a
+        // users ongoing work to continue uninterrupted when there is an update to
+        // the transform.
+        // If domElement is not focused cursor location will not be correct.
+        activeDomElement.focus();
+        lastEditingState?.applyToDomElement(activeDomElement);
+      });
     }
   }
 
@@ -1314,7 +1372,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       // Subscriptions are removed, listeners won't be triggered.
       activeDomElement.blur();
-      _hideAutofillElements(activeDomElement, isOffScreen: true);
+      _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
       activeDomElement.remove();
@@ -1357,9 +1415,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       lastEditingState = newEditingState;
       _editingDeltaState = newTextEditingDeltaState;
       onChange!(lastEditingState, _editingDeltaState);
-      // Flush delta after it has been sent to framework.
-      _editingDeltaState = null;
     }
+    // Flush delta state.
+    _editingDeltaState = null;
   }
 
   void handleBeforeInput(DomEvent event) {
@@ -1375,23 +1433,25 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
     if (inputType != null) {
+      final bool isSelectionInverted = lastEditingState!.baseOffset! > lastEditingState!.extentOffset!;
+      final int deltaOffset = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       if (inputType.contains('delete')) {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDeltaState.deltaText = '';
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (inputType == 'insertLineBreak'){
         // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDeltaState.deltaText = '\n';
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (eventData != null) {
         // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       }
     }
   }

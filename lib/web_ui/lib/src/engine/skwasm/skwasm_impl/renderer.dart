@@ -10,11 +10,11 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
-  late DomCanvasElement sceneElement;
   late SkwasmSurface surface;
-  ui.Size? surfaceSize;
+  late EngineSceneView sceneView;
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -193,7 +193,7 @@ class SkwasmRenderer implements Renderer {
   );
 
   @override
-  ui.SceneBuilder createSceneBuilder() => SkwasmSceneBuilder();
+  ui.SceneBuilder createSceneBuilder() => EngineSceneBuilder();
 
   @override
   ui.StrutStyle createStrutStyle({
@@ -347,14 +347,8 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FutureOr<void> initialize() {
-    // TODO(jacksongardner): This is very basic and doesn't work for element
-    // embedding or with platform views. We need to update this at some point
-    // to deal with those cases.
-    sceneElement = createDomCanvasElement();
-    sceneElement.id = 'flt-scene';
-    domDocument.body!.appendChild(sceneElement);
-    surface = SkwasmSurface('#flt-scene');
-    domDocument.body!.removeChild(sceneElement);
+    surface = SkwasmSurface();
+    sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
   }
 
   @override
@@ -368,11 +362,12 @@ class SkwasmRenderer implements Renderer {
     if (contentType == null) {
       throw Exception('Could not determine content type of image from data');
     }
-    final ui.Codec baseDecoder = SkwasmImageDecoder(
+    final SkwasmImageDecoder baseDecoder = SkwasmImageDecoder(
       contentType: contentType,
       dataSource: list.toJS,
       debugSource: 'encoded image bytes',
     );
+    await baseDecoder.initialize();
     if (targetWidth == null && targetHeight == null) {
       return baseDecoder;
     }
@@ -387,43 +382,36 @@ class SkwasmRenderer implements Renderer {
   @override
   Future<ui.Codec> instantiateImageCodecFromUrl(
     Uri uri, {
-    WebOnlyImageCodecChunkCallback? chunkCallback
+    ui_web.ImageCodecChunkCallback? chunkCallback
   }) async {
     final DomResponse response = await rawHttpGet(uri.toString());
     final String? contentType = response.headers.get('Content-Type');
     if (contentType == null) {
       throw Exception('Could not determine content type of image at url $uri');
     }
-    return SkwasmImageDecoder(
+    final SkwasmImageDecoder decoder = SkwasmImageDecoder(
       contentType: contentType,
-      dataSource: response.body as JSAny,
+      dataSource: response.body as JSObject,
       debugSource: uri.toString(),
     );
+    await decoder.initialize();
+    return decoder;
   }
 
+  // TODO(harryterkelsen): Add multiview support,
+  // https://github.com/flutter/flutter/issues/137073.
   @override
-  Future<void> renderScene(ui.Scene scene) async {
-    final ui.Size frameSize = ui.window.physicalSize;
-    if (frameSize != surfaceSize) {
-      final double logicalWidth = frameSize.width.ceil() / window.devicePixelRatio;
-      final double logicalHeight = frameSize.height.ceil() / window.devicePixelRatio;
-      final DomCSSStyleDeclaration style = sceneElement.style;
-      style.width = '${logicalWidth}px';
-      style.height = '${logicalHeight}px';
-
-      surface.setSize(frameSize.width.ceil(), frameSize.height.ceil());
-      surfaceSize = frameSize;
-    }
-    final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
-    await surface.renderPicture(picture);
-  }
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) =>
+      sceneView.renderScene(scene as EngineScene);
 
   @override
   String get rendererTag => 'skwasm';
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    embedder.addSceneToSceneHost(sceneElement);
+    // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
+    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+    implicitView.dom.setScene(sceneView.sceneElement);
   }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
@@ -438,7 +426,7 @@ class SkwasmRenderer implements Renderer {
     if (_programs.containsKey(assetKey)) {
       return _programs[assetKey]!;
     }
-    return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
+    return _programs[assetKey] = ui_web.assetManager.load(assetKey).then((ByteData data) {
       return SkwasmFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
     });
   }
@@ -465,4 +453,24 @@ class SkwasmRenderer implements Renderer {
     baseline: baseline,
     lineNumber: lineNumber
   );
+
+  @override
+  ui.Image createImageFromImageBitmap(DomImageBitmap imageSource) {
+    return SkwasmImage(imageCreateFromTextureSource(
+      imageSource as JSObject,
+      imageSource.width.toDartInt,
+      imageSource.height.toDartInt,
+      surface.handle,
+    ));
+  }
+}
+
+class SkwasmPictureRenderer implements PictureRenderer {
+  SkwasmPictureRenderer(this.surface);
+
+  SkwasmSurface surface;
+
+  @override
+  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture) =>
+    surface.renderPicture(picture as SkwasmPicture);
 }

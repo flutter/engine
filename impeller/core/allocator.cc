@@ -6,6 +6,7 @@
 
 #include "impeller/base/validation.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/range.h"
 
 namespace impeller {
@@ -49,14 +50,15 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
     const TextureDescriptor& desc) {
   const auto max_size = GetMaxTextureSizeSupported();
   if (desc.size.width > max_size.width || desc.size.height > max_size.height) {
-    VALIDATION_LOG
-        << "Requested texture size exceeds maximum supported size of "
-        << desc.size;
+    VALIDATION_LOG << "Requested texture size " << desc.size
+                   << " exceeds maximum supported size of " << max_size;
     return nullptr;
   }
 
   return OnCreateTexture(desc);
 }
+
+void Allocator::DidAcquireSurfaceFrame() {}
 
 uint16_t Allocator::MinimumBytesPerRow(PixelFormat format) const {
   return BytesPerPixelForPixelFormat(format);

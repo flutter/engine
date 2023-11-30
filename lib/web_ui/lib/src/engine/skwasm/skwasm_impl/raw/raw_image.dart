@@ -5,7 +5,9 @@
 @DefaultAsset('skwasm')
 library skwasm_impl;
 
+import 'dart:_wasm';
 import 'dart:ffi';
+import 'dart:js_interop';
 
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
@@ -38,17 +40,27 @@ external ImageHandle imageCreateFromPixels(
   int rowByteCount,
 );
 
-@Native<ImageHandle Function(
-  Uint32,
-  Int,
-  Int,
-  SurfaceHandle,
-)>(symbol: 'image_createFromVideoFrame', isLeaf: true)
-external ImageHandle imageCreateFromVideoFrame(
-  int videoFrameId,
+// We use a wasm import directly here instead of @Native since this uses an externref
+// in the function signature.
+ImageHandle imageCreateFromTextureSource(
+  JSAny frame,
   int width,
   int height,
-  SurfaceHandle handle,
+  SurfaceHandle handle
+) => ImageHandle.fromAddress(
+  imageCreateFromTextureSourceImpl(
+    externRefForJSAny(frame),
+    width.toWasmI32(),
+    height.toWasmI32(),
+    handle.address.toWasmI32(),
+  ).toIntUnsigned()
+);
+@pragma('wasm:import', 'skwasm.image_createFromTextureSource')
+external WasmI32 imageCreateFromTextureSourceImpl(
+  WasmExternRef? frame,
+  WasmI32 width,
+  WasmI32 height,
+  WasmI32 surfaceHandle,
 );
 
 @Native<Void Function(ImageHandle)>(symbol:'image_ref', isLeaf: true)
