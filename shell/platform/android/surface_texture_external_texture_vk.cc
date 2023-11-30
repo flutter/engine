@@ -15,6 +15,7 @@
 #include "flutter/shell/platform/android/surface_texture_external_texture_vk.h"
 #include "fml/logging.h"
 #include "fml/platform/android/jni_util.h"
+#include "fml/platform/android/jni_weak_ref.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -133,35 +134,71 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
     // Create a GLES texture and attach it.
     GLuint handle = GL_NONE;
     gl_->GenTextures(1u, &handle);
-    // gl_->BindTexture(GL_TEXTURE_EXTERNAL_OES, handle);
-
-    JNIEnv* env = fml::jni::AttachCurrentThread();
-    FML_CHECK(env) << "Failed to attach to JNI environment.";
-    FML_CHECK(surface_texture_.obj()) << "Surface texture is null.";
 
     // Convert SurfaceTextureWrapper to SurfaceTexture.
-    jobject surface_texture_wrapper = surface_texture_.obj();
+    if (surface_texture_.is_null()) {
+      FML_LOG(ERROR) << "Surface texture is null.";
+      return;
+    }
 
-    // TODO: This crashes saying it cannot find the class on path?
-    jclass surface_texture_wrapper_class =
-        env->GetObjectClass(surface_texture_wrapper);
-    FML_LOG(ERROR) << "Class: " << surface_texture_wrapper_class;
-    jmethodID surface_texture_method =
-        env->GetMethodID(surface_texture_wrapper_class, "surfaceTexture",
-                         "()Landroid/graphics/SurfaceTexture;");
-    jobject surface_texture_obj =
-        env->CallObjectMethod(surface_texture_wrapper, surface_texture_method);
-    FML_CHECK(fml::jni::CheckException(env));
+    // This is actually a SurfaceTextureWrapper object.
+    // We need to call the underlying ".surfaceTexture()" method.
+    JNIEnv* env = fml::jni::AttachCurrentThread();
+    fml::jni::ScopedJavaLocalRef<jobject> wrapper(surface_texture_);
+    if (wrapper.is_null()) {
+      FML_LOG(ERROR) << "Failed to get a reference to surface texture.";
+      return;
+    }
+    auto getWeakReferenceMethod = env->GetMethodID(
+        /*clazz=*/env->FindClass("java/lang/ref/WeakReference"),
+        /*name=*/"get",
+        /*sig=*/"()Ljava/lang/Object;");
+    if (!getWeakReferenceMethod) {
+      FML_LOG(ERROR) << "Failed to get getWeakReferenceMethod.";
+      return;
+    }
+    auto strong = fml::jni::ScopedJavaLocalRef<jobject>(
+        /*env=*/env,
+        /*obj=*/env->CallObjectMethod(
+            /*obj=*/wrapper.obj(),
+            /*methodID=*/getWeakReferenceMethod));
+    if (strong.is_null()) {
+      FML_LOG(ERROR) << "Failed to get strong reference.";
+      return;
+    }
+    auto surfaceTextureWrapperClass = env->GetObjectClass(strong.obj());
+    if (!surfaceTextureWrapperClass) {
+      FML_LOG(ERROR) << "Failed to get surfaceTextureWrapperClass.";
+      return;
+    }
+    auto getSurfaceTextureMethod = env->GetMethodID(
+        /*clazz=*/surfaceTextureWrapperClass,
+        /*name=*/"surfaceTexture",
+        /*sig=*/"()Landroid/graphics/SurfaceTexture;");
+    if (!getSurfaceTextureMethod) {
+      FML_LOG(ERROR) << "Failed to get surfaceTexture method.";
+      return;
+    }
+    auto ref = fml::jni::ScopedJavaLocalRef<jobject>(
+        /*env=*/env,
+        /*obj=*/env->CallObjectMethod(
+            /*obj=*/strong.obj(),
+            /*methodID=*/getSurfaceTextureMethod));
+    if (ref.is_null()) {
+      FML_LOG(ERROR) << "Failed to get surface texture.";
+      return;
+    }
 
     ASurfaceTexture* surface_texture =
         NDKHelpers::ASurfaceTexture_fromSurfaceTexture(
             /*env=*/env,
-            /*surfaceTextureObj=*/surface_texture_obj);
+            /*surfaceTextureObj=*/ref.obj());
     if (!surface_texture) {
       FML_LOG(ERROR) << "Failed to get ASurfaceTexture.";
       return;
     }
 
+    // ERROR: attachToContext: SurfaceTexture is already attached to a context
     NDKHelpers::ASurfaceTexture_attachToGLContext(surface_texture, handle);
     // Read framebuffer
     // bind draw framebuffer
