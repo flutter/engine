@@ -29,7 +29,7 @@
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-#include "C:/Users/tiusic/dev/work/flutter/engine/src/flutter/lib/ui/window/platform_isolate.h"
+#include "flutter/lib/ui/window/platform_isolate.h"
 
 // Impeller should only be enabled if the Vulkan backend is enabled.
 #define ALLOW_IMPELLER (IMPELLER_SUPPORTS_RENDERING && IMPELLER_ENABLE_VULKAN)

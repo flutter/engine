@@ -223,16 +223,6 @@ class DartIsolate : public UIDartState {
       const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
-  static std::weak_ptr<DartIsolate> CreateRunningPlatformIsolate(
-      const Settings& settings,
-      const fml::RefPtr<const DartSnapshot>& isolate_snapshot,
-      std::unique_ptr<PlatformConfiguration> platform_configuration,
-      Flags isolate_flags,
-      const fml::closure& isolate_create_callback,
-      const fml::closure& isolate_shutdown_callback,
-      // std::unique_ptr<IsolateConfiguration> isolate_configuration,
-      const DartIsolate* spawning_isolate);
-
   // |UIDartState|
   ~DartIsolate() override;
 
@@ -401,7 +391,10 @@ class DartIsolate : public UIDartState {
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
 
-  // private:
+  static bool InitializePlatformIsolate(void** child_callback_data,
+                                        char** error);
+
+ private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
    public:
@@ -421,6 +414,7 @@ class DartIsolate : public UIDartState {
   std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
+  const bool is_platform_isolate_;
   std::string domain_network_policy_;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
@@ -433,19 +427,9 @@ class DartIsolate : public UIDartState {
       const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
-  static std::weak_ptr<DartIsolate> CreateIsolate(
-      const Settings& settings,
-      bool is_root_isolate,
-      fml::RefPtr<const DartSnapshot> isolate_snapshot,
-      std::unique_ptr<PlatformConfiguration> platform_configuration,
-      const Flags& flags,
-      const fml::closure& isolate_create_callback,
-      const fml::closure& isolate_shutdown_callback,
-      const UIDartState::Context& context,
-      const DartIsolate* spawning_isolate);
-
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
+              bool is_platform_isolate,
               const UIDartState::Context& context);
 
   //----------------------------------------------------------------------------
@@ -485,6 +469,10 @@ class DartIsolate : public UIDartState {
   // |Dart_IsolateInitializeCallback|
   static bool DartIsolateInitializeCallback(void** child_callback_data,
                                             char** error);
+
+  static bool DartIsolateInitializeCallbackImpl(void** child_callback_data,
+                                                char** error,
+                                                bool is_platform_isolate);
 
   static Dart_Isolate DartCreateAndStartServiceIsolate(
       const char* package_root,

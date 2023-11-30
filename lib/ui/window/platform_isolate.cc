@@ -5,13 +5,11 @@
 #include <iostream>
 #include <thread>
 
-#include "C:/Users/tiusic/dev/work/dart-sdk/sdk/runtime/vm/os_thread.h"
-#include "C:/Users/tiusic/dev/work/flutter/engine/src/flutter/runtime/dart_isolate.h"
-#include "C:/Users/tiusic/dev/work/flutter/engine/src/flutter/runtime/dart_isolate_group_data.h"
-#include "C:/Users/tiusic/dev/work/flutter/engine/src/flutter/runtime/isolate_configuration.h"
+#include "../../../../../../../dart-sdk/sdk/runtime/vm/os_thread.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/window/platform_isolate.h"
+#include "flutter/runtime/dart_isolate.h"
 
 namespace flutter {
 
@@ -29,25 +27,6 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   std::shared_ptr<DartIsolate>* parent_isolate_data =
       static_cast<std::shared_ptr<DartIsolate>*>(
           Dart_IsolateData(parent_isolate));
-
-  /*global_platform_task_runner->PostTask(
-      [parent_isolate, debug_name_str, isolate_send_port_id]() {
-        std::cout << "Creating isolate" << std::endl;
-        char* error = NULL;
-        Dart_Isolate isolate =
-            Dart_CreateIsolateInGroup(parent_isolate, debug_name_str.c_str(),
-                                      NULL,  // shutdown_callback,
-                                      NULL,  // cleanup_callback,
-                                      NULL,  // child_isolate_data,
-                                      &error);
-        Dart_Port new_isolate_main_port_id = Dart_GetMainPortId();
-        Dart_Handle new_isolate_main_port =
-            Dart_NewSendPort(new_isolate_main_port_id);
-        if (!Dart_Post(isolate_send_port_id, new_isolate_main_port)) {
-          // TODO: Handle error.
-          std::cout << "Failed to send." << std::endl;
-        }
-      });*/
 
   Dart_ExitIsolate();  // Exit parent_isolate.
 
@@ -69,10 +48,9 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
 
   void* child_isolate_data;
   bool init_ok =
-      DartIsolate::DartIsolateInitializeCallback(&child_isolate_data, &error);
+      DartIsolate::InitializePlatformIsolate(&child_isolate_data, &error);
   // TODO: Do we need to set this isolate data on the Isolate somehow, or does
-  // DartIsolateInitializeCallback do this? Might need a new API function for
-  // this.
+  // InitializeIsolate do this? Might need a new API function for this.
   if (!init_ok) {
     // TODO: Handle error.
     std::cout << "Failed to create isolate. " << (error ? error : "no error")
@@ -81,36 +59,10 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   }
 
   Dart_EnterScope();
-
+  // TODO: Passing the persistent handle to the new isolate like this is a bit
+  // of a hack. Do we need to send it via a port?
   Dart_PersistentHandle entry_point_handle =
       Dart_NewPersistentHandle(entry_point);
-
-  /*
-  Settings settings = global_settings;  // TODO: Where should we get this from ?
-  DartIsolate::Flags flags;             // TODO: Set based on snapshot?
-  // std::unique_ptr<IsolateConfiguration> isolate_configuration =
-  //     IsolateConfiguration::InferFromSettings(settings);  // ???
-
-  std::weak_ptr<DartIsolate> new_isolate =
-      DartIsolate::CreateRunningPlatformIsolate(
-          settings,
-          (*parent_isolate_data)->GetIsolateGroupData().GetIsolateSnapshot(),
-          nullptr,  // platform_configuration
-          flags,
-          nullptr,  // isolate_create_callback
-          nullptr,  // isolate_shutdown_callback
-          // std::move(isolate_configuration),
-          parent_isolate_data->get());
-  ASSERT(Dart_CurrentIsolate() != NULL);*/
-
-  /*Dart_Port new_isolate_main_port_id = Dart_GetMainPortId();
-  Dart_Handle new_isolate_main_port =
-      Dart_NewSendPort(new_isolate_main_port_id);
-  if (!Dart_Post(isolate_send_port_id, new_isolate_main_port)) {
-    // TODO: Handle error.
-    std::cout << "Failed to send." << std::endl;
-    return;
-  }*/
   Dart_ExitScope();
 
   Dart_ExitIsolate();  // Exit new_isolate.
@@ -139,7 +91,7 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   //     backgrounding, where the platform thread is forcibly shut down by the
   //     OS.
   // TODO: How do I avoid including dart_isolate.h? What's the correct API
-  //     surface?
+  //     surface? Should all this logic move into dart_isolate.h?
 }
 
 uint32_t PlatformIsolateNativeApi::GetCurrentThreadId() {
@@ -149,6 +101,5 @@ uint32_t PlatformIsolateNativeApi::GetCurrentThreadId() {
 
 fml::RefPtr<fml::TaskRunner>
     PlatformIsolateNativeApi::global_platform_task_runner;
-Settings PlatformIsolateNativeApi::global_settings;
 
 }  // namespace flutter

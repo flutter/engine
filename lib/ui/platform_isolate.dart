@@ -6,7 +6,7 @@ part of dart.ui;
 class PlatformIsolate {
   static Future<Isolate> spawn<T>(
       void entryPoint(T message), T message,
-      {/*bool paused = false,
+      {/*bool paused = false,  // TODO: Support these params.
       bool errorsAreFatal = true,
       SendPort? onExit,
       SendPort? onError,*/
@@ -82,18 +82,6 @@ class PlatformIsolate {
       }
     };
     try {
-      /*PlatformIsolate.spawn(_RemoteRunner._remoteExecute,
-              _RemoteRunner<R>(computation, resultPort.sendPort),
-              onError: resultPort.sendPort,
-              onExit: resultPort.sendPort,
-              errorsAreFatal: true,
-              debugName: debugName)
-          .then<void>((_) {}, onError: (error, stack) {
-        // Sending the computation failed asynchronously.
-        // Do not expect a response, report the error asynchronously.
-        resultPort.close();
-        result.completeError(error, stack);
-      });*/
       PlatformIsolate.spawn(_remoteRun, (computation, resultPort.sendPort));
     } on Object {
       // Sending the computation failed synchronously.
@@ -125,6 +113,8 @@ class PlatformIsolate {
     sendPort.send((result, null, null));
   }
 
+  // Using this function to verify we're on the platform thread for prototyping.
+  // TODO: Need to figure out a better way of doing this.
   @Native<Uint32 Function()>(symbol: 'PlatformIsolateNativeApi::GetCurrentThreadId')
   external static int getCurrentThreadId();
 }

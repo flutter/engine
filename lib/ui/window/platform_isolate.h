@@ -12,10 +12,13 @@ namespace flutter {
 class PlatformIsolateNativeApi {
  public:
   static void Spawn(Dart_Handle entry_point, Dart_Handle debug_name);
+
+  // Using this function to verify we're on the platform thread for prototyping.
+  // TODO: Need to figure out a better way of doing this.
   static uint32_t GetCurrentThreadId();
 
+  // TODO: Delete this. Find a better way of getting the platform task runner.
   static fml::RefPtr<fml::TaskRunner> global_platform_task_runner;
-  static Settings global_settings;
 };
 
 }  // namespace flutter
