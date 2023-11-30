@@ -264,17 +264,12 @@ bool SurfaceMTL::Present() const {
       [command_buffer waitUntilScheduled];
       [drawable_ present];
     } else {
-      // Check whether CAMetalLayer or FlutterMetalLayer is being used.
-      if (drawable_.layer.class == [CAMetalLayer class]) {
-        [command_buffer presentDrawable:drawable_];
-      } else {
-        // The drawable is not actual metal drawable so it can't be present
-        // through the command buffer.
-        id<CAMetalDrawable> drawable = drawable_;
-        [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> buffer) {
-          [drawable present];
-        }];
-      }
+      // The drawable may come from a FlutterMetalLayer, so it can't be
+      // presented through the command buffer.
+      id<CAMetalDrawable> drawable = drawable_;
+      [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> buffer) {
+        [drawable present];
+      }];
       [command_buffer commit];
     }
   }
