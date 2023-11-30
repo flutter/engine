@@ -28,6 +28,8 @@ abstract class CkManagedSkImageFilterConvertible implements ui.ImageFilter {
 }
 
 /// The CanvasKit implementation of [ui.ImageFilter].
+///
+/// Currently only supports `blur`, `matrix`, and ColorFilters.
 abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
   factory CkImageFilter.blur(
       {required double sigmaX,
@@ -92,9 +94,10 @@ class _CkBlurImageFilter extends CkImageFilter {
     final SkImageFilter skImageFilter;
     if (sigmaX == 0 && sigmaY == 0) {
       skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
-          toSkMatrixFromFloat32(Matrix4.identity().storage),
-          toSkFilterOptions(ui.FilterQuality.none),
-          null);
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
+        toSkFilterOptions(ui.FilterQuality.none),
+        null
+      );
     } else {
       skImageFilter = canvasKit.ImageFilter.MakeBlur(
         sigmaX,
@@ -156,8 +159,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
       : matrix = Float64List.fromList(matrix),
         _transform = Matrix4.fromFloat32List(toMatrix32(matrix)),
         super._() {
-    final SkImageFilter skImageFilter =
-        canvasKit.ImageFilter.MakeMatrixTransform(
+    final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
       toSkFilterOptions(filterQuality),
       null,
