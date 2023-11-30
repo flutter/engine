@@ -454,7 +454,7 @@ void FlutterWindow::InitializeChild(const char* title,
 
   auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
-      WS_CHILD | WS_VISIBLE, CW_DEFAULT, CW_DEFAULT, width, height,
+      WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, CW_DEFAULT, CW_DEFAULT, width, height,
       HWND_MESSAGE, nullptr, window_class.hInstance, this);
 
   if (result == nullptr) {

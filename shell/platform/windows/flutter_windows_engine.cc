@@ -234,6 +234,8 @@ bool FlutterWindowsEngine::Run() {
   return Run("");
 }
 
+HWND test_button = NULL;
+
 bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   if (!project_->HasValidPaths()) {
     FML_LOG(ERROR) << "Missing or unresolvable paths to assets.";
@@ -414,19 +416,48 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   compositor.present_layers_callback = [](const FlutterLayer** layers,
                                           size_t layers_count,
                                           void* user_data) -> bool {
-    if (layers_count != 1 ||
-        layers[0]->type != kFlutterLayerContentTypeBackingStore ||
-        layers[0]->backing_store->type != kFlutterBackingStoreTypeSoftware) {
-      FML_UNREACHABLE();
-      return false;
-    }
-
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
+    bool result = false;
+    bool rendered_backing = false;
 
-    const auto& backing_store = layers[0]->backing_store->software;
-    return host->view()->PresentSoftwareBitmap(backing_store.allocation,
-                                               backing_store.row_bytes,
-                                               backing_store.height);
+    for (size_t index = 0; index < layers_count; index++) {
+      const auto layer = layers[index];
+      if (layer->type == kFlutterLayerContentTypeBackingStore) {
+        if (layer->backing_store->type != kFlutterBackingStoreTypeSoftware) {
+          FML_UNREACHABLE();
+          return false;
+        }
+        const auto& backing_store = layer->backing_store->software;
+        size_t bytes = backing_store.row_bytes * backing_store.height;
+        size_t pix = bytes / 4;
+        auto data = (const uint32_t*)backing_store.allocation;
+        int min = 256, max = -1;
+        for (int i = 0; i < pix; i++) {
+          int alpha = data[i] >> 24;
+          if (alpha > max) max = alpha;
+          if (alpha < min) min = alpha;
+        }
+        if (rendered_backing) {
+          continue;
+        }
+        result |= rendered_backing = host->view()->PresentSoftwareBitmap(backing_store.allocation,
+                                                   backing_store.row_bytes,
+                                                   backing_store.height);
+      }
+      else if (layer->type == kFlutterLayerContentTypePlatformView) {
+        const auto& offset = layer->offset;
+        const auto& size = layer->size;
+        host->task_runner()->PostTask([=](){
+          HWND parent = host->view()->GetPlatformWindow();
+          if (test_button == NULL && parent != NULL && IsWindowVisible(parent)) {
+            test_button = CreateWindowW(L"STATIC", L"Pretend I am a platform view!", WS_CHILD | WS_VISIBLE, 10, 10, 250, 250, parent, NULL, NULL, NULL);
+          }
+          SetWindowPos(test_button, HWND_TOPMOST, offset.x, offset.y, size.width, size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
+          UpdateWindow(test_button);
+        });
+      }
+    }
+    return result;
   };
   args.compositor = &compositor;
 
