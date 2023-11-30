@@ -10,6 +10,7 @@
 
 #include <android/hardware_buffer.h>
 #include <android/native_window.h>
+#include <android/surface_texture.h>
 #include <dlfcn.h>
 #include <media/NdkMediaError.h>
 
@@ -46,6 +47,11 @@ typedef jobject (*fp_ANativeWindow_toSurface)(JNIEnv* env,
                                               ANativeWindow* window);
 typedef media_status_t (*fp_AImage_getHardwareBuffer)(AImage* image,
                                                       AHardwareBuffer** buffer);
+typedef ASurfaceTexture* (*fp_ASurfaceTexture_fromSurfaceTexture)(
+    JNIEnv* env,
+    jobject surfaceTextureObj);
+typedef int (*fp_ASurfaceTexture_attachToGLContext)(ASurfaceTexture* st,
+                                                    uint32_t texName);
 typedef EGLClientBuffer (*fp_eglGetNativeClientBufferANDROID)(
     AHardwareBuffer* buffer);
 
@@ -78,6 +84,11 @@ jobject (*_ANativeWindow_toSurface)(JNIEnv* env,
                                     ANativeWindow* window) = nullptr;
 media_status_t (*_AImage_getHardwareBuffer)(AImage* image,
                                             AHardwareBuffer** buffer) = nullptr;
+ASurfaceTexture* (*_ASurfaceTexture_fromSurfaceTexture)(
+    JNIEnv* env,
+    jobject surfaceTextureObj) = nullptr;
+int (*_ASurfaceTexture_attachToGLContext)(ASurfaceTexture* st,
+                                          uint32_t texName) = nullptr;
 EGLClientBuffer (*_eglGetNativeClientBufferANDROID)(AHardwareBuffer* buffer) =
     nullptr;
 
@@ -142,6 +153,16 @@ void InitOnceCallback() {
       android
           ->ResolveFunction<fp_AImage_getHardwareBuffer>(
               "AImage_getHardwareBuffer")
+          .value_or(nullptr);
+  _ASurfaceTexture_fromSurfaceTexture =
+      android
+          ->ResolveFunction<fp_ASurfaceTexture_fromSurfaceTexture>(
+              "ASurfaceTexture_fromSurfaceTexture")
+          .value_or(nullptr);
+  _ASurfaceTexture_attachToGLContext =
+      android
+          ->ResolveFunction<fp_ASurfaceTexture_attachToGLContext>(
+              "ASurfaceTexture_attachToGLContext")
           .value_or(nullptr);
 }
 
@@ -240,6 +261,21 @@ media_status_t NDKHelpers::AImage_getHardwareBuffer(AImage* image,
   NDKHelpers::Init();
   FML_CHECK(_AImage_getHardwareBuffer != nullptr);
   return _AImage_getHardwareBuffer(image, buffer);
+}
+
+ASurfaceTexture* NDKHelpers::ASurfaceTexture_fromSurfaceTexture(
+    JNIEnv* env,
+    jobject surfaceTextureObj) {
+  NDKHelpers::Init();
+  FML_CHECK(_ASurfaceTexture_fromSurfaceTexture != nullptr);
+  return _ASurfaceTexture_fromSurfaceTexture(env, surfaceTextureObj);
+}
+
+int NDKHelpers::ASurfaceTexture_attachToGLContext(ASurfaceTexture* st,
+                                                  uint32_t texName) {
+  NDKHelpers::Init();
+  FML_CHECK(_ASurfaceTexture_attachToGLContext != nullptr);
+  return _ASurfaceTexture_attachToGLContext(st, texName);
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(

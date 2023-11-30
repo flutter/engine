@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include <GLES3/gl3.h>
+#include <android/surface_texture.h>
+#include <jni.h>
 #include <media/NdkImage.h>
 #include <media/NdkImageReader.h>
 #include <memory>
@@ -12,6 +14,7 @@
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_vk.h"
 #include "fml/logging.h"
+#include "fml/platform/android/jni_util.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -130,12 +133,45 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
     // Create a GLES texture and attach it.
     GLuint handle = GL_NONE;
     gl_->GenTextures(1u, &handle);
-    gl_->BindTexture(GL_TEXTURE_EXTERNAL_OES, handle);
+    // gl_->BindTexture(GL_TEXTURE_EXTERNAL_OES, handle);
+
+    JNIEnv* env = fml::jni::AttachCurrentThread();
+    FML_CHECK(env) << "Failed to attach to JNI environment.";
+    FML_CHECK(surface_texture_.obj()) << "Surface texture is null.";
+
+    // Convert SurfaceTextureWrapper to SurfaceTexture.
+    jobject surface_texture_wrapper = surface_texture_.obj();
+
+    // TODO: This crashes saying it cannot find the class on path?
+    jclass surface_texture_wrapper_class = env->FindClass(
+        "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper");
+    jmethodID surface_texture_method =
+        env->GetMethodID(surface_texture_wrapper_class, "surfaceTexture",
+                         "()Landroid/graphics/SurfaceTexture;");
+    jobject surface_texture_obj =
+        env->CallObjectMethod(surface_texture_wrapper, surface_texture_method);
+    FML_CHECK(fml::jni::CheckException(env));
+
+    ASurfaceTexture* surface_texture =
+        NDKHelpers::ASurfaceTexture_fromSurfaceTexture(
+            /*env=*/env,
+            /*surfaceTextureObj=*/surface_texture_obj);
+    if (!surface_texture) {
+      FML_LOG(ERROR) << "Failed to get ASurfaceTexture.";
+      return;
+    }
+
+    NDKHelpers::ASurfaceTexture_attachToGLContext(surface_texture, handle);
+    // Read framebuffer
+    // bind draw framebuffer
+    // blit
+    // done?
 
     Attach(Id());
   }
 
   // Blit the image from the image reader to the surface.
+
   surface_->Present();
 
   // TODO: Take the hardware buffer from the ImageReader annd render as DlImage.

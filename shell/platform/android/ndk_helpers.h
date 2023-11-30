@@ -11,6 +11,7 @@
 #include "flutter/impeller/toolkit/egl/egl.h"
 
 #include <android/hardware_buffer.h>
+#include <android/surface_texture.h>
 #include <jni.h>
 #include <media/NdkImageReader.h>
 #include <media/NdkMediaError.h>
@@ -61,6 +62,11 @@ class NDKHelpers {
   static jobject ANativeWindow_toSurface(JNIEnv* env, ANativeWindow* window);
   static media_status_t AImage_getHardwareBuffer(AImage* image,
                                                  AHardwareBuffer** buffer);
+  static ASurfaceTexture* ASurfaceTexture_fromSurfaceTexture(
+      JNIEnv* env,
+      jobject surfaceTextureObj);
+  static int ASurfaceTexture_attachToGLContext(ASurfaceTexture* st,
+                                               uint32_t texName);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 
