@@ -206,10 +206,11 @@ bool get isIOS15 {
       domWindow.navigator.userAgent.contains('OS 15_');
 }
 
-/// Detect if running on Chrome version 110 or older on Windows.
+/// Detect if running on Chrome version 110 or older.
 ///
-/// These versions of Chrome have a bug on Windows which causes
-/// rendering to be flipped upside down.
+/// These versions of Chrome have a bug which causes rendering to be flipped
+/// upside down when using `createImageBitmap`: see
+/// https://chromium.googlesource.com/chromium/src/+/a7f9b00e422a1755918f8ca5500380f98b6fddf2
 // TODO(harryterkelsen): Remove this check once we stop supporting Chrome 110
 // and earlier, https://github.com/flutter/flutter/issues/139186.
 bool get isChrome110OrOlder {
