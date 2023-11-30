@@ -136,12 +136,15 @@ extern CFTimeInterval display_link_target;
 }
 
 - (void)addPresentedHandler:(nonnull MTLDrawablePresentedHandler)block {
+  FML_LOG(WARNING) << "FlutterMetalLayer drawable does not implement addPresentedHandler:";
 }
 
 - (void)presentAtTime:(CFTimeInterval)presentationTime {
+  FML_LOG(WARNING) << "FlutterMetalLayer drawable does not implement presentAtTime:";
 }
 
 - (void)presentAfterMinimumDuration:(CFTimeInterval)duration {
+  FML_LOG(WARNING) << "FlutterMetalLayer drawable does not implement presentAfterMinimumDuration:";
 }
 
 @end
@@ -178,6 +181,10 @@ extern CFTimeInterval display_link_target;
 }
 
 - (void)setMaxRefreshRate:(double)refreshRate forceMax:(BOOL)forceMax {
+  // This is copied from vsync_waiter_ios.mm. The vsync waiter has display link scheduled on UI
+  // thread which does not trigger actual core animation frame. As a workaround FlutterMetalLayer
+  // has it's own displaylink scheduled on main thread, which is used to trigger core animation
+  // frame allowing for 120hz updates.
   if (!DisplayLinkManager.maxRefreshRateEnabledOnIPhone) {
     return;
   }
@@ -239,9 +246,12 @@ extern CFTimeInterval display_link_target;
   if (self.pixelFormat == MTLPixelFormatRGBA16Float) {
     pixelFormat = kCVPixelFormatType_64RGBAHalf;
     bytesPerElement = 8;
-  } else {
+  } else if (self.pixelFormat == MTLPixelFormatBGRA8Unorm) {
     pixelFormat = kCVPixelFormatType_32BGRA;
     bytesPerElement = 4;
+  } else {
+    FML_LOG(ERROR) << "Unsupported pixel format: " << self.pixelFormat;
+    return nil;
   }
   size_t bytesPerRow =
       IOSurfaceAlignProperty(kIOSurfaceBytesPerRow, _drawableSize.width * bytesPerElement);
