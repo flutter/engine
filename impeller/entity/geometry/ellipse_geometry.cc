@@ -22,21 +22,22 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
 
   Scalar radius = radius_;
   const Point& center = center_;
-  std::shared_ptr<Tessellator> t = renderer.GetTessellator();
-  CircleTessellator tessellator(t, entity.GetTransform(), radius_);
-  size_t count = tessellator.GetCircleVertexCount();
-  auto vertex_buffer =
-      host_buffer.Emplace(count * sizeof(VT), alignof(VT),
-                          [&tessellator, &center, radius](uint8_t* buffer) {
-                            auto vertices = reinterpret_cast<VT*>(buffer);
-                            tessellator.GenerateCircleTriangleStrip(
-                                [&vertices](const Point& p) {  //
-                                  *vertices++ = {
-                                      .position = p,
-                                  };
-                                },
-                                center, radius);
-                          });
+  std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
+  CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
+                                       radius_);
+  size_t count = circle_tessellator.GetCircleVertexCount();
+  auto vertex_buffer = host_buffer.Emplace(
+      count * sizeof(VT), alignof(VT),
+      [&circle_tessellator, &center, radius](uint8_t* buffer) {
+        auto vertices = reinterpret_cast<VT*>(buffer);
+        circle_tessellator.GenerateCircleTriangleStrip(
+            [&vertices](const Point& p) {  //
+              *vertices++ = {
+                  .position = p,
+              };
+            },
+            center, radius);
+      });
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
@@ -66,14 +67,15 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
 
   Scalar radius = radius_;
   const Point& center = center_;
-  std::shared_ptr<Tessellator> t = renderer.GetTessellator();
-  CircleTessellator tessellator(t, entity.GetTransform(), radius_);
-  size_t count = tessellator.GetCircleVertexCount();
+  std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
+  CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
+                                       radius_);
+  size_t count = circle_tessellator.GetCircleVertexCount();
   auto vertex_buffer = host_buffer.Emplace(
       count * sizeof(VT), alignof(VT),
-      [&tessellator, &uv_transform, &center, radius](uint8_t* buffer) {
+      [&circle_tessellator, &uv_transform, &center, radius](uint8_t* buffer) {
         auto vertices = reinterpret_cast<VT*>(buffer);
-        tessellator.GenerateCircleTriangleStrip(
+        circle_tessellator.GenerateCircleTriangleStrip(
             [&vertices, &uv_transform](const Point& p) {  //
               *vertices++ = {
                   .position = p,
@@ -91,7 +93,6 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      // .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform(),
       .prevent_overdraw = false,

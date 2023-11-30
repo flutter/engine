@@ -80,21 +80,22 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
     const Point& p0 = p0_;
     const Point& p1 = p1_;
 
-    std::shared_ptr<Tessellator> t = renderer.GetTessellator();
-    CircleTessellator tessellator(t, entity.GetTransform(), radius);
-    count = tessellator.GetCircleVertexCount();
-    vertex_buffer =
-        host_buffer.Emplace(count * sizeof(VT), alignof(VT),
-                            [&tessellator, &p0, &p1, radius](uint8_t* buffer) {
-                              auto vertices = reinterpret_cast<VT*>(buffer);
-                              tessellator.GenerateRoundCapLineTriangleStrip(
-                                  [&vertices](const Point& p) {  //
-                                    *vertices++ = {
-                                        .position = p,
-                                    };
-                                  },
-                                  p0, p1, radius);
-                            });
+    std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
+    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
+                                         radius);
+    count = circle_tessellator.GetCircleVertexCount();
+    vertex_buffer = host_buffer.Emplace(
+        count * sizeof(VT), alignof(VT),
+        [&circle_tessellator, &p0, &p1, radius](uint8_t* buffer) {
+          auto vertices = reinterpret_cast<VT*>(buffer);
+          circle_tessellator.GenerateRoundCapLineTriangleStrip(
+              [&vertices](const Point& p) {  //
+                *vertices++ = {
+                    .position = p,
+                };
+              },
+              p0, p1, radius);
+        });
   } else {
     Point corners[4];
     if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
@@ -148,14 +149,16 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
     const Point& p0 = p0_;
     const Point& p1 = p1_;
 
-    std::shared_ptr<Tessellator> t = renderer.GetTessellator();
-    CircleTessellator tessellator(t, entity.GetTransform(), radius);
-    count = tessellator.GetCircleVertexCount();
+    std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
+    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
+                                         radius);
+    count = circle_tessellator.GetCircleVertexCount();
     vertex_buffer = host_buffer.Emplace(
         count * sizeof(VT), alignof(VT),
-        [&tessellator, &uv_transform, &p0, &p1, radius](uint8_t* buffer) {
+        [&circle_tessellator, &uv_transform, &p0, &p1,
+         radius](uint8_t* buffer) {
           auto vertices = reinterpret_cast<VT*>(buffer);
-          tessellator.GenerateRoundCapLineTriangleStrip(
+          circle_tessellator.GenerateRoundCapLineTriangleStrip(
               [&vertices, &uv_transform](const Point& p) {  //
                 *vertices++ = {
                     .position = p,

@@ -12,13 +12,14 @@ namespace impeller {
 namespace testing {
 
 TEST(CircleTessellator, DivisionVertexCounts) {
-  auto t = std::make_shared<Tessellator>();
+  auto tessellator = std::make_shared<Tessellator>();
 
-  auto test = [&t](const Matrix& transform, Scalar radius) {
-    CircleTessellator tessellator(t, transform, radius);
-    size_t quadrant_divisions = tessellator.GetQuadrantDivisionCount();
+  auto test = [&tessellator](const Matrix& transform, Scalar radius) {
+    CircleTessellator circle_tessellator(tessellator, transform, radius);
+    size_t quadrant_divisions = circle_tessellator.GetQuadrantDivisionCount();
 
-    EXPECT_EQ(tessellator.GetCircleVertexCount(), (quadrant_divisions + 1) * 4)
+    EXPECT_EQ(circle_tessellator.GetCircleVertexCount(),
+              (quadrant_divisions + 1) * 4)
         << "transform = " << transform << ", radius = " << radius;
 
     // Confirm the approximation error is within the currently accepted
@@ -51,14 +52,14 @@ TEST(CircleTessellator, DivisionVertexCounts) {
 }
 
 TEST(CircleTessellator, CircleTessellationVertices) {
-  auto t = std::make_shared<Tessellator>();
+  auto tessellator = std::make_shared<Tessellator>();
 
-  auto test = [&t](Scalar pixel_radius, Point center, Scalar radius) {
-    CircleTessellator tessellator(t, {}, pixel_radius);
+  auto test = [&tessellator](Scalar pixel_radius, Point center, Scalar radius) {
+    CircleTessellator circle_tessellator(tessellator, {}, pixel_radius);
 
-    auto vertex_count = tessellator.GetCircleVertexCount();
+    auto vertex_count = circle_tessellator.GetCircleVertexCount();
     auto vertices = std::vector<Point>();
-    tessellator.GenerateCircleTriangleStrip(
+    circle_tessellator.GenerateCircleTriangleStrip(
         [&vertices](const Point& p) {  //
           vertices.push_back(p);
         },

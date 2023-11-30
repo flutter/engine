@@ -83,19 +83,21 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
 
   if (round_) {
-    std::shared_ptr<Tessellator> t = renderer.GetTessellator();
-    CircleTessellator tessellator(t, entity.GetTransform(), radius_);
+    std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
+    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
+                                         radius_);
 
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
     std::vector<Point> circle_vertices;
-    circle_vertices.reserve(tessellator.GetCircleVertexCount());
-    tessellator.GenerateCircleTriangleStrip(
+    circle_vertices.reserve(circle_tessellator.GetCircleVertexCount());
+    circle_tessellator.GenerateCircleTriangleStrip(
         [&circle_vertices](const Point& p) {  //
           circle_vertices.push_back(p);
         },
         {}, radius);
-    FML_DCHECK(circle_vertices.size() == tessellator.GetCircleVertexCount());
+    FML_DCHECK(circle_vertices.size() ==
+               circle_tessellator.GetCircleVertexCount());
 
     vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
     for (auto& center : points_) {
