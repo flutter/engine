@@ -189,9 +189,9 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
-      if (supports_framebuffer_fetch) {
-        vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
-      }
+    }
+    if (mode == StorageMode::kDeviceTransient && supports_framebuffer_fetch) {
+      vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
     }
   }
 

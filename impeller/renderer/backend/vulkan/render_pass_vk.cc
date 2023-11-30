@@ -116,9 +116,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
                       kUnusedAttachmentReference);
 
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
-    color_refs[bind_point] =
-        vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
-                                vk::ImageLayout::eColorAttachmentOptimal};
+    color_refs[bind_point] = vk::AttachmentReference{
+        static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
     attachments.emplace_back(
         CreateAttachmentDescription(color, &Attachment::texture));
     SetTextureLayout(color, attachments.back(), command_buffer,
@@ -532,8 +531,8 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  const auto& color_image_vk =
-      TextureVK::Cast(*render_target_.GetRenderTargetTexture());
+  const auto& color_image_vk = TextureVK::Cast(
+      *render_target_.GetColorAttachments().find(0u)->second.texture);
   auto desc_sets_result = AllocateAndBindDescriptorSets(
       vk_context, encoder, commands_, color_image_vk);
   if (!desc_sets_result.ok()) {

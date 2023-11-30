@@ -13,6 +13,7 @@
 layout(constant_id = 0) const int blend_type = 0;
 layout(constant_id = 1) const int supports_decal = 1;
 
+#ifdef IMPELLER_TARGET_OPENGLES
 layout(set = 0,
        binding = 0,
        input_attachment_index = 0) uniform subpassInput uSub;
@@ -20,6 +21,15 @@ layout(set = 0,
 vec4 ReadDestination() {
   return subpassLoad(uSub);
 }
+#else
+layout(set = 0,
+       binding = 0,
+       input_attachment_index = 0) uniform subpassInputMS uSub;
+
+vec4 ReadDestination() {
+  return subpassLoad(uSub, gl_SampleID);
+}
+#endif
 
 uniform sampler2D texture_sampler_src;
 
