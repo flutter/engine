@@ -54,6 +54,8 @@ Matrix MakeAnchorScale(const Point& anchor, Vector2 scale) {
          Matrix::MakeTranslation({-anchor.x, -anchor.y, 0});
 }
 
+/// Makes a subpass that will render the scaled down input and add the
+/// transparent gutter required for the blur halo.
 std::shared_ptr<Texture> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
