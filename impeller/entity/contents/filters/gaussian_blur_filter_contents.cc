@@ -17,6 +17,17 @@ using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
 using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
 
 namespace {
+
+std::optional<Rect> ExpandCoverageHint(const std::optional<Rect>& coverage_hint,
+                                       const Matrix& source_to_local_transform,
+                                       const Vector2& padding) {
+  if (!coverage_hint.has_value()) {
+    return std::nullopt;
+  }
+  Vector2 transformed_padding = (source_to_local_transform * padding).Abs();
+  return coverage_hint->Expand(transformed_padding);
+}
+
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
   SamplerDescriptor sampler_desc;
@@ -66,7 +77,8 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         frame_info.alpha = 1.0;
 
         // Insert transparent gutter around the downsampled image so the blur
-        // creates a halo effect.
+        // creates a halo effect. This compensates for when the expanded clip
+        // region can't give us the full gutter we want.
         Vector2 texture_size = Vector2(input_texture->GetSize());
         Quad vertices =
             MakeAnchorScale({0.5, 0.5},
@@ -106,6 +118,8 @@ std::shared_ptr<Texture> MakeBlurSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const GaussianBlurFragmentShader::BlurInfo& blur_info) {
+  // TODO(gaaclarke): This blurs the whole image, but because we know the clip
+  //                  region we could focus on just blurring that.
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
@@ -201,19 +215,18 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   Scalar blur_radius = CalculateBlurRadius(sigma_);
-  Scalar desired_scalar = CalculateScale(sigma_);
-  // TODO(jonahwilliams): if scaling value is 1.0, then skip the downsample
-  // pass.
-
-  Vector2 downsample_scalar(desired_scalar, desired_scalar);
   Vector2 padding(ceil(blur_radius), ceil(blur_radius));
 
-  std::optional<Rect> expanded_coverage_hint;
-  if (coverage_hint.has_value()) {
-    Matrix transform = entity.GetTransform() * effect_transform.Basis();
-    Vector2 transformed_padding = (transform * padding).Abs();
-    expanded_coverage_hint = coverage_hint->Expand(transformed_padding);
-  }
+  // Apply as much of the desired padding as possible from the source. This may
+  // be ignored so must be accounted for in the downsample pass by adding a
+  // transparent gutter.
+  std::optional<Rect> expanded_coverage_hint = ExpandCoverageHint(
+      coverage_hint, entity.GetTransform() * effect_transform, padding);
+  // TODO(gaaclarke): How much of the gutter is thrown away can be used to
+  //                  adjust the padding that is added in the downsample pass.
+  //                  For example, if we get all the padding we requested from
+  //                  the expanded_coverage_hint, there is no need to add a
+  //                  transparent gutter.
 
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
@@ -227,6 +240,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 entity.GetClipDepth());  // No blur to render.
   }
 
+  Scalar desired_scalar = CalculateScale(sigma_);
+  Vector2 downsample_scalar(desired_scalar, desired_scalar);
   Vector2 padded_size =
       Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
   Vector2 downsampled_size = padded_size * downsample_scalar;
