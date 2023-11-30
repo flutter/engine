@@ -286,8 +286,12 @@ extern CFTimeInterval display_link_target;
                                                              width:_drawableSize.width
                                                             height:_drawableSize.height
                                                          mipmapped:NO];
-      textureDescriptor.usage =
-          MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget | MTLTextureUsageShaderWrite;
+      if (_framebufferOnly) {
+        textureDescriptor.usage = MTLTextureUsageRenderTarget;
+      } else {
+        textureDescriptor.usage =
+            MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+      }
       id<MTLTexture> texture = [self.device newTextureWithDescriptor:textureDescriptor
                                                            iosurface:(__bridge IOSurfaceRef)surface
                                                                plane:0];
