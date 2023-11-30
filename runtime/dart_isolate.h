@@ -413,7 +413,7 @@ class DartIsolate : public UIDartState {
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
   std::string domain_network_policy_;
-  bool is_spawning_in_group_;
+  const bool is_spawning_in_group_;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
