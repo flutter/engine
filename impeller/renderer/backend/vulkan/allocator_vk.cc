@@ -190,7 +190,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
     } else {
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
     }
-    if (mode == StorageMode::kDeviceTransient && supports_framebuffer_fetch) {
+    if (supports_framebuffer_fetch) {
       vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
     }
   }

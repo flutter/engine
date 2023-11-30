@@ -29,7 +29,8 @@ namespace impeller {
 
 static vk::AttachmentDescription CreateAttachmentDescription(
     const Attachment& attachment,
-    const std::shared_ptr<Texture> Attachment::*texture_ptr) {
+    const std::shared_ptr<Texture> Attachment::*texture_ptr,
+    bool supports_framebuffer_fetch) {
   const auto& texture = attachment.*texture_ptr;
   if (!texture) {
     return {};
@@ -51,9 +52,9 @@ static vk::AttachmentDescription CreateAttachmentDescription(
     store_action = StoreAction::kStore;
   }
 
-  if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
-      current_layout != vk::ImageLayout::eUndefined) {
-    // Note: This should incur a barrier.
+  // Always insert a barrier to transition to color attachment optimal.
+  if (supports_framebuffer_fetch) {
+  } else {
     current_layout = vk::ImageLayout::eGeneral;
   }
 
@@ -61,7 +62,8 @@ static vk::AttachmentDescription CreateAttachmentDescription(
                                      desc.sample_count,  //
                                      load_action,        //
                                      store_action,       //
-                                     current_layout      //
+                                     current_layout,
+                                     supports_framebuffer_fetch  //
   );
 }
 
@@ -120,14 +122,18 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
 
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
     color_refs[bind_point] = vk::AttachmentReference{
-        static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
+        static_cast<uint32_t>(attachments.size()),
+        supports_framebuffer_fetch ? vk::ImageLayout::eColorAttachmentOptimal
+                                   : vk::ImageLayout::eGeneral};
     attachments.emplace_back(
         CreateAttachmentDescription(color, &Attachment::texture));
     SetTextureLayout(color, attachments.back(), command_buffer,
                      &Attachment::texture);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
-          static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
+          static_cast<uint32_t>(attachments.size()),
+          supports_framebuffer_fetch ? vk::ImageLayout::eColorAttachmentOptimal
+                                     : vk::ImageLayout::eGeneral};
       attachments.emplace_back(
           CreateAttachmentDescription(color, &Attachment::resolve_texture));
       SetTextureLayout(color, attachments.back(), command_buffer,
