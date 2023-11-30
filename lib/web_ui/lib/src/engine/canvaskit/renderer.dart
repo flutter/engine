@@ -193,9 +193,18 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   ui.ImageFilter composeImageFilters(
-          {required ui.ImageFilter outer, required ui.ImageFilter inner}) =>
-      CkImageFilter.compose(
+      {required ui.ImageFilter outer, required ui.ImageFilter inner}) {
+    if (outer is EngineColorFilter) {
+      final CkColorFilter colorFilter = createCkColorFilter(outer)!;
+      outer = CkColorFilterImageFilter(colorFilter: colorFilter);
+    }
+    if (inner is EngineColorFilter) {
+      final CkColorFilter colorFilter = createCkColorFilter(inner)!;
+      inner = CkColorFilterImageFilter(colorFilter: colorFilter);
+    }
+    return CkImageFilter.compose(
           outer: outer as CkImageFilter, inner: inner as CkImageFilter);
+  }
 
   @override
   Future<ui.Codec> instantiateImageCodec(
