@@ -52,8 +52,17 @@ class DomManager {
     final DomElement semanticsHost = domDocument.createElement(DomManager.semanticsHostTagName);
     final DomElement announcementsHost = createDomElement(DomManager.announcementsHostTagName);
 
-    // Root element children.
+    // This `flt-view-id` attribute does not serve a function in the engine's
+    // operation, but it's useful for debugging, test automation, and DOM
+    // interop use-cases. It allows one to use CSS selectors to find views by
+    // their identifiers.
+    //
+    // Example:
+    //
+    //     document.querySelector('flutter-view[flt-view-id="$viewId"]')
     rootElement.setAttribute('flt-view-id', viewId);
+
+    // Root element children.
     rootElement.appendChild(platformViewsHost);
     rootElement.appendChild(textEditingHost);
 
