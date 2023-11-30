@@ -12,10 +12,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -25,7 +22,6 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -95,7 +91,38 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
     setUpForTextClipboardTests(mockActivity);
+
+    // Primary clip contains non-text media.
     ClipData clip = ClipData.newPlainText("label", "Text");
+    assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    clipboardManager.setPrimaryClip(clip);
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+  }
+
+  @Test
+  public void platformPlugin_getClipboardDataIsNonNullWhenIOExceptionThrown() throws IOException {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    Activity mockActivity = mock(Activity.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    when(mockActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
+    setUpForTextClipboardTests(mockActivity);
+    ContentResolver contentResolver = mock(ContentResolver.class);
+    ClipData.Item mockItem = mock(ClipData.Item.class);
+    Uri mockUri = mock(Uri.class);
+    AssetFileDescriptor mockAssetFileDescriptor = mock(AssetFileDescriptor.class);
+
+    when(mockActivity.getContentResolver()).thenReturn(contentResolver);
+    when(mockUri.getScheme()).thenReturn("content");
+    when(mockItem.getText()).thenReturn(null);
+    when(mockItem.getUri()).thenReturn(mockUri);
+    when(contentResolver.openTypedAssetFileDescriptor(any(Uri.class), any(), any()))
+        .thenReturn(mockAssetFileDescriptor);
+    when(mockItem.coerceToText(mockActivity)).thenReturn("something non-null");
+    doThrow(new IOException()).when(mockAssetFileDescriptor).close();
+
+    ClipData clip = new ClipData("label", new String[0], mockItem);
 
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     clipboardManager.setPrimaryClip(clip);
@@ -190,25 +217,6 @@ public class PlatformPluginTest {
 
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
-
-    // Still return text when the AssetFileDescriptor throws an IOException.
-    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
-    ClipDescription clipDescription =
-        new ClipDescription(
-            "label",
-            new String[] {
-              ClipDescription.MIMETYPE_TEXT_PLAIN, ClipDescription.MIMETYPE_TEXT_URILIST
-            });
-    ClipData.Item clipDataItem = new ClipData.Item("Text", null, uri);
-    ClipData clipData = new ClipData(clipDescription, clipDataItem);
-    clipboardManager.setPrimaryClip(clipData);
-    AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
-    doReturn(fakeAssetFileDescriptor)
-        .when(contentResolver)
-        .openTypedAssetFileDescriptor(eq(uri), anyString(), eq(null));
-    doThrow(new IOException()).when(fakeAssetFileDescriptor).close();
-    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
-    verify(fakeAssetFileDescriptor).close();
   }
 
   @SuppressWarnings("deprecation")

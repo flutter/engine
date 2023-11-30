@@ -11,11 +11,8 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
-<<<<<<< HEAD
-import android.net.Uri;
-=======
 import android.content.res.AssetFileDescriptor;
->>>>>>> upstream/main
+import android.net.Uri;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
@@ -527,7 +524,6 @@ public class PlatformPlugin {
         // First, try getting clipboard data as text; no further processing
         // required if so.
         itemText = item.getText();
-
         if (itemText == null) {
           // Clipboard data does not contain text, so check whether or not it
           // contains a URI to extract text from.
@@ -537,15 +533,28 @@ public class PlatformPlugin {
             Log.w(
                 TAG, "Clipboard item contained no textual content nor a URI to retrieve it from.");
             return null;
-          } else if (!canExtractTextFromUri(itemUri)) {
-            Log.w(TAG, "Clipboard text was unable to be received from content URI.");
+          }
+
+          // Will only try to extract text from URI if it has the content scheme.
+          String uriScheme = itemUri.getScheme();
+
+          if (!uriScheme.equals("content")) {
+            Log.w(
+                TAG,
+                "Clipboard item contains a Uri with scheme '" + uriScheme + "'that is unhandled.");
             return null;
           }
+
+          AssetFileDescriptor assetFileDescriptor =
+              activity.getContentResolver().openTypedAssetFileDescriptor(itemUri, "text/*", null);
+
+          // Safely return clipboard data coerced into text; will return either
+          // itemText or text retrieved from its URI.
+          itemText = item.coerceToText(activity);
+          if (assetFileDescriptor != null) assetFileDescriptor.close();
         }
 
-        // Safely return clipboard data coerced into text; will return either
-        // itemText or text retrieved from its URI.
-        return item.coerceToText(activity);
+        return itemText;
       }
     } catch (SecurityException e) {
       Log.w(
@@ -555,32 +564,15 @@ public class PlatformPlugin {
               + "https://developer.android.com/guide/topics/permissions/overview",
           e);
       return null;
+    } catch (FileNotFoundException e) {
+      Log.w(TAG, "Clipboard text was unable to be received from content URI.");
+      return null;
     } catch (IOException e) {
-      Log.w(TAG, "Failed to close AssetFileDescriptor while accessing clipboard data.", e);
-      return charSequence;
+      Log.w(TAG, "Failed to close AssetFileDescriptor while trying to read text from URI.", e);
+      return itemText;
     }
 
     return null;
-  }
-
-  private boolean canExtractTextFromUri(Uri uri) {
-    // Will only try to extract text from URI if it has the content scheme.
-    String uriScheme = uri.getScheme();
-
-    if (!uriScheme.equals("content")) {
-      Log.w(TAG, "Clipboard item contains a Uri with scheme '" + uriScheme + "'that is unhandled.");
-      return false;
-    }
-
-    try {
-      AssetFileDescriptor assetFileDescriptor = activity.getContentResolver().openTypedAssetFileDescriptor(uri, "text/*", null);
-      if (assetFileDescriptor != null) assetFileDescriptor.close();
-    } catch (FileNotFoundException e) {
-      return false;
-    }
-
-    // Text can successfully be extracted from content URI.
-    return true;
   }
 
   private void setClipboardData(String text) {
