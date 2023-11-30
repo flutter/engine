@@ -143,8 +143,9 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
     jobject surface_texture_wrapper = surface_texture_.obj();
 
     // TODO: This crashes saying it cannot find the class on path?
-    jclass surface_texture_wrapper_class = env->FindClass(
-        "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper");
+    jclass surface_texture_wrapper_class =
+        env->GetObjectClass(surface_texture_wrapper);
+    FML_LOG(ERROR) << "Class: " << surface_texture_wrapper_class;
     jmethodID surface_texture_method =
         env->GetMethodID(surface_texture_wrapper_class, "surfaceTexture",
                          "()Landroid/graphics/SurfaceTexture;");
