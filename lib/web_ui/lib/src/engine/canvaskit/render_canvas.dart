@@ -6,8 +6,8 @@ import 'dart:js_interop';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../display.dart';
 import '../dom.dart';
-import '../window.dart';
 
 /// A visible (on-screen) canvas that can display bitmaps produced by CanvasKit
 /// in the (off-screen) SkSurface which is backed by an OffscreenCanvas.
@@ -53,6 +53,9 @@ class RenderCanvas {
   late final DomCanvasRenderingContextBitmapRenderer renderContext =
       canvasElement.contextBitmapRenderer;
 
+  late final DomCanvasRenderingContext2D renderContext2d =
+      canvasElement.context2D;
+
   double _currentDevicePixelRatio = -1;
 
   /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
@@ -65,12 +68,13 @@ class RenderCanvas {
   /// match the size of the window precisely we use the most precise floating
   /// point value we can get.
   void _updateLogicalHtmlCanvasSize() {
-    final double logicalWidth = _pixelWidth / window.devicePixelRatio;
-    final double logicalHeight = _pixelHeight / window.devicePixelRatio;
+    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final double logicalWidth = _pixelWidth / devicePixelRatio;
+    final double logicalHeight = _pixelHeight / devicePixelRatio;
     final DomCSSStyleDeclaration style = canvasElement.style;
     style.width = '${logicalWidth}px';
     style.height = '${logicalHeight}px';
-    _currentDevicePixelRatio = window.devicePixelRatio;
+    _currentDevicePixelRatio = devicePixelRatio;
   }
 
   /// Render the given [bitmap] with this [RenderCanvas].
@@ -82,6 +86,25 @@ class RenderCanvas {
     renderContext.transferFromImageBitmap(bitmap);
   }
 
+  void renderWithNoBitmapSupport(
+    DomCanvasImageSource imageSource,
+    int sourceHeight,
+    ui.Size size,
+  ) {
+    _ensureSize(size);
+    renderContext2d.drawImage(
+      imageSource,
+      0,
+      sourceHeight - size.height,
+      size.width,
+      size.height,
+      0,
+      0,
+      size.width,
+      size.height,
+    );
+  }
+
   /// Ensures that this canvas can draw a frame of the given [size].
   void _ensureSize(ui.Size size) {
     // Check if the frame is the same size as before, and if so, we don't need
@@ -90,7 +113,7 @@ class RenderCanvas {
         size.height.ceil() == _pixelHeight) {
       // The existing canvas doesn't need to be resized (unless the device pixel
       // ratio changed).
-      if (window.devicePixelRatio != _currentDevicePixelRatio) {
+      if (EngineFlutterDisplay.instance.devicePixelRatio != _currentDevicePixelRatio) {
         _updateLogicalHtmlCanvasSize();
       }
       return;

@@ -6,12 +6,19 @@ package io.flutter.plugin.platform;
 
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -20,9 +27,12 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.ClipData;
+import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.net.Uri;
 import android.os.Build;
 import android.view.View;
@@ -41,6 +51,8 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
@@ -84,18 +96,39 @@ public class PlatformPluginTest {
     PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
     PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
 
+    // Successfully get the contents of the primary clip when they contain text.
     ClipboardContentFormat clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
     ClipData clip = ClipData.newPlainText("label", "Text");
     clipboardManager.setPrimaryClip(clip);
     assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
 
-    ContentResolver contentResolver = ctx.getContentResolver();
+    // Return null when the primary clip contains non-text media.
+    ContentResolver contentResolver = spy(ctx.getContentResolver());
     when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
     Uri uri = Uri.parse("content://media/external_primary/images/media/");
     clip = ClipData.newUri(contentResolver, "URI", uri);
     clipboardManager.setPrimaryClip(clip);
     assertNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+
+    // Still return text when the AssetFileDescriptor throws an IOException.
+    when(fakeActivity.getContentResolver()).thenReturn(contentResolver);
+    ClipDescription clipDescription =
+        new ClipDescription(
+            "label",
+            new String[] {
+              ClipDescription.MIMETYPE_TEXT_PLAIN, ClipDescription.MIMETYPE_TEXT_URILIST
+            });
+    ClipData.Item clipDataItem = new ClipData.Item("Text", null, uri);
+    ClipData clipData = new ClipData(clipDescription, clipDataItem);
+    clipboardManager.setPrimaryClip(clipData);
+    AssetFileDescriptor fakeAssetFileDescriptor = mock(AssetFileDescriptor.class);
+    doReturn(fakeAssetFileDescriptor)
+        .when(contentResolver)
+        .openTypedAssetFileDescriptor(eq(uri), anyString(), eq(null));
+    doThrow(new IOException()).when(fakeAssetFileDescriptor).close();
+    assertNotNull(platformPlugin.mPlatformMessageHandler.getClipboardData(clipboardFormat));
+    verify(fakeAssetFileDescriptor).close();
   }
 
   @SuppressWarnings("deprecation")
@@ -601,5 +634,36 @@ public class PlatformPluginTest {
     platformPlugin.mPlatformMessageHandler.popSystemNavigator();
 
     verify(mockActivity, times(1)).finish();
+  }
+
+  @Test
+  public void startChoosenActivityWhenSharingText() {
+    Activity mockActivity = mock(Activity.class);
+    PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
+    // Mock Intent.createChooser (in real application it opens a chooser where the user can
+    // select which application will be used to share the selected text).
+    Intent choosenIntent = new Intent();
+    MockedStatic<Intent> intentClass = mockStatic(Intent.class);
+    ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+    intentClass
+        .when(() -> Intent.createChooser(intentCaptor.capture(), any()))
+        .thenReturn(choosenIntent);
+
+    final String expectedContent = "Flutter";
+    platformPlugin.mPlatformMessageHandler.share(expectedContent);
+
+    // Activity.startActivity should have been called.
+    verify(mockActivity, times(1)).startActivity(choosenIntent);
+
+    // The intent action created by the plugin and passed to Intent.createChooser should be
+    // 'Intent.ACTION_SEND'.
+    Intent sendToIntent = intentCaptor.getValue();
+    assertEquals(sendToIntent.getAction(), Intent.ACTION_SEND);
+    assertEquals(sendToIntent.getType(), "text/plain");
+    assertEquals(sendToIntent.getStringExtra(Intent.EXTRA_TEXT), expectedContent);
   }
 }

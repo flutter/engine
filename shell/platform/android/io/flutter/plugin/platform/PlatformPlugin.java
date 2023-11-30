@@ -11,6 +11,8 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.res.AssetFileDescriptor;
 import android.os.Build;
 import android.view.HapticFeedbackConstants;
 import android.view.SoundEffectConstants;
@@ -25,6 +27,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 /** Android implementation of the platform plugin. */
@@ -142,6 +145,11 @@ public class PlatformPlugin {
         @Override
         public boolean clipboardHasStrings() {
           return PlatformPlugin.this.clipboardHasStrings();
+        }
+
+        @Override
+        public void share(@NonNull String text) {
+          PlatformPlugin.this.share(text);
         }
       };
 
@@ -512,14 +520,21 @@ public class PlatformPlugin {
 
     if (!clipboard.hasPrimaryClip()) return null;
 
+    CharSequence charSequence = null;
     try {
       ClipData clip = clipboard.getPrimaryClip();
       if (clip == null) return null;
       if (format == null || format == PlatformChannel.ClipboardContentFormat.PLAIN_TEXT) {
         ClipData.Item item = clip.getItemAt(0);
+        AssetFileDescriptor assetFileDescriptor = null;
         if (item.getUri() != null)
-          activity.getContentResolver().openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
-        return item.coerceToText(activity);
+          assetFileDescriptor =
+              activity
+                  .getContentResolver()
+                  .openTypedAssetFileDescriptor(item.getUri(), "text/*", null);
+        charSequence = item.coerceToText(activity);
+        if (assetFileDescriptor != null) assetFileDescriptor.close();
+        return charSequence;
       }
     } catch (SecurityException e) {
       Log.w(
@@ -531,6 +546,9 @@ public class PlatformPlugin {
       return null;
     } catch (FileNotFoundException e) {
       return null;
+    } catch (IOException e) {
+      Log.w(TAG, "Failed to close AssetFileDescriptor while accessing clipboard data.", e);
+      return charSequence;
     }
 
     return null;
@@ -557,5 +575,14 @@ public class PlatformPlugin {
       return false;
     }
     return description.hasMimeType("text/*");
+  }
+
+  private void share(@NonNull String text) {
+    Intent intent = new Intent();
+    intent.setAction(Intent.ACTION_SEND);
+    intent.setType("text/plain");
+    intent.putExtra(Intent.EXTRA_TEXT, text);
+
+    activity.startActivity(Intent.createChooser(intent, null));
   }
 }

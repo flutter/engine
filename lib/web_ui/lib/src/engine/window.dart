@@ -31,6 +31,8 @@ const bool debugPrintPlatformMessages = false;
 /// The view ID for the implicit flutter view provided by the platform.
 const int kImplicitViewId = 0;
 
+int _nextViewId = kImplicitViewId + 1;
+
 /// Represents all views in the Flutter Web Engine.
 ///
 /// In addition to everything defined in [ui.FlutterView], this class adds
@@ -41,7 +43,6 @@ base class EngineFlutterView implements ui.FlutterView {
   /// The [hostElement] parameter specifies the container in the DOM into which
   /// the Flutter view will be rendered.
   factory EngineFlutterView(
-    int viewId,
     EnginePlatformDispatcher platformDispatcher,
     DomElement hostElement,
   ) = _EngineFlutterViewImpl;
@@ -55,12 +56,16 @@ base class EngineFlutterView implements ui.FlutterView {
     DomElement? hostElement,
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
         dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
-    platformDispatcher.registerView(this);
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
     embeddingStrategy.attachGlassPane(dom.rootElement);
     registerHotRestartListener(dispose);
   }
+
+  static EngineFlutterWindow implicit(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) => EngineFlutterWindow._(platformDispatcher, hostElement);
 
   @override
   final int viewId;
@@ -80,8 +85,10 @@ base class EngineFlutterView implements ui.FlutterView {
   /// tree and any event listeners.
   @mustCallSuper
   void dispose() {
+    if (isDisposed) {
+      return;
+    }
     isDisposed = true;
-    platformDispatcher.unregisterView(this);
     dimensionsProvider.close();
     dom.rootElement.remove();
     // TODO(harryterkelsen): What should we do about this in multi-view?
@@ -89,8 +96,9 @@ base class EngineFlutterView implements ui.FlutterView {
   }
 
   @override
-  void render(ui.Scene scene) {
+  void render(ui.Scene scene, {ui.Size? size}) {
     assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    // TODO(goderbauer): Respect the provided size when "physicalConstraints" are not always tight. See TODO on "physicalConstraints".
     platformDispatcher.render(scene, this);
   }
 
@@ -113,6 +121,10 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+
+  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
+  @override
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
 
   @override
   ui.Size get physicalSize {
@@ -186,19 +198,17 @@ base class EngineFlutterView implements ui.FlutterView {
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._();
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement hostElement,
+  ) : super._(_nextViewId++, platformDispatcher, hostElement);
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
-  EngineFlutterWindow(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
+  EngineFlutterWindow._(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) : super._(kImplicitViewId, platformDispatcher, hostElement) {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
@@ -616,11 +626,14 @@ EngineFlutterWindow? _window;
 EngineFlutterWindow ensureImplicitViewInitialized({
   DomElement? hostElement,
 }) {
-  return _window ??= EngineFlutterWindow(
-    kImplicitViewId,
-    EnginePlatformDispatcher.instance,
-    hostElement,
-  );
+  if (_window == null) {
+    _window = EngineFlutterView.implicit(
+      EnginePlatformDispatcher.instance,
+      hostElement,
+    );
+    EnginePlatformDispatcher.instance.viewManager.registerView(_window!);
+  }
+  return _window!;
 }
 
 /// The Web implementation of [ui.ViewPadding].
@@ -640,4 +653,85 @@ class ViewPadding implements ui.ViewPadding {
   final double right;
   @override
   final double bottom;
+}
+
+class ViewConstraints implements ui.ViewConstraints {
+  const ViewConstraints({
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  });
+
+  ViewConstraints.tight(ui.Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  @override
+  final double minWidth;
+  @override
+  final double maxWidth;
+  @override
+  final double minHeight;
+  @override
+  final double maxHeight;
+
+  @override
+  bool isSatisfiedBy(ui.Size size) {
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+
+  @override
+  bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+
+  @override
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is ViewConstraints
+        && other.minWidth == minWidth
+        && other.maxWidth == maxWidth
+        && other.minHeight == minHeight
+        && other.maxHeight == maxHeight;
+  }
+
+  @override
+  int get hashCode => Object.hash(minWidth, maxWidth, minHeight, maxHeight);
+
+  @override
+  String toString() {
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'ViewConstraints(biggest)';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity &&
+        minHeight == 0 && maxHeight == double.infinity) {
+      return 'ViewConstraints(unconstrained)';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'ViewConstraints($width, $height)';
+  }
 }
