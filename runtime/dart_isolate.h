@@ -223,6 +223,16 @@ class DartIsolate : public UIDartState {
       const UIDartState::Context& context,
       const DartIsolate* spawning_isolate = nullptr);
 
+  static std::weak_ptr<DartIsolate> CreateRunningPlatformIsolate(
+      const Settings& settings,
+      const fml::RefPtr<const DartSnapshot>& isolate_snapshot,
+      std::unique_ptr<PlatformConfiguration> platform_configuration,
+      Flags isolate_flags,
+      const fml::closure& isolate_create_callback,
+      const fml::closure& isolate_shutdown_callback,
+      // std::unique_ptr<IsolateConfiguration> isolate_configuration,
+      const DartIsolate* spawning_isolate);
+
   // |UIDartState|
   ~DartIsolate() override;
 
@@ -391,7 +401,7 @@ class DartIsolate : public UIDartState {
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
 
- private:
+  // private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
    public:

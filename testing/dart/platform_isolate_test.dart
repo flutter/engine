@@ -11,11 +11,11 @@ void main() {
   test('PlatformIsolate', () async {
     print('this thread: ${PlatformIsolate.getCurrentThreadId()}');
     expect(true, true);
-    final platIsoThread = await Isolate.run(
+    final platIsoThread = await PlatformIsolate.run(
         () => PlatformIsolate.getCurrentThreadId(),
         debugName: 'PlatformIsolate');
     print('plat thread: $platIsoThread');
-    final platIsoThread2 = await Isolate.run(
+    final platIsoThread2 = await PlatformIsolate.run(
         () => PlatformIsolate.getCurrentThreadId(),
         debugName: 'PlatformIsolate');
     print('plat thread: $platIsoThread2');

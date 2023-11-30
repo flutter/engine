@@ -343,8 +343,6 @@ int RunTester(const flutter::Settings& settings,
             << PlatformIsolateNativeApi::GetCurrentThreadId() << "\t"
             << current_task_runner.get() << std::endl;
 
-  getchar();
-
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
         thread_label, ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |

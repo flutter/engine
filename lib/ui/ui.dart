@@ -17,7 +17,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate' show SendPort, Isolate;
+import 'dart:isolate' show SendPort, Isolate, RawReceivePort, RemoteError, IsolateSpawnException, Capability;
 import 'dart:math' as math;
 import 'dart:nativewrappers';
 import 'dart:typed_data';

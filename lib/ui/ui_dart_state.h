@@ -180,7 +180,7 @@ class UIDartState : public tonic::DartState {
 
   const std::string& GetAdvisoryScriptURI() const;
 
- private:
+ protected:
   void DidSetIsolate() override;
 
   const TaskObserverAdd add_callback_;

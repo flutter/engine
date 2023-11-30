@@ -15,6 +15,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/snapshot/snapshot.h"
 #include "flutter/lib/ui/text/font_collection.h"
+#include "flutter/lib/ui/window/platform_isolate.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
@@ -60,6 +61,7 @@ Engine::Engine(
       task_runners_(task_runners),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
+  PlatformIsolateNativeApi::global_settings = settings_;
 }
 
 Engine::Engine(Delegate& delegate,
