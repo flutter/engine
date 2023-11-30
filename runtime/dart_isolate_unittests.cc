@@ -615,22 +615,19 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
     // This feels a little brittle, but the alternative seems to be making
     // DartIsolate have virtual methods so it can be mocked or exposing weird
     // test-only API on IsolateConfiguration.
-    settings
-        .application_kernels = fml::MakeCopyable([&get_kernel_count,
-                                                  mapping = std::move(
-                                                      mappings
-                                                          .front())]() mutable
-                                                 -> Mappings {
-      get_kernel_count++;
-      if (get_kernel_count > 1) {
-        FML_LOG(ERROR)
-            << "Unexpectedly got more than one call for the kernel mapping.";
-        abort();
-      }
-      std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
-      kernel_mappings.emplace_back(std::move(mapping));
-      return kernel_mappings;
-    });
+    settings.application_kernels = fml::MakeCopyable(
+        [&get_kernel_count,
+         mapping = std::move(mappings.front())]() mutable -> Mappings {
+          get_kernel_count++;
+          EXPECT_EQ(get_kernel_count, 1u)
+              << "Unexpectedly got more than one call for the kernel mapping.";
+          EXPECT_TRUE(mapping);
+          std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
+          if (mapping) {
+            kernel_mappings.emplace_back(std::move(mapping));
+          }
+          return kernel_mappings;
+        });
   }
 
   std::shared_ptr<DartIsolate> root_isolate;
