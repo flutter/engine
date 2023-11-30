@@ -196,19 +196,8 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
     const DartIsolate* spawning_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::CreateRootIsolate");
 
-  // The child isolate preparer is null but will be set when the isolate is
-  // being prepared to run.
-  auto isolate_group_data =
-      std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
-          std::shared_ptr<DartIsolateGroupData>(new DartIsolateGroupData(
-              settings,                            // settings
-              std::move(isolate_snapshot),         // isolate snapshot
-              context.advisory_script_uri,         // advisory URI
-              context.advisory_script_entrypoint,  // advisory entrypoint
-              nullptr,                             // child isolate preparer
-              isolate_create_callback,             // isolate create callback
-              isolate_shutdown_callback            // isolate shutdown callback
-              )));
+  // Only needed if this is the main isolate for the group.
+  std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data;
 
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(
@@ -223,24 +212,40 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
   IsolateMaker isolate_maker;
   if (spawning_isolate) {
-    isolate_maker = [spawning_isolate](
-                        std::shared_ptr<DartIsolateGroupData>*
-                            isolate_group_data,
-                        std::shared_ptr<DartIsolate>* isolate_data,
-                        Dart_IsolateFlags* flags, char** error) {
-      return Dart_CreateIsolateInGroup(
-          /*group_member=*/spawning_isolate->isolate(),
-          /*name=*/(*isolate_group_data)->GetAdvisoryScriptEntrypoint().c_str(),
-          /*shutdown_callback=*/
-          reinterpret_cast<Dart_IsolateShutdownCallback>(
-              DartIsolate::SpawnIsolateShutdownCallback),
-          /*cleanup_callback=*/
-          reinterpret_cast<Dart_IsolateCleanupCallback>(
-              DartIsolateCleanupCallback),
-          /*child_isolate_data=*/isolate_data,
-          /*error=*/error);
-    };
+    isolate_maker =
+        [spawning_isolate](
+            std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
+            std::shared_ptr<DartIsolate>* isolate_data,
+            Dart_IsolateFlags* flags, char** error) {
+          return Dart_CreateIsolateInGroup(
+              /*group_member=*/spawning_isolate->isolate(),
+              /*name=*/
+              spawning_isolate->GetIsolateGroupData()
+                  .GetAdvisoryScriptEntrypoint()
+                  .c_str(),
+              /*shutdown_callback=*/
+              reinterpret_cast<Dart_IsolateShutdownCallback>(
+                  DartIsolate::SpawnIsolateShutdownCallback),
+              /*cleanup_callback=*/
+              reinterpret_cast<Dart_IsolateCleanupCallback>(
+                  DartIsolateCleanupCallback),
+              /*child_isolate_data=*/isolate_data,
+              /*error=*/error);
+        };
   } else {
+    // The child isolate preparer is null but will be set when the isolate is
+    // being prepared to run.
+    isolate_group_data =
+        std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
+            std::shared_ptr<DartIsolateGroupData>(new DartIsolateGroupData(
+                settings,                            // settings
+                std::move(isolate_snapshot),         // isolate snapshot
+                context.advisory_script_uri,         // advisory URI
+                context.advisory_script_entrypoint,  // advisory entrypoint
+                nullptr,                             // child isolate preparer
+                isolate_create_callback,             // isolate create callback
+                isolate_shutdown_callback  // isolate shutdown callback
+                )));
     isolate_maker = [](std::shared_ptr<DartIsolateGroupData>*
                            isolate_group_data,
                        std::shared_ptr<DartIsolate>* isolate_data,
