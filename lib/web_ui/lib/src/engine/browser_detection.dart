@@ -212,29 +212,26 @@ bool get isIOS15 {
 /// rendering to be flipped upside down.
 // TODO(harryterkelsen): Remove this check once we stop supporting Chrome 110
 // and earlier, https://github.com/flutter/flutter/issues/139186.
-bool get isChrome110OrOlderOnWindows {
-  if (debugIsChrome110OrOlderOnWindows != null) {
-    return debugIsChrome110OrOlderOnWindows!;
+bool get isChrome110OrOlder {
+  if (debugIsChrome110OrOlder != null) {
+    return debugIsChrome110OrOlder!;
   }
-  if (_cachedIsChrome110OrOlderOnWindows != null) {
-    return _cachedIsChrome110OrOlderOnWindows!;
-  }
-  if (operatingSystem != OperatingSystem.windows) {
-    return _cachedIsChrome110OrOlderOnWindows = false;
+  if (_cachedIsChrome110OrOlder != null) {
+    return _cachedIsChrome110OrOlder!;
   }
   final RegExp chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
   final RegExpMatch? match =
       chromeRegexp.firstMatch(domWindow.navigator.userAgent);
   if (match != null) {
     final int chromeVersion = int.parse(match.group(2)!);
-    return _cachedIsChrome110OrOlderOnWindows = chromeVersion <= 110;
+    return _cachedIsChrome110OrOlder = chromeVersion <= 110;
   }
-  return _cachedIsChrome110OrOlderOnWindows = false;
+  return _cachedIsChrome110OrOlder = false;
 }
 
 // Cache the result of checking if the app is running on Chrome 110 on Windows
 // since we check this on every frame.
-bool? _cachedIsChrome110OrOlderOnWindows;
+bool? _cachedIsChrome110OrOlder;
 
 /// If set to true pretends that the current browser is iOS Safari.
 ///
@@ -267,7 +264,7 @@ bool get isWasm => const bool.fromEnvironment('dart.library.ffi');
 bool? debugIsIOS15;
 
 /// Use in tests to simulated the detection of Chrome 110 or older on Windows.
-bool? debugIsChrome110OrOlderOnWindows;
+bool? debugIsChrome110OrOlder;
 
 int? _cachedWebGLVersion;
 
