@@ -27,7 +27,9 @@ layout(set = 0,
        input_attachment_index = 0) uniform subpassInputMS uSub;
 
 vec4 ReadDestination() {
-  return subpassLoad(uSub, 1);
+  return (subpassLoad(uSub, 0) + subpassLoad(uSub, 1) + subpassLoad(uSub, 2) +
+          subpassLoad(uSub, 3)) /
+         vec4(4.0);
 }
 #endif
 
