@@ -71,7 +71,7 @@ inline bool operator==(const std::optional<fuchsia::math::Rect>& a,
 
 }  // namespace math
 
-namespace composition {
+namespace ui::composition {
 
 inline bool operator==(const fuchsia::ui::composition::ContentId& a,
                        const fuchsia::ui::composition::ContentId& b) {
@@ -142,7 +142,7 @@ inline bool operator==(
   return true;
 }
 
-}  // namespace composition
+}  // namespace ui::composition
 }  // namespace fuchsia
 
 namespace flutter_runner::testing {
