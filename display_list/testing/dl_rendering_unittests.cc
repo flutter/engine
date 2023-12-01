@@ -2750,9 +2750,11 @@ class CanvasCompareTester {
 
   static sk_sp<SkTextBlob> MakeTextBlob(const std::string& string,
                                         SkScalar font_height) {
-    SkFont font(txt::GetDefaultFontManager()->matchFamilyStyle(
-                    "ahem", SkFontStyle::Normal()),
-                font_height);
+    sk_sp<SkTypeface> face = txt::GetDefaultFontManager()->matchFamilyStyle(
+                    "ahem", SkFontStyle::Normal());
+    FML_CHECK(face);
+    FML_CHECK(face->countGlyphs() > 0) << "No glyphs in font";
+    SkFont font(face, font_height);
     return SkTextBlob::MakeFromText(string.c_str(), string.size(), font,
                                     SkTextEncoding::kUTF8);
   }

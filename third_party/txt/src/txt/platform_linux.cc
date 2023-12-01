@@ -5,11 +5,11 @@
 #include "txt/platform.h"
 
 #if defined(SK_FONTMGR_FONTCONFIG_AVAILABLE)
-#include "include/ports/SkFontMgr_fontconfig.h"
+#include "third_party/skia/include/ports/SkFontMgr_fontconfig.h"
 #endif
 
 #if defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
-#include "include/ports/SkFontMgr_empty.h"
+#include "third_party/skia/include/ports/SkFontMgr_empty.h"
 #endif
 
 namespace txt {
