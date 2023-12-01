@@ -10,6 +10,7 @@
 
 #include "fml/logging.h"
 #include "gtest/gtest.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
@@ -41,6 +42,7 @@
 #include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -2525,6 +2527,39 @@ TEST_P(EntityTest, DecalSpecializationAppliedToMorphologyFilter) {
   std::vector<int32_t> expected_constants = {decal_supported};
   ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
             expected_constants);
+}
+
+TEST_P(EntityTest, FramebufferFetchPipelinesDeclareUsage) {
+  auto content_context =
+      ContentContext(GetContext(), TypographerContextSkia::Make());
+  if (!content_context.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    GTEST_SKIP() << "Framebuffer fetch not supported.";
+  }
+
+  ContentContextOptions options;
+  options.color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt;
+  auto color_burn =
+      content_context.GetFramebufferBlendColorBurnPipeline(options);
+
+  EXPECT_TRUE(color_burn->GetDescriptor().UsesSubpassInput());
+}
+
+TEST_P(EntityTest, PipelineDescriptorEqAndHash) {
+  auto desc_1 = std::make_shared<PipelineDescriptor>();
+  auto desc_2 = std::make_shared<PipelineDescriptor>();
+
+  EXPECT_TRUE(desc_1->IsEqual(*desc_2));
+  EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
+
+  desc_1->SetUseSubpassInput(UseSubpassInput::kYes);
+
+  EXPECT_FALSE(desc_1->IsEqual(*desc_2));
+  EXPECT_NE(desc_1->GetHash(), desc_2->GetHash());
+
+  desc_2->SetUseSubpassInput(UseSubpassInput::kYes);
+
+  EXPECT_TRUE(desc_1->IsEqual(*desc_2));
+  EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
 }
 
 }  // namespace testing

@@ -53,11 +53,7 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   }
 
   // Always insert a barrier to transition to color attachment optimal.
-  if (supports_framebuffer_fetch) {
-  } else {
-    current_layout = vk::ImageLayout::eGeneral;
-  }
-
+  current_layout = vk::ImageLayout::eGeneral;
   return CreateAttachmentDescription(desc.format,        //
                                      desc.sample_count,  //
                                      load_action,        //
@@ -123,19 +119,20 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
     color_refs[bind_point] = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
-        supports_framebuffer_fetch ? vk::ImageLayout::eColorAttachmentOptimal
-                                   : vk::ImageLayout::eGeneral};
-    attachments.emplace_back(
-        CreateAttachmentDescription(color, &Attachment::texture));
+        supports_framebuffer_fetch ? vk::ImageLayout::eGeneral
+                                   : vk::ImageLayout::eColorAttachmentOptimal};
+    attachments.emplace_back(CreateAttachmentDescription(
+        color, &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(color, attachments.back(), command_buffer,
                      &Attachment::texture);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()),
-          supports_framebuffer_fetch ? vk::ImageLayout::eColorAttachmentOptimal
-                                     : vk::ImageLayout::eGeneral};
-      attachments.emplace_back(
-          CreateAttachmentDescription(color, &Attachment::resolve_texture));
+          supports_framebuffer_fetch
+              ? vk::ImageLayout::eGeneral
+              : vk::ImageLayout::eColorAttachmentOptimal};
+      attachments.emplace_back(CreateAttachmentDescription(
+          color, &Attachment::resolve_texture, supports_framebuffer_fetch));
       SetTextureLayout(color, attachments.back(), command_buffer,
                        &Attachment::resolve_texture);
     }
@@ -145,8 +142,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
-    attachments.emplace_back(
-        CreateAttachmentDescription(depth.value(), &Attachment::texture));
+    attachments.emplace_back(CreateAttachmentDescription(
+        depth.value(), &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(depth.value(), attachments.back(), command_buffer,
                      &Attachment::texture);
   }
@@ -156,8 +153,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
-    attachments.emplace_back(
-        CreateAttachmentDescription(stencil.value(), &Attachment::texture));
+    attachments.emplace_back(CreateAttachmentDescription(
+        stencil.value(), &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
                      &Attachment::texture);
   }

@@ -63,11 +63,12 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
     SampleCount sample_count) {
   // Load store ops are immaterial for pass compatibility. The right ops will be
   // picked up when the pass associated with framebuffer.
-  return CreateAttachmentDescription(format,                      //
-                                     sample_count,                //
-                                     LoadAction::kDontCare,       //
-                                     StoreAction::kDontCare,      //
-                                     vk::ImageLayout::eUndefined  //
+  return CreateAttachmentDescription(format,                       //
+                                     sample_count,                 //
+                                     LoadAction::kDontCare,        //
+                                     StoreAction::kDontCare,       //
+                                     vk::ImageLayout::eUndefined,  //
+                                     false                         //
   );
 }
 
