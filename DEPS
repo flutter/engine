@@ -300,7 +300,7 @@ deps = {
    Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + '38191e2733d7cbaeaef6a3f1a942ddeb38a2ad14',
 
   'src/flutter/third_party/benchmark':
-   Var('chromium_git') + '/external/github.com/google/benchmark' + '@' + '431abd149fd76a072f821913c0340137cc755f36',
+   Var('chromium_git') + '/external/github.com/google/benchmark' + '@' + '1e96bb0ab5e758861f5bbbd4edbd0a8d9a2a7cae',
 
   'src/third_party/googletest':
    Var('chromium_git') + '/external/github.com/google/googletest' + '@' + '054a986a8513149e8374fc669a5fe40117ca6b41',
