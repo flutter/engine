@@ -12,6 +12,7 @@ import 'package:ui/ui_web/src/ui_web.dart';
 
 import '../common/matchers.dart';
 import '../common/spy.dart';
+import '../common/test_initialization.dart';
 
 EngineFlutterWindow get implicitView =>
     EnginePlatformDispatcher.instance.implicitView!;
@@ -37,8 +38,8 @@ void main() {
 }
 
 void testMain() {
-  setUpAll(() {
-    ensureImplicitViewInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
   });
 
   test('createHistoryForExistingState', () {
@@ -746,7 +747,7 @@ void testMain() {
 
 Future<void> routeUpdated(String routeName) {
   final Completer<void> completer = Completer<void>();
-  implicitView.sendPlatformMessage(
+  EnginePlatformDispatcher.instance.sendPlatformMessage(
     'flutter/navigation',
     codec.encodeMethodCall(MethodCall(
       'routeUpdated',
@@ -759,7 +760,7 @@ Future<void> routeUpdated(String routeName) {
 
 Future<void> routeInformationUpdated(String location, dynamic state) {
   final Completer<void> completer = Completer<void>();
-  implicitView.sendPlatformMessage(
+  EnginePlatformDispatcher.instance.sendPlatformMessage(
     'flutter/navigation',
     codec.encodeMethodCall(MethodCall(
       'routeInformationUpdated',
@@ -772,7 +773,7 @@ Future<void> routeInformationUpdated(String location, dynamic state) {
 
 Future<void> systemNavigatorPop() {
   final Completer<void> completer = Completer<void>();
-  implicitView.sendPlatformMessage(
+  EnginePlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform',
     codec.encodeMethodCall(const MethodCall('SystemNavigator.pop')),
     (_) => completer.complete(),

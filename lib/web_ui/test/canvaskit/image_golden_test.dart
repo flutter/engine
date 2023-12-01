@@ -22,7 +22,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit Images', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     tearDown(() {
       mockHttpFetchResponseFactory = null;

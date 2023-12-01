@@ -15,7 +15,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     test('can render into arbitrary views', () async {
       final CkPicture picture =

@@ -16,7 +16,7 @@ void main() {
 
 void testMain() {
   group('$RenderCanvasFactory', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     test('getCanvas', () {
       final RenderCanvasFactory factory = RenderCanvasFactory();
