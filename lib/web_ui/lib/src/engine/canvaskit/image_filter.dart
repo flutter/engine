@@ -45,6 +45,9 @@ abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
       required double radiusY}) = _CkDilateImageFilter;
   factory CkImageFilter.erode(
       {required double radiusX, required double radiusY}) = _CkErodeImageFilter;
+  factory CkImageFilter.compose(
+      {required CkImageFilter outer,
+      required CkImageFilter inner}) = _CkComposeImageFilter;
 
   CkImageFilter._();
 
@@ -96,10 +99,9 @@ class _CkBlurImageFilter extends CkImageFilter {
     final SkImageFilter skImageFilter;
     if (sigmaX == 0 && sigmaY == 0) {
       skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
-        toSkMatrixFromFloat32(Matrix4.identity().storage),
-        toSkFilterOptions(ui.FilterQuality.none),
-        null
-      );
+          toSkMatrixFromFloat32(Matrix4.identity().storage),
+          toSkFilterOptions(ui.FilterQuality.none),
+          null);
     } else {
       skImageFilter = canvasKit.ImageFilter.MakeBlur(
         sigmaX,
@@ -161,7 +163,8 @@ class _CkMatrixImageFilter extends CkImageFilter {
       : matrix = Float64List.fromList(matrix),
         _transform = Matrix4.fromFloat32List(toMatrix32(matrix)),
         super._() {
-    final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
+    final SkImageFilter skImageFilter =
+        canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
       toSkFilterOptions(filterQuality),
       null,
@@ -277,5 +280,49 @@ class _CkErodeImageFilter extends CkImageFilter {
   @override
   String toString() {
     return 'ImageFilter.erode($radiusX, $radiusY)';
+  }
+}
+
+class _CkComposeImageFilter extends CkImageFilter {
+  _CkComposeImageFilter({required this.outer, required this.inner})
+      : super._() {
+    outer.imageFilter((SkImageFilter outerFilter) {
+      inner.imageFilter((SkImageFilter innerFilter) {
+        final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeCompose(
+          outerFilter,
+          innerFilter,
+        );
+        _ref = UniqueRef<SkImageFilter>(
+            this, skImageFilter, 'ImageFilter.compose');
+      });
+    });
+  }
+
+  final CkImageFilter outer;
+  final CkImageFilter inner;
+
+  late final UniqueRef<SkImageFilter> _ref;
+
+  @override
+  void imageFilter(SkImageFilterBorrow borrow) {
+    borrow(_ref.nativeObject);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (runtimeType != other.runtimeType) {
+      return false;
+    }
+    return other is _CkComposeImageFilter &&
+        other.outer == outer &&
+        other.inner == inner;
+  }
+
+  @override
+  int get hashCode => Object.hash(outer, inner);
+
+  @override
+  String toString() {
+    return 'ImageFilter.compose($outer, $inner)';
   }
 }
