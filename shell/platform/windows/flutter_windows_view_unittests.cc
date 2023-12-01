@@ -131,6 +131,7 @@ class MockAngleSurfaceManager : public AngleSurfaceManager {
               (override));
   MOCK_METHOD(void, DestroySurface, (), (override));
 
+  MOCK_METHOD(bool, MakeCurrent, (), (override));
   MOCK_METHOD(void, SetVSyncEnabled, (bool), (override));
 
  private:
@@ -1080,7 +1081,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
 
   {
     auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kSwitch);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kTrue);
 
@@ -1103,6 +1104,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_PRESSED);
+    EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_CHECKED);
 
     // Test similarly on UIA node.
     IRawElementProviderSimple* uia_node;
@@ -1128,7 +1130,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
 
   {
     auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
+    EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kSwitch);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kFalse);
 
@@ -1145,6 +1147,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_PRESSED);
+    EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_CHECKED);
 
     // Test similarly on UIA node.
     IRawElementProviderSimple* uia_node;
@@ -1302,7 +1305,9 @@ TEST(FlutterWindowsViewTest, UpdatesVSyncOnDwmUpdates) {
   FlutterWindowsView view(std::move(window_binding_handler));
 
   InSequence s;
+  EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
+  EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);

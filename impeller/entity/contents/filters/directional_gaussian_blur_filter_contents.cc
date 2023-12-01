@@ -95,7 +95,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   auto radius = Radius{ScaleSigma(blur_sigma_)}.radius;
 
-  auto transform = entity.GetTransformation() * effect_transform.Basis();
+  auto transform = entity.GetTransform() * effect_transform.Basis();
   auto transformed_blur_radius =
       transform.TransformDirection(blur_direction_ * radius);
 
@@ -185,6 +185,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
     frag_info.blur_radius = std::round(r.radius);
+    frag_info.step_size = 2.0;
 
     // The blur direction is in input UV space.
     frag_info.blur_uv_offset =
@@ -313,7 +314,9 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
 
   auto transform = inputs[0]->GetTransform(entity) * effect_transform.Basis();
   auto transformed_blur_vector =
-      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
+      transform
+          .TransformDirection(blur_direction_ *
+                              Radius{ScaleSigma(blur_sigma_)}.radius)
           .Abs();
   return coverage->Expand(transformed_blur_vector);
 }

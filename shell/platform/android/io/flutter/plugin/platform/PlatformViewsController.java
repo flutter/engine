@@ -13,6 +13,8 @@ import android.content.MutableContextWrapper;
 import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
+import android.view.MotionEvent.PointerCoords;
+import android.view.MotionEvent.PointerProperties;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -776,10 +778,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     usesSoftwareRendering = useSoftwareRendering;
   }
 
-  public void setDisableImageReaderPlatformViews(boolean disableImageReaderPlatformViews) {
-    enableHardwareBufferRenderingTarget = !disableImageReaderPlatformViews;
-  }
-
   /**
    * Detaches this platform views controller.
    *
@@ -1027,12 +1025,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     coords.orientation = (float) (double) coordsList.get(0);
     coords.pressure = (float) (double) coordsList.get(1);
     coords.size = (float) (double) coordsList.get(2);
-    coords.toolMajor = (float) (double) coordsList.get(3) * density;
-    coords.toolMinor = (float) (double) coordsList.get(4) * density;
-    coords.touchMajor = (float) (double) coordsList.get(5) * density;
-    coords.touchMinor = (float) (double) coordsList.get(6) * density;
-    coords.x = (float) (double) coordsList.get(7) * density;
-    coords.y = (float) (double) coordsList.get(8) * density;
+    coords.toolMajor = (float) ((double) coordsList.get(3) * density);
+    coords.toolMinor = (float) ((double) coordsList.get(4) * density);
+    coords.touchMajor = (float) ((double) coordsList.get(5) * density);
+    coords.touchMinor = (float) ((double) coordsList.get(6) * density);
+    coords.x = (float) ((double) coordsList.get(7) * density);
+    coords.y = (float) ((double) coordsList.get(8) * density);
     return coords;
   }
 

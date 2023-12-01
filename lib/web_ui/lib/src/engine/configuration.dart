@@ -51,9 +51,15 @@ import 'canvaskit/renderer.dart';
 import 'dom.dart';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration =>
-  _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+FlutterConfiguration get configuration {
+  if (_debugConfiguration != null) {
+    return _debugConfiguration!;
+  }
+  return _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+}
 FlutterConfiguration? _configuration;
+
+FlutterConfiguration? _debugConfiguration;
 
 /// Overrides the initial test configuration with new values coming from `newConfig`.
 ///
@@ -76,16 +82,9 @@ FlutterConfiguration? _configuration;
 @visibleForTesting
 void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
   if (newConfig != null) {
-    final JSObject newJsConfig = objectConstructor.assign(
-      <String, Object>{}.jsify(),
-      _jsConfiguration.jsify(),
-      newConfig.jsify(),
-    );
-    _configuration = FlutterConfiguration()
-        ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
-    print('Overridden engine JS config to: ${newJsConfig.dartify()}');
+    _debugConfiguration = configuration.withOverrides(newConfig);
   } else {
-    _configuration = null;
+    _debugConfiguration = null;
   }
 }
 
@@ -118,6 +117,17 @@ class FlutterConfiguration {
       }
       return true;
     }());
+  }
+
+  FlutterConfiguration withOverrides(JsFlutterConfiguration? overrides) {
+    final JsFlutterConfiguration newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _configuration.jsify(),
+      overrides.jsify(),
+    ) as JsFlutterConfiguration;
+    final FlutterConfiguration newConfig = FlutterConfiguration();
+    newConfig._configuration = newJsConfig;
+    return newConfig;
   }
 
   bool _usedLegacyConfigStyle = false;
@@ -257,17 +267,6 @@ class FlutterConfiguration {
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
 
-  /// This is deprecated. The CanvasKit renderer will only ever create one
-  /// WebGL context, obviating the problem this configuration was meant to
-  /// solve originally.
-  @Deprecated('Setting canvasKitMaximumSurfaces has no effect')
-  int get canvasKitMaximumSurfaces =>
-      _configuration?.canvasKitMaximumSurfaces?.toInt() ?? _defaultCanvasKitMaximumSurfaces;
-  static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_SURFACES',
-    defaultValue: 8,
-  );
-
   /// Set this flag to `true` to cause the engine to visualize the semantics tree
   /// on the screen for debugging.
   ///
@@ -287,6 +286,16 @@ class FlutterConfiguration {
   /// Returns the [hostElement] in which the Flutter Application is supposed
   /// to render, or `null` if the user hasn't specified anything.
   DomElement? get hostElement => _configuration?.hostElement;
+
+  /// Sets Flutter Web in "multi-view" mode.
+  ///
+  /// Multi-view mode allows apps to:
+  ///
+  ///  * Start without a `hostElement`.
+  ///  * Add/remove views (`hostElements`) from JS while the application is running.
+  ///  * ...
+  ///  * PROFIT?
+  bool get multiViewEnabled => _configuration?.multiViewEnabled ?? false;
 
   /// Returns a `nonce` to allowlist the inline styles that Flutter web needs.
   ///
@@ -314,8 +323,11 @@ external JsFlutterConfiguration? get _jsConfiguration;
 
 /// The JS bindings for the object that's set as `window.flutterConfiguration`.
 @JS()
+@anonymous
 @staticInterop
-class JsFlutterConfiguration {}
+class JsFlutterConfiguration {
+  external factory JsFlutterConfiguration();
+}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('assetBase')
@@ -334,15 +346,15 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external JSBoolean? get _canvasKitForceCpuOnly;
   bool? get canvasKitForceCpuOnly => _canvasKitForceCpuOnly?.toDart;
 
-  @JS('canvasKitMaximumSurfaces')
-  external JSNumber? get _canvasKitMaximumSurfaces;
-  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDartDouble;
-
   @JS('debugShowSemanticsNodes')
   external JSBoolean? get _debugShowSemanticsNodes;
   bool? get debugShowSemanticsNodes => _debugShowSemanticsNodes?.toDart;
 
   external DomElement? get hostElement;
+
+  @JS('multiViewEnabled')
+  external JSBoolean? get _multiViewEnabled;
+  bool? get multiViewEnabled => _multiViewEnabled?.toDart;
 
   @JS('nonce')
   external JSString? get _nonce;

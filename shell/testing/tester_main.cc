@@ -138,11 +138,11 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   void CancelFrame() override {}
 
   // |ExternalViewEmbedder|
-  void BeginFrame(
-      SkISize frame_size,
-      GrDirectContext* context,
-      double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+  void BeginFrame(SkISize frame_size,
+                  GrDirectContext* context,
+                  double device_pixel_ratio,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override {}
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -337,8 +337,8 @@ int RunTester(const flutter::Settings& settings,
 
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
-        thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                          ThreadHost::Type::UI | ThreadHost::Type::RASTER);
+        thread_label, ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
+                          ThreadHost::Type::kUi | ThreadHost::Type::kRaster);
     platform_task_runner = current_task_runner;
     raster_task_runner = threadhost->raster_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();
