@@ -26,7 +26,7 @@ vec4 ReadDestination() {
           subpassLoad(uSub, 3)) /
          vec4(4.0);
 }
-#endif
+#else
 layout(set = 0,
        binding = 0,
        input_attachment_index = 0) uniform subpassInput uSub;
@@ -34,7 +34,7 @@ layout(set = 0,
 vec4 ReadDestination() {
   return subpassLoad(uSub);
 }
-#else
+#endif  // IMPELLER_TARGET_VULKAN
 
 uniform sampler2D texture_sampler_src;
 

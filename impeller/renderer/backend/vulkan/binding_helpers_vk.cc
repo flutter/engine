@@ -11,12 +11,16 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_command.h"
 #include "vulkan/vulkan_core.h"
 
 namespace impeller {
+
+// Warning: if any of the constant values or layouts are changed in the
+// framebuffer fetch shader, then this input binding may need to be
+// manually changed.
+static constexpr size_t kMagicSubpassInputBinding = 64;
 
 static bool BindImages(const Bindings& bindings,
                        Allocator& allocator,
@@ -188,8 +192,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
 
       vk::WriteDescriptorSet write_set;
       write_set.dstSet = descriptor_sets[desc_index];
-      // MAGIC! see description in pipeline_library_vk.cc
-      write_set.dstBinding = 64u;
+      write_set.dstBinding = kMagicSubpassInputBinding;
       write_set.descriptorCount = 1u;
       write_set.descriptorType = vk::DescriptorType::eInputAttachment;
       write_set.pImageInfo = &images.back();
