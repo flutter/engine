@@ -67,9 +67,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
 
   // Callbacks for clearing context, settings context and swapping buffers,
   // these are typically called on an engine-controlled (non-platform) thread.
-  bool ClearContext();
-  bool MakeCurrent();
-  bool MakeResourceCurrent();
   bool SwapBuffers();
 
   // Callback for presenting a software bitmap.
