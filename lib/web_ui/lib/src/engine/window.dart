@@ -146,7 +146,6 @@ base class EngineFlutterView implements ui.FlutterView {
 
   @override
   ViewConstraints get physicalConstraints {
-    // TODO(dit): Recompute this *only* when the physicalSize changes...
     computePhysicalSize();
     return ViewConstraints.fromJsOptions(_jsViewConstraints, physicalSize);
   }
@@ -659,7 +658,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 EngineFlutterWindow get window {
   assert(
     _window != null,
-    'Trying to access the implicit FlutterView, but it is not available.\n'
+    'Trying to access the implicit FlutterView, but it is not available.'
     'Note: the implicit FlutterView is not available in multi-view mode.',
   );
   return _window!;

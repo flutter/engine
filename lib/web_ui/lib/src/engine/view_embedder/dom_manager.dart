@@ -204,6 +204,13 @@ class DomManager {
       sceneHost.append(sceneElement);
     }
   }
+
+  /// Resizes the [rootElement] to [logicalSize] (in px) via CSS.
+  void resize(ui.Size logicalSize) {
+    rootElement.style
+      ..width = '${logicalSize.width}px'
+      ..height = '${logicalSize.height}px';
+  }
 }
 
 DomShadowRoot _attachShadowRoot(DomElement element) {

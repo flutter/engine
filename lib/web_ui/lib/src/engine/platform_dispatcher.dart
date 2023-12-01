@@ -727,8 +727,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     scheduleFrameCallback!();
   }
 
-  /// Updates the application's rendering on the GPU with the newly provided
-  /// [Scene]. This function must be called within the scope of the
+  /// Updates the [view]'s rendering on the GPU with the newly provided [scene] of physical [size].
+  ///
+  /// This function must be called within the scope of the
   /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
   /// is called a second time during a single [onBeginFrame]/[onDrawFrame]
   /// callback sequence or called outside the scope of those callbacks, the call
@@ -753,20 +754,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    painting.
   void render(ui.Scene scene, { ui.FlutterView? view, ui.Size? size }) {
     final ui.FlutterView? target = view ?? implicitView;
-
     assert(target != null, 'Calling render without a FlutterView');
-
     if (target == null) {
       // If there is no view to render into, then this is a no-op.
       return;
     }
 
     if (size != null && view is EngineFlutterView) {
-      view.dom.rootElement.style
-        ..width = '${size.width / view.devicePixelRatio}px'
-        ..height = '${size.height / view.devicePixelRatio}px';
+      view.dom.resize(size / view.devicePixelRatio);
     }
-
     renderer.renderScene(scene, target, size: size);
   }
 
