@@ -97,10 +97,10 @@ void doTests() {
         ..style.height = '10px';
       domDocument.body!.append(sizeSource);
       provider = CustomElementDimensionsProvider(sizeSource);
-      // Let the DOM settle before starting the test, so we don't get the first
-      // 10,10 Size in the test. Otherwise, the ResizeObserver may trigger
-      // unexpectedly after the test has started, and break our "first" result.
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      // The first event should be the 10x10 size "change" when the element
+      // first renders. We wait until that event is dispatched so we can
+      // consider "first" events the resizes caused by the test, and not the setup.
+      await provider.onResize.first;
     });
 
     tearDown(() {
