@@ -52,6 +52,7 @@ typedef ASurfaceTexture* (*fp_ASurfaceTexture_fromSurfaceTexture)(
     jobject surfaceTextureObj);
 typedef int (*fp_ASurfaceTexture_attachToGLContext)(ASurfaceTexture* st,
                                                     uint32_t texName);
+typedef int (*fp_ASurfaceTexture_detachFromGLContext)(ASurfaceTexture* st);
 typedef EGLClientBuffer (*fp_eglGetNativeClientBufferANDROID)(
     AHardwareBuffer* buffer);
 
@@ -89,6 +90,7 @@ ASurfaceTexture* (*_ASurfaceTexture_fromSurfaceTexture)(
     jobject surfaceTextureObj) = nullptr;
 int (*_ASurfaceTexture_attachToGLContext)(ASurfaceTexture* st,
                                           uint32_t texName) = nullptr;
+int (*_ASurfaceTexture_detachFromGLContext)(ASurfaceTexture* st) = nullptr;
 EGLClientBuffer (*_eglGetNativeClientBufferANDROID)(AHardwareBuffer* buffer) =
     nullptr;
 
@@ -163,6 +165,11 @@ void InitOnceCallback() {
       android
           ->ResolveFunction<fp_ASurfaceTexture_attachToGLContext>(
               "ASurfaceTexture_attachToGLContext")
+          .value_or(nullptr);
+  _ASurfaceTexture_detachFromGLContext =
+      android
+          ->ResolveFunction<fp_ASurfaceTexture_detachFromGLContext>(
+              "ASurfaceTexture_detachFromGLContext")
           .value_or(nullptr);
 }
 
@@ -276,6 +283,12 @@ int NDKHelpers::ASurfaceTexture_attachToGLContext(ASurfaceTexture* st,
   NDKHelpers::Init();
   FML_CHECK(_ASurfaceTexture_attachToGLContext != nullptr);
   return _ASurfaceTexture_attachToGLContext(st, texName);
+}
+
+int NDKHelpers::ASurfaceTexture_detachFromGLContext(ASurfaceTexture* st) {
+  NDKHelpers::Init();
+  FML_CHECK(_ASurfaceTexture_attachToGLContext != nullptr);
+  return _ASurfaceTexture_attachToGLContext(st, 0);
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(

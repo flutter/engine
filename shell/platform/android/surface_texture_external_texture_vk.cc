@@ -199,6 +199,7 @@ void SurfaceTextureExternalTextureVK::ProcessFrame(PaintContext& context,
     }
 
     // ERROR: attachToContext: SurfaceTexture is already attached to a context
+    NDKHelpers::ASurfaceTexture_detachFromGLContext(surface_texture);
     NDKHelpers::ASurfaceTexture_attachToGLContext(surface_texture, handle);
     // Read framebuffer
     // bind draw framebuffer

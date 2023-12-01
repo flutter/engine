@@ -67,6 +67,7 @@ class NDKHelpers {
       jobject surfaceTextureObj);
   static int ASurfaceTexture_attachToGLContext(ASurfaceTexture* st,
                                                uint32_t texName);
+  static int ASurfaceTexture_detachFromGLContext(ASurfaceTexture* st);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 
