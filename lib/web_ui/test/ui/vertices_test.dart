@@ -416,7 +416,7 @@ const List<int> _circularVertexIndices = <int>[
   36
 ];
 
-// This function is used when asserts are NOT enabled and vertices() allows invalid 
+// This function is used when asserts are NOT enabled and vertices() allows invalid
 // vertices objects to be created.  Here we attempt to use these invalid ui.Vertices
 // objects to determine if they cause problems within drawVertices()
 void useAndDisposeOfInvalidVerticesObject( ui.Vertices vertices ) {
