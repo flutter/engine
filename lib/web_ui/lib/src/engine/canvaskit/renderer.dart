@@ -174,16 +174,14 @@ class CanvasKitRenderer implements Renderer {
   }) => CkImageFilter.blur(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
 
   @override
-  ui.ImageFilter createDilateImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    // TODO(fzyzcjy): implement dilate. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError('ImageFilter.dilate not implemented for CanvasKit.');
-  }
+  ui.ImageFilter createDilateImageFilter(
+          {double radiusX = 0.0, double radiusY = 0.0}) =>
+      CkImageFilter.dilate(radiusX: radiusX, radiusY: radiusY);
 
   @override
-  ui.ImageFilter createErodeImageFilter({double radiusX = 0.0, double radiusY = 0.0}) {
-    // TODO(fzyzcjy): implement erode. https://github.com/flutter/flutter/issues/101085
-    throw UnimplementedError('ImageFilter.erode not implemented for CanvasKit.');
-  }
+  ui.ImageFilter createErodeImageFilter(
+          {double radiusX = 0.0, double radiusY = 0.0}) =>
+      CkImageFilter.erode(radiusX: radiusX, radiusY: radiusY);
 
   @override
   ui.ImageFilter createMatrixImageFilter(
