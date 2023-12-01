@@ -19,8 +19,8 @@ std::vector<std::string> GetDefaultFontFamilies() {
 }
 
 sk_sp<SkFontMgr> GetDefaultFontManager(uint32_t font_initialization_data) {
-#if defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
-  static sk_sp<SkFontMgr> mgr = SkFontMgr_New_FontConfig(nullptr)
+#if defined(SK_FONTMGR_FONTCONFIG_AVAILABLE)
+  static sk_sp<SkFontMgr> mgr = SkFontMgr_New_FontConfig(nullptr);
 #elif defined(SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE)
   static sk_sp<SkFontMgr> mgr = SkFontMgr_New_Custom_Empty();
 #else
