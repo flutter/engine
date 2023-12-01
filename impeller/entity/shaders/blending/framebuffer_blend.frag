@@ -10,18 +10,13 @@
 #include <impeller/types.glsl>
 #include "blend_select.glsl"
 
+// Warning: if any of the constant values or layouts are changed in this
+// file, then the hard-coded constant value in
+// impeller/renderer/backend/vulkan/binding_helpers_vk.cc
 layout(constant_id = 0) const int blend_type = 0;
 layout(constant_id = 1) const int supports_decal = 1;
 
-#ifdef IMPELLER_TARGET_OPENGLES
-layout(set = 0,
-       binding = 0,
-       input_attachment_index = 0) uniform subpassInput uSub;
-
-vec4 ReadDestination() {
-  return subpassLoad(uSub);
-}
-#else
+#ifdef IMPELLER_TARGET_VULKAN
 layout(set = 0,
        binding = 0,
        input_attachment_index = 0) uniform subpassInputMS uSub;
@@ -32,6 +27,14 @@ vec4 ReadDestination() {
          vec4(4.0);
 }
 #endif
+layout(set = 0,
+       binding = 0,
+       input_attachment_index = 0) uniform subpassInput uSub;
+
+vec4 ReadDestination() {
+  return subpassLoad(uSub);
+}
+#else
 
 uniform sampler2D texture_sampler_src;
 
