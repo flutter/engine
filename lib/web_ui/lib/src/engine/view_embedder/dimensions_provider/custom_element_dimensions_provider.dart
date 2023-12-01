@@ -48,8 +48,13 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
   final StreamController<ui.Size> _onResizeStreamController =
       StreamController<ui.Size>.broadcast();
 
+  // A cache of the last Size reported by the browser for hostElement, so this
+  // never has to hit the clientWidth/Height metrics from the DOM.
+  ui.Size? _lastObservedSize;
+
   // Broadcasts the last seen `Size`.
   void _broadcastSize(ui.Size size) {
+    _lastObservedSize = size;
     _onResizeStreamController.add(size);
   }
 
@@ -68,10 +73,10 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
   ui.Size computePhysicalSize() {
     final double devicePixelRatio = getDevicePixelRatio();
 
-    return ui.Size(
-      _hostElement.clientWidth * devicePixelRatio,
-      _hostElement.clientHeight * devicePixelRatio,
-    );
+    final ui.Size size = _lastObservedSize ??
+        ui.Size(_hostElement.clientWidth, _hostElement.clientHeight);
+
+    return size * devicePixelRatio;
   }
 
   @override
