@@ -110,7 +110,7 @@ class MockFlutterWindowsEngine : public FlutterWindowsEngine {
  public:
   MockFlutterWindowsEngine() : FlutterWindowsEngine(GetTestProject()) {}
 
-  MOCK_METHOD(bool, Stop, (), ());
+  MOCK_METHOD(void, RemoveView, (), ());
   MOCK_METHOD(bool, PostRasterThreadTask, (fml::closure), ());
 
  private:
@@ -244,9 +244,9 @@ TEST(FlutterWindowsViewTest, SubMenuExpandedState) {
   }
 }
 
-// The view's surface must be destroyed after the engine is shutdown.
+// The view's surface must be destroyed after the engine removes the view.
 // See: https://github.com/flutter/flutter/issues/124463
-TEST(FlutterWindowsViewTest, Shutdown) {
+TEST(FlutterWindowsViewTest, Destroy) {
   std::unique_ptr<MockFlutterWindowsEngine> engine =
       std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
@@ -259,7 +259,7 @@ TEST(FlutterWindowsViewTest, Shutdown) {
 
   // The engine must be stopped before the surface can be destroyed.
   InSequence s;
-  EXPECT_CALL(*engine.get(), Stop).Times(1);
+  EXPECT_CALL(*engine.get(), RemoveView).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
@@ -1241,7 +1241,7 @@ TEST(FlutterWindowsViewTest, DisablesVSync) {
       .Times(1)
       .WillOnce(Return(true));
 
-  EXPECT_CALL(*engine.get(), Stop).Times(1);
+  EXPECT_CALL(*engine.get(), RemoveView).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
@@ -1270,7 +1270,7 @@ TEST(FlutterWindowsViewTest, EnablesVSync) {
       .Times(1)
       .WillOnce(Return(true));
 
-  EXPECT_CALL(*engine.get(), Stop).Times(1);
+  EXPECT_CALL(*engine.get(), RemoveView).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());
@@ -1310,7 +1310,7 @@ TEST(FlutterWindowsViewTest, UpdatesVSyncOnDwmUpdates) {
   EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
 
-  EXPECT_CALL(*engine.get(), Stop).Times(1);
+  EXPECT_CALL(*engine.get(), RemoveView).Times(1);
   EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
 
   modifier.SetSurfaceManager(surface_manager.release());

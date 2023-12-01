@@ -112,6 +112,10 @@ class FlutterWindowsEngine {
   // Sets the view that is displaying this engine's content.
   void SetView(FlutterWindowsView* view);
 
+  // Remove the view that is displaying this engine's content and transition to
+  // headless mode.
+  virtual void RemoveView();
+
   // The view displaying this engine's content, if any. This will be null for
   // headless engines.
   FlutterWindowsView* view() { return view_; }

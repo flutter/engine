@@ -464,6 +464,13 @@ void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   InitializeKeyboard();
 }
 
+void FlutterWindowsEngine::RemoveView() {
+  // TODO: Test that removing view and re-adding view on same engine works.
+  text_input_plugin_.reset();
+  keyboard_key_handler_.reset();
+  view_ = nullptr;
+}
+
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
   std::chrono::nanoseconds current_time =
       std::chrono::nanoseconds(embedder_api_.GetCurrentTime());

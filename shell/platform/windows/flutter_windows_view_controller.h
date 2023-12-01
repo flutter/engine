@@ -36,6 +36,7 @@ class FlutterWindowsViewController {
 
  private:
   // The engine owned by this view controller, if any.
+  //
   // This is only used if the view controller was created
   // using |FlutterDesktopViewControllerCreate| as that takes
   // ownership of the engine. View controllers created using

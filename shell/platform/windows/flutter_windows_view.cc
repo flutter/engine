@@ -49,10 +49,10 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
-  // The engine renders into the view's surface. The engine must be
-  // shutdown before the view's resources can be destroyed.
+  // The engine renders into the view's surface. The engine must be notified to
+  // stop using the view before its resources can be destroyed.
   if (engine_) {
-    engine_->Stop();
+    engine_->RemoveView();
   }
 
   DestroyRenderSurface();
