@@ -71,9 +71,10 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   return contents_copy;
 }
 
-static std::shared_ptr<Contents> CreateContentsWithFilters(const Paint& paint,
-                                                           const Path& path = {},
-                                                           bool cover = false) {
+static std::shared_ptr<Contents> CreateContentsWithFilters(
+    const Paint& paint,
+    const Path& path = {},
+    bool cover = false) {
   std::shared_ptr<Geometry> geometry;
   if (cover) {
     geometry = Geometry::MakeCover();

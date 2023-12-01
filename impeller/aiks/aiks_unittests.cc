@@ -2440,7 +2440,7 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  entity_pass->AddEntity(entity);
+  entity_pass->AddEntity(std::move(entity));
   paint.color = Color::Red().WithAlpha(0.5);
 
   delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
