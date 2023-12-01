@@ -18,7 +18,7 @@ import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'platform_views/message_handler.dart';
 import 'pointer_binding.dart';
-import 'semantics/accessibility.dart';
+import 'semantics.dart';
 import 'services.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
@@ -96,6 +96,7 @@ base class EngineFlutterView implements ui.FlutterView {
     dom.rootElement.remove();
     // TODO(harryterkelsen): What should we do about this in multi-view?
     renderer.clearFragmentProgramCache();
+    semantics.reset();
   }
 
   @override
@@ -108,7 +109,7 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   void updateSemantics(ui.SemanticsUpdate update) {
     assert(!isDisposed, 'Trying to update semantics on a disposed EngineFlutterView.');
-    platformDispatcher.updateSemantics(update);
+    semantics.updateSemantics(update);
   }
 
   // TODO(yjbanov): How should this look like for multi-view?
@@ -120,7 +121,7 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom = DomManager(devicePixelRatio: devicePixelRatio);
+  late final DomManager dom = DomManager(viewId: viewId, devicePixelRatio: devicePixelRatio);
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
@@ -130,6 +131,8 @@ base class EngineFlutterView implements ui.FlutterView {
   // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
   @override
   ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
+
+  late final EngineSemanticsOwner semantics = EngineSemanticsOwner(dom.semanticsHost);
 
   @override
   ui.Size get physicalSize {

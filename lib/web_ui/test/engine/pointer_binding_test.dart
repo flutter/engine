@@ -2672,11 +2672,11 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
     test(
       description,
       () async {
-        EngineSemanticsOwner.instance
+        EngineSemantics.instance
           ..debugOverrideTimestampFunction(() => testTime)
           ..semanticsEnabled = true;
         await body();
-        EngineSemanticsOwner.instance.semanticsEnabled = false;
+        EngineSemantics.instance.semanticsEnabled = false;
       },
     );
   }
