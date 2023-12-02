@@ -13,6 +13,8 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/color_source_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -28,7 +30,8 @@ namespace {
 static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
     const Paint& paint,
     std::shared_ptr<Geometry> geometry) {
-  auto contents = paint.color_source.GetContents(paint);
+  std::shared_ptr<ColorSourceContents> contents =
+      paint.color_source.GetContents(paint);
 
   // Attempt to apply the color filter on the CPU first.
   // Note: This is not just an optimization; some color sources rely on
@@ -55,14 +58,14 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   // if any. See `TiledTextureContents.SetColorFilter`.
   if (needs_color_filter &&
       paint.color_source.GetType() != ColorSource::Type::kImage) {
-    auto color_filter = paint.GetColorFilter();
+    std::shared_ptr<ColorFilter> color_filter = paint.GetColorFilter();
     contents_copy = color_filter->WrapWithGPUColorFilter(
         FilterInput::Make(std::move(contents_copy)),
         ColorFilterContents::AbsorbOpacity::kYes);
   }
 
   if (paint.image_filter) {
-    auto filter = paint.image_filter->WrapInput(
+    std::shared_ptr<FilterContents> filter = paint.image_filter->WrapInput(
         FilterInput::Make(std::move(contents_copy)));
     filter->SetRenderingMode(Entity::RenderingMode::kDirect);
     return filter;
