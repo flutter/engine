@@ -19,7 +19,7 @@ SDK_PREBUILTS_DIR="${FLUTTER_DIR}/prebuilts"
 # If set to 1 (via the -i option) will run felt incrementally.
 INCREMENTAL=0
 
-# All arguments passed to felt, expect -i, if any.
+# All arguments passed to felt, except -i, if any.
 ARGS=""
 for arg in "$@" ; do
   case "$arg" in
@@ -32,10 +32,6 @@ for arg in "$@" ; do
       ;;
   esac
 done
-
-echo $INCREMENTAL
-echo $ARGS
-exit 0
 
 if [ -z "${DART_SDK_DIR}" ]
 then
