@@ -728,7 +728,7 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
 
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(shared_wrapper);
-  if (vertices->HasTextureCoordinates()) {
+  if (shared_wrapper->HasTextureCoordinates()) {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
     // the extent of the texture coordinates to determine how large
@@ -739,12 +739,12 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
     if (size.has_value()) {
       src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
     } else {
-      auto cvg = vertices->GetCoverage(Matrix{});
+      auto cvg = shared_wrapper->GetCoverage(Matrix{});
       FML_CHECK(cvg.has_value());
       src_coverage =
           // Covered by FML_CHECK.
           // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-          vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
+          shared_wrapper->GetTextureCoordinateCoverge().value_or(cvg.value());
     }
     src_contents =
         src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));

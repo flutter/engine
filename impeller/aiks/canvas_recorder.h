@@ -91,6 +91,16 @@ class CanvasRecorder {
     return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
   }
 
+  template <typename FuncType, typename... Args>
+  auto ExecuteAndSerializeIgnoringArgs(CanvasRecorderOp op,
+                                       FuncType canvasMethod,
+                                       Args&&... args)
+      -> decltype((std::declval<Canvas>().*
+                   canvasMethod)(std::forward<Args>(args)...)) {
+    serializer_.Write(op);
+    return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // Canvas Static Polymorphism
   // ////////////////////////////////////////////////
@@ -255,8 +265,9 @@ class CanvasRecorder {
   void DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                     BlendMode blend_mode,
                     const Paint& paint) {
-    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawVertices),
-                               std::move(vertices), blend_mode, paint);
+    return ExecuteAndSerializeIgnoringArgs(
+        FLT_CANVAS_RECORDER_OP_ARG(DrawVertices), std::move(vertices),
+        blend_mode, paint);
   }
 
   void DrawAtlas(const std::shared_ptr<Image>& atlas,
