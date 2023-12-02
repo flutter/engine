@@ -125,6 +125,12 @@ std::unique_ptr<Geometry> Geometry::MakeCircle(Point center, Scalar radius) {
   return std::make_unique<EllipseGeometry>(center, radius);
 }
 
+std::unique_ptr<Geometry> Geometry::MakeStrokedCircle(Point center,
+                                                      Scalar radius,
+                                                      Scalar stroke_width) {
+  return std::make_unique<EllipseGeometry>(center, radius, stroke_width);
+}
+
 bool Geometry::CoversArea(const Matrix& transform, const Rect& rect) const {
   return false;
 }

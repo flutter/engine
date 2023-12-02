@@ -72,6 +72,10 @@ class Geometry {
 
   static std::unique_ptr<Geometry> MakeCircle(Point center, Scalar radius);
 
+  static std::unique_ptr<Geometry> MakeStrokedCircle(Point center,
+                                                     Scalar radius,
+                                                     Scalar stroke_width);
+
   static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,
                                                   bool round);
