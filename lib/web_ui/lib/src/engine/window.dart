@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@JS()
-library window;
-
 import 'dart:async';
-import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -16,16 +12,16 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'display.dart';
 import 'dom.dart';
-import 'embedder.dart';
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'platform_views/message_handler.dart';
-import 'semantics/accessibility.dart';
+import 'semantics.dart';
 import 'services.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
+import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 
 typedef _HandleMessageCallBack = Future<bool> Function();
 
@@ -35,20 +31,41 @@ const bool debugPrintPlatformMessages = false;
 /// The view ID for the implicit flutter view provided by the platform.
 const int kImplicitViewId = 0;
 
+int _nextViewId = kImplicitViewId + 1;
+
 /// Represents all views in the Flutter Web Engine.
 ///
 /// In addition to everything defined in [ui.FlutterView], this class adds
 /// a few web-specific properties.
 base class EngineFlutterView implements ui.FlutterView {
+  /// Creates a [ui.FlutterView] that can be used in multi-view mode.
+  ///
+  /// The [hostElement] parameter specifies the container in the DOM into which
+  /// the Flutter view will be rendered.
   factory EngineFlutterView(
-    int viewId,
     EnginePlatformDispatcher platformDispatcher,
+    DomElement hostElement,
   ) = _EngineFlutterViewImpl;
 
   EngineFlutterView._(
     this.viewId,
     this.platformDispatcher,
-  );
+    // This is nullable to accommodate the legacy `EngineFlutterWindow`. In
+    // multi-view mode, the host element is required for each view (as reflected
+    // by the public `EngineFlutterView` constructor).
+    DomElement? hostElement,
+  )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
+        dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
+    // The embeddingStrategy will take care of cleaning up the rootElement on
+    // hot restart.
+    embeddingStrategy.attachGlassPane(dom.rootElement);
+    registerHotRestartListener(dispose);
+  }
+
+  static EngineFlutterWindow implicit(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) => EngineFlutterWindow._(platformDispatcher, hostElement);
 
   @override
   final int viewId;
@@ -56,13 +73,41 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   final EnginePlatformDispatcher platformDispatcher;
 
+  /// Abstracts all the DOM manipulations required to embed a Flutter view in a user-supplied `hostElement`.
+  final EmbeddingStrategy embeddingStrategy;
+
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
-  @override
-  void render(ui.Scene scene) => platformDispatcher.render(scene, this);
+  /// Whether this [EngineFlutterView] has been disposed or not.
+  bool isDisposed = false;
+
+  /// Disposes of the [EngineFlutterView] instance and undoes all of its DOM
+  /// tree and any event listeners.
+  @mustCallSuper
+  void dispose() {
+    if (isDisposed) {
+      return;
+    }
+    isDisposed = true;
+    dimensionsProvider.close();
+    dom.rootElement.remove();
+    // TODO(harryterkelsen): What should we do about this in multi-view?
+    renderer.clearFragmentProgramCache();
+    semantics.reset();
+  }
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void render(ui.Scene scene, {ui.Size? size}) {
+    assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    // TODO(goderbauer): Respect the provided size when "physicalConstraints" are not always tight. See TODO on "physicalConstraints".
+    platformDispatcher.render(scene, this);
+  }
+
+  @override
+  void updateSemantics(ui.SemanticsUpdate update) {
+    assert(!isDisposed, 'Trying to update semantics on a disposed EngineFlutterView.');
+    semantics.updateSemantics(update);
+  }
 
   // TODO(yjbanov): How should this look like for multi-view?
   //                https://github.com/flutter/flutter/issues/137445
@@ -73,11 +118,16 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom =
-      DomManager.fromFlutterViewEmbedderDEPRECATED(flutterViewEmbedder);
+  late final DomManager dom = DomManager(viewId: viewId, devicePixelRatio: devicePixelRatio);
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+
+  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
+  @override
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
+
+  late final EngineSemanticsOwner semantics = EngineSemanticsOwner(dom.semanticsHost);
 
   @override
   ui.Size get physicalSize {
@@ -109,7 +159,7 @@ base class EngineFlutterView implements ui.FlutterView {
     }());
 
     if (!override) {
-      _physicalSize = _dimensionsProvider.computePhysicalSize();
+      _physicalSize = dimensionsProvider.computePhysicalSize();
     }
   }
 
@@ -143,43 +193,34 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   double get devicePixelRatio => display.devicePixelRatio;
 
-  late DimensionsProvider _dimensionsProvider;
-  void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
-    _dimensionsProvider = dimensionsProvider;
-  }
+  @visibleForTesting
+  final DimensionsProvider dimensionsProvider;
 
-  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
+  Stream<ui.Size?> get onResize => dimensionsProvider.onResize;
 }
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    int viewId,
     EnginePlatformDispatcher platformDispatcher,
-  ) : super._(viewId, platformDispatcher) {
-    platformDispatcher.registerView(this);
-    registerHotRestartListener(() {
-      // TODO(harryterkelsen): What should we do about this in multi-view?
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
-  }
+    DomElement hostElement,
+  ) : super._(_nextViewId++, platformDispatcher, hostElement);
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
-  EngineFlutterWindow(
-    int viewId,
+  EngineFlutterWindow._(
     EnginePlatformDispatcher platformDispatcher,
-  ) : super._(viewId, platformDispatcher) {
-    platformDispatcher.registerView(this);
+    DomElement? hostElement,
+  ) : super._(kImplicitViewId, platformDispatcher, hostElement) {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
-    registerHotRestartListener(() {
-      _browserHistory?.dispose();
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _browserHistory?.dispose();
   }
 
   @override
@@ -498,7 +539,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
+    _viewInsets = dimensionsProvider.computeKeyboardInsets(
       _physicalSize!.height,
       isEditingOnMobile,
     );
@@ -522,7 +563,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
-      final ui.Size current = _dimensionsProvider.computePhysicalSize();
+      final ui.Size current = dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
       if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the
@@ -573,8 +614,30 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
-final EngineFlutterWindow window =
-    EngineFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
+EngineFlutterWindow get window {
+  assert(
+    _window != null,
+    'Trying to access the implicit FlutterView, but it is not available.\n'
+    'Note: the implicit FlutterView is not available in multi-view mode.',
+  );
+  return _window!;
+}
+EngineFlutterWindow? _window;
+
+/// Initializes the [window] (aka the implicit view), if it's not already
+/// initialized.
+EngineFlutterWindow ensureImplicitViewInitialized({
+  DomElement? hostElement,
+}) {
+  if (_window == null) {
+    _window = EngineFlutterView.implicit(
+      EnginePlatformDispatcher.instance,
+      hostElement,
+    );
+    EnginePlatformDispatcher.instance.viewManager.registerView(_window!);
+  }
+  return _window!;
+}
 
 /// The Web implementation of [ui.ViewPadding].
 class ViewPadding implements ui.ViewPadding {
@@ -593,4 +656,85 @@ class ViewPadding implements ui.ViewPadding {
   final double right;
   @override
   final double bottom;
+}
+
+class ViewConstraints implements ui.ViewConstraints {
+  const ViewConstraints({
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  });
+
+  ViewConstraints.tight(ui.Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  @override
+  final double minWidth;
+  @override
+  final double maxWidth;
+  @override
+  final double minHeight;
+  @override
+  final double maxHeight;
+
+  @override
+  bool isSatisfiedBy(ui.Size size) {
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+
+  @override
+  bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+
+  @override
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is ViewConstraints
+        && other.minWidth == minWidth
+        && other.maxWidth == maxWidth
+        && other.minHeight == minHeight
+        && other.maxHeight == maxHeight;
+  }
+
+  @override
+  int get hashCode => Object.hash(minWidth, maxWidth, minHeight, maxHeight);
+
+  @override
+  String toString() {
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'ViewConstraints(biggest)';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity &&
+        minHeight == 0 && maxHeight == double.infinity) {
+      return 'ViewConstraints(unconstrained)';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'ViewConstraints($width, $height)';
+  }
 }

@@ -12,7 +12,6 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
@@ -110,6 +109,27 @@ enum class PixelFormat {
   kD24UnormS8Uint,
   kD32FloatS8UInt,
 };
+
+constexpr bool IsDepthWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
+
+constexpr bool IsStencilWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
 
 constexpr const char* PixelFormatToString(PixelFormat format) {
   switch (format) {

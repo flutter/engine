@@ -79,27 +79,6 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
     ASSERT_EQ(result, Tessellator::Result::kInputError);
   }
 
-  // More than 30 contours, non-zero fill mode.
-  {
-    Tessellator t;
-    PathBuilder builder = {};
-    for (auto i = 0u; i < Tessellator::kMultiContourThreshold + 1; i++) {
-      builder.AddCircle(Point(i, i), 4);
-    }
-    auto path = builder.TakePath(FillType::kNonZero);
-    bool no_indices = false;
-    Tessellator::Result result = t.Tessellate(
-        path, 1.0f,
-        [&no_indices](const float* vertices, size_t vertices_count,
-                      const uint16_t* indices, size_t indices_count) {
-          no_indices = indices == nullptr;
-          return true;
-        });
-
-    ASSERT_TRUE(no_indices);
-    ASSERT_EQ(result, Tessellator::Result::kSuccess);
-  }
-
   // More than uint16 points, odd fill mode.
   {
     Tessellator t;
@@ -129,34 +108,27 @@ TEST(TessellatorTest, TessellateConvex) {
   {
     Tessellator t;
     // Sanity check simple rectangle.
-    auto [pts, indices] = t.TessellateConvex(
+    auto pts = t.TessellateConvex(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), 1.0);
 
     std::vector<Point> expected = {
-        {0, 0}, {10, 0}, {10, 10}, {0, 10},  //
+        {0, 0}, {10, 0}, {0, 10}, {10, 10},  //
     };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
+    EXPECT_EQ(pts, expected);
   }
 
   {
     Tessellator t;
-    auto [pts, indices] =
-        t.TessellateConvex(PathBuilder{}
-                               .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                               .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                               .TakePath(),
-                           1.0);
+    auto pts = t.TessellateConvex(PathBuilder{}
+                                      .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                                      .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                                      .TakePath(),
+                                  1.0);
 
-    std::vector<Point> expected = {
-        {0, 0},   {10, 0},  {10, 10}, {0, 10},  //
-        {20, 20}, {30, 20}, {30, 30}, {20, 30}  //
-    };
-    std::vector<uint16_t> expected_indices = {0, 1, 2, 0, 2, 3,
-                                              0, 6, 7, 0, 7, 8};
-    ASSERT_EQ(pts, expected);
-    ASSERT_EQ(indices, expected_indices);
+    std::vector<Point> expected = {{0, 0},   {10, 0},  {0, 10},  {10, 10},
+                                   {10, 10}, {20, 20}, {20, 20}, {30, 20},
+                                   {20, 30}, {30, 30}};
+    EXPECT_EQ(pts, expected);
   }
 }
 

@@ -11,6 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "impeller/geometry/trig.h"
 
 struct TESStesselator;
 
@@ -44,10 +45,6 @@ class Tessellator {
   Tessellator();
 
   ~Tessellator();
-
-  /// @brief An arbitrary value to determine when a multi-contour non-zero fill
-  /// path should be split into multiple tessellations.
-  static constexpr size_t kMultiContourThreshold = 30u;
 
   /// @brief A callback that returns the results of the tessellation.
   ///
@@ -84,17 +81,19 @@ class Tessellator {
   ///                        Matrix::GetMaxBasisLength of the CTM applied to the
   ///                        path for rendering.
   ///
-  /// @return A point vector containing the vertices and a vector of indices
-  ///         into the point vector.
+  /// @return A point vector containing the vertices in triangle strip format.
   ///
-  std::pair<std::vector<Point>, std::vector<uint16_t>> TessellateConvex(
-      const Path& path,
-      Scalar tolerance);
+  std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
 
  private:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
   CTessellator c_tessellator_;
+
+  // Cached data for CircleTessellator
+  static constexpr size_t kCachedTrigCount = 300;
+  std::vector<Trig> precomputed_trigs_[kCachedTrigCount];
+  friend class CircleTessellator;
 
   Tessellator(const Tessellator&) = delete;
 

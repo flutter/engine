@@ -28,7 +28,6 @@
 #include "flutter/flow/layers/transform_layer.h"
 #include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/dart/dart_converter.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
@@ -388,8 +387,8 @@ TEST_F(ShellTest, InitializeWithDifferentThreads) {
   Settings settings = CreateSettingsForFixture();
   std::string name_prefix = "io.flutter.test." + GetCurrentTestName() + ".";
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      name_prefix, ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                       ThreadHost::Type::IO | ThreadHost::Type::UI));
+      name_prefix, ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+                       ThreadHost::Type::kIo | ThreadHost::Type::kUi));
   ASSERT_EQ(thread_host.name_prefix, name_prefix);
 
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
@@ -407,7 +406,7 @@ TEST_F(ShellTest, InitializeWithSingleThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -436,9 +435,9 @@ TEST_F(ShellTest,
        InitializeWithMultipleThreadButCallingThreadAsPlatformThread) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::RASTER | ThreadHost::Type::IO | ThreadHost::Type::UI);
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
@@ -471,7 +470,7 @@ TEST_F(ShellTest, InitializeWithDisabledGpu) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -495,9 +494,9 @@ TEST_F(ShellTest, InitializeWithDisabledGpu) {
 TEST_F(ShellTest, InitializeWithGPUAndPlatformThreadsTheSame) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
-  ThreadHost thread_host(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
@@ -939,7 +938,7 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
         std::make_shared<TransformLayer>(SkMatrix::Translate(1, 1));
     root->Add(transform_layer);
     auto clip_rect_layer = std::make_shared<ClipRectLayer>(
-        SkRect::MakeLTRB(0, 0, 30, 30), Clip::hardEdge);
+        SkRect::MakeLTRB(0, 0, 30, 30), Clip::kHardEdge);
     transform_layer->Add(clip_rect_layer);
     auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
     auto backdrop_filter_layer =
@@ -1337,9 +1336,9 @@ TEST_F(ShellTest, OnPlatformViewDestroyWithStaticThreadMerging) {
       };
   auto external_view_embedder = std::make_shared<ShellTestExternalViewEmbedder>(
       end_frame_callback, PostPrerollResult::kSuccess, true);
-  ThreadHost thread_host(
-      "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::IO | ThreadHost::Type::UI);
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners(
       "test",
       thread_host.platform_thread->GetTaskRunner(),  // platform
@@ -2207,52 +2206,6 @@ TEST_F(ShellTest, Screenshot) {
   DestroyShell(std::move(shell));
 }
 
-TEST_F(ShellTest, CanConvertToAndFromMappings) {
-  const size_t buffer_size = 2 << 20;
-
-  uint8_t* buffer = static_cast<uint8_t*>(::malloc(buffer_size));
-  // NOLINTNEXTLINE(clang-analyzer-unix.Malloc)
-  ASSERT_TRUE(buffer != nullptr);
-  ASSERT_TRUE(MemsetPatternSetOrCheck(
-      buffer, buffer_size, MemsetPatternOp::kMemsetPatternOpSetBuffer));
-
-  std::unique_ptr<fml::Mapping> mapping =
-      std::make_unique<fml::MallocMapping>(buffer, buffer_size);
-
-  ASSERT_EQ(mapping->GetSize(), buffer_size);
-
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback(
-      "SendFixtureMapping", CREATE_NATIVE_ENTRY([&](auto args) {
-        auto mapping_from_dart =
-            tonic::DartConverter<std::unique_ptr<fml::Mapping>>::FromDart(
-                Dart_GetNativeArgument(args, 0));
-        ASSERT_NE(mapping_from_dart, nullptr);
-        ASSERT_EQ(mapping_from_dart->GetSize(), buffer_size);
-        ASSERT_TRUE(MemsetPatternSetOrCheck(
-            const_cast<uint8_t*>(mapping_from_dart->GetMapping()),  // buffer
-            mapping_from_dart->GetSize(),                           // size
-            MemsetPatternOp::kMemsetPatternOpCheckBuffer            // op
-            ));
-        latch.Signal();
-      }));
-
-  AddNativeCallback(
-      "GetFixtureMapping", CREATE_NATIVE_ENTRY([&](auto args) {
-        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
-            args, mapping);
-      }));
-
-  auto settings = CreateSettingsForFixture();
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("canConvertMappings");
-  std::unique_ptr<Shell> shell = CreateShell(settings);
-  ASSERT_NE(shell.get(), nullptr);
-  RunEngine(shell.get(), std::move(configuration));
-  latch.Wait();
-  DestroyShell(std::move(shell));
-}
-
 // Compares local times as seen by the dart isolate and as seen by this test
 // fixture, to a resolution of 1 hour.
 //
@@ -2298,35 +2251,6 @@ TEST_F(ShellTest, LocaltimesMatch) {
       << "Local times in the dart isolate and the local time seen by the test "
       << "differ by more than 1 hour, but are expected to be about equal";
 
-  DestroyShell(std::move(shell));
-}
-
-TEST_F(ShellTest, CanDecompressImageFromAsset) {
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("NotifyWidthHeight", CREATE_NATIVE_ENTRY([&](auto args) {
-                      auto width = tonic::DartConverter<int>::FromDart(
-                          Dart_GetNativeArgument(args, 0));
-                      auto height = tonic::DartConverter<int>::FromDart(
-                          Dart_GetNativeArgument(args, 1));
-                      ASSERT_EQ(width, 100);
-                      ASSERT_EQ(height, 100);
-                      latch.Signal();
-                    }));
-
-  AddNativeCallback(
-      "GetFixtureImage", CREATE_NATIVE_ENTRY([](auto args) {
-        auto fixture = OpenFixtureAsMapping("shelltest_screenshot.png");
-        tonic::DartConverter<tonic::DartConverterMapping>::SetReturnValue(
-            args, fixture);
-      }));
-
-  auto settings = CreateSettingsForFixture();
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("canDecompressImageFromAsset");
-  std::unique_ptr<Shell> shell = CreateShell(settings);
-  ASSERT_NE(shell.get(), nullptr);
-  RunEngine(shell.get(), std::move(configuration));
-  latch.Wait();
   DestroyShell(std::move(shell));
 }
 
@@ -3699,7 +3623,7 @@ TEST_F(ShellTest, UpdateAssetResolverByTypeNull) {
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
       "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform));
+      ThreadHost::Type::kPlatform));
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -4221,7 +4145,7 @@ TEST_F(ShellTest, PictureToImageSyncWithTrampledContext) {
   // make it easier to trample the GL context by running on a single task
   // runner.
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -4299,8 +4223,8 @@ TEST_F(ShellTest, NotifyIdleRejectsPastAndNearFuture) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::UI |
-                             ThreadHost::IO | ThreadHost::RASTER);
+                         ThreadHost::Type::kPlatform | ThreadHost::kUi |
+                             ThreadHost::kIo | ThreadHost::kRaster);
   auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
@@ -4344,8 +4268,8 @@ TEST_F(ShellTest, NotifyIdleNotCalledInLatencyMode) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::UI |
-                             ThreadHost::IO | ThreadHost::RASTER);
+                         ThreadHost::Type::kPlatform | ThreadHost::kUi |
+                             ThreadHost::kIo | ThreadHost::kRaster);
   auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
@@ -4387,8 +4311,8 @@ TEST_F(ShellTest, NotifyDestroyed) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform | ThreadHost::UI |
-                             ThreadHost::IO | ThreadHost::RASTER);
+                         ThreadHost::Type::kPlatform | ThreadHost::kUi |
+                             ThreadHost::kIo | ThreadHost::kRaster);
   auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
@@ -4423,7 +4347,7 @@ TEST_F(ShellTest, PrintsErrorWhenPlatformMessageSentFromWrongThread) {
 #else
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -4475,7 +4399,7 @@ TEST_F(ShellTest, DiesIfSoftwareRenderingAndImpellerAreEnabledDeathTest) {
   settings.enable_impeller = true;
   settings.enable_software_rendering = true;
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
-                         ThreadHost::Type::Platform);
+                         ThreadHost::Type::kPlatform);
   auto task_runner = thread_host.platform_thread->GetTaskRunner();
   TaskRunners task_runners("test", task_runner, task_runner, task_runner,
                            task_runner);
@@ -4540,8 +4464,8 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
       "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-          ThreadHost::Type::IO | ThreadHost::Type::UI));
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -4621,8 +4545,8 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
   Settings settings = CreateSettingsForFixture();
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
       "io.flutter.test." + GetCurrentTestName() + ".",
-      ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-          ThreadHost::Type::IO | ThreadHost::Type::UI));
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
