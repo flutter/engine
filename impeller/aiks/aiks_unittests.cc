@@ -1380,6 +1380,7 @@ struct TextRenderOptions {
   Scalar font_size = 50;
   Scalar alpha = 1;
   Point position = Vector2(100, 200);
+  std::optional<Paint::MaskBlurDescriptor> mask_blur_descriptor;
 };
 
 bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
@@ -1413,6 +1414,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
 
   Paint text_paint;
   text_paint.color = Color::Yellow().WithAlpha(options.alpha);
+  text_paint.mask_blur_descriptor = options.mask_blur_descriptor;
   canvas.DrawTextFrame(frame, options.position, text_paint);
   return true;
 }
@@ -1531,6 +1533,25 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 #else
                                      "NotoColorEmoji.ttf"));
 #endif
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderEmojiTextFrameWithBlur) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
+  auto font_fixture =
+#if FML_OS_MACOSX
+      "Apple Color Emoji.ttc";
+#else
+      "NotoColorEmoji.ttf";
+#endif
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊", font_fixture,
+      TextRenderOptions{.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+                            .style = FilterContents::BlurStyle::kNormal,
+                            .sigma = Sigma(16)}}));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
