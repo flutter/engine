@@ -12,7 +12,7 @@ class EllipseGeometry final : public Geometry {
  public:
   explicit EllipseGeometry(Point center, Scalar radius);
 
-  ~EllipseGeometry() = default;
+  ~EllipseGeometry() override = default;
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;

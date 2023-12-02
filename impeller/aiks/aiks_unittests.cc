@@ -2440,7 +2440,7 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  entity_pass->AddEntity(std::move(entity));
+  entity_pass->AddEntity(entity);
   paint.color = Color::Red().WithAlpha(0.5);
 
   delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
@@ -3876,11 +3876,11 @@ TEST_P(AiksTest, VerticesGeometryUVPositionData) {
   std::vector<uint16_t> indices = {0u, 1u, 2u};
   std::vector<Point> texture_coordinates = {};
   std::vector<Color> vertex_colors = {};
-  auto geometry = std::make_shared<VerticesGeometry>(
+  auto geometry = std::make_unique<VerticesGeometry>(
       vertices, indices, texture_coordinates, vertex_colors,
       Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
 
-  canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
+  canvas.DrawVertices(std::move(geometry), BlendMode::kSourceOver, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -3899,11 +3899,11 @@ TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
   std::vector<uint16_t> indices = {0u, 1u, 2u};
   std::vector<Point> texture_coordinates = {};
   std::vector<Color> vertex_colors = {};
-  auto geometry = std::make_shared<VerticesGeometry>(
+  auto geometry = std::make_unique<VerticesGeometry>(
       vertices, indices, texture_coordinates, vertex_colors,
       Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
 
-  canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
+  canvas.DrawVertices(std::move(geometry), BlendMode::kSourceOver, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

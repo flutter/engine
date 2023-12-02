@@ -159,7 +159,7 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
 GeometryResult VerticesGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   using VS = GeometryColorPipeline::VertexShader;
 
   auto index_count = indices_.size();
@@ -300,6 +300,55 @@ GeometryVertexType VerticesGeometry::GetVertexType() const {
 std::optional<Rect> VerticesGeometry::GetCoverage(
     const Matrix& transform) const {
   return bounds_.TransformBounds(transform);
+}
+
+UniqueVerticesWrapper::UniqueVerticesWrapper(
+    std::unique_ptr<VerticesGeometry> geometry)
+    : geometry_(std::move(geometry)) {}
+
+GeometryResult UniqueVerticesWrapper::GetPositionColorBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) const {
+  return geometry_->GetPositionColorBuffer(renderer, entity, pass);
+}
+
+GeometryResult UniqueVerticesWrapper::GetPositionUVBuffer(
+    Rect texture_coverage,
+    const Matrix effect_transform,
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) const {
+  return geometry_->GetPositionUVBuffer(texture_coverage, effect_transform,
+                                        renderer, entity, pass);
+}
+
+GeometryResult UniqueVerticesWrapper::GetPositionBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) const {
+  return geometry_->GetPositionBuffer(renderer, entity, pass);
+}
+
+std::optional<Rect> UniqueVerticesWrapper::GetCoverage(
+    const Matrix& transform) const {
+  return geometry_->GetCoverage(transform);
+}
+
+GeometryVertexType UniqueVerticesWrapper::GetVertexType() const {
+  return geometry_->GetVertexType();
+}
+
+bool UniqueVerticesWrapper::HasVertexColors() const {
+  return geometry_->HasVertexColors();
+}
+
+bool UniqueVerticesWrapper::HasTextureCoordinates() const {
+  return geometry_->HasTextureCoordinates();
+}
+
+std::optional<Rect> UniqueVerticesWrapper::GetTextureCoordinateCoverge() const {
+  return geometry_->GetTextureCoordinateCoverge();
 }
 
 }  // namespace impeller

@@ -103,7 +103,7 @@ auto CreatePassWithRectPath(Rect rect,
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  subpass->AddEntity(std::move(entity));
+  subpass->AddEntity(entity);
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
   subpass->SetBoundsLimit(bounds_hint);
   return subpass;
@@ -152,7 +152,7 @@ TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
   contents->SetColor(Color::Blue());
   entity.SetContents(std::move(contents));
 
-  pass.AddEntity(std::move(entity));
+  pass.AddEntity(entity);
 
   ASSERT_TRUE(OpenPlaygroundHere(pass));
 }
@@ -2465,7 +2465,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
-  pass->AddEntity(std::move(entity));
+  pass->AddEntity(entity);
 
   EXPECT_TRUE(pass->Render(content_context, rt));
 

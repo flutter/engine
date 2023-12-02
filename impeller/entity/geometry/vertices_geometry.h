@@ -8,8 +8,21 @@
 
 namespace impeller {
 
+class VerticesBase : public Geometry {
+ public:
+  virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
+                                                const Entity& entity,
+                                                RenderPass& pass) const = 0;
+
+  virtual bool HasVertexColors() const = 0;
+
+  virtual bool HasTextureCoordinates() const = 0;
+
+  virtual std::optional<Rect> GetTextureCoordinateCoverge() const = 0;
+};
+
 /// @brief A geometry that is created from a vertices object.
-class VerticesGeometry final : public Geometry {
+class VerticesGeometry final : public VerticesBase {
  public:
   enum class VertexMode {
     kTriangles,
@@ -24,11 +37,12 @@ class VerticesGeometry final : public Geometry {
                    Rect bounds,
                    VerticesGeometry::VertexMode vertex_mode);
 
-  ~VerticesGeometry() = default;
+  ~VerticesGeometry() override = default;
 
+  // |VerticesBase|
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
-                                        RenderPass& pass);
+                                        RenderPass& pass) const override;
 
   // |Geometry|
   GeometryResult GetPositionUVBuffer(Rect texture_coverage,
@@ -48,11 +62,14 @@ class VerticesGeometry final : public Geometry {
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
-  bool HasVertexColors() const;
+  // |VerticesBase|
+  bool HasVertexColors() const override;
 
-  bool HasTextureCoordinates() const;
+  // |VerticesBase|
+  bool HasTextureCoordinates() const override;
 
-  std::optional<Rect> GetTextureCoordinateCoverge() const;
+  // |VerticesBase|
+  std::optional<Rect> GetTextureCoordinateCoverge() const override;
 
  private:
   void NormalizeIndices();
@@ -66,6 +83,47 @@ class VerticesGeometry final : public Geometry {
   Rect bounds_;
   VerticesGeometry::VertexMode vertex_mode_ =
       VerticesGeometry::VertexMode::kTriangles;
+};
+
+class UniqueVerticesWrapper final : public VerticesBase {
+ public:
+  explicit UniqueVerticesWrapper(std::unique_ptr<VerticesGeometry> geometry);
+
+  ~UniqueVerticesWrapper() override = default;
+
+  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass) const override;
+
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) const override;
+
+  // |Geometry|
+  GeometryResult GetPositionBuffer(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) const override;
+
+  // |Geometry|
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  // |Geometry|
+  GeometryVertexType GetVertexType() const override;
+
+  // |VerticesBase|
+  bool HasVertexColors() const override;
+
+  // |VerticesBase|
+  bool HasTextureCoordinates() const override;
+
+  // |VerticesBase|
+  std::optional<Rect> GetTextureCoordinateCoverge() const override;
+
+ private:
+  std::unique_ptr<VerticesGeometry> geometry_;
 };
 
 }  // namespace impeller

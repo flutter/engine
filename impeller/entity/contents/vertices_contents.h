@@ -26,7 +26,7 @@ class VerticesContents final : public Contents {
 
   ~VerticesContents() override;
 
-  void SetGeometry(std::shared_ptr<VerticesGeometry> geometry);
+  void SetGeometry(std::shared_ptr<VerticesBase> geometry);
 
   void SetAlpha(Scalar alpha);
 
@@ -34,7 +34,7 @@ class VerticesContents final : public Contents {
 
   void SetSourceContents(std::shared_ptr<Contents> contents);
 
-  std::shared_ptr<VerticesGeometry> GetGeometry() const;
+  std::shared_ptr<VerticesBase> GetGeometry() const;
 
   const std::shared_ptr<Contents>& GetSourceContents() const;
 
@@ -48,7 +48,7 @@ class VerticesContents final : public Contents {
 
  private:
   Scalar alpha_;
-  std::shared_ptr<VerticesGeometry> geometry_;
+  std::shared_ptr<VerticesBase> geometry_;
   BlendMode blend_mode_ = BlendMode::kSource;
   std::shared_ptr<Contents> src_contents_;
 

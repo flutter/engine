@@ -4,15 +4,10 @@
 
 #include "impeller/entity/contents/filters/filter_contents.h"
 
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
 #include <memory>
 #include <optional>
-#include <tuple>
 #include <utility>
 
-#include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
@@ -25,7 +20,6 @@
 #include "impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 

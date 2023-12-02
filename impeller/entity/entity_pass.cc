@@ -67,7 +67,7 @@ std::optional<Rect> EntityPass::GetBoundsLimit() const {
   return bounds_limit_;
 }
 
-void EntityPass::AddEntity(Entity&& entity) {
+void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() == BlendMode::kSourceOver &&
       entity.GetContents()->IsOpaque()) {
     entity.SetBlendMode(BlendMode::kSource);

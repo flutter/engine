@@ -72,7 +72,7 @@ class EntityPass {
 
   std::unique_ptr<EntityPass> Clone() const;
 
-  void AddEntity(Entity&& entity);
+  void AddEntity(Entity entity);
 
   void SetElements(std::vector<Element> elements);
 

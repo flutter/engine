@@ -48,29 +48,31 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
 
 class Geometry {
  public:
-  static std::shared_ptr<Geometry> MakeFillPath(
+  virtual ~Geometry();
+
+  static std::unique_ptr<Geometry> MakeFillPath(
       const Path& path,
       std::optional<Rect> inner_rect = std::nullopt);
 
-  static std::shared_ptr<Geometry> MakeStrokePath(
+  static std::unique_ptr<Geometry> MakeStrokePath(
       const Path& path,
       Scalar stroke_width = 0.0,
       Scalar miter_limit = 4.0,
       Cap stroke_cap = Cap::kButt,
       Join stroke_join = Join::kMiter);
 
-  static std::shared_ptr<Geometry> MakeCover();
+  static std::unique_ptr<Geometry> MakeCover();
 
-  static std::shared_ptr<Geometry> MakeRect(Rect rect);
+  static std::unique_ptr<Geometry> MakeRect(Rect rect);
 
-  static std::shared_ptr<Geometry> MakeLine(Point p0,
+  static std::unique_ptr<Geometry> MakeLine(Point p0,
                                             Point p1,
                                             Scalar width,
                                             Cap cap);
 
-  static std::shared_ptr<Geometry> MakeCircle(Point center, Scalar radius);
+  static std::unique_ptr<Geometry> MakeCircle(Point center, Scalar radius);
 
-  static std::shared_ptr<Geometry> MakePointField(std::vector<Point> points,
+  static std::unique_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,
                                                   bool round);
 

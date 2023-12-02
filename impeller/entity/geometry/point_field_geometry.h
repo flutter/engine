@@ -12,7 +12,7 @@ class PointFieldGeometry final : public Geometry {
  public:
   PointFieldGeometry(std::vector<Point> points, Scalar radius, bool round);
 
-  ~PointFieldGeometry() = default;
+  ~PointFieldGeometry() override = default;
 
   static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
 

@@ -4,6 +4,7 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/aiks/canvas_recorder.h"
+#include "impeller/entity/geometry/vertices_geometry.h"
 namespace impeller {
 namespace testing {
 
@@ -44,7 +45,7 @@ class Serializer {
 
   void Write(const std::shared_ptr<TextFrame>& text_frame) {}
 
-  void Write(const std::shared_ptr<VerticesGeometry>& vertices) {}
+  void Write(std::unique_ptr<VerticesGeometry> vertices) {}
 
   void Write(const BlendMode& blend_mode) {}
 
@@ -222,9 +223,17 @@ TEST(CanvasRecorder, DrawTextFrame) {
 
 TEST(CanvasRecorder, DrawVertices) {
   CanvasRecorder<Serializer> recorder;
-  auto geometry = std::shared_ptr<VerticesGeometry>(
-      new VerticesGeometry({}, {}, {}, {}, {}, {}));
-  recorder.DrawVertices(geometry, {}, {});
+  std::vector<Point> vertices = {};
+  std::vector<uint16_t> indices = {};
+  std::vector<Point> texture_coordinates = {};
+  std::vector<Color> colors = {};
+  Rect bounds = {};
+  VerticesGeometry::VertexMode vertex_mode =
+      VerticesGeometry::VertexMode::kTriangles;
+  auto geometry = std::make_unique<VerticesGeometry>(
+      vertices, indices, texture_coordinates, colors, bounds, vertex_mode);
+  recorder.DrawVertices(std::move(geometry), {}, {});
+
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kDrawVertices);
 }
 

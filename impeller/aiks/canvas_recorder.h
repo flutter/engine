@@ -252,11 +252,11 @@ class CanvasRecorder {
                                text_frame, position, paint);
   }
 
-  void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
+  void DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                     BlendMode blend_mode,
                     const Paint& paint) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawVertices),
-                               vertices, blend_mode, paint);
+                               std::move(vertices), blend_mode, paint);
   }
 
   void DrawAtlas(const std::shared_ptr<Image>& atlas,

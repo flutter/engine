@@ -13,7 +13,7 @@ class LineGeometry final : public Geometry {
  public:
   explicit LineGeometry(Point p0, Point p1, Scalar width, Cap cap);
 
-  ~LineGeometry() = default;
+  ~LineGeometry() override = default;
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
@@ -72,7 +72,5 @@ class LineGeometry final : public Geometry {
 
   LineGeometry& operator=(const LineGeometry&) = delete;
 };
-
-static_assert(std::is_trivially_destructible<LineGeometry>::value);
 
 }  // namespace impeller

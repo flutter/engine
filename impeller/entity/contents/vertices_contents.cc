@@ -22,7 +22,7 @@ std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
   return geometry_->GetCoverage(entity.GetTransform());
 };
 
-void VerticesContents::SetGeometry(std::shared_ptr<VerticesGeometry> geometry) {
+void VerticesContents::SetGeometry(std::shared_ptr<VerticesBase> geometry) {
   geometry_ = std::move(geometry);
 }
 
@@ -30,7 +30,7 @@ void VerticesContents::SetSourceContents(std::shared_ptr<Contents> contents) {
   src_contents_ = std::move(contents);
 }
 
-std::shared_ptr<VerticesGeometry> VerticesContents::GetGeometry() const {
+std::shared_ptr<VerticesBase> VerticesContents::GetGeometry() const {
   return geometry_;
 }
 

@@ -144,7 +144,7 @@ class Canvas {
                      Point position,
                      const Paint& paint);
 
-  void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
+  void DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                     BlendMode blend_mode,
                     const Paint& paint);
 
@@ -173,7 +173,7 @@ class Canvas {
 
   size_t GetClipDepth() const;
 
-  void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
+  void ClipGeometry(std::unique_ptr<Geometry> geometry,
                     Entity::ClipOperation clip_op);
 
   void IntersectCulling(Rect clip_bounds);
