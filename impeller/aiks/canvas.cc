@@ -278,8 +278,8 @@ void Canvas::DrawRRect(Rect rect, Point corner_radii, const Paint& paint) {
     entity.SetTransform(GetCurrentTransform());
     entity.SetClipDepth(GetClipDepth());
     entity.SetBlendMode(paint.blend_mode);
-    entity.SetContents(paint.WithFilters(
-        paint.CreateContentsForGeometry(Geometry::MakeFillPath(std::move(path)))));
+    entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+        Geometry::MakeFillPath(std::move(path)))));
 
     GetCurrentPass().AddEntity(entity);
     return;

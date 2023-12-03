@@ -356,8 +356,8 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     auto render_path = [width = width, &context, &pass, &world_matrix](
                            const Path& path, Cap cap, Join join) {
       auto contents = std::make_unique<SolidColorContents>();
-      contents->SetGeometry(
-          Geometry::MakeStrokePath(path.Clone(), width, miter_limit, cap, join));
+      contents->SetGeometry(Geometry::MakeStrokePath(path.Clone(), width,
+                                                     miter_limit, cap, join));
       contents->SetColor(Color::Red());
 
       Entity entity;
@@ -2289,8 +2289,8 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
                         .LineTo({120, 190})
                         .LineTo({190, 120})
                         .TakePath();
-  auto geometry = Geometry::MakeStrokePath(std::move(arrow_head), 15.0, 4.0, Cap::kRound,
-                                           Join::kRound);
+  auto geometry = Geometry::MakeStrokePath(std::move(arrow_head), 15.0, 4.0,
+                                           Cap::kRound, Join::kRound);
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));

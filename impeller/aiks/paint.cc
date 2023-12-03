@@ -31,13 +31,14 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(Path path,
   std::shared_ptr<Geometry> geometry;
   switch (style) {
     case Style::kFill:
-      geometry = cover ? Geometry::MakeCover() : Geometry::MakeFillPath(std::move(path));
+      geometry = cover ? Geometry::MakeCover()
+                       : Geometry::MakeFillPath(std::move(path));
       break;
     case Style::kStroke:
-      geometry =
-          cover ? Geometry::MakeCover()
-                : Geometry::MakeStrokePath(std::move(path), stroke_width, stroke_miter,
-                                           stroke_cap, stroke_join);
+      geometry = cover ? Geometry::MakeCover()
+                       : Geometry::MakeStrokePath(std::move(path), stroke_width,
+                                                  stroke_miter, stroke_cap,
+                                                  stroke_join);
       break;
   }
   return CreateContentsForGeometry(geometry);

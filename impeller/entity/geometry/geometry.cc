@@ -100,8 +100,8 @@ std::shared_ptr<Geometry> Geometry::MakeStrokePath(Path path,
   if (miter_limit < 0) {
     miter_limit = 4.0;
   }
-  return std::make_shared<StrokePathGeometry>(std::move(path), stroke_width, miter_limit,
-                                              stroke_cap, stroke_join);
+  return std::make_shared<StrokePathGeometry>(
+      std::move(path), stroke_width, miter_limit, stroke_cap, stroke_join);
 }
 
 std::shared_ptr<Geometry> Geometry::MakeCover() {
