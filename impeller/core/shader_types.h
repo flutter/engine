@@ -82,7 +82,7 @@ struct ShaderMetadata {
 struct ShaderUniformSlot {
   uint8_t ext_res_0;
   uint8_t set;
-  uint8_t binding;
+  size_t binding;
 };
 
 struct ShaderStageIOSlot {
