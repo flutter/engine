@@ -4,7 +4,6 @@
 
 #include "impeller/scene/geometry.h"
 
-#include <iostream>
 #include <memory>
 #include <ostream>
 

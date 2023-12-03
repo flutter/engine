@@ -84,10 +84,6 @@ PipelineDescriptor& PipelineDescriptor::AddStageEntrypoint(
     return *this;
   }
 
-  if (function->GetStage() == ShaderStage::kUnknown) {
-    return *this;
-  }
-
   entrypoints_[function->GetStage()] = std::move(function);
 
   return *this;

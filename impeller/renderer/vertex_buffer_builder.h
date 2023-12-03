@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "fml/logging.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/device_buffer.h"
@@ -39,7 +40,7 @@ class VertexBufferBuilder {
     if (sizeof(IndexType) == 4) {
       return impeller::IndexType::k32bit;
     }
-    return impeller::IndexType::kUnknown;
+    FML_UNREACHABLE();
   }
 
   void SetLabel(const std::string& label) { label_ = label; }

@@ -119,16 +119,10 @@ ToVKPipelineColorBlendAttachmentState(const ColorAttachmentDescriptor& desc) {
 constexpr std::optional<vk::ShaderStageFlagBits> ToVKShaderStageFlagBits(
     ShaderStage stage) {
   switch (stage) {
-    case ShaderStage::kUnknown:
-      return std::nullopt;
     case ShaderStage::kVertex:
       return vk::ShaderStageFlagBits::eVertex;
     case ShaderStage::kFragment:
       return vk::ShaderStageFlagBits::eFragment;
-    case ShaderStage::kTessellationControl:
-      return vk::ShaderStageFlagBits::eTessellationControl;
-    case ShaderStage::kTessellationEvaluation:
-      return vk::ShaderStageFlagBits::eTessellationEvaluation;
     case ShaderStage::kCompute:
       return vk::ShaderStageFlagBits::eCompute;
   }
@@ -255,14 +249,8 @@ constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
 
 constexpr vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
   switch (stage) {
-    case ShaderStage::kUnknown:
-      return vk::ShaderStageFlagBits::eAll;
     case ShaderStage::kFragment:
       return vk::ShaderStageFlagBits::eFragment;
-    case ShaderStage::kTessellationControl:
-      return vk::ShaderStageFlagBits::eTessellationControl;
-    case ShaderStage::kTessellationEvaluation:
-      return vk::ShaderStageFlagBits::eTessellationEvaluation;
     case ShaderStage::kCompute:
       return vk::ShaderStageFlagBits::eCompute;
     case ShaderStage::kVertex:
@@ -337,8 +325,6 @@ constexpr vk::IndexType ToVKIndexType(IndexType index_type) {
     case IndexType::k16bit:
       return vk::IndexType::eUint16;
     case IndexType::k32bit:
-      return vk::IndexType::eUint32;
-    case IndexType::kUnknown:
       return vk::IndexType::eUint32;
     case IndexType::kNone:
       FML_UNREACHABLE();

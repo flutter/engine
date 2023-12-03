@@ -32,20 +32,11 @@ static std::string GLESShaderNameToShaderKeyName(const std::string& name,
   std::stringstream stream;
   stream << name;
   switch (stage) {
-    case ShaderStage::kUnknown:
-      stream << "_unknown_";
-      break;
     case ShaderStage::kVertex:
       stream << "_vertex_";
       break;
     case ShaderStage::kFragment:
       stream << "_fragment_";
-      break;
-    case ShaderStage::kTessellationControl:
-      stream << "_tessellation_control_";
-      break;
-    case ShaderStage::kTessellationEvaluation:
-      stream << "_tessellation_evaluation_";
       break;
     case ShaderStage::kCompute:
       stream << "_compute_";
@@ -117,8 +108,7 @@ void ShaderLibraryGLES::RegisterFunction(std::string name,
     callback = [](auto) {};
   }
   fml::ScopedCleanupClosure auto_fail([callback]() { callback(false); });
-  if (name.empty() || stage == ShaderStage::kUnknown || code == nullptr ||
-      code->GetMapping() == nullptr) {
+  if (name.empty() || code == nullptr || code->GetMapping() == nullptr) {
     VALIDATION_LOG << "Invalid runtime stage registration.";
     return;
   }

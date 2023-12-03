@@ -15,12 +15,7 @@ struct VertexBuffer {
   // The total count of vertices, either in the vertex_buffer if the
   // index_type is IndexType::kNone or in the index_buffer otherwise.
   size_t vertex_count = 0u;
-  IndexType index_type = IndexType::kUnknown;
-
-  constexpr explicit operator bool() const {
-    return static_cast<bool>(vertex_buffer) &&
-           (index_type == IndexType::kNone || static_cast<bool>(index_buffer));
-  }
+  IndexType index_type = IndexType::kNone;
 };
 
 }  // namespace impeller

@@ -60,11 +60,7 @@ void RenderPass::SetLabel(std::string label) {
 }
 
 bool RenderPass::AddCommand(Command&& command) {
-  if (!command.IsValid()) {
-    VALIDATION_LOG << "Attempted to add an invalid command to the render pass.";
-    return false;
-  }
-
+#ifdef IMPELLER_DEBUG
   if (command.scissor.has_value()) {
     auto target_rect = IRect::MakeSize(render_target_.GetRenderTargetSize());
     if (!target_rect.Contains(command.scissor.value())) {
@@ -73,18 +69,7 @@ bool RenderPass::AddCommand(Command&& command) {
       return false;
     }
   }
-
-  if (command.vertex_count == 0u) {
-    // Essentially a no-op. Don't record the command but this is not necessary
-    // an error either.
-    return true;
-  }
-
-  if (command.instance_count == 0u) {
-    // Essentially a no-op. Don't record the command but this is not necessary
-    // an error either.
-    return true;
-  }
+#endif
 
   commands_.emplace_back(std::move(command));
   return true;

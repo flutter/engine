@@ -251,11 +251,6 @@ struct RenderPassData {
   gl.Clear(clear_bits);
 
   for (const auto& command : commands) {
-    if (command.instance_count != 1u) {
-      VALIDATION_LOG << "GLES backend does not support instanced rendering.";
-      return false;
-    }
-
     if (!command.pipeline) {
       VALIDATION_LOG << "Command has no pipeline specified.";
       return false;
@@ -372,10 +367,6 @@ struct RenderPassData {
         break;
     }
 
-    if (command.index_type == IndexType::kUnknown) {
-      return false;
-    }
-
     auto vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
@@ -441,11 +432,11 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    if (command.index_type == IndexType::kNone) {
-      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+    if (command.vertex_buffer.index_type == IndexType::kNone) {
+      gl.DrawArrays(mode, 0u, command.vertex_buffer.vertex_count);
     } else {
       // Bind the index buffer if necessary.
-      auto index_buffer_view = command.index_buffer;
+      auto index_buffer_view = command.vertex_buffer.index_buffer;
       auto index_buffer =
           index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
@@ -453,9 +444,9 @@ struct RenderPassData {
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
         return false;
       }
-      gl.DrawElements(mode,                             // mode
-                      command.vertex_count,             // count
-                      ToIndexType(command.index_type),  // type
+      gl.DrawElements(mode,                                           // mode
+                      command.vertex_buffer.vertex_count,             // count
+                      ToIndexType(command.vertex_buffer.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
                           index_buffer_view.range.offset))  // indices
       );

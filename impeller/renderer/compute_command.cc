@@ -4,56 +4,36 @@
 
 #include "impeller/renderer/compute_command.h"
 
-#include <utility>
-
-#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
+#include "impeller/renderer/command.h"
 
 namespace impeller {
 
 bool ComputeCommand::BindResource(ShaderStage stage,
                                   const ShaderUniformSlot& slot,
                                   const ShaderMetadata& metadata,
-                                  const BufferView& view) {
-  if (stage != ShaderStage::kCompute) {
-    VALIDATION_LOG << "Use Command for non-compute shader stages.";
-    return false;
-  }
-  if (!view) {
-    return false;
-  }
+                                  BufferView view) {
+  FML_DCHECK(stage == ShaderStage::kCompute);
 
-  bindings.buffers[slot.ext_res_0] = {.slot = slot, .view = {&metadata, view}};
+  bindings.buffers.emplace_back(
+      BufferAndUniformSlot{.slot = slot, .view = {&metadata, std::move(view)}});
   return true;
 }
 
-bool ComputeCommand::BindResource(
-    ShaderStage stage,
-    const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
-    const std::shared_ptr<const Texture>& texture,
-    const std::shared_ptr<const Sampler>& sampler) {
-  if (stage != ShaderStage::kCompute) {
-    VALIDATION_LOG << "Use Command for non-compute shader stages.";
-    return false;
-  }
-  if (!sampler || !sampler->IsValid()) {
-    return false;
-  }
-  if (!texture || !texture->IsValid()) {
-    return false;
-  }
-  if (!slot.HasSampler() || !slot.HasTexture()) {
-    return true;
-  }
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const ShaderUniformSlot& slot,
+                                  const ShaderMetadata& metadata,
+                                  std::shared_ptr<const Texture> texture,
+                                  std::shared_ptr<const Sampler> sampler) {
+  FML_DCHECK(stage == ShaderStage::kCompute);
 
-  bindings.sampled_images[slot.sampler_index] = TextureAndSampler{
+  bindings.sampled_images.emplace_back(TextureAndSampler{
       .slot = slot,
-      .texture = {&metadata, texture},
-      .sampler = {&metadata, sampler},
-  };
-
-  return false;
+      .texture = {&metadata, std::move(texture)},
+      .sampler = std::move(sampler),
+  });
+  return true;
 }
 
 }  // namespace impeller

@@ -321,7 +321,7 @@ constexpr const char* TextureUsageToString(TextureUsage usage) {
 std::string TextureUsageMaskToString(TextureUsageMask mask);
 
 // Texture coordinate system.
-enum class TextureCoordinateSystem {
+enum class TextureCoordinateSystem : uint8_t {
   // Alternative coordinate system used when uploading texture data from the
   // host.
   // (0, 0) is the bottom-left of the image with +Y going up.
@@ -331,14 +331,13 @@ enum class TextureCoordinateSystem {
   kRenderToTexture,
 };
 
-enum class CullMode {
+enum class CullMode : uint8_t {
   kNone,
   kFrontFace,
   kBackFace,
 };
 
-enum class IndexType {
-  kUnknown,
+enum class IndexType : uint8_t {
   k16bit,
   k32bit,
   /// Does not use the index buffer.

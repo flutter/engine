@@ -9,14 +9,13 @@
 #include <unordered_map>
 
 #include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/shader_types.h"
 
 namespace impeller {
 
 struct ShaderKey {
   std::string name;
-  ShaderStage stage = ShaderStage::kUnknown;
+  ShaderStage stage;
 
   ShaderKey(std::string_view p_name, ShaderStage p_stage)
       : name({p_name.data(), p_name.size()}), stage(p_stage) {}

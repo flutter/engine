@@ -125,9 +125,6 @@ size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
       return max_vertex_texture_image_units;
     case ShaderStage::kFragment:
       return max_texture_image_units;
-    case ShaderStage::kUnknown:
-    case ShaderStage::kTessellationControl:
-    case ShaderStage::kTessellationEvaluation:
     case ShaderStage::kCompute:
       return 0u;
   }

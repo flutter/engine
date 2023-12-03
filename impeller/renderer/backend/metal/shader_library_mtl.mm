@@ -31,9 +31,6 @@ static MTLFunctionType ToMTLFunctionType(ShaderStage stage) {
       return MTLFunctionTypeVertex;
     case ShaderStage::kFragment:
       return MTLFunctionTypeFragment;
-    case ShaderStage::kUnknown:
-    case ShaderStage::kTessellationControl:
-    case ShaderStage::kTessellationEvaluation:
     case ShaderStage::kCompute:
       return MTLFunctionTypeKernel;
   }

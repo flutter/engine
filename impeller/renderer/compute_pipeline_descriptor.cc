@@ -45,10 +45,6 @@ ComputePipelineDescriptor& ComputePipelineDescriptor::SetStageEntrypoint(
     return *this;
   }
 
-  if (function->GetStage() == ShaderStage::kUnknown) {
-    return *this;
-  }
-
   entrypoint_ = std::move(function);
 
   return *this;

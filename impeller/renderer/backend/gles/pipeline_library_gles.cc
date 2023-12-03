@@ -54,20 +54,11 @@ static void LogShaderCompilationFailure(const ProcTableGLES& gl,
   std::stringstream stream;
   stream << "Failed to compile ";
   switch (stage) {
-    case ShaderStage::kUnknown:
-      stream << "unknown";
-      break;
     case ShaderStage::kVertex:
       stream << "vertex";
       break;
     case ShaderStage::kFragment:
       stream << "fragment";
-      break;
-    case ShaderStage::kTessellationControl:
-      stream << "tessellation control";
-      break;
-    case ShaderStage::kTessellationEvaluation:
-      stream << "tessellation evaluation";
       break;
     case ShaderStage::kCompute:
       stream << "compute";

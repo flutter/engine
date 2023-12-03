@@ -74,7 +74,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
@@ -96,7 +96,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = pipeline;
 
-    cmd.BindVertices(vertex_buffer);
+    cmd.BindVertices(std::move(vertex_buffer));
 
     VS::UniformBuffer uniforms;
     uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -191,7 +191,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     DEBUG_COMMAND_INFO(cmd, "Perspective Cube");
     cmd.pipeline = pipeline;
 
-    cmd.BindVertices(vertex_buffer);
+    cmd.BindVertices(std::move(vertex_buffer));
 
     VS::UniformBuffer uniforms;
     Scalar time = GetSecondsElapsed();
@@ -240,7 +240,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
@@ -253,7 +253,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = box_pipeline;
 
-    cmd.BindVertices(vertex_buffer);
+    cmd.BindVertices(std::move(vertex_buffer));
 
     FS::FrameInfo frame_info;
     frame_info.current_time = GetSecondsElapsed();
@@ -312,7 +312,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
@@ -367,7 +367,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   DEBUG_COMMAND_INFO(cmd, "Box");
   cmd.pipeline = box_pipeline;
 
-  cmd.BindVertices(vertex_buffer);
+  cmd.BindVertices(std::move(vertex_buffer));
 
   FS::FrameInfo frame_info;
   frame_info.current_time = GetSecondsElapsed();
@@ -387,72 +387,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
       cmd, r2t_pass->GetTransientsBuffer().EmplaceUniform(uniforms));
   ASSERT_TRUE(r2t_pass->AddCommand(std::move(cmd)));
   ASSERT_TRUE(r2t_pass->EncodeCommands());
-}
-
-TEST_P(RendererTest, CanRenderInstanced) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("Instancing is not supported on OpenGL.");
-  }
-  using VS = InstancedDrawVertexShader;
-  using FS = InstancedDrawFragmentShader;
-
-  VertexBufferBuilder<VS::PerVertexData> builder;
-
-  ASSERT_EQ(Tessellator::Result::kSuccess,
-            Tessellator{}.Tessellate(
-                PathBuilder{}
-                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath(FillType::kPositive),
-                1.0f,
-                [&builder](const float* vertices, size_t vertices_count,
-                           const uint16_t* indices, size_t indices_count) {
-                  for (auto i = 0u; i < vertices_count * 2; i += 2) {
-                    VS::PerVertexData data;
-                    data.vtx = {vertices[i], vertices[i + 1]};
-                    builder.AppendVertex(data);
-                  }
-                  for (auto i = 0u; i < indices_count; i++) {
-                    builder.AppendIndex(indices[i]);
-                  }
-                  return true;
-                }));
-
-  ASSERT_NE(GetContext(), nullptr);
-  auto pipeline =
-      GetContext()
-          ->GetPipelineLibrary()
-          ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
-                            *GetContext())
-                            ->SetSampleCount(SampleCount::kCount4)
-                            .SetStencilAttachmentDescriptors(std::nullopt))
-
-          .Get();
-  ASSERT_TRUE(pipeline && pipeline->IsValid());
-
-  Command cmd;
-  cmd.pipeline = pipeline;
-  DEBUG_COMMAND_INFO(cmd, "InstancedDraw");
-
-  static constexpr size_t kInstancesCount = 5u;
-  VS::InstanceInfo<kInstancesCount> instances;
-  for (size_t i = 0; i < kInstancesCount; i++) {
-    instances.colors[i] = Color::Random();
-  }
-
-  ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     Matrix::MakeScale(GetContentScale());
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-    VS::BindInstanceInfo(
-        cmd, pass.GetTransientsBuffer().EmplaceStorageBuffer(instances));
-    cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
-
-    cmd.instance_count = kInstancesCount;
-    pass.AddCommand(std::move(cmd));
-    return true;
-  }));
 }
 
 TEST_P(RendererTest, CanBlitTextureToTexture) {
@@ -500,7 +434,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     auto buffer = context->CreateCommandBuffer();
@@ -539,7 +473,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
         DEBUG_COMMAND_INFO(cmd, "Image");
         cmd.pipeline = mipmaps_pipeline;
 
-        cmd.BindVertices(vertex_buffer);
+        cmd.BindVertices(std::move(vertex_buffer));
 
         VS::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
@@ -618,7 +552,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     {
@@ -664,7 +598,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         DEBUG_COMMAND_INFO(cmd, "Image");
         cmd.pipeline = mipmaps_pipeline;
 
-        cmd.BindVertices(vertex_buffer);
+        cmd.BindVertices(std::move(vertex_buffer));
 
         VS::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
@@ -731,7 +665,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
@@ -785,7 +719,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
         DEBUG_COMMAND_INFO(cmd, "Image LOD");
         cmd.pipeline = mipmaps_pipeline;
 
-        cmd.BindVertices(vertex_buffer);
+        cmd.BindVertices(std::move(vertex_buffer));
 
         VS::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
@@ -1128,7 +1062,7 @@ TEST_P(RendererTest, StencilMask) {
   });
   auto vertex_buffer =
       vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
+  ASSERT_TRUE(vertex_buffer.vertex_count > 0);
 
   desc->SetSampleCount(SampleCount::kCount4);
   desc->SetStencilAttachmentDescriptors(std::nullopt);

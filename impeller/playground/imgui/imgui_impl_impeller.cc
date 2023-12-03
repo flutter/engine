@@ -263,8 +263,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
                 pcmd->ElemCount * sizeof(ImDrawIdx))};
         vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
-        cmd.BindVertices(vertex_buffer);
-        cmd.base_vertex = pcmd->VtxOffset;
+        cmd.BindVertices(std::move(vertex_buffer));
 
         render_pass.AddCommand(std::move(cmd));
       }

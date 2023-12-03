@@ -19,11 +19,8 @@
 namespace impeller {
 
 enum class ShaderStage {
-  kUnknown,
   kVertex,
   kFragment,
-  kTessellationControl,
-  kTessellationEvaluation,
   kCompute,
 };
 
@@ -35,10 +32,6 @@ constexpr ShaderStage ToShaderStage(RuntimeShaderStage stage) {
       return ShaderStage::kFragment;
     case RuntimeShaderStage::kCompute:
       return ShaderStage::kCompute;
-    case RuntimeShaderStage::kTessellationControl:
-      return ShaderStage::kTessellationControl;
-    case RuntimeShaderStage::kTessellationEvaluation:
-      return ShaderStage::kTessellationEvaluation;
   }
   FML_UNREACHABLE();
 }
@@ -79,11 +72,17 @@ struct ShaderMetadata {
   std::vector<ShaderStructMemberMetadata> members;
 };
 
+/// @brief Metadata required to bind a buffer or texture.
+///
+/// `ext_res_0` is the Metal binding value. `binding` is the Vulkan binding
+/// value and `set` is the Vulkan descriptor set. OpenGL binding requires the
+/// usage of the separate shader metadata struct.
+///
+/// When used for texture binding this assumes a combined texture and sampler.
 struct ShaderUniformSlot {
-  const char* name;
-  size_t ext_res_0;
-  size_t set;
-  size_t binding;
+  uint8_t ext_res_0;
+  uint8_t set;
+  uint8_t binding;
 };
 
 struct ShaderStageIOSlot {
@@ -125,18 +124,6 @@ struct ShaderStageBufferLayout {
     return stride == other.stride &&  //
            binding == other.binding;
   }
-};
-
-struct SampledImageSlot {
-  const char* name;
-  size_t texture_index;
-  size_t sampler_index;
-  size_t binding;
-  size_t set;
-
-  constexpr bool HasTexture() const { return texture_index < 32u; }
-
-  constexpr bool HasSampler() const { return sampler_index < 32u; }
 };
 
 enum class DescriptorType {
