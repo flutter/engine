@@ -28,7 +28,7 @@ class Serializer {
 
   void Write(const Radians& vec2) {}
 
-  void Write(const Path& path) {}
+  void Write(Path path) {}
 
   void Write(const std::vector<Point>& points) {}
 
