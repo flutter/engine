@@ -23,16 +23,16 @@ bool ComputeCommand::BindResource(ShaderStage stage,
     return false;
   }
 
-  bindings.buffers[slot.ext_res_0] = {.slot = slot, .view = {&metadata, std::move(view)}};
+  bindings.buffers[slot.ext_res_0] = {.slot = slot,
+                                      .view = {&metadata, std::move(view)}};
   return true;
 }
 
-bool ComputeCommand::BindResource(
-    ShaderStage stage,
-    const SampledImageSlot& slot,
-    const ShaderMetadata& metadata,
-    std::shared_ptr<const Texture> texture,
-    std::shared_ptr<const Sampler> sampler) {
+bool ComputeCommand::BindResource(ShaderStage stage,
+                                  const SampledImageSlot& slot,
+                                  const ShaderMetadata& metadata,
+                                  std::shared_ptr<const Texture> texture,
+                                  std::shared_ptr<const Sampler> sampler) {
   if (stage != ShaderStage::kCompute) {
     VALIDATION_LOG << "Use Command for non-compute shader stages.";
     return false;
