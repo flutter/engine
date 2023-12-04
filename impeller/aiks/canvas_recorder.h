@@ -180,7 +180,7 @@ class CanvasRecorder {
   }
 
   void DrawPath(Path path, const Paint& paint) {
-    serializer_.Write(path.Clone());
+    serializer_.Write(path);
     serializer_.Write(paint);
     return ExecuteAndSkipArgSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPath),
                                       std::move(path), paint);
@@ -233,7 +233,7 @@ class CanvasRecorder {
   void ClipPath(
       Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
-    serializer_.Write(path.Clone());
+    serializer_.Write(path);
     serializer_.Write(clip_op);
     return ExecuteAndSkipArgSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipPath),
                                       std::move(path), clip_op);
