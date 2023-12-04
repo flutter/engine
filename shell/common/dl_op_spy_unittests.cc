@@ -8,11 +8,8 @@
 #include "flutter/testing/testing.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkFont.h"
-#include "third_party/skia/include/core/SkFontMgr.h"
-#include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/core/SkTypeface.h"
 #include "third_party/skia/include/core/SkRSXform.h"
-#include "txt/platform.h"
+#include "flutter/display_list/testing/dl_test_snippets.h"
 
 namespace flutter {
 namespace testing {
@@ -550,10 +547,7 @@ TEST(DlOpSpy, DrawTextBlob) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kBlack());
     std::string string = "xx";
-    sk_sp<SkTypeface> face = txt::GetDefaultFontManager()->matchFamilyStyle(nullptr, {});
-    ASSERT_TRUE(face);
-    ASSERT_TRUE(face->countGlyphs() > 0);
-    SkFont font(face, 12);
+    SkFont font = CreateTestFontOfSize(12);
     auto text_blob = SkTextBlob::MakeFromString(string.c_str(), font);
     builder.DrawTextBlob(text_blob, 1, 1, paint);
     sk_sp<DisplayList> dl = builder.Build();
@@ -565,10 +559,7 @@ TEST(DlOpSpy, DrawTextBlob) {
     DisplayListBuilder builder;
     DlPaint paint(DlColor::kTransparent());
     std::string string = "xx";
-    sk_sp<SkTypeface> face = txt::GetDefaultFontManager()->matchFamilyStyle(nullptr, {});
-    ASSERT_TRUE(face);
-    ASSERT_TRUE(face->countGlyphs() > 0);
-    SkFont font(face, 12);
+    SkFont font = CreateTestFontOfSize(12);
     auto text_blob = SkTextBlob::MakeFromString(string.c_str(), font);
     builder.DrawTextBlob(text_blob, 1, 1, paint);
     sk_sp<DisplayList> dl = builder.Build();
