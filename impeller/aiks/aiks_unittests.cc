@@ -3232,11 +3232,11 @@ TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   // Entity entity;
   std::vector<Entity> entity;
   std::shared_ptr<SolidColorContents> contents;
-  picture.pass->IterateAllEntities([&e = entity, &contents](Entity& entity) {
+  picture.pass->IterateAllEntities([e = &entity, &contents](Entity& entity) {
     if (ScalarNearlyEqual(entity.GetTransform().GetScale().x, 1.618f)) {
       contents =
           std::static_pointer_cast<SolidColorContents>(entity.GetContents());
-      e.emplace_back(entity.Clone());
+      e->emplace_back(entity.Clone());
       return false;
     }
     return true;
