@@ -469,7 +469,8 @@ TEST(PathTest, CanBeCloned) {
 
   for (auto i = 0u; i < poly_a.contours.size(); i++) {
     EXPECT_EQ(poly_a.contours[i].start_index, poly_b.contours[i].start_index);
-    EXPECT_EQ(poly_a.contours[i].start_direction, poly_b.contours[i].start_direction);
+    EXPECT_EQ(poly_a.contours[i].start_direction,
+              poly_b.contours[i].start_direction);
   }
 }
 
