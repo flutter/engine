@@ -45,10 +45,6 @@ static std::optional<fb::Stage> ToStage(spv::ExecutionModel stage) {
       return fb::Stage::kFragment;
     case spv::ExecutionModel::ExecutionModelGLCompute:
       return fb::Stage::kCompute;
-    case spv::ExecutionModel::ExecutionModelTessellationControl:
-      return fb::Stage::kTessellationControl;
-    case spv::ExecutionModel::ExecutionModelTessellationEvaluation:
-      return fb::Stage::kTessellationEvaluation;
     default:
       return std::nullopt;
   }
@@ -63,10 +59,6 @@ static std::optional<uint32_t> ToJsonStage(spv::ExecutionModel stage) {
       return 1;  // fb::Stage::kFragment;
     case spv::ExecutionModel::ExecutionModelGLCompute:
       return 2;  // fb::Stage::kCompute;
-    case spv::ExecutionModel::ExecutionModelTessellationControl:
-      return 3;  // fb::Stage::kTessellationControl;
-    case spv::ExecutionModel::ExecutionModelTessellationEvaluation:
-      return 4;  // fb::Stage::kTessellationEvaluation;
     default:
       return std::nullopt;
   }
