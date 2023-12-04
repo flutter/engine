@@ -32,6 +32,8 @@ class TextContents final : public Contents {
 
   /// @brief Force the text color to apply to the rendered glyphs, even if those
   ///        glyphs are bitmaps.
+  ///
+  ///        This is used to ensure that mask blurs work correctly on emoji.
   void SetForceTextColor(bool value);
 
   Color GetColor() const;
