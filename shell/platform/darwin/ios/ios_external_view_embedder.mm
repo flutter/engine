@@ -34,9 +34,7 @@ void IOSExternalViewEmbedder::CancelFrame() {
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::BeginFrame(
     GrDirectContext* context,
-    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
-  TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::BeginFrame");
-}
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
 void IOSExternalViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,

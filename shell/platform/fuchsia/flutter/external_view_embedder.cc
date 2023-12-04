@@ -109,9 +109,7 @@ flutter::PostPrerollResult ExternalViewEmbedder::PostPrerollAction(
 
 void ExternalViewEmbedder::BeginFrame(
     GrDirectContext* context,
-    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
-  TRACE_EVENT0("flutter", "ExternalViewEmbedder::BeginFrame");
-}
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
 // |ExternalViewEmbedder|
 void ExternalViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,
