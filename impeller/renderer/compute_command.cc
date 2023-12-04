@@ -48,10 +48,7 @@ bool ComputeCommand::BindResource(
   }
 
   bindings.sampled_images[slot.sampler_index] = TextureAndSampler{
-      .slot = slot,
-      .texture = {&metadata, texture},
-      .sampler = {&metadata, sampler},
-  };
+      .slot = slot, .texture = {&metadata, texture}, .sampler = sampler};
 
   return false;
 }
