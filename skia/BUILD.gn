@@ -234,6 +234,17 @@ optional("fontmgr_custom") {
   sources = [ "$_skia_root/src/ports/SkFontMgr_custom.cpp" ]
 }
 
+optional("fontmgr_custom_embedded") {
+  enabled = skia_enable_fontmgr_custom_embedded
+  public_defines = [ "SK_FONTMGR_FREETYPE_EMBEDDED_AVAILABLE" ]
+
+  deps = [
+    ":fontmgr_custom",
+    ":typeface_freetype",
+  ]
+  sources = [ "$_skia_root/src/ports/SkFontMgr_custom_embedded.cpp" ]
+}
+
 optional("fontmgr_custom_empty") {
   enabled = skia_enable_fontmgr_custom_empty
   public_defines = [ "SK_FONTMGR_FREETYPE_EMPTY_AVAILABLE" ]
@@ -587,6 +598,7 @@ skia_component("skia") {
 
   public_deps = [
     ":fontmgr_android",
+    ":fontmgr_custom_embedded",
     ":fontmgr_custom_empty",
     ":fontmgr_fontconfig",
     ":fontmgr_fuchsia",
