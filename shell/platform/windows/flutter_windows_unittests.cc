@@ -39,7 +39,10 @@ TEST(WindowsNoFixtureTest, GetTextureRegistrar) {
 TEST_F(WindowsTest, LaunchMain) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
-  ViewControllerPtr controller{builder.Run()};
+
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 }
 
@@ -51,7 +54,10 @@ TEST_F(WindowsTest, LaunchMainHasNoOutput) {
 
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
-  ViewControllerPtr controller{builder.Run()};
+
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 
   stdout_capture.Stop();
@@ -67,7 +73,10 @@ TEST_F(WindowsTest, LaunchCustomEntrypoint) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
   builder.SetDartEntrypoint("customEntrypoint");
-  ViewControllerPtr controller{builder.Run()};
+
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 }
 
@@ -143,7 +152,9 @@ TEST_F(WindowsTest, VerifyNativeFunction) {
       CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); });
   context.AddNativeFunction("Signal", native_entry);
 
-  ViewControllerPtr controller{builder.Run()};
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 
   // Wait until signal has been called.
@@ -166,7 +177,9 @@ TEST_F(WindowsTest, VerifyNativeFunctionWithParameters) {
   });
   context.AddNativeFunction("SignalBoolValue", native_entry);
 
-  ViewControllerPtr controller{builder.Run()};
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 
   // Wait until signalBoolValue has been called.
@@ -190,7 +203,9 @@ TEST_F(WindowsTest, PlatformExecutable) {
   });
   context.AddNativeFunction("SignalStringValue", native_entry);
 
-  ViewControllerPtr controller{builder.Run()};
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 
   // Wait until signalStringValue has been called.
@@ -221,7 +236,9 @@ TEST_F(WindowsTest, VerifyNativeFunctionWithReturn) {
   });
   context.AddNativeFunction("SignalBoolValue", bool_pass_entry);
 
-  ViewControllerPtr controller{builder.Run()};
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
 
   // Wait until signalBoolReturn and signalBoolValue have been called.
@@ -251,13 +268,15 @@ TEST_F(WindowsTest, NextFrameCallback) {
     });
     context.AddNativeFunction("NotifyFirstFrameScheduled", native_entry);
 
-    ViewControllerPtr controller{builder.Run()};
+    EnginePtr engine;
+    ViewControllerPtr controller;
+    std::tie(engine, controller) = builder.Run();
     ASSERT_NE(controller, nullptr);
 
-    auto engine = FlutterDesktopViewControllerGetEngine(controller.get());
+    auto engine_ref = FlutterDesktopViewControllerGetEngine(controller.get());
 
     FlutterDesktopEngineSetNextFrameCallback(
-        engine,
+        engine_ref,
         [](void* user_data) {
           auto captures = static_cast<Captures*>(user_data);
 
@@ -286,7 +305,10 @@ TEST_F(WindowsTest, NextFrameCallback) {
 TEST_F(WindowsTest, GetGraphicsAdapter) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
-  ViewControllerPtr controller{builder.Run()};
+
+  EnginePtr engine;
+  ViewControllerPtr controller;
+  std::tie(engine, controller) = builder.Run();
   ASSERT_NE(controller, nullptr);
   auto view = FlutterDesktopViewControllerGetView(controller.get());
 

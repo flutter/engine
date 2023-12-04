@@ -64,9 +64,9 @@ class WindowsConfigBuilder {
   // Returns a configured and initialized engine.
   EnginePtr InitializeEngine() const;
 
-  // Returns a configured and initialized view controller running the default
-  // Dart entrypoint.
-  ViewControllerPtr Run();
+  // Returns a configured and initialized engine and view controller running the
+  // default Dart entrypoint.
+  std::pair<EnginePtr, ViewControllerPtr> Run() const;
 
  private:
   // Initialize COM, so that it is available for use in the library and/or
@@ -76,7 +76,6 @@ class WindowsConfigBuilder {
   WindowsTestContext& context_;
   std::string dart_entrypoint_;
   std::vector<std::string> dart_entrypoint_arguments_;
-  std::vector<EnginePtr> engines_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(WindowsConfigBuilder);
 };

@@ -71,7 +71,7 @@ EnginePtr WindowsConfigBuilder::InitializeEngine() const {
   return EnginePtr(FlutterDesktopEngineCreate(&engine_properties));
 }
 
-ViewControllerPtr WindowsConfigBuilder::Run() {
+std::pair<EnginePtr, ViewControllerPtr> WindowsConfigBuilder::Run() const {
   InitializeCOM();
 
   EnginePtr engine = InitializeEngine();
@@ -94,8 +94,7 @@ ViewControllerPtr WindowsConfigBuilder::Run() {
     return {};
   }
 
-  engines_.push_back(std::move(engine));
-  return controller;
+  return std::make_pair(std::move(engine), std::move(controller));
 }
 
 void WindowsConfigBuilder::InitializeCOM() const {
