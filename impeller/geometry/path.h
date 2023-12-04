@@ -132,8 +132,6 @@ class Path {
 
   ~Path();
 
-  Path(const Path& other) = delete;
-
   Path(Path&& other) = default;
 
   /// @brief Deeply clone this path and all data associated with it.
@@ -184,6 +182,8 @@ class Path {
 
  private:
   friend class PathBuilder;
+
+  Path(const Path& other);
 
   void SetConvexity(Convexity value);
 

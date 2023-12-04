@@ -74,13 +74,7 @@ void Path::Shift(Point shift) {
 }
 
 Path Path::Clone() const {
-  Path new_path;
-  new_path.components_ = components_;
-  new_path.contours_ = contours_;
-  new_path.computed_bounds_ = computed_bounds_;
-  new_path.convexity_ = convexity_;
-  new_path.points_ = new_path.points_;
-  new_path.fill_ = fill_;
+  Path new_path = *this;
   return new_path;
 }
 
