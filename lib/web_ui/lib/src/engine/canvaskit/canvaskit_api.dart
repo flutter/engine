@@ -161,6 +161,13 @@ extension CanvasKitExtension on CanvasKit {
       DomCanvasElement canvas, SkWebGLContextOptions options) =>
         _GetWebGLContext(canvas, options).toDartDouble;
 
+  @JS('GetWebGLContext')
+  external JSNumber _GetOffscreenWebGLContext(
+      DomOffscreenCanvas canvas, SkWebGLContextOptions options);
+  double GetOffscreenWebGLContext(
+          DomOffscreenCanvas canvas, SkWebGLContextOptions options) =>
+      _GetOffscreenWebGLContext(canvas, options).toDartDouble;
+
   @JS('MakeGrContext')
   external SkGrContext _MakeGrContext(JSNumber glContext);
   SkGrContext MakeGrContext(double glContext) =>
@@ -198,6 +205,9 @@ extension CanvasKitExtension on CanvasKit {
   ) => _MakeRenderTarget(grContext, width.toJS, height.toJS);
 
   external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
+
+  @JS('MakeSWCanvasSurface')
+  external SkSurface MakeOffscreenSWCanvasSurface(DomOffscreenCanvas canvas);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
@@ -240,7 +250,7 @@ extension CanvasKitExtension on CanvasKit {
     DomImageBitmap imageBitmap,
     bool hasPremultipliedAlpha,
   ) => _MakeLazyImageFromTextureSource3(
-    imageBitmap,
+    imageBitmap as JSObject,
     0.toJS,
     hasPremultipliedAlpha.toJS,
   );
@@ -3186,6 +3196,29 @@ extension SkLineMetricsExtension on SkLineMetrics {
 @JS()
 @anonymous
 @staticInterop
+class SkGlyphClusterInfo {}
+
+extension SkGlyphClusterInfoExtension on SkGlyphClusterInfo {
+  @JS('graphemeLayoutBounds')
+  external JSArray get _bounds;
+
+  @JS('dir')
+  external SkTextDirection get _direction;
+
+  @JS('graphemeClusterTextRange')
+  external SkTextRange get _textRange;
+
+  ui.GlyphInfo get _glyphInfo {
+    final List<JSNumber> list = _bounds.toDart.cast<JSNumber>();
+    final ui.Rect bounds = ui.Rect.fromLTRB(list[0].toDartDouble, list[1].toDartDouble, list[2].toDartDouble, list[3].toDartDouble);
+    final ui.TextRange textRange = ui.TextRange(start: _textRange.start.toInt(), end: _textRange.end.toInt());
+    return ui.GlyphInfo(bounds, textRange, ui.TextDirection.values[_direction.value.toInt()]);
+  }
+}
+
+@JS()
+@anonymous
+@staticInterop
 class SkRectWithDirection {}
 
 extension SkRectWithDirectionExtension on SkRectWithDirection {
@@ -3226,6 +3259,18 @@ extension SkParagraphExtension on SkParagraph {
   external JSArray _getLineMetrics();
   List<SkLineMetrics> getLineMetrics() =>
       _getLineMetrics().toDart.cast<SkLineMetrics>();
+
+  @JS('getLineMetricsAt')
+  external SkLineMetrics? _getLineMetricsAt(JSNumber index);
+  SkLineMetrics? getLineMetricsAt(double index) => _getLineMetricsAt(index.toJS);
+
+  @JS('getNumberOfLines')
+  external JSNumber _getNumberOfLines();
+  double getNumberOfLines() => _getNumberOfLines().toDartDouble;
+
+  @JS('getLineNumberAt')
+  external JSNumber _getLineNumberAt(JSNumber index);
+  double getLineNumberAt(double index) => _getLineNumberAt(index.toJS).toDartDouble;
 
   @JS('getLongestLine')
   external JSNumber _getLongestLine();
@@ -3272,6 +3317,14 @@ extension SkParagraphExtension on SkParagraph {
     double x,
     double y,
   ) => _getGlyphPositionAtCoordinate(x.toJS, y.toJS);
+
+  @JS('getGlyphInfoAt')
+  external SkGlyphClusterInfo? _getGlyphInfoAt(JSNumber position);
+  ui.GlyphInfo? getGlyphInfoAt(double position) => _getGlyphInfoAt(position.toJS)?._glyphInfo;
+
+  @JS('getClosestGlyphInfoAtCoordinate')
+  external SkGlyphClusterInfo? _getClosestGlyphInfoAtCoordinate(JSNumber x, JSNumber y);
+  ui.GlyphInfo? getClosestGlyphInfoAt(double x, double y) => _getClosestGlyphInfoAtCoordinate(x.toJS, y.toJS)?._glyphInfo;
 
   @JS('getWordBoundary')
   external SkTextRange _getWordBoundary(JSNumber position);

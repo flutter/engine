@@ -15,7 +15,6 @@
 namespace impeller {
 
 struct Picture;
-class RenderPass;
 
 class AiksContext {
  public:
@@ -46,7 +45,9 @@ class AiksContext {
   std::unique_ptr<ContentContext> content_context_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AiksContext);
+  AiksContext(const AiksContext&) = delete;
+
+  AiksContext& operator=(const AiksContext&) = delete;
 };
 
 }  // namespace impeller

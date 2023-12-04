@@ -25,12 +25,14 @@ class SamplerGLES final : public Sampler,
  private:
   friend class SamplerLibraryGLES;
 
-  SamplerGLES(SamplerDescriptor desc);
+  explicit SamplerGLES(SamplerDescriptor desc);
 
   // |Sampler|
   bool IsValid() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SamplerGLES);
+  SamplerGLES(const SamplerGLES&) = delete;
+
+  SamplerGLES& operator=(const SamplerGLES&) = delete;
 };
 
 }  // namespace impeller

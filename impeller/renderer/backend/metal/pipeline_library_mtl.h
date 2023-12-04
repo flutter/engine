@@ -27,7 +27,7 @@ class PipelineLibraryMTL final : public PipelineLibrary {
   PipelineMap pipelines_;
   ComputePipelineMap compute_pipelines_;
 
-  PipelineLibraryMTL(id<MTLDevice> device);
+  explicit PipelineLibraryMTL(id<MTLDevice> device);
 
   // |PipelineLibrary|
   bool IsValid() const override;
@@ -44,7 +44,9 @@ class PipelineLibraryMTL final : public PipelineLibrary {
   void RemovePipelinesWithEntryPoint(
       std::shared_ptr<const ShaderFunction> function) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryMTL);
+  PipelineLibraryMTL(const PipelineLibraryMTL&) = delete;
+
+  PipelineLibraryMTL& operator=(const PipelineLibraryMTL&) = delete;
 };
 
 }  // namespace impeller

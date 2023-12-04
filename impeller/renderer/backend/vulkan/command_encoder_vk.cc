@@ -5,6 +5,8 @@
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 
 #include "flutter/fml/closure.h"
+#include "fml/status.h"
+#include "fml/status_or.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
@@ -14,11 +16,10 @@ namespace impeller {
 
 class TrackedObjectsVK {
  public:
-  explicit TrackedObjectsVK(
-      const std::weak_ptr<const DeviceHolder>& device_holder,
-      const std::shared_ptr<CommandPoolVK>& pool,
-      std::unique_ptr<GPUProbe> probe)
-      : desc_pool_(device_holder), probe_(std::move(probe)) {
+  explicit TrackedObjectsVK(const std::weak_ptr<const ContextVK>& context,
+                            const std::shared_ptr<CommandPoolVK>& pool,
+                            std::unique_ptr<GPUProbe> probe)
+      : desc_pool_(context), probe_(std::move(probe)) {
     if (!pool) {
       return;
     }
@@ -92,7 +93,9 @@ class TrackedObjectsVK {
   std::unique_ptr<GPUProbe> probe_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TrackedObjectsVK);
+  TrackedObjectsVK(const TrackedObjectsVK&) = delete;
+
+  TrackedObjectsVK& operator=(const TrackedObjectsVK&) = delete;
 };
 
 CommandEncoderFactoryVK::CommandEncoderFactoryVK(
@@ -108,8 +111,7 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
   if (!context) {
     return nullptr;
   }
-  auto& context_vk = ContextVK::Cast(*context);
-  auto recycler = context_vk.GetCommandPoolRecycler();
+  auto recycler = context->GetCommandPoolRecycler();
   if (!recycler) {
     return nullptr;
   }
@@ -119,9 +121,8 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
   }
 
   auto tracked_objects = std::make_shared<TrackedObjectsVK>(
-      context_vk.GetDeviceHolder(), tls_pool,
-      context->GetGPUTracer()->CreateGPUProbe());
-  auto queue = context_vk.GetGraphicsQueue();
+      context, tls_pool, context->GetGPUTracer()->CreateGPUProbe());
+  auto queue = context->GetGraphicsQueue();
 
   if (!tracked_objects || !tracked_objects->IsValid() || !queue) {
     return nullptr;
@@ -136,15 +137,14 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
   }
 
   if (label_.has_value()) {
-    context_vk.SetDebugName(tracked_objects->GetCommandBuffer(),
-                            label_.value());
+    context->SetDebugName(tracked_objects->GetCommandBuffer(), label_.value());
   }
   tracked_objects->GetGPUProbe().RecordCmdBufferStart(
       tracked_objects->GetCommandBuffer());
 
-  return std::make_shared<CommandEncoderVK>(context_vk.GetDeviceHolder(),
+  return std::make_shared<CommandEncoderVK>(context->GetDeviceHolder(),
                                             tracked_objects, queue,
-                                            context_vk.GetFenceWaiter());
+                                            context->GetFenceWaiter());
 }
 
 CommandEncoderVK::CommandEncoderVK(
@@ -294,15 +294,17 @@ bool CommandEncoderVK::IsTracking(
   return tracked_objects_->IsTracking(source);
 }
 
-std::optional<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSet(
-    const vk::DescriptorSetLayout& layout,
-    size_t command_count) {
+fml::StatusOr<std::vector<vk::DescriptorSet>>
+CommandEncoderVK::AllocateDescriptorSets(
+    uint32_t buffer_count,
+    uint32_t sampler_count,
+    const std::vector<vk::DescriptorSetLayout>& layouts) {
   if (!IsValid()) {
-    return std::nullopt;
+    return fml::Status(fml::StatusCode::kUnknown, "command encoder invalid");
   }
 
-  return tracked_objects_->GetDescriptorPool().AllocateDescriptorSet(
-      layout, command_count);
+  return tracked_objects_->GetDescriptorPool().AllocateDescriptorSets(
+      buffer_count, sampler_count, layouts);
 }
 
 void CommandEncoderVK::PushDebugGroup(const char* label) const {

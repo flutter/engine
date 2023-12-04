@@ -5,8 +5,6 @@
 
 #include <cstdint>
 
-#include "flutter/fml/macros.h"
-
 namespace impeller {
 
 class ArchiveStatement;
@@ -43,7 +41,9 @@ class ArchiveTransaction {
                      ArchiveStatement& endStatement,
                      ArchiveStatement& rollbackStatement);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveTransaction);
+  ArchiveTransaction(const ArchiveTransaction&) = delete;
+
+  ArchiveTransaction& operator=(const ArchiveTransaction&) = delete;
 };
 
 }  // namespace impeller

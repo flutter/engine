@@ -12,7 +12,6 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
@@ -110,6 +109,27 @@ enum class PixelFormat {
   kD24UnormS8Uint,
   kD32FloatS8UInt,
 };
+
+constexpr bool IsDepthWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
+
+constexpr bool IsStencilWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
 
 constexpr const char* PixelFormatToString(PixelFormat format) {
   switch (format) {
@@ -325,11 +345,33 @@ enum class IndexType {
   kNone,
 };
 
+/// Decides how backend draws pixels based on input vertices.
 enum class PrimitiveType {
+  /// Draws a triage for each separate set of three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, DEF].
   kTriangle,
+
+  /// Draws a triage for every adjacent three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, BCD, CDE, DEF].
   kTriangleStrip,
+
+  /// Draws a line for each separate set of two vertices.
+  ///
+  /// Vertices [A, B, C] will produce discontinued line
+  /// [AB, BC].
   kLine,
+
+  /// Draws a continuous line that connect every input vertices
+  ///
+  /// Vertices [A, B, C] will produce one continuous line
+  /// [ABC].
   kLineStrip,
+
+  /// Draws a point at each input vertex.
   kPoint,
   // Triangle fans are implementation dependent and need extra extensions
   // checks. Hence, they are not supported here.

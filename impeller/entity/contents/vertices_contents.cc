@@ -4,12 +4,8 @@
 
 #include "vertices_contents.h"
 
-#include "impeller/core/formats.h"
-#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/geometry/color.h"
@@ -23,7 +19,7 @@ VerticesContents::VerticesContents() = default;
 VerticesContents::~VerticesContents() = default;
 
 std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry_->GetCoverage(entity.GetTransform());
 };
 
 void VerticesContents::SetGeometry(std::shared_ptr<VerticesGeometry> geometry) {
@@ -73,6 +69,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
 
   std::shared_ptr<Contents> contents;
   if (blend_mode_ == BlendMode::kDestination) {
+    dst_contents->SetAlpha(alpha_);
     contents = dst_contents;
   } else {
     auto color_filter_contents = ColorFilterContents::MakeBlend(

@@ -12,8 +12,6 @@
 
 namespace impeller {
 
-class EntityPass;
-
 class PaintPassDelegate final : public EntityPassDelegate {
  public:
   explicit PaintPassDelegate(Paint paint);
@@ -40,7 +38,9 @@ class PaintPassDelegate final : public EntityPassDelegate {
  private:
   const Paint paint_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PaintPassDelegate);
+  PaintPassDelegate(const PaintPassDelegate&) = delete;
+
+  PaintPassDelegate& operator=(const PaintPassDelegate&) = delete;
 };
 
 /// A delegate that attempts to forward opacity from a save layer to
@@ -74,7 +74,10 @@ class OpacityPeepholePassDelegate final : public EntityPassDelegate {
  private:
   const Paint paint_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(OpacityPeepholePassDelegate);
+  OpacityPeepholePassDelegate(const OpacityPeepholePassDelegate&) = delete;
+
+  OpacityPeepholePassDelegate& operator=(const OpacityPeepholePassDelegate&) =
+      delete;
 };
 
 }  // namespace impeller

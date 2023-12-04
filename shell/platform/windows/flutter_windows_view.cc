@@ -58,9 +58,11 @@ FlutterWindowsView::~FlutterWindowsView() {
   DestroyRenderSurface();
 }
 
-void FlutterWindowsView::SetEngine(
-    std::unique_ptr<FlutterWindowsEngine> engine) {
-  engine_ = std::move(engine);
+void FlutterWindowsView::SetEngine(FlutterWindowsEngine* engine) {
+  FML_DCHECK(engine_ == nullptr);
+  FML_DCHECK(engine != nullptr);
+
+  engine_ = engine;
 
   engine_->SetView(this);
 
@@ -533,18 +535,6 @@ void FlutterWindowsView::SendPointerEventWithData(
   }
 }
 
-bool FlutterWindowsView::MakeCurrent() {
-  return engine_->surface_manager()->MakeCurrent();
-}
-
-bool FlutterWindowsView::MakeResourceCurrent() {
-  return engine_->surface_manager()->MakeResourceCurrent();
-}
-
-bool FlutterWindowsView::ClearContext() {
-  return engine_->surface_manager()->ClearContext();
-}
-
 bool FlutterWindowsView::SwapBuffers() {
   // Called on an engine-controlled (non-platform) thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
@@ -611,12 +601,8 @@ void FlutterWindowsView::DestroyRenderSurface() {
   }
 }
 
-void FlutterWindowsView::SendInitialAccessibilityFeatures() {
-  binding_handler_->SendInitialAccessibilityFeatures();
-}
-
-void FlutterWindowsView::UpdateHighContrastEnabled(bool enabled) {
-  engine_->UpdateHighContrastEnabled(enabled);
+void FlutterWindowsView::OnHighContrastChanged() {
+  engine_->UpdateHighContrastMode();
 }
 
 WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
@@ -628,7 +614,7 @@ PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
 }
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
-  return engine_.get();
+  return engine_;
 }
 
 void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {

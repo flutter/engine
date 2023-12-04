@@ -49,7 +49,7 @@ class ColorSourceContents : public Contents {
   //----------------------------------------------------------------------------
   /// @brief  Set the effect transform for this color source.
   ///
-  ///         The effect transform is a transformation matrix that is applied to
+  ///         The effect transform is a transform matrix that is applied to
   ///         the shaded color output and does not impact geometry in any way.
   ///
   ///         For example: With repeat tiling, any gradient or
@@ -107,7 +107,9 @@ class ColorSourceContents : public Contents {
   Scalar opacity_ = 1.0;
   Scalar inherited_opacity_ = 1.0;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ColorSourceContents);
+  ColorSourceContents(const ColorSourceContents&) = delete;
+
+  ColorSourceContents& operator=(const ColorSourceContents&) = delete;
 };
 
 }  // namespace impeller

@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <cstdint>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/includer.h"
 #include "impeller/compiler/source_options.h"
@@ -68,7 +68,9 @@ class SPIRVCompiler {
 
   std::string GetSourcePrefix() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SPIRVCompiler);
+  SPIRVCompiler(const SPIRVCompiler&) = delete;
+
+  SPIRVCompiler& operator=(const SPIRVCompiler&) = delete;
 };
 
 }  // namespace compiler

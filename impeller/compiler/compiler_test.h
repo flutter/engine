@@ -24,6 +24,10 @@ class CompilerTest : public ::testing::TestWithParam<TargetPlatform> {
   std::unique_ptr<fml::FileMapping> GetReflectionJson(
       const char* fixture_name) const;
 
+  std::unique_ptr<fml::FileMapping> GetShaderFile(
+      const char* fixture_name,
+      TargetPlatform platform) const;
+
   bool CanCompileAndReflect(
       const char* fixture_name,
       SourceType source_type = SourceType::kUnknown,
@@ -33,7 +37,9 @@ class CompilerTest : public ::testing::TestWithParam<TargetPlatform> {
  private:
   fml::UniqueFD intermediates_directory_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CompilerTest);
+  CompilerTest(const CompilerTest&) = delete;
+
+  CompilerTest& operator=(const CompilerTest&) = delete;
 };
 
 }  // namespace testing

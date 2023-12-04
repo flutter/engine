@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
@@ -20,7 +21,6 @@ class ShaderLibrary;
 class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
-class Allocator;
 
 //------------------------------------------------------------------------------
 /// @brief      To do anything rendering related with Impeller, you need a
@@ -175,7 +175,9 @@ class Context {
   ///
   ///             This is required for correct rendering on Android when using
   ///             the hybrid composition mode. This has no effect on other
-  ///             backends.
+  ///             backends. This is analogous to the check for isMainThread in
+  ///             surface_mtl.mm to block presentation on scheduling of all
+  ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
   //----------------------------------------------------------------------------
@@ -193,7 +195,7 @@ class Context {
   /// Threadsafe.
   ///
   /// `task` will be executed on the platform thread.
-  virtual void StoreTaskForGPU(std::function<void()> task) {
+  virtual void StoreTaskForGPU(const std::function<void()>& task) {
     FML_CHECK(false && "not supported in this context");
   }
 
@@ -203,7 +205,9 @@ class Context {
  private:
   mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Context);
+  Context(const Context&) = delete;
+
+  Context& operator=(const Context&) = delete;
 };
 
 }  // namespace impeller

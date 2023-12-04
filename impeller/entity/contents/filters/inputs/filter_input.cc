@@ -62,12 +62,18 @@ Matrix FilterInput::GetLocalTransform(const Entity& entity) const {
 
 std::optional<Rect> FilterInput::GetLocalCoverage(const Entity& entity) const {
   Entity local_entity = entity;
-  local_entity.SetTransformation(GetLocalTransform(entity));
+  local_entity.SetTransform(GetLocalTransform(entity));
   return GetCoverage(local_entity);
 }
 
+std::optional<Rect> FilterInput::GetSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return output_limit;
+}
+
 Matrix FilterInput::GetTransform(const Entity& entity) const {
-  return entity.GetTransformation() * GetLocalTransform(entity);
+  return entity.GetTransform() * GetLocalTransform(entity);
 }
 
 void FilterInput::PopulateGlyphAtlas(

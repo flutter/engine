@@ -8,7 +8,6 @@
 #include <optional>
 #include <utility>
 
-#include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
@@ -46,7 +45,9 @@ class BackgroundCommandPoolVK final {
   }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(BackgroundCommandPoolVK);
+  BackgroundCommandPoolVK(const BackgroundCommandPoolVK&) = delete;
+
+  BackgroundCommandPoolVK& operator=(const BackgroundCommandPoolVK&) = delete;
 
   vk::UniqueCommandPool pool_;
 

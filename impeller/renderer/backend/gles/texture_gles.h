@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -17,6 +16,7 @@ class TextureGLES final : public Texture,
  public:
   enum class Type {
     kTexture,
+    kTextureMultisampled,
     kRenderBuffer,
     kRenderBufferMultisampled,
   };
@@ -89,7 +89,9 @@ class TextureGLES final : public Texture,
 
   void InitializeContentsIfNecessary() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureGLES);
+  TextureGLES(const TextureGLES&) = delete;
+
+  TextureGLES& operator=(const TextureGLES&) = delete;
 };
 
 }  // namespace impeller

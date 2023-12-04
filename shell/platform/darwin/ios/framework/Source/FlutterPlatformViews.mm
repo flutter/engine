@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <Metal/Metal.h>
 #import <UIKit/UIGestureRecognizerSubclass.h>
 
 #include <list>
@@ -14,6 +15,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
@@ -85,13 +87,15 @@ BOOL canApplyBlurBackdrop = YES;
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
-    const std::shared_ptr<IOSContext>& ios_context) {
+    const std::shared_ptr<IOSContext>& ios_context,
+    MTLPixelFormat pixel_format) {
   if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view;
-    fml::scoped_nsobject<FlutterOverlayView> overlay_view_wrapper;
+    fml::scoped_nsobject<UIView> overlay_view;
+    fml::scoped_nsobject<UIView> overlay_view_wrapper;
 
-    if (!gr_context) {
+    bool impeller_enabled = !!ios_context->GetImpellerContext();
+    if (!gr_context && !impeller_enabled) {
       overlay_view.reset([[FlutterOverlayView alloc] init]);
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] init]);
 
@@ -104,8 +108,10 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
           std::move(surface));
     } else {
       CGFloat screenScale = [UIScreen mainScreen].scale;
-      overlay_view.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
-      overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
+      overlay_view.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale
+                                                               pixelFormat:pixel_format]);
+      overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale
+                                                                       pixelFormat:pixel_format]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
       std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
@@ -173,7 +179,7 @@ UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
   return flutter_view_controller_.get();
 }
 
-void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult result) {
   if ([[call method] isEqualToString:@"create"]) {
     OnCreate(call, result);
   } else if ([[call method] isEqualToString:@"dispose"]) {
@@ -187,7 +193,7 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
   }
 }
 
-void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
 
   int64_t viewId = [args[@"id"] longLongValue];
@@ -238,7 +244,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
                   initWithEmbeddedView:platform_view
                platformViewsController:GetWeakPtr()
-      gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies[viewType]]
+      gestureRecognizersBlockingPolicy:gesture_recognizers_blocking_policies_[viewType]]
       autorelease];
 
   touch_interceptors_[viewId] =
@@ -252,7 +258,7 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   result(nil);
 }
 
-void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult& result) {
+void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterResult result) {
   NSNumber* arg = [call arguments];
   int64_t viewId = [arg longLongValue];
 
@@ -268,7 +274,7 @@ void FlutterPlatformViewsController::OnDispose(FlutterMethodCall* call, FlutterR
 }
 
 void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -286,7 +292,7 @@ void FlutterPlatformViewsController::OnAcceptGesture(FlutterMethodCall* call,
 }
 
 void FlutterPlatformViewsController::OnRejectGesture(FlutterMethodCall* call,
-                                                     FlutterResult& result) {
+                                                     FlutterResult result) {
   NSDictionary<NSString*, id>* args = [call arguments];
   int64_t viewId = [args[@"id"] longLongValue];
 
@@ -311,7 +317,7 @@ void FlutterPlatformViewsController::RegisterViewFactory(
   FML_CHECK(factories_.count(idString) == 0);
   factories_[idString] =
       fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>([factory retain]);
-  gesture_recognizers_blocking_policies[idString] = gestureRecognizerBlockingPolicy;
+  gesture_recognizers_blocking_policies_[idString] = gestureRecognizerBlockingPolicy;
 }
 
 void FlutterPlatformViewsController::BeginFrame(SkISize frame_size) {
@@ -681,7 +687,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   // Clipping the background canvas before drawing the picture recorders requires
   // saving and restoring the clip context.
-  DlAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  DlAutoCanvasRestore save(background_canvas, /*do_save=*/true);
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
@@ -699,8 +705,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     for (size_t j = i + 1; j > 0; j--) {
       int64_t current_platform_view_id = composition_order_[j - 1];
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
-      std::list<SkRect> intersection_rects =
-          slice->searchNonOverlappingDrawnRects(platform_view_rect);
+      std::vector<SkIRect> intersection_rects = slice->region(platform_view_rect).getRects();
       auto allocation_size = intersection_rects.size();
 
       // For testing purposes, the overlay id is used to find the overlay view.
@@ -713,8 +718,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       // TODO(egarciad): Consider making this configurable.
       // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
-        SkRect joined_rect = SkRect::MakeEmpty();
-        for (const SkRect& rect : intersection_rects) {
+        SkIRect joined_rect = SkIRect::MakeEmpty();
+        for (const SkIRect& rect : intersection_rects) {
           joined_rect.join(rect);
         }
         // Replace the rects in the intersection rects list for a single rect that is
@@ -722,26 +727,23 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         intersection_rects.clear();
         intersection_rects.push_back(joined_rect);
       }
-      for (SkRect& joined_rect : intersection_rects) {
+      for (SkIRect& joined_rect : intersection_rects) {
         // Get the intersection rect between the current rect
         // and the platform view rect.
-        joined_rect.intersect(platform_view_rect);
-        // Subpixels in the platform may not align with the canvas subpixels.
-        // To workaround it, round the floating point bounds and make the rect slightly larger.
-        // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-        joined_rect.setLTRB(std::floor(joined_rect.left()), std::floor(joined_rect.top()),
-                            std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
+        joined_rect.intersect(platform_view_rect.roundOut());
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
-        background_canvas->ClipRect(joined_rect, DlCanvas::ClipOp::kDifference);
+        background_canvas->ClipRect(SkRect::Make(joined_rect), DlCanvas::ClipOp::kDifference);
         // Get a new host layer.
-        std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
-                                                                   ios_context,               //
-                                                                   slice,                     //
-                                                                   joined_rect,               //
-                                                                   current_platform_view_id,  //
-                                                                   overlay_id                 //
-        );
+        std::shared_ptr<FlutterPlatformViewLayer> layer =
+            GetLayer(gr_context,                                      //
+                     ios_context,                                     //
+                     slice,                                           //
+                     joined_rect,                                     //
+                     current_platform_view_id,                        //
+                     overlay_id,                                      //
+                     ((FlutterView*)flutter_view_.get()).pixelFormat  //
+            );
         did_submit &= layer->did_submit_last_frame;
         platform_view_layers[current_platform_view_id].push_back(layer);
         overlay_id++;
@@ -809,11 +811,13 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
     GrDirectContext* gr_context,
     const std::shared_ptr<IOSContext>& ios_context,
     EmbedderViewSlice* slice,
-    SkRect rect,
+    SkIRect rect,
     int64_t view_id,
-    int64_t overlay_id) {
+    int64_t overlay_id,
+    MTLPixelFormat pixel_format) {
   FML_DCHECK(flutter_view_);
-  std::shared_ptr<FlutterPlatformViewLayer> layer = layer_pool_->GetLayer(gr_context, ios_context);
+  std::shared_ptr<FlutterPlatformViewLayer> layer =
+      layer_pool_->GetLayer(gr_context, ios_context, pixel_format);
 
   UIView* overlay_view_wrapper = layer->overlay_view_wrapper.get();
   auto screenScale = [UIScreen mainScreen].scale;
@@ -842,7 +846,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   DlCanvas* overlay_canvas = frame->Canvas();
   int restore_count = overlay_canvas->GetSaveCount();
   overlay_canvas->Save();
-  overlay_canvas->ClipRect(rect);
+  overlay_canvas->ClipRect(SkRect::Make(rect));
   overlay_canvas->Clear(DlColor::kTransparent());
   slice->render_into(overlay_canvas);
   overlay_canvas->RestoreToCount(restore_count);

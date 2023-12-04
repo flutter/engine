@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <set>
 #include <string>
@@ -63,6 +64,9 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsOffscreenMSAA() const override;
 
   // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override;
+
+  // |Capabilities|
   bool SupportsSSBO() const override;
 
   // |Capabilities|
@@ -82,9 +86,6 @@ class CapabilitiesVK final : public Capabilities,
 
   // |Capabilities|
   bool SupportsReadFromResolve() const override;
-
-  // |Capabilities|
-  bool SupportsReadFromOnscreenTexture() const override;
 
   // |Capabilities|
   bool SupportsDecalSamplerAddressMode() const override;
@@ -121,7 +122,9 @@ class CapabilitiesVK final : public Capabilities,
 
   bool HasLayer(const std::string& layer) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CapabilitiesVK);
+  CapabilitiesVK(const CapabilitiesVK&) = delete;
+
+  CapabilitiesVK& operator=(const CapabilitiesVK&) = delete;
 };
 
 }  // namespace impeller

@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
+#include "fml/concurrent_message_loop.h"
+
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
 #include <sys/resource.h>
@@ -127,6 +129,12 @@ void ContextVK::Setup(Settings settings) {
   if (!settings.proc_address_callback) {
     return;
   }
+
+  queue_submit_thread_ = std::make_unique<fml::Thread>("QueueSubmitThread");
+  queue_submit_thread_->GetTaskRunner()->PostTask([]() {
+    // submitKHR is extremely cheap and mostly blocks on an internal fence.
+    fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
+  });
 
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
       std::min(4u, std::thread::hardware_concurrency()));
@@ -397,6 +405,13 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
+  auto descriptor_pool_recycler =
+      std::make_shared<DescriptorPoolRecyclerVK>(weak_from_this());
+  if (!descriptor_pool_recycler) {
+    VALIDATION_LOG << "Could not create descriptor pool recycler.";
+    return;
+  }
+
   //----------------------------------------------------------------------------
   /// Fetch the queues.
   ///
@@ -428,6 +443,7 @@ void ContextVK::Setup(Settings settings) {
   fence_waiter_ = std::move(fence_waiter);
   resource_manager_ = std::move(resource_manager);
   command_pool_recycler_ = std::move(command_pool_recycler);
+  descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
   is_valid_ = true;
 
@@ -486,6 +502,10 @@ const vk::Device& ContextVK::GetDevice() const {
   return device_holder_->device.get();
 }
 
+const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner() const {
+  return queue_submit_thread_->GetTaskRunner();
+}
+
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
@@ -500,6 +520,7 @@ void ContextVK::Shutdown() {
   fence_waiter_.reset();
   resource_manager_.reset();
 
+  queue_submit_thread_->Join();
   raster_message_loop_->Terminate();
 }
 

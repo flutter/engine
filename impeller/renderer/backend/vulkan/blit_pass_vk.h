@@ -26,7 +26,7 @@ class BlitPassVK final : public BlitPass {
   std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
   std::string label_;
 
-  BlitPassVK(std::weak_ptr<CommandBufferVK> command_buffer);
+  explicit BlitPassVK(std::weak_ptr<CommandBufferVK> command_buffer);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -61,7 +61,9 @@ class BlitPassVK final : public BlitPass {
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(BlitPassVK);
+  BlitPassVK(const BlitPassVK&) = delete;
+
+  BlitPassVK& operator=(const BlitPassVK&) = delete;
 };
 
 }  // namespace impeller
