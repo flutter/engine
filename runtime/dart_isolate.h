@@ -391,8 +391,10 @@ class DartIsolate : public UIDartState {
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
 
-  static bool InitializePlatformIsolate(void** child_callback_data,
-                                        char** error);
+  static void CreatePlatformIsolate(Dart_Isolate parent_isolate,
+                                    Dart_Handle entry_point,
+                                    Dart_Port isolate_ready_port_id,
+                                    const std::string& debug_name);
 
  private:
   friend class IsolateConfiguration;

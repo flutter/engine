@@ -278,6 +278,95 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   return (*root_isolate_data)->GetWeakIsolatePtr();
 }
 
+void DartIsolate::CreatePlatformIsolate(Dart_Isolate parent_isolate,
+                                        Dart_Handle entry_point,
+                                        Dart_Port isolate_ready_port_id,
+                                        const std::string& debug_name) {
+  std::shared_ptr<DartIsolate>* parent_isolate_data =
+      static_cast<std::shared_ptr<DartIsolate>*>(
+          Dart_IsolateData(parent_isolate));
+  const TaskRunners& task_runners = (*parent_isolate_data)->GetTaskRunners();
+  auto isolate_group_data =
+      std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
+          std::shared_ptr<DartIsolateGroupData>(
+              *static_cast<std::shared_ptr<DartIsolateGroupData>*>(
+                  Dart_IsolateGroupData((*parent_isolate_data)->isolate()))));
+
+  UIDartState::Context context(task_runners);
+  context.advisory_script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
+  context.advisory_script_entrypoint =
+      (*isolate_group_data)->GetAdvisoryScriptEntrypoint();
+  auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
+      std::shared_ptr<DartIsolate>(
+          new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
+                          false,       // is_root_isolate
+                          true,        // is_platform_isolate
+                          context)));  // context
+
+  IsolateMaker isolate_maker =
+      [parent_isolate, debug_name](
+          std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
+          std::shared_ptr<DartIsolate>* isolate_data, Dart_IsolateFlags* flags,
+          char** error) {
+        std::cout << "           PlatformIsolate data: " << (void*)isolate_data
+                  << std::endl;
+        // TODO: Are those the right shutdown_callback and cleanup_callback?
+        return Dart_CreateIsolateInGroup(
+            /*group_member=*/parent_isolate,
+            /*name=*/debug_name.c_str(),
+            /*shutdown_callback=*/
+            reinterpret_cast<Dart_IsolateShutdownCallback>(
+                DartIsolate::SpawnIsolateShutdownCallback),
+            /*cleanup_callback=*/
+            reinterpret_cast<Dart_IsolateCleanupCallback>(
+                DartIsolateCleanupCallback),
+            /*child_isolate_data=*/isolate_data,
+            /*error=*/error);
+        // TODO: Passing a non-null isolate_data causes platform isolate to
+        //     never exit.
+      };
+  DartErrorString error;
+  Dart_Isolate new_isolate = CreateDartIsolateGroup(
+      std::move(isolate_group_data), std::move(isolate_data), nullptr,
+      error.error(), isolate_maker);
+
+  if (error) {
+    // TODO: Handle error.
+    FML_LOG(ERROR) << "CreatePlatformIsolate failed: " << error.str();
+  }
+
+  // TODO: Avoid exiting in new_isolate CreateDartIsolateGroup?
+  Dart_EnterIsolate(new_isolate);
+
+  Dart_EnterScope();
+  Dart_PersistentHandle entry_point_handle =
+      Dart_NewPersistentHandle(entry_point);
+  Dart_ExitScope();
+
+  Dart_ExitIsolate();  // Exit new_isolate.
+
+  fml::RefPtr<fml::TaskRunner> platform_task_runner =
+      task_runners.GetPlatformTaskRunner();
+  platform_task_runner->PostTask([entry_point_handle, new_isolate,
+                                  isolate_ready_port_id]() {
+    Dart_EnterIsolate(new_isolate);
+    Dart_EnterScope();
+    std::cout << "Hello from the platform task runner " << GetCurrentThreadId()
+              << std::endl;
+    Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
+    Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
+
+    std::cout << "Dart_InvokeClosure" << std::endl;
+    Dart_InvokeClosure(entry_point, 1, &isolate_ready_port);
+    std::cout << "Dart_InvokeClosure done" << std::endl;
+    // TODO: Handle error.
+
+    Dart_DeletePersistentHandle(entry_point_handle);
+    Dart_ExitScope();
+    Dart_ExitIsolate();  // Exit new_isolate.
+  });
+}
+
 DartIsolate::DartIsolate(const Settings& settings,
                          bool is_root_isolate,
                          bool is_platform_isolate,
@@ -341,10 +430,9 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
   std::cout << "    is_platform_isolate: " << is_platform_isolate_ << std::endl;
   Dart_ExitScope();
 
-  SetMessageHandlingTaskRunner(
-      is_platform_isolate_
-          ? PlatformIsolateNativeApi::global_platform_task_runner
-          : GetTaskRunners().GetUITaskRunner());
+  SetMessageHandlingTaskRunner(is_platform_isolate_
+                                   ? GetTaskRunners().GetPlatformTaskRunner()
+                                   : GetTaskRunners().GetUITaskRunner());
 
   if (tonic::CheckAndHandleError(
           Dart_SetLibraryTagHandler(tonic::DartState::HandleLibraryTag))) {
@@ -997,12 +1085,6 @@ bool DartIsolate::DartIsolateInitializeCallbackImpl(void** child_callback_data,
   return true;
 }
 
-bool DartIsolate::InitializePlatformIsolate(void** child_callback_data,
-                                            char** error) {
-  return DartIsolateInitializeCallbackImpl(child_callback_data, error,
-                                           /* is_platform_isolate= */ true);
-}
-
 Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
     std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
@@ -1082,6 +1164,8 @@ void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
+  std::cout << "           DartIsolateCleanupCallback data: "
+            << (void*)isolate_data << std::endl;
 
   // If the isolate initialization failed there will be nothing to do.
   // This can happen e.g. during a [DartIsolateInitializeCallback] invocation
@@ -1104,6 +1188,8 @@ void DartIsolate::DartIsolateGroupCleanupCallback(
 void DartIsolate::DartIsolateCleanupCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
+  std::cout << "           DartIsolateCleanupCallback data: "
+            << (void*)isolate_data << std::endl;
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateCleanupCallback");
   delete isolate_data;
 }

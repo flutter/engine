@@ -29,8 +29,6 @@
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-#include "flutter/lib/ui/window/platform_isolate.h"
-
 // Impeller should only be enabled if the Vulkan backend is enabled.
 #define ALLOW_IMPELLER (IMPELLER_SUPPORTS_RENDERING && IMPELLER_ENABLE_VULKAN)
 
@@ -338,11 +336,6 @@ int RunTester(const flutter::Settings& settings,
   fml::RefPtr<fml::TaskRunner> ui_task_runner;
   fml::RefPtr<fml::TaskRunner> io_task_runner;
 
-  std::cout << "RunTester "
-            << (multithreaded ? "multithreaded" : "singlethreaded") << "\t"
-            << PlatformIsolateNativeApi::GetCurrentThreadId() << "\t"
-            << current_task_runner.get() << std::endl;
-
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
         thread_label, ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
@@ -355,8 +348,6 @@ int RunTester(const flutter::Settings& settings,
     platform_task_runner = raster_task_runner = ui_task_runner =
         io_task_runner = current_task_runner;
   }
-
-  PlatformIsolateNativeApi::global_platform_task_runner = platform_task_runner;
 
   const flutter::TaskRunners task_runners(thread_label,  // dart thread label
                                           platform_task_runner,  // platform

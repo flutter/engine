@@ -113,8 +113,8 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
   V(PlatformConfigurationNativeApi::SendChannelUpdate, 2)             \
   V(PlatformConfigurationNativeApi::GetScaledFontSize, 2)             \
-  V(PlatformIsolateNativeApi::GetCurrentThreadId, 0)                  \
-  V(PlatformIsolateNativeApi::Spawn, 2)                               \
+  V(PlatformIsolateNativeApi::IsRunningOnPlatformThread, 0)           \
+  V(PlatformIsolateNativeApi::Spawn, 3)                               \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
