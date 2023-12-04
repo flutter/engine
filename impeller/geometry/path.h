@@ -183,7 +183,7 @@ class Path {
  private:
   friend class PathBuilder;
 
-  Path(const Path& other);
+  Path(const Path& other) = default;
 
   void SetConvexity(Convexity value);
 
