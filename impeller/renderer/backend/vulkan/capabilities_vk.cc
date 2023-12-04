@@ -407,10 +407,19 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     });
   }
 
-  supports_native_advanced_blends_ =
-      physical_properties_2
-          .get<vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>()
-          .advancedBlendAllOperations;
+  {
+    supports_native_advanced_blends_ =
+        optional_device_extensions_.find(
+            OptionalDeviceExtensionVK::kEXTBlendOperationAdvanced) !=
+        optional_device_extensions_.end();
+  }
+
+  // supports_native_advanced_blends_ =
+  //     physical_properties_2
+  //         .get<vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>()
+  //         .advancedBlendAllOperations;
+  FML_LOG(ERROR) << "Supports native advanced blends: "
+                 << supports_native_advanced_blends_;
   return true;
 }
 

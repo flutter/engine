@@ -109,11 +109,6 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     supports_decal_sampler_address_mode_ = true;
   }
 
-  supports_native_advanced_blend_ =
-      gl.GetDescription()->HasExtension("GL_KHR_blend_equation_advanced");
-  FML_LOG(ERROR) << "supports native advanced blend: "
-                 << supports_native_advanced_blend_;
-
   if (desc->HasExtension(kMultisampledRenderToTextureExt)) {
     supports_implicit_msaa_ = true;
 
@@ -184,7 +179,7 @@ bool CapabilitiesGLES::SupportsDeviceTransientTextures() const {
 }
 
 bool CapabilitiesGLES::SupportsNativeAdvancedBlends() const {
-  return supports_native_advanced_blend_;
+  return false;
 }
 
 PixelFormat CapabilitiesGLES::GetDefaultColorFormat() const {

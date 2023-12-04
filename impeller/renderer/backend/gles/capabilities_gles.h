@@ -121,7 +121,6 @@ class CapabilitiesGLES final
  private:
   bool supports_framebuffer_fetch_ = false;
   bool supports_decal_sampler_address_mode_ = false;
-  bool supports_native_advanced_blend_ = false;
   bool supports_offscreen_msaa_ = false;
   bool supports_implicit_msaa_ = false;
 };
