@@ -221,7 +221,7 @@ TEST_P(EntityTest, CanDrawRect) {
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, CanDrawRRect) {
@@ -237,7 +237,7 @@ TEST_P(EntityTest, CanDrawRRect) {
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
@@ -264,7 +264,7 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
   contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
   contents->SetColor(Color::Red());
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, StrokeWithTextureContents) {
@@ -285,7 +285,7 @@ TEST_P(EntityTest, StrokeWithTextureContents) {
   contents->SetTexture(bridge);
   contents->SetTileModes(Entity::TileMode::kClamp, Entity::TileMode::kClamp);
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, TriangleInsideASquare) {
@@ -471,7 +471,7 @@ TEST_P(EntityTest, CubicCurveTest) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransform) {
@@ -745,7 +745,7 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, SolidColorContentsStrokeSetStrokeCapsAndJoins) {
@@ -1360,7 +1360,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
@@ -1395,7 +1395,7 @@ TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorSimple) {
@@ -1431,7 +1431,7 @@ TEST_P(EntityTest, DrawAtlasWithColorSimple) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
@@ -1504,7 +1504,7 @@ TEST_P(EntityTest, DrawAtlasWithOpacity) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
@@ -1524,7 +1524,7 @@ TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
@@ -2401,7 +2401,7 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
       BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
                                FilterInput::Make(src_contents, false)});
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {

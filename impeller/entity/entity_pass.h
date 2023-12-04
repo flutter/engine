@@ -186,7 +186,7 @@ class EntityPass {
     ///         error while resolving the Entity.
     Status status = kFailure;
 
-    static EntityResult Success(const Entity& e) { return {e, kSuccess}; }
+    static EntityResult Success(Entity e) { return {std::move(e), kSuccess}; }
     static EntityResult Failure() { return {{}, kFailure}; }
     static EntityResult Skip() { return {{}, kSkip}; }
   };
