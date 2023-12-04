@@ -323,10 +323,10 @@ if (enable_unittests) {
       ":shell_unittests_fixtures",
       "//flutter/assets",
       "//flutter/common/graphics",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/shell/common:base64",
       "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
-      "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing:fixture_test",
       "//third_party/googletest:gmock",
     ]
