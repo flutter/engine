@@ -157,6 +157,10 @@ struct SampledImageSlot {
 
   /// @brief The Vulkan descriptor set index.
   size_t set;
+
+  constexpr bool HasTexture() const { return texture_index < 32u; }
+
+  constexpr bool HasSampler() const { return sampler_index < 32u; }
 };
 
 enum class DescriptorType {
