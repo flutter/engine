@@ -94,6 +94,8 @@ class FlutterEngine : public PluginRegistry {
                                                       WPARAM wparam,
                                                       LPARAM lparam);
 
+  void RegisterPlatformViewType(const std::string& view_type, Win32PlatformViewFactory factory);
+
  private:
   // For access to RelinquishEngine.
   friend class FlutterViewController;

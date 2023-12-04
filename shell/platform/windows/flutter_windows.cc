@@ -210,6 +210,10 @@ void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
       [callback, user_data]() { callback(user_data); });
 }
 
+void FlutterDesktopEngineRegisterPlatformView(FlutterDesktopEngineRef, const char* view_type, Win32PlatformViewFactory factory) {
+  // TODO(schectman): register in the FlutterWindowsEngine
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return ViewFromHandle(view)->GetPlatformWindow();
 }

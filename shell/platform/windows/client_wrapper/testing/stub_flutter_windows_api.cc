@@ -123,6 +123,12 @@ void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
   }
 }
 
+void FlutterDesktopEngineRegisterPlatformView(FlutterDesktopEngineRef, const char* view_type, Win32PlatformViewFactory factory) {
+  if (s_stub_implementation) {
+    s_stub_implementation->EngineRegisterPlatformView(view_type, factory);
+  }
+}
+
 void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
   if (s_stub_implementation) {
     s_stub_implementation->EngineReloadSystemFonts();

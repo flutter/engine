@@ -113,6 +113,12 @@ std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
+void FlutterEngine::RegisterPlatformViewType(const std::string& view_type, Win32PlatformViewFactory factory) {
+  if (engine_) {
+    FlutterDesktopEngineRegisterPlatformView(engine_, view_type.data(), factory);
+  }
+}
+
 FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {
   owns_engine_ = false;
   return engine_;
