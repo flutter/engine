@@ -17,7 +17,7 @@ import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
 import 'platform_views/message_handler.dart';
-import 'semantics/accessibility.dart';
+import 'semantics.dart';
 import 'services.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
@@ -93,18 +93,20 @@ base class EngineFlutterView implements ui.FlutterView {
     dom.rootElement.remove();
     // TODO(harryterkelsen): What should we do about this in multi-view?
     renderer.clearFragmentProgramCache();
+    semantics.reset();
   }
 
   @override
-  void render(ui.Scene scene) {
+  void render(ui.Scene scene, {ui.Size? size}) {
     assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    // TODO(goderbauer): Respect the provided size when "physicalConstraints" are not always tight. See TODO on "physicalConstraints".
     platformDispatcher.render(scene, this);
   }
 
   @override
   void updateSemantics(ui.SemanticsUpdate update) {
     assert(!isDisposed, 'Trying to update semantics on a disposed EngineFlutterView.');
-    platformDispatcher.updateSemantics(update);
+    semantics.updateSemantics(update);
   }
 
   // TODO(yjbanov): How should this look like for multi-view?
@@ -116,10 +118,16 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom = DomManager(devicePixelRatio: devicePixelRatio);
+  late final DomManager dom = DomManager(viewId: viewId, devicePixelRatio: devicePixelRatio);
 
   late final PlatformViewMessageHandler platformViewMessageHandler =
       PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+
+  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
+  @override
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
+
+  late final EngineSemanticsOwner semantics = EngineSemanticsOwner(dom.semanticsHost);
 
   @override
   ui.Size get physicalSize {
@@ -648,4 +656,85 @@ class ViewPadding implements ui.ViewPadding {
   final double right;
   @override
   final double bottom;
+}
+
+class ViewConstraints implements ui.ViewConstraints {
+  const ViewConstraints({
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  });
+
+  ViewConstraints.tight(ui.Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  @override
+  final double minWidth;
+  @override
+  final double maxWidth;
+  @override
+  final double minHeight;
+  @override
+  final double maxHeight;
+
+  @override
+  bool isSatisfiedBy(ui.Size size) {
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+
+  @override
+  bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+
+  @override
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is ViewConstraints
+        && other.minWidth == minWidth
+        && other.maxWidth == maxWidth
+        && other.minHeight == minHeight
+        && other.maxHeight == maxHeight;
+  }
+
+  @override
+  int get hashCode => Object.hash(minWidth, maxWidth, minHeight, maxHeight);
+
+  @override
+  String toString() {
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'ViewConstraints(biggest)';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity &&
+        minHeight == 0 && maxHeight == double.infinity) {
+      return 'ViewConstraints(unconstrained)';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'ViewConstraints($width, $height)';
+  }
 }

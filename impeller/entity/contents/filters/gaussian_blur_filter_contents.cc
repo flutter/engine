@@ -17,6 +17,17 @@ using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
 using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
 
 namespace {
+
+std::optional<Rect> ExpandCoverageHint(const std::optional<Rect>& coverage_hint,
+                                       const Matrix& source_to_local_transform,
+                                       const Vector2& padding) {
+  if (!coverage_hint.has_value()) {
+    return std::nullopt;
+  }
+  Vector2 transformed_padding = (source_to_local_transform * padding).Abs();
+  return coverage_hint->Expand(transformed_padding);
+}
+
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
   SamplerDescriptor sampler_desc;
@@ -43,6 +54,8 @@ Matrix MakeAnchorScale(const Point& anchor, Vector2 scale) {
          Matrix::MakeTranslation({-anchor.x, -anchor.y, 0});
 }
 
+/// Makes a subpass that will render the scaled down input and add the
+/// transparent gutter required for the blur halo.
 std::shared_ptr<Texture> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
@@ -66,7 +79,8 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         frame_info.alpha = 1.0;
 
         // Insert transparent gutter around the downsampled image so the blur
-        // creates a halo effect.
+        // creates a halo effect. This compensates for when the expanded clip
+        // region can't give us the full gutter we want.
         Vector2 texture_size = Vector2(input_texture->GetSize());
         Quad vertices =
             MakeAnchorScale({0.5, 0.5},
@@ -106,6 +120,8 @@ std::shared_ptr<Texture> MakeBlurSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const GaussianBlurFragmentShader::BlurInfo& blur_info) {
+  // TODO(gaaclarke): This blurs the whole image, but because we know the clip
+  //                  region we could focus on just blurring that.
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
@@ -144,20 +160,20 @@ std::shared_ptr<Texture> MakeBlurSubpass(
   return out_texture;
 }
 
-/// Calculate how much to scale down the texture depending on the blur radius.
-/// This curve was taken from |DirectionalGaussianBlurFilterContents|.
-Scalar CalculateScale(Scalar radius) {
-  constexpr Scalar decay = 4.0;   // Larger is more gradual.
-  constexpr Scalar limit = 0.95;  // The maximum percentage of the scaledown.
-  const Scalar curve =
-      std::min(1.0, decay / (std::max(1.0f, radius) + decay - 1.0));
-  return (curve - 1) * limit + 1;
-};
-
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
     : sigma_(sigma) {}
+
+// This value was extracted from Skia, see:
+//  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/ganesh/GrBlurUtils.cpp#L2561-L2576
+//  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/BlurUtils.h#L57
+Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
+  if (sigma <= 4) {
+    return 1.0;
+  }
+  return 4.0 / sigma;
+};
 
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
@@ -183,7 +199,9 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
 
   Scalar blur_radius = CalculateBlurRadius(sigma_);
   Vector3 blur_radii =
-      effect_transform.Basis() * Vector3{blur_radius, blur_radius, 0.0};
+      (inputs[0]->GetTransform(entity).Basis() * effect_transform.Basis() *
+       Vector3{blur_radius, blur_radius, 0.0})
+          .Abs();
   return input_coverage.value().Expand(Point(blur_radii.x, blur_radii.y));
 }
 
@@ -198,9 +216,23 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  Scalar blur_radius = CalculateBlurRadius(sigma_);
+  Vector2 padding(ceil(blur_radius), ceil(blur_radius));
+
+  // Apply as much of the desired padding as possible from the source. This may
+  // be ignored so must be accounted for in the downsample pass by adding a
+  // transparent gutter.
+  std::optional<Rect> expanded_coverage_hint = ExpandCoverageHint(
+      coverage_hint, entity.GetTransform() * effect_transform, padding);
+  // TODO(gaaclarke): How much of the gutter is thrown away can be used to
+  //                  adjust the padding that is added in the downsample pass.
+  //                  For example, if we get all the padding we requested from
+  //                  the expanded_coverage_hint, there is no need to add a
+  //                  transparent gutter.
+
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
-                             /*coverage_limit=*/coverage_hint);
+                             /*coverage_limit=*/expanded_coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -210,11 +242,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 entity.GetClipDepth());  // No blur to render.
   }
 
-  Scalar blur_radius = CalculateBlurRadius(sigma_);
-  Scalar desired_scalar = CalculateScale(blur_radius);
+  Scalar desired_scalar = CalculateScale(sigma_);
+  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
+  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
+  // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
-  Vector2 padding(ceil(blur_radius), ceil(blur_radius));
-
   Vector2 padded_size =
       Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
   Vector2 downsampled_size = padded_size * downsample_scalar;
@@ -257,7 +289,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   return Entity::FromSnapshot(
       Snapshot{
           .texture = pass3_out_texture,
-          .transform = entity.GetTransform() *
+          .transform = input_snapshot->transform *
                        Matrix::MakeTranslation({-padding.x, -padding.y, 0}) *
                        Matrix::MakeScale(padded_size /
                                          Vector2(pass1_out_texture->GetSize())),

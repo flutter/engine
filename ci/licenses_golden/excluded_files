@@ -156,6 +156,7 @@
 ../../../flutter/impeller/geometry/path_unittests.cc
 ../../../flutter/impeller/geometry/rect_unittests.cc
 ../../../flutter/impeller/geometry/size_unittests.cc
+../../../flutter/impeller/geometry/trig_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/golden_tests_harvester/.dart_tool
 ../../../flutter/impeller/golden_tests_harvester/.gitignore
@@ -172,6 +173,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
@@ -192,6 +194,7 @@
 ../../../flutter/impeller/scene/importer/importer_unittests.cc
 ../../../flutter/impeller/scene/scene_unittests.cc
 ../../../flutter/impeller/shader_archive/shader_archive_unittests.cc
+../../../flutter/impeller/tessellator/circle_tessellator_unittests.cc
 ../../../flutter/impeller/tessellator/dart/.dart_tool
 ../../../flutter/impeller/tessellator/dart/pubspec.lock
 ../../../flutter/impeller/tessellator/dart/pubspec.yaml
@@ -697,6 +700,7 @@
 ../../../flutter/third_party/rapidjson/test
 ../../../flutter/third_party/shaderc/.clang-format
 ../../../flutter/third_party/shaderc/.git
+../../../flutter/third_party/shaderc/.github
 ../../../flutter/third_party/shaderc/.gitignore
 ../../../flutter/third_party/shaderc/AUTHORS
 ../../../flutter/third_party/shaderc/Android.mk
@@ -1044,6 +1048,7 @@
 ../../../flutter/third_party/tonic/AUTHORS
 ../../../flutter/third_party/tonic/PATENTS
 ../../../flutter/third_party/tonic/README.md
+../../../flutter/third_party/tonic/file_loader/file_loader_unittests.cc
 ../../../flutter/third_party/tonic/filesystem/README.md
 ../../../flutter/third_party/tonic/filesystem/tests
 ../../../flutter/third_party/tonic/tests
@@ -1265,6 +1270,8 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-14/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-15/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-15/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-16/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-16/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-12/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-13/sysroot/dist/lib/asan/ld.so.1
@@ -1273,6 +1280,8 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-14/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-15/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-15/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-12/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-13/sysroot/dist/lib/asan/ld.so.1
@@ -1281,6 +1290,8 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-14/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-15/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-15/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
 ../../../fuchsia/sdk/linux/packages/realm_builder_server/meta.json
@@ -1357,8 +1368,12 @@
 ../../../fuchsia/sdk/linux/pkg/syslog/meta.json
 ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/meta.json
 ../../../fuchsia/sdk/linux/pkg/sysroot/meta.json
+../../../fuchsia/sdk/linux/pkg/trace-engine-headersonly/meta.json
 ../../../fuchsia/sdk/linux/pkg/trace-engine/meta.json
+../../../fuchsia/sdk/linux/pkg/trace-headersonly/meta.json
 ../../../fuchsia/sdk/linux/pkg/trace-provider-so/meta.json
+../../../fuchsia/sdk/linux/pkg/trace-vthread-headersonly/meta.json
+../../../fuchsia/sdk/linux/pkg/trace-vthread/meta.json
 ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json

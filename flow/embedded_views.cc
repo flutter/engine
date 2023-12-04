@@ -18,6 +18,7 @@ DlCanvas* DisplayListEmbedderViewSlice::canvas() {
 
 void DisplayListEmbedderViewSlice::end_recording() {
   display_list_ = builder_->Build();
+  FML_DCHECK(display_list_->has_rtree());
   builder_ = nullptr;
 }
 
@@ -41,12 +42,18 @@ bool DisplayListEmbedderViewSlice::recording_ended() {
   return builder_ == nullptr;
 }
 
-void ExternalViewEmbedder::SubmitFrame(
+void ExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
   frame->Submit();
 }
+
+bool ExternalViewEmbedder::SupportsDynamicThreadMerging() {
+  return false;
+}
+
+void ExternalViewEmbedder::Teardown() {}
 
 void MutatorsStack::PushClipRect(const SkRect& rect) {
   std::shared_ptr<Mutator> element = std::make_shared<Mutator>(rect);
@@ -110,11 +117,5 @@ const std::vector<std::shared_ptr<Mutator>>::const_iterator MutatorsStack::End()
     const {
   return vector_.end();
 }
-
-bool ExternalViewEmbedder::SupportsDynamicThreadMerging() {
-  return false;
-}
-
-void ExternalViewEmbedder::Teardown() {}
 
 }  // namespace flutter
