@@ -793,9 +793,9 @@ abstract class SemanticsUpdateBuilder {
   /// a heading at the specified level. The valid value range is from 1 to 6,
   /// inclusive. This attribute is only used for Web platform, and it will have
   /// no effect on other platforms.
-  /// 
+  ///
   /// See also:
-  /// 
+  ///
   ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
   ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
   void updateNode({
