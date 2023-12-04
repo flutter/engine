@@ -345,11 +345,9 @@ void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
 bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
   if (HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint)) {
     default_depth_stencil_format_ = PixelFormat::kD32FloatS8UInt;
-    default_stencil_format_ = PixelFormat::kD32FloatS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,
                                            vk::Format::eD24UnormS8Uint)) {
     default_depth_stencil_format_ = PixelFormat::kD24UnormS8Uint;
-    default_stencil_format_ = PixelFormat::kD24UnormS8Uint;
   } else {
     default_depth_stencil_format_ = PixelFormat::kUnknown;
   }
@@ -358,7 +356,7 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     default_stencil_format_ = PixelFormat::kS8UInt;
   } else if (default_stencil_format_ != PixelFormat::kUnknown) {
     default_stencil_format_ = default_depth_stencil_format_;
-  } else if (default_stencil_format_ == PixelFormat::kUnknown) {
+  } else {
     return false;
   }
 
@@ -414,12 +412,6 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
         optional_device_extensions_.end();
   }
 
-  // supports_native_advanced_blends_ =
-  //     physical_properties_2
-  //         .get<vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT>()
-  //         .advancedBlendAllOperations;
-  FML_LOG(ERROR) << "Supports native advanced blends: "
-                 << supports_native_advanced_blends_;
   return true;
 }
 

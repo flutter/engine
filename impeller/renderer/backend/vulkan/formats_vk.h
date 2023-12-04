@@ -14,6 +14,7 @@
 #include "vulkan/vulkan.hpp"
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_structs.hpp"
+#include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
 
@@ -100,13 +101,13 @@ constexpr vk::BlendOp ToAdvancedVKBlendOp(BlendMode blend_mode) {
     case BlendMode::kMultiply:
       return vk::BlendOp::eMultiplyEXT;
     case BlendMode::kHue:
-      return vk::BlendOp::eHslHueEXT;  // Is this right?
+      return vk::BlendOp::eHslHueEXT;
     case BlendMode::kSaturation:
-      return vk::BlendOp::eHslSaturationEXT;  // Is this right?
+      return vk::BlendOp::eHslSaturationEXT;
     case BlendMode::kColor:
-      return vk::BlendOp::eHslColorEXT;  // Is this right?
+      return vk::BlendOp::eHslColorEXT;
     case BlendMode::kLuminosity:
-      return vk::BlendOp::eHslLuminosityEXT;  // Is this right?
+      return vk::BlendOp::eHslLuminosityEXT;
       break;
     default:
       break;
@@ -152,8 +153,8 @@ ToVKPipelineColorBlendAttachmentState(const ColorAttachmentDescriptor& desc) {
   } else {
     res.setColorBlendOp(ToVKBlendOp(desc.color_blend_op));
   }
-  res.setDstColorBlendFactor(ToVKBlendFactor(desc.dst_color_blend_factor));
 
+  res.setDstColorBlendFactor(ToVKBlendFactor(desc.dst_color_blend_factor));
   res.setSrcAlphaBlendFactor(ToVKBlendFactor(desc.src_alpha_blend_factor));
 
   if (desc.advanced_blend_override.has_value()) {
@@ -164,7 +165,6 @@ ToVKPipelineColorBlendAttachmentState(const ColorAttachmentDescriptor& desc) {
   }
 
   res.setDstAlphaBlendFactor(ToVKBlendFactor(desc.dst_alpha_blend_factor));
-
   res.setColorWriteMask(ToVKColorComponentFlags(desc.write_mask));
 
   return res;

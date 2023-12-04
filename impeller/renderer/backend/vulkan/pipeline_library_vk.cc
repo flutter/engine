@@ -367,8 +367,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   if (desc.GetColorAttachmentDescriptors()
           .find(0u)
           ->second.advanced_blend_override.has_value()) {
-    state.setBlendOverlap(vk::BlendOverlapEXT::eUncorrelated);  // dunno
-    state.setSrcPremultiplied(true);                            // double check
+    state.setBlendOverlap(vk::BlendOverlapEXT::eConjoint);  // dunno
+    state.setSrcPremultiplied(true);                        // double check
     state.setDstPremultiplied(true);
     blend_state.pNext = &state;
   }

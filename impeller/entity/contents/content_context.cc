@@ -9,7 +9,6 @@
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
-#include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -24,15 +23,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
 
-  // if (blend_mode > Entity::kLastPipelineBlendMode) {
-  //   VALIDATION_LOG << "Cannot use blend mode " <<
-  //   static_cast<int>(blend_mode)
-  //                  << " as a pipeline blend.";
-  //   pipeline_blend = BlendMode::kSourceOver;
-  // }
-
   desc.SetSampleCount(sample_count);
-
   ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
   color0.format = color_attachment_pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
@@ -135,8 +126,11 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       break;
     default:
       // This is an advanced blend, set the override.
-      FML_LOG(ERROR) << "advanced blend set override";
       color0.advanced_blend_override = blend_mode;
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
       break;
   }
   desc.SetColorAttachmentDescriptor(0u, color0);
