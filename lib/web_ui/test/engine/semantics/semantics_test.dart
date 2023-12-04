@@ -1542,7 +1542,7 @@ void _testIncrementables() {
     };
 
     pumpSemantics(isFocused: false);
-    final DomElement element = semantics().debugSemanticsTree![0]!.element.querySelector('input')!;
+    final DomElement element = owner().debugSemanticsTree![0]!.element.querySelector('input')!;
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
@@ -1910,7 +1910,7 @@ void _testCheckables() {
     };
 
     pumpSemantics(isFocused: false);
-    final DomElement element = semantics().debugSemanticsTree![0]!.element;
+    final DomElement element = owner().debugSemanticsTree![0]!.element;
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
@@ -1919,9 +1919,17 @@ void _testCheckables() {
     ]);
     capturedActions.clear();
 
+    // The framework removes focus from the widget (i.e. "blurs" it). Since the
+    // blurring is initiated by the framework, there's no need to send any
+    // notifications back to the framework about it.
     pumpSemantics(isFocused: false);
     expect(capturedActions, isEmpty);
 
+    // If the element is blurred by the browser, then we do want to notify the
+    // framework. This is because screen reader can be focused on something
+    // other than what the framework is focused on, and notifying the framework
+    // about the loss of focus on a node is information that the framework did
+    // not have before.
     element.blur();
     expect(capturedActions, <CapturedAction>[
       (0, ui.SemanticsAction.didLoseAccessibilityFocus, null),
@@ -2086,7 +2094,7 @@ void _testTappable() {
     };
 
     pumpSemantics(isFocused: false);
-    final DomElement element = semantics().debugSemanticsTree![0]!.element;
+    final DomElement element = owner().debugSemanticsTree![0]!.element;
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
@@ -2879,7 +2887,7 @@ void _testDialog() {
   });
 
   // Test the simple scenario of a dialog coming up and containing focusable
-  // descentants that are not initially focused. The expectation is that the
+  // descendants that are not initially focused. The expectation is that the
   // first descendant will be auto-focused.
   test('focuses on the first unfocused Focusable', () async {
     semantics()
@@ -2891,7 +2899,7 @@ void _testDialog() {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
-    final SemanticsTester tester = SemanticsTester(semantics());
+    final SemanticsTester tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       scopesRoute: true,
@@ -2899,6 +2907,8 @@ void _testDialog() {
       children: <SemanticsNodeUpdate>[
         tester.updateNode(
           id: 1,
+          // None of the children should have isFocused set to `true` to make
+          // sure that the auto-focus logic kicks in.
           children: <SemanticsNodeUpdate>[
             tester.updateNode(
               id: 2,
@@ -2939,7 +2949,7 @@ void _testDialog() {
   });
 
   // Test the scenario of a dialog coming up and containing focusable
-  // descentants with one of them explicitly requesting focus. The expectation
+  // descendants with one of them explicitly requesting focus. The expectation
   // is that the dialog will not attempt to auto-focus on anything and let the
   // respective descendant take focus.
   test('does nothing if a descendant asks for focus explicitly', () async {
@@ -2952,7 +2962,7 @@ void _testDialog() {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
-    final SemanticsTester tester = SemanticsTester(semantics());
+    final SemanticsTester tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       scopesRoute: true,
@@ -2980,6 +2990,7 @@ void _testDialog() {
               isEnabled: true,
               isButton: true,
               isFocusable: true,
+              // Asked for focus explicitly.
               isFocused: true,
               rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
             ),
@@ -3000,8 +3011,8 @@ void _testDialog() {
   });
 
   // Test the scenario of a dialog coming up and containing non-focusable
-  // descentants that can have a11y focus. The expectation is that the first
-  // descendant will be auto-focused.
+  // descendants that can have a11y focus. The expectation is that the first
+  // descendant will be auto-focused, even if it's not input-focusable.
   test('focuses on the first non-focusable descedant', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -3012,7 +3023,7 @@ void _testDialog() {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
-    final SemanticsTester tester = SemanticsTester(semantics());
+    final SemanticsTester tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       scopesRoute: true,
@@ -3048,7 +3059,7 @@ void _testDialog() {
     expect(capturedActions, isEmpty);
 
     // However, the element should have gotten the focus.
-    final DomElement element = semantics().debugSemanticsTree![2]!.element;
+    final DomElement element = owner().debugSemanticsTree![2]!.element;
     expect(element.tabIndex, -1);
     expect(domDocument.activeElement, element);
 
@@ -3067,7 +3078,7 @@ void _testDialog() {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
-    final SemanticsTester tester = SemanticsTester(semantics());
+    final SemanticsTester tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       scopesRoute: true,
@@ -3075,9 +3086,8 @@ void _testDialog() {
     );
     tester.apply();
 
-    // The focused node is not focusable, so no notification is sent to the
-    // framework.
     expect(capturedActions, isEmpty);
+    expect(domDocument.activeElement, domDocument.body);
 
     semantics().semanticsEnabled = false;
   });

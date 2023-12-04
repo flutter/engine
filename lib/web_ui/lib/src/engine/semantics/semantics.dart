@@ -609,6 +609,10 @@ abstract class PrimaryRoleManager {
   /// focus. Not all elements that can take accessibility focus can also take
   /// input focus. For example, a plain text node cannot take input focus, but
   /// it can take accessibility focus.
+  ///
+  /// Returns `true` if the this role manager took the focus. Returns `false` if
+  /// this role manager did not take the focus. The return value can be used to
+  /// decide whether to stop searching for a node that should take focus.
   bool focusAsRouteDefault();
 }
 
@@ -2472,7 +2476,11 @@ AFTER: $description
     _oneTimePostUpdateCallbacks.clear();
   }
 
-  /// True, if any semantics node requested focus explicitly.
+  /// True, if any semantics node requested focus explicitly during the latest
+  /// semantics update.
+  ///
+  /// The default value is `false`, and it is reset back to `false` after the
+  /// semantics update at the end of [updateSemantics].
   ///
   /// Since focus can only be taken by no more than one element, the engine
   /// should not request focus for multiple elements. This flag helps resolve
