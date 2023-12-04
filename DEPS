@@ -163,7 +163,6 @@ vars = {
   "upstream_file": "https://github.com/google/file.dart.git",
   "upstream_fixnum": "https://github.com/dart-lang/fixnum.git",
   "upstream_flatbuffers": "https://github.com/google/flatbuffers.git",
-  "upstream_fontconfig": "https://gitlab.freedesktop.org/fontconfig/fontconfig.git",
   "upstream_freetype2": "https://gitlab.freedesktop.org/freetype/freetype.git",
   "upstream_gcloud": "https://github.com/dart-lang/gcloud.git",
   "upstream_glfw": "https://github.com/glfw/glfw.git",
