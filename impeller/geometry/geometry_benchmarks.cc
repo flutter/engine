@@ -16,6 +16,8 @@ namespace {
 Path CreateCubic();
 /// Similar to the path above, but with all cubics replaced by quadratics.
 Path CreateQuadratic();
+/// Create a rounded rect.
+Path CreateRRect();
 }  // namespace
 
 static Tessellator tess;
@@ -28,16 +30,53 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
 
   size_t point_count = 0u;
   size_t single_point_count = 0u;
+  auto points = std::make_unique<std::vector<Point>>();
+  points->reserve(2048);
   while (state.KeepRunning()) {
-    auto polyline = path.CreatePolyline(1.0f);
-    single_point_count = polyline.points.size();
-    point_count += single_point_count;
     if (tessellate) {
-      tess.Tessellate(
-          FillType::kNonZero, polyline,
-          [](const float* vertices, size_t vertices_count,
-             const uint16_t* indices, size_t indices_count) { return true; });
+      tess.Tessellate(path, 1.0f,
+                      [&point_count, &single_point_count](
+                          const float* vertices, size_t vertices_count,
+                          const uint16_t* indices, size_t indices_count) {
+                        if (indices_count > 0) {
+                          single_point_count = indices_count;
+                          point_count += indices_count;
+                        } else {
+                          single_point_count = vertices_count;
+                          point_count += vertices_count;
+                        }
+                        return true;
+                      });
+    } else {
+      auto polyline = path.CreatePolyline(
+          // Clang-tidy doesn't know that the points get moved back before
+          // getting moved again in this loop.
+          // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
+          1.0f, std::move(points),
+          [&points](Path::Polyline::PointBufferPtr reclaimed) {
+            points = std::move(reclaimed);
+          });
+      single_point_count = polyline.points->size();
+      point_count += single_point_count;
     }
+  }
+  state.counters["SinglePointCount"] = single_point_count;
+  state.counters["TotalPointCount"] = point_count;
+}
+
+template <class... Args>
+static void BM_Convex(benchmark::State& state, Args&&... args) {
+  auto args_tuple = std::make_tuple(std::move(args)...);
+  auto path = std::get<Path>(args_tuple);
+
+  size_t point_count = 0u;
+  size_t single_point_count = 0u;
+  auto points = std::make_unique<std::vector<Point>>();
+  points->reserve(2048);
+  while (state.KeepRunning()) {
+    auto points = tess.TessellateConvex(path, 1.0f);
+    single_point_count = points.size();
+    point_count += points.size();
   }
   state.counters["SinglePointCount"] = single_point_count;
   state.counters["TotalPointCount"] = point_count;
@@ -47,8 +86,16 @@ BENCHMARK_CAPTURE(BM_Polyline, cubic_polyline, CreateCubic(), false);
 BENCHMARK_CAPTURE(BM_Polyline, cubic_polyline_tess, CreateCubic(), true);
 BENCHMARK_CAPTURE(BM_Polyline, quad_polyline, CreateQuadratic(), false);
 BENCHMARK_CAPTURE(BM_Polyline, quad_polyline_tess, CreateQuadratic(), true);
+BENCHMARK_CAPTURE(BM_Convex, rrect_convex, CreateRRect(), true);
 
 namespace {
+
+Path CreateRRect() {
+  return PathBuilder{}
+      .AddRoundedRect(Rect::MakeLTRB(0, 0, 400, 400), 16)
+      .TakePath();
+}
+
 Path CreateCubic() {
   return PathBuilder{}
       .MoveTo({359.934, 96.6335})

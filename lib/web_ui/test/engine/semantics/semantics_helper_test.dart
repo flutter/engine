@@ -6,10 +6,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/pointer_binding.dart';
 import 'package:ui/src/engine/semantics.dart';
-
-const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -21,7 +18,7 @@ void testMain() {
     late DomElement? placeholder;
 
     setUp(() {
-      EngineSemanticsOwner.instance.semanticsEnabled = false;
+      EngineSemantics.instance.semanticsEnabled = false;
       desktopSemanticsEnabler = DesktopSemanticsEnabler();
       placeholder = desktopSemanticsEnabler.prepareAccessibilityPlaceholder();
       domDocument.body!.append(placeholder!);
@@ -31,7 +28,7 @@ void testMain() {
       expect(placeholder, isNotNull,
           reason: 'Expected the test to create a placeholder');
       placeholder!.remove();
-      EngineSemanticsOwner.instance.semanticsEnabled = false;
+      EngineSemantics.instance.semanticsEnabled = false;
     });
 
     test('prepare accessibility placeholder', () async {
@@ -98,7 +95,7 @@ void testMain() {
       DomElement? placeholder;
 
       setUp(() {
-        EngineSemanticsOwner.instance.semanticsEnabled = false;
+        EngineSemantics.instance.semanticsEnabled = false;
         mobileSemanticsEnabler = MobileSemanticsEnabler();
         placeholder = mobileSemanticsEnabler.prepareAccessibilityPlaceholder();
         domDocument.body!.append(placeholder!);
@@ -106,7 +103,7 @@ void testMain() {
 
       tearDown(() {
         placeholder!.remove();
-        EngineSemanticsOwner.instance.semanticsEnabled = false;
+        EngineSemantics.instance.semanticsEnabled = false;
       });
 
       test('prepare accessibility placeholder', () async {
@@ -122,14 +119,7 @@ void testMain() {
 
       test('Non-relevant events should be forwarded to the framework',
           () async {
-        DomEvent event;
-        if (_defaultSupportDetector.hasPointerEvents) {
-          event = createDomPointerEvent('pointermove');
-        } else if (_defaultSupportDetector.hasTouchEvents) {
-          event = createDomTouchEvent('touchcancel');
-        } else {
-          event = createDomMouseEvent('mousemove');
-        }
+        final DomEvent event = createDomPointerEvent('pointermove');
 
         final bool shouldForwardToFramework =
             mobileSemanticsEnabler.tryEnableSemantics(event);
