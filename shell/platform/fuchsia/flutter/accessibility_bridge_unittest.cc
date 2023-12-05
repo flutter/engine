@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "fuchsia/accessibility/semantics/cpp/fidl.h"
 #include "gtest/gtest.h"
 
 #include "flutter_runner_fakes.h"
@@ -478,6 +479,36 @@ TEST_F(AccessibilityBridgeTest, PopulatesToggledState) {
   EXPECT_TRUE(states.has_toggled_state());
   EXPECT_EQ(states.toggled_state(),
             fuchsia::accessibility::semantics::ToggledState::ON);
+
+  EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
+  EXPECT_FALSE(semantics_manager_.UpdateOverflowed());
+}
+
+TEST_F(AccessibilityBridgeTest, PopulatesEnabledState) {
+  flutter::SemanticsNode node0;
+  node0.id = 0;
+  // HasEnabledState = true
+  // IsEnabled = true
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kHasEnabledState);
+  node0.flags |= static_cast<int>(flutter::SemanticsFlags::kIsEnabled);
+  node0.value = "value";
+
+  accessibility_bridge_->AddSemanticsNodeUpdate({{0, node0}}, 1.f);
+  RunLoopUntilIdle();
+
+  EXPECT_EQ(0, semantics_manager_.DeleteCount());
+  EXPECT_EQ(1, semantics_manager_.UpdateCount());
+  EXPECT_EQ(1, semantics_manager_.CommitCount());
+  EXPECT_EQ(1U, semantics_manager_.LastUpdatedNodes().size());
+  const auto& fuchsia_node = semantics_manager_.LastUpdatedNodes().at(0u);
+  EXPECT_EQ(fuchsia_node.node_id(), static_cast<unsigned int>(node0.id));
+  EXPECT_TRUE(fuchsia_node.has_states());
+  const auto& states = fuchsia_node.states();
+  EXPECT_TRUE(states.has_enabled_state());
+  EXPECT_EQ(states.enabled_state(),
+            fuchsia::accessibility::semantics::EnabledState::ENABLED);
+  EXPECT_TRUE(states.has_value());
+  EXPECT_EQ(states.value(), node0.value);
 
   EXPECT_FALSE(semantics_manager_.DeleteOverflowed());
   EXPECT_FALSE(semantics_manager_.UpdateOverflowed());

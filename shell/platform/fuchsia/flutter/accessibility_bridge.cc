@@ -16,6 +16,7 @@
 #include "flutter/lib/ui/semantics/semantics_node.h"
 
 #include "../runtime/dart/utils/root_inspect_node.h"
+#include "fuchsia/accessibility/semantics/cpp/fidl.h"
 
 namespace flutter_runner {
 namespace {
@@ -338,6 +339,14 @@ fuchsia::accessibility::semantics::States AccessibilityBridge::GetNodeStates(
         node.HasFlag(flutter::SemanticsFlags::kIsChecked)
             ? fuchsia::accessibility::semantics::CheckedState::CHECKED
             : fuchsia::accessibility::semantics::CheckedState::UNCHECKED);
+  }
+
+  // Set enabled state.
+  if (node.HasFlag(flutter::SemanticsFlags::kHasEnabledState)) {
+    states.set_enabled_state(
+        node.HasFlag(flutter::SemanticsFlags::kIsEnabled)
+            ? fuchsia::accessibility::semantics::EnabledState::ENABLED
+            : fuchsia::accessibility::semantics::EnabledState::DISABLED);
   }
 
   // Set selected state.
