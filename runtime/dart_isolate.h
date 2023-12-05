@@ -80,16 +80,17 @@ class DartIsolate : public UIDartState {
   };
 
   //----------------------------------------------------------------------------
-  /// @brief      The engine represents all dart isolates as being in one of the
-  ///             known phases. By invoking various methods on the Dart isolate,
-  ///             the engine transition the Dart isolate from one phase to the
-  ///             next. The Dart isolate will only move from one phase to the
-  ///             next in the order specified in the `DartIsolate::Phase` enum.
-  ///             That is, once the isolate has moved out of a particular phase,
-  ///             it can never transition back to that phase in the future.
-  ///             There is no error recovery mechanism and callers that find
-  ///             their isolates in an undesirable phase must discard the
-  ///             isolate and start over.
+  /// @brief      The engine represents all dart isolates as being in one of
+  /// the
+  ///             known phases. By invoking various methods on the Dart
+  ///             isolate, the engine transition the Dart isolate from one
+  ///             phase to the next. The Dart isolate will only move from one
+  ///             phase to the next in the order specified in the
+  ///             `DartIsolate::Phase` enum. That is, once the isolate has
+  ///             moved out of a particular phase, it can never transition
+  ///             back to that phase in the future. There is no error recovery
+  ///             mechanism and callers that find their isolates in an
+  ///             undesirable phase must discard the isolate and start over.
   ///
   enum class Phase {
     // NOLINTBEGIN(readability-identifier-naming)
@@ -99,7 +100,8 @@ class DartIsolate : public UIDartState {
     ///
     Unknown,
     //--------------------------------------------------------------------------
-    /// The Dart isolate has been created but none of the library tag or message
+    /// The Dart isolate has been created but none of the library tag or
+    /// message
     /// handers have been set yet. The is an internal phase and callers can
     /// never get a reference to a Dart isolate in this phase.
     ///
@@ -112,7 +114,8 @@ class DartIsolate : public UIDartState {
     ///
     Initialized,
     //--------------------------------------------------------------------------
-    /// The isolate has been fully initialized and is waiting for the caller to
+    /// The isolate has been fully initialized and is waiting for the caller
+    /// to
     /// associate isolate snapshots with the same. The isolate will only be
     /// ready to execute Dart code once one of the `Prepare` calls are
     /// successfully made.
@@ -129,7 +132,8 @@ class DartIsolate : public UIDartState {
     ///
     Running,
     //--------------------------------------------------------------------------
-    /// The isolate is no longer running Dart code and is in the middle of being
+    /// The isolate is no longer running Dart code and is in the middle of
+    /// being
     /// collected. This is in internal phase and callers can never get a
     /// reference to a Dart isolate in this phase.
     ///
@@ -144,19 +148,21 @@ class DartIsolate : public UIDartState {
   ///             shell, this is the UI thread and task runner. Using the
   ///             isolate on any other thread is user error.
   ///
-  ///             The isolate that the engine creates to act as the host for the
-  ///             Flutter application code with UI bindings is called the root
-  ///             isolate.
+  ///             The isolate that the engine creates to act as the host for
+  ///             the Flutter application code with UI bindings is called the
+  ///             root isolate.
   ///
   ///             The root isolate is special in the following ways:
   ///             * The root isolate forms a new isolate group. Child isolates
   ///               are added to their parents groups. When the root isolate
   ///               dies, all isolates in its group are terminated.
   ///             * Only root isolates get UI bindings.
-  ///             * Root isolates execute their code on engine managed threads.
+  ///             * Root isolates execute their code on engine managed
+  ///             threads.
   ///               All other isolates run their Dart code on Dart VM managed
   ///               thread pool workers that the engine has no control over.
-  ///             * Since the engine does not know the thread on which non-root
+  ///             * Since the engine does not know the thread on which
+  ///             non-root
   ///               isolates are run, the engine has no opportunity to get a
   ///               reference to non-root isolates. Such isolates can only be
   ///               terminated if they terminate themselves or their isolate
@@ -173,25 +179,30 @@ class DartIsolate : public UIDartState {
   ///                                         function to invoke.
   /// @param[in]  dart_entrypoint_library     The name of the dart library
   ///                                         containing the entrypoint.
-  /// @param[in]  dart_entrypoint_args        Arguments passed as a List<String>
+  /// @param[in]  dart_entrypoint_args        Arguments passed as a
+  /// List<String>
   ///                                         to Dart's entrypoint function.
-  /// @param[in]  isolate_configuration       The isolate configuration used to
+  /// @param[in]  isolate_configuration       The isolate configuration used
+  /// to
   ///                                         configure the isolate before
   ///                                         invoking the entrypoint.
-  /// @param[in]  root_isolate_create_callback  A callback called after the root
+  /// @param[in]  root_isolate_create_callback  A callback called after the
+  /// root
   ///                                         isolate is created, _without_
   ///                                         isolate scope. This gives the
   ///                                         caller a chance to finish any
   ///                                         setup before running the Dart
   ///                                         program, and after any embedder
-  ///                                         callbacks in the settings object.
-  /// @param[in]  isolate_create_callback     The isolate create callback. This
-  ///                                         will be called when the before the
-  ///                                         main Dart entrypoint is invoked in
-  ///                                         the root isolate. The isolate is
-  ///                                         already in the running state at
-  ///                                         this point and an isolate scope is
-  ///                                         current.
+  ///                                         callbacks in the settings
+  ///                                         object.
+  /// @param[in]  isolate_create_callback     The isolate create callback.
+  /// This
+  ///                                         will be called when the before
+  ///                                         the main Dart entrypoint is
+  ///                                         invoked in the root isolate. The
+  ///                                         isolate is already in the
+  ///                                         running state at this point and
+  ///                                         an isolate scope is current.
   /// @param[in]  isolate_shutdown_callback   The isolate shutdown callback.
   ///                                         This will be called before the
   ///                                         isolate is about to transition
@@ -200,14 +211,15 @@ class DartIsolate : public UIDartState {
   ///                                         point and an isolate scope is
   ///                                         current.
   /// @param[in]  context                     Engine-owned state which is
-  ///                                         accessed by the root dart isolate.
+  ///                                         accessed by the root dart
+  ///                                         isolate.
   /// @param[in]  spawning_isolate            The isolate that is spawning the
   ///                                         new isolate.
   /// @return     A weak pointer to the root Dart isolate. The caller must
-  ///             ensure that the isolate is not referenced for long periods of
-  ///             time as it prevents isolate collection when the isolate
-  ///             terminates itself. The caller may also only use the isolate on
-  ///             the thread on which the isolate was created.
+  ///             ensure that the isolate is not referenced for long periods
+  ///             of time as it prevents isolate collection when the isolate
+  ///             terminates itself. The caller may also only use the isolate
+  ///             on the thread on which the isolate was created.
   ///
   static std::weak_ptr<DartIsolate> CreateRunningRootIsolate(
       const Settings& settings,
@@ -229,15 +241,16 @@ class DartIsolate : public UIDartState {
 
   //----------------------------------------------------------------------------
   /// @brief      The current phase of the isolate. The engine represents all
-  ///             dart isolates as being in one of the known phases. By invoking
-  ///             various methods on the Dart isolate, the engine transitions
-  ///             the Dart isolate from one phase to the next. The Dart isolate
-  ///             will only move from one phase to the next in the order
-  ///             specified in the `DartIsolate::Phase` enum. That is, the once
-  ///             the isolate has moved out of a particular phase, it can never
-  ///             transition back to that phase in the future. There is no error
-  ///             recovery mechanism and callers that find their isolates in an
-  ///             undesirable phase must discard the isolate and start over.
+  ///             dart isolates as being in one of the known phases. By
+  ///             invoking various methods on the Dart isolate, the engine
+  ///             transitions the Dart isolate from one phase to the next. The
+  ///             Dart isolate will only move from one phase to the next in
+  ///             the order specified in the `DartIsolate::Phase` enum. That
+  ///             is, the once the isolate has moved out of a particular
+  ///             phase, it can never transition back to that phase in the
+  ///             future. There is no error recovery mechanism and callers
+  ///             that find their isolates in an undesirable phase must
+  ///             discard the isolate and start over.
   ///
   /// @return     The current isolate phase.
   ///
@@ -252,7 +265,8 @@ class DartIsolate : public UIDartState {
   std::string GetServiceId();
 
   //----------------------------------------------------------------------------
-  /// @brief      Prepare the isolate for running for a precompiled code bundle.
+  /// @brief      Prepare the isolate for running for a precompiled code
+  /// bundle.
   ///             The Dart VM must be configured for running precompiled code.
   ///
   ///             The isolate must already be in the `Phase::LibrariesSetup`
@@ -265,22 +279,24 @@ class DartIsolate : public UIDartState {
   [[nodiscard]] bool PrepareForRunningFromPrecompiledCode();
 
   //----------------------------------------------------------------------------
-  /// @brief      Prepare the isolate for running for a a list of kernel files.
+  /// @brief      Prepare the isolate for running for a a list of kernel
+  /// files.
   ///
   ///             The Dart VM must be configured for running from kernel
   ///             snapshots.
   ///
   ///             The isolate must already be in the `Phase::LibrariesSetup`
-  ///             phase. This call can be made multiple times. After a series of
-  ///             successful calls to this method, the caller can specify the
-  ///             last kernel file mapping by specifying `last_piece` to `true`.
-  ///             On success, the isolate will transition to the `Phase::Ready`
-  ///             phase.
+  ///             phase. This call can be made multiple times. After a series
+  ///             of successful calls to this method, the caller can specify
+  ///             the last kernel file mapping by specifying `last_piece` to
+  ///             `true`. On success, the isolate will transition to the
+  ///             `Phase::Ready` phase.
   ///
   /// @param[in]  kernel      The kernel mapping.
   /// @param[in]  last_piece  Indicates if this is the last kernel mapping
   ///                         expected. After this point, the isolate will
-  ///                         attempt a transition to the `Phase::Ready` phase.
+  ///                         attempt a transition to the `Phase::Ready`
+  ///                         phase.
   ///
   /// @return     If the kernel mapping supplied was successfully used to
   ///             prepare the isolate.
@@ -291,7 +307,8 @@ class DartIsolate : public UIDartState {
       bool last_piece);
 
   //----------------------------------------------------------------------------
-  /// @brief      Prepare the isolate for running for a a list of kernel files.
+  /// @brief      Prepare the isolate for running for a a list of kernel
+  /// files.
   ///
   ///             The Dart VM must be configured for running from kernel
   ///             snapshots.
@@ -309,7 +326,8 @@ class DartIsolate : public UIDartState {
       std::vector<std::shared_ptr<const fml::Mapping>> kernels);
 
   //----------------------------------------------------------------------------
-  /// @brief      Prepare the isolate for running for a a list of kernel files.
+  /// @brief      Prepare the isolate for running for a a list of kernel
+  /// files.
   ///
   ///             The Dart VM must be configured for running from kernel
   ///             snapshots.
@@ -327,7 +345,8 @@ class DartIsolate : public UIDartState {
       std::vector<std::unique_ptr<const fml::Mapping>> kernels);
 
   //----------------------------------------------------------------------------
-  /// @brief      Transition the root isolate to the `Phase::Running` phase and
+  /// @brief      Transition the root isolate to the `Phase::Running` phase
+  /// and
   ///             invoke the main entrypoint (the "main" method) in the
   ///             specified library. The isolate must already be in the
   ///             `Phase::Ready` phase.
@@ -337,7 +356,8 @@ class DartIsolate : public UIDartState {
   /// @param[in]  entrypoint    The entrypoint in `library_name`
   /// @param[in]  args          A list of string arguments to the entrypoint.
   ///
-  /// @return     If the isolate successfully transitioned to the running phase
+  /// @return     If the isolate successfully transitioned to the running
+  /// phase
   ///             and the main entrypoint was invoked.
   ///
   [[nodiscard]] bool RunFromLibrary(std::optional<std::string> library_name,
@@ -363,17 +383,20 @@ class DartIsolate : public UIDartState {
   void AddIsolateShutdownCallback(const fml::closure& closure);
 
   //----------------------------------------------------------------------------
-  /// @brief      A weak pointer to the Dart isolate instance. This instance may
-  ///             only be used on the task runner that created the root isolate.
+  /// @brief      A weak pointer to the Dart isolate instance. This instance
+  /// may
+  ///             only be used on the task runner that created the root
+  ///             isolate.
   ///
   /// @return     The weak isolate pointer.
   ///
   std::weak_ptr<DartIsolate> GetWeakIsolatePtr();
 
   //----------------------------------------------------------------------------
-  /// @brief      The task runner on which the Dart code for the root isolate is
-  ///             running. For the root isolate, this is the UI task runner for
-  ///             the shell that owns the root isolate.
+  /// @brief      The task runner on which the Dart code for the root isolate
+  /// is
+  ///             running. For the root isolate, this is the UI task runner
+  ///             for the shell that owns the root isolate.
   ///
   /// @return     The message handling task runner.
   ///
@@ -391,6 +414,11 @@ class DartIsolate : public UIDartState {
   DartIsolateGroupData& GetIsolateGroupData();
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
+
+  /// Returns the "main" entrypoint of the library contained in the kernel
+  /// data in `mapping`.
+  static Dart_Handle LoadLibraryFromKernel(
+      const std::shared_ptr<const fml::Mapping>& mapping);
 
  private:
   friend class IsolateConfiguration;
@@ -435,9 +463,10 @@ class DartIsolate : public UIDartState {
   ///
   /// @param[in]  dart_isolate  The current isolate that is to be initialized.
   ///
-  /// @return     Whether the initialization succeeded. Irrespective of whether
-  ///             the initialization suceeded, the current isolate will still be
-  ///             active.
+  /// @return     Whether the initialization succeeded. Irrespective of
+  /// whether
+  ///             the initialization suceeded, the current isolate will still
+  ///             be active.
   ///
   [[nodiscard]] bool Initialize(Dart_Isolate dart_isolate);
 

@@ -25,6 +25,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
 
+#include "third_party/abseil-cpp/absl/base/no_destructor.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -128,7 +129,27 @@ struct ImpellerVulkanContextHolder {};
 
 namespace flutter {
 
+static absl::NoDestructor<std::unique_ptr<Shell>> g_shell;
+
 static constexpr int64_t kImplicitViewId = 0ll;
+
+static void ConfigureShell(Shell* shell) {
+  auto device_pixel_ratio = 3.0;
+  auto physical_width = 2400.0;   // 800 at 3x resolution.
+  auto physical_height = 1800.0;  // 600 at 3x resolution.
+
+  std::vector<std::unique_ptr<Display>> displays;
+  displays.push_back(std::make_unique<Display>(
+      0, 60, physical_width, physical_height, device_pixel_ratio));
+  shell->OnDisplayUpdates(std::move(displays));
+
+  flutter::ViewportMetrics metrics{};
+  metrics.device_pixel_ratio = device_pixel_ratio;
+  metrics.physical_width = physical_width;
+  metrics.physical_height = physical_height;
+  metrics.display_id = 0;
+  shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId, metrics);
+}
 
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
@@ -381,12 +402,14 @@ int RunTester(const flutter::Settings& settings,
         shell, Rasterizer::MakeGpuImageBehavior::kBitmap);
   };
 
-  auto shell = Shell::Create(flutter::PlatformData(),  //
-                             task_runners,             //
-                             settings,                 //
-                             on_create_platform_view,  //
-                             on_create_rasterizer      //
-  );
+  g_shell->reset(Shell::Create(flutter::PlatformData(),  //
+                               task_runners,             //
+                               settings,                 //
+                               on_create_platform_view,  //
+                               on_create_rasterizer      //
+                               )
+                     .release());
+  auto shell = g_shell->get();
 
   if (!shell || !shell->IsSetup()) {
     FML_LOG(ERROR) << "Could not set up the shell.";
@@ -476,21 +499,7 @@ int RunTester(const flutter::Settings& settings,
                      }
                    });
 
-  auto device_pixel_ratio = 3.0;
-  auto physical_width = 2400.0;   // 800 at 3x resolution.
-  auto physical_height = 1800.0;  // 600 at 3x resolution.
-
-  std::vector<std::unique_ptr<Display>> displays;
-  displays.push_back(std::make_unique<Display>(
-      0, 60, physical_width, physical_height, device_pixel_ratio));
-  shell->OnDisplayUpdates(std::move(displays));
-
-  flutter::ViewportMetrics metrics{};
-  metrics.device_pixel_ratio = device_pixel_ratio;
-  metrics.physical_width = physical_width;
-  metrics.physical_height = physical_height;
-  metrics.display_id = 0;
-  shell->GetPlatformView()->SetViewportMetrics(kImplicitViewId, metrics);
+  ConfigureShell(shell);
 
   // Run the message loop and wait for the script to do its thing.
   fml::MessageLoop::GetCurrent().Run();
@@ -500,6 +509,8 @@ int RunTester(const flutter::Settings& settings,
   fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_remove);
   latch.Wait();
 
+  g_shell->reset(nullptr);
+
   if (!engine_did_run) {
     // If the engine itself didn't have a chance to run, there is no point in
     // asking it if there was an error. Signal a failure unconditionally.
@@ -507,6 +518,84 @@ int RunTester(const flutter::Settings& settings,
   }
 
   return completion_observer.GetExitCodeForLastError();
+}
+
+#ifdef _WIN32
+#define EXPORTED __declspec(dllexport)
+#else
+#define EXPORTED __attribute__((visibility("default")))
+#endif
+
+extern "C" {
+EXPORTED Dart_Handle LoadLibraryFromKernel(const char* path) {
+  std::shared_ptr<fml::FileMapping> mapping =
+      fml::FileMapping::CreateReadOnly(path);
+  if (!mapping) {
+    FML_LOG(ERROR) << "Failed to load file at \"" << path << "\".";
+    return Dart_Null();
+  }
+  return DartIsolate::LoadLibraryFromKernel(mapping);
+}
+
+EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
+  if (!uri || !name) {
+    return Dart_Null();
+  }
+  return Dart_GetField(Dart_LookupLibrary(Dart_NewStringFromCString(uri)),
+                       Dart_NewStringFromCString(name));
+}
+
+EXPORTED void Spawn(const char* entrypoint, const char* route) {
+  auto shell = g_shell->get();
+  auto spawn_task = [shell, entrypoint, route]() {
+    auto configuration = RunConfiguration::InferFromSettings(
+        shell->GetSettings(), /*io_worker=*/nullptr,
+        /*launch_type=*/IsolateLaunchType::kExistingGroup);
+    configuration.SetEntrypoint(entrypoint);
+
+    Shell::CreateCallback<PlatformView> on_create_platform_view =
+        fml::MakeCopyable([](Shell& shell) mutable {
+          ImpellerVulkanContextHolder impeller_context_holder;
+          return std::make_unique<TesterPlatformView>(
+              shell, shell.GetTaskRunners(),
+              std::move(impeller_context_holder));
+        });
+
+    Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
+      return std::make_unique<Rasterizer>(
+          shell, Rasterizer::MakeGpuImageBehavior::kBitmap);
+    };
+
+    // Spawn a shell, and keep it running until it has no live ports, then
+    // delete it on the platform thread.
+    auto spawned_shell =
+        shell
+            ->Spawn(std::move(configuration), route, on_create_platform_view,
+                    on_create_rasterizer)
+            .release();
+
+    ConfigureShell(spawned_shell);
+
+    fml::TaskRunner::RunNowOrPostTask(
+        spawned_shell->GetTaskRunners().GetUITaskRunner(), [spawned_shell]() {
+          fml::MessageLoop::GetCurrent().AddTaskObserver(
+              reinterpret_cast<intptr_t>(spawned_shell), [spawned_shell]() {
+                if (spawned_shell->EngineHasLivePorts()) {
+                  return;
+                }
+
+                fml::MessageLoop::GetCurrent().RemoveTaskObserver(
+                    reinterpret_cast<intptr_t>(spawned_shell));
+                // Shell must be deleted on the platform task runner.
+                fml::TaskRunner::RunNowOrPostTask(
+                    spawned_shell->GetTaskRunners().GetPlatformTaskRunner(),
+                    [spawned_shell]() { delete spawned_shell; });
+              });
+        });
+  };
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(), spawn_task);
+}
 }
 
 }  // namespace flutter

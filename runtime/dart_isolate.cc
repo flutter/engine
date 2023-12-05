@@ -1130,6 +1130,22 @@ Dart_Handle DartIsolate::OnDartLoadLibrary(intptr_t loading_unit_id) {
   return Dart_NewApiError(error_message.c_str());
 }
 
+Dart_Handle DartIsolate::LoadLibraryFromKernel(
+    const std::shared_ptr<const fml::Mapping>& mapping) {
+  auto current_isolate =
+      static_cast<std::shared_ptr<DartIsolate>*>(Dart_CurrentIsolateData());
+  // Mapping must be retained until isolate shutdown.
+  (*current_isolate)->kernel_buffers_.push_back(mapping);
+
+  auto lib =
+      Dart_LoadLibraryFromKernel(mapping->GetMapping(), mapping->GetSize());
+  auto result = Dart_FinalizeLoading(false);
+  if (Dart_IsError(result)) {
+    return result;
+  }
+  return Dart_GetField(lib, Dart_NewStringFromCString("main"));
+}
+
 DartIsolate::AutoFireClosure::AutoFireClosure(const fml::closure& closure)
     : closure_(closure) {}
 
