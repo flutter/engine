@@ -65,6 +65,7 @@ impeller_component("compiler_lib") {
     "../base",
     "../geometry",
     "../runtime_stage",
+    "../shader_bundle",
     "//flutter/fml",
 
     # All third_party deps must be included by the global license script.
