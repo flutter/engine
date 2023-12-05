@@ -225,11 +225,19 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   platform_view_channel_->SetMethodCallHandler([this](const MethodCall<EncodableValue>& call, std::unique_ptr<MethodResult<EncodableValue>> result) {
     const std::string& name = call.method_name();
     if (name == "create") {
+      FML_LOG(ERROR) << "Receiving creation method";
       const auto& args = std::get<EncodableMap>(*call.arguments());
-      auto id = std::get<int64_t>(args.find(EncodableValue("id"))->second);
+      FML_LOG(ERROR) << "Got args of size: " << args.size();
+      for (auto it : args) {
+        FML_LOG(ERROR) << "Has key: " << std::get<std::string>(it.first);
+      }
+      auto id = std::get<int32_t>(args.find(EncodableValue("id"))->second);
+      FML_LOG(ERROR) << "Found ID for platform view: " << id;
       auto type = std::get<std::string>(args.find(EncodableValue("viewType"))->second);
+      FML_LOG(ERROR) << "Found view type for platform view: " << type;
       PlatformViewCreationParams creation_args{view_->GetPlatformWindow(), id, type.data()};
-      CreatePlatformView(&creation_args);
+      CreatePlatformView(creation_args);
+      result->Success();
     }
     else {
       result->NotImplemented();
@@ -462,16 +470,26 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                                                    backing_store.height);
       }
       else if (layer->type == kFlutterLayerContentTypePlatformView) {
+        const auto platform_view = layer->platform_view;
+        auto id = platform_view->identifier;
+        const auto itr = host->platform_views_.find(platform_view->identifier);
         const auto& offset = layer->offset;
         const auto& size = layer->size;
-        host->task_runner()->PostTask([=](){
+        if (itr != host->platform_views_.end()) {
+          HWND view = itr->second;
+          SetWindowPos(view, HWND_TOPMOST, offset.x, offset.y, size.width, size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
+          UpdateWindow(view);
+        } else {
+          FML_LOG(ERROR) << "No platform view registered with id " << id;
+        }
+        /*host->task_runner()->PostTask([=](){
           HWND parent = host->view()->GetPlatformWindow();
           if (test_button == NULL && parent != NULL && IsWindowVisible(parent)) {
             test_button = CreateWindowW(L"STATIC", L"Pretend I am a platform view!", WS_CHILD | WS_VISIBLE, 10, 10, 250, 250, parent, NULL, NULL, NULL);
           }
           SetWindowPos(test_button, HWND_TOPMOST, offset.x, offset.y, size.width, size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
           UpdateWindow(test_button);
-        });
+        });*/
       }
     }
     return result;
@@ -920,17 +938,17 @@ void FlutterWindowsEngine::RegisterPlatformViewType(const std::string& type, Win
   platform_view_types_.insert({type, factory});
 }
 
-HWND FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams* args) {
-  const auto itr = platform_view_types_.find(std::string(args->view_type));
+void FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams args) {
+  FML_LOG(ERROR) << "Creating a platform view of type \"" << args.view_type << "\"";
+  const auto itr = platform_view_types_.find(std::string(args.view_type));
   if (itr == platform_view_types_.end()) {
-    return nullptr;
+    FML_LOG(ERROR) << "View type not registered";
+    return;
   }
-  HWND platform_view = itr->second(args);
-  if (platform_view == nullptr) {
-    return nullptr;
-  }
-  platform_views_.insert({args->id, platform_view});
-  return platform_view;
+  task_runner_->PostTask([this, itr, args]() {
+    HWND platform_view = itr->second(&args);
+    platform_views_.insert({args.id, platform_view});
+  });
 }
 
 }  // namespace flutter

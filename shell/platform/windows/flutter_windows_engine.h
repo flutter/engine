@@ -280,7 +280,7 @@ class FlutterWindowsEngine {
   // These should end up in their own platform view plugin at some point.
   void RegisterPlatformViewType(const std::string& type, Win32PlatformViewFactory factory);
 
-  HWND CreatePlatformView(PlatformViewCreationParams* args);
+  void CreatePlatformView(PlatformViewCreationParams args);
 
  protected:
   // Creates the keyboard key handler.
