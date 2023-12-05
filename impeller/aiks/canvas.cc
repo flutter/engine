@@ -18,6 +18,7 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 
 namespace impeller {
@@ -203,6 +204,11 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       new_paint.mask_blur_descriptor->style !=
           FilterContents::BlurStyle::kNormal) {
     return false;
+  }
+
+  if (std::fabs(new_paint.mask_blur_descriptor->sigma.sigma) <=
+      kEhCloseEnough) {
+    return true;
   }
 
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
