@@ -13,8 +13,8 @@
 // Warning: if any of the constant values or layouts are changed in this
 // file, then the hard-coded constant value in
 // impeller/renderer/backend/vulkan/binding_helpers_vk.cc
-layout(constant_id = 0) const int blend_type = 0;
-layout(constant_id = 1) const int supports_decal = 1;
+layout(constant_id = 0) const float blend_type = 0;
+layout(constant_id = 1) const float supports_decal = 1;
 
 #ifdef IMPELLER_TARGET_VULKAN
 layout(set = 0,
@@ -61,7 +61,7 @@ void main() {
                                )) *
                 frag_info.src_input_alpha;
 
-  f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, blend_type);
+  f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, int(blend_type));
   f16vec4 blended = mix(src, f16vec4(blend_result, dst.a), dst.a);
   frag_color = vec4(mix(dst, blended, src.a));
 }

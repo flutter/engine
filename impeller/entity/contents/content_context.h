@@ -714,7 +714,7 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<int32_t>& constants = {},
+                       const std::initializer_list<Scalar>& constants = {},
                        UseSubpassInput subpass_input = UseSubpassInput::kNo) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);

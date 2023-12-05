@@ -129,9 +129,9 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
-  void SetSpecializationConstants(std::vector<int32_t> values);
+  void SetSpecializationConstants(std::vector<Scalar> values);
 
-  const std::vector<int32_t>& GetSpecializationConstants() const;
+  const std::vector<Scalar>& GetSpecializationConstants() const;
 
   void SetUseSubpassInput(UseSubpassInput value) { use_subpass_input_ = value; }
 
@@ -163,7 +163,7 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
   UseSubpassInput use_subpass_input_ = UseSubpassInput::kNo;
-  std::vector<int32_t> specialization_constants_;
+  std::vector<Scalar> specialization_constants_;
 };
 
 }  // namespace impeller
