@@ -2,15 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/ui.dart' as ui;
-
 import '../engine.dart' show buildMode, renderer;
 import 'browser_detection.dart';
 import 'configuration.dart';
 import 'dom.dart';
-import 'platform_dispatcher.dart';
-import 'text_editing/text_editing.dart';
-import 'view_embedder/style_manager.dart';
 import 'window.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
@@ -64,34 +59,6 @@ class FlutterViewEmbedder {
     );
 
     renderer.reset(this);
-
-    window.onResize.listen(_metricsDidChange);
-  }
-
-  /// Called immediately after browser window metrics change.
-  ///
-  /// When there is a text editing going on in mobile devices, do not change
-  /// the physicalSize, change the [window.viewInsets]. See:
-  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/viewInsets.html
-  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/physicalSize.html
-  ///
-  /// Note: always check for rotations for a mobile device. Update the physical
-  /// size if the change is caused by a rotation.
-  void _metricsDidChange(ui.Size? newSize) {
-    StyleManager.scaleSemanticsHost(
-      _semanticsHostElement,
-      window.devicePixelRatio,
-    );
-    // TODO(dit): Do not computePhysicalSize twice, https://github.com/flutter/flutter/issues/117036
-    if (isMobile && !window.isRotation() && textEditing.isEditing) {
-      window.computeOnScreenKeyboardInsets(true);
-      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
-    } else {
-      window.computePhysicalSize();
-      // When physical size changes this value has to be recalculated.
-      window.computeOnScreenKeyboardInsets(false);
-      EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
-    }
   }
 
   /// Add an element as a global resource to be referenced by CSS.
