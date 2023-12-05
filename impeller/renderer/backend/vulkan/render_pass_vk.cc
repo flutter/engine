@@ -53,7 +53,12 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   }
 
   // Always insert a barrier to transition to color attachment optimal.
-  current_layout = vk::ImageLayout::eGeneral;
+  if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
+      current_layout != vk::ImageLayout::eUndefined) {
+    // Note: This should incur a barrier.
+    current_layout = vk::ImageLayout::eGeneral;
+  }
+
   return CreateAttachmentDescription(desc.format,        //
                                      desc.sample_count,  //
                                      load_action,        //
