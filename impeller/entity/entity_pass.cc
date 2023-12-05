@@ -227,7 +227,7 @@ void EntityPass::AddSubpassInline(std::unique_ptr<EntityPass> pass) {
   }
   FML_DCHECK(pass->superpass_ == nullptr);
 
-  auto& elements = pass->elements_;
+  std::vector<Element>& elements = pass->elements_;
   for (auto i = 0u; i < elements.size(); i++) {
     elements_.emplace_back(std::move(elements[i]));
   }

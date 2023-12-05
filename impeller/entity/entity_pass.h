@@ -73,8 +73,6 @@ class EntityPass {
   std::unique_ptr<EntityPass> Clone() const;
 
   /// @brief Add an entity to the current entity pass.
-  ///
-  /// Prefer moving the entity over copying it.
   void AddEntity(Entity entity);
 
   void SetElements(std::vector<Element> elements);

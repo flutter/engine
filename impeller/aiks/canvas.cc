@@ -74,26 +74,27 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   return contents_copy;
 }
 
-static std::shared_ptr<Contents> CreateContentsWithFilters(const Paint& paint,
-                                                           Path path = {},
-                                                           bool cover = false) {
+static std::shared_ptr<Contents> CreatePathContentsWithFilters(
+    const Paint& paint,
+    Path path = {}) {
   std::shared_ptr<Geometry> geometry;
-  if (cover) {
-    geometry = Geometry::MakeCover();
-  } else {
-    switch (paint.style) {
-      case Paint::Style::kFill:
-        geometry = Geometry::MakeFillPath(std::move(path));
-        break;
-      case Paint::Style::kStroke:
-        geometry = Geometry::MakeStrokePath(
-            std::move(path), paint.stroke_width, paint.stroke_miter,
-            paint.stroke_cap, paint.stroke_join);
-        break;
-    }
+  switch (paint.style) {
+    case Paint::Style::kFill:
+      geometry = Geometry::MakeFillPath(std::move(path));
+      break;
+    case Paint::Style::kStroke:
+      geometry = Geometry::MakeStrokePath(std::move(path), paint.stroke_width,
+                                          paint.stroke_miter, paint.stroke_cap,
+                                          paint.stroke_join);
+      break;
   }
 
   return CreateContentsForGeometryWithFilters(paint, std::move(geometry));
+}
+
+static std::shared_ptr<Contents> CreateCoverContentsWithFilters(
+    const Paint& paint) {
+  return CreateContentsForGeometryWithFilters(paint, Geometry::MakeCover());
 }
 
 }  // namespace
@@ -251,7 +252,7 @@ void Canvas::DrawPath(Path path, const Paint& paint) {
   entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreateContentsWithFilters(paint, std::move(path)));
+  entity.SetContents(CreatePathContentsWithFilters(paint, std::move(path)));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
@@ -261,7 +262,7 @@ void Canvas::DrawPaint(const Paint& paint) {
   entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreateContentsWithFilters(paint, {}, true));
+  entity.SetContents(CreateCoverContentsWithFilters(paint));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }

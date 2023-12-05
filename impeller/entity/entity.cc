@@ -175,8 +175,7 @@ Capture& Entity::GetCapture() const {
 }
 
 Entity Entity::Clone() const {
-  Entity copy = *this;
-  return copy;
+  return Entity(*this);
 }
 
 void Entity::SetCapture(Capture capture) const {
