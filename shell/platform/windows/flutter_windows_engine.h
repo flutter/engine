@@ -277,6 +277,11 @@ class FlutterWindowsEngine {
     return windows_proc_table_;
   }
 
+  // These should end up in their own platform view plugin at some point.
+  void RegisterPlatformViewType(const std::string& type, Win32PlatformViewFactory factory);
+
+  HWND CreatePlatformView(PlatformViewCreationParams* args);
+
  protected:
   // Creates the keyboard key handler.
   //
@@ -421,6 +426,13 @@ class FlutterWindowsEngine {
   std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;
 
   std::shared_ptr<WindowsProcTable> windows_proc_table_;
+
+  // These can also end up in the platform view plugin.
+  std::map<std::string, Win32PlatformViewFactory> platform_view_types_;
+
+  std::map<std::int64_t, HWND> platform_views_;
+
+  std::unique_ptr<MethodChannel<EncodableValue>> platform_view_channel_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

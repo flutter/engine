@@ -206,8 +206,9 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
 typedef struct {
   HWND parent;
   int64_t id;
+  const char* view_type;
 } PlatformViewCreationParams;
-typedef HWND (*Win32PlatformViewFactory)(PlatformViewCreationParams);
+typedef HWND (*Win32PlatformViewFactory)(PlatformViewCreationParams*);
 
 FLUTTER_EXPORT void FlutterDesktopEngineRegisterPlatformView(FlutterDesktopEngineRef, const char* view_type, Win32PlatformViewFactory factory);
 

@@ -22,6 +22,7 @@
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/third_party/accessibility/ax/ax_node.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -218,6 +219,22 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<PlatformHandler>(messenger_wrapper_.get(), this);
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
                                                       task_runner_.get());
+
+  // Makeshift PV channel before a separate plugin is there.
+  platform_view_channel_ = std::make_unique<MethodChannel<EncodableValue>>(messenger_wrapper_.get(), "flutter/platform_views", &StandardMethodCodec::GetInstance());
+  platform_view_channel_->SetMethodCallHandler([this](const MethodCall<EncodableValue>& call, std::unique_ptr<MethodResult<EncodableValue>> result) {
+    const std::string& name = call.method_name();
+    if (name == "create") {
+      const auto& args = std::get<EncodableMap>(*call.arguments());
+      auto id = std::get<int64_t>(args.find(EncodableValue("id"))->second);
+      auto type = std::get<std::string>(args.find(EncodableValue("viewType"))->second);
+      PlatformViewCreationParams creation_args{view_->GetPlatformWindow(), id, type.data()};
+      CreatePlatformView(&creation_args);
+    }
+    else {
+      result->NotImplemented();
+    }
+  });
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -896,6 +913,24 @@ void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
   } else if (name == "flutter/lifecycle" && listening) {
     lifecycle_manager_->BeginProcessingLifecycle();
   }
+}
+
+// Platform view methods:
+void FlutterWindowsEngine::RegisterPlatformViewType(const std::string& type, Win32PlatformViewFactory factory) {
+  platform_view_types_.insert({type, factory});
+}
+
+HWND FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams* args) {
+  const auto itr = platform_view_types_.find(std::string(args->view_type));
+  if (itr == platform_view_types_.end()) {
+    return nullptr;
+  }
+  HWND platform_view = itr->second(args);
+  if (platform_view == nullptr) {
+    return nullptr;
+  }
+  platform_views_.insert({args->id, platform_view});
+  return platform_view;
 }
 
 }  // namespace flutter
