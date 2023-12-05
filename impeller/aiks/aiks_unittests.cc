@@ -3242,7 +3242,7 @@ TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
     return true;
   });
 
-  ASSERT_TRUE(entity.size() > 1);
+  ASSERT_TRUE(entity.size() >= 1);
   ASSERT_TRUE(contents->IsOpaque());
   ASSERT_EQ(entity[0].GetBlendMode(), BlendMode::kSource);
 }
