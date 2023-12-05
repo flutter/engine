@@ -41,8 +41,6 @@ class PlaygroundImplVK final : public PlaygroundImpl {
   PlaygroundImplVK(const PlaygroundImplVK&) = delete;
 
   PlaygroundImplVK& operator=(const PlaygroundImplVK&) = delete;
-
-  static void InitGlobalVulkanInstance();
 };
 
 }  // namespace impeller
