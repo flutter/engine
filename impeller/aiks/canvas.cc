@@ -171,12 +171,13 @@ void Canvas::RestoreToCount(size_t count) {
   }
 }
 
-void Canvas::DrawPath(const Path& path, const Paint& paint) {
+void Canvas::DrawPath(Path path, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(paint.CreateContentsForEntity(path)));
+  entity.SetContents(
+      paint.WithFilters(paint.CreateContentsForEntity(std::move(path))));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -277,28 +278,16 @@ void Canvas::DrawRRect(Rect rect, Point corner_radii, const Paint& paint) {
     entity.SetTransform(GetCurrentTransform());
     entity.SetClipDepth(GetClipDepth());
     entity.SetBlendMode(paint.blend_mode);
-    entity.SetContents(paint.WithFilters(
-        paint.CreateContentsForGeometry(Geometry::MakeFillPath(path))));
+    entity.SetContents(paint.WithFilters(paint.CreateContentsForGeometry(
+        Geometry::MakeFillPath(std::move(path)))));
 
     GetCurrentPass().AddEntity(entity);
     return;
   }
-  DrawPath(path, paint);
+  DrawPath(std::move(path), paint);
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
-  if (paint.style == Paint::Style::kStroke) {
-    auto circle_path =
-        PathBuilder{}
-            .AddCircle(center, radius)
-            .SetConvexity(Convexity::kConvex)
-            .SetBounds(Rect::MakeLTRB(center.x - radius, center.y - radius,
-                                      center.x + radius, center.y + radius))
-            .TakePath();
-    DrawPath(circle_path, paint);
-    return;
-  }
-
   Size half_size(radius, radius);
   if (AttemptDrawBlurredRRect(
           Rect::MakeOriginSize(center - half_size, half_size * 2), radius,
@@ -310,16 +299,20 @@ void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
   entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(
-      paint.CreateContentsForGeometry(Geometry::MakeCircle(center, radius))));
+  auto geometry =
+      paint.style == Paint::Style::kStroke
+          ? Geometry::MakeStrokedCircle(center, radius, paint.stroke_width)
+          : Geometry::MakeCircle(center, radius);
+  entity.SetContents(
+      paint.WithFilters(paint.CreateContentsForGeometry(geometry)));
 
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
-  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
+void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
+  auto bounds = path.GetBoundingBox();
+  ClipGeometry(Geometry::MakeFillPath(std::move(path)), clip_op);
   if (clip_op == Entity::ClipOperation::kIntersect) {
-    auto bounds = path.GetBoundingBox();
     if (bounds.has_value()) {
       IntersectCulling(bounds.value());
     }
@@ -363,7 +356,7 @@ void Canvas::ClipRRect(const Rect& rect,
   std::optional<Rect> inner_rect = (flat_on_LR && flat_on_TB)
                                        ? rect.Expand(-corner_radii)
                                        : std::make_optional<Rect>();
-  auto geometry = Geometry::MakeFillPath(path, inner_rect);
+  auto geometry = Geometry::MakeFillPath(std::move(path), inner_rect);
   auto& cull_rect = transform_stack_.back().cull_rect;
   if (clip_op == Entity::ClipOperation::kIntersect &&                      //
       cull_rect.has_value() &&                                             //
