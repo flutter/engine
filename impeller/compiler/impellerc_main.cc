@@ -10,6 +10,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/compiler.h"
+#include "impeller/compiler/shader_bundle.h"
 #include "impeller/compiler/source_options.h"
 #include "impeller/compiler/switches.h"
 #include "impeller/compiler/types.h"
@@ -59,9 +60,21 @@ static std::shared_ptr<fml::Mapping> CompileSkSL(
 /// If there is an error, prints error text and returns `false`.
 static bool OutputArtifacts(Compiler& compiler,
                             Switches& switches,
+                            std::shared_ptr<fml::Mapping> source_file_mapping,
                             SourceOptions& options,
-                            std::shared_ptr<fml::Mapping> sksl_mapping) {
-  /// 1. Output the source file. When in IPLR/RuntimeStage mode, this is the
+                            Reflector::Options& reflector_options) {
+  /// 1. Invoke the compiler to generate SkSL if needed.
+
+  std::shared_ptr<fml::Mapping> sksl_mapping;
+  if (switches.iplr && TargetPlatformBundlesSkSL(switches.target_platform)) {
+    sksl_mapping =
+        CompileSkSL(std::move(source_file_mapping), options, reflector_options);
+    if (!sksl_mapping) {
+      return false;
+    }
+  }
+
+  /// 2. Output the source file. When in IPLR/RuntimeStage mode, this is the
   ///    IPLR flatbuffer file.
 
   auto sl_file_name = std::filesystem::absolute(
@@ -110,7 +123,7 @@ static bool OutputArtifacts(Compiler& compiler,
     }
   }
 
-  /// 2. Output shader reflection data.
+  /// 3. Output shader reflection data.
   ///    May include a JSON file, a C++ header, and/or a C++ TU.
 
   if (TargetPlatformNeedsReflection(options.target_platform)) {
@@ -155,7 +168,7 @@ static bool OutputArtifacts(Compiler& compiler,
     }
   }
 
-  /// 3. Output a depfile.
+  /// 4. Output a depfile.
 
   if (!switches.depfile_path.empty()) {
     std::string result_file;
@@ -204,69 +217,13 @@ bool Main(const fml::CommandLine& command_line) {
   }
 
   if (!switches.iplr_bundle.empty()) {
-    auto json = nlohmann::json::parse(switches.iplr_bundle);
-    if (!json.is_object()) {
-      std::cerr << "The shader bundle must be a JSON object." << std::endl;
-      return false;
-    }
-
-    /// Bundle parsing.
-
-    IPLRBundleEntries bundle_entries_result;
-    for (auto& [bundle_name, bundle_value] : json.items()) {
-      if (!bundle_value.is_object()) {
-        std::cerr << "Invalid bundle entry \"" << bundle_name
-                  << "\": Entry is not a JSON object." << std::endl;
-        return false;
-      }
-
-      /// Shader parsing.
-
-      IPLRBundleEntry bundle_entry_result;
-      for (auto& [shader_name, shader_value] : bundle_value.items()) {
-        if (bundle_entry_result.find(shader_name) ==
-            bundle_entry_result.end()) {
-          std::cerr << "Duplicate shader \"" << shader_name << "\" in bundle \""
-                    << bundle_name << "\"." << std::endl;
-          return false;
-        }
-        if (!bundle_value.is_object()) {
-          std::cerr << "Invalid shader entry \"" << shader_name
-                    << "\" in bundle \"" << bundle_name
-                    << "\": Entry is not a JSON object." << std::endl;
-          return false;
-        }
-
-        IPLRShaderEntry stage_result;
-
-        stage_result.language = shader_value.contains("language")
-                                    ? ToSourceLanguage(shader_value["language"])
-                                    : SourceLanguage::kGLSL;
-        if (stage_result.language == SourceLanguage::kUnknown) {
-          std::cerr << "Invalid shader entry \"" << shader_name
-                    << "\" in bundle \"" << bundle_name
-                    << "\": Unknown language type \""
-                    << shader_value["language"] << "\"." << std::endl;
-          return false;
-        }
-
-        if (!shader_value.contains("name")) {
-          std::cerr << "Duplicate IPLR bundle stage entry \"" << shader_name
-                    << "\" in bundle \"" << bundle_name << "\": Entry ."
-                    << std::endl;
-          return false;
-        }
-        stage_result.source_file_name = shader_value["name"];
-
-        stage_result.entry_point = shader_value.contains("entry_point")
-                                       ? shader_value["entry_point"]
-                                       : "main";
-
-        bundle_entry_result[shader_name] = stage_result;
-      }
-      bundle_entries_result[bundle_name] = bundle_entry_result;
-    }
+    // Invoke the compiler multiple times to build a shader bundle with the
+    // given iplr_bundle spec.
+    return GenerateShaderBundle(switches);
   }
+
+  // Invoke the compiler and generate reflection data for a single shader or
+  // runtime stage IPLR.
 
   std::shared_ptr<fml::FileMapping> source_file_mapping =
       fml::FileMapping::CreateReadOnly(switches.source_file_name);
@@ -304,16 +261,6 @@ bool Main(const fml::CommandLine& command_line) {
   reflector_options.header_file_name = Utf8FromPath(
       std::filesystem::path{switches.reflection_header_name}.filename());
 
-  // Generate SkSL if needed.
-  std::shared_ptr<fml::Mapping> sksl_mapping;
-  if (switches.iplr && TargetPlatformBundlesSkSL(switches.target_platform) &&
-      switches.iplr_bundle.empty()) {
-    sksl_mapping = CompileSkSL(source_file_mapping, options, reflector_options);
-    if (!sksl_mapping) {
-      return false;
-    }
-  }
-
   Compiler compiler(source_file_mapping, options, reflector_options);
   if (!compiler.IsValid()) {
     std::cerr << "Compilation failed." << std::endl;
@@ -331,7 +278,8 @@ bool Main(const fml::CommandLine& command_line) {
     return false;
   }
 
-  if (!OutputArtifacts(compiler, switches, options, sksl_mapping)) {
+  if (!OutputArtifacts(compiler, switches, std::move(source_file_mapping),
+                       options, reflector_options)) {
     return false;
   }
 
