@@ -6,10 +6,25 @@
 
 #include <cctype>
 #include <filesystem>
+#include <iostream>
 #include <sstream>
 
 namespace impeller {
 namespace compiler {
+
+bool SetPermissiveAccess(const std::filesystem::path& p) {
+  auto permissions =
+      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write |
+      std::filesystem::perms::group_read | std::filesystem::perms::others_read;
+  std::error_code error;
+  std::filesystem::permissions(p, permissions, error);
+  if (error) {
+    std::cerr << "Failed to set access on file '" << p
+              << "': " << error.message() << std::endl;
+    return false;
+  }
+  return true;
+}
 
 std::string Utf8FromPath(const std::filesystem::path& path) {
   return reinterpret_cast<const char*>(path.u8string().c_str());

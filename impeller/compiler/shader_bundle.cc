@@ -8,8 +8,8 @@
 #include "impeller/compiler/source_options.h"
 #include "impeller/compiler/types.h"
 
+#include "impeller/compiler/utilities.h"
 #include "impeller/shader_bundle/shader_bundle_flatbuffers.h"
-#include "runtime_stage_types_flatbuffers.h"
 #include "third_party/json/include/nlohmann/json.hpp"
 
 namespace impeller {
@@ -168,7 +168,29 @@ bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
   /// 3. Serialize the shader bundle and write to disk.
   ///
 
-  // TODO(bdero)
+  auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
+  builder->Finish(fb::ShaderBundle::Pack(*builder.get(), &shader_bundle),
+                  fb::ShaderBundleIdentifier());
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      builder->GetBufferPointer(), builder->GetSize(),
+      [builder](auto, auto) {});
+
+  auto sl_file_name = std::filesystem::absolute(
+      std::filesystem::current_path() / switches.sl_file_name);
+
+  if (!fml::WriteAtomically(*switches.working_directory,         //
+                            Utf8FromPath(sl_file_name).c_str(),  //
+                            *mapping                             //
+                            )) {
+    std::cerr << "Could not write file to " << switches.sl_file_name
+              << std::endl;
+    return false;
+  }
+  // Tools that consume the runtime stage data expect the access mode to
+  // be 0644.
+  if (!SetPermissiveAccess(sl_file_name)) {
+    return false;
+  }
 
   return true;
 }

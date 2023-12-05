@@ -19,21 +19,6 @@
 namespace impeller {
 namespace compiler {
 
-// Sets the file access mode of the file at path 'p' to 0644.
-static bool SetPermissiveAccess(const std::filesystem::path& p) {
-  auto permissions =
-      std::filesystem::perms::owner_read | std::filesystem::perms::owner_write |
-      std::filesystem::perms::group_read | std::filesystem::perms::others_read;
-  std::error_code error;
-  std::filesystem::permissions(p, permissions, error);
-  if (error) {
-    std::cerr << "Failed to set access on file '" << p
-              << "': " << error.message() << std::endl;
-    return false;
-  }
-  return true;
-}
-
 /// Run the shader compiler to geneate SkSL.
 /// If there is an error, prints error text and returns `nullptr`.
 static std::shared_ptr<fml::Mapping> CompileSkSL(
@@ -223,7 +208,7 @@ bool Main(const fml::CommandLine& command_line) {
     Switches::PrintHelp(std::cerr);
     return false;
   }
-    SourceOptions options;
+  SourceOptions options;
   options.target_platform = switches.target_platform;
   options.source_language = switches.source_language;
   if (switches.input_type == SourceType::kUnknown) {
