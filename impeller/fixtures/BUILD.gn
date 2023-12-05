@@ -82,8 +82,6 @@ test_fixtures("file_fixtures") {
     "resources_limit.vert",
     "sample.comp",
     "sample.frag",
-    "sample.tesc",
-    "sample.tese",
     "sample.vert",
     "sample_with_binding.vert",
     "simple.vert.hlsl",
@@ -101,6 +99,7 @@ test_fixtures("file_fixtures") {
     "two_triangles.glb",
     "types.h",
     "wtf.otf",
+    "texture_lookup.frag",
   ]
   if (host_os == "mac") {
     fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
