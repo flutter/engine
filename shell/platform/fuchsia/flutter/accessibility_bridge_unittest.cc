@@ -21,7 +21,6 @@
 #include <memory>
 
 #include "flutter/lib/ui/semantics/semantics_node.h"
-#include "fuchsia/accessibility/semantics/cpp/fidl.h"
 #include "gtest/gtest.h"
 
 #include "flutter_runner_fakes.h"

@@ -16,7 +16,6 @@
 #include "flutter/lib/ui/semantics/semantics_node.h"
 
 #include "../runtime/dart/utils/root_inspect_node.h"
-#include "fuchsia/accessibility/semantics/cpp/fidl.h"
 
 namespace flutter_runner {
 namespace {
