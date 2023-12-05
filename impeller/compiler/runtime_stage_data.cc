@@ -51,14 +51,14 @@ static std::optional<fb::Stage> ToStage(spv::ExecutionModel stage) {
   FML_UNREACHABLE();
 }
 
-static std::optional<uint32_t> ToJsonStage(spv::ExecutionModel stage) {
+static std::optional<fb::Stage> ToJsonStage(spv::ExecutionModel stage) {
   switch (stage) {
     case spv::ExecutionModel::ExecutionModelVertex:
-      return 0;  // fb::Stage::kVertex;
+      return fb::Stage::kVertex;
     case spv::ExecutionModel::ExecutionModelFragment:
-      return 1;  // fb::Stage::kFragment;
+      return fb::Stage::kFragment;
     case spv::ExecutionModel::ExecutionModelGLCompute:
-      return 2;  // fb::Stage::kCompute;
+      return fb::Stage::kCompute;
     default:
       return std::nullopt;
   }
@@ -238,7 +238,7 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
     VALIDATION_LOG << "Invalid runtime stage.";
     return nullptr;
   }
-  root[kStageKey] = stage.value();
+  root[kStageKey] = static_cast<uint32_t>(stage.value());
 
   const auto target_platform = ToJsonTargetPlatform(target_platform_);
   if (!target_platform.has_value()) {
