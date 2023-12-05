@@ -16,13 +16,9 @@ PlaygroundTest::PlaygroundTest()
 PlaygroundTest::~PlaygroundTest() = default;
 
 void PlaygroundTest::SetUp() {
-  if (!Playground::SupportsBackend(GetParam())) {
-    GTEST_SKIP_("Playground doesn't support this backend type.");
-    return;
-  }
-
-  if (!Playground::ShouldOpenNewPlaygrounds()) {
-    GTEST_SKIP_("Skipping due to user action.");
+  std::string skip_message;
+  if (Playground::ShouldSkipPlaygroundInvocation(GetParam(), skip_message)) {
+    GTEST_SKIP_(skip_message.c_str());
     return;
   }
 

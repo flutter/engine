@@ -71,9 +71,13 @@ static void IntentionallyLeakContext(std::shared_ptr<ContextVK> context) {
   static std::shared_ptr<ContextVK> gLeakedContext = std::move(context);
 }
 
+bool PlaygroundImplVK::HasSupportedVulkanDriver() {
+  return ::glfwVulkanSupported();
+}
+
 PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     : PlaygroundImpl(switches), handle_(nullptr, &DestroyWindowHandle) {
-  if (!::glfwVulkanSupported()) {
+  if (!HasSupportedVulkanDriver()) {
 #ifdef TARGET_OS_MAC
     VALIDATION_LOG << "Attempted to initialize a Vulkan playground on macOS "
                       "where Vulkan cannot be found. It can be installed via "

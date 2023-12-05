@@ -19,6 +19,8 @@ class PlaygroundImpl {
   static std::unique_ptr<PlaygroundImpl> Create(PlaygroundBackend backend,
                                                 PlaygroundSwitches switches);
 
+  static bool QueryDriverSupport(PlaygroundBackend backend);
+
   virtual ~PlaygroundImpl();
 
   using WindowHandle = void*;

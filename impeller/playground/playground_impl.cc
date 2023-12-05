@@ -45,6 +45,21 @@ std::unique_ptr<PlaygroundImpl> PlaygroundImpl::Create(
   FML_UNREACHABLE();
 }
 
+bool PlaygroundImpl::QueryDriverSupport(PlaygroundBackend backend) {
+  switch (backend) {
+    case PlaygroundBackend::kMetal:
+      return true;
+    case PlaygroundBackend::kOpenGLES:
+      return true;
+    case PlaygroundBackend::kVulkan:
+#if IMPELLER_ENABLE_VULKAN
+      return PlaygroundImplVK::HasSupportedVulkanDriver();
+#else   // IMPELLER_ENABLE_VULKAN
+      return false;
+#endif  // IMPELLER_ENABLE_VULKAN
+  }
+}
+
 PlaygroundImpl::PlaygroundImpl(PlaygroundSwitches switches)
     : switches_(switches) {}
 

@@ -80,7 +80,15 @@ class Playground {
   std::shared_ptr<Texture> CreateTextureCubeForFixture(
       std::array<const char*, 6> fixture_names) const;
 
-  static bool SupportsBackend(PlaygroundBackend backend);
+  enum class SupportStatus {
+    kSupported,
+    kDisabled,
+    kMissingDriver,
+  };
+  static SupportStatus SupportsBackend(PlaygroundBackend backend);
+
+  static bool ShouldSkipPlaygroundInvocation(PlaygroundBackend backend,
+                                             std::string& skip_message);
 
   virtual std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const = 0;

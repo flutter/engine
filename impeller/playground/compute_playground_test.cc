@@ -4,6 +4,9 @@
 
 #include "flutter/fml/time/time_point.h"
 
+#include <sstream>
+
+#include "flutter/fml/build_config.h"
 #include "flutter/testing/test_args.h"
 #include "impeller/playground/compute_playground_test.h"
 
@@ -15,13 +18,9 @@ ComputePlaygroundTest::ComputePlaygroundTest()
 ComputePlaygroundTest::~ComputePlaygroundTest() = default;
 
 void ComputePlaygroundTest::SetUp() {
-  if (!Playground::SupportsBackend(GetParam())) {
-    GTEST_SKIP_("Playground doesn't support this backend type.");
-    return;
-  }
-
-  if (!Playground::ShouldOpenNewPlaygrounds()) {
-    GTEST_SKIP_("Skipping due to user action.");
+  std::string skip_message;
+  if (Playground::ShouldSkipPlaygroundInvocation(GetParam(), skip_message)) {
+    GTEST_SKIP_(skip_message.c_str());
     return;
   }
 

@@ -12,6 +12,8 @@ namespace impeller {
 
 class PlaygroundImplVK final : public PlaygroundImpl {
  public:
+  static bool HasSupportedVulkanDriver();
+
   explicit PlaygroundImplVK(PlaygroundSwitches switches);
 
   ~PlaygroundImplVK();

@@ -87,7 +87,7 @@ std::shared_ptr<Context> Playground::GetContext() const {
   return context_;
 }
 
-bool Playground::SupportsBackend(PlaygroundBackend backend) {
+static bool PlaygroundBackendEnabled(PlaygroundBackend backend) {
   switch (backend) {
     case PlaygroundBackend::kMetal:
 #if IMPELLER_ENABLE_METAL
@@ -102,7 +102,7 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
       return false;
 #endif  // IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kVulkan:
-#if IMPELLER_ENABLE_VULKAN && IMPELLER_ENABLE_VULKAN_PLAYGROUNDS
+#if IMPELLER_ENABLE_VULKAN
       return true;
 #else   // IMPELLER_ENABLE_VULKAN
       return false;
@@ -111,8 +111,60 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
+Playground::SupportStatus Playground::SupportsBackend(
+    PlaygroundBackend backend) {
+  if (!PlaygroundBackendEnabled(backend)) {
+    return SupportStatus::kDisabled;
+  }
+  if (!PlaygroundImpl::QueryDriverSupport(backend)) {
+    return SupportStatus::kMissingDriver;
+  }
+  return SupportStatus::kSupported;
+}
+
+static std::string CreateSkippedTestMessage(PlaygroundBackend backend,
+                                            Playground::SupportStatus status) {
+  std::stringstream stream;
+  stream << PlaygroundBackendToString(backend) << " playground backend is ";
+  switch (status) {
+    case Playground::SupportStatus::kSupported:
+      stream << "enabled and supported.";
+      break;
+    case Playground::SupportStatus::kDisabled:
+      stream << "disabled as a build option. Pass --enable-impeller-<backend> "
+                "to './flutter/tools/gn.' before building.";
+      break;
+    case Playground::SupportStatus::kMissingDriver:
+      stream << "enabled but the GPU driver could not be found.";
+#ifdef FML_OS_MACOSX
+      stream << " Install MoltenVK globally first to continue.";
+#endif  // FML_OS_MACOSX
+      break;
+  }
+  return stream.str();
+}
+
+bool Playground::ShouldSkipPlaygroundInvocation(PlaygroundBackend backend,
+                                                std::string& skip_message) {
+  switch (auto status = Playground::SupportsBackend(backend)) {
+    case Playground::SupportStatus::kSupported:
+      break;
+    case Playground::SupportStatus::kDisabled:
+    case Playground::SupportStatus::kMissingDriver:
+      skip_message = CreateSkippedTestMessage(backend, status);
+      return true;
+  }
+
+  if (!Playground::ShouldOpenNewPlaygrounds()) {
+    skip_message = "Skipping due to user action.";
+    return true;
+  }
+
+  return false;
+}
+
 void Playground::SetupContext(PlaygroundBackend backend) {
-  FML_CHECK(SupportsBackend(backend));
+  FML_CHECK(SupportsBackend(backend) == SupportStatus::kSupported);
 
   impl_ = PlaygroundImpl::Create(backend, switches_);
   if (!impl_) {
