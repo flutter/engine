@@ -10,6 +10,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/types.h"
+#include "runtime_stage_types_flatbuffers.h"
 #include "spirv_parser.hpp"
 
 namespace impeller {
@@ -38,6 +39,8 @@ class RuntimeStageData {
   void SetShaderData(std::shared_ptr<fml::Mapping> shader);
 
   void SetSkSLData(std::shared_ptr<fml::Mapping> sksl);
+
+  std::unique_ptr<fb::RuntimeStageT> CreateFlatbuffer() const;
 
   std::shared_ptr<fml::Mapping> CreateMapping() const;
 

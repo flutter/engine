@@ -63,7 +63,9 @@ static bool OutputArtifacts(Compiler& compiler,
                             std::shared_ptr<fml::Mapping> source_file_mapping,
                             SourceOptions& options,
                             Reflector::Options& reflector_options) {
+  // --------------------------------------------------------------------------
   /// 1. Invoke the compiler to generate SkSL if needed.
+  ///
 
   std::shared_ptr<fml::Mapping> sksl_mapping;
   if (switches.iplr && TargetPlatformBundlesSkSL(switches.target_platform)) {
@@ -74,8 +76,10 @@ static bool OutputArtifacts(Compiler& compiler,
     }
   }
 
-  /// 2. Output the source file. When in IPLR/RuntimeStage mode, this is the
-  ///    IPLR flatbuffer file.
+  // --------------------------------------------------------------------------
+  /// 2. Output the source file. When in IPLR/RuntimeStage mode, output the
+  ///    serialized IPLR flatbuffer.
+  ///
 
   auto sl_file_name = std::filesystem::absolute(
       std::filesystem::current_path() / switches.sl_file_name);
@@ -123,8 +127,10 @@ static bool OutputArtifacts(Compiler& compiler,
     }
   }
 
+  // --------------------------------------------------------------------------
   /// 3. Output shader reflection data.
   ///    May include a JSON file, a C++ header, and/or a C++ TU.
+  ///
 
   if (TargetPlatformNeedsReflection(options.target_platform)) {
     if (!switches.reflection_json_name.empty()) {
@@ -168,7 +174,9 @@ static bool OutputArtifacts(Compiler& compiler,
     }
   }
 
+  // --------------------------------------------------------------------------
   /// 4. Output a depfile.
+  ///
 
   if (!switches.depfile_path.empty()) {
     std::string result_file;
@@ -215,24 +223,7 @@ bool Main(const fml::CommandLine& command_line) {
     Switches::PrintHelp(std::cerr);
     return false;
   }
-
-  if (!switches.iplr_bundle.empty()) {
-    // Invoke the compiler multiple times to build a shader bundle with the
-    // given iplr_bundle spec.
-    return GenerateShaderBundle(switches);
-  }
-
-  // Invoke the compiler and generate reflection data for a single shader or
-  // runtime stage IPLR.
-
-  std::shared_ptr<fml::FileMapping> source_file_mapping =
-      fml::FileMapping::CreateReadOnly(switches.source_file_name);
-  if (!source_file_mapping) {
-    std::cerr << "Could not open input file." << std::endl;
-    return false;
-  }
-
-  SourceOptions options;
+    SourceOptions options;
   options.target_platform = switches.target_platform;
   options.source_language = switches.source_language;
   if (switches.input_type == SourceType::kUnknown) {
@@ -252,6 +243,22 @@ bool Main(const fml::CommandLine& command_line) {
   options.metal_version = switches.metal_version;
   options.use_half_textures = switches.use_half_textures;
   options.require_framebuffer_fetch = switches.require_framebuffer_fetch;
+
+  if (!switches.iplr_bundle.empty()) {
+    // Invoke the compiler multiple times to build a shader bundle with the
+    // given iplr_bundle spec.
+    return GenerateShaderBundle(switches, options);
+  }
+
+  std::shared_ptr<fml::FileMapping> source_file_mapping =
+      fml::FileMapping::CreateReadOnly(switches.source_file_name);
+  if (!source_file_mapping) {
+    std::cerr << "Could not open input file." << std::endl;
+    return false;
+  }
+
+  // Invoke the compiler and generate reflection data for a single shader or
+  // runtime stage IPLR.
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = switches.target_platform;

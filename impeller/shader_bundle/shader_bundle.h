@@ -26,7 +26,7 @@ class ShaderBundle {
   bool is_valid_;
 
   std::shared_ptr<fml::Mapping> payload_;
-  std::map<std::string, Shader> shaders_;
+  std::map<std::string, BundledShader> shaders_;
 
   ShaderBundle(const ShaderBundle&) = delete;
   ShaderBundle& operator=(const ShaderBundle&) = delete;

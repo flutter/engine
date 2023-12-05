@@ -6,15 +6,15 @@
 
 namespace impeller {
 
-Shader::Shader() = default;
+BundledShader::BundledShader() = default;
 
-Shader::Shader(const fb::Shader* shader)
+BundledShader::BundledShader(const fb::Shader* shader)
     : runtime_stage_(
           std::make_shared<RuntimeStage>(RuntimeStage(shader->shader()))) {
   is_valid_ = runtime_stage_->IsValid();
 }
 
-bool Shader::IsValid() const {
+bool BundledShader::IsValid() const {
   return is_valid_;
 }
 

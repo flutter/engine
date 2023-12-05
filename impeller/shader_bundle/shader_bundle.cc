@@ -24,7 +24,7 @@ ShaderBundle::ShaderBundle(std::shared_ptr<fml::Mapping> payload)
   auto* shaders = shader_bundle->shaders();
   for (size_t i = 0; i < shaders->size(); i++) {
     const fb::Shader* shader = shaders->Get(i);
-    shaders_[shader->name()->str()] = Shader(shader);
+    shaders_[shader->name()->str()] = BundledShader(shader);
     if (!shaders_[shader->name()->str()].IsValid()) {
       return;
     }

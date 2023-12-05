@@ -15,11 +15,11 @@ namespace impeller {
 
 class ShaderBundle;
 
-class Shader {
+class BundledShader {
  public:
   // Note: Default constructor and copy operations required for map usage in
   // ShaderBundle.
-  Shader();
+  BundledShader();
 
   bool IsValid() const;
 
@@ -28,7 +28,7 @@ class Shader {
 
   std::shared_ptr<RuntimeStage> runtime_stage_;
 
-  explicit Shader(const fb::Shader* shader);
+  explicit BundledShader(const fb::Shader* shader);
 
   friend ShaderBundle;
 };

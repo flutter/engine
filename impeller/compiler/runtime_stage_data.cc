@@ -285,35 +285,36 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
       json_string->size(), [json_string](auto, auto) {});
 }
 
-std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
+std::unique_ptr<fb::RuntimeStageT> RuntimeStageData::CreateFlatbuffer() const {
+  auto runtime_stage = std::make_unique<fb::RuntimeStageT>();
+
   // The high level object API is used here for writing to the buffer. This is
   // just a convenience.
-  fb::RuntimeStageT runtime_stage;
-  runtime_stage.entrypoint = entrypoint_;
+  runtime_stage->entrypoint = entrypoint_;
   const auto stage = ToStage(stage_);
   if (!stage.has_value()) {
     VALIDATION_LOG << "Invalid runtime stage.";
     return nullptr;
   }
-  runtime_stage.stage = stage.value();
+  runtime_stage->stage = stage.value();
   const auto target_platform = ToTargetPlatform(target_platform_);
   if (!target_platform.has_value()) {
     VALIDATION_LOG << "Invalid target platform for runtime stage.";
     return nullptr;
   }
-  runtime_stage.target_platform = target_platform.value();
+  runtime_stage->target_platform = target_platform.value();
   if (!shader_) {
     VALIDATION_LOG << "No shader specified for runtime stage.";
     return nullptr;
   }
   if (shader_->GetSize() > 0u) {
-    runtime_stage.shader = {shader_->GetMapping(),
-                            shader_->GetMapping() + shader_->GetSize()};
+    runtime_stage->shader = {shader_->GetMapping(),
+                             shader_->GetMapping() + shader_->GetSize()};
   }
   // It is not an error for the SkSL to be ommitted.
   if (sksl_ && sksl_->GetSize() > 0u) {
-    runtime_stage.sksl = {sksl_->GetMapping(),
-                          sksl_->GetMapping() + sksl_->GetSize()};
+    runtime_stage->sksl = {sksl_->GetMapping(),
+                           sksl_->GetMapping() + sksl_->GetSize()};
   }
   for (const auto& uniform : uniforms_) {
     auto desc = std::make_unique<fb::UniformDescriptionT>();
@@ -337,10 +338,20 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
       desc->array_elements = uniform.array_elements.value();
     }
 
-    runtime_stage.uniforms.emplace_back(std::move(desc));
+    runtime_stage->uniforms.emplace_back(std::move(desc));
   }
+
+  return runtime_stage;
+}
+
+std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
+  auto runtime_stage = CreateFlatbuffer();
+  if (!runtime_stage) {
+    return nullptr;
+  }
+
   auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-  builder->Finish(fb::RuntimeStage::Pack(*builder.get(), &runtime_stage),
+  builder->Finish(fb::RuntimeStage::Pack(*builder.get(), runtime_stage.get()),
                   fb::RuntimeStageIdentifier());
   return std::make_shared<fml::NonOwnedMapping>(builder->GetBufferPointer(),
                                                 builder->GetSize(),

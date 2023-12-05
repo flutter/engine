@@ -3,8 +3,13 @@
 // found in the LICENSE file.
 
 #include "impeller/compiler/shader_bundle.h"
+#include "impeller/compiler/compiler.h"
+#include "impeller/compiler/reflector.h"
+#include "impeller/compiler/source_options.h"
 #include "impeller/compiler/types.h"
 
+#include "impeller/shader_bundle/shader_bundle_flatbuffers.h"
+#include "runtime_stage_types_flatbuffers.h"
 #include "third_party/json/include/nlohmann/json.hpp"
 
 namespace impeller {
@@ -72,15 +77,98 @@ static std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
   return bundle;
 }
 
+static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
+    SourceOptions& options,
+    const std::string& shader_name,
+    const ShaderConfig& shader_config) {
+  auto result = std::make_unique<fb::ShaderT>();
+  result->name = shader_name;
+
+  std::shared_ptr<fml::FileMapping> source_file_mapping =
+      fml::FileMapping::CreateReadOnly(shader_config.source_file_name);
+  if (!source_file_mapping) {
+    std::cerr << "Could not open file for bundled shader \"" << shader_name
+              << "\"." << std::endl;
+    return nullptr;
+  }
+
+  /// Override options.
+  options.entry_point_name = shader_config.entry_point;
+  options.type = shader_config.type;
+  options.source_language = shader_config.language;
+
+  Reflector::Options reflector_options;
+  reflector_options.target_platform = options.target_platform;
+  reflector_options.entry_point_name = options.entry_point_name;
+  reflector_options.shader_name = shader_name;
+
+  Compiler compiler(source_file_mapping, options, reflector_options);
+  if (!compiler.IsValid()) {
+    std::cerr << "Compilation failed for bundled shader \"" << shader_name
+              << "\"." << std::endl;
+    std::cerr << compiler.GetErrorMessages() << std::endl;
+    return nullptr;
+  }
+
+  auto reflector = compiler.GetReflector();
+  if (reflector == nullptr) {
+    std::cerr << "Could not create reflector for bundled shader \""
+              << shader_name << "\"." << std::endl;
+    return nullptr;
+  }
+
+  auto stage_data = reflector->GetRuntimeStageData();
+  if (!stage_data) {
+    std::cerr << "Runtime stage information was nil for bundled shader \""
+              << shader_name << "\"." << std::endl;
+    return nullptr;
+  }
+
+  result->shader = stage_data->CreateFlatbuffer();
+  if (!result->shader) {
+    std::cerr << "Failed to create flatbuffer for bundled shader \""
+              << shader_name << "\"." << std::endl;
+    return nullptr;
+  }
+
+  // TODO(bdero): Vertex attributes.
+
+  return result;
+}
+
 /// Parses the given JSON shader bundle configuration and invokes the compiler
 /// multiple times to produce a shader bundle file.
-bool GenerateShaderBundle(Switches& switches) {
-  /// Parse the bundle files.
+bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
+  // --------------------------------------------------------------------------
+  /// 1. Parse the bundle configuration.
+  ///
+
   std::optional<ShaderBundleConfig> bundle_config =
       ParseShaderBundleConfig(switches.iplr_bundle);
   if (!bundle_config) {
     return false;
   }
+
+  // --------------------------------------------------------------------------
+  /// 2. Build the deserialized shader bundle.
+  ///
+
+  fb::ShaderBundleT shader_bundle;
+
+  for (const auto& [shader_name, shader_config] : bundle_config.value()) {
+    std::unique_ptr<fb::ShaderT> shader =
+        GenerateShaderFB(options, shader_name, shader_config);
+    if (!shader) {
+      return false;
+    }
+    shader_bundle.shaders.push_back(shader);
+  }
+
+  // --------------------------------------------------------------------------
+  /// 3. Serialize the shader bundle and write to disk.
+  ///
+
+  // TODO(bdero)
 
   return true;
 }
