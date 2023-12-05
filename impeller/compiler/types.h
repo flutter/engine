@@ -43,16 +43,15 @@ enum class SourceLanguage {
   kHLSL,
 };
 
-struct IPLRShaderEntry {
+/// A shader config parsed as part of a ShaderBundleConfig.
+struct ShaderConfig {
   std::string source_file_name;
   SourceType type;
   SourceLanguage language;
   std::string entry_point;
 };
 
-using IPLRBundleEntry = std::map<std::string, IPLRShaderEntry>;
-
-using IPLRBundleEntries = std::map<std::string, IPLRBundleEntry>;
+using ShaderBundleConfig = std::map<std::string, ShaderConfig>;
 
 bool TargetPlatformIsMetal(TargetPlatform platform);
 
@@ -61,6 +60,8 @@ bool TargetPlatformIsOpenGL(TargetPlatform platform);
 bool TargetPlatformIsVulkan(TargetPlatform platform);
 
 SourceType SourceTypeFromFileName(const std::string& file_name);
+
+SourceType SourceTypeFromString(const std::string& name);
 
 std::string SourceTypeToString(SourceType type);
 

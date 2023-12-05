@@ -4,6 +4,7 @@
 
 #include "impeller/compiler/types.h"
 
+#include <cctype>
 #include <filesystem>
 #include <sstream>
 
@@ -36,6 +37,34 @@ SourceType SourceTypeFromFileName(const std::string& file_name) {
   }
 
   if (StringEndWith(file_name, ".comp")) {
+    return SourceType::kComputeShader;
+  }
+
+  return SourceType::kUnknown;
+}
+
+SourceType SourceTypeFromString(std::string name) {
+  for (auto it = name.begin(); it != name.end(); it++) {
+    *it = std::tolower(static_cast<unsigned char>(*it));
+  }
+
+  if (name == "vertex") {
+    return SourceType::kVertexShader;
+  }
+
+  if (name == "fragment") {
+    return SourceType::kFragmentShader;
+  }
+
+  if (name == "tessellationcontrol") {
+    return SourceType::kTessellationControlShader;
+  }
+
+  if (name == "tessellationevaluation") {
+    return SourceType::kTessellationEvaluationShader;
+  }
+
+  if (name == "compute") {
     return SourceType::kComputeShader;
   }
 
