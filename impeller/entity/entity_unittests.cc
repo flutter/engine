@@ -104,7 +104,7 @@ auto CreatePassWithRectPath(Rect rect,
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  subpass->AddEntity(entity);
+  subpass->AddEntity(std::move(entity));
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
   subpass->SetBoundsLimit(bounds_hint);
   return subpass;
@@ -153,7 +153,7 @@ TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
   contents->SetColor(Color::Blue());
   entity.SetContents(std::move(contents));
 
-  pass.AddEntity(entity);
+  pass.AddEntity(std::move(entity));
 
   ASSERT_TRUE(OpenPlaygroundHere(pass));
 }
@@ -222,7 +222,7 @@ TEST_P(EntityTest, CanDrawRect) {
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, CanDrawRRect) {
@@ -231,14 +231,14 @@ TEST_P(EntityTest, CanDrawRRect) {
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10.0)
                   .TakePath();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
   contents->SetColor(Color::Red());
 
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
@@ -262,10 +262,10 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 5.0));
   contents->SetColor(Color::Red());
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, StrokeWithTextureContents) {
@@ -282,11 +282,11 @@ TEST_P(EntityTest, StrokeWithTextureContents) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<TiledTextureContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(path, 100.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 100.0));
   contents->SetTexture(bridge);
   contents->SetTileModes(Entity::TileMode::kClamp, Entity::TileMode::kClamp);
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, TriangleInsideASquare) {
@@ -322,7 +322,7 @@ TEST_P(EntityTest, TriangleInsideASquare) {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()));
     auto contents = std::make_unique<SolidColorContents>();
-    contents->SetGeometry(Geometry::MakeStrokePath(path, 20.0));
+    contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 20.0));
     contents->SetColor(Color::Red());
     entity.SetContents(std::move(contents));
 
@@ -357,8 +357,8 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     auto render_path = [width = width, &context, &pass, &world_matrix](
                            const Path& path, Cap cap, Join join) {
       auto contents = std::make_unique<SolidColorContents>();
-      contents->SetGeometry(
-          Geometry::MakeStrokePath(path, width, miter_limit, cap, join));
+      contents->SetGeometry(Geometry::MakeStrokePath(path.Clone(), width,
+                                                     miter_limit, cap, join));
       contents->SetColor(Color::Red());
 
       Entity entity;
@@ -471,8 +471,8 @@ TEST_P(EntityTest, CubicCurveTest) {
           .TakePath();
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransform) {
@@ -515,7 +515,7 @@ TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransform) {
 
     Entity entity;
     entity.SetTransform(result_transform);
-    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -745,8 +745,8 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
           .TakePath();
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, SolidColorContentsStrokeSetStrokeCapsAndJoins) {
@@ -947,7 +947,7 @@ TEST_P(EntityTest, BezierCircleScaled) {
                     .TakePath();
     entity.SetTransform(
         Matrix::MakeScale({scale, scale, 1.0}).Translate({-90, -20, 0}));
-    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -1361,7 +1361,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
@@ -1396,7 +1396,7 @@ TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorSimple) {
@@ -1432,7 +1432,7 @@ TEST_P(EntityTest, DrawAtlasWithColorSimple) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
@@ -1505,7 +1505,7 @@ TEST_P(EntityTest, DrawAtlasWithOpacity) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
@@ -1525,7 +1525,7 @@ TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
   e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
@@ -2289,8 +2289,8 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
                         .LineTo({120, 190})
                         .LineTo({190, 120})
                         .TakePath();
-  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
-                                           Join::kRound);
+  auto geometry = Geometry::MakeStrokePath(std::move(arrow_head), 15.0, 4.0,
+                                           Cap::kRound, Join::kRound);
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));
@@ -2401,7 +2401,7 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
       BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
                                FilterInput::Make(src_contents, false)});
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
@@ -2465,7 +2465,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
-  pass->AddEntity(entity);
+  pass->AddEntity(std::move(entity));
 
   EXPECT_TRUE(pass->Render(content_context, rt));
 
