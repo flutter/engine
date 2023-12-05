@@ -58,8 +58,6 @@ bool Command::DoBindResource(ShaderStage stage,
       return true;
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
-    case ShaderStage::kTessellationControl:
-    case ShaderStage::kTessellationEvaluation:
     case ShaderStage::kUnknown:
       return false;
   }
@@ -100,8 +98,6 @@ bool Command::BindResource(ShaderStage stage,
     case ShaderStage::kCompute:
       VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
     case ShaderStage::kUnknown:
-    case ShaderStage::kTessellationControl:
-    case ShaderStage::kTessellationEvaluation:
       return false;
   }
 
