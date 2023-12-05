@@ -15,6 +15,7 @@
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -2561,6 +2562,30 @@ TEST_P(EntityTest, PipelineDescriptorEqAndHash) {
   EXPECT_TRUE(desc_1->IsEqual(*desc_2));
   EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
 }
+
+#ifdef FML_OS_LINUX
+TEST_P(EntityTest, FramebufferFetchVulkanBindingOffsetIsTheSame) {
+  // Using framebuffer fetch on Vulkan requires that we maintain a subpass input
+  // binding that we don't have a good route for configuring with the current
+  // metadata approach. This test verifies that the binding value doesn't change
+  // from the expected constant.
+  // See also:
+  //   * impeller/renderer/backend/vulkan/binding_helpers_vk.cc
+  //   * impeller/entity/shaders/blending/framebuffer_blend.frag
+  // This test only works on Linux because macOS hosts incorrectly populate the
+  // Vulkan descriptor sets based on the MSL compiler settings.
+
+  bool expected_layout = false;
+  for (const DescriptorSetLayout& layout : FramebufferBlendColorBurnPipeline::
+           FragmentShader::kDescriptorSetLayouts) {
+    if (layout.binding == 64 &&
+        layout.descriptor_type == DescriptorType::kInputAttachment) {
+      expected_layout = true;
+    }
+  }
+  EXPECT_TRUE(expected_layout);
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller
