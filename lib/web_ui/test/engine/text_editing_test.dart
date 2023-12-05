@@ -441,6 +441,31 @@ Future<void> testMain() async {
       expect(event.defaultPrevented, isFalse);
     });
 
+    test('Triggers input action in multiline-none mode', () {
+      final InputConfiguration config = InputConfiguration(
+        inputType: EngineInputType.multilineNone,
+      );
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      // No input action so far.
+      expect(lastInputAction, isNull);
+
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // Input action is triggered!
+      expect(lastInputAction, 'TextInputAction.done');
+      // And default behavior of keyboard event shouldn't have been prevented.
+      expect(event.defaultPrevented, isFalse);
+    });
+
     test('Triggers input action and prevent new line key event for single line field', () {
       // Regression test for https://github.com/flutter/flutter/issues/113559
       final InputConfiguration config = InputConfiguration();
