@@ -241,5 +241,5 @@ class Scrollable extends PrimaryRoleManager {
   }
 
   @override
-  bool focusAsRouteDefault() => false;
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 }
