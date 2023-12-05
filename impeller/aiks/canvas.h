@@ -15,6 +15,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
+#include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
@@ -25,8 +26,6 @@
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
-
-class Entity;
 
 struct CanvasStackEntry {
   Matrix transform;
@@ -97,7 +96,7 @@ class Canvas {
 
   void Rotate(Radians radians);
 
-  void DrawPath(const Path& path, const Paint& paint);
+  void DrawPath(Path path, const Paint& paint);
 
   void DrawPaint(const Paint& paint);
 
@@ -126,7 +125,7 @@ class Canvas {
                      SamplerDescriptor sampler = {});
 
   void ClipPath(
-      const Path& path,
+      Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void ClipRect(
