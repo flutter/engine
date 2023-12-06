@@ -63,7 +63,7 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
 }
 
 bool ClipContents::ShouldRender(const Entity& entity,
-                                const Rect& clip_coverage) const {
+                                const std::optional<Rect> clip_coverage) const {
   return true;
 }
 
@@ -158,8 +158,9 @@ Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
   return {.type = ClipCoverage::Type::kRestore, .coverage = std::nullopt};
 }
 
-bool ClipRestoreContents::ShouldRender(const Entity& entity,
-                                       const Rect& clip_coverage) const {
+bool ClipRestoreContents::ShouldRender(
+    const Entity& entity,
+    const std::optional<Rect> clip_coverage) const {
   return true;
 }
 

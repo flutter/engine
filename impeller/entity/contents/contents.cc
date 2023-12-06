@@ -131,7 +131,11 @@ bool Contents::ApplyColorFilter(
 }
 
 bool Contents::ShouldRender(const Entity& entity,
-                            const Rect& clip_coverage) const {
+                            const std::optional<Rect> clip_coverage) const {
+#ifdef IMPELLER_CONTENT_CULLING
+  if (!clip_coverage.has_value()) {
+    return false;
+  }
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return false;
@@ -140,6 +144,9 @@ bool Contents::ShouldRender(const Entity& entity,
     return true;
   }
   return clip_coverage.IntersectsWithRect(coverage.value());
+#else
+  return true;
+#endif  // IMPELLER_CONTENT_CULLING
 }
 
 void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {
