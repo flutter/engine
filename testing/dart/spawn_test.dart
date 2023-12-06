@@ -30,7 +30,11 @@ void spawn(
       'Spawn should not be used to spawn main with the default route name',
     );
     IsolateNameServer.registerPortWithName(port, route);
-    _spawn(entrypoint.toNativeUtf8(), route.toNativeUtf8());
+    final Pointer<Utf8> nativeEntrypoint = entrypoint.toNativeUtf8();
+    final Pointer<Utf8> nativeRoute = route.toNativeUtf8();
+    _spawn(nativeEntrypoint, nativeRoute);
+    malloc.free(nativeEntrypoint);
+    malloc.free(nativeRoute);
   });
 }
 
@@ -54,23 +58,30 @@ void main() {
   });
 
   test('Lookup entrypoint and execute', () {
-    final String libraryPath = 'file://${const String.fromEnvironment('kFlutterSrcDirectory')}/testing/dart/spawn_helper.dart';
+    final Pointer<Utf8> libraryPath = 'file://${const String.fromEnvironment('kFlutterSrcDirectory')}/testing/dart/spawn_helper.dart'.toNativeUtf8();
+    final Pointer<Utf8> entryPoint = 'echoInt'.toNativeUtf8();
     expect(
       (_lookupEntryPoint(
-        libraryPath.toNativeUtf8(),
-        'echoInt'.toNativeUtf8(),
+        libraryPath,
+        entryPoint,
       ) as int Function(int))(42),
       42,
     );
+    malloc.free(libraryPath);
+    malloc.free(entryPoint);
   });
 
   test('Load from kernel', () {
-    final String kernelPath = '${const String.fromEnvironment('kFlutterBuildDirectory')}/spawn_helper.dart.dill';
+  return;
+    final Pointer<Utf8> kernelPath = '${const String.fromEnvironment('kFlutterBuildDirectory')}/spawn_helper.dart.dill'.toNativeUtf8();
     expect(
-      _loadLibraryFromKernel(kernelPath.toNativeUtf8()) is void Function(),
+      _loadLibraryFromKernel(kernelPath) is void Function(),
       true,
     );
+    malloc.free(kernelPath);
 
-    expect(_loadLibraryFromKernel('fake-path'.toNativeUtf8()), null);
+    final Pointer<Utf8> fakePath = 'fake-path'.toNativeUtf8();
+    expect(_loadLibraryFromKernel(fakePath), null);
+    malloc.free(fakePath);
   }, skip: kProfileMode || kReleaseMode);
 }

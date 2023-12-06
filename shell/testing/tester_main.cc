@@ -513,7 +513,7 @@ int RunTester(const flutter::Settings& settings,
   fml::TaskRunner::RunNowOrPostTask(ui_task_runner, task_observer_remove);
   latch.Wait();
 
-  g_shell->reset(nullptr);
+  delete g_shell->release();
 
   if (!engine_did_run) {
     // If the engine itself didn't have a chance to run, there is no point in
@@ -551,7 +551,8 @@ EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
 
 EXPORTED void Spawn(const char* entrypoint, const char* route) {
   auto shell = g_shell->get();
-  auto spawn_task = [shell, entrypoint, route]() {
+  auto spawn_task = [shell, entrypoint = std::string(entrypoint),
+                     route = std::string(route)]() {
     auto configuration = RunConfiguration::InferFromSettings(
         shell->GetSettings(), /*io_worker=*/nullptr,
         /*launch_type=*/IsolateLaunchType::kExistingGroup);
