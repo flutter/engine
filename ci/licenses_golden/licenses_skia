@@ -1,4 +1,4 @@
-Signature: a2f15a2c3e7e0ae51b62a9da2296afdc
+Signature: 1834371d1b225b6b6d1017adbe931616
 
 ====================================================================================================
 LIBRARY: etc1
@@ -386,12 +386,6 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
-FILE: ../../../flutter/third_party/skia/relnotes/FontConfigInterface.md
-FILE: ../../../flutter/third_party/skia/relnotes/NoYield.md
-FILE: ../../../flutter/third_party/skia/relnotes/mip_aliases.md
-FILE: ../../../flutter/third_party/skia/relnotes/shaper.md
-FILE: ../../../flutter/third_party/skia/relnotes/vksemaphore.md
-FILE: ../../../flutter/third_party/skia/relnotes/vulkan-mutable.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -1526,8 +1520,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkHRESULT.h + ../../../f
 ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkIStream.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkIStream.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkTScopedComPtr.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkWGL.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkWGL_win.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/xps/SkXPSDevice.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/xps/SkXPSDevice.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
@@ -1709,8 +1701,6 @@ FILE: ../../../flutter/third_party/skia/src/utils/win/SkHRESULT.h
 FILE: ../../../flutter/third_party/skia/src/utils/win/SkIStream.cpp
 FILE: ../../../flutter/third_party/skia/src/utils/win/SkIStream.h
 FILE: ../../../flutter/third_party/skia/src/utils/win/SkTScopedComPtr.h
-FILE: ../../../flutter/third_party/skia/src/utils/win/SkWGL.h
-FILE: ../../../flutter/third_party/skia/src/utils/win/SkWGL_win.cpp
 FILE: ../../../flutter/third_party/skia/src/xps/SkXPSDevice.cpp
 FILE: ../../../flutter/third_party/skia/src/xps/SkXPSDevice.h
 ----------------------------------------------------------------------------------------------------
@@ -9024,6 +9014,7 @@ ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/SlugImpl.h + ../../../flu
 ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/VertexFiller.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/text/gpu/VertexFiller.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkTestCanvas.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/utils/win/SkWGL_win.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/fuzz/FuzzCubicRoots.cpp
@@ -9306,6 +9297,7 @@ FILE: ../../../flutter/third_party/skia/src/text/gpu/SlugImpl.h
 FILE: ../../../flutter/third_party/skia/src/text/gpu/VertexFiller.cpp
 FILE: ../../../flutter/third_party/skia/src/text/gpu/VertexFiller.h
 FILE: ../../../flutter/third_party/skia/src/utils/SkTestCanvas.cpp
+FILE: ../../../flutter/third_party/skia/src/utils/win/SkWGL_win.cpp
 FILE: ../../../flutter/third_party/skia/toolchain/android_trampolines/gen_trampolines/gen_trampolines.go
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 Google LLC

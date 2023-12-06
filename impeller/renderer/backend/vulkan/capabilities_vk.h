@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -24,6 +23,8 @@ enum class OptionalDeviceExtensionVK : uint32_t {
   kEXTPipelineCreationFeedback,
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_blend_operation_advanced.html
   kEXTBlendOperationAdvanced,
+  kARMRasterizationOrderAttachmentAccess,
+  kEXTRasterizationOrderAttachmentAccess,
   kLast,
 };
 
@@ -116,6 +117,7 @@ class CapabilitiesVK final : public Capabilities,
   bool supports_compute_subgroups_ = false;
   bool supports_device_transient_textures_ = false;
   bool supports_native_advanced_blends_ = false;
+  bool supports_framebuffer_fetch_ = false;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;
