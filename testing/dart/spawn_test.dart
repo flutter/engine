@@ -9,6 +9,8 @@ import 'dart:ui';
 import 'package:ffi/ffi.dart';
 import 'package:litetest/litetest.dart';
 
+// This import is used in a test, but not in a way that the analyzer can understand.
+// ignore: unused_import
 import 'spawn_helper.dart';
 
 @Native<Handle Function(Pointer<Utf8>)>(symbol: 'LoadLibraryFromKernel')
@@ -49,12 +51,12 @@ void main() {
   test('Spawn a different entrypoint with a special route name', () async {
     final ReceivePort port = ReceivePort();
     spawn(port: port.sendPort, entrypoint: 'testEntrypoint', route: kTestEntrypointRouteName);
-    expect((await port.first), isNull);
+    expect(await port.first, isNull);
     port.close();
   });
 
   test('Lookup entrypoint and execute', () {
-    final String libraryPath = 'file://${const String.fromEnvironment('kFlutterSrcDirectory')}/testing/dart/spawn_helper.dart';
+    const String libraryPath = 'file://${const String.fromEnvironment('kFlutterSrcDirectory')}/testing/dart/spawn_helper.dart';
     expect(
       (_lookupEntryPoint(
         libraryPath.toNativeUtf8(),
@@ -65,12 +67,12 @@ void main() {
   });
 
   test('Load from kernel', () {
-    final String kernelPath = '${const String.fromEnvironment('kFlutterBuildDirectory')}/spawn_helper.dart.dill';
+    const String kernelPath = '${const String.fromEnvironment('kFlutterBuildDirectory')}/spawn_helper.dart.dill';
     expect(
       _loadLibraryFromKernel(kernelPath.toNativeUtf8()) is void Function(),
       true,
     );
 
     expect(_loadLibraryFromKernel('fake-path'.toNativeUtf8()), null);
-  }, skip: kProfileMode || kReleaseMode);
+  }, skip: kProfileMode || kReleaseMode); // ignore: avoid_redundant_argument_values
 }
