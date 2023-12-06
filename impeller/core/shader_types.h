@@ -73,7 +73,7 @@ struct ShaderMetadata {
   std::vector<ShaderStructMemberMetadata> members;
 };
 
-/// @brief Metadata required to bind a buffer or texture/sampler.
+/// @brief Metadata required to bind a buffer.
 ///
 /// OpenGL binding requires the usage of the separate shader metadata struct.
 struct ShaderUniformSlot {
@@ -82,6 +82,23 @@ struct ShaderUniformSlot {
 
   /// @brief `ext_res_0` is the Metal binding value.
   size_t ext_res_0;
+
+  /// @brief The Vulkan descriptor set index.
+  size_t set;
+
+  /// @brief The Vulkan binding value.
+  size_t binding;
+};
+
+/// @brief Metadata required to bind a combined texture and sampler.
+///
+/// OpenGL binding requires the usage of the separate shader metadata struct.
+struct SampledImageSlot {
+  /// @brief The name of the uniform slot.
+  const char* name;
+
+  /// @brief `ext_res_0` is the Metal binding value.
+  size_t texture_index;
 
   /// @brief The Vulkan descriptor set index.
   size_t set;

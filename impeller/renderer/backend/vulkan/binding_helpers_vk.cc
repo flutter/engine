@@ -29,7 +29,7 @@ static bool BindImages(const Bindings& bindings,
                        vk::DescriptorSet& vk_desc_set,
                        std::vector<vk::DescriptorImageInfo>& images,
                        std::vector<vk::WriteDescriptorSet>& writes) {
-  for (const auto& data : bindings.sampled_images) {
+  for (const TextureAndSampler& data : bindings.sampled_images) {
     auto texture = data.texture.resource;
     const auto& texture_vk = TextureVK::Cast(*texture);
     const SamplerVK& sampler = SamplerVK::Cast(*data.sampler);
@@ -39,7 +39,7 @@ static bool BindImages(const Bindings& bindings,
       return false;
     }
 
-    const ShaderUniformSlot& slot = data.slot;
+    const SampledImageSlot& slot = data.slot;
 
     vk::DescriptorImageInfo image_info;
     image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -67,7 +67,7 @@ static bool BindBuffers(const Bindings& bindings,
                         const std::vector<DescriptorSetLayout>& desc_set,
                         std::vector<vk::DescriptorBufferInfo>& buffers,
                         std::vector<vk::WriteDescriptorSet>& writes) {
-  for (const auto& data : bindings.buffers) {
+  for (const BufferAndUniformSlot& data : bindings.buffers) {
     const auto& buffer_view = data.view.resource.buffer;
 
     auto device_buffer = buffer_view->GetDeviceBuffer(allocator);
