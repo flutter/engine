@@ -409,14 +409,14 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                   const Bindings& bindings,
                                   ShaderStage stage) -> bool {
     for (const auto& buffer : bindings.buffers) {
-      if (!Bind(pass_bindings, *allocator, stage, buffer.first,
-                buffer.second.view.resource)) {
+      if (!Bind(pass_bindings, *allocator, stage, buffer.slot.ext_res_0,
+                buffer.view.resource)) {
         return false;
       }
     }
     for (const auto& data : bindings.sampled_images) {
-      if (!Bind(pass_bindings, stage, data.first, *data.second.sampler,
-                *data.second.texture.resource)) {
+      if (!Bind(pass_bindings, stage, data.slot.ext_res_0, *data.sampler,
+                *data.texture.resource)) {
         return false;
       }
     }

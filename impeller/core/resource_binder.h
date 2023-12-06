@@ -4,12 +4,8 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
-#include <optional>
-#include <string>
 
-#include "flutter/fml/logging.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler.h"
@@ -32,7 +28,7 @@ struct ResourceBinder {
                             BufferView view) = 0;
 
   virtual bool BindResource(ShaderStage stage,
-                            const SampledImageSlot& slot,
+                            const ShaderUniformSlot& slot,
                             const ShaderMetadata& metadata,
                             std::shared_ptr<const Texture> texture,
                             std::shared_ptr<const Sampler> sampler) = 0;

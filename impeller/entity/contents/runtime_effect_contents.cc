@@ -238,10 +238,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         auto sampler =
             context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
 
-        SampledImageSlot image_slot;
+        ShaderUniformSlot image_slot;
         image_slot.name = uniform.name.c_str();
-        image_slot.texture_index = uniform.location - minimum_sampler_index;
-        image_slot.sampler_index = uniform.location - minimum_sampler_index;
+        image_slot.ext_res_0 = uniform.location - minimum_sampler_index;
         cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
                          input.texture, sampler);
 

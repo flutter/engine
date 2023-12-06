@@ -10,8 +10,6 @@
 #include <optional>
 #include <string>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/resource_binder.h"
@@ -21,8 +19,6 @@
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -63,7 +59,7 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 
 /// @brief combines the texture, sampler and sampler slot information.
 struct TextureAndSampler {
-  SampledImageSlot slot;
+  ShaderUniformSlot slot;
   TextureResource texture;
   std::shared_ptr<const Sampler> sampler;
 };
@@ -75,8 +71,8 @@ struct BufferAndUniformSlot {
 };
 
 struct Bindings {
-  std::map<size_t, TextureAndSampler> sampled_images;
-  std::map<size_t, BufferAndUniformSlot> buffers;
+  std::vector<TextureAndSampler> sampled_images;
+  std::vector<BufferAndUniformSlot> buffers;
 };
 
 //------------------------------------------------------------------------------
@@ -177,7 +173,7 @@ struct Command : public ResourceBinder {
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
-                    const SampledImageSlot& slot,
+                    const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
                     std::shared_ptr<const Sampler> sampler) override;

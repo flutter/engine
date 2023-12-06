@@ -23,13 +23,13 @@ bool ComputeCommand::BindResource(ShaderStage stage,
     return false;
   }
 
-  bindings.buffers[slot.ext_res_0] = {.slot = slot,
-                                      .view = {&metadata, std::move(view)}};
+  bindings.buffers.emplace_back(
+      BufferAndUniformSlot{.slot = slot, .view = {&metadata, std::move(view)}});
   return true;
 }
 
 bool ComputeCommand::BindResource(ShaderStage stage,
-                                  const SampledImageSlot& slot,
+                                  const ShaderUniformSlot& slot,
                                   const ShaderMetadata& metadata,
                                   std::shared_ptr<const Texture> texture,
                                   std::shared_ptr<const Sampler> sampler) {
@@ -43,15 +43,12 @@ bool ComputeCommand::BindResource(ShaderStage stage,
   if (!texture || !texture->IsValid()) {
     return false;
   }
-  if (!slot.HasSampler() || !slot.HasTexture()) {
-    return true;
-  }
 
-  bindings.sampled_images[slot.sampler_index] = TextureAndSampler{
+  bindings.sampled_images.emplace_back(TextureAndSampler{
       .slot = slot,
       .texture = {&metadata, std::move(texture)},
       .sampler = std::move(sampler),
-  };
+  });
 
   return false;
 }
