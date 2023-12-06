@@ -43,6 +43,9 @@ void testEntrypoint() {
 }
 
 void main() {
+  const bool kReleaseMode = bool.fromEnvironment('dart.vm.product');
+  const bool kProfileMode = bool.fromEnvironment('dart.vm.profile');
+
   test('Spawn a different entrypoint with a special route name', () async {
     final ReceivePort port = ReceivePort();
     spawn(port: port.sendPort, entrypoint: 'testEntrypoint', route: kTestEntrypointRouteName);
@@ -69,5 +72,5 @@ void main() {
     );
 
     expect(_loadLibraryFromKernel('fake-path'.toNativeUtf8()), null);
-  });
+  }, skip: kProfileMode || kReleaseMode);
 }

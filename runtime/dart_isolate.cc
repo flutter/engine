@@ -1132,6 +1132,10 @@ Dart_Handle DartIsolate::OnDartLoadLibrary(intptr_t loading_unit_id) {
 
 Dart_Handle DartIsolate::LoadLibraryFromKernel(
     const std::shared_ptr<const fml::Mapping>& mapping) {
+  if (DartVM::IsRunningPrecompiledCode()) {
+    return Dart_Null();
+  }
+
   auto current_isolate =
       static_cast<std::shared_ptr<DartIsolate>*>(Dart_CurrentIsolateData());
   // Mapping must be retained until isolate shutdown.
