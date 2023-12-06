@@ -86,6 +86,7 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     bool supports_framebuffer_fetch) {
   std::vector<vk::AttachmentDescription> attachments;
 
+  bool supports_advanced_blend = true;
   std::vector<vk::AttachmentReference> color_refs;
   std::vector<vk::AttachmentReference> subpass_color_ref;
   vk::AttachmentReference depth_stencil_ref = kUnusedAttachmentReference;
@@ -133,9 +134,29 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
                               eRasterizationOrderAttachmentColorAccessARM);
     subpass_desc.setInputAttachments(subpass_color_ref);
+  } else if (supports_advanced_blend) {
+    subpass_desc.setInputAttachments(subpass_color_ref);
   }
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
+
+  if (supports_advanced_blend) {
+    vk::SubpassDependency subpass_dependency;
+    subpass_dependency.setSrcSubpass(0);
+    subpass_dependency.setDstSubpass(0);
+    subpass_dependency.dependencyFlags = vk::DependencyFlagBits::eByRegion;
+    subpass_dependency.srcStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    subpass_dependency.srcAccessMask =
+        vk::AccessFlagBits::eColorAttachmentWrite;
+    subpass_dependency.dstStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    subpass_dependency.dstAccessMask =
+        vk::AccessFlagBits::eColorAttachmentReadNoncoherentEXT;
+    subpass_dependencies.emplace_back(subpass_dependency);
+    // subpass_dependency.dstStageMask = 0;
+    // subpass_dependency.dstAccessMask = 0;
+  }
 
   vk::RenderPassCreateInfo render_pass_desc;
   render_pass_desc.setAttachments(attachments);
@@ -387,8 +408,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   if (desc.GetColorAttachmentDescriptors()
           .find(0u)
           ->second.advanced_blend_override.has_value()) {
-    state.setBlendOverlap(vk::BlendOverlapEXT::eConjoint);  // dunno
-    state.setSrcPremultiplied(true);                        // double check
+    state.setBlendOverlap(vk::BlendOverlapEXT::eUncorrelated);  // dunno
+    state.setSrcPremultiplied(true);                            // double check
     state.setDstPremultiplied(true);
     blend_state.pNext = &state;
   }

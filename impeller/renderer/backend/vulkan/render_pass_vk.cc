@@ -23,6 +23,7 @@
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
+#include "vulkan/vulkan_structs.hpp"
 #include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
@@ -107,6 +108,7 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   std::vector<vk::AttachmentReference> color_refs;
   std::vector<vk::AttachmentReference> resolve_refs;
   vk::AttachmentReference depth_stencil_ref = kUnusedAttachmentReference;
+  bool supports_advanced_blend = true;
 
   // Spec says: "Each element of the pColorAttachments array corresponds to an
   // output location in the shader, i.e. if the shader declares an output
@@ -124,8 +126,9 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
     color_refs[bind_point] = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
-        supports_framebuffer_fetch ? vk::ImageLayout::eGeneral
-                                   : vk::ImageLayout::eColorAttachmentOptimal};
+        (supports_framebuffer_fetch || supports_advanced_blend)
+            ? vk::ImageLayout::eGeneral
+            : vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(CreateAttachmentDescription(
         color, &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(color, attachments.back(), command_buffer,
@@ -133,7 +136,7 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()),
-          supports_framebuffer_fetch
+          (supports_framebuffer_fetch || supports_advanced_blend)
               ? vk::ImageLayout::eGeneral
               : vk::ImageLayout::eColorAttachmentOptimal};
       attachments.emplace_back(CreateAttachmentDescription(
@@ -178,12 +181,31 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
                               eRasterizationOrderAttachmentColorAccessARM);
     subpass_desc.setInputAttachments(subpass_color_ref);
+  } else if (supports_advanced_blend) {
+    subpass_desc.setInputAttachments(subpass_color_ref);
+  }
+
+  if (supports_advanced_blend) {
+    vk::SubpassDependency subpass_dependency;
+    subpass_dependency.setSrcSubpass(0);
+    subpass_dependency.setDstSubpass(0);
+    subpass_dependency.dependencyFlags = vk::DependencyFlagBits::eByRegion;
+    subpass_dependency.srcStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    subpass_dependency.srcAccessMask =
+        vk::AccessFlagBits::eColorAttachmentWrite;
+    subpass_dependency.dstStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    subpass_dependency.dstAccessMask =
+        vk::AccessFlagBits::eColorAttachmentReadNoncoherentEXT;
+    subpass_dependencies.emplace_back(subpass_dependency);
   }
 
   vk::RenderPassCreateInfo render_pass_desc;
   render_pass_desc.setAttachments(attachments);
   render_pass_desc.setPSubpasses(&subpass_desc);
   render_pass_desc.setSubpassCount(1u);
+  render_pass_desc.setDependencies(subpass_dependencies);
 
   auto [result, pass] =
       context.GetDevice().createRenderPassUnique(render_pass_desc);
@@ -368,7 +390,8 @@ static bool EncodeCommand(const Context& context,
                           CommandEncoderVK& encoder,
                           PassBindingsCache& command_buffer_cache,
                           const ISize& target_size,
-                          const vk::DescriptorSet vk_desc_set) {
+                          const vk::DescriptorSet vk_desc_set,
+                          const TextureVK& texture) {
 #ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_marker(
       [&encoder]() { encoder.PopDebugGroup(); });
@@ -381,6 +404,28 @@ static bool EncodeCommand(const Context& context,
 
   const auto& cmd_buffer = encoder.GetCommandBuffer();
   const auto& pipeline_vk = PipelineVK::Cast(*command.pipeline);
+
+  if (pipeline_vk.GetDescriptor()
+          .GetColorAttachmentDescriptor(0u)
+          ->advanced_blend_override.has_value()) {
+    auto dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    auto dstAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
+    vk::ImageMemoryBarrier barrier;
+    barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+    barrier.dstAccessMask =
+        vk::AccessFlagBits::eColorAttachmentReadNoncoherentEXT;
+    barrier.oldLayout = vk::ImageLayout::eGeneral;
+    barrier.newLayout = vk::ImageLayout::eGeneral;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = texture.GetImage();
+    barrier.subresourceRange = {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1};
+
+    cmd_buffer.pipelineBarrier(
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::PipelineStageFlagBits::eColorAttachmentOutput,
+        vk::DependencyFlagBits::eByRegion, nullptr, nullptr, {barrier});
+  }
 
   encoder.GetCommandBuffer().bindDescriptorSets(
       vk::PipelineBindPoint::eGraphics,  // bind point
@@ -555,7 +600,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
     auto desc_index = 0u;
     for (const auto& command : commands_) {
       if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
-                         target_size, desc_sets[desc_index])) {
+                         target_size, desc_sets[desc_index], color_image_vk)) {
         return false;
       }
       desc_index += 1;

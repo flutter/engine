@@ -10,10 +10,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "vulkan/vulkan_core.h"
-<<<<<<< HEAD
-#include "vulkan/vulkan_structs.hpp"
-=======
->>>>>>> fe96317750ff70f91306d1a46050fc81bd3690a9
 
 namespace impeller {
 
@@ -161,15 +157,12 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
   switch (ext) {
     case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
       return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
-<<<<<<< HEAD
     case OptionalDeviceExtensionVK::kEXTBlendOperationAdvanced:
       return VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
-=======
     case OptionalDeviceExtensionVK::kARMRasterizationOrderAttachmentAccess:
       return VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess:
       return VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
->>>>>>> fe96317750ff70f91306d1a46050fc81bd3690a9
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -416,12 +409,10 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
   }
 
   {
-<<<<<<< HEAD
     supports_native_advanced_blends_ =
         optional_device_extensions_.find(
             OptionalDeviceExtensionVK::kEXTBlendOperationAdvanced) !=
         optional_device_extensions_.end();
-=======
     supports_framebuffer_fetch_ =
         (optional_device_extensions_.find(
              OptionalDeviceExtensionVK::
@@ -431,7 +422,6 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
              OptionalDeviceExtensionVK::
                  kEXTRasterizationOrderAttachmentAccess) !=
              optional_device_extensions_.end());
->>>>>>> fe96317750ff70f91306d1a46050fc81bd3690a9
   }
 
   return true;

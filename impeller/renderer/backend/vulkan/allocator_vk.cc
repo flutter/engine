@@ -172,6 +172,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
     bool supports_memoryless_textures,
     bool supports_framebuffer_fetch) {
   vk::ImageUsageFlags vk_usage;
+  bool supports_advanced_blends = true;
 
   switch (mode) {
     case StorageMode::kHostVisible:
@@ -191,6 +192,8 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
     }
     if (supports_framebuffer_fetch) {
+      vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
+    } else if (supports_advanced_blends) {
       vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
     }
   }
