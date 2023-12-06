@@ -344,7 +344,7 @@ external DomHTMLDocument get domDocument;
 
 @JS()
 @staticInterop
-class DomEventTarget implements JSObject {}
+class DomEventTarget {}
 
 extension DomEventTargetExtension on DomEventTarget {
   @JS('addEventListener')
@@ -1157,7 +1157,7 @@ extension WebGLContextExtension on WebGLContext {
 
 @JS()
 @staticInterop
-abstract class DomCanvasImageSource implements JSObject {}
+abstract class DomCanvasImageSource {}
 
 @JS()
 @staticInterop
@@ -1226,10 +1226,53 @@ extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
           x0.toJS, y0.toJS, r0.toJS, x1.toJS, y1.toJS, r1.toJS);
 
   @JS('drawImage')
-  external JSVoid _drawImage(
-      DomCanvasImageSource source, JSNumber destX, JSNumber destY);
-  void drawImage(DomCanvasImageSource source, num destX, num destY) =>
-      _drawImage(source, destX.toJS, destY.toJS);
+  external JSVoid _drawImage1(
+      DomCanvasImageSource source, JSNumber dx, JSNumber dy);
+  @JS('drawImage')
+  external JSVoid _drawImage2(
+    DomCanvasImageSource source,
+    JSNumber sx,
+    JSNumber sy,
+    JSNumber sWidth,
+    JSNumber sHeight,
+    JSNumber dx,
+    JSNumber dy,
+    JSNumber dWidth,
+    JSNumber dHeight,
+  );
+  void drawImage(
+    DomCanvasImageSource source,
+    num srcxOrDstX,
+    num srcyOrDstY, [
+    num? srcWidth,
+    num? srcHeight,
+    num? dstX,
+    num? dstY,
+    num? dstWidth,
+    num? dstHeight,
+  ]) {
+    if (srcWidth == null) {
+      // In this case the numbers provided are the destination x and y offset.
+      return _drawImage1(source, srcxOrDstX.toJS, srcyOrDstY.toJS);
+    } else {
+      assert(srcHeight != null &&
+          dstX != null &&
+          dstY != null &&
+          dstWidth != null &&
+          dstHeight != null);
+      return _drawImage2(
+        source,
+        srcxOrDstX.toJS,
+        srcyOrDstY.toJS,
+        srcWidth.toJS,
+        srcHeight!.toJS,
+        dstX!.toJS,
+        dstY!.toJS,
+        dstWidth!.toJS,
+        dstHeight!.toJS,
+      );
+    }
+  }
 
   @JS('fill')
   external JSVoid _fill1();
@@ -1453,7 +1496,7 @@ extension DomImageDataExtension on DomImageData {
 
 @JS('ImageBitmap')
 @staticInterop
-class DomImageBitmap implements JSObject {}
+class DomImageBitmap {}
 
 extension DomImageBitmapExtension on DomImageBitmap {
   external JSNumber get width;
@@ -1831,7 +1874,7 @@ class HttpFetchError implements Exception {
 
 @JS()
 @staticInterop
-class DomResponse implements JSObject {}
+class DomResponse {}
 
 extension DomResponseExtension on DomResponse {
   @JS('status')
@@ -1868,7 +1911,7 @@ extension DomHeadersExtension on DomHeaders {
 
 @JS()
 @staticInterop
-class _DomReadableStream implements JSObject {}
+class _DomReadableStream {}
 
 extension _DomReadableStreamExtension on _DomReadableStream {
   external _DomStreamReader getReader();
@@ -2631,14 +2674,6 @@ DomTouch createDomTouch([Map<dynamic, dynamic>? init]) {
     return DomTouch.arg1();
   } else {
     return DomTouch.arg2(init.toJSAnyDeep);
-  }
-}
-
-DomTouchEvent createDomTouchEvent(String type, [Map<dynamic, dynamic>? init]) {
-  if (init == null) {
-    return DomTouchEvent.arg1(type.toJS);
-  } else {
-    return DomTouchEvent.arg2(type.toJS, init.toJSAnyDeep);
   }
 }
 
@@ -3630,6 +3665,17 @@ bool browserSupportsFinalizationRegistry =
 external JSAny? get _offscreenCanvasConstructor;
 
 bool browserSupportsOffscreenCanvas = _offscreenCanvasConstructor != null;
+
+@JS('window.createImageBitmap')
+external JSAny? get _createImageBitmapFunction;
+
+/// Set to `true` to disable `createImageBitmap` support. Used in tests.
+bool debugDisableCreateImageBitmapSupport = false;
+
+bool get browserSupportsCreateImageBitmap =>
+    _createImageBitmapFunction != null &&
+    !isChrome110OrOlder &&
+    !debugDisableCreateImageBitmapSupport;
 
 @JS()
 @staticInterop

@@ -403,6 +403,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
       make_test('fml_unittests'),
+      make_test('fml_arc_unittests'),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
       make_test('testing_unittests'),
@@ -436,6 +437,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         make_test('accessibility_unittests'),
         make_test('framework_common_unittests'),
         make_test('spring_animation_unittests'),
+        make_test('gpu_surface_metal_unittests'),
     ]
 
   if is_linux():
@@ -461,16 +463,23 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         make_test('flow_unittests', flags=repeat_flags + flow_flags),
     ]
 
-  for test, flags, extra_env in unittests:
-    run_engine_executable(
-        build_dir,
-        test,
-        executable_filter,
-        flags,
-        coverage=coverage,
-        extra_env=extra_env,
-        gtest=True
-    )
+  build_name = os.path.basename(build_dir)
+  try:
+    if is_linux():
+      xvfb.start_virtual_x(build_name, build_dir)
+    for test, flags, extra_env in unittests:
+      run_engine_executable(
+          build_dir,
+          test,
+          executable_filter,
+          flags,
+          coverage=coverage,
+          extra_env=extra_env,
+          gtest=True
+      )
+  finally:
+    if is_linux():
+      xvfb.stop_virtual_x(build_name)
 
   if is_mac():
     # flutter_desktop_darwin_unittests uses global state that isn't handled
@@ -571,6 +580,10 @@ def run_engine_benchmarks(build_dir, executable_filter):
       build_dir, 'geometry_benchmarks', executable_filter, icu_flags
   )
 
+  run_engine_executable(
+      build_dir, 'canvas_benchmarks', executable_filter, icu_flags
+  )
+
   if is_linux():
     run_engine_executable(
         build_dir, 'txt_benchmarks', executable_filter, icu_flags
@@ -606,6 +619,11 @@ class FlutterTesterOptions():
       return 'multithreaded'
     return 'single-threaded'
 
+  def impeller_enabled(self):
+    if self.enable_impeller:
+      return 'impeller swiftshader'
+    return 'skia software'
+
 
 def gather_dart_test(build_dir, dart_file, options):
   kernel_file_name = os.path.basename(dart_file) + '.dill'
@@ -637,8 +655,8 @@ def gather_dart_test(build_dir, dart_file, options):
 
   tester_name = 'flutter_tester'
   logger.info(
-      "Running test '%s' using '%s' (%s)", kernel_file_name, tester_name,
-      options.threading_description()
+      "Running test '%s' using '%s' (%s, %s)", kernel_file_name, tester_name,
+      options.threading_description(), options.impeller_enabled()
   )
   forbidden_output = [] if 'unopt' in build_dir or options.expect_failure else [
       '[ERROR'

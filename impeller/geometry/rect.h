@@ -9,6 +9,7 @@
 #include <ostream>
 #include <vector>
 
+#include "fml/logging.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
@@ -20,18 +21,12 @@ template <class T>
 struct TRect {
   using Type = T;
 
+  /// DEPRECATED: Use |GetOrigin|
   TPoint<Type> origin;
+  /// DEPRECATED: Use |GetSize|
   TSize<Type> size;
 
   constexpr TRect() : origin({0, 0}), size({0, 0}) {}
-
-  constexpr TRect(TSize<Type> size) : origin({0.0, 0.0}), size(size) {}
-
-  constexpr TRect(TPoint<Type> origin, TSize<Type> size)
-      : origin(origin), size(size) {}
-
-  constexpr TRect(Type x, Type y, Type width, Type height)
-      : origin(x, y), size(width, height) {}
 
   constexpr static TRect MakeLTRB(Type left,
                                   Type top,
@@ -52,6 +47,11 @@ struct TRect {
   template <class U>
   constexpr static TRect MakeSize(const TSize<U>& size) {
     return TRect(0.0, 0.0, size.width, size.height);
+  }
+
+  template <typename U>
+  constexpr static std::optional<TRect> MakePointBounds(const U& value) {
+    return MakePointBounds(value.begin(), value.end());
   }
 
   template <typename PointIter>
@@ -129,8 +129,7 @@ struct TRect {
     return Union(o).size == size;
   }
 
-  constexpr bool IsZero() const { return size.IsZero(); }
-
+  /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
@@ -218,7 +217,40 @@ struct TRect {
   ///         rectangle.
   constexpr TRect TransformBounds(const Matrix& transform) const {
     auto points = GetTransformedPoints(transform);
-    return TRect::MakePointBounds(points.begin(), points.end()).value();
+    auto bounds = TRect::MakePointBounds(points.begin(), points.end());
+    if (bounds.has_value()) {
+      return bounds.value();
+    }
+    FML_UNREACHABLE();
+  }
+
+  /// @brief  Constructs a Matrix that will map all points in the coordinate
+  ///         space of the rectangle into a new normalized coordinate space
+  ///         where the upper left corner of the rectangle maps to (0, 0)
+  ///         and the lower right corner of the rectangle maps to (1, 1).
+  ///
+  ///         Empty and non-finite rectangles will return a zero-scaling
+  ///         transform that maps all points to (0, 0).
+  constexpr Matrix GetNormalizingTransform() const {
+    if (!IsEmpty()) {
+      Scalar sx = 1.0 / size.width;
+      Scalar sy = 1.0 / size.height;
+      Scalar tx = origin.x * -sx;
+      Scalar ty = origin.y * -sy;
+
+      // Exclude NaN and infinities and either scale underflowing to zero
+      if (sx != 0.0 && sy != 0.0 && 0.0 * sx * sy * tx * ty == 0.0) {
+        // clang-format off
+        return Matrix(  sx, 0.0f, 0.0f, 0.0f,
+                      0.0f,   sy, 0.0f, 0.0f,
+                      0.0f, 0.0f, 1.0f, 0.0f,
+                        tx,   ty, 0.0f, 1.0f);
+        // clang-format on
+      }
+    }
+
+    // Map all coordinates to the origin.
+    return Matrix::MakeScale({0.0f, 0.0f, 1.0f});
   }
 
   constexpr TRect Union(const TRect& o) const {
@@ -363,6 +395,13 @@ struct TRect {
       const std::optional<TRect> b) {
     return a.has_value() ? Intersection(a.value(), b) : b;
   }
+
+ private:
+  constexpr TRect(Type x, Type y, Type width, Type height)
+      : origin(x, y), size(width, height) {}
+
+  constexpr TRect(TPoint<Type> origin, TSize<Type> size)
+      : origin(origin), size(size) {}
 };
 
 using Rect = TRect<Scalar>;

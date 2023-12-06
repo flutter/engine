@@ -13,7 +13,10 @@
 #include "flow/stopwatch_dl.h"
 #include "flow/stopwatch_sk.h"
 #include "third_party/skia/include/core/SkFont.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/typographer/backends/skia/text_frame_skia.h"  // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -71,10 +74,12 @@ sk_sp<SkTextBlob> PerformanceOverlayLayer::MakeStatisticsText(
     const std::string& label_prefix,
     const std::string& font_path) {
   SkFont font;
-  if (font_path != "") {
-    font = SkFont(SkTypeface::MakeFromFile(font_path.c_str()));
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  if (font_path == "") {
+    font = SkFont(font_mgr->matchFamilyStyle(nullptr, {}), 15);
+  } else {
+    font = SkFont(font_mgr->makeFromFile(font_path.c_str()), 15);
   }
-  font.setSize(15);
 
   double max_ms_per_frame = stopwatch.MaxDelta().ToMillisecondsF();
   double average_ms_per_frame = stopwatch.AverageDelta().ToMillisecondsF();

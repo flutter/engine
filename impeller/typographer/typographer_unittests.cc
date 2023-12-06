@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/testing/testing.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -9,9 +10,12 @@
 #include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
@@ -36,7 +40,7 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
 }
 
 TEST_P(TypographerTest, CanConvertTextBlob) {
-  SkFont font;
+  SkFont font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString(
       "the quick brown fox jumped over the lazy dog.", font);
   ASSERT_TRUE(blob);
@@ -57,7 +61,7 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -86,30 +90,16 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
                   .has_value());
 }
 
-static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
-  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
-  if (!mapping) {
-    return nullptr;
-  }
-  auto data = SkData::MakeWithProc(
-      mapping->GetMapping(), mapping->GetSize(),
-      [](const void* ptr, void* context) {
-        delete reinterpret_cast<fml::Mapping*>(context);
-      },
-      mapping.get());
-  mapping.release();
-  return data;
-}
-
 TEST_P(TypographerTest, LazyAtlasTracksColor) {
 #if FML_OS_MACOSX
-  auto mapping = OpenFixtureAsSkData("Apple Color Emoji.ttc");
+  auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color Emoji.ttc");
 #else
-  auto mapping = OpenFixtureAsSkData("NotoColorEmoji.ttf");
+  auto mapping = flutter::testing::OpenFixtureAsSkData("NotoColorEmoji.ttf");
 #endif
   ASSERT_TRUE(mapping);
-  SkFont emoji_font(SkTypeface::MakeFromData(mapping), 50.0);
-  SkFont sk_font;
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  SkFont emoji_font(font_mgr->makeFromData(mapping), 50.0);
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
 
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
@@ -142,7 +132,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -159,7 +149,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -189,7 +179,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
       "œ∑´®†¥¨ˆøπ““‘‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥≥≥≥÷¡™£¢∞§¶•ªº–≠⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰Á¨Ø∏”’/"
       "* Í˝ */¸˛Ç◊ı˜Â¯˘¿";
 
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString(test_string, sk_font);
   ASSERT_TRUE(blob);
 
@@ -226,7 +216,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -259,7 +249,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -290,7 +280,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
 }
 
 TEST_P(TypographerTest, MaybeHasOverlapping) {
-  sk_sp<SkFontMgr> font_mgr = SkFontMgr::RefDefault();
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
   sk_sp<SkTypeface> typeface =
       font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
   SkFont sk_font(typeface, 0.5f);

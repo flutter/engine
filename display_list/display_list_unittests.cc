@@ -1075,7 +1075,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
       SkPath().addOval({0, 0, 10, 10}).addOval({5, 5, 15, 15})););
   RUN_TESTS(receiver.drawArc({0, 0, 10, 10}, 0, math::kPi, true););
   RUN_TESTS2(
-      receiver.drawPoints(PointMode::kPoints, TestPointCount, TestPoints);
+      receiver.drawPoints(PointMode::kPoints, TestPointCount, kTestPoints);
       , false);
   RUN_TESTS2(receiver.drawVertices(TestVertices1.get(), DlBlendMode::kSrc);
              , false);
@@ -1114,7 +1114,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
     static auto display_list = builder.Build();
     RUN_TESTS2(receiver.drawDisplayList(display_list);, false);
   }
-  RUN_TESTS2(receiver.drawTextBlob(TestBlob1, 0, 0);, false);
+  RUN_TESTS2(receiver.drawTextBlob(GetTestTextBlob(1), 0, 0);, false);
   RUN_TESTS2(
       receiver.drawShadow(kTestPath1, DlColor(SK_ColorBLACK), 1.0, false, 1.0);
       , false);
@@ -3145,7 +3145,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawAtlas(TestImage1, xforms, rects, nullptr, 2,
                             DlBlendMode::kSrcOver, DlImageSampling::kLinear,
                             nullptr, &paint);
-          builder.DrawTextBlob(TestBlob1, 10, 10, paint);
+          builder.DrawTextBlob(GetTestTextBlob(1), 10, 10, paint);
 
           // Dst mode eliminates most rendering ops except for
           // the following two, so we'll prune those manually...

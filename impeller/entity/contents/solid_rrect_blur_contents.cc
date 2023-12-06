@@ -8,6 +8,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
@@ -57,13 +58,14 @@ std::optional<Rect> SolidRRectBlurContents::GetCoverage(
   auto ltrb = rect_->GetLTRB();
   Rect bounds = Rect::MakeLTRB(ltrb[0] - radius, ltrb[1] - radius,
                                ltrb[2] + radius, ltrb[3] + radius);
-  return bounds.TransformBounds(entity.GetTransformation());
+  return bounds.TransformBounds(entity.GetTransform());
 };
 
 bool SolidRRectBlurContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-  if (!rect_.has_value()) {
+  // Early return if sigma is close to zero to avoid rendering NaNs.
+  if (!rect_.has_value() || std::fabs(sigma_.sigma) <= kEhCloseEnough) {
     return true;
   }
 
@@ -108,7 +110,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation() *
+                   entity.GetTransform() *
                    Matrix::MakeTranslation({positive_rect.origin});
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 

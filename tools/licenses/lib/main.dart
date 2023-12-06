@@ -1029,6 +1029,9 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   static final RegExp _licenseNamePattern = RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|GPLv2|bsd|mit|mpl?|ftl|Apache)_*\b', caseSensitive: false);
 
   static const Map<String, _Constructor> _specialCaseFiles = <String, _Constructor>{
+    '/flutter/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
+    '/flutter/third_party/libjpeg-turbo/src/LICENSE': _RepositoryLibJpegTurboLicenseFile.new,
+    '/flutter/third_party/libjpeg-turbo/src/README.ijg': _RepositoryReadmeIjgFile.new,
     '/flutter/third_party/rapidjson/LICENSE': _RepositoryOpaqueLicenseFile.new,
     '/flutter/third_party/rapidjson/license.txt': _RepositoryOpaqueLicenseFile.new,
     '/fuchsia/sdk/linux/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
@@ -1040,12 +1043,9 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     '/third_party/khronos/LICENSE': _RepositoryKhronosLicenseFile.new,
     '/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
     '/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
-    '/third_party/libjpeg-turbo/LICENSE': _RepositoryLibJpegTurboLicenseFile.new,
-    '/third_party/libjpeg-turbo/README.ijg': _RepositoryReadmeIjgFile.new,
     '/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
     '/third_party/root_certificates/LICENSE': _RepositoryMpl2File.new,
     '/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
-    '/flutter/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
   };
 
   _RepositoryFile createFile(fs.IoNode entry) {
@@ -1447,14 +1447,17 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
 
   @override
   List<_RepositoryDirectory> get virtualSubdirectories {
-    // Skia is updated more frequently than other third party libraries and
-    // is therefore represented as a separate top-level component.
+    // Dart and Skia are updated more frequently than other third party
+    // libraries and is therefore represented as a separate top-level component.
     final fs.Directory thirdPartyNode = findChildDirectory(ioDirectory, 'third_party')!;
-    final fs.Directory skiaNode = findChildDirectory(thirdPartyNode, 'skia')!;
     final fs.Directory dartNode = findChildDirectory(thirdPartyNode, 'dart')!;
+
+    final fs.Directory flutterNode = findChildDirectory(ioDirectory, 'flutter')!;
+    final fs.Directory flutterThirdPartyNode = findChildDirectory(flutterNode, 'third_party')!;
+    final fs.Directory skiaNode = findChildDirectory(flutterThirdPartyNode, 'skia')!;
     return <_RepositoryDirectory>[
-      _RepositorySkiaDirectory(this, skiaNode),
       _RepositorySkiaDirectory(this, dartNode),
+      _RepositorySkiaDirectory(this, skiaNode),
     ];
   }
 }
@@ -1471,8 +1474,7 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'skia' // handled as a virtual directory of the root
-        && entry.name != 'dart' // handled as a virtual directory of the root
+    return entry.name != 'dart' // handled as a virtual directory of the root
         && super.shouldRecurse(entry);
   }
 
@@ -1767,6 +1769,32 @@ class _RepositoryFlutterDirectory extends _RepositoryDirectory {
 
   @override
   bool get isLicenseRoot => true;
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'third_party') {
+      return _RepositoryFlutterThirdPartyDirectory(this, entry);
+    }
+    return _RepositoryDirectory(this, entry);
+  }
+}
+
+class _RepositoryFlutterThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
+  _RepositoryFlutterThirdPartyDirectory(super.parent, super.io);
+
+  @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'skia' // handled as a virtual directory of the root
+        && super.shouldRecurse(entry);
+  }
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'expat') {
+      return _RepositoryExpatDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
+  }
 }
 
 class _RepositoryFuchsiaDirectory extends _RepositoryDirectory {

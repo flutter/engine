@@ -1,4 +1,4 @@
-Signature: 4f6c6ef3539e00d6683e50d9e5058131
+Signature: ae182e4e10a0bacf95bbd4a9475a970c
 
 ====================================================================================================
 LIBRARY: dart
@@ -3924,6 +3924,7 @@ ORIGIN: ../../../third_party/dart/runtime/bin/dart_precompiled_runtime_test_comp
 ORIGIN: ../../../third_party/dart/runtime/bin/dart_test_component.cml + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/bin/main_impl.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/bin/run_vm_tests_test_component.cml + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/lib/ffi_dynamic_library.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/platform/unwinding_records.cc + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/platform/unwinding_records.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/platform/unwinding_records_win.cc + ../../../third_party/dart/LICENSE
@@ -3944,6 +3945,7 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_r
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_allow_interop_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/seal_native_object.js + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/records.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/convert_utf_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_unsafe_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_types.dart + ../../../third_party/dart/LICENSE
@@ -3958,6 +3960,7 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_array.dart + ../
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_unsafe_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_string.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_string_convert.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_typed_array.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_types.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_helper.dart + ../../../third_party/dart/LICENSE
@@ -3966,7 +3969,6 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/simd.dart + ../../.
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_helper.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_stringref_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/sync_star_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart + ../../../third_party/dart/LICENSE
@@ -3985,6 +3987,7 @@ FILE: ../../../third_party/dart/runtime/bin/dart_precompiled_runtime_test_compon
 FILE: ../../../third_party/dart/runtime/bin/dart_test_component.cml
 FILE: ../../../third_party/dart/runtime/bin/main_impl.h
 FILE: ../../../third_party/dart/runtime/bin/run_vm_tests_test_component.cml
+FILE: ../../../third_party/dart/runtime/lib/ffi_dynamic_library.h
 FILE: ../../../third_party/dart/runtime/platform/unwinding_records.cc
 FILE: ../../../third_party/dart/runtime/platform/unwinding_records.h
 FILE: ../../../third_party/dart/runtime/platform/unwinding_records_win.cc
@@ -4005,6 +4008,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_run
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/js_allow_interop_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/preambles/seal_native_object.js
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/records.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/convert_utf_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_interop_unsafe_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_shared/lib/js_types.dart
@@ -4019,6 +4023,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_array.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_interop_unsafe_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_string.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_string_convert.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_typed_array.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/js_types.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/object_helper.dart
@@ -4027,7 +4032,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/simd.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_buffer_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_helper.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/string_stringref_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/sync_star_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/typed_data.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/wasm_types_patch.dart
@@ -4134,9 +4138,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: double-conversion
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/cached-powers.cc
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/cached-powers.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2006-2008 the V8 project authors. All rights reserved.
 
@@ -4169,35 +4173,35 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: double-conversion
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum-dtoa.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum-dtoa.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/diy-fp.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-to-string.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/fast-dtoa.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/fixed-dtoa.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/fixed-dtoa.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/string-to-double.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/strtod.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/strtod.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/utils.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/bignum-dtoa.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/bignum-dtoa.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/bignum.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/bignum.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/cached-powers.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/diy-fp.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/double-to-string.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/fast-dtoa.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/fixed-dtoa.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/fixed-dtoa.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/string-to-double.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/strtod.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/strtod.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/utils.h
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum-dtoa.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum-dtoa.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/bignum.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/cached-powers.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/diy-fp.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-to-string.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/fast-dtoa.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/fixed-dtoa.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/fixed-dtoa.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/string-to-double.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/strtod.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/strtod.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/utils.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/bignum-dtoa.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/bignum-dtoa.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/bignum.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/bignum.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/cached-powers.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/diy-fp.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/double-to-string.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/fast-dtoa.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/fixed-dtoa.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/fixed-dtoa.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/string-to-double.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/strtod.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/strtod.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/utils.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2010 the V8 project authors. All rights reserved.
 
@@ -4230,17 +4234,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: double-conversion
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-conversion.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-to-string.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/fast-dtoa.cc
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/ieee.h
-ORIGIN: ../../../third_party/dart/runtime/third_party/double-conversion/src/string-to-double.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/double-conversion.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/double-to-string.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/fast-dtoa.cc
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/ieee.h
+ORIGIN: ../../../third_party/dart/third_party/double-conversion/src/string-to-double.h
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-conversion.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/double-to-string.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/fast-dtoa.cc
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/ieee.h
-FILE: ../../../third_party/dart/runtime/third_party/double-conversion/src/string-to-double.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/double-conversion.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/double-to-string.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/fast-dtoa.cc
+FILE: ../../../third_party/dart/third_party/double-conversion/src/ieee.h
+FILE: ../../../third_party/dart/third_party/double-conversion/src/string-to-double.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2012 the V8 project authors. All rights reserved.
 
@@ -4283,6 +4287,12 @@ FILE: ../../../third_party/dart/runtime/observatory/web/favicon.ico
 FILE: ../../../third_party/dart/runtime/observatory/web/index.html
 FILE: ../../../third_party/dart/runtime/observatory/web/third_party/trace_viewer_full.html
 FILE: ../../../third_party/dart/runtime/observatory/web/timeline.html
+FILE: ../../../third_party/dart/runtime/tools/entitlements/dart.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/dart_precompiled_runtime.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/dart_precompiled_runtime_product.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/gen_snapshot.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/gen_snapshot_product.plist
+FILE: ../../../third_party/dart/runtime/tools/entitlements/run_vm_tests.plist
 FILE: ../../../third_party/dart/runtime/tools/wiki/styles/style.scss
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/includes/auto-refresh.html
 FILE: ../../../third_party/dart/runtime/tools/wiki/templates/page.html

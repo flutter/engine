@@ -20,6 +20,7 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -95,7 +96,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   auto radius = Radius{ScaleSigma(blur_sigma_)}.radius;
 
-  auto transform = entity.GetTransformation() * effect_transform.Basis();
+  auto transform = entity.GetTransform() * effect_transform.Basis();
   auto transformed_blur_radius =
       transform.TransformDirection(blur_direction_ * radius);
 
@@ -106,12 +107,10 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   std::optional<Rect> expanded_coverage_hint;
   if (coverage_hint.has_value()) {
     auto r =
-        Size(transformed_blur_radius_length, transformed_blur_radius_length)
+        Point(transformed_blur_radius_length, transformed_blur_radius_length)
             .Abs();
     expanded_coverage_hint =
-        is_second_pass_ ? coverage_hint
-                        : Rect(coverage_hint.value().origin - r,
-                               Size(coverage_hint.value().size + r * 2));
+        is_second_pass_ ? coverage_hint : coverage_hint->Expand(r);
   }
   auto input_snapshot = inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
                                                expanded_coverage_hint);
@@ -176,7 +175,6 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         {Point(0, 1), input_uvs[2]},
         {Point(1, 1), input_uvs[3]},
     });
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
@@ -187,6 +185,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     auto r = Radius{transformed_blur_radius_length};
     frag_info.blur_sigma = Sigma{r}.sigma;
     frag_info.blur_radius = std::round(r.radius);
+    frag_info.step_size = 2.0;
 
     // The blur direction is in input UV space.
     frag_info.blur_uv_offset =
@@ -196,7 +195,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
                                     transformed_blur_radius_length));
-    cmd.BindVertices(vtx_buffer);
+    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
     auto options = OptionsFromPass(pass);
     options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -315,11 +314,11 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
 
   auto transform = inputs[0]->GetTransform(entity) * effect_transform.Basis();
   auto transformed_blur_vector =
-      transform.TransformDirection(blur_direction_ * Radius{blur_sigma_}.radius)
+      transform
+          .TransformDirection(blur_direction_ *
+                              Radius{ScaleSigma(blur_sigma_)}.radius)
           .Abs();
-  auto extent = coverage->size + transformed_blur_vector * 2;
-  return Rect(coverage->origin - transformed_blur_vector,
-              Size(extent.x, extent.y));
+  return coverage->Expand(transformed_blur_vector);
 }
 
 }  // namespace impeller

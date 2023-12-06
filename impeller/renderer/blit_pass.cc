@@ -8,6 +8,7 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/renderer/blit_command.h"
 
@@ -52,6 +53,16 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
         static_cast<int>(destination->GetTextureDescriptor().sample_count));
     return false;
   }
+  if (source->GetTextureDescriptor().format !=
+      destination->GetTextureDescriptor().format) {
+    VALIDATION_LOG << SPrintF(
+        "The source pixel format (%s) must match the destination pixel format "
+        "(%s) "
+        "for blits.",
+        PixelFormatToString(source->GetTextureDescriptor().format),
+        PixelFormatToString(destination->GetTextureDescriptor().format));
+    return false;
+  }
 
   if (!source_region.has_value()) {
     source_region = IRect::MakeSize(source->GetSize());
@@ -66,7 +77,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
   // Clip the destination image.
   source_region = source_region->Intersection(
-      IRect(-destination_origin, destination->GetSize()));
+      IRect::MakeOriginSize(-destination_origin, destination->GetSize()));
   if (!source_region.has_value()) {
     return true;  // Nothing to blit.
   }

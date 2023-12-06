@@ -12,6 +12,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/matrix.h"
 #include "impeller/geometry/sigma.h"
 
 namespace impeller {
@@ -132,17 +133,36 @@ class FilterContents : public Contents {
   // |Contents|
   const FilterContents* AsFilter() const override;
 
-  /// @brief Determines the coverage of source pixels that will be needed
-  ///        to apply this filter under the given transform and produce
-  ///        results anywhere within the indicated coverage limit.
+  /// @brief  Determines the coverage of source pixels that will be needed
+  ///         to produce results for the specified |output_limit| under the
+  ///         specified |effect_transform|. This is essentially a reverse of
+  ///         the |GetCoverage| method computing a source coverage from
+  ///         an intended |output_limit| coverage.
   ///
-  ///        This is useful for subpass rendering scenarios where a filter
-  ///        will be applied to the output of the subpass and we need to
-  ///        determine how large of a render target to allocate in order
-  ///        to collect all pixels that might affect the supplied output
-  ///        coverage limit. While we might clip the rendering of the subpass,
-  ///        we want to avoid clipping out any pixels that contribute to
-  ///        the output limit via the filtering operation.
+  ///         Both the |output_limit| and the return value are in the
+  ///         transformed coordinate space, and so do not need to be
+  ///         transformed or inverse transformed by the |effect_transform|
+  ///         but individual parameters on the filter might be in the
+  ///         untransformed space and should be transformed by the
+  ///         |effect_transform| before applying them to the coverages.
+  ///
+  ///         The method computes a result such that if the filter is applied
+  ///         to a set of pixels filling the computed source coverage, it
+  ///         should produce an output that covers the entire specified
+  ///         |output_limit|.
+  ///
+  ///         This is useful for subpass rendering scenarios where a filter
+  ///         will be applied to the output of the subpass and we need to
+  ///         determine how large of a render target to allocate in order
+  ///         to collect all pixels that might affect the supplied output
+  ///         coverage limit. While we might end up clipping the rendering
+  ///         of the subpass to its destination, we want to avoid clipping
+  ///         out any pixels that contribute to the output limit via the
+  ///         filtering operation.
+  ///
+  /// @return The coverage bounds in the transformed space of any source pixel
+  ///         that may be needed to produce output for the indicated filter
+  ///         that covers the indicated |output_limit|.
   std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
                                         const Rect& output_limit) const;
 
@@ -151,8 +171,8 @@ class FilterContents : public Contents {
   Matrix GetTransform(const Matrix& parent_transform) const;
 
   /// @brief  Returns true if this filter graph doesn't perform any basis
-  ///         transformations to the filtered content. For example: Rotating,
-  ///         scaling, and skewing are all basis transformations, but
+  ///         transforms to the filtered content. For example: Rotating,
+  ///         scaling, and skewing are all basis transforms, but
   ///         translating is not.
   ///
   ///         This is useful for determining whether a filtered object's space
@@ -172,17 +192,24 @@ class FilterContents : public Contents {
   /// @brief  Marks this filter chain as applying in a subpass scenario.
   ///
   ///         Subpasses render in screenspace, and this setting informs filters
-  ///         that the current transformation matrix of the entity is not stored
-  ///         in the Entity transformation matrix. Instead, the effect transform
+  ///         that the current transform matrix of the entity is not stored
+  ///         in the Entity transform matrix. Instead, the effect transform
   ///         is used in this case.
   virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 
  private:
+  /// @brief  Internal utility method for |GetLocalCoverage| that computes
+  ///         the output coverage of this filter across the specified inputs,
+  ///         ignoring the coverage hint.
   virtual std::optional<Rect> GetFilterCoverage(
       const FilterInput::Vector& inputs,
       const Entity& entity,
       const Matrix& effect_transform) const;
 
+  /// @brief  Internal utility method for |GetSourceCoverage| that computes
+  ///         the inverse effect of this transform on the specified output
+  ///         coverage, ignoring the inputs which will be accommodated by
+  ///         the caller.
   virtual std::optional<Rect> GetFilterSourceCoverage(
       const Matrix& effect_transform,
       const Rect& output_limit) const = 0;
@@ -196,10 +223,15 @@ class FilterContents : public Contents {
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const = 0;
 
+  /// @brief  Internal utility method to compute the coverage of this
+  ///         filter across its internally specified inputs and subject
+  ///         to the coverage hint.
+  ///
+  ///         Uses |GetFilterCoverage|.
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 
   FilterInput::Vector inputs_;
-  Matrix effect_transform_;
+  Matrix effect_transform_ = Matrix();
 
   FilterContents(const FilterContents&) = delete;
 

@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include <optional>
-
 #include "impeller/core/formats.h"
 #include "impeller/geometry/size.h"
-#include "impeller/image/decompressed_image.h"
 
 namespace impeller {
 
@@ -83,7 +80,7 @@ struct TextureDescriptor {
 
   constexpr bool IsValid() const {
     return format != PixelFormat::kUnknown &&  //
-           size.IsPositive() &&                //
+           !size.IsEmpty() &&                  //
            mip_count >= 1u &&                  //
            SamplingOptionsAreValid();
   }
