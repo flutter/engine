@@ -79,7 +79,6 @@ using CrCoreCursorType = int64_t;
 + (id)cursorWithType:(CrCoreCursorType)type;
 - (id)initWithType:(CrCoreCursorType)type;
 - (CrCoreCursorType)_coreCursorType;
-- (CrCoreCursorType)testCoreCursorType;
 @end
 
 @implementation CrCoreCursor
