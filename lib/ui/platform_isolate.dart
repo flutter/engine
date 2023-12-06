@@ -88,7 +88,8 @@ class PlatformIsolate {
       }
     };
     try {
-      PlatformIsolate.spawn(_remoteRun, (computation, resultPort.sendPort));
+      PlatformIsolate.spawn(_remoteRun, (computation, resultPort.sendPort),
+          debugName: debugName);
     } on Object {
       // Sending the computation failed synchronously.
       // This is not expected to happen, but if it does,
@@ -112,10 +113,11 @@ class PlatformIsolate {
       }
     } catch (e, s) {
       // If sending fails, the error becomes an uncaught error.
-      //Isolate.exit(resultPort, (e, s));
+      //Isolate.exit(resultPort, (null, e, s));
       resultPort.send((null, e, s));
     }
-    //Isolate.exit(resultPort, (result));
+    // TODO: Use Isolate.exit. It's causing an error atm.
+    //Isolate.exit(resultPort, (result, null, null));
     resultPort.send((result, null, null));
   }
 

@@ -163,6 +163,10 @@ class UIDartState : public tonic::DartState {
   /// Whether Impeller is enabled for this application.
   bool IsImpellerEnabled() const;
 
+  virtual bool CreatePlatformIsolate(Dart_Handle entry_point,
+                                     Dart_Port isolate_ready_port_id,
+                                     const std::string& debug_name);
+
  protected:
   UIDartState(TaskObserverAdd add_callback,
               TaskObserverRemove remove_callback,

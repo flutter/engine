@@ -20,6 +20,7 @@
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_snapshot.h"
 #include "flutter/runtime/dart_vm_data.h"
+#include "flutter/runtime/platform_isolate_manager.h"
 #include "flutter/runtime/service_protocol.h"
 #include "flutter/runtime/skia_concurrent_executor.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -160,6 +161,10 @@ class DartVM {
   ///
   std::shared_ptr<fml::ConcurrentMessageLoop> GetConcurrentMessageLoop();
 
+  PlatformIsolateManager* GetPlatformIsolateManager() {
+    return &platform_isolate_manager_;
+  }
+
  private:
   const Settings settings_;
   std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_message_loop_;
@@ -167,6 +172,7 @@ class DartVM {
   std::shared_ptr<const DartVMData> vm_data_;
   const std::shared_ptr<IsolateNameServer> isolate_name_server_;
   const std::shared_ptr<ServiceProtocol> service_protocol_;
+  PlatformIsolateManager platform_isolate_manager_;
 
   friend class DartVMRef;
   friend class DartIsolate;

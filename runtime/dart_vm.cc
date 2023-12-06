@@ -521,6 +521,8 @@ DartVM::~DartVM() {
     Dart_ExitIsolate();
   }
 
+  platform_isolate_manager_.ShutdownPlatformIsolates();
+
   DartVMInitializer::Cleanup();
 
   dart::bin::CleanupDartIo();

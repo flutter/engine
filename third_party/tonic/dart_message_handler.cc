@@ -136,6 +136,10 @@ void DartMessageHandler::OnHandleMessage(DartState* dart_state) {
       Dart_SetPausedOnExit(true);
     } else {
       isolate_exited_ = true;
+      if (Dart_CurrentIsolate()) {
+        // TODO: Is this ok? Platform isolates never shut down without this.
+        Dart_ShutdownIsolate();
+      }
     }
   }
 }

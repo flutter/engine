@@ -391,10 +391,9 @@ class DartIsolate : public UIDartState {
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
 
-  static void CreatePlatformIsolate(Dart_Isolate parent_isolate,
-                                    Dart_Handle entry_point,
-                                    Dart_Port isolate_ready_port_id,
-                                    const std::string& debug_name);
+  bool CreatePlatformIsolate(Dart_Handle entry_point,
+                             Dart_Port isolate_ready_port_id,
+                             const std::string& debug_name) override;
 
  private:
   friend class IsolateConfiguration;
@@ -471,10 +470,6 @@ class DartIsolate : public UIDartState {
   // |Dart_IsolateInitializeCallback|
   static bool DartIsolateInitializeCallback(void** child_callback_data,
                                             char** error);
-
-  static bool DartIsolateInitializeCallbackImpl(void** child_callback_data,
-                                                char** error,
-                                                bool is_platform_isolate);
 
   static Dart_Isolate DartCreateAndStartServiceIsolate(
       const char* package_root,

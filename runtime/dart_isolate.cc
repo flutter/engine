@@ -22,6 +22,7 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/isolate_configuration.h"
+#include "flutter/runtime/runtime_controller.h"
 #include "fml/message_loop_task_queues.h"
 #include "fml/task_source.h"
 #include "fml/time/time_point.h"
@@ -278,19 +279,44 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   return (*root_isolate_data)->GetWeakIsolatePtr();
 }
 
-void DartIsolate::CreatePlatformIsolate(Dart_Isolate parent_isolate,
-                                        Dart_Handle entry_point,
+bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
                                         const std::string& debug_name) {
-  std::shared_ptr<DartIsolate>* parent_isolate_data =
-      static_cast<std::shared_ptr<DartIsolate>*>(
-          Dart_IsolateData(parent_isolate));
-  const TaskRunners& task_runners = (*parent_isolate_data)->GetTaskRunners();
+  PlatformIsolateManager* platform_isolate_manager =
+      DartVMRef::GetRunningVM()->GetPlatformIsolateManager();
+  if (platform_isolate_manager->IsShutdown()) {
+    // Not allowed to spawn new platform isolates.
+    return false;
+  }
+
+  Dart_EnterScope();
+  Dart_PersistentHandle entry_point_handle =
+      Dart_NewPersistentHandle(entry_point);
+  Dart_ExitScope();
+
+  Dart_Isolate parent_isolate = isolate();
+  Dart_ExitIsolate();  // Exit parent_isolate.
+
+  // PlatformConfigurationClient* client = platform_configuration()->client();
+  // RuntimeController* runtime = (RuntimeController*)(client);
+  // std::cout << "RuntimeController: " << (void*)runtime << std::endl;
+
+  // TODO: This doesn't work for platform isolates spawned from other child
+  //     isolates, since their TaskRunners are null. Need a better way of
+  //     getting them. Maybe child isolates should have non-null TaskRunners?
+  const TaskRunners& task_runners = GetTaskRunners();
+  /*((RuntimeController*)platform_configuration()->client())
+      ->GetRootIsolate()
+      .lock()
+      ->GetTaskRunners();*/
   auto isolate_group_data =
       std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
           std::shared_ptr<DartIsolateGroupData>(
               *static_cast<std::shared_ptr<DartIsolateGroupData>*>(
-                  Dart_IsolateGroupData((*parent_isolate_data)->isolate()))));
+                  Dart_IsolateGroupData(parent_isolate))));
+
+  std::cout << "Task runner: "
+            << (void*)task_runners.GetPlatformTaskRunner().get() << std::endl;
 
   UIDartState::Context context(task_runners);
   context.advisory_script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
@@ -331,24 +357,24 @@ void DartIsolate::CreatePlatformIsolate(Dart_Isolate parent_isolate,
       error.error(), isolate_maker);
 
   if (error) {
-    // TODO: Handle error.
     FML_LOG(ERROR) << "CreatePlatformIsolate failed: " << error.str();
+    return false;
   }
 
-  // TODO: Avoid exiting in new_isolate CreateDartIsolateGroup?
-  Dart_EnterIsolate(new_isolate);
-
-  Dart_EnterScope();
-  Dart_PersistentHandle entry_point_handle =
-      Dart_NewPersistentHandle(entry_point);
-  Dart_ExitScope();
-
-  Dart_ExitIsolate();  // Exit new_isolate.
+  platform_isolate_manager->RegisterPlatformIsolate(new_isolate);
 
   fml::RefPtr<fml::TaskRunner> platform_task_runner =
       task_runners.GetPlatformTaskRunner();
   platform_task_runner->PostTask([entry_point_handle, new_isolate,
-                                  isolate_ready_port_id]() {
+                                  isolate_ready_port_id,
+                                  platform_isolate_manager]() {
+    PlatformIsolateManager* platform_isolate_manager =
+        DartVMRef::GetRunningVM()->GetPlatformIsolateManager();
+    if (platform_isolate_manager->IsShutdown()) {
+      // Shutdown happened in between this task being posted, and it running.
+      // new_isolate has already been shut down. Do nothing.
+      return;
+    }
     Dart_EnterIsolate(new_isolate);
     Dart_EnterScope();
     std::cout << "Hello from the platform task runner " << GetCurrentThreadId()
@@ -365,6 +391,10 @@ void DartIsolate::CreatePlatformIsolate(Dart_Isolate parent_isolate,
     Dart_ExitScope();
     Dart_ExitIsolate();  // Exit new_isolate.
   });
+
+  Dart_EnterIsolate(parent_isolate);
+
+  return true;
 }
 
 DartIsolate::DartIsolate(const Settings& settings,
@@ -1037,13 +1067,6 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
 // |Dart_IsolateInitializeCallback|
 bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
                                                 char** error) {
-  return DartIsolateInitializeCallbackImpl(child_callback_data, error,
-                                           /* is_platform_isolate= */ false);
-}
-
-bool DartIsolate::DartIsolateInitializeCallbackImpl(void** child_callback_data,
-                                                    char** error,
-                                                    bool is_platform_isolate) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateInitializeCallback");
   Dart_Isolate isolate = Dart_CurrentIsolate();
   if (isolate == nullptr) {
@@ -1069,9 +1092,9 @@ bool DartIsolate::DartIsolateInitializeCallbackImpl(void** child_callback_data,
   auto embedder_isolate = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(
           new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
-                          false,                // is_root_isolate
-                          is_platform_isolate,  // is_platform_isolate
-                          context)));           // context
+                          false,       // is_root_isolate
+                          false,       // is_platform_isolate
+                          context)));  // context
 
   // root isolate should have been created via CreateRootIsolate
   if (!InitializeIsolate(*embedder_isolate, isolate, error)) {
@@ -1214,6 +1237,12 @@ void DartIsolate::OnShutdownCallback() {
     if (!Dart_IsNull(sticky_error) && !Dart_IsFatalError(sticky_error)) {
       FML_LOG(ERROR) << Dart_GetError(sticky_error);
     }
+  }
+
+  if (is_platform_isolate_) {
+    PlatformIsolateManager* platform_isolate_manager =
+        DartVMRef::GetRunningVM()->GetPlatformIsolateManager();
+    platform_isolate_manager->RemovePlatformIsolate(isolate());
   }
 
   shutdown_callbacks_.clear();

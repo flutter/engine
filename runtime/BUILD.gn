@@ -73,6 +73,8 @@ source_set("runtime") {
     "isolate_configuration.h",
     "platform_data.cc",
     "platform_data.h",
+    "platform_isolate_manager.cc",
+    "platform_isolate_manager.h",
     "ptrace_check.h",
     "runtime_controller.cc",
     "runtime_controller.h",
