@@ -97,7 +97,20 @@ class NoTextInputType extends EngineInputType {
   String get inputmodeAttribute => 'none';
 }
 
-/// Multi-line no text input.
+/// Multi-line no text input from system virtual keyboard.
+///
+/// Use this for inputting multiple lines with a customized keyboard.
+///
+/// When Flutter uses a custom virtual keyboard, it sends [TextInputType.none]
+/// with a [forceMultiline] flag to block the system virtual keyboard.
+///
+/// For [MultilineNoTextInputType] (mapped to [TextInputType.none] with 
+/// [forceMultiline] = true), it creates a <textarea> element with the 
+/// inputmode="none" attribute.
+///
+/// For [NoTextInputType] (mapped to [TextInputType.none] with 
+/// [forceMultiline] = false), it creates an <input> element with the 
+/// inputmode="none" attribute.
 class MultilineNoTextInputType extends EngineInputType {
   const MultilineNoTextInputType();
 
