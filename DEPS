@@ -635,8 +635,8 @@ deps = {
    Var('flutter_git') + '/third_party/abseil-cpp.git' + '@' + '61833f2c057a2b1993d871e8c51156aed1dd4354',
 
    # Dart packages
-  'src/third_party/pkg/archive':
-  Var('github_git') + '/brendan-duncan/archive.git' + '@' + 'a478442db1e16582bbd4336dd5d4c23cfdac8c75', # 3.4.6
+  'src/flutter/third_party/pkg/archive':
+  Var('chromium_git') + '/external/github.com/brendan-duncan/archive.git' + '@' + 'a478442db1e16582bbd4336dd5d4c23cfdac8c75', # 3.4.6
 
   'src/third_party/pkg/equatable':
   Var('github_git') + '/felangel/equatable.git' + '@' + '2117551ff3054f8edb1a58f63ffe1832a8d25623', # 2.0.5
