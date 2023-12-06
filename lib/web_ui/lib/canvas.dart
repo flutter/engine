@@ -130,8 +130,8 @@ typedef PictureEventCallback = void Function(Picture picture);
 abstract class Picture {
   static PictureEventCallback? onCreate;
   static PictureEventCallback? onDispose;
-  Future<Image> toImage(int width, int height);
-  Image toImageSync(int width, int height);
+  Future<Image> toImage(int width, int height, {double pixelRatio = 1.0});
+  Image toImageSync(int width, int height, {double pixelRatio = 1.0});
   void dispose();
   bool get debugDisposed;
   int get approximateBytesUsed;

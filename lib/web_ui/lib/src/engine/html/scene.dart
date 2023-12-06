@@ -21,12 +21,12 @@ class SurfaceScene implements ui.Scene {
   /// Creates a raster image representation of the current state of the scene.
   /// This is a slow operation that is performed on a background thread.
   @override
-  Future<ui.Image> toImage(int width, int height) {
+  Future<ui.Image> toImage(int width, int height, {double pixelRatio = 1.0}) {
     throw UnsupportedError('toImage is not supported on the Web');
   }
 
   @override
-  ui.Image toImageSync(int width, int height) {
+  ui.Image toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     throw UnsupportedError('toImageSync is not supported on the Web');
   }
 

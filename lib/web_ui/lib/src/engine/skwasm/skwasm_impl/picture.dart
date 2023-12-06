@@ -13,7 +13,8 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePict
     SkwasmFinalizationRegistry<RawPicture>(pictureDispose);
 
   @override
-  Future<ui.Image> toImage(int width, int height) async => toImageSync(width, height);
+  Future<ui.Image> toImage(int width, int height, {double pixelRatio = 1.0}) async =>
+    toImageSync(width, height, pixelRatio: pixelRatio);
 
   @override
   int get approximateBytesUsed => pictureApproximateBytesUsed(handle);
@@ -25,7 +26,7 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePict
   }
 
   @override
-  ui.Image toImageSync(int width, int height) =>
+  ui.Image toImageSync(int width, int height, {double pixelRatio = 1.0}) =>
     SkwasmImage(imageCreateFromPicture(handle, width, height));
 
   @override

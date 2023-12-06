@@ -21,21 +21,21 @@ class LayerScene implements ui.Scene {
   void dispose() {}
 
   @override
-  Future<ui.Image> toImage(int width, int height) {
+  Future<ui.Image> toImage(int width, int height, {double pixelRatio = 1.0}) {
     final ui.Picture picture = layerTree.flatten(ui.Size(
       width.toDouble(),
       height.toDouble(),
     ));
-    return picture.toImage(width, height);
+    return picture.toImage(width, height, pixelRatio: pixelRatio);
   }
 
   @override
-  ui.Image toImageSync(int width, int height) {
+  ui.Image toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     final ui.Picture picture = layerTree.flatten(ui.Size(
       width.toDouble(),
       height.toDouble(),
     ));
-    return picture.toImageSync(width, height);
+    return picture.toImageSync(width, height, pixelRatio: pixelRatio);
   }
 }
 

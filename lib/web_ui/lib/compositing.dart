@@ -5,8 +5,8 @@
 part of ui;
 
 abstract class Scene {
-  Future<Image> toImage(int width, int height);
-  Image toImageSync(int width, int height);
+  Future<Image> toImage(int width, int height, {double pixelRatio = 1.0});
+  Image toImageSync(int width, int height, {double pixelRatio = 1.0});
   void dispose();
 }
 

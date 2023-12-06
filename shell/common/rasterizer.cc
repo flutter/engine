@@ -895,17 +895,19 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   switch (type) {
     case ScreenshotType::SkiaPicture:
       format = "ScreenshotType::SkiaPicture";
-      data = ScreenshotLayerTreeAsPicture(layer_tree, pixel_ratio, *compositor_context_);
+      data = ScreenshotLayerTreeAsPicture(layer_tree, pixel_ratio,
+                                          *compositor_context_);
       break;
     case ScreenshotType::UncompressedImage:
       format = "ScreenshotType::UncompressedImage";
-      data = ScreenshotLayerTreeAsImage(layer_tree, pixel_ratio, *compositor_context_,
-                                        surface_context, false);
+      data = ScreenshotLayerTreeAsImage(layer_tree, pixel_ratio,
+                                        *compositor_context_, surface_context,
+                                        false);
       break;
     case ScreenshotType::CompressedImage:
       format = "ScreenshotType::CompressedImage";
-      data = ScreenshotLayerTreeAsImage(layer_tree, pixel_ratio, *compositor_context_,
-                                        surface_context, true);
+      data = ScreenshotLayerTreeAsImage(
+          layer_tree, pixel_ratio, *compositor_context_, surface_context, true);
       break;
     case ScreenshotType::SurfaceData: {
       Surface::SurfaceData surface_data = surface_->GetSurfaceData();

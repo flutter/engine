@@ -91,12 +91,12 @@ class CkPicture implements ScenePicture {
   }
 
   @override
-  Future<ui.Image> toImage(int width, int height) async {
-    return toImageSync(width, height);
+  Future<ui.Image> toImage(int width, int height, {double pixelRatio = 1.0}) async {
+    return toImageSync(width, height, pixelRatio: pixelRatio);
   }
 
   @override
-  CkImage toImageSync(int width, int height) {
+  CkImage toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
 
     final Surface surface = CanvasKitRenderer.instance.pictureToImageSurface;

@@ -55,7 +55,7 @@ class EnginePicture implements ui.Picture {
   EnginePicture(this.recordingCanvas, this.cullRect);
 
   @override
-  Future<ui.Image> toImage(int width, int height) async {
+  Future<ui.Image> toImage(int width, int height, {double pixelRatio = 1.0}) async {
     final ui.Rect imageRect = ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble());
     final BitmapCanvas canvas = BitmapCanvas.imageData(imageRect);
     recordingCanvas!.apply(canvas, imageRect);
@@ -91,7 +91,7 @@ class EnginePicture implements ui.Picture {
   }
 
   @override
-  ui.Image toImageSync(int width, int height) {
+  ui.Image toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     throw UnsupportedError('toImageSync is not supported on the HTML backend. Use drawPicture instead, or toImage.');
   }
 

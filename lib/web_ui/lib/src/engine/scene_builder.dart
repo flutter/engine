@@ -52,12 +52,12 @@ class EngineScene implements ui.Scene {
   }
 
   @override
-  Future<ui.Image> toImage(int width, int height) async {
-    return toImageSync(width, height);
+  Future<ui.Image> toImage(int width, int height, {double pixelRatio = 1.0}) async {
+    return toImageSync(width, height, pixelRatio: pixelRatio);
   }
 
   @override
-  ui.Image toImageSync(int width, int height) {
+  ui.Image toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Rect canvasRect = ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
     final ui.Canvas canvas = ui.Canvas(recorder, canvasRect);
@@ -66,7 +66,7 @@ class EngineScene implements ui.Scene {
     for (final PictureSlice slice in rootLayer.slices.whereType<PictureSlice>()) {
       canvas.drawPicture(slice.picture);
     }
-    return recorder.endRecording().toImageSync(width, height);
+    return recorder.endRecording().toImageSync(width, height, pixelRatio: pixelRatio);
   }
 }
 
