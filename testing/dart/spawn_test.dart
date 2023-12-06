@@ -84,5 +84,5 @@ void main() {
     final Pointer<Utf8> fakePath = 'fake-path'.toNativeUtf8();
     expect(_loadLibraryFromKernel(fakePath), null);
     malloc.free(fakePath);
-  }, skip: kProfileMode || kReleaseMode);
+  }, skip: kProfileMode || kReleaseMode); // ignore: avoid_redundant_argument_values
 }
