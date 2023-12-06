@@ -189,8 +189,7 @@ void testMain() {
       CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // Transformations happen on the slot element.
-      DomElement slotHost =
-          sceneHost.querySelector('flt-platform-view-slot')!;
+      DomElement slotHost = sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -715,12 +714,23 @@ void testMain() {
         CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       }
 
-      final DomNode skPathDefs = sceneHost.querySelector('#sk_path_defs')!;
+      DomElement? skPathDefs = sceneHost.querySelector('#sk_path_defs');
 
-      expect(skPathDefs.childNodes, hasLength(0));
+      expect(
+        skPathDefs,
+        isNull,
+        reason: 'Rasterizer should not make SVG paths node before first render',
+      );
 
       renderTestScene();
-      expect(skPathDefs.childNodes, hasLength(1));
+
+      skPathDefs = sceneHost.querySelector('#sk_path_defs');
+      expect(
+        skPathDefs,
+        isNotNull,
+        reason: 'Should have created SVG paths after rendering the scene',
+      );
+      expect(skPathDefs!.childNodes, hasLength(1));
 
       await Future<void>.delayed(Duration.zero);
       renderTestScene();

@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
+import '../engine.dart' show DimensionsProvider, registerHotRestartListener;
 import 'display.dart';
 import 'dom.dart';
 import 'mouse/context_menu.dart';
@@ -91,8 +91,6 @@ base class EngineFlutterView implements ui.FlutterView {
     isDisposed = true;
     dimensionsProvider.close();
     dom.rootElement.remove();
-    // TODO(harryterkelsen): What should we do about this in multi-view?
-    renderer.clearFragmentProgramCache();
     semantics.reset();
   }
 

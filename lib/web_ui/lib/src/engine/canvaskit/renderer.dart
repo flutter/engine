@@ -66,6 +66,7 @@ class CanvasKitRenderer implements Renderer {
       }
       _instance = this;
     }();
+    registerHotRestartListener(debugClear);
     return _initialized;
   }
 
@@ -425,6 +426,8 @@ class CanvasKitRenderer implements Renderer {
       rasterizer.renderCanvasFactory.debugClear();
       rasterizer.viewEmbedder.debugClear();
     }
+    _rasterizers.clear();
+    clearFragmentProgramCache();
   }
 
   @override
