@@ -77,8 +77,7 @@ struct ImpellerVulkanContextHolder {
 };
 
 bool ImpellerVulkanContextHolder::Initialize(bool enable_validation) {
-  vulkan_proc_table =
-      fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH);
+  vulkan_proc_table = vulkan::VulkanProcTable::CreateForCurrentProcess();
   if (!vulkan_proc_table->NativeGetInstanceProcAddr()) {
     FML_LOG(ERROR) << "Could not load Swiftshader library.";
     return false;

@@ -51,6 +51,8 @@ class VulkanProcTable : public fml::RefCountedThreadSafe<VulkanProcTable> {
   explicit VulkanProcTable(PFN_vkGetInstanceProcAddr get_instance_proc_addr);
   ~VulkanProcTable();
 
+  static fml::RefPtr<VulkanProcTable> CreateForCurrentProcess();
+
   bool HasAcquiredMandatoryProcAddresses() const;
 
   bool IsValid() const;
