@@ -25,7 +25,7 @@ static std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
 
   ShaderBundleConfig bundle;
   for (auto& [shader_name, shader_value] : json.items()) {
-    if (bundle.find(shader_name) == bundle.end()) {
+    if (bundle.find(shader_name) != bundle.end()) {
       std::cerr << "Duplicate shader \"" << shader_name << "\"." << std::endl;
       return std::nullopt;
     }
@@ -49,7 +49,7 @@ static std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
                 << "\": Missing required \"type\" field. \"" << std::endl;
       return std::nullopt;
     }
-    shader.type = shader_value["type"];
+    shader.type = SourceTypeFromString(shader_value["type"]);
     if (shader.type == SourceType::kUnknown) {
       std::cerr << "Invalid shader entry \"" << shader_name
                 << "\": Shader type \"" << shader_value["type"]
@@ -161,7 +161,7 @@ bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
     if (!shader) {
       return false;
     }
-    shader_bundle.shaders.push_back(shader);
+    shader_bundle.shaders.push_back(std::move(shader));
   }
 
   // --------------------------------------------------------------------------

@@ -61,7 +61,7 @@ bool TargetPlatformIsVulkan(TargetPlatform platform);
 
 SourceType SourceTypeFromFileName(const std::string& file_name);
 
-SourceType SourceTypeFromString(const std::string& name);
+SourceType SourceTypeFromString(std::string name);
 
 std::string SourceTypeToString(SourceType type);
 
