@@ -102,7 +102,7 @@ class FlutterWindowsEngine {
   bool Run(std::string_view entrypoint);
 
   // Returns true if the engine is currently running.
-  bool running() { return engine_ != nullptr; }
+  virtual bool running() const { return engine_ != nullptr; }
 
   // Stops the engine. This invalidates the pointer returned by engine().
   //
@@ -141,7 +141,9 @@ class FlutterWindowsEngine {
 
   // The ANGLE surface manager object. If this is nullptr, then we are
   // rendering using software instead of OpenGL.
-  AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
+  AngleSurfaceManager* surface_manager() const {
+    return surface_manager_.get();
+  }
 
   WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
@@ -201,7 +203,7 @@ class FlutterWindowsEngine {
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
   // Posts the given callback onto the raster thread.
-  virtual bool PostRasterThreadTask(fml::closure callback);
+  virtual bool PostRasterThreadTask(fml::closure callback) const;
 
   // Invoke on the embedder's vsync callback to schedule a frame.
   void OnVsync(intptr_t baton);
@@ -360,9 +362,6 @@ class FlutterWindowsEngine {
   // The texture registrar.
   std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;
 
-  // Resolved OpenGL functions used by external texture implementations.
-  GlProcs gl_procs_ = {};
-
   // An object used for intializing Angle and creating / destroying render
   // surfaces. Surface creation functionality requires a valid render_target.
   // May be nullptr if ANGLE failed to initialize.
@@ -421,6 +420,8 @@ class FlutterWindowsEngine {
   std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;
 
   std::shared_ptr<WindowsProcTable> windows_proc_table_;
+
+  std::shared_ptr<GlProcTable> gl_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };
