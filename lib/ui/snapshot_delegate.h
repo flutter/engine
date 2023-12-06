@@ -52,7 +52,8 @@ class SnapshotDelegate {
   ///             is available.
   virtual std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
-      const SkImageInfo& image_info) = 0;
+      const SkImageInfo& image_info,
+      float pixel_ratio) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Gets the registry of external textures currently in use by the
@@ -68,7 +69,8 @@ class SnapshotDelegate {
   virtual GrDirectContext* GetGrContext() = 0;
 
   virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                            SkISize picture_size) = 0;
+                                            SkISize picture_size,
+                                            float pixel_ratio) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;
 };

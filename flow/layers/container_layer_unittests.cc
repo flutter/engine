@@ -21,6 +21,8 @@ namespace testing {
 
 using ContainerLayerTest = LayerTest;
 
+static constexpr float kPixelRatio = 1.0f;
+
 #ifndef NDEBUG
 TEST_F(ContainerLayerTest, LayerWithParentHasPlatformView) {
   auto layer = std::make_shared<ContainerLayer>();
@@ -325,7 +327,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   {
     // frame1
     use_mock_raster_cache();
-    preroll_context()->raster_cache->BeginFrame();
+    preroll_context()->raster_cache->BeginFrame(kPixelRatio);
     layer->Preroll(preroll_context());
     preroll_context()->raster_cache->EvictUnusedCacheEntries();
     // Cache the cacheable entries
@@ -365,7 +367,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     // new frame the layer tree will create new PrerollContext, so in here we
     // clear the cached_entries
     preroll_context()->raster_cached_entries->clear();
-    preroll_context()->raster_cache->BeginFrame();
+    preroll_context()->raster_cache->BeginFrame(kPixelRatio);
     layer->Preroll(preroll_context());
     preroll_context()->raster_cache->EvictUnusedCacheEntries();
 
@@ -408,7 +410,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     // frame3
     // new frame the layer tree will create new PrerollContext, so in here we
     // clear the cached_entries
-    preroll_context()->raster_cache->BeginFrame();
+    preroll_context()->raster_cache->BeginFrame(kPixelRatio);
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context());
     preroll_context()->raster_cache->EvictUnusedCacheEntries();
@@ -448,7 +450,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
   }
 
   {
-    preroll_context()->raster_cache->BeginFrame();
+    preroll_context()->raster_cache->BeginFrame(kPixelRatio);
     // frame4
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context());
@@ -458,7 +460,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     preroll_context()->raster_cache->EndFrame();
 
     // frame5
-    preroll_context()->raster_cache->BeginFrame();
+    preroll_context()->raster_cache->BeginFrame(kPixelRatio);
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context());
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),
@@ -466,7 +468,7 @@ TEST_F(ContainerLayerTest, RasterCacheTest) {
     preroll_context()->raster_cache->EndFrame();
 
     // frame6
-    preroll_context()->raster_cache->BeginFrame();
+    preroll_context()->raster_cache->BeginFrame(kPixelRatio);
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context());
     LayerTree::TryToRasterCache(*(preroll_context()->raster_cached_entries),

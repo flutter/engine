@@ -3151,7 +3151,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           // the following two, so we'll prune those manually...
           if (paint.getBlendMode() != DlBlendMode::kDst) {
             builder.DrawDisplayList(TestDisplayList1, paint.getOpacity());
-            builder.DrawShadow(kTestPath1, paint.getColor(), 1, true, 1);
+            builder.DrawShadow(kTestPath1, paint.getColor(), 1, true);
           }
         },
         expected_op_count);

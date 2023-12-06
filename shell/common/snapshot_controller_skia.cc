@@ -131,10 +131,12 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
 
 sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
-    SkISize size) {
-  return DoMakeRasterSnapshot(size, [display_list](SkCanvas* canvas) {
-    DlSkCanvasAdapter(canvas).DrawDisplayList(display_list);
-  });
+    SkISize size,
+    float pixel_ratio) {
+  return DoMakeRasterSnapshot(
+      size, [display_list, pixel_ratio](SkCanvas* canvas) {
+        DlSkCanvasAdapter(canvas, pixel_ratio).DrawDisplayList(display_list);
+      });
 }
 
 sk_sp<SkImage> SnapshotControllerSkia::ConvertToRasterImage(

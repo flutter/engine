@@ -884,7 +884,7 @@ void DisplayListStreamDispatcher::drawShadow(const SkPath& path,
            << color << ", "
            << elevation << ", "
            << transparent_occluder << ", "
-           << dpr
+           << dpr << ", "
            << ");" << std::endl;
 }
 // clang-format on

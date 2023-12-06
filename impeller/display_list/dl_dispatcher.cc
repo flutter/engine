@@ -1054,7 +1054,7 @@ void DlDispatcher::drawShadow(const SkPath& path,
                               const flutter::DlColor color,
                               const SkScalar elevation,
                               bool transparent_occluder,
-                              SkScalar dpr) {
+                              const SkScalar dpr) {
   Color spot_color = skia_conversions::ToColor(color);
   spot_color.alpha *= 0.25;
 

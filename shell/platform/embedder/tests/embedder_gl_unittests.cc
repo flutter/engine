@@ -4514,7 +4514,7 @@ TEST_F(EmbedderTest, ExternalTextureGLRefreshedTooOften) {
   EmbedderExternalTextureGL texture(1, callback);
 
   auto skia_surface = surface.GetOnscreenSurface();
-  DlSkCanvasAdapter canvas(skia_surface->getCanvas());
+  DlSkCanvasAdapter canvas(skia_surface->getCanvas(), /*pixel_ratio=*/1.0);
 
   Texture* texture_ = &texture;
   Texture::PaintContext ctx{

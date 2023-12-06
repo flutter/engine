@@ -57,7 +57,7 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
 
   const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
   sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
-  DlSkCanvasAdapter canvas(surface->getCanvas());
+  DlSkCanvasAdapter canvas(surface->getCanvas(), /*pixel_ratio=*/1.0f);
 
   ASSERT_TRUE(surface != nullptr);
 

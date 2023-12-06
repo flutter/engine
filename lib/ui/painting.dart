@@ -6252,7 +6252,7 @@ abstract class Picture {
   /// The returned image will be `width` pixels wide and `height` pixels high.
   /// The picture is rasterized within the 0 (left), 0 (top), `width` (right),
   /// `height` (bottom) bounds. Content outside these bounds is clipped.
-  Future<Image> toImage(int width, int height);
+  Future<Image> toImage(int width, int height, {double pixelRatio = 1.0});
 
   /// Synchronously creates a handle to an image of this picture.
   ///
@@ -6271,7 +6271,7 @@ abstract class Picture {
   ///
   /// If no GPU context is available, the image will be rasterized on the CPU.
   /// {@endtemplate}
-  Image toImageSync(int width, int height);
+  Image toImageSync(int width, int height, {double pixelRatio = 1.0});
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -6298,13 +6298,13 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
   _NativePicture._();
 
   @override
-  Future<Image> toImage(int width, int height) {
+  Future<Image> toImage(int width, int height, {double pixelRatio = 1.0}) {
     assert(!_disposed);
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
     return _futurize(
-      (_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
+      (_Callback<Image?> callback) => _toImage(width, height, pixelRatio, (_Image? image) {
         if (image == null) {
           callback(null);
         } else {
@@ -6314,23 +6314,23 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
     );
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Picture::toImage')
-  external String? _toImage(int width, int height, void Function(_Image?) callback);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Picture::toImage')
+  external String? _toImage(int width, int height, double pixelRatio, void Function(_Image?) callback);
 
   @override
-  Image toImageSync(int width, int height) {
+  Image toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     assert(!_disposed);
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
 
     final _Image image = _Image._();
-    _toImageSync(width, height, image);
+    _toImageSync(width, height, pixelRatio, image);
     return Image._(image, image.width, image.height);
   }
 
-  @Native<Void Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Picture::toImageSync')
-  external void _toImageSync(int width, int height, _Image outImage);
+  @Native<Void Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Picture::toImageSync')
+  external void _toImageSync(int width, int height, double pixelRatio, _Image outImage);
 
   @override
   void dispose() {

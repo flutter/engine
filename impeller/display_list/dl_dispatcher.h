@@ -218,7 +218,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
                   const flutter::DlColor color,
                   const SkScalar elevation,
                   bool transparent_occluder,
-                  SkScalar dpr) override;
+                  const SkScalar dpr) override;
 
  private:
   Paint paint_;

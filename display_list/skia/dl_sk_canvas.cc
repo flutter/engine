@@ -337,10 +337,9 @@ void DlSkCanvasAdapter::DrawTextFrame(
 void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
                                    const DlColor color,
                                    const SkScalar elevation,
-                                   bool transparent_occluder,
-                                   SkScalar dpr) {
+                                   bool transparent_occluder) {
   DlSkCanvasDispatcher::DrawShadow(delegate_, path, color, elevation,
-                                   transparent_occluder, dpr);
+                                   transparent_occluder, pixel_ratio_);
 }
 
 void DlSkCanvasAdapter::Flush() {

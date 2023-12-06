@@ -20,6 +20,8 @@
 namespace flutter {
 namespace testing {
 
+static constexpr float kPixelRatio = 1.0f;
+
 DlPaint GetPaintForRun(unsigned attributes) {
   DlPaint paint;
 
@@ -99,7 +101,7 @@ void BM_DrawLine(benchmark::State& state,
 
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   state.counters["DrawCallCount"] = kLinesToDraw;
   for (size_t i = 0; i < kLinesToDraw; i++) {
@@ -137,7 +139,7 @@ void BM_DrawRect(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   // As rects have SkScalar dimensions, we want to ensure that we also
   // draw rects with non-integer position and size
@@ -186,7 +188,7 @@ void BM_DrawOval(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkRect rect = SkRect::MakeXYWH(0, 0, length * 1.5f, length);
   const SkScalar offset = 0.5f;
@@ -232,7 +234,7 @@ void BM_DrawCircle(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkScalar radius = length / 2.0f;
   const SkScalar offset = 0.5f;
@@ -281,7 +283,7 @@ void BM_DrawRRect(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkVector radii[4] = {};
   switch (type) {
@@ -362,7 +364,7 @@ void BM_DrawDRRect(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkVector radii[4] = {};
   switch (type) {
@@ -437,7 +439,7 @@ void BM_DrawArc(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkScalar starting_angle = 0.0f;
   SkScalar offset = 0.5f;
@@ -651,7 +653,7 @@ void BM_DrawPath(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkPath path;
 
@@ -789,7 +791,7 @@ void BM_DrawVertices(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkPoint center = SkPoint::Make(length / 2.0f, length / 2.0f);
 
@@ -898,7 +900,7 @@ void BM_DrawPoints(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   size_t point_count = state.range(0);
   state.SetComplexityN(point_count);
@@ -949,7 +951,7 @@ void BM_DrawImage(benchmark::State& state,
   size_t canvas_size = 2 * bitmap_size;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   sk_sp<SkImage> image;
   std::shared_ptr<DlSurfaceInstance> offscreen_instance;
@@ -1032,7 +1034,7 @@ void BM_DrawImageRect(benchmark::State& state,
   size_t canvas_size = 2 * bitmap_size;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   sk_sp<SkImage> image;
   std::shared_ptr<DlSurfaceInstance> offscreen_instance;
@@ -1119,7 +1121,7 @@ void BM_DrawImageNine(benchmark::State& state,
   size_t canvas_size = 2 * bitmap_size;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkIRect center = SkIRect::MakeXYWH(bitmap_size / 4, bitmap_size / 4,
                                      bitmap_size / 2, bitmap_size / 2);
@@ -1194,7 +1196,7 @@ void BM_DrawTextBlob(benchmark::State& state,
   size_t canvas_size = kFixedCanvasSize;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   state.counters["DrawCallCount_Varies"] = draw_calls;
   state.counters["GlyphCount"] = draw_calls;
@@ -1240,7 +1242,7 @@ void BM_DrawShadow(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   SkPath path;
 
@@ -1267,10 +1269,8 @@ void BM_DrawShadow(benchmark::State& state,
   float elevation = state.range(0);
   state.counters["DrawCallCount"] = 1;
 
-  // We can hardcode dpr to 1.0f as we're varying elevation, and dpr is only
-  // ever used in conjunction with elevation.
   builder.DrawShadow(path, DlColor(SK_ColorBLUE), elevation,
-                     transparent_occluder, 1.0f);
+                     transparent_occluder);
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.
@@ -1305,7 +1305,7 @@ void BM_SaveLayer(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), kPixelRatio);
 
   size_t save_layer_calls = state.range(0);
 

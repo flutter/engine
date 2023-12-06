@@ -91,8 +91,9 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
+                                       float pixel_ratio,
                                        bool prepare_rtree)
-    : tracker_(cull_rect, SkMatrix::I()) {
+    : pixel_ratio_(pixel_ratio), tracker_(cull_rect, SkMatrix::I()) {
   if (prepare_rtree) {
     accumulator_ = std::make_unique<RTreeBoundsAccumulator>();
   } else {
@@ -1340,17 +1341,16 @@ void DisplayListBuilder::DrawTextFrame(
 void DisplayListBuilder::DrawShadow(const SkPath& path,
                                     const DlColor color,
                                     const SkScalar elevation,
-                                    bool transparent_occluder,
-                                    SkScalar dpr) {
+                                    bool transparent_occluder) {
   OpResult result = PaintResult(DlPaint(color));
   if (result != OpResult::kNoEffect) {
-    SkRect shadow_bounds =
-        DlCanvas::ComputeShadowBounds(path, elevation, dpr, GetTransform());
+    SkRect shadow_bounds = DlCanvas::ComputeShadowBounds(
+        path, elevation, pixel_ratio_, GetTransform());
     if (AccumulateOpBounds(shadow_bounds, kDrawShadowFlags)) {
       transparent_occluder  //
           ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation,
-                                                  dpr)
-          : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
+                                                  pixel_ratio_)
+          : Push<DrawShadowOp>(0, 1, path, color, elevation, pixel_ratio_);
       UpdateLayerOpacityCompatibility(false);
       UpdateLayerResult(result);
     }

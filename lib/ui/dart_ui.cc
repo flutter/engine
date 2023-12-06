@@ -276,8 +276,8 @@ typedef CanvasPath Path;
   V(PictureRecorder, endRecording, 2)                  \
   V(Picture, GetAllocationSize, 1)                     \
   V(Picture, dispose, 1)                               \
-  V(Picture, toImage, 4)                               \
-  V(Picture, toImageSync, 4)                           \
+  V(Picture, toImage, 5)                               \
+  V(Picture, toImageSync, 5)                           \
   V(SceneBuilder, addPerformanceOverlay, 6)            \
   V(SceneBuilder, addPicture, 5)                       \
   V(SceneBuilder, addPlatformView, 6)                  \
@@ -299,8 +299,8 @@ typedef CanvasPath Path;
   V(SceneBuilder, setCheckerboardRasterCacheImages, 2) \
   V(SceneBuilder, setRasterizerTracingThreshold, 2)    \
   V(Scene, dispose, 1)                                 \
-  V(Scene, toImage, 4)                                 \
-  V(Scene, toImageSync, 4)                             \
+  V(Scene, toImage, 5)                                 \
+  V(Scene, toImageSync, 5)                             \
   V(SemanticsUpdateBuilder, build, 2)                  \
   V(SemanticsUpdateBuilder, updateCustomAction, 5)     \
   V(SemanticsUpdateBuilder, updateNode, 36)            \

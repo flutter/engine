@@ -105,7 +105,6 @@ class MockCanvas final : public DlCanvas {
     DlColor color;
     SkScalar elevation;
     bool transparent_occluder;
-    SkScalar dpr;
   };
 
   struct ClipRectData {
@@ -280,8 +279,7 @@ class MockCanvas final : public DlCanvas {
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
-                  bool transparent_occluder,
-                  SkScalar dpr) override;
+                  bool transparent_occluder) override;
 
   void Flush() override;
 

@@ -617,11 +617,13 @@ class Rasterizer final : public SnapshotDelegate,
   // |SnapshotDelegate|
   std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
-      const SkImageInfo& image_info) override;
+      const SkImageInfo& image_info,
+      float pixel_ratio) override;
 
   // |SnapshotDelegate|
   sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                    SkISize picture_size) override;
+                                    SkISize picture_size,
+                                    float pixel_ratio) override;
 
   // |SnapshotDelegate|
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
@@ -665,9 +667,12 @@ class Rasterizer final : public SnapshotDelegate,
 
   sk_sp<SkData> ScreenshotLayerTreeAsImage(
       flutter::LayerTree* tree,
+      float pixel_ratio,
       flutter::CompositorContext& compositor_context,
       GrDirectContext* surface_context,
       bool compressed);
+
+  LayerTreeTask* GetLastSuccessfulTask(int64_t view_id);
 
   // This method starts with the frame timing recorder at build end. This
   // method might push it to raster end and get the recorded time, or abort in

@@ -31,6 +31,8 @@
 namespace flutter {
 namespace testing {
 
+constexpr float kPixelRatio = 1.0f;
+
 using EmbedderTest = testing::EmbedderTest;
 
 TEST_F(EmbedderTest, CanRenderGradientWithMetal) {
@@ -588,7 +590,7 @@ TEST_F(EmbedderTest, ExternalTextureMetalRefreshedTooOften) {
 
   auto surface = TestMetalSurface::Create(*metal_context, SkISize::Make(100, 100));
   auto skia_surface = surface->GetSurface();
-  DlSkCanvasAdapter canvas(skia_surface->getCanvas());
+  DlSkCanvasAdapter canvas(skia_surface->getCanvas(), kPixelRatio);
 
   Texture* texture_ = &texture;
   DlImageSampling sampling = DlImageSampling::kLinear;

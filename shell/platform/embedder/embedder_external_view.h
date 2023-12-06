@@ -77,9 +77,11 @@ class EmbedderExternalView {
                                           ViewIdentifier::Equal>;
 
   EmbedderExternalView(const SkISize& frame_size,
+                       const float pixel_ratio,
                        const SkMatrix& surface_transformation);
 
   EmbedderExternalView(const SkISize& frame_size,
+                       const float pixel_ratio,
                        const SkMatrix& surface_transformation,
                        ViewIdentifier view_identifier,
                        std::unique_ptr<EmbeddedViewParams> params);
@@ -113,6 +115,7 @@ class EmbedderExternalView {
   void TryEndRecording() const;
 
   const SkISize render_surface_size_;
+  const float pixel_ratio_;
   const SkMatrix surface_transformation_;
   ViewIdentifier view_identifier_;
   std::unique_ptr<EmbeddedViewParams> embedded_view_params_;

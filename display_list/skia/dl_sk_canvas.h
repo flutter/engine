@@ -18,7 +18,8 @@ namespace flutter {
 class DlSkCanvasAdapter final : public virtual DlCanvas {
  public:
   DlSkCanvasAdapter() : delegate_(nullptr) {}
-  explicit DlSkCanvasAdapter(SkCanvas* canvas) : delegate_(canvas) {}
+  explicit DlSkCanvasAdapter(SkCanvas* canvas, float pixel_ratio)
+      : delegate_(canvas), pixel_ratio_(pixel_ratio) {}
   ~DlSkCanvasAdapter() override = default;
 
   void set_canvas(SkCanvas* canvas);
@@ -152,13 +153,13 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
-                  bool transparent_occluder,
-                  SkScalar dpr) override;
+                  bool transparent_occluder) override;
 
   void Flush() override;
 
  private:
   SkCanvas* delegate_;
+  float pixel_ratio_;
 };
 
 }  // namespace flutter

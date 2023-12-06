@@ -44,7 +44,7 @@ void IOSExternalViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,
   // Properly support multi-view in the future.
   FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   FML_CHECK(platform_views_controller_);
-  platform_views_controller_->BeginFrame(frame_size);
+  platform_views_controller_->BeginFrame(frame_size, device_pixel_ratio);
 }
 
 // |ExternalViewEmbedder|

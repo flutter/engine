@@ -348,7 +348,7 @@ class EmbedderViewSlice {
 
 class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
  public:
-  explicit DisplayListEmbedderViewSlice(SkRect view_bounds);
+  DisplayListEmbedderViewSlice(SkRect view_bounds, float pixel_ratio);
   ~DisplayListEmbedderViewSlice() override = default;
 
   DlCanvas* canvas() override;

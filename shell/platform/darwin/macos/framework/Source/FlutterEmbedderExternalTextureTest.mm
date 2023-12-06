@@ -22,6 +22,8 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
+static constexpr float kPixelRatio = 1.0f;
+
 @interface TestExternalTexture : NSObject <FlutterTexture>
 
 - (nonnull instancetype)initWidth:(size_t)width
@@ -116,7 +118,7 @@ TEST_F(FlutterEmbedderExternalTextureTest, TestTextureResolution) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-  DlSkCanvasAdapter canvas(gpuSurface->getCanvas());
+  DlSkCanvasAdapter canvas(gpuSurface->getCanvas(), kPixelRatio);
   flutter::Texture::PaintContext context{
       .canvas = &canvas,
       .gr_context = grContext,
@@ -170,7 +172,7 @@ TEST_F(FlutterEmbedderExternalTextureTest, TestPopulateExternalTexture) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-  DlSkCanvasAdapter canvas(gpuSurface->getCanvas());
+  DlSkCanvasAdapter canvas(gpuSurface->getCanvas(), kPixelRatio);
   flutter::Texture::PaintContext context{
       .canvas = &canvas,
       .gr_context = grContext,
@@ -224,7 +226,7 @@ TEST_F(FlutterEmbedderExternalTextureTest, TestPopulateExternalTextureYUVA) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-  DlSkCanvasAdapter canvas(gpuSurface->getCanvas());
+  DlSkCanvasAdapter canvas(gpuSurface->getCanvas(), kPixelRatio);
   flutter::Texture::PaintContext context{
       .canvas = &canvas,
       .gr_context = grContext,
@@ -278,7 +280,7 @@ TEST_F(FlutterEmbedderExternalTextureTest, TestPopulateExternalTextureYUVA2) {
       std::make_unique<EmbedderExternalTextureMetal>(texture_id, callback);
   SkRect bounds = SkRect::MakeWH(info.width(), info.height());
   DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
-  DlSkCanvasAdapter canvas(gpuSurface->getCanvas());
+  DlSkCanvasAdapter canvas(gpuSurface->getCanvas(), kPixelRatio);
   flutter::Texture::PaintContext context{
       .canvas = &canvas,
       .gr_context = grContext,

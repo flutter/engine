@@ -16,13 +16,15 @@ class SnapshotControllerImpeller : public SnapshotController {
       : SnapshotController(delegate) {}
 
   sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                    SkISize size) override;
+                                    SkISize size,
+                                    float pixel_ratio) override;
 
   sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
 
  private:
   sk_sp<DlImage> DoMakeRasterSnapshot(const sk_sp<DisplayList>& display_list,
-                                      SkISize size);
+                                      SkISize size,
+                                      float pixel_ratio);
 
   FML_DISALLOW_COPY_AND_ASSIGN(SnapshotControllerImpeller);
 };

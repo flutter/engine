@@ -19,6 +19,8 @@ namespace testing {
 
 using DisplayListLayerTest = LayerTest;
 
+static constexpr float kPixelRatio = 1.0;
+
 #ifndef NDEBUG
 TEST_F(DisplayListLayerTest, PaintBeforePrerollInvalidDisplayListDies) {
   const SkPoint layer_offset = SkPoint::Make(0.0f, 0.0f);
@@ -592,7 +594,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
     opacity_layer->Add(layers.back());
   }
   for (size_t j = 0; j < context->raster_cache->access_threshold(); j++) {
-    context->raster_cache->BeginFrame();
+    context->raster_cache->BeginFrame(kPixelRatio);
     for (int i = 0; i < layer_count; i++) {
       context->renderable_state_flags = 0;
       layers[i]->Preroll(context);
@@ -604,7 +606,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
   LayerTree::TryToRasterCache(*context->raster_cached_entries, &paint_context(),
                               false);
   context->raster_cached_entries->clear();
-  context->raster_cache->BeginFrame();
+  context->raster_cache->BeginFrame(kPixelRatio);
   for (int i = 0; i < per_frame; i++) {
     context->renderable_state_flags = 0;
     layers[i]->Preroll(context);
@@ -622,7 +624,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
   LayerTree::TryToRasterCache(*context->raster_cached_entries, &paint_context(),
                               false);
   context->raster_cached_entries->clear();
-  context->raster_cache->BeginFrame();
+  context->raster_cache->BeginFrame(kPixelRatio);
   for (int i = 0; i < layer_count; i++) {
     context->renderable_state_flags = 0;
     layers[i]->Preroll(context);

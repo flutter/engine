@@ -6,9 +6,11 @@
 
 namespace flutter {
 
-DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
+DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds,
+                                                           float pixel_ratio) {
   builder_ = std::make_unique<DisplayListBuilder>(
       /*bounds=*/view_bounds,
+      /*pixel_ratio=*/pixel_ratio,
       /*prepare_rtree=*/true);
 }
 

@@ -30,10 +30,12 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   Dart_Handle toImageSync(uint32_t width,
                           uint32_t height,
+                          double pixelRatio,
                           Dart_Handle raw_image_handle);
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
+                      double pixelRatio,
                       Dart_Handle raw_image_handle);
 
   void dispose();
@@ -49,6 +51,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
 
   void RasterizeToImage(uint32_t width,
                         uint32_t height,
+                        float pixel_ratio,
                         Dart_Handle raw_image_handle);
 
   std::unique_ptr<LayerTree> BuildLayerTree(uint32_t width, uint32_t height);

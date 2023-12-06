@@ -28,10 +28,12 @@ class Picture : public RefCountedDartWrappable<Picture> {
 
   Dart_Handle toImage(uint32_t width,
                       uint32_t height,
+                      double pixel_ratio,
                       Dart_Handle raw_image_callback);
 
   void toImageSync(uint32_t width,
                    uint32_t height,
+                   double pixel_ratio,
                    Dart_Handle raw_image_handle);
 
   void dispose();
@@ -41,15 +43,18 @@ class Picture : public RefCountedDartWrappable<Picture> {
   static void RasterizeToImageSync(sk_sp<DisplayList> display_list,
                                    uint32_t width,
                                    uint32_t height,
+                                   float pixel_ratio,
                                    Dart_Handle raw_image_handle);
 
   static Dart_Handle RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
+                                      float pixel_ratio,
                                       Dart_Handle raw_image_callback);
 
   static Dart_Handle RasterizeLayerTreeToImage(
       std::unique_ptr<LayerTree> layer_tree,
+      float pixel_ratio,
       Dart_Handle raw_image_callback);
 
   // Callers may provide either a display list or a layer tree, but not both.
@@ -60,6 +65,7 @@ class Picture : public RefCountedDartWrappable<Picture> {
                                         std::unique_ptr<LayerTree> layer_tree,
                                         uint32_t width,
                                         uint32_t height,
+                                        float pixel_ratio,
                                         Dart_Handle raw_image_callback);
 
  private:

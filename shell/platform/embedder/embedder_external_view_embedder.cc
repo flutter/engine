@@ -73,7 +73,8 @@ void EmbedderExternalViewEmbedder::PrepareFlutterView(
   pending_surface_transformation_ = GetSurfaceTransformation();
 
   pending_views_[kRootViewIdentifier] = std::make_unique<EmbedderExternalView>(
-      pending_frame_size_, pending_surface_transformation_);
+      pending_frame_size_, pending_device_pixel_ratio_,
+      pending_surface_transformation_);
   composition_order_.push_back(kRootViewIdentifier);
 }
 
@@ -86,6 +87,7 @@ void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
 
   pending_views_[vid] = std::make_unique<EmbedderExternalView>(
       pending_frame_size_,              // frame size
+      pending_device_pixel_ratio_,      // pixel ratio
       pending_surface_transformation_,  // surface xformation
       vid,                              // view identifier
       std::move(params)                 // embedded view params
@@ -468,7 +470,6 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
   }
 
   builder.Render();
-
   // We are going to be transferring control back over to the embedder there
   // the context may be trampled upon again. Flush all operations to the
   // underlying rendering API.

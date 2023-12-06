@@ -52,6 +52,7 @@ void ShellTestExternalViewEmbedder::PrepareFlutterView(
   visited_platform_views_.clear();
   mutators_stacks_.clear();
   current_composition_params_.clear();
+  device_pixel_ratio_ = device_pixel_ratio;
 }
 
 // |ExternalViewEmbedder|
@@ -59,7 +60,8 @@ void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   SkRect view_bounds = SkRect::Make(frame_size_);
-  auto view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+  auto view = std::make_unique<DisplayListEmbedderViewSlice>(
+      view_bounds, device_pixel_ratio_);
   slices_.insert_or_assign(view_id, std::move(view));
 }
 

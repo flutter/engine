@@ -17,6 +17,8 @@ namespace flutter {
 
 using testing::MockRasterCache;
 
+static constexpr float kPixelRatio = 1.0;
+
 TEST(FrameTimingsRecorderTest, RecordVsync) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
   const auto st = fml::TimePoint::Now();
@@ -90,7 +92,7 @@ TEST(FrameTimingsRecorderTest, RecordRasterTimesWithCache) {
   using namespace std::chrono_literals;
 
   MockRasterCache cache(1, 10);
-  cache.BeginFrame();
+  cache.BeginFrame(kPixelRatio);
 
   const auto raster_start = fml::TimePoint::Now();
   recorder->RecordRasterStart(raster_start);
@@ -252,7 +254,7 @@ TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEnd) {
 TEST(FrameTimingsRecorderTest, ClonedHasSameRasterEndWithCache) {
   auto recorder = std::make_unique<FrameTimingsRecorder>();
   MockRasterCache cache(1, 10);
-  cache.BeginFrame();
+  cache.BeginFrame(kPixelRatio);
 
   const auto now = fml::TimePoint::Now();
   recorder->RecordVsync(now, now + fml::TimeDelta::FromMilliseconds(16));

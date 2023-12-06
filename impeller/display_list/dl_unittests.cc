@@ -897,8 +897,8 @@ TEST_P(DisplayListTest, CanDrawShadow) {
   for (size_t x = 0; x < paths.size(); x++) {
     builder.Save();
     for (size_t y = 0; y < 6; y++) {
-      builder.DrawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 8, false,
-                         1);
+      builder.DrawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 8,
+                         false);
       builder.DrawPath(paths[x], paint);
       builder.Translate(0, 150);
     }

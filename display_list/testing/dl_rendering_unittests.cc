@@ -44,6 +44,7 @@ using PointMode = DlCanvas::PointMode;
 
 constexpr int kTestWidth = 200;
 constexpr int kTestHeight = 200;
+constexpr float kDefaultPixelRatio = 1.0;
 constexpr int kRenderWidth = 100;
 constexpr int kRenderHeight = 100;
 constexpr int kRenderHalfWidth = 50;
@@ -185,7 +186,7 @@ static void DrawCheckerboard(DlCanvas* canvas) {
 }
 
 static void DrawCheckerboard(SkCanvas* canvas) {
-  DlSkCanvasAdapter dl_canvas(canvas);
+  DlSkCanvasAdapter dl_canvas(canvas, kDefaultPixelRatio);
   DrawCheckerboard(&dl_canvas);
 }
 
@@ -433,6 +434,7 @@ class ImpellerRenderResult final : public RenderResult {
 struct RenderJobInfo {
   int width = kTestWidth;
   int height = kTestHeight;
+  float pixel_ratio = kDefaultPixelRatio;
   DlColor bg = DlColor::kTransparent();
   SkScalar scale = SK_Scalar1;
   SkScalar opacity = SK_Scalar1;
@@ -515,7 +517,7 @@ struct DlJobRenderer : public MatrixClipJobRenderer {
         dl_image_(dl_image) {}
 
   void Render(SkCanvas* sk_canvas, const RenderJobInfo& info) override {
-    DlSkCanvasAdapter canvas(sk_canvas);
+    DlSkCanvasAdapter canvas(sk_canvas, info.pixel_ratio);
     Render(&canvas, info);
   }
 
@@ -532,7 +534,7 @@ struct DlJobRenderer : public MatrixClipJobRenderer {
   }
 
   sk_sp<DisplayList> MakeDisplayList(const RenderJobInfo& info) {
-    DisplayListBuilder builder(kTestBounds);
+    DisplayListBuilder builder(kTestBounds, info.pixel_ratio);
     Render(&builder, info);
     return builder.Build();
   }
@@ -572,7 +574,8 @@ struct DisplayListJobRenderer : public JobRenderer {
       : display_list_(std::move(display_list)) {}
 
   void Render(SkCanvas* canvas, const RenderJobInfo& info) {
-    DlSkCanvasAdapter(canvas).DrawDisplayList(display_list_, info.opacity);
+    DlSkCanvasAdapter(canvas, info.pixel_ratio)
+        .DrawDisplayList(display_list_, info.opacity);
   }
 
  private:
@@ -581,8 +584,10 @@ struct DisplayListJobRenderer : public JobRenderer {
 
 class RenderEnvironment {
  public:
-  RenderEnvironment(const DlSurfaceProvider* provider, PixelFormat format)
-      : provider_(provider), format_(format) {
+  RenderEnvironment(const DlSurfaceProvider* provider,
+                    PixelFormat format,
+                    float pixel_ratio)
+      : provider_(provider), format_(format), pixel_ratio_(pixel_ratio) {
     if (provider->supports(format)) {
       surface_1x_ =
           provider->MakeOffscreenSurface(kTestWidth, kTestHeight, format);
@@ -591,12 +596,10 @@ class RenderEnvironment {
     }
   }
 
-  static RenderEnvironment Make565(const DlSurfaceProvider* provider) {
-    return RenderEnvironment(provider, PixelFormat::k565PixelFormat);
-  }
-
-  static RenderEnvironment MakeN32(const DlSurfaceProvider* provider) {
-    return RenderEnvironment(provider, PixelFormat::kN32PremulPixelFormat);
+  static RenderEnvironment MakeN32(const DlSurfaceProvider* provider,
+                                   float pixel_ratio) {
+    return RenderEnvironment(provider, PixelFormat::kN32PremulPixelFormat,
+                             pixel_ratio);
   }
 
   void init_ref(SkSetup& sk_setup,
@@ -604,9 +607,11 @@ class RenderEnvironment {
                 DlSetup& dl_setup,
                 DlRenderer& dl_renderer,
                 DlRenderer& imp_renderer,
-                DlColor bg = DlColor::kTransparent()) {
+                DlColor bg = DlColor::kTransparent(),
+                float pixel_ratio = 1.0f) {
     SkJobRenderer sk_job(sk_setup, sk_renderer, kEmptySkRenderer, kTestSkImage);
     RenderJobInfo info = {
+        .pixel_ratio = pixel_ratio,
         .bg = bg,
     };
     ref_sk_result_ = getResult(info, sk_job);
@@ -671,6 +676,7 @@ class RenderEnvironment {
   bool supports_impeller() const { return provider_->supports_impeller(); }
 
   PixelFormat format() const { return format_; }
+  float pixel_ratio() const { return pixel_ratio_; }
   const DlPaint& ref_dl_paint() const { return ref_dl_paint_; }
   const SkMatrix& ref_matrix() const { return ref_matrix_; }
   const SkIRect& ref_clip_bounds() const { return ref_clip_bounds_; }
@@ -703,6 +709,7 @@ class RenderEnvironment {
 
   const DlSurfaceProvider* provider_;
   const PixelFormat format_;
+  const float pixel_ratio_;
   std::shared_ptr<DlSurfaceInstance> surface_1x_;
   std::shared_ptr<DlSurfaceInstance> surface_2x_;
 
@@ -1131,12 +1138,15 @@ class CanvasCompareTester {
   static BoundsTolerance DefaultTolerance;
 
   static void RenderAll(const TestParameters& params,
-                        const BoundsTolerance& tolerance = DefaultTolerance) {
+                        const BoundsTolerance& tolerance = DefaultTolerance,
+                        float pixel_ratio = kDefaultPixelRatio) {
     for (auto& back_end : TestBackends) {
       auto provider = GetProvider(back_end);
-      RenderEnvironment env = RenderEnvironment::MakeN32(provider.get());
+      RenderEnvironment env =
+          RenderEnvironment::MakeN32(provider.get(), pixel_ratio);
       env.init_ref(kEmptySkSetup, params.sk_renderer(),  //
-                   kEmptyDlSetup, params.dl_renderer(), params.imp_renderer());
+                   kEmptyDlSetup, params.dl_renderer(), params.imp_renderer(),
+                   /*bg=*/DlColor::kTransparent(), pixel_ratio);
       quickCompareToReference(env, "default");
       if (env.supports_impeller()) {
         auto impeller_result = env.ref_impeller_result();
@@ -1287,7 +1297,7 @@ class CanvasCompareTester {
       // drawColor which can override the alpha with its color, but it now uses
       // a non-opaque color to avoid that problem.
       RenderEnvironment backdrop_env =
-          RenderEnvironment::MakeN32(env.provider());
+          RenderEnvironment::MakeN32(env.provider(), env.pixel_ratio());
       SkSetup sk_backdrop_setup = [=](const SkSetupContext& ctx) {
         SkPaint setup_p;
         setup_p.setShader(MakeColorSource(ctx.image));
@@ -1304,9 +1314,10 @@ class CanvasCompareTester {
       DlSetup dl_content_setup = [=](const DlSetupContext& ctx) {
         ctx.paint.setAlpha(ctx.paint.getAlpha() / 2);
       };
-      backdrop_env.init_ref(sk_backdrop_setup, testP.sk_renderer(),
-                            dl_backdrop_setup, testP.dl_renderer(),
-                            testP.imp_renderer());
+      backdrop_env.init_ref(
+          sk_backdrop_setup, testP.sk_renderer(), dl_backdrop_setup,
+          testP.dl_renderer(), testP.imp_renderer(),
+          /*bg=*/DlColor::kTransparent(), /*pixel_ratio=*/env.pixel_ratio());
       quickCompareToReference(backdrop_env, "backdrop");
 
       DlBlurImageFilter dl_backdrop(5, 5, DlTileMode::kDecal);
@@ -1473,7 +1484,8 @@ class CanvasCompareTester {
       // CPU renderer with default line width of 0 does not show antialiasing
       // for stroked primitives, so we make a new reference with a non-trivial
       // stroke width to demonstrate the differences
-      RenderEnvironment aa_env = RenderEnvironment::MakeN32(env.provider());
+      RenderEnvironment aa_env =
+          RenderEnvironment::MakeN32(env.provider(), env.pixel_ratio());
       // Tweak the bounds tolerance for the displacement of 1/10 of a pixel
       const BoundsTolerance aa_tolerance = tolerance.addBoundsPadding(1, 1);
       auto sk_aa_setup = [=](SkSetupContext ctx, bool is_aa) {
@@ -1564,7 +1576,8 @@ class CanvasCompareTester {
       // Being able to see a blur requires some non-default attributes,
       // like a non-trivial stroke width and a shader rather than a color
       // (for drawPaint) so we create a new environment for these tests.
-      RenderEnvironment blur_env = RenderEnvironment::MakeN32(env.provider());
+      RenderEnvironment blur_env =
+          RenderEnvironment::MakeN32(env.provider(), env.pixel_ratio());
       SkSetup sk_blur_setup = [=](const SkSetupContext& ctx) {
         ctx.paint.setShader(MakeColorSource(ctx.image));
         ctx.paint.setStrokeWidth(5.0);
@@ -1616,7 +1629,8 @@ class CanvasCompareTester {
       // Being able to see a dilate requires some non-default attributes,
       // like a non-trivial stroke width and a shader rather than a color
       // (for drawPaint) so we create a new environment for these tests.
-      RenderEnvironment dilate_env = RenderEnvironment::MakeN32(env.provider());
+      RenderEnvironment dilate_env =
+          RenderEnvironment::MakeN32(env.provider(), env.pixel_ratio());
       SkSetup sk_dilate_setup = [=](const SkSetupContext& ctx) {
         ctx.paint.setShader(MakeColorSource(ctx.image));
         ctx.paint.setStrokeWidth(5.0);
@@ -1648,7 +1662,8 @@ class CanvasCompareTester {
       // Being able to see an erode requires some non-default attributes,
       // like a non-trivial stroke width and a shader rather than a color
       // (for drawPaint) so we create a new environment for these tests.
-      RenderEnvironment erode_env = RenderEnvironment::MakeN32(env.provider());
+      RenderEnvironment erode_env =
+          RenderEnvironment::MakeN32(env.provider(), env.pixel_ratio());
       SkSetup sk_erode_setup = [=](const SkSetupContext& ctx) {
         ctx.paint.setShader(MakeColorSource(ctx.image));
         ctx.paint.setStrokeWidth(6.0);
@@ -1843,7 +1858,7 @@ class CanvasCompareTester {
                    }));
 
     RenderEnvironment stroke_base_env =
-        RenderEnvironment::MakeN32(env.provider());
+        RenderEnvironment::MakeN32(env.provider(), env.pixel_ratio());
     SkSetup sk_stroke_setup = [=](const SkSetupContext& ctx) {
       ctx.paint.setStyle(SkPaint::kStroke_Style);
       ctx.paint.setStrokeWidth(5.0);
@@ -2294,6 +2309,7 @@ class CanvasCompareTester {
         env.backend_name() + ": " + test_name + " (" + caseP.info() + ")";
     const DlColor bg = caseP.bg();
     RenderJobInfo base_info = {
+        .pixel_ratio = env.pixel_ratio(),
         .bg = bg,
     };
 
@@ -3662,7 +3678,8 @@ TEST_F(DisplayListRendering, DrawDisplayList) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](const SkRenderContext& ctx) {  //
-            DlSkCanvasAdapter(ctx.canvas).DrawDisplayList(display_list);
+            DlSkCanvasAdapter(ctx.canvas, kDefaultPixelRatio)
+                .DrawDisplayList(display_list);
           },
           [=](const DlRenderContext& ctx) {  //
             ctx.canvas->DrawDisplayList(display_list);
@@ -3730,18 +3747,20 @@ TEST_F(DisplayListRendering, DrawShadow) {
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
   const SkScalar elevation = 5;
+  const float pixel_ratio = 1.0;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](const SkRenderContext& ctx) {  //
             DlSkCanvasDispatcher::DrawShadow(ctx.canvas, path, color, elevation,
-                                             false, 1.0);
+                                             false, pixel_ratio);
           },
           [=](const DlRenderContext& ctx) {  //
-            ctx.canvas->DrawShadow(path, color, elevation, false, 1.0);
+            ctx.canvas->DrawShadow(path, color, elevation, false);
           },
           kDrawShadowFlags),
-      CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3));
+      CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3),
+      pixel_ratio);
 }
 
 TEST_F(DisplayListRendering, DrawShadowTransparentOccluder) {
@@ -3756,18 +3775,20 @@ TEST_F(DisplayListRendering, DrawShadowTransparentOccluder) {
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
   const SkScalar elevation = 5;
+  const float pixel_ratio = 1.0;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](const SkRenderContext& ctx) {  //
             DlSkCanvasDispatcher::DrawShadow(ctx.canvas, path, color, elevation,
-                                             true, 1.0);
+                                             true, pixel_ratio);
           },
           [=](const DlRenderContext& ctx) {  //
-            ctx.canvas->DrawShadow(path, color, elevation, true, 1.0);
+            ctx.canvas->DrawShadow(path, color, elevation, true);
           },
           kDrawShadowFlags),
-      CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3));
+      CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3),
+      pixel_ratio);
 }
 
 TEST_F(DisplayListRendering, DrawShadowDpr) {
@@ -3782,18 +3803,20 @@ TEST_F(DisplayListRendering, DrawShadowDpr) {
       kRenderCornerRadius, kRenderCornerRadius);
   const DlColor color = DlColor::kDarkGrey();
   const SkScalar elevation = 5;
+  const float pixel_ratio = 1.5;
 
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](const SkRenderContext& ctx) {  //
             DlSkCanvasDispatcher::DrawShadow(ctx.canvas, path, color, elevation,
-                                             false, 1.5);
+                                             false, pixel_ratio);
           },
           [=](const DlRenderContext& ctx) {  //
-            ctx.canvas->DrawShadow(path, color, elevation, false, 1.5);
+            ctx.canvas->DrawShadow(path, color, elevation, false);
           },
           kDrawShadowFlags),
-      CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3));
+      CanvasCompareTester::DefaultTolerance.addBoundsPadding(3, 3),
+      pixel_ratio);
 }
 
 TEST_F(DisplayListRendering, SaveLayerClippedContentStillFilters) {
@@ -3835,7 +3858,8 @@ TEST_F(DisplayListRendering, SaveLayerClippedContentStillFilters) {
 
   for (auto& back_end : CanvasCompareTester::TestBackends) {
     auto provider = CanvasCompareTester::GetProvider(back_end);
-    RenderEnvironment env = RenderEnvironment::MakeN32(provider.get());
+    RenderEnvironment env =
+        RenderEnvironment::MakeN32(provider.get(), /*pixel_ratio=*/1.0f);
     env.init_ref(kEmptySkSetup, test_params.sk_renderer(),  //
                  kEmptyDlSetup, test_params.dl_renderer(),
                  test_params.imp_renderer());
@@ -3951,7 +3975,8 @@ TEST_F(DisplayListRendering, SaveLayerConsolidation) {
     for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
-          provider.get(), PixelFormat::kN32PremulPixelFormat);
+          provider.get(), PixelFormat::kN32PremulPixelFormat,
+          /*pixel_ratio=*/1.0f);
       test_attributes_env(paint1, paint2, paint_both,  //
                           same, rev_same, desc1, desc2, env.get());
     }
@@ -4064,7 +4089,8 @@ TEST_F(DisplayListRendering, MatrixColorFilterModifyTransparencyCheck) {
     for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
-          provider.get(), PixelFormat::kN32PremulPixelFormat);
+          provider.get(), PixelFormat::kN32PremulPixelFormat,
+          /*pixel_ratio=*/1.0f);
       auto results1 = env->getResult(display_list1);
       auto results2 = env->getResult(display_list2);
       CanvasCompareTester::quickCompareToReference(
@@ -4135,7 +4161,8 @@ TEST_F(DisplayListRendering, MatrixColorFilterOpacityCommuteCheck) {
     for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
-          provider.get(), PixelFormat::kN32PremulPixelFormat);
+          provider.get(), PixelFormat::kN32PremulPixelFormat,
+          /*pixel_ratio=*/1.0f);
       auto results1 = env->getResult(display_list1);
       auto results2 = env->getResult(display_list2);
       if (!filter || filter->can_commute_with_opacity()) {
@@ -4240,7 +4267,8 @@ TEST_F(DisplayListRendering, BlendColorFilterModifyTransparencyCheck) {
     for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
-          provider.get(), PixelFormat::kN32PremulPixelFormat);
+          provider.get(), PixelFormat::kN32PremulPixelFormat,
+          /*pixel_ratio=*/1.0f);
       auto results1 = env->getResult(display_list1);
       auto results2 = env->getResult(display_list2);
       int modified_transparent_pixels =
@@ -4304,7 +4332,8 @@ TEST_F(DisplayListRendering, BlendColorFilterOpacityCommuteCheck) {
     for (auto& back_end : CanvasCompareTester::TestBackends) {
       auto provider = CanvasCompareTester::GetProvider(back_end);
       auto env = std::make_unique<RenderEnvironment>(
-          provider.get(), PixelFormat::kN32PremulPixelFormat);
+          provider.get(), PixelFormat::kN32PremulPixelFormat,
+          /*pixel_ratio=*/1.0f);
       auto results1 = env->getResult(display_list1);
       auto results2 = env->getResult(display_list2);
       if (filter.can_commute_with_opacity()) {

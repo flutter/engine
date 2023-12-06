@@ -33,9 +33,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
       SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   explicit DisplayListBuilder(bool prepare_rtree)
-      : DisplayListBuilder(kMaxCullRect, prepare_rtree) {}
+      : DisplayListBuilder(kMaxCullRect, kDefaultPixelRatio, prepare_rtree) {}
 
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
+                              float pixel_ratio = kDefaultPixelRatio,
                               bool prepare_rtree = false);
 
   ~DisplayListBuilder();
@@ -238,8 +239,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
-                  bool transparent_occluder,
-                  SkScalar dpr) override;
+                  bool transparent_occluder) override;
 
   // |DlCanvas|
   void Flush() override {}
@@ -247,6 +247,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   sk_sp<DisplayList> Build();
 
  private:
+  static constexpr float kDefaultPixelRatio = 1.0f;
+
   // This method exposes the internal stateful DlOpReceiver implementation
   // of the DisplayListBuilder, primarily for testing purposes. Its use
   // is obsolete and forbidden in every other case and is only shared to a
@@ -480,7 +482,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override {
-    DrawShadow(path, color, elevation, transparent_occluder, dpr);
+    pixel_ratio_ = dpr;
+    DrawShadow(path, color, elevation, transparent_occluder);
   }
 
   void checkForDeferredSave();
@@ -605,6 +608,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     friend class DisplayListBuilder;
   };
 
+  float pixel_ratio_;
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
   DisplayListMatrixClipTracker tracker_;

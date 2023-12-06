@@ -218,7 +218,7 @@ class FlutterPlatformViewsController {
       FlutterPlatformViewGestureRecognizersBlockingPolicy gestureRecognizerBlockingPolicy);
 
   // Called at the beginning of each frame.
-  void BeginFrame(SkISize frame_size);
+  void BeginFrame(SkISize frame_size, float device_pixel_ratio);
 
   // Indicates that we don't compisite any platform views or overlays during this frame.
   // Also reverts the composition_order_ to its original state at the beginning of the frame.
@@ -368,6 +368,7 @@ class FlutterPlatformViewsController {
   // platform view last time it was composited.
   std::map<int64_t, int64_t> clip_count_;
   SkISize frame_size_;
+  float device_pixel_ratio_;
 
   // The number of frames the rasterizer task runner will continue
   // to run on the platform thread after no platform view is rendered.

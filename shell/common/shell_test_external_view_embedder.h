@@ -99,6 +99,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   bool support_thread_merging_;
   SkISize frame_size_;
+  float device_pixel_ratio_;
   std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
   std::map<int64_t, MutatorsStack> mutators_stacks_;
   std::map<int64_t, EmbeddedViewParams> current_composition_params_;

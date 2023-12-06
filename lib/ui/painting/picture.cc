@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/canvas.h"
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -41,18 +42,22 @@ Picture::~Picture() = default;
 
 Dart_Handle Picture::toImage(uint32_t width,
                              uint32_t height,
+                             double pixel_ratio,
                              Dart_Handle raw_image_callback) {
   if (!display_list_) {
     return tonic::ToDart("Picture is null");
   }
-  return RasterizeToImage(display_list_, width, height, raw_image_callback);
+  return RasterizeToImage(display_list_, width, height, SafeNarrow(pixel_ratio),
+                          raw_image_callback);
 }
 
 void Picture::toImageSync(uint32_t width,
                           uint32_t height,
+                          double pixel_ratio,
                           Dart_Handle raw_image_handle) {
   FML_DCHECK(display_list_);
-  RasterizeToImageSync(display_list_, width, height, raw_image_handle);
+  RasterizeToImageSync(display_list_, width, height, SafeNarrow(pixel_ratio),
+                       raw_image_handle);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
@@ -60,13 +65,14 @@ static sk_sp<DlImage> CreateDeferredImage(
     sk_sp<DisplayList> display_list,
     uint32_t width,
     uint32_t height,
+    float pixel_ratio,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
     return DlDeferredImageGPUImpeller::Make(
-        std::move(display_list), SkISize::Make(width, height),
+        std::move(display_list), SkISize::Make(width, height), pixel_ratio,
         std::move(snapshot_delegate), std::move(raster_task_runner));
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -74,14 +80,15 @@ static sk_sp<DlImage> CreateDeferredImage(
   const SkImageInfo image_info = SkImageInfo::Make(
       width, height, kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   return DlDeferredImageGPUSkia::Make(
-      image_info, std::move(display_list), std::move(snapshot_delegate),
-      raster_task_runner, std::move(unref_queue));
+      image_info, pixel_ratio, std::move(display_list),
+      std::move(snapshot_delegate), raster_task_runner, std::move(unref_queue));
 }
 
 // static
 void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
                                    uint32_t width,
                                    uint32_t height,
+                                   float pixel_ratio,
                                    Dart_Handle raw_image_handle) {
   auto* dart_state = UIDartState::Current();
   if (!dart_state) {
@@ -94,7 +101,7 @@ void Picture::RasterizeToImageSync(sk_sp<DisplayList> display_list,
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
       dart_state->IsImpellerEnabled(), std::move(display_list), width, height,
-      std::move(snapshot_delegate), std::move(raster_task_runner),
+      pixel_ratio, std::move(snapshot_delegate), std::move(raster_task_runner),
       std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);
@@ -116,24 +123,28 @@ size_t Picture::GetAllocationSize() const {
 Dart_Handle Picture::RasterizeToImage(const sk_sp<DisplayList>& display_list,
                                       uint32_t width,
                                       uint32_t height,
+                                      float pixel_ratio,
                                       Dart_Handle raw_image_callback) {
-  return DoRasterizeToImage(display_list, nullptr, width, height,
+  return DoRasterizeToImage(display_list, nullptr, width, height, pixel_ratio,
                             raw_image_callback);
 }
 
 Dart_Handle Picture::RasterizeLayerTreeToImage(
     std::unique_ptr<LayerTree> layer_tree,
+    float pixel_ratio,
     Dart_Handle raw_image_callback) {
   FML_DCHECK(layer_tree != nullptr);
   auto frame_size = layer_tree->frame_size();
   return DoRasterizeToImage(nullptr, std::move(layer_tree), frame_size.width(),
-                            frame_size.height(), raw_image_callback);
+                            frame_size.height(), pixel_ratio,
+                            raw_image_callback);
 }
 
 Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
                                         std::unique_ptr<LayerTree> layer_tree,
                                         uint32_t width,
                                         uint32_t height,
+                                        float pixel_ratio,
                                         Dart_Handle raw_image_callback) {
   // Either display_list or layer_tree should be provided.
   FML_DCHECK((display_list == nullptr) != (layer_tree == nullptr));
@@ -199,7 +210,7 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner,
       fml::MakeCopyable([ui_task_runner, snapshot_delegate, display_list, width,
-                         height, ui_task,
+                         height, ui_task, pixel_ratio,
                          layer_tree = std::move(layer_tree)]() mutable {
         auto picture_bounds = SkISize::Make(width, height);
         sk_sp<DlImage> image;
@@ -210,11 +221,11 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
                                   snapshot_delegate->GetTextureRegistry(),
                                   snapshot_delegate->GetGrContext());
 
-          image = snapshot_delegate->MakeRasterSnapshot(display_list,
-                                                        picture_bounds);
+          image = snapshot_delegate->MakeRasterSnapshot(
+              display_list, picture_bounds, pixel_ratio);
         } else {
-          image = snapshot_delegate->MakeRasterSnapshot(display_list,
-                                                        picture_bounds);
+          image = snapshot_delegate->MakeRasterSnapshot(
+              display_list, picture_bounds, pixel_ratio);
         }
 
         fml::TaskRunner::RunNowOrPostTask(

@@ -97,7 +97,7 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
     return nullptr;
   }
 
-  DlSkCanvasAdapter canvas(surface->getCanvas());
+  DlSkCanvasAdapter canvas(surface->getCanvas(), pixel_ratio_);
   canvas.Clear(DlColor::kTransparent());
 
   canvas.Translate(-dest_rect.left(), -dest_rect.top());
@@ -190,10 +190,11 @@ bool RasterCache::Draw(const RasterCacheKeyID& id,
   return false;
 }
 
-void RasterCache::BeginFrame() {
+void RasterCache::BeginFrame(float pixel_ratio) {
   display_list_cached_this_frame_ = 0;
   picture_metrics_ = {};
   layer_metrics_ = {};
+  pixel_ratio_ = pixel_ratio;
 }
 
 void RasterCache::UpdateMetrics() {

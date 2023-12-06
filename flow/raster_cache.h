@@ -158,7 +158,7 @@ class RasterCache {
 
   bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 
-  void BeginFrame();
+  void BeginFrame(float pixel_ratio);
 
   void EvictUnusedCacheEntries();
 
@@ -263,6 +263,7 @@ class RasterCache {
   mutable size_t display_list_cached_this_frame_ = 0;
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;
+  float pixel_ratio_;
   mutable RasterCacheKey::Map<Entry> cache_;
   bool checkerboard_images_ = false;
 

@@ -13,7 +13,7 @@ abstract class Scene {
   /// Synchronously creates a handle to an image from this scene.
   ///
   /// {@macro dart.ui.painting.Picture.toImageSync}
-  Image toImageSync(int width, int height);
+  Image toImageSync(int width, int height, {double pixelRatio = 1.0});
 
   /// Creates a raster image representation of the current state of the scene.
   ///
@@ -22,7 +22,7 @@ abstract class Scene {
   /// Callers must dispose the [Image] when they are done with it. If the result
   /// will be shared with other methods or classes, [Image.clone] should be used
   /// and each handle created must be disposed.
-  Future<Image> toImage(int width, int height);
+  Future<Image> toImage(int width, int height, {double pixelRatio = 1.0});
 
   /// Releases the resources used by this scene.
   ///
@@ -43,28 +43,28 @@ base class _NativeScene extends NativeFieldWrapperClass1 implements Scene {
   _NativeScene._();
 
   @override
-  Image toImageSync(int width, int height) {
+  Image toImageSync(int width, int height, {double pixelRatio = 1.0}) {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
 
     final _Image image = _Image._();
-    final String? result =  _toImageSync(width, height, image);
+    final String? result =  _toImageSync(width, height, pixelRatio, image);
     if (result != null) {
       throw PictureRasterizationException._(result);
     }
     return Image._(image, image.width, image.height);
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Scene::toImageSync')
-  external String? _toImageSync(int width, int height, _Image outImage);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double,Handle)>(symbol: 'Scene::toImageSync')
+  external String? _toImageSync(int width, int height, double pixelRatio, _Image outImage);
 
   @override
-  Future<Image> toImage(int width, int height) {
+  Future<Image> toImage(int width, int height, {double pixelRatio = 1.0}) {
     if (width <= 0 || height <= 0) {
       throw Exception('Invalid image dimensions.');
     }
-    return _futurize((_Callback<Image?> callback) => _toImage(width, height, (_Image? image) {
+    return _futurize((_Callback<Image?> callback) => _toImage(width, height, pixelRatio, (_Image? image) {
         if (image == null) {
           callback(null);
         } else {
@@ -74,8 +74,8 @@ base class _NativeScene extends NativeFieldWrapperClass1 implements Scene {
     );
   }
 
-  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Scene::toImage')
-  external String? _toImage(int width, int height, _Callback<_Image?> callback);
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Double, Handle)>(symbol: 'Scene::toImage')
+  external String? _toImage(int width, int height, double pixelRatio, _Callback<_Image?> callback);
 
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Scene::dispose')

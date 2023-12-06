@@ -2429,7 +2429,8 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
         sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
-            MakeSizedDisplayList(50, 50), SkISize::Make(50, 50));
+            MakeSizedDisplayList(50, 50), SkISize::Make(50, 50),
+            /*pixel_ratio=*/1.0f);
         EXPECT_NE(image, nullptr);
 
         latch->Signal();

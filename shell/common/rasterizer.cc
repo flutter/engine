@@ -186,6 +186,16 @@ GrDirectContext* Rasterizer::GetGrContext() {
   return surface_ ? surface_->GetContext() : nullptr;
 }
 
+LayerTreeTask* Rasterizer::GetLastSuccessfulTask(int64_t view_id) {
+  auto found = view_records_.find(view_id);
+  if (found == view_records_.end()) {
+    return nullptr;
+  }
+  auto& last_task = found->second.last_successful_task;
+  FML_DCHECK(last_task != nullptr);
+  return last_task.get();
+}
+
 flutter::LayerTree* Rasterizer::GetLastLayerTree(int64_t view_id) {
   auto found = view_records_.find(view_id);
   if (found == view_records_.end()) {
@@ -314,7 +324,8 @@ DrawStatus Rasterizer::ToDrawStatus(DoDrawStatus status) {
 namespace {
 std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
     const sk_sp<DisplayList>& display_list,
-    const SkImageInfo& image_info) {
+    const SkImageInfo& image_info,
+    float pixel_ratio) {
   FML_DCHECK(display_list);
   // Use 16384 as a proxy for the maximum texture size for a GPU image.
   // This is meant to be large enough to avoid false positives in test contexts,
@@ -330,7 +341,7 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
   };
 
   sk_sp<SkSurface> surface = SkSurfaces::Raster(image_info);
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas(), pixel_ratio);
   canvas.Clear(DlColor::kTransparent());
   canvas.DrawDisplayList(display_list);
 
@@ -343,38 +354,39 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
 
 std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
     sk_sp<DisplayList> display_list,
-    const SkImageInfo& image_info) {
+    const SkImageInfo& image_info,
+    float pixel_ratio) {
   TRACE_EVENT0("flutter", "Rasterizer::MakeGpuImage");
   FML_DCHECK(display_list);
 
   std::unique_ptr<SnapshotDelegate::GpuImageResult> result;
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
-          .SetIfTrue([&result, &image_info, &display_list] {
+          .SetIfTrue([&result, &image_info, pixel_ratio, &display_list] {
             // TODO(dnfield): This isn't safe if display_list contains any GPU
             // resources like an SkImage_gpu.
-            result = MakeBitmapImage(display_list, image_info);
+            result = MakeBitmapImage(display_list, image_info, pixel_ratio);
           })
-          .SetIfFalse([&result, &image_info, &display_list,
+          .SetIfFalse([&result, &image_info, pixel_ratio, &display_list,
                        surface = surface_.get(),
                        gpu_image_behavior = gpu_image_behavior_] {
             if (!surface ||
                 gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
               // TODO(dnfield): This isn't safe if display_list contains any GPU
               // resources like an SkImage_gpu.
-              result = MakeBitmapImage(display_list, image_info);
+              result = MakeBitmapImage(display_list, image_info, pixel_ratio);
               return;
             }
 
             auto context_switch = surface->MakeRenderContextCurrent();
             if (!context_switch->GetResult()) {
-              result = MakeBitmapImage(display_list, image_info);
+              result = MakeBitmapImage(display_list, image_info, pixel_ratio);
               return;
             }
 
             auto* context = surface->GetContext();
             if (!context) {
-              result = MakeBitmapImage(display_list, image_info);
+              result = MakeBitmapImage(display_list, image_info, pixel_ratio);
               return;
             }
 
@@ -400,7 +412,8 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
               return;
             }
 
-            auto canvas = DlSkCanvasAdapter(sk_surface->getCanvas());
+            auto canvas =
+                DlSkCanvasAdapter(sk_surface->getCanvas(), pixel_ratio);
             canvas.Clear(DlColor::kTransparent());
             canvas.DrawDisplayList(display_list);
 
@@ -411,8 +424,10 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
 }
 
 sk_sp<DlImage> Rasterizer::MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                              SkISize picture_size) {
-  return snapshot_controller_->MakeRasterSnapshot(display_list, picture_size);
+                                              SkISize picture_size,
+                                              float pixel_ratio) {
+  return snapshot_controller_->MakeRasterSnapshot(display_list, picture_size,
+                                                  pixel_ratio);
 }
 
 sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
@@ -689,7 +704,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       surface_->GetAiksContext().get()  // aiks context
   );
   if (compositor_frame) {
-    compositor_context_->raster_cache().BeginFrame();
+    compositor_context_->raster_cache().BeginFrame(device_pixel_ratio);
 
     std::unique_ptr<FrameDamage> damage;
     // when leaf layer tracing is enabled we wish to repaint the whole frame
@@ -771,6 +786,7 @@ Rasterizer::ViewRecord& Rasterizer::EnsureViewRecord(int64_t view_id) {
 
 static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
     flutter::LayerTree* tree,
+    float pixel_ratio,
     flutter::CompositorContext& compositor_context) {
   FML_DCHECK(tree != nullptr);
   SkPictureRecorder recorder;
@@ -779,7 +795,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
-  DlSkCanvasAdapter canvas(recorder.getRecordingCanvas());
+  DlSkCanvasAdapter canvas(recorder.getRecordingCanvas(), pixel_ratio);
 
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
@@ -805,6 +821,7 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
 sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
     flutter::LayerTree* tree,
+    float pixel_ratio,
     flutter::CompositorContext& compositor_context,
     GrDirectContext* surface_context,
     bool compressed) {
@@ -860,11 +877,14 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   // when the shell protocol supports multi-views.
   // https://github.com/flutter/flutter/issues/135534
   // https://github.com/flutter/flutter/issues/135535
-  auto* layer_tree = GetLastLayerTree(kFlutterImplicitViewId);
-  if (layer_tree == nullptr) {
+  int64_t view_id = kFlutterImplicitViewId;
+  LayerTreeTask* last_task = GetLastSuccessfulTask(view_id);
+  if (last_task == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};
   }
+  LayerTree* layer_tree = last_task->layer_tree.get();
+  float pixel_ratio = last_task->device_pixel_ratio;
 
   sk_sp<SkData> data = nullptr;
   std::string format;
@@ -875,16 +895,16 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   switch (type) {
     case ScreenshotType::SkiaPicture:
       format = "ScreenshotType::SkiaPicture";
-      data = ScreenshotLayerTreeAsPicture(layer_tree, *compositor_context_);
+      data = ScreenshotLayerTreeAsPicture(layer_tree, pixel_ratio, *compositor_context_);
       break;
     case ScreenshotType::UncompressedImage:
       format = "ScreenshotType::UncompressedImage";
-      data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
+      data = ScreenshotLayerTreeAsImage(layer_tree, pixel_ratio, *compositor_context_,
                                         surface_context, false);
       break;
     case ScreenshotType::CompressedImage:
       format = "ScreenshotType::CompressedImage";
-      data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
+      data = ScreenshotLayerTreeAsImage(layer_tree, pixel_ratio, *compositor_context_,
                                         surface_context, true);
       break;
     case ScreenshotType::SurfaceData: {

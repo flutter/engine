@@ -23,21 +23,29 @@ static SkISize TransformedSurfaceSize(const SkISize& size,
 
 EmbedderExternalView::EmbedderExternalView(
     const SkISize& frame_size,
+    const float pixel_ratio,
     const SkMatrix& surface_transformation)
-    : EmbedderExternalView(frame_size, surface_transformation, {}, nullptr) {}
+    : EmbedderExternalView(frame_size,
+                           pixel_ratio,
+                           surface_transformation,
+                           {},
+                           nullptr) {}
 
 EmbedderExternalView::EmbedderExternalView(
     const SkISize& frame_size,
+    const float pixel_ratio,
     const SkMatrix& surface_transformation,
     ViewIdentifier view_identifier,
     std::unique_ptr<EmbeddedViewParams> params)
     : render_surface_size_(
           TransformedSurfaceSize(frame_size, surface_transformation)),
+      pixel_ratio_(pixel_ratio),
       surface_transformation_(surface_transformation),
       view_identifier_(view_identifier),
       embedded_view_params_(std::move(params)),
       slice_(std::make_unique<DisplayListEmbedderViewSlice>(
-          SkRect::Make(frame_size))) {}
+          SkRect::Make(frame_size),
+          pixel_ratio)) {}
 
 EmbedderExternalView::~EmbedderExternalView() = default;
 
@@ -121,7 +129,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
   if (!canvas) {
     return false;
   }
-  DlSkCanvasAdapter dl_canvas(canvas);
+  DlSkCanvasAdapter dl_canvas(canvas, pixel_ratio_);
   int restore_count = dl_canvas.GetSaveCount();
   dl_canvas.SetTransform(surface_transformation_);
   if (clear_surface) {

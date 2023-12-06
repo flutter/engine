@@ -13,12 +13,13 @@ namespace flutter {
 
 sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::Make(
     const SkImageInfo& image_info,
+    float pixel_ratio,
     sk_sp<DisplayList> display_list,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPUSkia>(new DlDeferredImageGPUSkia(
-      ImageWrapper::Make(image_info, std::move(display_list),
+      ImageWrapper::Make(image_info, pixel_ratio, std::move(display_list),
                          std::move(snapshot_delegate), raster_task_runner,
                          std::move(unref_queue)),
       raster_task_runner));
@@ -26,14 +27,16 @@ sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::Make(
 
 sk_sp<DlDeferredImageGPUSkia> DlDeferredImageGPUSkia::MakeFromLayerTree(
     const SkImageInfo& image_info,
+    float pixel_ratio,
     std::unique_ptr<LayerTree> layer_tree,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
   return sk_sp<DlDeferredImageGPUSkia>(new DlDeferredImageGPUSkia(
       ImageWrapper::MakeFromLayerTree(
-          image_info, std::move(layer_tree), std::move(snapshot_delegate),
-          raster_task_runner, std::move(unref_queue)),
+          image_info, pixel_ratio, std::move(layer_tree),
+          std::move(snapshot_delegate), raster_task_runner,
+          std::move(unref_queue)),
       raster_task_runner));
 }
 
@@ -101,13 +104,15 @@ std::optional<std::string> DlDeferredImageGPUSkia::get_error() const {
 std::shared_ptr<DlDeferredImageGPUSkia::ImageWrapper>
 DlDeferredImageGPUSkia::ImageWrapper::Make(
     const SkImageInfo& image_info,
+    float pixel_ratio,
     sk_sp<DisplayList> display_list,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
-  auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
-      image_info, std::move(display_list), std::move(snapshot_delegate),
-      std::move(raster_task_runner), std::move(unref_queue)));
+  auto wrapper = std::shared_ptr<ImageWrapper>(
+      new ImageWrapper(image_info, pixel_ratio, std::move(display_list),
+                       std::move(snapshot_delegate),
+                       std::move(raster_task_runner), std::move(unref_queue)));
   wrapper->SnapshotDisplayList();
   return wrapper;
 }
@@ -115,24 +120,27 @@ DlDeferredImageGPUSkia::ImageWrapper::Make(
 std::shared_ptr<DlDeferredImageGPUSkia::ImageWrapper>
 DlDeferredImageGPUSkia::ImageWrapper::MakeFromLayerTree(
     const SkImageInfo& image_info,
+    float pixel_ratio,
     std::unique_ptr<LayerTree> layer_tree,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
-  auto wrapper = std::shared_ptr<ImageWrapper>(
-      new ImageWrapper(image_info, nullptr, std::move(snapshot_delegate),
-                       std::move(raster_task_runner), std::move(unref_queue)));
+  auto wrapper = std::shared_ptr<ImageWrapper>(new ImageWrapper(
+      image_info, pixel_ratio, nullptr, std::move(snapshot_delegate),
+      std::move(raster_task_runner), std::move(unref_queue)));
   wrapper->SnapshotDisplayList(std::move(layer_tree));
   return wrapper;
 }
 
 DlDeferredImageGPUSkia::ImageWrapper::ImageWrapper(
     const SkImageInfo& image_info,
+    float pixel_ratio,
     sk_sp<DisplayList> display_list,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue)
     : image_info_(image_info),
+      pixel_ratio_(pixel_ratio),
       display_list_(std::move(display_list)),
       snapshot_delegate_(std::move(snapshot_delegate)),
       raster_task_runner_(std::move(raster_task_runner)),
@@ -169,7 +177,8 @@ void DlDeferredImageGPUSkia::ImageWrapper::SnapshotDisplayList(
   fml::TaskRunner::RunNowOrPostTask(
       raster_task_runner_,
       fml::MakeCopyable([weak_this = weak_from_this(),
-                         layer_tree = std::move(layer_tree)]() mutable {
+                         layer_tree = std::move(layer_tree),
+                         pixel_ratio = pixel_ratio_]() mutable {
         auto wrapper = weak_this.lock();
         if (!wrapper) {
           return;
@@ -187,7 +196,7 @@ void DlDeferredImageGPUSkia::ImageWrapper::SnapshotDisplayList(
           wrapper->display_list_ = std::move(display_list);
         }
         auto result = snapshot_delegate->MakeSkiaGpuImage(
-            wrapper->display_list_, wrapper->image_info_);
+            wrapper->display_list_, wrapper->image_info_, pixel_ratio);
         if (result->texture.isValid()) {
           wrapper->texture_ = result->texture;
           wrapper->context_ = std::move(result->context);

@@ -179,11 +179,10 @@ void MockCanvas::DrawPath(const SkPath& path, const DlPaint& paint) {
 void MockCanvas::DrawShadow(const SkPath& path,
                             const DlColor color,
                             const SkScalar elevation,
-                            bool transparent_occluder,
-                            SkScalar dpr) {
-  draw_calls_.emplace_back(DrawCall{
-      current_layer_,
-      DrawShadowData{path, color, elevation, transparent_occluder, dpr}});
+                            bool transparent_occluder) {
+  draw_calls_.emplace_back(
+      DrawCall{current_layer_,
+               DrawShadowData{path, color, elevation, transparent_occluder}});
 }
 
 void MockCanvas::DrawImage(const sk_sp<DlImage>& image,
@@ -485,13 +484,13 @@ std::ostream& operator<<(std::ostream& os,
 bool operator==(const MockCanvas::DrawShadowData& a,
                 const MockCanvas::DrawShadowData& b) {
   return a.path == b.path && a.color == b.color && a.elevation == b.elevation &&
-         a.transparent_occluder == b.transparent_occluder && a.dpr == b.dpr;
+         a.transparent_occluder == b.transparent_occluder;
 }
 
 std::ostream& operator<<(std::ostream& os,
                          const MockCanvas::DrawShadowData& data) {
   return os << data.path << " " << data.color << " " << data.elevation << " "
-            << data.transparent_occluder << " " << data.dpr;
+            << data.transparent_occluder;
 }
 
 bool operator==(const MockCanvas::ClipRectData& a,

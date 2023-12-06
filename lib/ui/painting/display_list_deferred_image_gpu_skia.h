@@ -25,6 +25,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPUSkia> Make(
       const SkImageInfo& image_info,
+      float pixel_ratio,
       sk_sp<DisplayList> display_list,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
@@ -32,6 +33,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
 
   static sk_sp<DlDeferredImageGPUSkia> MakeFromLayerTree(
       const SkImageInfo& image_info,
+      float pixel_ratio,
       std::unique_ptr<LayerTree> layer_tree,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       const fml::RefPtr<fml::TaskRunner>& raster_task_runner,
@@ -80,6 +82,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
    public:
     static std::shared_ptr<ImageWrapper> Make(
         const SkImageInfo& image_info,
+        float pixel_ratio,
         sk_sp<DisplayList> display_list,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner,
@@ -87,6 +90,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
 
     static std::shared_ptr<ImageWrapper> MakeFromLayerTree(
         const SkImageInfo& image_info,
+        float pixel_ratio,
         std::unique_ptr<LayerTree> layer_tree,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner,
@@ -102,6 +106,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
 
    private:
     const SkImageInfo image_info_;
+    float pixel_ratio_;
     sk_sp<DisplayList> display_list_;
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
     fml::RefPtr<fml::TaskRunner> raster_task_runner_;
@@ -118,6 +123,7 @@ class DlDeferredImageGPUSkia final : public DlImage {
 
     ImageWrapper(
         const SkImageInfo& image_info,
+        float pixel_ratio,
         sk_sp<DisplayList> display_list,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner,

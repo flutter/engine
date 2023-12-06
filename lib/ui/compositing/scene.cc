@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/compositing/scene.h"
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
@@ -60,6 +61,7 @@ void Scene::dispose() {
 
 Dart_Handle Scene::toImageSync(uint32_t width,
                                uint32_t height,
+                               double pixel_ratio,
                                Dart_Handle raw_image_handle) {
   TRACE_EVENT0("flutter", "Scene::toImageSync");
 
@@ -67,12 +69,14 @@ Dart_Handle Scene::toImageSync(uint32_t width,
     return tonic::ToDart("Scene has been disposed.");
   }
 
-  Scene::RasterizeToImage(width, height, raw_image_handle);
+  Scene::RasterizeToImage(width, height, SafeNarrow(pixel_ratio),
+                          raw_image_handle);
   return Dart_Null();
 }
 
 Dart_Handle Scene::toImage(uint32_t width,
                            uint32_t height,
+                           double pixel_ratio,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
 
@@ -81,18 +85,20 @@ Dart_Handle Scene::toImage(uint32_t width,
   }
 
   return Picture::RasterizeLayerTreeToImage(BuildLayerTree(width, height),
+                                            SafeNarrow(pixel_ratio),
                                             raw_image_callback);
 }
 
 static sk_sp<DlImage> CreateDeferredImage(
     bool impeller,
     std::unique_ptr<LayerTree> layer_tree,
+    float pixel_ratio,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::RefPtr<fml::TaskRunner> raster_task_runner,
     fml::RefPtr<SkiaUnrefQueue> unref_queue) {
 #if IMPELLER_SUPPORTS_RENDERING
   if (impeller) {
-    return DlDeferredImageGPUImpeller::Make(std::move(layer_tree),
+    return DlDeferredImageGPUImpeller::Make(std::move(layer_tree), pixel_ratio,
                                             std::move(snapshot_delegate),
                                             std::move(raster_task_runner));
   }
@@ -103,12 +109,13 @@ static sk_sp<DlImage> CreateDeferredImage(
       SkImageInfo::Make(frame_size.width(), frame_size.height(),
                         kRGBA_8888_SkColorType, kPremul_SkAlphaType);
   return DlDeferredImageGPUSkia::MakeFromLayerTree(
-      image_info, std::move(layer_tree), std::move(snapshot_delegate),
-      raster_task_runner, std::move(unref_queue));
+      image_info, pixel_ratio, std::move(layer_tree),
+      std::move(snapshot_delegate), raster_task_runner, std::move(unref_queue));
 }
 
 void Scene::RasterizeToImage(uint32_t width,
                              uint32_t height,
+                             float pixel_ratio,
                              Dart_Handle raw_image_handle) {
   auto* dart_state = UIDartState::Current();
   if (!dart_state) {
@@ -121,7 +128,7 @@ void Scene::RasterizeToImage(uint32_t width,
   auto image = CanvasImage::Create();
   auto dl_image = CreateDeferredImage(
       dart_state->IsImpellerEnabled(), BuildLayerTree(width, height),
-      std::move(snapshot_delegate), std::move(raster_task_runner),
+      pixel_ratio, std::move(snapshot_delegate), std::move(raster_task_runner),
       std::move(unref_queue));
   image->set_image(dl_image);
   image->AssociateWithDartWrapper(raw_image_handle);

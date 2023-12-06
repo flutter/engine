@@ -568,23 +568,24 @@ TEST(DlOpSpy, DrawTextBlob) {
 }
 
 TEST(DlOpSpy, DrawShadow) {
+  float pixel_ratio = 1.0f;
   {  // valid shadow
-    DisplayListBuilder builder;
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, pixel_ratio);
     DlPaint paint;
     DlColor color = DlColor::kBlack();
     SkPath path = SkPath::Line(SkPoint::Make(0, 1), SkPoint::Make(1, 1));
-    builder.DrawShadow(path, color, 1, false, 1);
+    builder.DrawShadow(path, color, 1, false);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);
     ASSERT_DID_DRAW(dl_op_spy, dl);
   }
   {  // transparent color
-    DisplayListBuilder builder;
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, pixel_ratio);
     DlPaint paint;
     DlColor color = DlColor::kTransparent();
     SkPath path = SkPath::Line(SkPoint::Make(0, 1), SkPoint::Make(1, 1));
-    builder.DrawShadow(path, color, 1, false, 1);
+    builder.DrawShadow(path, color, 1, false);
     sk_sp<DisplayList> dl = builder.Build();
     DlOpSpy dl_op_spy;
     dl->Dispatch(dl_op_spy);

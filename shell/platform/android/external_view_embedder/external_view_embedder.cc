@@ -30,7 +30,8 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
 
   SkRect view_bounds = SkRect::Make(frame_size_);
   std::unique_ptr<EmbedderViewSlice> view;
-  view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+  view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds,
+                                                        device_pixel_ratio_);
   slices_.insert_or_assign(view_id, std::move(view));
 
   composition_order_.push_back(view_id);

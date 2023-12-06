@@ -216,8 +216,7 @@ class DlCanvas {
   virtual void DrawShadow(const SkPath& path,
                           const DlColor color,
                           const SkScalar elevation,
-                          bool transparent_occluder,
-                          SkScalar dpr) = 0;
+                          bool transparent_occluder) = 0;
 
   virtual void Flush() = 0;
 

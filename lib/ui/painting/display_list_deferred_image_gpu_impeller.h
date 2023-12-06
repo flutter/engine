@@ -19,12 +19,14 @@ class DlDeferredImageGPUImpeller final : public DlImage {
  public:
   static sk_sp<DlDeferredImageGPUImpeller> Make(
       std::unique_ptr<LayerTree> layer_tree,
+      float pixel_ratio,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
   static sk_sp<DlDeferredImageGPUImpeller> Make(
       sk_sp<DisplayList> display_list,
       const SkISize& size,
+      float pixel_ratio,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -66,11 +68,13 @@ class DlDeferredImageGPUImpeller final : public DlImage {
     static std::shared_ptr<ImageWrapper> Make(
         sk_sp<DisplayList> display_list,
         const SkISize& size,
+        float pixel_ratio,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
     static std::shared_ptr<ImageWrapper> Make(
         std::unique_ptr<LayerTree> layer_tree,
+        float pixel_ratio,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
@@ -86,6 +90,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
 
    private:
     SkISize size_;
+    float pixel_ratio_;
     sk_sp<DisplayList> display_list_;
     std::shared_ptr<impeller::Texture> texture_;
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
@@ -98,6 +103,7 @@ class DlDeferredImageGPUImpeller final : public DlImage {
     ImageWrapper(
         sk_sp<DisplayList> display_list,
         const SkISize& size,
+        float pixel_ratio,
         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
         fml::RefPtr<fml::TaskRunner> raster_task_runner);
 
