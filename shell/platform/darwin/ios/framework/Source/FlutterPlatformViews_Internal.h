@@ -319,7 +319,7 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
-                                                     SkRect rect,
+                                                     SkIRect rect,
                                                      int64_t view_id,
                                                      int64_t overlay_id,
                                                      MTLPixelFormat pixel_format);
@@ -395,7 +395,7 @@ class FlutterPlatformViewsController {
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
-      gesture_recognizers_blocking_policies;
+      gesture_recognizers_blocking_policies_;
 
   bool catransaction_added_ = false;
 

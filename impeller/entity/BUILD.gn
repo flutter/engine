@@ -193,6 +193,8 @@ impeller_component("entity") {
     "entity_pass_target.h",
     "geometry/cover_geometry.cc",
     "geometry/cover_geometry.h",
+    "geometry/ellipse_geometry.cc",
+    "geometry/ellipse_geometry.h",
     "geometry/fill_path_geometry.cc",
     "geometry/fill_path_geometry.h",
     "geometry/geometry.cc",
@@ -275,6 +277,7 @@ impeller_component("entity_unittests") {
     ":entity_test_helpers",
     "../geometry:geometry_asserts",
     "../playground:playground_test",
+    "//flutter/display_list/testing:display_list_testing",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
   ]
 }
