@@ -4,8 +4,6 @@
 
 #include "impeller/entity/geometry/line_geometry.h"
 
-#include "flutter/impeller/tessellator/circle_tessellator.h"
-
 namespace impeller {
 
 LineGeometry::LineGeometry(Point p0, Point p1, Scalar width, Cap cap)
@@ -78,41 +76,25 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
   size_t count;
   BufferView vertex_buffer;
   if (cap_ == Cap::kRound) {
-    const Point& p0 = p0_;
-    const Point& p1 = p1_;
-
     std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
-    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
-                                         radius);
-    count = circle_tessellator.GetCircleVertexCount();
+    auto generator = tessellator->RoundCapLine(transform, p0_, p1_, radius);
+    return ComputePositionGeometry(generator, entity, pass);
+  }
+
+  Point corners[4];
+  if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
+    count = 4;
     vertex_buffer = host_buffer.Emplace(
-        count * sizeof(VT), alignof(VT),
-        [&circle_tessellator, &p0, &p1, radius](uint8_t* buffer) {
+        count * sizeof(VT), alignof(VT), [&corners](uint8_t* buffer) {
           auto vertices = reinterpret_cast<VT*>(buffer);
-          circle_tessellator.GenerateRoundCapLineTriangleStrip(
-              [&vertices](const Point& p) {  //
-                *vertices++ = {
-                    .position = p,
-                };
-              },
-              p0, p1, radius);
+          for (auto& corner : corners) {
+            *vertices++ = {
+                .position = corner,
+            };
+          }
         });
   } else {
-    Point corners[4];
-    if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-      count = 4;
-      vertex_buffer = host_buffer.Emplace(
-          count * sizeof(VT), alignof(VT), [&corners](uint8_t* buffer) {
-            auto vertices = reinterpret_cast<VT*>(buffer);
-            for (auto& corner : corners) {
-              *vertices++ = {
-                  .position = corner,
-              };
-            }
-          });
-    } else {
-      return {};
-    }
+    return {};
   }
 
   return GeometryResult{
@@ -147,45 +129,27 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
   size_t count;
   BufferView vertex_buffer;
   if (cap_ == Cap::kRound) {
-    const Point& p0 = p0_;
-    const Point& p1 = p1_;
-
     std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
-    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
-                                         radius);
-    count = circle_tessellator.GetCircleVertexCount();
-    vertex_buffer = host_buffer.Emplace(
-        count * sizeof(VT), alignof(VT),
-        [&circle_tessellator, &uv_transform, &p0, &p1,
-         radius](uint8_t* buffer) {
-          auto vertices = reinterpret_cast<VT*>(buffer);
-          circle_tessellator.GenerateRoundCapLineTriangleStrip(
-              [&vertices, &uv_transform](const Point& p) {  //
-                *vertices++ = {
-                    .position = p,
-                    .texture_coords = uv_transform * p,
-                };
-              },
-              p0, p1, radius);
-        });
+    auto generator = tessellator->RoundCapLine(transform, p0_, p1_, radius);
+    return ComputePositionUVGeometry(generator, uv_transform, entity, pass);
+  }
+
+  Point corners[4];
+  if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
+    count = 4;
+    vertex_buffer =
+        host_buffer.Emplace(count * sizeof(VT), alignof(VT),
+                            [&uv_transform, &corners](uint8_t* buffer) {
+                              auto vertices = reinterpret_cast<VT*>(buffer);
+                              for (auto& corner : corners) {
+                                *vertices++ = {
+                                    .position = corner,
+                                    .texture_coords = uv_transform * corner,
+                                };
+                              }
+                            });
   } else {
-    Point corners[4];
-    if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-      count = 4;
-      vertex_buffer =
-          host_buffer.Emplace(count * sizeof(VT), alignof(VT),
-                              [&uv_transform, &corners](uint8_t* buffer) {
-                                auto vertices = reinterpret_cast<VT*>(buffer);
-                                for (auto& corner : corners) {
-                                  *vertices++ = {
-                                      .position = corner,
-                                      .texture_coords = uv_transform * corner,
-                                  };
-                                }
-                              });
-    } else {
-      return {};
-    }
+    return {};
   }
 
   return GeometryResult{

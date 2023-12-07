@@ -4,16 +4,15 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
-#include "flutter/impeller/tessellator/circle_tessellator.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 
 namespace impeller {
 
-PointFieldGeometry::PointFieldGeometry(std::vector<Point> points,
+PointFieldGeometry::PointFieldGeometry(const std::vector<Point>& points,
                                        Scalar radius,
                                        bool round)
-    : points_(std::move(points)), radius_(radius), round_(round) {}
+    : points_(points), radius_(radius), round_(round) {}
 
 GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
@@ -72,7 +71,8 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   if (radius_ < 0.0) {
     return std::nullopt;
   }
-  auto determinant = entity.GetTransform().GetDeterminant();
+  auto transform = entity.GetTransform();
+  auto determinant = transform.GetDeterminant();
   if (determinant == 0) {
     return std::nullopt;
   }
@@ -83,21 +83,17 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
 
   if (round_) {
-    std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
-    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
-                                         radius_);
-
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
+    auto generator =
+        renderer.GetTessellator()->FilledCircle(transform, {}, radius);
+    FML_DCHECK(generator->GetPrimitiveType() == PrimitiveType::kTriangleStrip);
     std::vector<Point> circle_vertices;
-    circle_vertices.reserve(circle_tessellator.GetCircleVertexCount());
-    circle_tessellator.GenerateCircleTriangleStrip(
-        [&circle_vertices](const Point& p) {  //
-          circle_vertices.push_back(p);
-        },
-        {}, radius);
-    FML_DCHECK(circle_vertices.size() ==
-               circle_tessellator.GetCircleVertexCount());
+    circle_vertices.reserve(generator->VertexCount());
+    generator->GenerateVertices([&circle_vertices](const Point& p) {  //
+      circle_vertices.push_back(p);
+    });
+    FML_DCHECK(circle_vertices.size() == generator->VertexCount());
 
     vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
     for (auto& center : points_) {
