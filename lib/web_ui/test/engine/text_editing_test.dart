@@ -3075,7 +3075,11 @@ Future<void> testMain() async {
 
       final DomHTMLElement input = editingStrategy!.activeDomElement;
       expect(input.style.color, contains('transparent'));
-      expect(input.style.background, contains('transparent'));
+      if (isSafari) {
+        expect(input.style.background, contains('none'));
+      } else {
+        expect(input.style.background, contains('transparent'));
+      }
       expect(input.style.backgroundColor, contains('transparent'));
       expect(input.style.caretColor, contains('transparent'));
       expect(input.style.outline, contains('none'));
