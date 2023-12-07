@@ -535,7 +535,6 @@ EXPORTED Dart_Handle LoadLibraryFromKernel(const char* path) {
   std::shared_ptr<fml::FileMapping> mapping =
       fml::FileMapping::CreateReadOnly(path);
   if (!mapping) {
-    FML_LOG(ERROR) << "Failed to load file at \"" << path << "\".";
     return Dart_Null();
   }
   return DartIsolate::LoadLibraryFromKernel(mapping);
@@ -551,7 +550,8 @@ EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
 
 EXPORTED void Spawn(const char* entrypoint, const char* route) {
   auto shell = g_shell->get();
-  auto spawn_task = [shell, entrypoint = std::string(entrypoint),
+  fml::AutoResetWaitableEvent latch;
+  auto spawn_task = [shell, &latch, entrypoint = std::string(entrypoint),
                      route = std::string(route)]() {
     auto configuration = RunConfiguration::InferFromSettings(
         shell->GetSettings(), /*io_worker=*/nullptr,
@@ -597,9 +597,15 @@ EXPORTED void Spawn(const char* entrypoint, const char* route) {
                     [spawned_shell]() { delete spawned_shell; });
               });
         });
+    latch.Signal();
   };
+  // The global shell pointer is kept alive by the RunTester routine above.
+  // This in turn keeps the isolate group alive. The UI task runner is blocked
+  // until the isolate spawns, which guarantees the global shell pointer won't
+  // be deleted.
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), spawn_task);
+  latch.Wait();
 }
 }
 
