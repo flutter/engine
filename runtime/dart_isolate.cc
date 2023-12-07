@@ -411,7 +411,8 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.log_message_callback,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate,
-                  context),
+                  context,
+                  [this](Dart_Handle result) { MessageEpilogue(result); }),
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
       is_platform_isolate_(is_platform_isolate),
@@ -528,7 +529,10 @@ void DartIsolate::SetMessageHandlingTaskRunner(
 
   message_handling_task_runner_ = runner;
 
-  message_handler().Initialize([runner](std::function<void()> task) {
+  message_handler().Initialize([this, runner](std::function<void()> task) {
+    if (is_platform_isolate_) {
+      ++platform_isolate_pending_messages_;
+    }
 #ifdef OS_FUCHSIA
     runner->PostTask([task = std::move(task)]() {
       TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
@@ -1190,7 +1194,7 @@ void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
-  std::cout << "           DartIsolateCleanupCallback data: "
+  std::cout << "           DartIsolateShutdownCallback data: "
             << (void*)isolate_data << std::endl;
 
   // If the isolate initialization failed there will be nothing to do.
@@ -1253,6 +1257,21 @@ void DartIsolate::OnShutdownCallback() {
       GetIsolateGroupData().GetIsolateShutdownCallback();
   if (isolate_shutdown_callback) {
     isolate_shutdown_callback();
+  }
+}
+
+void DartIsolate::MessageEpilogue(Dart_Handle result) {
+  if (is_platform_isolate_) {
+    std::cout << "MessageEpilogue for platform isolate: " << (void*)this
+              << std::endl;
+    // TODO: Are there cases where this assert is false?
+    FML_DCHECK(Dart_CurrentIsolate() == isolate());
+    FML_DCHECK(platform_isolate_pending_messages_ > 0);
+    --platform_isolate_pending_messages_;
+    if (platform_isolate_pending_messages_ == 0 && !Dart_HasLivePorts()) {
+      std::cout << "    Shutting down platform isolate" << std::endl;
+      Dart_ShutdownIsolate();
+    }
   }
 }
 

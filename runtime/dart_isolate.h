@@ -417,6 +417,7 @@ class DartIsolate : public UIDartState {
   const bool may_insecurely_connect_to_all_domains_;
   const bool is_platform_isolate_;
   std::string domain_network_policy_;
+  uint32_t platform_isolate_pending_messages_ = 0;
 
   // TODO: This is only needed for OnShutdownCallback. Find a way to access the
   //     PlatformIsolateManager from there and remove this field.
@@ -460,6 +461,8 @@ class DartIsolate : public UIDartState {
   [[nodiscard]] bool MarkIsolateRunnable();
 
   void OnShutdownCallback();
+
+  void MessageEpilogue(Dart_Handle result);
 
   // |Dart_IsolateGroupCreateCallback|
   static Dart_Isolate DartIsolateGroupCreateCallback(
