@@ -36,11 +36,11 @@ struct Resource {
   Resource() {}
 
   Resource(const ShaderMetadata* metadata, ResourceType p_resource)
-      : resource(p_resource), metadata_(metadata) {}
+      : resource(std::move(p_resource)), metadata_(metadata) {}
 
   Resource(std::shared_ptr<const ShaderMetadata>& metadata,
            ResourceType p_resource)
-      : resource(p_resource), dynamic_metadata_(metadata) {}
+      : resource(std::move(p_resource)), dynamic_metadata_(metadata) {}
 
   const ShaderMetadata* GetMetadata() const {
     return dynamic_metadata_ ? dynamic_metadata_.get() : metadata_;
