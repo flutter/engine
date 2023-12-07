@@ -418,6 +418,10 @@ class DartIsolate : public UIDartState {
   const bool is_platform_isolate_;
   std::string domain_network_policy_;
 
+  // TODO: This is only needed for OnShutdownCallback. Find a way to access the
+  //     PlatformIsolateManager from there and remove this field.
+  PlatformIsolateManager* platform_isolate_manager_ = nullptr;
+
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,

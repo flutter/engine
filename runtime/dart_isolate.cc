@@ -282,8 +282,10 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
                                         const std::string& debug_name) {
+  PlatformConfiguration* platform_config = platform_configuration();
+  FML_DCHECK(platform_config != nullptr);
   PlatformIsolateManager* platform_isolate_manager =
-      DartVMRef::GetRunningVM()->GetPlatformIsolateManager();
+      platform_config->client()->GetPlatformIsolateManager();
   if (platform_isolate_manager->IsShutdown()) {
     // Not allowed to spawn new platform isolates.
     return false;
@@ -328,6 +330,7 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                           false,       // is_root_isolate
                           true,        // is_platform_isolate
                           context)));  // context
+  (*isolate_data)->platform_isolate_manager_ = platform_isolate_manager;
 
   IsolateMaker isolate_maker =
       [parent_isolate, debug_name](
@@ -365,20 +368,20 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
 
   fml::RefPtr<fml::TaskRunner> platform_task_runner =
       task_runners.GetPlatformTaskRunner();
+  std::cout << "platform_task_runner = " << (void*)platform_task_runner.get()
+            << std::endl;
   platform_task_runner->PostTask([entry_point_handle, new_isolate,
                                   isolate_ready_port_id,
                                   platform_isolate_manager]() {
-    PlatformIsolateManager* platform_isolate_manager =
-        DartVMRef::GetRunningVM()->GetPlatformIsolateManager();
+    std::cout << "Hello from the platform task runner" << std::endl;
     if (platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
       // new_isolate has already been shut down. Do nothing.
+      std::cout << "platform_isolate_manager is shutdown" << std::endl;
       return;
     }
     Dart_EnterIsolate(new_isolate);
     Dart_EnterScope();
-    std::cout << "Hello from the platform task runner " << GetCurrentThreadId()
-              << std::endl;
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
 
@@ -1240,9 +1243,8 @@ void DartIsolate::OnShutdownCallback() {
   }
 
   if (is_platform_isolate_) {
-    PlatformIsolateManager* platform_isolate_manager =
-        DartVMRef::GetRunningVM()->GetPlatformIsolateManager();
-    platform_isolate_manager->RemovePlatformIsolate(isolate());
+    FML_DCHECK(platform_isolate_manager_ != nullptr);
+    platform_isolate_manager_->RemovePlatformIsolate(isolate());
   }
 
   shutdown_callbacks_.clear();

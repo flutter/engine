@@ -18,15 +18,15 @@ PlatformIsolateManager::PlatformIsolateManager() {
 void PlatformIsolateManager::RegisterPlatformIsolate(Dart_Isolate isolate) {
   FML_DCHECK(!is_shutdown_);
   std::cout << "PlatformIsolateManager::RegisterPlatformIsolate: "
-            << (void*)isolate << std::endl;
+            << (void*)this << "\t" << (void*)isolate << std::endl;
   std::scoped_lock lock(platform_isolates_lock_);
-  FML_DCHECK(!platform_isolates_.contains(isolate));
+  FML_DCHECK(platform_isolates_.count(isolate) == 0);
   platform_isolates_.insert(isolate);
 }
 
 void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
-  std::cout << "PlatformIsolateManager::RemovePlatformIsolate: "
-            << (void*)isolate << std::endl;
+  std::cout << "PlatformIsolateManager::RemovePlatformIsolate: " << (void*)this
+            << "\t" << (void*)isolate << std::endl;
   if (is_shutdown_) {
     // Removal during ShutdownPlatformIsolates. Ignore, to avoid modifying
     // platform_isolates_ during iteration.
@@ -34,13 +34,14 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
     return;
   }
   std::scoped_lock lock(platform_isolates_lock_);
-  FML_DCHECK(platform_isolates_.contains(isolate));
+  FML_DCHECK(platform_isolates_.count(isolate) != 0);
   platform_isolates_.erase(isolate);
 }
 
 void PlatformIsolateManager::ShutdownPlatformIsolates() {
   // TODO: Assert that we're on the platform thread.
-  std::cout << "PlatformIsolateManager::ShutdownPlatformIsolates" << std::endl;
+  std::cout << "PlatformIsolateManager::ShutdownPlatformIsolates: "
+            << (void*)this << "\t" << std::endl;
   is_shutdown_ = true;
   std::scoped_lock lock(platform_isolates_lock_);
   for (Dart_Isolate isolate : platform_isolates_) {

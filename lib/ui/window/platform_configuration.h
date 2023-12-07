@@ -25,6 +25,7 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class PlatformMessageHandler;
+class PlatformIsolateManager;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -239,6 +240,9 @@ class PlatformConfigurationClient {
   ///
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const = 0;
+
+  virtual PlatformIsolateManager* GetPlatformIsolateManager() = 0;
+  virtual const PlatformIsolateManager* GetPlatformIsolateManager() const = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();

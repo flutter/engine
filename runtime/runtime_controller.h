@@ -22,6 +22,7 @@
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/platform_data.h"
+#include "flutter/runtime/platform_isolate_manager.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 
@@ -614,6 +615,14 @@ class RuntimeController : public PlatformConfigurationClient {
     return root_isolate_;
   }
 
+  PlatformIsolateManager* GetPlatformIsolateManager() override {
+    return &platform_isolate_manager_;
+  }
+
+  const PlatformIsolateManager* GetPlatformIsolateManager() const override {
+    return &platform_isolate_manager_;
+  }
+
  protected:
   /// Constructor for Mocks.
   RuntimeController(RuntimeDelegate& p_client, const TaskRunners& task_runners);
@@ -645,6 +654,7 @@ class RuntimeController : public PlatformConfigurationClient {
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
   UIDartState::Context context_;
+  PlatformIsolateManager platform_isolate_manager_;
   bool has_flushed_runtime_state_ = false;
 
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();

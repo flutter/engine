@@ -5,6 +5,7 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
 
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -495,12 +496,27 @@ Shell::Shell(DartVMRef vm,
 }
 
 Shell::~Shell() {
+  std::cout << "Shell::~Shell" << std::endl;
   PersistentCache::GetCacheForProcess()->RemoveWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
 
   vm_->GetServiceProtocol()->RemoveHandler(this);
 
-  fml::AutoResetWaitableEvent ui_latch, gpu_latch, platform_latch, io_latch;
+  fml::AutoResetWaitableEvent platiso_latch, ui_latch, gpu_latch,
+      platform_latch, io_latch;
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetPlatformTaskRunner(),
+      fml::MakeCopyable([this, &platiso_latch]() mutable {
+        const PlatformIsolateManager* platform_isolate_manager =
+            engine_->GetRuntimeController()->GetPlatformIsolateManager();
+        // PlatformIsolateManager::ShutdownPlatformIsolates is thread safe,
+        // so it's safe to const_cast here.
+        const_cast<PlatformIsolateManager*>(platform_isolate_manager)
+            ->ShutdownPlatformIsolates();
+        platiso_latch.Signal();
+      }));
+  platiso_latch.Wait();
 
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
