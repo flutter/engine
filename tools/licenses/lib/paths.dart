@@ -58,6 +58,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/ninja', // build system
   r'flutter/third_party/ocmock', // only used for tests
   r'flutter/third_party/pkg/archive', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/pkg/pc-dart',
   r'flutter/third_party/pkg/equatable',
   r'flutter/third_party/pkg/flutter_packages',
   r'flutter/third_party/pkg/gcloud',
@@ -129,7 +130,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/build', // not shipped in binary
   r'third_party/dart/docs', // not shipped in binary
   r'third_party/dart/pkg', // packages that don't become part of the binary (e.g. the analyzer)
-  r'third_party/dart/pc-dart', // packages that don't become part of the binary (e.g. the analyzer)
   r'third_party/dart/runtime/bin/ffi_test',
   r'third_party/dart/runtime/docs',
   r'third_party/dart/runtime/vm/service',
