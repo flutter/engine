@@ -54,6 +54,31 @@ Matrix MakeAnchorScale(const Point& anchor, Vector2 scale) {
          Matrix::MakeTranslation({-anchor.x, -anchor.y, 0});
 }
 
+void SetTileMode(SamplerDescriptor* descriptor,
+                 const ContentContext& renderer,
+                 Entity::TileMode tile_mode) {
+  switch (tile_mode) {
+    case Entity::TileMode::kDecal:
+      if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
+        descriptor->width_address_mode = SamplerAddressMode::kDecal;
+        descriptor->height_address_mode = SamplerAddressMode::kDecal;
+      }
+      break;
+    case Entity::TileMode::kClamp:
+      descriptor->width_address_mode = SamplerAddressMode::kClampToEdge;
+      descriptor->height_address_mode = SamplerAddressMode::kClampToEdge;
+      break;
+    case Entity::TileMode::kMirror:
+      descriptor->width_address_mode = SamplerAddressMode::kMirror;
+      descriptor->height_address_mode = SamplerAddressMode::kMirror;
+      break;
+    case Entity::TileMode::kRepeat:
+      descriptor->width_address_mode = SamplerAddressMode::kRepeat;
+      descriptor->height_address_mode = SamplerAddressMode::kRepeat;
+      break;
+  }
+}
+
 /// Makes a subpass that will render the scaled down input and add the
 /// transparent gutter required for the blur halo.
 std::shared_ptr<Texture> MakeDownsampleSubpass(
@@ -98,35 +123,7 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
             });
 
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
-        switch (tile_mode) {
-          case Entity::TileMode::kDecal:
-            if (renderer.GetDeviceCapabilities()
-                    .SupportsDecalSamplerAddressMode()) {
-              linear_sampler_descriptor.width_address_mode =
-                  SamplerAddressMode::kDecal;
-              linear_sampler_descriptor.height_address_mode =
-                  SamplerAddressMode::kDecal;
-            }
-            break;
-          case Entity::TileMode::kClamp:
-            linear_sampler_descriptor.width_address_mode =
-                SamplerAddressMode::kClampToEdge;
-            linear_sampler_descriptor.height_address_mode =
-                SamplerAddressMode::kClampToEdge;
-            break;
-          case Entity::TileMode::kMirror:
-            linear_sampler_descriptor.width_address_mode =
-                SamplerAddressMode::kMirror;
-            linear_sampler_descriptor.height_address_mode =
-                SamplerAddressMode::kMirror;
-            break;
-          case Entity::TileMode::kRepeat:
-            linear_sampler_descriptor.width_address_mode =
-                SamplerAddressMode::kRepeat;
-            linear_sampler_descriptor.height_address_mode =
-                SamplerAddressMode::kRepeat;
-            break;
-        }
+        SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
         TextureFillVertexShader::BindFrameInfo(
