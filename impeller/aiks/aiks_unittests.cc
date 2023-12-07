@@ -4257,7 +4257,6 @@ TEST_P(AiksTest, AdvancedBlendWithClearColorOptimization) {
   canvas.DrawRect(
       Rect::MakeXYWH(0, 0, 200, 300),
       {.color = {1.0, 0.0, 1.0, 1.0}, .blend_mode = BlendMode::kMultiply});
-
 }
 
 TEST_P(AiksTest, GaussianBlurAtPeripheryVertical) {
