@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:test_api/src/backend/runtime.dart';
@@ -23,6 +24,56 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
   @override
   Uri get driverUri => Uri(scheme: 'http', host: 'localhost', port: portNumber);
 
+  late Process _driverProcess;
+  int _retryCount = 0;
+  static const int _waitBetweenRetry = 1;
+  static const int _maxRetryCount = 5;
+
   @override
   Future<Process> spawnDriverProcess() => Process.start('safaridriver', <String>['-p', portNumber.toString()]);
+
+  @override
+  Future<void> prepare() async {
+    await _startDriverProcess();
+  }
+
+  /// Pick an unused port and start `safaridriver` using that port.
+  ///
+  /// On macOS 13, starting `safaridriver` can be flakey so if it returns an
+  /// "Operation not permitted" error, kill the `safaridriver` process and try again.
+  Future<void> _startDriverProcess() async {
+    _retryCount += 1;
+    if (_retryCount > 1) {
+      await Future<void>.delayed(const Duration(seconds: _waitBetweenRetry));
+    }
+    portNumber = await pickUnusedPort();
+
+    print('Attempt $_retryCount to start safaridriver on port $portNumber');
+
+    _driverProcess = await spawnDriverProcess();
+
+    _driverProcess.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((String error) {
+      print('[Webdriver][Error] $error');
+      if (_retryCount > _maxRetryCount) {
+        print('[Webdriver][Error] Failed to start after $_maxRetryCount tries.');
+      } else if (error.contains('Operation not permitted')) {
+        _driverProcess.kill();
+        _startDriverProcess();
+      }
+    });
+    _driverProcess.stdout
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((String log) {
+      print('[Webdriver] $log');
+    });
+  }
+
+  @override
+  Future<void> cleanup() async {
+    _driverProcess.kill();
+  }
 }
