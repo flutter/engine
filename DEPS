@@ -715,7 +715,7 @@ deps = {
   'src/third_party/stb':
   Var('flutter_git') + '/third_party/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
 
-  'src/third_party/pc-dart':
+  'src/flutter/third_party/pkg/pc-dart':
   Var('github_git') + '/bcgit/pc-dart.git' + '@' + '6ff86a9d0c81ad92a4a879acad84ed9b96536240', # 3.6.2
 
   'src/third_party/gradle': {
