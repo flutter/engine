@@ -26,8 +26,8 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
 
   late Process _driverProcess;
   int _retryCount = 0;
-  static const int _waitBetweenRetry = 1;
-  static const int _maxRetryCount = 5;
+  static const int _waitBetweenRetryInSeconds = 1;
+  static const int _maxRetryCount = 10;
 
   @override
   Future<Process> spawnDriverProcess() => Process.start('safaridriver', <String>['-p', portNumber.toString()]);
@@ -39,12 +39,14 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
 
   /// Pick an unused port and start `safaridriver` using that port.
   ///
-  /// On macOS 13, starting `safaridriver` can be flakey so if it returns an
-  /// "Operation not permitted" error, kill the `safaridriver` process and try again.
+  /// On macOS 13, starting `safaridriver` can be flaky so if it returns an
+  /// "Operation not permitted" error, kill the `safaridriver` process and try
+  /// again with a different port. Wait [_waitBetweenRetryInSeconds] seconds
+  /// between retries. Try up to [_maxRetryCount] times.
   Future<void> _startDriverProcess() async {
     _retryCount += 1;
     if (_retryCount > 1) {
-      await Future<void>.delayed(const Duration(seconds: _waitBetweenRetry));
+      await Future<void>.delayed(const Duration(seconds: _waitBetweenRetryInSeconds));
     }
     portNumber = await pickUnusedPort();
 
