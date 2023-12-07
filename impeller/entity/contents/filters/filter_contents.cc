@@ -50,6 +50,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   return blur;
 }
 
+#define IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER 1
+
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const FilterInput::Ref& input,
     Sigma sigma_x,
@@ -66,7 +68,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
   // TODO(https://github.com/flutter/flutter/issues/131580): Remove once the new
   // blur handles all cases.
   if (use_new_filter) {
-    auto blur = std::make_shared<GaussianBlurFilterContents>(sigma_x.sigma);
+    auto blur =
+        std::make_shared<GaussianBlurFilterContents>(sigma_x.sigma, tile_mode);
     blur->SetInputs({input});
     return blur;
   }

@@ -62,7 +62,8 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
     const SamplerDescriptor& sampler_descriptor,
     const Quad& uvs,
     const ISize& subpass_size,
-    const Vector2 padding) {
+    const Vector2 padding,
+    Entity::TileMode tile_mode) {
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
         HostBuffer& host_buffer = pass.GetTransientsBuffer();
@@ -82,21 +83,50 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         // creates a halo effect. This compensates for when the expanded clip
         // region can't give us the full gutter we want.
         Vector2 texture_size = Vector2(input_texture->GetSize());
-        Quad vertices =
+        Quad guttered_uvs =
             MakeAnchorScale({0.5, 0.5},
-                            texture_size / (texture_size + padding * 2))
-                .Transform(
-                    {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)});
+                            (texture_size + padding * 2) / texture_size)
+                .Transform(uvs);
 
-        BindVertices<TextureFillVertexShader>(cmd, host_buffer,
-                                              {
-                                                  {vertices[0], uvs[0]},
-                                                  {vertices[1], uvs[1]},
-                                                  {vertices[2], uvs[2]},
-                                                  {vertices[3], uvs[3]},
-                                              });
+        BindVertices<TextureFillVertexShader>(
+            cmd, host_buffer,
+            {
+                {Point(0, 0), guttered_uvs[0]},
+                {Point(1, 0), guttered_uvs[1]},
+                {Point(0, 1), guttered_uvs[2]},
+                {Point(1, 1), guttered_uvs[3]},
+            });
 
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
+        switch (tile_mode) {
+          case Entity::TileMode::kDecal:
+            if (renderer.GetDeviceCapabilities()
+                    .SupportsDecalSamplerAddressMode()) {
+              linear_sampler_descriptor.width_address_mode =
+                  SamplerAddressMode::kDecal;
+              linear_sampler_descriptor.height_address_mode =
+                  SamplerAddressMode::kDecal;
+            }
+            break;
+          case Entity::TileMode::kClamp:
+            linear_sampler_descriptor.width_address_mode =
+                SamplerAddressMode::kClampToEdge;
+            linear_sampler_descriptor.height_address_mode =
+                SamplerAddressMode::kClampToEdge;
+            break;
+          case Entity::TileMode::kMirror:
+            linear_sampler_descriptor.width_address_mode =
+                SamplerAddressMode::kMirror;
+            linear_sampler_descriptor.height_address_mode =
+                SamplerAddressMode::kMirror;
+            break;
+          case Entity::TileMode::kRepeat:
+            linear_sampler_descriptor.width_address_mode =
+                SamplerAddressMode::kRepeat;
+            linear_sampler_descriptor.height_address_mode =
+                SamplerAddressMode::kRepeat;
+            break;
+        }
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
         TextureFillVertexShader::BindFrameInfo(
@@ -165,8 +195,10 @@ std::shared_ptr<Texture> MakeBlurSubpass(
 
 }  // namespace
 
-GaussianBlurFilterContents::GaussianBlurFilterContents(Scalar sigma)
-    : sigma_(sigma) {}
+GaussianBlurFilterContents::GaussianBlurFilterContents(
+    Scalar sigma,
+    Entity::TileMode tile_mode)
+    : sigma_(sigma), tile_mode_(tile_mode) {}
 
 // This value was extracted from Skia, see:
 //  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/ganesh/GrBlurUtils.cpp#L2561-L2576
@@ -264,7 +296,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
-      uvs, subpass_size, padding);
+      uvs, subpass_size, padding, tile_mode_);
 
   Vector2 pass1_pixel_size = 1.0 / Vector2(pass1_out_texture->GetSize());
 
