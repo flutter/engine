@@ -3078,11 +3078,11 @@ Future<void> testMain() async {
       if (isSafari) {
         expect(input.style.background, contains('none'));
         expect(input.style.outline, contains('currentcolor'));
-        expect(input.style.border, contains('none'));
+        expect(input.style.border, contains('medium'));
       } else {
         expect(input.style.background, contains('transparent'));
         expect(input.style.outline, contains('none'));
-        expect(input.style.border, contains('medium'));
+        expect(input.style.border, contains('none'));
       }
       expect(input.style.backgroundColor, contains('transparent'));
       expect(input.style.caretColor, contains('transparent'));
