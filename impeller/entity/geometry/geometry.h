@@ -10,6 +10,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -49,11 +50,11 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
 class Geometry {
  public:
   static std::shared_ptr<Geometry> MakeFillPath(
-      const Path& path,
+      Path path,
       std::optional<Rect> inner_rect = std::nullopt);
 
   static std::shared_ptr<Geometry> MakeStrokePath(
-      const Path& path,
+      Path path,
       Scalar stroke_width = 0.0,
       Scalar miter_limit = 4.0,
       Cap stroke_cap = Cap::kButt,
@@ -69,6 +70,10 @@ class Geometry {
                                             Cap cap);
 
   static std::shared_ptr<Geometry> MakeCircle(Point center, Scalar radius);
+
+  static std::shared_ptr<Geometry> MakeStrokedCircle(Point center,
+                                                     Scalar radius,
+                                                     Scalar stroke_width);
 
   static std::shared_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,

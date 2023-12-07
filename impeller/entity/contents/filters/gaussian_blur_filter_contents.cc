@@ -10,6 +10,7 @@
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -44,8 +45,7 @@ void BindVertices(Command& cmd,
                   std::initializer_list<typename T::PerVertexData>&& vertices) {
   VertexBufferBuilder<typename T::PerVertexData> vtx_builder;
   vtx_builder.AddVertices(vertices);
-  auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-  cmd.BindVertices(vtx_buffer);
+  cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 }
 
 Matrix MakeAnchorScale(const Point& anchor, Vector2 scale) {
@@ -143,10 +143,13 @@ std::shared_ptr<Texture> MakeBlurSubpass(
                                                    {Point(1, 1), Point(1, 1)},
                                                });
 
+        SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
+        linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
+        linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
         GaussianBlurFragmentShader::BindTextureSampler(
             cmd, input_texture,
             renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                sampler_descriptor));
+                linear_sampler_descriptor));
         GaussianBlurVertexShader::BindFrameInfo(
             cmd, host_buffer.EmplaceUniform(frame_info));
         GaussianBlurFragmentShader::BindBlurInfo(
@@ -254,6 +257,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   //                  amount we are throwing away.
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
+  Vector2 effective_scalar = subpass_size / padded_size;
 
   Quad uvs =
       CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
@@ -268,8 +272,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       renderer, pass1_out_texture, input_snapshot->sampler_descriptor,
       GaussianBlurFragmentShader::BlurInfo{
           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-          .blur_sigma = sigma_ * downsample_scalar.y,
-          .blur_radius = blur_radius * downsample_scalar.y,
+          .blur_sigma = sigma_ * effective_scalar.y,
+          .blur_radius = blur_radius * effective_scalar.y,
           .step_size = 1.0,
       });
 
@@ -278,8 +282,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       renderer, pass2_out_texture, input_snapshot->sampler_descriptor,
       GaussianBlurFragmentShader::BlurInfo{
           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-          .blur_sigma = sigma_ * downsample_scalar.x,
-          .blur_radius = blur_radius * downsample_scalar.x,
+          .blur_sigma = sigma_ * effective_scalar.x,
+          .blur_radius = blur_radius * effective_scalar.x,
           .step_size = 1.0,
       });
 
@@ -291,8 +295,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           .texture = pass3_out_texture,
           .transform = input_snapshot->transform *
                        Matrix::MakeTranslation({-padding.x, -padding.y, 0}) *
-                       Matrix::MakeScale(padded_size /
-                                         Vector2(pass1_out_texture->GetSize())),
+                       Matrix::MakeScale(1 / effective_scalar),
           .sampler_descriptor = sampler_desc,
           .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
