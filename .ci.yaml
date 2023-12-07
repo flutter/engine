@@ -65,6 +65,7 @@ targets:
       - shell/platform/android/**
 
   - name: Linux linux_android_emulator_tests_api_33
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
