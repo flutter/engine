@@ -117,7 +117,7 @@ void Capture::Rewind() {
 #ifdef IMPELLER_ENABLE_CAPTURE
 #define _CAPTURE_PROPERTY_RECORDER_DEFINITION(type_name, pascal_name,          \
                                               lower_name)                      \
-  type_name Capture::Add##pascal_name(const std::string& label,                \
+  type_name Capture::Add##pascal_name(const std::string_view& label,           \
                                       type_name value,                         \
                                       CaptureProperty::Options options) {      \
     if (!active_) {                                                            \
@@ -125,8 +125,9 @@ void Capture::Rewind() {
     }                                                                          \
     FML_DCHECK(element_ != nullptr);                                           \
                                                                                \
+    std::string label_clone = std::string(label);                              \
     auto new_value = Capture##pascal_name##Property::Make(                     \
-        label, std::move(value), options);                                     \
+        label_clone, std::move(value), options);                               \
                                                                                \
     auto next = std::reinterpret_pointer_cast<Capture##pascal_name##Property>( \
         element_->properties.GetNext(std::move(new_value), options.readonly)); \
