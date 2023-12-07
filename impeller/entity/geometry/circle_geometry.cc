@@ -10,12 +10,14 @@
 
 namespace impeller {
 
-CircleGeometry::CircleGeometry(Point center, Scalar radius)
+CircleGeometry::CircleGeometry(const Point& center, Scalar radius)
     : center_(center), radius_(radius), stroke_width_(-1.0f) {
   FML_DCHECK(radius >= 0);
 }
 
-CircleGeometry::CircleGeometry(Point center, Scalar radius, Scalar stroke_width)
+CircleGeometry::CircleGeometry(const Point& center,
+                               Scalar radius,
+                               Scalar stroke_width)
     : center_(center),
       radius_(radius),
       stroke_width_(std::max(stroke_width, 0.0f)) {

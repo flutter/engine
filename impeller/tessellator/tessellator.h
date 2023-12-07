@@ -148,7 +148,7 @@ class Tessellator {
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the center point.
   std::unique_ptr<VertexGenerator> FilledCircle(const Matrix& view_transform,
-                                                Point center,
+                                                const Point& center,
                                                 Scalar radius);
 
   /// @brief   Create a |VertexGenerator| that can produce vertices for
@@ -162,7 +162,7 @@ class Tessellator {
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the center point.
   std::unique_ptr<VertexGenerator> StrokedCircle(const Matrix& view_transform,
-                                                 Point center,
+                                                 const Point& center,
                                                  Scalar outer_radius,
                                                  Scalar inner_radius);
 
@@ -176,8 +176,8 @@ class Tessellator {
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the two points.
   std::unique_ptr<VertexGenerator> RoundCapLine(const Matrix& view_transform,
-                                                Point p0,
-                                                Point p1,
+                                                const Point& p0,
+                                                const Point& p1,
                                                 Scalar radius);
 
   /// @brief   Create a |VertexGenerator| that can produce vertices for
@@ -190,7 +190,7 @@ class Tessellator {
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the bounds.
   std::unique_ptr<VertexGenerator> FilledEllipse(const Matrix& view_transform,
-                                                 Rect bounds);
+                                                 const Rect& bounds);
 
  private:
   /// Used for polyline generation.

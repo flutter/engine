@@ -378,7 +378,7 @@ using VertexGenerator = Tessellator::VertexGenerator;
 
 std::unique_ptr<VertexGenerator> Tessellator::FilledCircle(
     const Matrix& view_transform,
-    Point center,
+    const Point& center,
     Scalar radius) {
   auto divisions =
       ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() * radius);
@@ -388,7 +388,7 @@ std::unique_ptr<VertexGenerator> Tessellator::FilledCircle(
 
 std::unique_ptr<VertexGenerator> Tessellator::StrokedCircle(
     const Matrix& view_transform,
-    Point center,
+    const Point& center,
     Scalar outer_radius,
     Scalar inner_radius) {
   auto divisions = ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() *
@@ -404,8 +404,8 @@ std::unique_ptr<VertexGenerator> Tessellator::StrokedCircle(
 
 std::unique_ptr<VertexGenerator> Tessellator::RoundCapLine(
     const Matrix& view_transform,
-    Point p0,
-    Point p1,
+    const Point& p0,
+    const Point& p1,
     Scalar radius) {
   auto along = p1 - p0;
   auto length = along.GetLength();
@@ -420,7 +420,7 @@ std::unique_ptr<VertexGenerator> Tessellator::RoundCapLine(
 
 std::unique_ptr<VertexGenerator> Tessellator::FilledEllipse(
     const Matrix& view_transform,
-    Rect bounds) {
+    const Rect& bounds) {
   if (bounds.GetSize().width == bounds.GetSize().height) {
     return FilledCircle(view_transform, bounds.GetCenter(),
                         bounds.GetSize().width * 0.5f);

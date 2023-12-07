@@ -12,8 +12,11 @@ namespace impeller {
 // coordinates) for either filled or stroked circles
 class CircleGeometry final : public Geometry {
  public:
-  explicit CircleGeometry(Point center, Scalar radius);
-  explicit CircleGeometry(Point center, Scalar radius, Scalar stroke_width);
+  explicit CircleGeometry(const Point& center, Scalar radius);
+
+  explicit CircleGeometry(const Point& center,
+                          Scalar radius,
+                          Scalar stroke_width);
 
   ~CircleGeometry() = default;
 

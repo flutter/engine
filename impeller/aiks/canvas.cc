@@ -547,7 +547,7 @@ void Canvas::RestoreClip() {
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
-void Canvas::DrawPoints(const std::vector<Point>& points,
+void Canvas::DrawPoints(std::vector<Point> points,
                         Scalar radius,
                         const Paint& paint,
                         PointStyle point_style) {
@@ -561,7 +561,7 @@ void Canvas::DrawPoints(const std::vector<Point>& points,
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateContentsForGeometryWithFilters(
       paint,
-      Geometry::MakePointField(points, radius,
+      Geometry::MakePointField(std::move(points), radius,
                                /*round=*/point_style == PointStyle::kRound)));
 
   GetCurrentPass().AddEntity(std::move(entity));

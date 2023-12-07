@@ -110,7 +110,7 @@ class Canvas {
 
   void DrawCircle(const Point& center, Scalar radius, const Paint& paint);
 
-  void DrawPoints(const std::vector<Point>& points,
+  void DrawPoints(std::vector<Point> points,
                   Scalar radius,
                   const Paint& paint,
                   PointStyle point_style);

@@ -155,11 +155,10 @@ std::shared_ptr<Geometry> Geometry::MakeFillPath(
   return std::make_shared<FillPathGeometry>(std::move(path), inner_rect);
 }
 
-std::shared_ptr<Geometry> Geometry::MakePointField(
-    const std::vector<Point>& points,
-    Scalar radius,
-    bool round) {
-  return std::make_shared<PointFieldGeometry>(points, radius, round);
+std::shared_ptr<Geometry> Geometry::MakePointField(std::vector<Point> points,
+                                                   Scalar radius,
+                                                   bool round) {
+  return std::make_shared<PointFieldGeometry>(std::move(points), radius, round);
 }
 
 std::shared_ptr<Geometry> Geometry::MakeStrokePath(Path path,

@@ -78,8 +78,9 @@ class Geometry {
                                                      Scalar radius,
                                                      Scalar stroke_width);
 
-  static std::shared_ptr<Geometry>
-  MakePointField(const std::vector<Point>& points, Scalar radius, bool round);
+  static std::shared_ptr<Geometry> MakePointField(std::vector<Point> points,
+                                                  Scalar radius,
+                                                  bool round);
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
