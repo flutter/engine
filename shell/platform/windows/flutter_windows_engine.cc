@@ -445,6 +445,38 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     bool result = false;
     bool rendered_backing = false;
 
+    // Attempted double buffering:
+    /*HWND hwnd = host->view()->GetPlatformWindow();
+    HDC dstdc = GetDC(hwnd);
+    RECT rect;
+    GetClientRect(hwnd, &rect);
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+    void* bits;
+    HDC srcdc = CreateCompatibleDC(dstdc);
+    BITMAPINFO bmi = {};
+    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bmi.bmiHeader.biWidth = width;
+    bmi.bmiHeader.biHeight = -height;
+    bmi.bmiHeader.biPlanes = 1;
+    bmi.bmiHeader.biBitCount = 32;
+    bmi.bmiHeader.biCompression = BI_RGB;
+    bmi.bmiHeader.biSizeImage = width * height * 4;
+    HBITMAP srcbm = CreateDIBSection(srcdc, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
+    SelectObject(srcdc, srcbm);
+    memset(bits, 0, width * height * 4);
+
+    HDC buffer = CreateCompatibleDC(dstdc);
+    void* bufbits;
+    HBITMAP bufferbm = CreateDIBSection(buffer, &bmi, DIB_RGB_COLORS, &bufbits, NULL, 0);
+    SelectObject(buffer, bufferbm);
+
+    BLENDFUNCTION bf;
+    bf.AlphaFormat = AC_SRC_ALPHA;
+    bf.BlendFlags = 0;
+    bf.BlendOp = AC_SRC_OVER;
+    bf.SourceConstantAlpha = 0;*/
+
     for (size_t index = 0; index < layers_count; index++) {
       const auto layer = layers[index];
       if (layer->type == kFlutterLayerContentTypeBackingStore) {
@@ -453,18 +485,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
           return false;
         }
         const auto& backing_store = layer->backing_store->software;
-        size_t bytes = backing_store.row_bytes * backing_store.height;
-        size_t pix = bytes / 4;
-        auto data = (const uint32_t*)backing_store.allocation;
-        int min = 256, max = -1;
-        for (int i = 0; i < pix; i++) {
-          int alpha = data[i] >> 24;
-          if (alpha > max) max = alpha;
-          if (alpha < min) min = alpha;
-        }
-        if (rendered_backing) {
-          continue;
-        }
+        /*FML_LOG(ERROR) << "Set bits layer " << index << ": " << SetDIBitsToDevice(srcdc, layer->offset.x, layer->offset.y, layer->size.width, layer->size.height, 0, 0, 0, layer->size.height, backing_store.allocation, &bmi, DIB_RGB_COLORS);
+        FML_LOG(ERROR) << "Blend layer " << index << ": " << AlphaBlend(buffer, 0, 0, width, height, srcdc, 0, 0, width, height, bf);*/
         result |= rendered_backing = host->view()->PresentSoftwareBitmap(backing_store.allocation,
                                                    backing_store.row_bytes,
                                                    backing_store.height);
@@ -492,6 +514,14 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
         });*/
       }
     }
+
+    /*FML_LOG(ERROR) << "Blit buffer: " << (result = SetDIBitsToDevice(dstdc, 0, 0, width, height, 0, 0, 0, height, bufbits, &bmi, DIB_RGB_COLORS));
+
+    DeleteObject(bufferbm);
+    DeleteDC(buffer);
+    DeleteObject(srcbm);
+    DeleteDC(srcdc);
+    ReleaseDC(hwnd, dstdc);*/
     return result;
   };
   args.compositor = &compositor;

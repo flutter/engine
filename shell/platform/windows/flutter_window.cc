@@ -325,7 +325,11 @@ void FlutterWindow::OnResetImeComposing() {
 bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
                                            size_t row_bytes,
                                            size_t height) {
+  // Destination DC
   HDC dc = ::GetDC(GetWindowHandle());
+
+  // Source DC
+  HDC src = CreateCompatibleDC(dc);
   BITMAPINFO bmi = {};
   bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bmi.bmiHeader.biWidth = row_bytes / 4;
@@ -333,10 +337,29 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
   bmi.bmiHeader.biPlanes = 1;
   bmi.bmiHeader.biBitCount = 32;
   bmi.bmiHeader.biCompression = BI_RGB;
-  bmi.bmiHeader.biSizeImage = 0;
-  int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
-                              allocation, &bmi, DIB_RGB_COLORS);
+  bmi.bmiHeader.biSizeImage = row_bytes * height;
+
+  // Source BITMAP
+  //HBITMAP srcbm = CreateCompatibleBitmap(src, row_bytes / 4, height);
+  void* bits;
+  HBITMAP srcbm = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
+  SelectObject(src, srcbm);
+  memcpy(bits, allocation, row_bytes * height);
+
+  // Write to source
+  SetDIBitsToDevice(src, 0, 0, row_bytes / 4, height, 0, 0, 0, height, allocation, &bmi, DIB_RGB_COLORS);
+
+  BLENDFUNCTION bf;
+  bf.AlphaFormat = AC_SRC_ALPHA;
+  bf.BlendFlags = 0;
+  bf.BlendOp = AC_SRC_OVER;
+  bf.SourceConstantAlpha = 0xff;
+
+  
+  int ret = AlphaBlend(dc, 0, 0, row_bytes / 4, height, src, 0, 0, row_bytes / 4, height, bf);
   ::ReleaseDC(GetWindowHandle(), dc);
+  DeleteObject(srcbm);
+  DeleteDC(src);
   return ret != 0;
 }
 
