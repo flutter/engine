@@ -119,14 +119,10 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.entity_transform = entity.GetTransform();
   frame_info.text_color = ToVector(color.Premultiply());
 
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
+  using FSS = GlyphAtlasColorPipeline::FragmentShader;
+  FSS::FragInfo frag_info;
   if (type == GlyphAtlas::Type::kColorBitmap) {
-    using FSS = GlyphAtlasColorPipeline::FragmentShader;
-    FSS::FragInfo frag_info;
     frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
-    FSS::BindFragInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frag_info));
   }
 
   SamplerDescriptor sampler_desc;
@@ -143,13 +139,6 @@ bool TextContents::Render(const ContentContext& renderer,
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
   sampler_desc.mip_filter = MipFilter::kNearest;
-
-  FS::BindGlyphAtlasSampler(
-      cmd,                  // command
-      atlas->GetTexture(),  // texture
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-          sampler_desc)  // sampler
-  );
 
   // Common vertex information for all glyphs.
   // All glyphs are given the same vertex information in the form of a
@@ -219,7 +208,38 @@ bool TextContents::Render(const ContentContext& renderer,
       .index_type = IndexType::kNone,
   });
 
-  return pass.AddCommand(std::move(cmd));
+  // Need to do this better
+  if (type == GlyphAtlas::Type::kColorBitmap) {
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            FSS::BindFragInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frag_info)),
+        },
+        {
+            FS::BindGlyphAtlasSampler(
+                atlas->GetTexture(),  // texture
+                renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                    sampler_desc)  // sampler
+                ),
+        });
+  }
+
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          VS::BindFrameInfo(
+              pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+      },
+      {
+          FS::BindGlyphAtlasSampler(
+              atlas->GetTexture(),  // texture
+              renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                  sampler_desc)  // sampler
+              ),
+      });
 }
 
 }  // namespace impeller

@@ -161,16 +161,21 @@ VertexBuffer CuboidGeometry::GetVertexBuffer(Allocator& allocator) const {
 }
 
 // |Geometry|
-void CuboidGeometry::BindToCommand(const SceneContext& scene_context,
-                                   HostBuffer& buffer,
-                                   const Matrix& transform,
-                                   Command& command) const {
+void CuboidGeometry::BindToCommand(
+    const SceneContext& scene_context,
+    HostBuffer& buffer,
+    const Matrix& transform,
+    Command& command,
+    std::vector<BoundBuffer>& bound_buffers,
+    std::vector<BoundTexture>& bound_textures) const {
   command.BindVertices(
       GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
 
   UnskinnedVertexShader::FrameInfo info;
   info.mvp = transform;
-  UnskinnedVertexShader::BindFrameInfo(command, buffer.EmplaceUniform(info));
+
+  bound_buffers.emplace_back(
+      UnskinnedVertexShader::BindFrameInfo(buffer.EmplaceUniform(info)));
 }
 
 //------------------------------------------------------------------------------
@@ -202,13 +207,17 @@ void UnskinnedVertexBufferGeometry::BindToCommand(
     const SceneContext& scene_context,
     HostBuffer& buffer,
     const Matrix& transform,
-    Command& command) const {
+    Command& command,
+    std::vector<BoundBuffer>& bound_buffers,
+    std::vector<BoundTexture>& bound_textures) const {
   command.BindVertices(
       GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
 
   UnskinnedVertexShader::FrameInfo info;
   info.mvp = transform;
-  UnskinnedVertexShader::BindFrameInfo(command, buffer.EmplaceUniform(info));
+
+  bound_buffers.emplace_back(
+      UnskinnedVertexShader::BindFrameInfo(buffer.EmplaceUniform(info)));
 }
 
 //------------------------------------------------------------------------------
@@ -239,7 +248,9 @@ void SkinnedVertexBufferGeometry::BindToCommand(
     const SceneContext& scene_context,
     HostBuffer& buffer,
     const Matrix& transform,
-    Command& command) const {
+    Command& command,
+    std::vector<BoundBuffer>& bound_buffers,
+    std::vector<BoundTexture>& bound_textures) const {
   command.BindVertices(
       GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
 
@@ -250,18 +261,18 @@ void SkinnedVertexBufferGeometry::BindToCommand(
   sampler_desc.width_address_mode = SamplerAddressMode::kRepeat;
   sampler_desc.label = "NN Repeat";
 
-  SkinnedVertexShader::BindJointsTexture(
-      command,
-      joints_texture_ ? joints_texture_ : scene_context.GetPlaceholderTexture(),
-      scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
-          sampler_desc));
-
   SkinnedVertexShader::FrameInfo info;
   info.mvp = transform;
   info.enable_skinning = joints_texture_ ? 1 : 0;
   info.joint_texture_size =
       joints_texture_ ? joints_texture_->GetSize().width : 1;
-  SkinnedVertexShader::BindFrameInfo(command, buffer.EmplaceUniform(info));
+
+  bound_buffers.emplace_back(
+      SkinnedVertexShader::BindFrameInfo(buffer.EmplaceUniform(info)));
+  bound_textures.emplace_back(SkinnedVertexShader::BindJointsTexture(
+      joints_texture_ ? joints_texture_ : scene_context.GetPlaceholderTexture(),
+      scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
+          sampler_desc)));
 }
 
 // |Geometry|

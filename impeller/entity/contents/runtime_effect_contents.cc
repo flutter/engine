@@ -162,7 +162,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
   /// Fragment stage uniforms.
@@ -171,6 +170,12 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
   size_t buffer_offset = 0;
+  std::vector<BoundBuffer> bound_buffers = {};
+  std::vector<BoundTexture> bound_textures = {};
+
+  bound_buffers.emplace_back(
+      VS::BindFrameInfo(pass.GetTransientsBuffer().EmplaceUniform(frame_info)));
+
   for (const auto& uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
@@ -201,8 +206,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
         uniform_slot.ext_res_0 = uniform.location;
-        cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
-                         buffer_view);
+
+        bound_buffers.emplace_back(BoundBuffer(
+            ShaderStage::kFragment, uniform_slot, metadata, buffer_view));
         buffer_index++;
         buffer_offset += uniform.GetSize();
         break;
@@ -241,8 +247,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         SampledImageSlot image_slot;
         image_slot.name = uniform.name.c_str();
         image_slot.texture_index = uniform.location - minimum_sampler_index;
-        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
-                         input.texture, sampler);
+        bound_textures.emplace_back(BoundTexture(ShaderStage::kFragment,
+                                                 image_slot, metadata,
+                                                 input.texture, sampler));
 
         sampler_index++;
         break;
@@ -252,7 +259,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     }
   }
 
-  pass.AddCommand(std::move(cmd));
+  if (!pass.AddCommand(std::move(cmd), std::move(bound_buffers),
+                       std::move(bound_textures))) {
+    return false;
+  }
 
   if (geometry_result.prevent_overdraw) {
     auto restore = ClipRestoreContents();

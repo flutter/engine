@@ -107,11 +107,14 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   cmd.pipeline = renderer.GetRadialGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-  FS::BindColorData(cmd, color_buffer);
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.AddCommand(std::move(cmd))) {
+  if (!pass.AddCommand(
+          std::move(cmd),
+          {
+              VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+              FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+              FS::BindColorData(color_buffer),
+          })) {
     return false;
   }
 
@@ -166,16 +169,25 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   cmd.pipeline = renderer.GetRadialGradientFillPipeline(options);
 
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
-  FS::BindTextureSampler(
-      cmd, gradient_texture,
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.AddCommand(std::move(cmd))) {
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  if (!pass.AddCommand(
+          std::move(cmd),
+          {
+              VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+              FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+          },
+          {
+              FS::BindTextureSampler(
+                  gradient_texture,
+                  renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                      sampler_desc)),
+          })) {
     return false;
   }
 

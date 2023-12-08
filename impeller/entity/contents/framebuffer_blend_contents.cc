@@ -136,17 +136,22 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   }
   auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
       src_sampler_descriptor);
-  FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
 
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    src_snapshot->transform;
   frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
   frag_info.src_input_alpha = src_snapshot->opacity;
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.AddCommand(std::move(cmd));
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+          FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+      },
+      {
+          FS::BindTextureSamplerSrc(src_snapshot->texture, src_sampler),
+      });
 }
 
 }  // namespace impeller

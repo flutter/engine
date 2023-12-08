@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <string>
 #include <variant>
 
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/compute_command.h"
 
@@ -47,6 +49,10 @@ class ComputePass {
   ///
   bool AddCommand(ComputeCommand command);
 
+  bool AddCommand(ComputeCommand command,
+                  std::initializer_list<BoundBuffer> buffers = {},
+                  std::initializer_list<BoundTexture> textures = {});
+
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
   ///
@@ -60,6 +66,8 @@ class ComputePass {
  protected:
   const std::weak_ptr<const Context> context_;
   std::vector<ComputeCommand> commands_;
+  std::vector<BoundBuffer> bound_buffers_;
+  std::vector<BoundTexture> bound_textures_;
 
   explicit ComputePass(std::weak_ptr<const Context> context);
 

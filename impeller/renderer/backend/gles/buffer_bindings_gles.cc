@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/sampler_gles.h"
@@ -140,28 +141,27 @@ bool BufferBindingsGLES::BindVertexAttributes(const ProcTableGLES& gl,
   return true;
 }
 
-bool BufferBindingsGLES::BindUniformData(const ProcTableGLES& gl,
-                                         Allocator& transients_allocator,
-                                         const Bindings& vertex_bindings,
-                                         const Bindings& fragment_bindings) {
-  for (const auto& buffer : vertex_bindings.buffers) {
-    if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
-      return false;
-    }
-  }
-  for (const auto& buffer : fragment_bindings.buffers) {
+bool BufferBindingsGLES::BindUniformData(
+    const ProcTableGLES& gl,
+    Allocator& transients_allocator,
+    BindingOffsets buffer_offsets,
+    const std::vector<BoundBuffer>& bound_buffers,
+    BindingOffsets texture_offsets,
+    const std::vector<BoundTexture>& bound_textures) {
+  for (auto i = 0u; i < buffer_offsets.length; i++) {
+    const BoundBuffer& buffer = bound_buffers[i];
     if (!BindUniformBuffer(gl, transients_allocator, buffer.view)) {
       return false;
     }
   }
 
   std::optional<size_t> next_unit_index =
-      BindTextures(gl, vertex_bindings, ShaderStage::kVertex);
+      BindTextures(gl, texture_offsets, bound_textures, ShaderStage::kVertex);
   if (!next_unit_index.has_value()) {
     return false;
   }
 
-  if (!BindTextures(gl, fragment_bindings, ShaderStage::kFragment,
+  if (!BindTextures(gl, texture_offsets, bound_textures, ShaderStage::kFragment,
                     *next_unit_index)
            .has_value()) {
     return false;
@@ -340,11 +340,16 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
 
 std::optional<size_t> BufferBindingsGLES::BindTextures(
     const ProcTableGLES& gl,
-    const Bindings& bindings,
+    BindingOffsets texture_offsets,
+    const std::vector<BoundTexture>& bound_textures,
     ShaderStage stage,
     size_t unit_start_index) {
   size_t active_index = unit_start_index;
-  for (const auto& data : bindings.sampled_images) {
+  for (auto i = 0u; i < texture_offsets.length; i++) {
+    const BoundTexture& data = bound_textures[i];
+    if (data.stage != stage) {
+      continue;
+    }
     const auto& texture_gles = TextureGLES::Cast(*data.texture.resource);
     if (data.texture.GetMetadata() == nullptr) {
       VALIDATION_LOG << "No metadata found for texture binding.";

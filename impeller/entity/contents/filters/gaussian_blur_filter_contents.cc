@@ -126,16 +126,17 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
-        TextureFillVertexShader::BindFrameInfo(
-            cmd, host_buffer.EmplaceUniform(frame_info));
-        TextureFillFragmentShader::BindTextureSampler(
-            cmd, input_texture,
-            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                linear_sampler_descriptor));
 
-        pass.AddCommand(std::move(cmd));
-
-        return true;
+        return pass.AddCommand(
+            std::move(cmd),
+            {TextureFillVertexShader::BindFrameInfo(
+                host_buffer.EmplaceUniform(frame_info))},
+            {
+                TextureFillFragmentShader::BindTextureSampler(
+                    input_texture,
+                    renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                        linear_sampler_descriptor)),
+            });
       };
   std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);
@@ -173,17 +174,21 @@ std::shared_ptr<Texture> MakeBlurSubpass(
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
-        GaussianBlurFragmentShader::BindTextureSampler(
-            cmd, input_texture,
-            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                linear_sampler_descriptor));
-        GaussianBlurVertexShader::BindFrameInfo(
-            cmd, host_buffer.EmplaceUniform(frame_info));
-        GaussianBlurFragmentShader::BindBlurInfo(
-            cmd, host_buffer.EmplaceUniform(blur_info));
-        pass.AddCommand(std::move(cmd));
 
-        return true;
+        return pass.AddCommand(
+            std::move(cmd),
+            {
+                GaussianBlurVertexShader::BindFrameInfo(
+                    host_buffer.EmplaceUniform(frame_info)),
+                GaussianBlurFragmentShader::BindBlurInfo(
+                    host_buffer.EmplaceUniform(blur_info)),
+            },
+            {
+                GaussianBlurFragmentShader::BindTextureSampler(
+                    input_texture,
+                    renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                        linear_sampler_descriptor)),
+            });
       };
   std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);

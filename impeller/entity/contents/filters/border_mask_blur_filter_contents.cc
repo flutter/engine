@@ -125,13 +125,17 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     frag_info.inner_blur_factor = inner_blur_factor;
     frag_info.outer_blur_factor = outer_blur_factor;
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-    FS::BindTextureSampler(cmd, input_snapshot->texture, sampler);
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+        },
+        {
+            FS::BindTextureSampler(input_snapshot->texture, sampler),
+        });
   };
 
   CoverageProc coverage_proc =

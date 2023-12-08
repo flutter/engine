@@ -98,8 +98,6 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     VS::UniformBuffer uniforms;
     uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    Matrix::MakeScale(GetContentScale());
-    VS::BindUniformBuffer(cmd,
-                          pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
     FS::FrameInfo frame_info;
     frame_info.current_time = GetSecondsElapsed();
@@ -107,11 +105,18 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
 
-    FS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-    FS::BindContents1(cmd, boston, sampler);
-    FS::BindContents2(cmd, bridge, sampler);
-    if (!pass.AddCommand(std::move(cmd))) {
+    if (!pass.AddCommand(
+            std::move(cmd),
+            {
+                VS::BindUniformBuffer(
+                    pass.GetTransientsBuffer().EmplaceUniform(uniforms)),
+                FS::BindFrameInfo(
+                    pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            },
+            {
+                FS::BindContents1(boston, sampler),
+                FS::BindContents2(bridge, sampler),
+            })) {
       return false;
     }
     return true;
@@ -200,9 +205,13 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
         Matrix::MakeRotationX(Radians(euler_angles.x)) *
         Matrix::MakeRotationY(Radians(euler_angles.y)) *
         Matrix::MakeRotationZ(Radians(euler_angles.z));
-    VS::BindUniformBuffer(cmd,
-                          pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-    if (!pass.AddCommand(std::move(cmd))) {
+
+    if (!pass.AddCommand(
+            std::move(cmd),
+            {
+                VS::BindUniformBuffer(
+                    pass.GetTransientsBuffer().EmplaceUniform(uniforms)),
+            })) {
       return false;
     }
     return true;
@@ -258,20 +267,25 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
 
-    FS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-    FS::BindContents1(cmd, boston, sampler);
-    FS::BindContents2(cmd, bridge, sampler);
-
     for (size_t i = 0; i < 1; i++) {
       for (size_t j = 0; j < 1; j++) {
         VS::UniformBuffer uniforms;
         uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                        Matrix::MakeScale(GetContentScale()) *
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
-        VS::BindUniformBuffer(
-            cmd, pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-        if (!pass.AddCommand(std::move(cmd))) {
+
+        if (!pass.AddCommand(
+                std::move(cmd),
+                {
+                    FS::BindFrameInfo(
+                        pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+                    VS::BindUniformBuffer(
+                        pass.GetTransientsBuffer().EmplaceUniform(uniforms)),
+                },
+                {
+                    FS::BindContents1(boston, sampler),
+                    FS::BindContents2(bridge, sampler),
+                })) {
           return false;
         }
       }
@@ -372,17 +386,23 @@ TEST_P(RendererTest, CanRenderToTexture) {
   frame_info.window_size.x = GetWindowSize().width;
   frame_info.window_size.y = GetWindowSize().height;
 
-  FS::BindFrameInfo(cmd,
-                    r2t_pass->GetTransientsBuffer().EmplaceUniform(frame_info));
-  FS::BindContents1(cmd, boston, sampler);
-  FS::BindContents2(cmd, bridge, sampler);
-
   VS::UniformBuffer uniforms;
   uniforms.mvp = Matrix::MakeOrthographic(ISize{1024, 768}) *
                  Matrix::MakeTranslation({50.0f, 50.0f, 0.0f});
-  VS::BindUniformBuffer(
-      cmd, r2t_pass->GetTransientsBuffer().EmplaceUniform(uniforms));
-  ASSERT_TRUE(r2t_pass->AddCommand(std::move(cmd)));
+
+  ASSERT_TRUE(r2t_pass->AddCommand(
+      std::move(cmd),
+      {
+          FS::BindFrameInfo(
+              r2t_pass->GetTransientsBuffer().EmplaceUniform(frame_info)),
+          VS::BindUniformBuffer(
+              r2t_pass->GetTransientsBuffer().EmplaceUniform(uniforms)),
+      },
+      {
+          FS::BindContents1(boston, sampler),
+          FS::BindContents2(bridge, sampler),
+      }));
+
   ASSERT_TRUE(r2t_pass->EncodeCommands());
 }
 
@@ -440,14 +460,18 @@ TEST_P(RendererTest, CanRenderInstanced) {
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      Matrix::MakeScale(GetContentScale());
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-    VS::BindInstanceInfo(
-        cmd, pass.GetTransientsBuffer().EmplaceStorageBuffer(instances));
+    ;
     cmd.BindVertices(builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
     cmd.instance_count = kInstancesCount;
-    pass.AddCommand(std::move(cmd));
+    pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            VS::BindInstanceInfo(
+                pass.GetTransientsBuffer().EmplaceStorageBuffer(instances)),
+        });
     return true;
   }));
 }
@@ -541,18 +565,23 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
         VS::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
                          Matrix::MakeScale(GetContentScale());
-        VS::BindFrameInfo(
-            cmd, pass->GetTransientsBuffer().EmplaceUniform(frame_info));
 
         FS::FragInfo frag_info;
         frag_info.lod = 0;
-        FS::BindFragInfo(cmd,
-                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
 
         auto sampler = context->GetSamplerLibrary()->GetSampler({});
-        FS::BindTex(cmd, texture, sampler);
 
-        pass->AddCommand(std::move(cmd));
+        pass->AddCommand(
+            std::move(cmd),
+            {
+                VS::BindFrameInfo(
+                    pass->GetTransientsBuffer().EmplaceUniform(frame_info)),
+                FS::BindFragInfo(
+                    pass->GetTransientsBuffer().EmplaceUniform(frag_info)),
+            },
+            {
+                FS::BindTex(texture, sampler),
+            });
       }
       pass->EncodeCommands();
     }
@@ -666,13 +695,10 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         VS::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
                          Matrix::MakeScale(GetContentScale());
-        VS::BindFrameInfo(
-            cmd, pass->GetTransientsBuffer().EmplaceUniform(frame_info));
 
         FS::FragInfo frag_info;
         frag_info.lod = 0;
-        FS::BindFragInfo(cmd,
-                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+        ;
 
         auto sampler = context->GetSamplerLibrary()->GetSampler({});
         auto buffer_view = device_buffer->AsBufferView();
@@ -683,9 +709,18 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
           VALIDATION_LOG << "Could not upload texture to device memory";
           return false;
         }
-        FS::BindTex(cmd, texture, sampler);
 
-        pass->AddCommand(std::move(cmd));
+        pass->AddCommand(
+            std::move(cmd),
+            {
+                VS::BindFrameInfo(
+                    pass->GetTransientsBuffer().EmplaceUniform(frame_info)),
+                FS::BindFragInfo(
+                    pass->GetTransientsBuffer().EmplaceUniform(frag_info)),
+            },
+            {
+                FS::BindTex(texture, sampler),
+            });
       }
       pass->EncodeCommands();
       if (!buffer->SubmitCommands()) {
@@ -787,21 +822,28 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
         VS::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
                          Matrix::MakeScale(GetContentScale());
-        VS::BindFrameInfo(
-            cmd, pass->GetTransientsBuffer().EmplaceUniform(frame_info));
 
         FS::FragInfo frag_info;
         frag_info.lod = lod;
-        FS::BindFragInfo(cmd,
-                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
 
         SamplerDescriptor sampler_desc;
         sampler_desc.mip_filter = mip_filters[selected_mip_filter];
         sampler_desc.min_filter = min_filters[selected_min_filter];
         auto sampler = context->GetSamplerLibrary()->GetSampler(sampler_desc);
-        FS::BindTex(cmd, boston, sampler);
 
-        pass->AddCommand(std::move(cmd));
+        pass->AddCommand(
+            std::move(cmd),
+            {
+                VS::BindFrameInfo(
+                    pass->GetTransientsBuffer().EmplaceUniform(frame_info)),
+                FS::BindFragInfo(
+                    pass->GetTransientsBuffer().EmplaceUniform(frag_info)),
+
+            },
+            {
+                FS::BindTex(boston, sampler),
+
+            });
       }
       pass->EncodeCommands();
     }
@@ -858,18 +900,23 @@ TEST_P(RendererTest, TheImpeller) {
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(size);
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
     fs_uniform.time = GetSecondsElapsed();
-    FS::BindFragInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
-    FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
-    FS::BindCubeMap(cmd, cube_map, cube_map_sampler);
 
-    pass.AddCommand(std::move(cmd));
+    pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            FS::BindFragInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(fs_uniform)),
+        },
+        {
+            FS::BindBlueNoise(blue_noise, noise_sampler),
+            FS::BindCubeMap(cube_map, cube_map_sampler),
+        });
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -907,8 +954,6 @@ TEST_P(RendererTest, ArrayUniforms) {
     VS::FrameInfo frame_info;
     frame_info.mvp =
         Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     auto time = GetSecondsElapsed();
     auto y_pos = [&time](float x) {
@@ -923,10 +968,15 @@ TEST_P(RendererTest, ArrayUniforms) {
                    Color::MakeRGBA8(244, 180, 0, 255),
                    Color::MakeRGBA8(15, 157, 88, 255)},
     };
-    FS::BindFragInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
 
-    pass.AddCommand(std::move(cmd));
+    pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            FS::BindFragInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(fs_uniform)),
+        });
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -964,15 +1014,17 @@ TEST_P(RendererTest, InactiveUniforms) {
     VS::FrameInfo frame_info;
     frame_info.mvp =
         Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
                                .color = Color::Green()};
-    FS::BindFragInfo(cmd,
-                     pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
-
-    pass.AddCommand(std::move(cmd));
+    pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            FS::BindFragInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(fs_uniform)),
+        });
     return true;
   };
   OpenPlaygroundHere(callback);
@@ -1228,8 +1280,6 @@ TEST_P(RendererTest, StencilMask) {
       if (mirror) {
         uniforms.mvp = Matrix::MakeScale(Vector2(-1, 1)) * uniforms.mvp;
       }
-      VS::BindUniformBuffer(
-          cmd, pass->GetTransientsBuffer().EmplaceUniform(uniforms));
 
       FS::FrameInfo frame_info;
       frame_info.current_time = GetSecondsElapsed();
@@ -1237,11 +1287,18 @@ TEST_P(RendererTest, StencilMask) {
       frame_info.window_size.x = GetWindowSize().width;
       frame_info.window_size.y = GetWindowSize().height;
 
-      FS::BindFrameInfo(cmd,
-                        pass->GetTransientsBuffer().EmplaceUniform(frame_info));
-      FS::BindContents1(cmd, boston, sampler);
-      FS::BindContents2(cmd, bridge, sampler);
-      if (!pass->AddCommand(std::move(cmd))) {
+      if (!pass->AddCommand(
+              std::move(cmd),
+              {
+                  VS::BindUniformBuffer(
+                      pass->GetTransientsBuffer().EmplaceUniform(uniforms)),
+                  FS::BindFrameInfo(
+                      pass->GetTransientsBuffer().EmplaceUniform(frame_info)),
+              },
+              {
+                  FS::BindContents1(boston, sampler),
+                  FS::BindContents2(bridge, sampler),
+              })) {
         return false;
       }
       pass->EncodeCommands();

@@ -18,7 +18,6 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/snapshot.h"
@@ -176,13 +175,20 @@ static std::optional<Entity> AdvancedBlend(
     typename VS::FrameInfo frame_info;
 
     auto dst_sampler_descriptor = dst_snapshot->sampler_descriptor;
+    auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+        dst_sampler_descriptor);
+
+    auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
+    auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+        src_sampler_descriptor);
+
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
+      src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+      src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-        dst_sampler_descriptor);
-    FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
+
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
     blend_info.dst_input_alpha =
         absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
@@ -192,35 +198,31 @@ static std::optional<Entity> AdvancedBlend(
     if (foreground_color.has_value()) {
       blend_info.color_factor = 1;
       blend_info.color = foreground_color.value();
-      // This texture will not be sampled from due to the color factor. But
-      // this is present so that validation doesn't trip on a missing
-      // binding.
-      FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
     } else {
-      auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
-      if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
-        src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
-        src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
-      }
-      auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-          src_sampler_descriptor);
       blend_info.color_factor = 0;
       blend_info.src_input_alpha = src_snapshot->opacity;
-      FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
-    auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
-    FS::BindBlendInfo(cmd, blend_uniform);
 
     frame_info.mvp =
         Matrix::MakeOrthographic(size) *
         Matrix::MakeTranslation(coverage.origin - subpass_coverage.origin);
 
-    auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-    VS::BindFrameInfo(cmd, uniform_view);
-    pass.AddCommand(std::move(cmd));
-
-    return true;
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+            FS::BindBlendInfo(host_buffer.EmplaceUniform(blend_info)),
+        },
+        {
+            // This texture will not be sampled from due to the color
+            // factor. But this is present so that validation doesn't trip
+            // on a missing binding.
+            foreground_color.has_value()
+                ? FS::BindTextureSamplerSrc(dst_snapshot->texture, dst_sampler)
+                : FS::BindTextureSamplerSrc(src_snapshot->texture, src_sampler),
+            FS::BindTextureSamplerDst(dst_snapshot->texture, dst_sampler),
+        });
   };
 
   auto out_texture = renderer.MakeSubpass(
@@ -354,7 +356,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     }
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
         dst_sampler_descriptor);
-    FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
+
     frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
     blend_info.dst_input_alpha =
         absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
@@ -366,18 +368,20 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     // This texture will not be sampled from due to the color factor. But
     // this is present so that validation doesn't trip on a missing
     // binding.
-    FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
-
-    auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
-    FS::BindBlendInfo(cmd, blend_uniform);
 
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransform();
 
-    auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-    VS::BindFrameInfo(cmd, uniform_view);
-
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            FS::BindBlendInfo(host_buffer.EmplaceUniform(blend_info)),
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+        },
+        {
+            FS::BindTextureSamplerDst(dst_snapshot->texture, dst_sampler),
+            FS::BindTextureSamplerSrc(dst_snapshot->texture, dst_sampler),
+        });
   };
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
@@ -476,7 +480,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     }
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
         dst_sampler_descriptor);
-    FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
+
     frame_info.texture_sampler_y_coord_scale =
         dst_snapshot->texture->GetYCoordScale();
 
@@ -494,15 +498,18 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     frag_info.dst_coeff_src_alpha = blend_coefficients[3];
     frag_info.dst_coeff_src_color = blend_coefficients[4];
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransform();
 
-    auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-    VS::BindFrameInfo(cmd, uniform_view);
-
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+            FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+        },
+        {
+            FS::BindTextureSamplerDst(dst_snapshot->texture, dst_sampler),
+        });
   };
 
   CoverageProc coverage_proc =
@@ -573,7 +580,6 @@ static std::optional<Entity> PipelineBlend(
 
       auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           input->sampler_descriptor);
-      FS::BindTextureSamplerSrc(cmd, input->texture, sampler);
 
       auto size = input->texture->GetSize();
       VertexBufferBuilder<VS::PerVertexData> vtx_builder;
@@ -597,11 +603,16 @@ static std::optional<Entity> PipelineBlend(
           absorb_opacity == ColorFilterContents::AbsorbOpacity::kYes
               ? input->opacity
               : 1.0;
-      FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-      VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-      pass.AddCommand(std::move(cmd));
-      return true;
+      return pass.AddCommand(
+          std::move(cmd),
+          {
+              FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+              VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+          },
+          {
+              FS::BindTextureSamplerSrc(input->texture, sampler),
+          });
     };
 
     // Draw the first texture using kSource.

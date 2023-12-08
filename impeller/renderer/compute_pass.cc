@@ -47,6 +47,14 @@ bool ComputePass::AddCommand(ComputeCommand command) {
   return true;
 }
 
+bool ComputePass::AddCommand(ComputeCommand command,
+                             std::initializer_list<BoundBuffer> buffers,
+                             std::initializer_list<BoundTexture> textures) {
+  commands_.emplace_back(std::move(command));
+  // TODO
+  return true;
+}
+
 bool ComputePass::EncodeCommands() const {
   if (grid_size_.IsEmpty() || thread_group_size_.IsEmpty()) {
     FML_DLOG(WARNING) << "Attempted to encode a compute pass with an empty "

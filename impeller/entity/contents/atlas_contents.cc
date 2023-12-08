@@ -6,8 +6,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include "flutter/fml/macros.h"
-
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
@@ -262,7 +260,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
     }
     auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
         dst_sampler_descriptor);
-    FS::BindTextureSamplerDst(cmd, texture_, dst_sampler);
+
     frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
     frag_info.output_alpha = alpha_;
@@ -278,15 +276,18 @@ bool AtlasContents::Render(const ContentContext& renderer,
     frag_info.dst_coeff_src_alpha = blend_coefficients[3];
     frag_info.dst_coeff_src_color = blend_coefficients[4];
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                      entity.GetTransform();
 
-    auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-    VS::BindFrameInfo(cmd, uniform_view);
-
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+            FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+        },
+        {
+            FS::BindTextureSamplerDst(texture_, dst_sampler),
+        });
   }
 
   // Advanced blends.
@@ -425,11 +426,17 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetTexturePipeline(options);
   cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindTextureSampler(cmd, texture,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             parent_.GetSamplerDescriptor()));
-  return pass.AddCommand(std::move(cmd));
+
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+      },
+      {
+          FS::BindTextureSampler(
+              texture, renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                           parent_.GetSamplerDescriptor())),
+      });
 }
 
 // AtlasColorContents
@@ -515,9 +522,13 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
   cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  return pass.AddCommand(std::move(cmd));
+
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+          FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+      });
 }
 
 }  // namespace impeller

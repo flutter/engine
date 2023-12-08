@@ -8,7 +8,6 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/point.h"
-#include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
@@ -81,11 +80,16 @@ std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
             : 1.0f;
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-    FS::BindInputTexture(cmd, input_snapshot->texture, sampler);
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+        },
+        {
+            FS::BindInputTexture(input_snapshot->texture, sampler),
+        });
   };
 
   CoverageProc coverage_proc =

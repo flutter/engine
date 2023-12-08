@@ -78,11 +78,12 @@ bool ClipContents::Render(const ContentContext& renderer,
                           RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
 
+  Command cmd;
   VS::FrameInfo info;
 
-  Command cmd;
-
   auto options = OptionsFromPass(pass);
+  auto& host_buffer = pass.GetTransientsBuffer();
+
   options.blend_mode = BlendMode::kDestination;
   cmd.stencil_reference = entity.GetClipDepth();
   options.stencil_compare = CompareFunction::kEqual;
@@ -100,11 +101,14 @@ bool ClipContents::Render(const ContentContext& renderer,
       cmd.BindVertices(std::move(vertices));
 
       info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-      VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
       cmd.pipeline = renderer.GetClipPipeline(options);
-      pass.AddCommand(Command(cmd));
+
+      pass.AddCommand(Command(cmd),
+                      {
+                          VS::BindFrameInfo(host_buffer.EmplaceUniform(info)),
+                      });
     }
 
     {
@@ -128,10 +132,9 @@ bool ClipContents::Render(const ContentContext& renderer,
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
 
   info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
-  pass.AddCommand(std::move(cmd));
-  return true;
+  return pass.AddCommand(std::move(cmd),
+                         {VS::BindFrameInfo(host_buffer.EmplaceUniform(info))});
 }
 
 /*******************************************************************************
@@ -178,6 +181,8 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "Restore Clip");
   auto options = OptionsFromPass(pass);
+  auto& host_buffer = pass.GetTransientsBuffer();
+
   options.blend_mode = BlendMode::kDestination;
   options.stencil_compare = CompareFunction::kLess;
   options.stencil_operation = StencilOperation::kSetToReferenceValue;
@@ -201,10 +206,11 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo info;
   info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
-  pass.AddCommand(std::move(cmd));
-  return true;
+  return pass.AddCommand(
+      std::move(cmd), {
+                          VS::BindFrameInfo(host_buffer.EmplaceUniform(info)),
+                      });
 }
 
 };  // namespace impeller

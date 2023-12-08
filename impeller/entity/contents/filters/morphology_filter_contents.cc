@@ -127,14 +127,18 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
       sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
 
-    FS::BindTextureSampler(
-        cmd, input_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            sampler_descriptor));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+            FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+        },
+        {
+            FS::BindTextureSampler(
+                input_snapshot->texture,
+                renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                    sampler_descriptor)),
+        });
   };
 
   auto out_texture = renderer.MakeSubpass("Directional Morphology Filter",

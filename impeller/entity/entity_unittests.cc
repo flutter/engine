@@ -885,10 +885,11 @@ TEST_P(EntityTest, BlendingModeOptions) {
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
       frame_info.color = color.Premultiply();
-      VS::BindFrameInfo(cmd,
-                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-      return pass.AddCommand(std::move(cmd));
+      return pass.AddCommand(
+          std::move(cmd),
+          {VS::BindFrameInfo(
+              pass.GetTransientsBuffer().EmplaceUniform(frame_info))});
     };
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);

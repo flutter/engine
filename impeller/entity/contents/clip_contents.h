@@ -4,11 +4,8 @@
 
 #pragma once
 
-#include <functional>
 #include <memory>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"

@@ -114,7 +114,8 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
   UnlitFragmentShader::FragInfo info;
   info.color = color_;
   info.vertex_color_weight = vertex_color_weight_;
-  UnlitFragmentShader::BindFragInfo(command, buffer.EmplaceUniform(info));
+  // TODO
+  // UnlitFragmentShader::BindFragInfo(command, buffer.EmplaceUniform(info));
 
   // Textures.
   SamplerDescriptor sampler_descriptor;
@@ -122,11 +123,13 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
   sampler_descriptor.min_filter = MinMagFilter::kLinear;
   sampler_descriptor.mag_filter = MinMagFilter::kLinear;
   sampler_descriptor.mip_filter = MipFilter::kLinear;
-  UnlitFragmentShader::BindBaseColorTexture(
-      command,
-      color_texture_ ? color_texture_ : scene_context.GetPlaceholderTexture(),
-      scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
-          sampler_descriptor));
+  // TODO
+  // UnlitFragmentShader::BindBaseColorTexture(
+  //     command,
+  //     color_texture_ ? color_texture_ :
+  //     scene_context.GetPlaceholderTexture(),
+  //     scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
+  //         sampler_descriptor));
 }
 
 //------------------------------------------------------------------------------

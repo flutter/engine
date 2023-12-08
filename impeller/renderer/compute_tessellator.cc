@@ -127,16 +127,19 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     DEBUG_COMMAND_INFO(cmd, "Generate Polyline");
     cmd.pipeline = compute_pipeline;
 
-    PS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
-    PS::BindCubics(cmd,
-                   pass->GetTransientsBuffer().EmplaceStorageBuffer(cubics));
-    PS::BindQuads(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(quads));
-    PS::BindLines(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(lines));
-    PS::BindComponents(
-        cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(components));
-    PS::BindPolyline(cmd, polyline_buffer->AsBufferView());
+    auto& host_buffer = pass->GetTransientsBuffer();
 
-    if (!pass->AddCommand(std::move(cmd))) {
+    if (!pass->AddCommand(
+            std::move(cmd),
+            {
+                PS::BindConfig(host_buffer.EmplaceUniform(config)),
+                PS::BindCubics(host_buffer.EmplaceStorageBuffer(cubics)),
+                PS::BindQuads(host_buffer.EmplaceStorageBuffer(quads)),
+                PS::BindLines(host_buffer.EmplaceStorageBuffer(lines)),
+                PS::BindComponents(
+                    host_buffer.EmplaceStorageBuffer(components)),
+                PS::BindPolyline(polyline_buffer->AsBufferView()),
+            })) {
       return Status::kCommandInvalid;
     }
   }
@@ -163,13 +166,16 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
         .join = static_cast<uint32_t>(stroke_join_),
         .miter_limit = miter_limit_,
     };
-    SS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
 
-    SS::BindPolyline(cmd, polyline_buffer->AsBufferView());
-    SS::BindVertexBufferCount(cmd, std::move(vertex_buffer_count));
-    SS::BindVertexBuffer(cmd, std::move(vertex_buffer));
-
-    if (!pass->AddCommand(std::move(cmd))) {
+    if (!pass->AddCommand(
+            std::move(cmd),
+            {
+                SS::BindConfig(
+                    pass->GetTransientsBuffer().EmplaceUniform(config)),
+                SS::BindPolyline(polyline_buffer->AsBufferView()),
+                SS::BindVertexBufferCount(std::move(vertex_buffer_count)),
+                SS::BindVertexBuffer(std::move(vertex_buffer)),
+            })) {
       return Status::kCommandInvalid;
     }
   }

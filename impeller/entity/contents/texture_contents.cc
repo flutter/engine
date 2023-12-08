@@ -172,19 +172,19 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  if (is_external_texture) {
-    FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
-        cmd, texture_,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            sampler_descriptor_));
-  } else {
-    FS::BindTextureSampler(
-        cmd, texture_,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            sampler_descriptor_));
-  }
-  pass.AddCommand(std::move(cmd));
+
+  pass.AddCommand(
+      std::move(cmd),
+      {VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info))},
+      {is_external_texture
+           ? FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
+                 texture_,
+                 renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                     sampler_descriptor_))
+           : FS::BindTextureSampler(
+                 texture_,
+                 renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                     sampler_descriptor_))});
 
   return true;
 }

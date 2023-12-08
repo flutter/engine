@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
 #include "fml/logging.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -174,19 +175,31 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
                      : renderer.GetTexturePipeline(options);
 #endif  // IMPELLER_ENABLE_OPENGLES
 
+  // This code is too complicated for the initializer list, it should
+  // be refactored to more clearly split external and non-external
+  // texture.
+  std::vector<BoundBuffer> bound_buffers;
+  std::vector<BoundTexture> bound_textures;
+
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+
+  bound_buffers.push_back(
+      VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)));
 
   if (is_external_texture) {
     FSExternal::FragInfo frag_info;
     frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
     frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-    FSExternal::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+    bound_buffers.push_back(
+        FSExternal::BindFragInfo(host_buffer.EmplaceUniform(frag_info)));
   } else if (uses_emulated_tile_mode) {
     FS::FragInfo frag_info;
     frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
     frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+    bound_buffers.push_back(
+        FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)));
   }
 
   if (is_external_texture) {
@@ -201,28 +214,30 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     FML_DCHECK(!color_filter_)
         << "Color filters are not currently supported for external textures.";
 
-    FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
-        cmd, texture_,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
+    bound_textures.push_back(FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
+        texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc)));
   } else {
     if (color_filter_) {
       auto filtered_texture = CreateFilterTexture(renderer);
       if (!filtered_texture) {
         return false;
-      }
-      FS::BindTextureSampler(
-          cmd, filtered_texture,
+      };
+      bound_textures.push_back(FS::BindTextureSampler(
+          filtered_texture,
           renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-              CreateSamplerDescriptor(renderer.GetDeviceCapabilities())));
+              CreateSamplerDescriptor(renderer.GetDeviceCapabilities()))));
     } else {
-      FS::BindTextureSampler(
-          cmd, texture_,
+      ;
+      bound_textures.push_back(FS::BindTextureSampler(
+          texture_,
           renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-              CreateSamplerDescriptor(renderer.GetDeviceCapabilities())));
+              CreateSamplerDescriptor(renderer.GetDeviceCapabilities()))));
     }
   }
 
-  if (!pass.AddCommand(std::move(cmd))) {
+  if (!pass.AddCommand(std::move(cmd), std::move(bound_buffers),
+                       std::move(bound_textures))) {
     return false;
   }
 

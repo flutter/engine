@@ -406,24 +406,6 @@ static bool Bind(PassBindingsCache& pass,
 bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                    id<MTLRenderCommandEncoder> encoder) const {
   PassBindingsCache pass_bindings(encoder);
-  auto bind_stage_resources = [&allocator, &pass_bindings](
-                                  const Bindings& bindings,
-                                  ShaderStage stage) -> bool {
-    for (const BufferAndUniformSlot& buffer : bindings.buffers) {
-      if (!Bind(pass_bindings, *allocator, stage, buffer.slot.ext_res_0,
-                buffer.view.resource)) {
-        return false;
-      }
-    }
-    for (const TextureAndSampler& data : bindings.sampled_images) {
-      if (!Bind(pass_bindings, stage, data.slot.texture_index, *data.sampler,
-                *data.texture.resource)) {
-        return false;
-      }
-    }
-    return true;
-  };
-
   const auto target_sample_count = render_target_.GetSampleCount();
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
@@ -472,12 +454,24 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       return false;
     }
 
-    if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
-      return false;
+    // Bind buffers.
+    for (auto i = 0u; i < command.buffer_bindings.length; i++) {
+      const BoundBuffer& buffer =
+          bound_buffers_[command.buffer_bindings.offset + i];
+      if (!Bind(pass_bindings, *allocator, buffer.stage, buffer.slot.ext_res_0,
+                buffer.view.resource)) {
+        return false;
+      }
     }
-    if (!bind_stage_resources(command.fragment_bindings,
-                              ShaderStage::kFragment)) {
-      return false;
+
+    // Bind textures and samplers.
+    for (auto i = 0u; i < command.texture_bindings.length; i++) {
+      const BoundTexture& texture =
+          bound_textures_[command.texture_bindings.offset + i];
+      if (!Bind(pass_bindings, texture.stage, texture.slot.texture_index,
+                *texture.sampler, *texture.texture.resource)) {
+        return false;
+      }
     }
 
     const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();

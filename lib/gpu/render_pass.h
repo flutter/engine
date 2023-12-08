@@ -11,6 +11,7 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
@@ -36,6 +37,10 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   impeller::Command& GetCommand();
   const impeller::Command& GetCommand() const;
+
+  std::vector<impeller::BoundBuffer> GetBoundBuffers();
+
+  std::vector<impeller::BoundTexture> GetBoundTextures();
 
   impeller::RenderTarget& GetRenderTarget();
   const impeller::RenderTarget& GetRenderTarget() const;
@@ -66,6 +71,8 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   // Command encoding state.
   impeller::Command command_;
+  std::vector<impeller::BoundBuffer> bound_buffers_;
+  std::vector<impeller::BoundTexture> bound_textures_;
   fml::RefPtr<RenderPipeline> render_pipeline_;
   impeller::PipelineDescriptor pipeline_descriptor_;
 

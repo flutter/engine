@@ -3,16 +3,11 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
-#include "impeller/base/strings.h"
-#include "impeller/core/formats.h"
 #include "impeller/fixtures/sample.comp.h"
 #include "impeller/fixtures/stage1.comp.h"
 #include "impeller/fixtures/stage2.comp.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/path_component.h"
 #include "impeller/playground/compute_playground_test.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
@@ -74,14 +69,16 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInfo(cmd, pass->GetTransientsBuffer().EmplaceUniform(info));
-  CS::BindInput0(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, output_buffer->AsBufferView());
-
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->AddCommand(
+      std::move(cmd),
+      {
+          CS::BindInfo(pass->GetTransientsBuffer().EmplaceUniform(info)),
+          CS::BindInput0(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0)),
+          CS::BindInput1(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1)),
+          CS::BindOutput(output_buffer->AsBufferView()),
+      }));
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
@@ -145,11 +142,13 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInputData(
-      cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data));
-  CS::BindOutputData(cmd, output_buffer->AsBufferView());
-
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->AddCommand(
+      std::move(cmd),
+      {
+          CS::BindInputData(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data)),
+          CS::BindOutputData(output_buffer->AsBufferView()),
+      }));
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
@@ -204,9 +203,10 @@ TEST_P(ComputeTest, 1DThreadgroupSizingIsCorrect) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
       context, "Output Buffer");
 
-  CS::BindOutputData(cmd, output_buffer->AsBufferView());
-
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->AddCommand(
+      std::move(cmd), {
+                          CS::BindOutputData(output_buffer->AsBufferView()),
+                      }));
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
@@ -260,11 +260,13 @@ TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
     auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
         context, "Output Buffer");
 
-    CS::BindInputData(
-        cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data));
-    CS::BindOutputData(cmd, output_buffer->AsBufferView());
-
-    pass->AddCommand(std::move(cmd));
+    pass->AddCommand(
+        std::move(cmd),
+        {
+            CS::BindInputData(
+                pass->GetTransientsBuffer().EmplaceStorageBuffer(input_data)),
+            CS::BindOutputData(output_buffer->AsBufferView()),
+        });
     pass->EncodeCommands();
     return cmd_buffer->SubmitCommands();
   };
@@ -326,20 +328,24 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
     ComputeCommand cmd;
     cmd.pipeline = compute_pipeline_1;
 
-    CS1::BindInput(cmd,
-                   pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
-    CS1::BindOutput(cmd, output_buffer_1->AsBufferView());
-
-    ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+    ASSERT_TRUE(pass->AddCommand(
+        std::move(cmd),
+        {
+            CS1::BindInput(
+                pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1)),
+            CS1::BindOutput(output_buffer_1->AsBufferView()),
+        }));
   }
 
   {
     ComputeCommand cmd;
     cmd.pipeline = compute_pipeline_2;
 
-    CS1::BindInput(cmd, output_buffer_1->AsBufferView());
-    CS2::BindOutput(cmd, output_buffer_2->AsBufferView());
-    ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+    ASSERT_TRUE(pass->AddCommand(
+        std::move(cmd), {
+                            CS1::BindInput(output_buffer_1->AsBufferView()),
+                            CS2::BindOutput(output_buffer_2->AsBufferView()),
+                        }));
   }
 
   ASSERT_TRUE(pass->EncodeCommands());
@@ -411,14 +417,16 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInfo(cmd, pass->GetTransientsBuffer().EmplaceUniform(info));
-  CS::BindInput0(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, output_buffer->AsBufferView());
-
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->AddCommand(
+      std::move(cmd),
+      {
+          CS::BindInfo(pass->GetTransientsBuffer().EmplaceUniform(info)),
+          CS::BindInput0(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0)),
+          CS::BindInput1(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1)),
+          CS::BindOutput(output_buffer->AsBufferView()),
+      }));
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
@@ -491,14 +499,16 @@ TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInfo(cmd, pass->GetTransientsBuffer().EmplaceUniform(info));
-  CS::BindInput0(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd,
-                 pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, output_buffer->AsBufferView());
-
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->AddCommand(
+      std::move(cmd),
+      {
+          CS::BindInfo(pass->GetTransientsBuffer().EmplaceUniform(info)),
+          CS::BindInput0(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_0)),
+          CS::BindInput1(
+              pass->GetTransientsBuffer().EmplaceStorageBuffer(input_1)),
+          CS::BindOutput(output_buffer->AsBufferView()),
+      }));
   ASSERT_FALSE(pass->EncodeCommands());
 }
 

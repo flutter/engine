@@ -10,7 +10,6 @@
 #include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
-#include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/entity/contents/content_context.h"
@@ -20,11 +19,8 @@
 #include "impeller/fixtures/stage2.comp.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/geometry/path_component.h"
 #include "impeller/playground/compute_playground_test.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/compute_command.h"
-#include "impeller/renderer/compute_pipeline_builder.h"
 #include "impeller/renderer/compute_tessellator.h"
 #include "impeller/renderer/path_polyline.comp.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -163,10 +159,11 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
     frame_info.mvp =
         Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
     frame_info.color = Color::Red().Premultiply();
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
+    if (!pass.AddCommand(
+            std::move(cmd),
+            {VS::BindFrameInfo(
+                pass.GetTransientsBuffer().EmplaceUniform(frame_info))})) {
       return false;
     }
 
@@ -366,10 +363,13 @@ TEST_P(ComputeSubgroupTest, LargePath) {
     frame_info.mvp =
         Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
     frame_info.color = Color::Red().Premultiply();
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
+    if (!pass.AddCommand(
+            std::move(cmd),
+            {
+                VS::BindFrameInfo(
+                    pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            })) {
       return false;
     }
 
@@ -449,10 +449,13 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
     frame_info.mvp =
         Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
     frame_info.color = Color::Red().Premultiply();
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
+    if (!pass.AddCommand(
+            std::move(cmd),
+            {
+                VS::BindFrameInfo(
+                    pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+            })) {
       return false;
     }
 

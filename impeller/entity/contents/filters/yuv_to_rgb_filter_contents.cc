@@ -114,13 +114,17 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     }
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-    FS::BindYTexture(cmd, y_input_snapshot->texture, sampler);
-    FS::BindUvTexture(cmd, uv_input_snapshot->texture, sampler);
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+        },
+        {
+            FS::BindYTexture(y_input_snapshot->texture, sampler),
+            FS::BindUvTexture(uv_input_snapshot->texture, sampler),
+        });
   };
 
   CoverageProc coverage_proc =

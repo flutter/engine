@@ -108,16 +108,25 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
   cmd.pipeline = renderer.GetLinearGradientFillPipeline(options);
 
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
-  FS::BindTextureSampler(
-      cmd, std::move(gradient_texture),
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.AddCommand(std::move(cmd))) {
+  if (!pass.AddCommand(
+          std::move(cmd),
+          {
+              VS::BindFrameInfo(
+                  pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
+              FS::BindFragInfo(
+                  pass.GetTransientsBuffer().EmplaceUniform(frag_info)),
+          },
+          {
+              FS::BindTextureSampler(
+                  std::move(gradient_texture),
+                  renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                      sampler_desc)),
+          })) {
     return false;
   }
 
@@ -170,11 +179,13 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   cmd.pipeline = renderer.GetLinearGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-  FS::BindColorData(cmd, color_buffer);
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-
-  if (!pass.AddCommand(std::move(cmd))) {
+  if (!pass.AddCommand(
+          std::move(cmd),
+          {
+              FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+              FS::BindColorData(color_buffer),
+              VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+          })) {
     return false;
   }
 

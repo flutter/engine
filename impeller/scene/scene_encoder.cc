@@ -5,6 +5,7 @@
 #include "flutter/fml/macros.h"
 
 #include "flutter/fml/logging.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/scene/scene_context.h"
@@ -36,12 +37,15 @@ static void EncodeCommand(const SceneContext& scene_context,
                   scene_command.material->GetMaterialType()},
       scene_command.material->GetContextOptions(render_pass));
 
+  std::vector<BoundBuffer> bound_buffers;
+  std::vector<BoundTexture> bound_textures;
   scene_command.geometry->BindToCommand(
-      scene_context, host_buffer, view_transform * scene_command.transform,
-      cmd);
+      scene_context, host_buffer, view_transform * scene_command.transform, cmd,
+      bound_buffers, bound_textures);
   scene_command.material->BindToCommand(scene_context, host_buffer, cmd);
 
-  render_pass.AddCommand(std::move(cmd));
+  render_pass.AddCommand(std::move(cmd), std::move(bound_buffers),
+                         std::move(bound_textures));
 }
 
 std::shared_ptr<CommandBuffer> SceneEncoder::BuildSceneCommandBuffer(

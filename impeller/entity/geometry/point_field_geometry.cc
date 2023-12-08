@@ -187,11 +187,13 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     frame_info.points_per_circle = points_per_circle;
     frame_info.divisions_per_circle = vertices_per_geom;
 
-    PS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    PS::BindGeometryData(cmd, geometry_buffer);
-    PS::BindPointData(cmd, points_data);
-
-    if (!compute_pass->AddCommand(std::move(cmd))) {
+    if (!compute_pass->AddCommand(
+            std::move(cmd),
+            {
+                PS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+                PS::BindGeometryData(geometry_buffer),
+                PS::BindPointData(points_data),
+            })) {
       return {};
     }
     output = geometry_buffer;
@@ -219,11 +221,13 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     frame_info.texture_origin = {0, 0};
     frame_info.texture_size = Vector2(texture_coverage.value().size);
 
-    UV::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    UV::BindGeometryData(cmd, geometry_buffer);
-    UV::BindGeometryUVData(cmd, geometry_uv_buffer);
-
-    if (!compute_pass->AddCommand(std::move(cmd))) {
+    if (!compute_pass->AddCommand(
+            std::move(cmd),
+            {
+                UV::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+                UV::BindGeometryData(geometry_buffer),
+                UV::BindGeometryUVData(geometry_uv_buffer),
+            })) {
       return {};
     }
     output = geometry_uv_buffer;

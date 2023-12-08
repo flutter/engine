@@ -11,7 +11,7 @@
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/texture_descriptor.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -149,6 +149,8 @@ struct RenderPassData {
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
     const std::vector<Command>& commands,
+    const std::vector<BoundBuffer>& bound_buffers,
+    const std::vector<BoundTexture>& bound_textures,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
@@ -420,8 +422,10 @@ struct RenderPassData {
     ///
     if (!vertex_desc_gles->BindUniformData(gl,                        //
                                            *transients_allocator,     //
-                                           command.vertex_bindings,   //
-                                           command.fragment_bindings  //
+                                           command.buffer_bindings,   //
+                                           bound_buffers,             //
+                                           command.texture_bindings,  //
+                                           bound_textures             //
                                            )) {
       return false;
     }
@@ -581,8 +585,9 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
                                  allocator = context.GetResourceAllocator(),
                                  render_pass = std::move(shared_this),
                                  tracer](const auto& reactor) {
-    auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_, tracer);
+    auto result = EncodeCommandsInReactor(
+        *pass_data, allocator, reactor, render_pass->commands_,
+        render_pass->bound_buffers_, render_pass->bound_textures_, tracer);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }

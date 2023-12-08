@@ -244,10 +244,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
 
         cmd.viewport = viewport;
         cmd.scissor = impeller::IRect(clip_rect);
-
         cmd.pipeline = bd->pipeline;
-        VS::BindUniformBuffer(cmd, vtx_uniforms);
-        FS::BindTex(cmd, bd->font_texture, bd->sampler);
 
         size_t vb_start =
             vertex_buffer_offset + pcmd->VtxOffset * sizeof(ImDrawVert);
@@ -266,7 +263,13 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         cmd.BindVertices(std::move(vertex_buffer));
         cmd.base_vertex = pcmd->VtxOffset;
 
-        render_pass.AddCommand(std::move(cmd));
+        render_pass.AddCommand(std::move(cmd),
+                               {
+                                   VS::BindUniformBuffer(vtx_uniforms),
+                               },
+                               {
+                                   FS::BindTex(bd->font_texture, bd->sampler),
+                               });
       }
     }
 

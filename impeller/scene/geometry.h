@@ -10,6 +10,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/vector.h"
@@ -41,10 +42,13 @@ class Geometry {
 
   virtual VertexBuffer GetVertexBuffer(Allocator& allocator) const = 0;
 
-  virtual void BindToCommand(const SceneContext& scene_context,
-                             HostBuffer& buffer,
-                             const Matrix& transform,
-                             Command& command) const = 0;
+  virtual void BindToCommand(
+      const SceneContext& scene_context,
+      HostBuffer& buffer,
+      const Matrix& transform,
+      Command& command,
+      std::vector<BoundBuffer>& bound_buffers,
+      std::vector<BoundTexture>& bound_textures) const = 0;
 
   virtual void SetJointsTexture(const std::shared_ptr<Texture>& texture);
 };
@@ -67,7 +71,9 @@ class CuboidGeometry final : public Geometry {
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
                      const Matrix& transform,
-                     Command& command) const override;
+                     Command& command,
+                     std::vector<BoundBuffer>& bound_buffers,
+                     std::vector<BoundTexture>& bound_textures) const override;
 
  private:
   Vector3 size_;
@@ -95,7 +101,9 @@ class UnskinnedVertexBufferGeometry final : public Geometry {
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
                      const Matrix& transform,
-                     Command& command) const override;
+                     Command& command,
+                     std::vector<BoundBuffer>& bound_buffers,
+                     std::vector<BoundTexture>& bound_textures) const override;
 
  private:
   VertexBuffer vertex_buffer_;
@@ -124,7 +132,9 @@ class SkinnedVertexBufferGeometry final : public Geometry {
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
                      const Matrix& transform,
-                     Command& command) const override;
+                     Command& command,
+                     std::vector<BoundBuffer>& bound_buffers,
+                     std::vector<BoundTexture>& bound_textures) const override;
 
   // |Geometry|
   void SetJointsTexture(const std::shared_ptr<Texture>& texture) override;

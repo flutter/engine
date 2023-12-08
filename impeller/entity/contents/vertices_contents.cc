@@ -142,13 +142,18 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   frame_info.texture_sampler_y_coord_scale =
       snapshot->texture->GetYCoordScale();
   frame_info.alpha = alpha_ * snapshot->opacity;
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
-  FS::BindTextureSampler(cmd, snapshot->texture,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             snapshot->sampler_descriptor));
-
-  return pass.AddCommand(std::move(cmd));
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+      },
+      {
+          FS::BindTextureSampler(
+              snapshot->texture,
+              renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                  snapshot->sampler_descriptor)),
+      });
 }
 
 //------------------------------------------------------
@@ -189,13 +194,16 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
   frag_info.alpha = alpha_;
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.AddCommand(std::move(cmd));
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+          FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+      });
 }
 
 }  // namespace impeller

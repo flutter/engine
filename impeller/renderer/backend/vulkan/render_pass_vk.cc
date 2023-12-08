@@ -11,6 +11,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
@@ -301,8 +302,9 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   return MakeSharedVK(std::move(framebuffer));
 }
 
-static bool UpdateBindingLayouts(const Bindings& bindings,
-                                 const vk::CommandBuffer& buffer) {
+static bool UpdateBindingLayouts(
+    const std::vector<BoundTexture>& bound_textures,
+    const vk::CommandBuffer& buffer) {
   // All previous writes via a render or blit pass must be done before another
   // shader attempts to read the resource.
   BarrierVK barrier;
@@ -316,24 +318,8 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const TextureAndSampler& data : bindings.sampled_images) {
+  for (const BoundTexture& data : bound_textures) {
     if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool UpdateBindingLayouts(const Command& command,
-                                 const vk::CommandBuffer& buffer) {
-  return UpdateBindingLayouts(command.vertex_bindings, buffer) &&
-         UpdateBindingLayouts(command.fragment_bindings, buffer);
-}
-
-static bool UpdateBindingLayouts(const std::vector<Command>& commands,
-                                 const vk::CommandBuffer& buffer) {
-  for (const Command& command : commands) {
-    if (!UpdateBindingLayouts(command, buffer)) {
       return false;
     }
   }
@@ -486,6 +472,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
     return false;
   }
 
+#ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_marker(
       [&encoder]() { encoder->PopDebugGroup(); });
   if (!debug_label_.empty()) {
@@ -493,10 +480,11 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   } else {
     pop_marker.Release();
   }
+#endif  // IMPELLER_DEBUG
 
   auto cmd_buffer = encoder->GetCommandBuffer();
 
-  if (!UpdateBindingLayouts(commands_, cmd_buffer)) {
+  if (!UpdateBindingLayouts(bound_textures_, cmd_buffer)) {
     return false;
   }
 
@@ -540,7 +528,8 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   const auto& color_image_vk = TextureVK::Cast(
       *render_target_.GetColorAttachments().find(0u)->second.texture);
   auto desc_sets_result = AllocateAndBindDescriptorSets(
-      vk_context, encoder, commands_, color_image_vk);
+      vk_context, encoder, commands_, bound_buffers_, bound_textures_,
+      color_image_vk);
   if (!desc_sets_result.ok()) {
     return false;
   }

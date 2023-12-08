@@ -40,6 +40,14 @@ const impeller::Command& RenderPass::GetCommand() const {
   return command_;
 }
 
+std::vector<impeller::BoundBuffer> RenderPass::GetBoundBuffers() {
+  return bound_buffers_;
+}
+
+std::vector<impeller::BoundTexture> RenderPass::GetBoundTextures() {
+  return bound_textures_;
+}
+
 impeller::RenderTarget& RenderPass::GetRenderTarget() {
   return render_target_;
 }
@@ -137,7 +145,8 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
 
 bool RenderPass::Draw() {
   impeller::Command result = ProvisionRasterCommand();
-  return render_pass_->AddCommand(std::move(result));
+  return render_pass_->AddCommand(std::move(result), GetBoundBuffers(),
+                                  GetBoundTextures());
 }
 
 }  // namespace gpu
@@ -327,12 +336,13 @@ static bool BindUniform(flutter::gpu::RenderPass* wrapper,
   // Don't populate the slot name... we don't have it here and Impeller doesn't
   // even use it for anything.
   slot.ext_res_0 = slot_id;
-  return command.BindResource(
+  wrapper->GetBoundBuffers().emplace_back(impeller::BoundBuffer(
       flutter::gpu::ToImpellerShaderStage(stage), slot, metadata,
       impeller::BufferView{
           .buffer = buffer->GetBuffer(),
           .range = impeller::Range(offset_in_bytes, length_in_bytes),
-      });
+      }));
+  return true;
 }
 
 bool InternalFlutterGpu_RenderPass_BindUniformDevice(
@@ -386,17 +396,19 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
 
   impeller::SampledImageSlot image_slot;
   image_slot.texture_index = slot_id;
-  return command.BindResource(flutter::gpu::ToImpellerShaderStage(stage),
-                              image_slot, metadata, texture->GetTexture(),
-                              sampler);
+
+  wrapper->GetBoundTextures().emplace_back(impeller::BoundTexture(
+      flutter::gpu::ToImpellerShaderStage(stage), image_slot, metadata,
+      texture->GetTexture(), sampler));
+  return true;
 }
 
 void InternalFlutterGpu_RenderPass_ClearBindings(
     flutter::gpu::RenderPass* wrapper) {
   auto& command = wrapper->GetCommand();
   command.vertex_buffer = {};
-  command.vertex_bindings = {};
-  command.fragment_bindings = {};
+  wrapper->GetBoundBuffers().clear();
+  wrapper->GetBoundTextures().clear();
 }
 
 void InternalFlutterGpu_RenderPass_SetColorBlendEnable(

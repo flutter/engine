@@ -22,8 +22,6 @@ constexpr std::string_view kReflectionHeaderTemplate =
 
 #include "impeller/core/shader_types.h"               {# // nogncheck #}
 
-#include "impeller/core/resource_binder.h"            {# // nogncheck #}
-
 #include "impeller/core/texture.h"                    {# // nogncheck #}
 
 
@@ -159,9 +157,10 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
   static {{proto.return_type}} Bind{{proto.name}}({% for arg in proto.args %}
 {{arg.type_name}} {{arg.argument_name}}{% if not loop.is_last %}, {% endif %}
 {% endfor %}) {
-    return {{ proto.args.0.argument_name }}.BindResource({% for arg in proto.args %}
+    return {{proto.return_type}}({% for arg in proto.args %}
   {% if loop.is_first %}
-{{to_shader_stage(shader_stage)}}, kResource{{ proto.name }}, kMetadata{{ proto.name }}, {% else %}
+{{to_shader_stage(shader_stage)}}, kResource{{ proto.name }}, kMetadata{{ proto.name }}, std::move({{ arg.argument_name }})
+  {% if not loop.is_last %}, {% endif %} {% else %}
 std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
   {% endif %}
   {% endfor %});

@@ -233,16 +233,20 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
       cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
     } else {
       cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-    }
+    };
 
-    FS::BindTextureSampler(
-        cmd, input_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            input_descriptor));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-
-    return pass.AddCommand(std::move(cmd));
+    return pass.AddCommand(
+        std::move(cmd),
+        {
+            VS::BindFrameInfo(host_buffer.EmplaceUniform(frame_info)),
+            FS::BindBlurInfo(host_buffer.EmplaceUniform(frag_info)),
+        },
+        {
+            FS::BindTextureSampler(
+                input_snapshot->texture,
+                renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                    input_descriptor)),
+        });
   };
 
   Vector2 scale;

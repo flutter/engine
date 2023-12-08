@@ -5,11 +5,11 @@
 #include "impeller/renderer/backend/vulkan/compute_pass_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/compute_pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/command.h"
 
 namespace impeller {
 
@@ -33,8 +33,9 @@ void ComputePassVK::OnSetLabel(const std::string& label) {
   label_ = label;
 }
 
-static bool UpdateBindingLayouts(const Bindings& bindings,
-                                 const vk::CommandBuffer& buffer) {
+static bool UpdateBindingLayouts(
+    const std::vector<BoundTexture>& bound_textures,
+    const vk::CommandBuffer& buffer) {
   BarrierVK barrier;
   barrier.cmd_buffer = buffer;
   barrier.src_access = vk::AccessFlagBits::eTransferWrite;
@@ -44,23 +45,8 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const TextureAndSampler& data : bindings.sampled_images) {
+  for (const BoundTexture& data : bound_textures) {
     if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool UpdateBindingLayouts(const ComputeCommand& command,
-                                 const vk::CommandBuffer& buffer) {
-  return UpdateBindingLayouts(command.bindings, buffer);
-}
-
-static bool UpdateBindingLayouts(const std::vector<ComputeCommand>& commands,
-                                 const vk::CommandBuffer& buffer) {
-  for (const ComputeCommand& command : commands) {
-    if (!UpdateBindingLayouts(command, buffer)) {
       return false;
     }
   }
@@ -97,12 +83,12 @@ bool ComputePassVK::OnEncodeCommands(const Context& context,
   }
   auto cmd_buffer = encoder->GetCommandBuffer();
 
-  if (!UpdateBindingLayouts(commands_, cmd_buffer)) {
+  if (!UpdateBindingLayouts(bound_textures_, cmd_buffer)) {
     VALIDATION_LOG << "Could not update binding layouts for compute pass.";
     return false;
   }
-  auto desc_sets_result =
-      AllocateAndBindDescriptorSets(vk_context, encoder, commands_);
+  auto desc_sets_result = AllocateAndBindDescriptorSets(
+      vk_context, encoder, commands_, bound_buffers_, bound_textures_);
   if (!desc_sets_result.ok()) {
     return false;
   }

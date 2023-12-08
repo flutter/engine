@@ -7,12 +7,6 @@
 #include <memory>
 #include <string>
 
-#include "impeller/core/buffer_view.h"
-#include "impeller/core/formats.h"
-#include "impeller/core/resource_binder.h"
-#include "impeller/core/sampler.h"
-#include "impeller/core/shader_types.h"
-#include "impeller/core/texture.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/pipeline.h"
@@ -32,7 +26,7 @@ namespace impeller {
 ///             views into buffers managed by other allocators and resource
 ///             managers.
 ///
-struct ComputeCommand : public ResourceBinder {
+struct ComputeCommand {
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
   ///
@@ -41,7 +35,13 @@ struct ComputeCommand : public ResourceBinder {
   /// The buffer, texture, and sampler bindings used by the compute pipeline
   /// stage.
   ///
-  Bindings bindings;
+  BindingOffsets buffer_bindings;
+
+  //----------------------------------------------------------------------------
+  /// The buffer, texture, and sampler bindings used by the compute pipeline
+  /// stage.
+  ///
+  BindingOffsets texture_bindings;
 
 #ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------
@@ -49,19 +49,6 @@ struct ComputeCommand : public ResourceBinder {
   ///
   std::string label;
 #endif  // IMPELLER_DEBUG
-
-  // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    const ShaderUniformSlot& slot,
-                    const ShaderMetadata& metadata,
-                    BufferView view) override;
-
-  // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler) override;
 
   constexpr explicit operator bool() const {
     return pipeline && pipeline->IsValid();

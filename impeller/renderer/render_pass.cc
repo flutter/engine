@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/render_pass.h"
+#include <iterator>
 
 namespace impeller {
 
@@ -84,6 +85,22 @@ bool RenderPass::AddCommand(Command&& command) {
   commands_.emplace_back(std::move(command));
   return true;
 }
+
+// bool RenderPass::AddCommand(Command&& command,
+//                 std::vector<BoundBuffer> buffers,
+//                 std::vector<BoundTexture> textures) {
+//   // TODO
+//   // size_t buffer_start = bound_buffers_.size();
+//   // size_t texture_start = bound_textures_.size();
+//   commands_.emplace_back(std::move(command));
+//   // for (const auto& buffer : buffers) {
+//   //   bound_buffers_.emplace_back(std::move(buffer));
+//   // }
+//   // for (const auto& texture : textures) {
+//   //   bound_textures_.emplace_back(std::move(texture));
+//   // }
+//   return true;
+// }
 
 bool RenderPass::EncodeCommands() const {
   auto context = context_.lock();

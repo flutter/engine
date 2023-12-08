@@ -48,11 +48,12 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
   FS::FragInfo frag_info;
   frag_info.color = color_;
   frag_info.square_size = square_size_;
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  pass.AddCommand(std::move(cmd));
-
-  return true;
+  return pass.AddCommand(
+      std::move(cmd),
+      {
+          FS::BindFragInfo(host_buffer.EmplaceUniform(frag_info)),
+      });
 }
 
 std::optional<Rect> CheckerboardContents::GetCoverage(

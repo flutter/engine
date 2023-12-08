@@ -224,16 +224,22 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
         ComputePipelineMTL::Cast(*command.pipeline)
             .GetMTLComputePipelineState());
 
-    for (const BufferAndUniformSlot& buffer : command.bindings.buffers) {
+    // Bind buffers.
+    for (auto i = 0u; i < command.buffer_bindings.length; i++) {
+      const BoundBuffer& buffer =
+          bound_buffers_[command.buffer_bindings.offset + i];
       if (!Bind(pass_bindings, *allocator, buffer.slot.ext_res_0,
                 buffer.view.resource)) {
         return false;
       }
     }
 
-    for (const TextureAndSampler& data : command.bindings.sampled_images) {
-      if (!Bind(pass_bindings, data.slot.texture_index, *data.sampler,
-                *data.texture.resource)) {
+    // Bind textures and samplers.
+    for (auto i = 0u; i < command.texture_bindings.length; i++) {
+      const BoundTexture& texture =
+          bound_textures_[command.texture_bindings.offset + i];
+      if (!Bind(pass_bindings, texture.slot.texture_index, *texture.sampler,
+                *texture.texture.resource)) {
         return false;
       }
     }
