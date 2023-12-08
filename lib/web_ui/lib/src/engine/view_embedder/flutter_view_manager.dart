@@ -97,7 +97,6 @@ class FlutterViewManager {
     // We need to call `toList()` in order to avoid concurrent modification
     // inside the loop.
     _viewData.keys.toList().forEach(disposeAndUnregisterView);
-    _viewData.clear();
     // Let listeners receive the unregistration events from the loop above, then
     // close the streams.
     _onViewCreatedController.close();
