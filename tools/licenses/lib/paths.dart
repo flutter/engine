@@ -30,6 +30,8 @@ final Set<String> skippedPaths = <String>{
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
   r'flutter/third_party/benchmark', // only used by tests
+  r'flutter/third_party/colorama/src/demos',
+  r'flutter/third_party/colorama/src/screenshots',
   r'flutter/third_party/expat/expat/doc',
   r'flutter/third_party/expat/expat/win32/expat.iss',
   r'flutter/third_party/flatbuffers/android',
@@ -123,8 +125,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/boringssl/src/fuzz', // testing tools, not shipped
   r'third_party/boringssl/src/rust', // rust-related code is not shipped
   r'third_party/boringssl/src/util', // code generators, not shipped
-  r'third_party/colorama/src/demos',
-  r'third_party/colorama/src/screenshots',
   r'third_party/dart/benchmarks', // not shipped in binary
   r'third_party/dart/build', // not shipped in binary
   r'third_party/dart/docs', // not shipped in binary

@@ -622,7 +622,7 @@ deps = {
     'condition': 'host_os == "win" and download_esbuild'
   },
 
-  'src/third_party/colorama/src':
+  'src/flutter/third_party/colorama/src':
    Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
 
   'src/flutter/third_party/expat':
