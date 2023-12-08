@@ -125,11 +125,11 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
                       kUnusedAttachmentReference);
 
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
-    color_refs[bind_point] = vk::AttachmentReference{
-        static_cast<uint32_t>(attachments.size()),
-        (supports_framebuffer_fetch)
-            ? vk::ImageLayout::eGeneral
-            : vk::ImageLayout::eColorAttachmentOptimal};
+    color_refs[bind_point] =
+        vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
+                                (supports_framebuffer_fetch)
+                                    ? vk::ImageLayout::eGeneral
+                                    : vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(CreateAttachmentDescription(
         color, &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(color, attachments.back(), command_buffer,

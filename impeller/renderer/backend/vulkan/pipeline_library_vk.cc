@@ -138,7 +138,8 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
 
-  // See https://github.com/google/angle/blob/46817856888e74d23169e79ac98064600fd00127/src/libANGLE/renderer/vulkan/vk_cache_utils.cpp#L672-L693
+  // See
+  // https://github.com/google/angle/blob/46817856888e74d23169e79ac98064600fd00127/src/libANGLE/renderer/vulkan/vk_cache_utils.cpp#L672-L693
   if (supports_advanced_blend) {
     vk::SubpassDependency subpass_dependency;
     subpass_dependency.setSrcSubpass(0);
@@ -406,9 +407,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //         .find(0u)
   //         ->second.advanced_blend_override.has_value()) {
   //   state.setBlendOverlap(vk::BlendOverlapEXT::eUncorrelated);  // dunno
-  //   state.setSrcPremultiplied(true);                            // double check
-  //   state.setDstPremultiplied(true);
-  //   blend_state.pNext = &state;
+  //   state.setSrcPremultiplied(true);                            // double
+  //   check state.setDstPremultiplied(true); blend_state.pNext = &state;
   // }
 
   std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
