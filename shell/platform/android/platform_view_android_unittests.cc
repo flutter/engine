@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/third_party/googletest/googlemock/include/gmock/gmock-nice-strict.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "shell/platform/android/context/android_context.h"
-#include "flutter/third_party/googletest/googlemock/include/gmock/gmock-nice-strict.h"
 
 namespace flutter {
 namespace testing {
