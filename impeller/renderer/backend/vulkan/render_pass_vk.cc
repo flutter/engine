@@ -472,16 +472,6 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
     return false;
   }
 
-#ifdef IMPELLER_DEBUG
-  fml::ScopedCleanupClosure pop_marker(
-      [&encoder]() { encoder->PopDebugGroup(); });
-  if (!debug_label_.empty()) {
-    encoder->PushDebugGroup(debug_label_.c_str());
-  } else {
-    pop_marker.Release();
-  }
-#endif  // IMPELLER_DEBUG
-
   auto cmd_buffer = encoder->GetCommandBuffer();
 
   if (!UpdateBindingLayouts(bound_textures_, cmd_buffer)) {
