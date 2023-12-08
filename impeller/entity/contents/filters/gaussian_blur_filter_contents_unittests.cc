@@ -19,7 +19,7 @@ namespace {
 // Use newtonian method to give the closest answer to target where
 // f(x) is less than the target. We do this because the value is `ceil`'d to
 // grab fractional pixels.
-float LowerBoundNewtonianMethod(std::function<float(float)> func,
+float LowerBoundNewtonianMethod(const std::function<float(float)>& func,
                                 float target,
                                 float guess,
                                 float tolerance) {
