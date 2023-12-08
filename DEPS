@@ -159,7 +159,6 @@ vars = {
   "upstream_cli_util": "https://github.com/dart-lang/cli_util.git",
   "upstream_clock": "https://github.com/dart-lang/clock.git",
   "upstream_collection": "https://github.com/dart-lang/collection.git",
-  "upstream_colorama": "https://github.com/tartley/colorama.git",
   "upstream_convert": "https://github.com/dart-lang/convert.git",
   "upstream_crypto": "https://github.com/dart-lang/crypto.git",
   "upstream_csslib": "https://github.com/dart-lang/csslib.git",
@@ -621,9 +620,6 @@ deps = {
     'dep_type': 'cipd',
     'condition': 'host_os == "win" and download_esbuild'
   },
-
-  'src/third_party/colorama/src':
-   Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
 
   'src/flutter/third_party/expat':
    Var('chromium_git') + '/external/github.com/libexpat/libexpat.git' + '@' + '654d2de0da85662fcc7644a7acd7c2dd2cfb21f0',
