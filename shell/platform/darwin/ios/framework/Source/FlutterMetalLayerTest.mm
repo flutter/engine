@@ -11,10 +11,10 @@
 @interface FlutterMetalLayerTest : XCTestCase
 @end
 
-@interface MetalView : UIView
+@interface TestFlutterMetalLayerView : UIView
 @end
 
-@implementation MetalView
+@implementation TestFlutterMetalLayerView
 
 + (Class)layerClass {
   return [FlutterMetalLayer class];
@@ -25,7 +25,8 @@
 @implementation FlutterMetalLayerTest
 
 - (FlutterMetalLayer*)addMetalLayer {
-  MetalView* view = [[MetalView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
+  TestFlutterMetalLayerView* view =
+      [[TestFlutterMetalLayerView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
   FlutterMetalLayer* layer = (FlutterMetalLayer*)view.layer;
   layer.drawableSize = CGSizeMake(100, 100);
   [UIApplication.sharedApplication.keyWindow addSubview:view];
