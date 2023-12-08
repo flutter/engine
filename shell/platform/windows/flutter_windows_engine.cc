@@ -259,8 +259,6 @@ bool FlutterWindowsEngine::Run() {
   return Run("");
 }
 
-HWND test_button = NULL;
-
 bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   if (!project_->HasValidPaths()) {
     FML_LOG(ERROR) << "Missing or unresolvable paths to assets.";
@@ -442,61 +440,63 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                                           size_t layers_count,
                                           void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    bool result = false;
-    bool rendered_backing = false;
 
-    // Attempted double buffering:
-    /*HWND hwnd = host->view()->GetPlatformWindow();
-    HDC dstdc = GetDC(hwnd);
+    HWND hwnd = host->view()->GetPlatformWindow();
     RECT rect;
     GetClientRect(hwnd, &rect);
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
-    void* bits;
-    HDC srcdc = CreateCompatibleDC(dstdc);
-    BITMAPINFO bmi = {};
-    bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmi.bmiHeader.biWidth = width;
-    bmi.bmiHeader.biHeight = -height;
-    bmi.bmiHeader.biPlanes = 1;
-    bmi.bmiHeader.biBitCount = 32;
-    bmi.bmiHeader.biCompression = BI_RGB;
-    bmi.bmiHeader.biSizeImage = width * height * 4;
-    HBITMAP srcbm = CreateDIBSection(srcdc, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
-    SelectObject(srcdc, srcbm);
-    memset(bits, 0, width * height * 4);
-
-    HDC buffer = CreateCompatibleDC(dstdc);
-    void* bufbits;
-    HBITMAP bufferbm = CreateDIBSection(buffer, &bmi, DIB_RGB_COLORS, &bufbits, NULL, 0);
-    SelectObject(buffer, bufferbm);
-
-    BLENDFUNCTION bf;
-    bf.AlphaFormat = AC_SRC_ALPHA;
-    bf.BlendFlags = 0;
-    bf.BlendOp = AC_SRC_OVER;
-    bf.SourceConstantAlpha = 0;*/
+    std::vector<uint32_t> allocation(width * height);
 
     for (size_t index = 0; index < layers_count; index++) {
       const auto layer = layers[index];
+      const auto& offset = layer->offset;
+      const auto& size = layer->size;
       if (layer->type == kFlutterLayerContentTypeBackingStore) {
         if (layer->backing_store->type != kFlutterBackingStoreTypeSoftware) {
           FML_UNREACHABLE();
           return false;
         }
         const auto& backing_store = layer->backing_store->software;
-        /*FML_LOG(ERROR) << "Set bits layer " << index << ": " << SetDIBitsToDevice(srcdc, layer->offset.x, layer->offset.y, layer->size.width, layer->size.height, 0, 0, 0, layer->size.height, backing_store.allocation, &bmi, DIB_RGB_COLORS);
-        FML_LOG(ERROR) << "Blend layer " << index << ": " << AlphaBlend(buffer, 0, 0, width, height, srcdc, 0, 0, width, height, bf);*/
-        result |= rendered_backing = host->view()->PresentSoftwareBitmap(backing_store.allocation,
-                                                   backing_store.row_bytes,
-                                                   backing_store.height);
+        const uint32_t *src_data = (const uint32_t*)backing_store.allocation;
+
+        // Manually blend alpha:
+        for (int y_src = 0; y_src < size.height && y_src + offset.y < height; y_src++) {
+          int y_dst = y_src + offset.y;
+          if (y_dst < 0) {
+            continue;
+          }
+          for (int x_src = 0; x_src < size.width && x_src + offset.x < width; x_src++) {
+            int x_dst = x_src + offset.x;
+            if (x_dst < 0) {
+              continue;
+            }
+            int i_src = y_src * size.width + x_src;
+            int i_dst = y_dst * width + x_dst;
+            uint32_t src = src_data[i_src];
+            uint32_t dst = allocation[i_dst];
+
+            int r_src =  src & 0xff;
+            int g_src = (src >> 8) & 0xff;
+            int b_src = (src >> 16) & 0xff;
+            int a_src = (src >> 24);
+
+            int r_dst =  dst & 0xff;
+            int g_dst = (dst >> 8) & 0xff;
+            int b_dst = (dst >> 16) & 0xff;
+
+            int r = (r_dst * 255 + (r_src - r_dst) * a_src) / 255;
+            int g = (g_dst * 255 + (g_src - g_dst) * a_src) / 255;
+            int b = (b_dst * 255 + (b_src - b_dst) * a_src) / 255;
+
+            allocation[i_dst] = r | (g << 8) | (b <<16) | (0xff << 24);
+          }
+        }
       }
       else if (layer->type == kFlutterLayerContentTypePlatformView) {
         const auto platform_view = layer->platform_view;
         auto id = platform_view->identifier;
         const auto itr = host->platform_views_.find(platform_view->identifier);
-        const auto& offset = layer->offset;
-        const auto& size = layer->size;
         if (itr != host->platform_views_.end()) {
           HWND view = itr->second;
           SetWindowPos(view, HWND_TOPMOST, offset.x, offset.y, size.width, size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -504,25 +504,10 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
         } else {
           FML_LOG(ERROR) << "No platform view registered with id " << id;
         }
-        /*host->task_runner()->PostTask([=](){
-          HWND parent = host->view()->GetPlatformWindow();
-          if (test_button == NULL && parent != NULL && IsWindowVisible(parent)) {
-            test_button = CreateWindowW(L"STATIC", L"Pretend I am a platform view!", WS_CHILD | WS_VISIBLE, 10, 10, 250, 250, parent, NULL, NULL, NULL);
-          }
-          SetWindowPos(test_button, HWND_TOPMOST, offset.x, offset.y, size.width, size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
-          UpdateWindow(test_button);
-        });*/
       }
     }
 
-    /*FML_LOG(ERROR) << "Blit buffer: " << (result = SetDIBitsToDevice(dstdc, 0, 0, width, height, 0, 0, 0, height, bufbits, &bmi, DIB_RGB_COLORS));
-
-    DeleteObject(bufferbm);
-    DeleteDC(buffer);
-    DeleteObject(srcbm);
-    DeleteDC(srcdc);
-    ReleaseDC(hwnd, dstdc);*/
-    return result;
+    return host->view()->PresentSoftwareBitmap((void*)allocation.data(), width * 4, height);
   };
   args.compositor = &compositor;
 
