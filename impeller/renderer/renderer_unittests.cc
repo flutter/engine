@@ -275,7 +275,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
 
         if (!pass.AddCommand(
-                std::move(cmd),
+                Command(cmd),
                 {
                     FS::BindFrameInfo(
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info)),
