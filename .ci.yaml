@@ -66,7 +66,6 @@ targets:
 
   - name: Linux linux_android_emulator_tests_api_33
     bringup: true
-    presubmit: true # TESTING CHANGE ONLY
     enabled_branches:
       - main
     recipe: engine_v2/engine_v2
