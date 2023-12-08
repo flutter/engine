@@ -190,16 +190,6 @@ std::shared_ptr<Texture> MakeBlurSubpass(
   return out_texture;
 }
 
-// This function was calculated by observing Skia's behavior.  It's blur at 500
-// seemed to be 0.15.  Since we clamp at 500 I solved the quadratic equation
-// that puts the minima there and a f(0)=1.
-Scalar ScaleSigma(Scalar sigma) {
-  // Limit the kernel size to 1000x1000 pixels, like Skia does.
-  Scalar clamped = std::min(sigma, 500.0f);
-  Scalar scalar = 1.0 - 3.4e-3 * clamped + 3.4e-06 * clamped * clamped;
-  return clamped * scalar;
-}
-
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(
@@ -359,6 +349,19 @@ Quad GaussianBlurFilterContents::CalculateUVs(
   Matrix uv_transform = Matrix::MakeScale(
       {1.0f / texture_size.width, 1.0f / texture_size.height, 1.0f});
   return uv_transform.Transform(coverage_quad);
+}
+
+// This function was calculated by observing Skia's behavior.  It's blur at 500
+// seemed to be 0.15.  Since we clamp at 500 I solved the quadratic equation
+// that puts the minima there and a f(0)=1.
+Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
+  // Limit the kernel size to 1000x1000 pixels, like Skia does.
+  Scalar clamped = std::min(sigma, 500.0f);
+  constexpr Scalar a = 3.4e-06;
+  constexpr Scalar b = -3.4e-3;
+  constexpr Scalar c = 1.f;
+  Scalar scalar = c + b * clamped + a * clamped * clamped;
+  return clamped * scalar;
 }
 
 }  // namespace impeller
