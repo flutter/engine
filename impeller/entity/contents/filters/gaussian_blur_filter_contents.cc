@@ -190,8 +190,23 @@ std::shared_ptr<Texture> MakeBlurSubpass(
   return out_texture;
 }
 
+// This function was derived with polynomial regression when comparing the
+// results with Skia.  Changing the curve below should invalidate this.
+//
+// The following data points were used:
+//   0 | 1
+//  75 | 0.8
+// 150 | 0.5
+// 300 | 0.22
+// 400 | 0.2
+// 500 | 0.15
+//
+// TODO(gaaclarke): Maybe we should just change this to a linear function.
 Scalar ScaleSigma(Scalar sigma) {
-  return std::min(sigma, 500.f);
+  // Limit the kernel size to 1000x1000 pixels, like Skia does.
+  Scalar clamped = std::min(sigma, 500.0f);
+  Scalar scalar = 1.02 - 3.89e-3 * clamped + 4.36e-06 * clamped * clamped;
+  return clamped * scalar;
 }
 
 }  // namespace
