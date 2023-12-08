@@ -14,7 +14,7 @@ export type WebRenderer =
 
 export interface ApplicationBuild {
     target: CompileTarget;
-    supportedRenderers: WebRenderer[];
+    renderer: WebRenderer;
 }
 
 export interface BuildConfig {
