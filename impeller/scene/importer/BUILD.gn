@@ -56,7 +56,7 @@ impeller_component("importer_lib") {
 
     # All third_party deps must be reflected below in the scenec_license
     # target.
-    "//third_party/tinygltf",
+    "//flutter/third_party/tinygltf",
   ]
 }
 
