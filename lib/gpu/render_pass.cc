@@ -331,7 +331,6 @@ static bool BindUniform(flutter::gpu::RenderPass* wrapper,
   std::shared_ptr<impeller::ShaderMetadata> metadata =
       std::make_shared<impeller::ShaderMetadata>();
 
-  auto& command = wrapper->GetCommand();
   impeller::ShaderUniformSlot slot;
   // Don't populate the slot name... we don't have it here and Impeller doesn't
   // even use it for anything.
@@ -377,8 +376,6 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
     int mip_filter,
     int width_address_mode,
     int height_address_mode) {
-  auto& command = wrapper->GetCommand();
-
   // TODO(113715): Populate this metadata once GLES is able to handle
   //               non-struct uniform names.
   impeller::ShaderMetadata metadata;
