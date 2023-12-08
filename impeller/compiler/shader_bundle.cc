@@ -144,7 +144,7 @@ bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
   ///
 
   std::optional<ShaderBundleConfig> bundle_config =
-      ParseShaderBundleConfig(switches.iplr_bundle);
+      ParseShaderBundleConfig(switches.shader_bundle);
   if (!bundle_config) {
     return false;
   }

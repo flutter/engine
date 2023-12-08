@@ -56,14 +56,6 @@ SourceType SourceTypeFromString(std::string name) {
     return SourceType::kFragmentShader;
   }
 
-  if (name == "tessellationcontrol") {
-    return SourceType::kTessellationControlShader;
-  }
-
-  if (name == "tessellationevaluation") {
-    return SourceType::kTessellationEvaluationShader;
-  }
-
   if (name == "compute") {
     return SourceType::kComputeShader;
   }

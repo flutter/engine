@@ -229,9 +229,9 @@ bool Main(const fml::CommandLine& command_line) {
   options.use_half_textures = switches.use_half_textures;
   options.require_framebuffer_fetch = switches.require_framebuffer_fetch;
 
-  if (!switches.iplr_bundle.empty()) {
+  if (!switches.shader_bundle.empty()) {
     // Invoke the compiler multiple times to build a shader bundle with the
-    // given iplr_bundle spec.
+    // given shader_bundle spec.
     return GenerateShaderBundle(switches, options);
   }
 
