@@ -800,7 +800,8 @@ void _testContainer() {
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     if (isSafari) {
-      expect(parentElement.style.transformOrigin, '0px 0px');
+      // macOS 13 returns different values than macOS 12.
+      expect(parentElement.style.transformOrigin, anyOf(contains('0px 0px 0px'), contains('0px 0px')));
     } else {
       expect(parentElement.style.transformOrigin, '0px 0px 0px');
     }
