@@ -190,6 +190,10 @@ std::shared_ptr<Texture> MakeBlurSubpass(
   return out_texture;
 }
 
+Scalar ScaleSigma(Scalar sigma) {
+  return std::min(sigma, 500.f);
+}
+
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(
@@ -210,7 +214,8 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
     const Rect& output_limit) const {
-  Scalar blur_radius = CalculateBlurRadius(sigma_);
+  Scalar scaled_sigma = ScaleSigma(sigma_);
+  Scalar blur_radius = CalculateBlurRadius(scaled_sigma);
   Vector3 blur_radii =
       effect_transform.Basis() * Vector3{blur_radius, blur_radius, 0.0};
   return output_limit.Expand(Point(blur_radii.x, blur_radii.y));
@@ -229,7 +234,8 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
     return {};
   }
 
-  Scalar blur_radius = CalculateBlurRadius(sigma_);
+  Scalar scaled_sigma = ScaleSigma(sigma_);
+  Scalar blur_radius = CalculateBlurRadius(scaled_sigma);
   Vector3 blur_radii =
       (inputs[0]->GetTransform(entity).Basis() * effect_transform.Basis() *
        Vector3{blur_radius, blur_radius, 0.0})
@@ -248,7 +254,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  Scalar blur_radius = CalculateBlurRadius(sigma_);
+  Scalar scaled_sigma = ScaleSigma(sigma_);
+  Scalar blur_radius = CalculateBlurRadius(scaled_sigma);
   Vector2 padding(ceil(blur_radius), ceil(blur_radius));
 
   // Apply as much of the desired padding as possible from the source. This may
@@ -269,12 +276,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  if (sigma_ < kEhCloseEnough) {
+  if (scaled_sigma < kEhCloseEnough) {
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
                                 entity.GetClipDepth());  // No blur to render.
   }
 
-  Scalar desired_scalar = CalculateScale(sigma_);
+  Scalar desired_scalar = CalculateScale(scaled_sigma);
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
@@ -301,7 +308,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       renderer, pass1_out_texture, input_snapshot->sampler_descriptor,
       GaussianBlurFragmentShader::BlurInfo{
           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-          .blur_sigma = sigma_ * effective_scalar.y,
+          .blur_sigma = scaled_sigma * effective_scalar.y,
           .blur_radius = blur_radius * effective_scalar.y,
           .step_size = 1.0,
       });
@@ -311,7 +318,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       renderer, pass2_out_texture, input_snapshot->sampler_descriptor,
       GaussianBlurFragmentShader::BlurInfo{
           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-          .blur_sigma = sigma_ * effective_scalar.x,
+          .blur_sigma = scaled_sigma * effective_scalar.x,
           .blur_radius = blur_radius * effective_scalar.x,
           .step_size = 1.0,
       });
