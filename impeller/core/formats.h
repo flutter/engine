@@ -522,14 +522,16 @@ struct ColorAttachmentDescriptor {
            alpha_blend_op == o.alpha_blend_op &&                  //
            dst_alpha_blend_factor == o.dst_alpha_blend_factor &&  //
            write_mask == o.write_mask &&                          //
-           advanced_blend_override == o.advanced_blend_override;
+           advanced_blend_override.value_or(BlendMode::kClear) ==
+               o.advanced_blend_override.value_or(BlendMode::kClear);
   }
 
   constexpr size_t Hash() const {
     return fml::HashCombine(
         format, blending_enabled, src_color_blend_factor, color_blend_op,
         dst_color_blend_factor, src_alpha_blend_factor, alpha_blend_op,
-        dst_alpha_blend_factor, write_mask, advanced_blend_override);
+        dst_alpha_blend_factor, write_mask,
+        advanced_blend_override.value_or(BlendMode::kClear));
   }
 };
 
