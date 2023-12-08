@@ -158,6 +158,32 @@
     id<CAMetalDrawable> drawable = [layer nextDrawable];
     XCTAssertEqual(texture, drawable.texture);
   }
+
+  [self removeMetalLayer:layer];
+}
+
+- (void)testLayerLimitsDrawableCount {
+  FlutterMetalLayer* layer = [self addMetalLayer];
+
+  id<CAMetalDrawable> d1 = [layer nextDrawable];
+  id<CAMetalDrawable> d2 = [layer nextDrawable];
+  id<CAMetalDrawable> d3 = [layer nextDrawable];
+  XCTAssertNotNil(d3);
+
+  // Layer should not return more than 3 drawables.
+  id<CAMetalDrawable> d4 = [layer nextDrawable];
+  XCTAssertNil(d4);
+
+  [d1 present];
+
+  // Still no drawable, until the front buffer returns to pool
+  id<CAMetalDrawable> d5 = [layer nextDrawable];
+  XCTAssertNil(d5);
+
+  [d2 present];
+  id<CAMetalDrawable> d6 = [layer nextDrawable];
+  XCTAssertNotNil(d6);
+
   [self removeMetalLayer:layer];
 }
 
