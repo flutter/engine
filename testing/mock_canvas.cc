@@ -15,6 +15,7 @@ namespace flutter {
 namespace testing {
 
 constexpr SkISize kSize = SkISize::Make(64, 64);
+constexpr float kPixelRatio = 1.0f;
 
 MockCanvas::MockCanvas()
     : tracker_(SkRect::Make(kSize), SkMatrix::I()), current_layer_(0) {}
@@ -29,6 +30,10 @@ MockCanvas::~MockCanvas() {
 
 SkISize MockCanvas::GetBaseLayerSize() const {
   return tracker_.base_device_cull_rect().roundOut().size();
+}
+
+float MockCanvas::GetBaseLayerPixelRatio() const {
+  return kPixelRatio;
 }
 
 SkImageInfo MockCanvas::GetImageInfo() const {

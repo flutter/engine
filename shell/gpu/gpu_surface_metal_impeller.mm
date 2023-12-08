@@ -55,7 +55,8 @@ bool GPUSurfaceMetalImpeller::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_size,
+                                                                    float pixel_ratio) {
   TRACE_EVENT0("impeller", "GPUSurfaceMetalImpeller::AcquireFrame");
 
   if (!IsValid()) {
@@ -71,14 +72,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size,
+        pixel_ratio);
   }
 
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
-      return AcquireFrameFromCAMetalLayer(frame_size);
+      return AcquireFrameFromCAMetalLayer(frame_size, pixel_ratio);
     case MTLRenderTargetType::kMTLTexture:
-      return AcquireFrameFromMTLTexture(frame_size);
+      return AcquireFrameFromMTLTexture(frame_size, pixel_ratio);
     default:
       FML_CHECK(false) << "Unknown MTLRenderTargetType type.";
   }
@@ -87,7 +89,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLayer(
-    const SkISize& frame_size) {
+    const SkISize& frame_size,
+    float pixel_ratio) {
   auto layer = delegate_->GetCAMetalLayer(frame_size);
 
   if (!layer) {
@@ -185,13 +188,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
                                         framebuffer_info,  // framebuffer info
                                         submit_callback,   // submit callback
                                         frame_size,        // frame size
+                                        pixel_ratio,       // pixel ratio
                                         nullptr,           // context result
                                         true               // display list fallback
   );
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTexture(
-    const SkISize& frame_size) {
+    const SkISize& frame_size,
+    float pixel_ratio) {
   GPUMTLTextureInfo texture_info = delegate_->GetMTLTexture(frame_size);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture_info.texture);
 
@@ -289,6 +294,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
                                         framebuffer_info,  // framebuffer info
                                         submit_callback,   // submit callback
                                         frame_size,        // frame size
+                                        pixel_ratio,       // pixel ratio
                                         nullptr,           // context result
                                         true               // display list fallback
   );

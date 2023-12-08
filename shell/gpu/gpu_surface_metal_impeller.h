@@ -50,14 +50,16 @@ class IMPELLER_CA_METAL_LAYER_AVAILABLE GPUSurfaceMetalImpeller
   std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(
-      const SkISize& frame_size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& frame_size,
+                                             float pixel_ratio) override;
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
-      const SkISize& frame_size);
+      const SkISize& frame_size,
+      float pixel_ratio);
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
-      const SkISize& frame_size);
+      const SkISize& frame_size,
+      float pixel_ratio);
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

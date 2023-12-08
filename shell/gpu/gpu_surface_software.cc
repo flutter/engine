@@ -27,7 +27,8 @@ bool GPUSurfaceSoftware::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
-    const SkISize& logical_size) {
+    const SkISize& logical_size,
+    float pixel_ratio) {
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
@@ -39,7 +40,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        logical_size);
+        logical_size, pixel_ratio);
   }
 
   if (!IsValid()) {
@@ -78,7 +79,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceSoftware::AcquireFrame(
   };
 
   return std::make_unique<SurfaceFrame>(backing_store, framebuffer_info,
-                                        on_submit, logical_size);
+                                        on_submit, logical_size, pixel_ratio);
 }
 
 // |Surface|

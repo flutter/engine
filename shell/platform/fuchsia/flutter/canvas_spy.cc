@@ -6,7 +6,10 @@
 
 namespace flutter {
 
-CanvasSpy::CanvasSpy(SkCanvas* target_canvas) {
+static constexpr float kDefaultPixelRatio = 1.0f;
+
+CanvasSpy::CanvasSpy(SkCanvas* target_canvas)
+    : adapter_(nullptr, kDefaultPixelRatio) {
   SkISize canvas_size = target_canvas->getBaseLayerSize();
   n_way_canvas_ =
       std::make_unique<SkNWayCanvas>(canvas_size.width(), canvas_size.height());

@@ -53,7 +53,8 @@ bool GPUSurfaceGLImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
-    const SkISize& size) {
+    const SkISize& size,
+    float pixel_ratio) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "OpenGL surface was invalid.";
     return nullptr;
@@ -131,6 +132,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
       delegate_->GLContextFramebufferInfo(),  // framebuffer info
       submit_callback,                        // submit callback
       size,                                   // frame size
+      pixel_ratio,                            // pixel ratio
       std::move(context_switch),              // context result
       true                                    // display list fallback
   );

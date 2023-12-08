@@ -15,6 +15,8 @@
 namespace flutter {
 namespace testing {
 
+static constexpr float kDefaultPixelRatio = 1.5f;
+
 class TestGPUSurfaceMetalDelegate : public GPUSurfaceMetalDelegate {
  public:
   TestGPUSurfaceMetalDelegate() : GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer) {
@@ -73,7 +75,7 @@ TEST(GPUSurfaceMetalImpeller, AcquireFrameFromCAMetalLayerNullChecksDrawable) {
 
   ASSERT_TRUE(surface->IsValid());
 
-  auto frame = surface->AcquireFrame(SkISize::Make(100, 100));
+  auto frame = surface->AcquireFrame(SkISize::Make(100, 100), kDefaultPixelRatio);
   ASSERT_EQ(frame, nullptr);
 }
 

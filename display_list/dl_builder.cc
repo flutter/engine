@@ -91,8 +91,8 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
-                                       float pixel_ratio,
-                                       bool prepare_rtree)
+                                       bool prepare_rtree,
+                                       float pixel_ratio)
     : pixel_ratio_(pixel_ratio), tracker_(cull_rect, SkMatrix::I()) {
   if (prepare_rtree) {
     accumulator_ = std::make_unique<RTreeBoundsAccumulator>();
@@ -113,6 +113,10 @@ DisplayListBuilder::~DisplayListBuilder() {
 
 SkISize DisplayListBuilder::GetBaseLayerSize() const {
   return tracker_.base_device_cull_rect().roundOut().size();
+}
+
+float DisplayListBuilder::GetBaseLayerPixelRatio() const {
+  return pixel_ratio_;
 }
 
 SkImageInfo DisplayListBuilder::GetImageInfo() const {

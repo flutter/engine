@@ -87,7 +87,8 @@ void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size,
+                                                                float pixel_ratio) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
@@ -101,16 +102,17 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size);
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; }, frame_size,
+        pixel_ratio);
   }
 
   PrecompileKnownSkSLsIfNecessary();
 
   switch (render_target_type_) {
     case MTLRenderTargetType::kCAMetalLayer:
-      return AcquireFrameFromCAMetalLayer(frame_size);
+      return AcquireFrameFromCAMetalLayer(frame_size, pixel_ratio);
     case MTLRenderTargetType::kMTLTexture:
-      return AcquireFrameFromMTLTexture(frame_size);
+      return AcquireFrameFromMTLTexture(frame_size, pixel_ratio);
     default:
       FML_CHECK(false) << "Unknown MTLRenderTargetType type.";
   }
@@ -119,7 +121,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
-    const SkISize& frame_info) {
+    const SkISize& frame_info,
+    float pixel_ratio) {
   auto layer = delegate_->GetCAMetalLayer(frame_info);
   if (!layer) {
     FML_LOG(ERROR) << "Invalid CAMetalLayer given by the embedder.";
@@ -196,11 +199,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
   }
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
-                                        frame_info);
+                                        frame_info, pixel_ratio);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
-    const SkISize& frame_info) {
+    const SkISize& frame_info,
+    float pixel_ratio) {
   GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);
 
@@ -239,7 +243,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
   framebuffer_info.supports_readback = true;
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
-                                        frame_info);
+                                        frame_info, pixel_ratio);
 }
 
 // |Surface|

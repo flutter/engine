@@ -13,21 +13,23 @@
 
 namespace flutter::testing {
 
+static constexpr float kDefaultPixelRatio = 1.5f;
+
 TEST(OffscreenSurfaceTest, EmptySurfaceIsInvalid) {
-  auto surface =
-      std::make_unique<OffscreenSurface>(nullptr, SkISize::MakeEmpty());
+  auto surface = std::make_unique<OffscreenSurface>(
+      nullptr, SkISize::MakeEmpty(), kDefaultPixelRatio);
   ASSERT_FALSE(surface->IsValid());
 }
 
 TEST(OffscreenSurfaceTest, OnexOneSurfaceIsValid) {
-  auto surface =
-      std::make_unique<OffscreenSurface>(nullptr, SkISize::Make(1, 1));
+  auto surface = std::make_unique<OffscreenSurface>(
+      nullptr, SkISize::Make(1, 1), kDefaultPixelRatio);
   ASSERT_TRUE(surface->IsValid());
 }
 
 TEST(OffscreenSurfaceTest, PaintSurfaceBlack) {
-  auto surface =
-      std::make_unique<OffscreenSurface>(nullptr, SkISize::Make(1, 1));
+  auto surface = std::make_unique<OffscreenSurface>(
+      nullptr, SkISize::Make(1, 1), kDefaultPixelRatio);
 
   DlCanvas* canvas = surface->GetCanvas();
   canvas->Clear(DlColor::kBlack());

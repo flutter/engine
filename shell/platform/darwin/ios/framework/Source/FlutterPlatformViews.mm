@@ -839,7 +839,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   overlay_view.accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld].overlay_view[%lld]", view_id, overlay_id];
 
-  std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);
+  std::unique_ptr<SurfaceFrame> frame =
+      layer->surface->AcquireFrame(frame_size_, device_pixel_ratio_);
   // If frame is null, AcquireFrame already printed out an error message.
   if (!frame) {
     return layer;

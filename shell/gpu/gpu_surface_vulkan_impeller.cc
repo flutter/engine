@@ -46,7 +46,8 @@ bool GPUSurfaceVulkanImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
-    const SkISize& size) {
+    const SkISize& size,
+    float pixel_ratio) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";
     return nullptr;
@@ -103,6 +104,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
       SurfaceFrame::FramebufferInfo{},  // framebuffer info
       submit_callback,                  // submit callback
       size,                             // frame size
+      pixel_ratio,                      // pixel ratio
       nullptr,                          // context result
       true                              // display list fallback
   );

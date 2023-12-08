@@ -55,6 +55,7 @@ class DlCanvas {
   virtual ~DlCanvas() = default;
 
   virtual SkISize GetBaseLayerSize() const = 0;
+  virtual float GetBaseLayerPixelRatio() const = 0;
   virtual SkImageInfo GetImageInfo() const = 0;
 
   virtual void Save() = 0;

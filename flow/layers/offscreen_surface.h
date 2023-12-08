@@ -22,7 +22,8 @@ namespace flutter {
 class OffscreenSurface {
  public:
   explicit OffscreenSurface(GrDirectContext* surface_context,
-                            const SkISize& size);
+                            const SkISize& size,
+                            float pixel_ratio);
 
   ~OffscreenSurface() = default;
 

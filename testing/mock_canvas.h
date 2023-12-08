@@ -162,6 +162,7 @@ class MockCanvas final : public DlCanvas {
   void reset_draw_calls() { draw_calls_.clear(); }
 
   SkISize GetBaseLayerSize() const override;
+  float GetBaseLayerPixelRatio() const override;
   SkImageInfo GetImageInfo() const override;
 
   void Save() override;

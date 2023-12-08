@@ -41,6 +41,10 @@ SkISize DlSkCanvasAdapter::GetBaseLayerSize() const {
   return delegate_->getBaseLayerSize();
 }
 
+float DlSkCanvasAdapter::GetBaseLayerPixelRatio() const {
+  return pixel_ratio_;
+}
+
 SkImageInfo DlSkCanvasAdapter::GetImageInfo() const {
   return delegate_->imageInfo();
 }

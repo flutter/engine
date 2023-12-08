@@ -213,7 +213,8 @@ SkMatrix GPUSurfaceGLSkia::GetRootTransformation() const {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
-    const SkISize& size) {
+    const SkISize& size,
+    float pixel_ratio) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
@@ -235,7 +236,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        size);
+        size, pixel_ratio);
   }
 
   const auto root_surface_transformation = GetRootTransformation();
@@ -259,7 +260,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
     framebuffer_info.existing_damage = existing_damage_;
   }
   return std::make_unique<SurfaceFrame>(surface, framebuffer_info,
-                                        submit_callback, size,
+                                        submit_callback, size, pixel_ratio,
                                         std::move(context_switch));
 }
 

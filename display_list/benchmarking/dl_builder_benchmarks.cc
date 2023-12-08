@@ -65,8 +65,8 @@ static void BM_DisplayListBuilderDefault(benchmark::State& state,
                                          DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, kPixelRatio,
-                               prepare_rtree);
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, prepare_rtree,
+                               kPixelRatio);
     InvokeAllRenderingOps(builder);
     Complete(builder, type);
   }
@@ -77,8 +77,8 @@ static void BM_DisplayListBuilderWithScaleAndTranslate(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, kPixelRatio,
-                               prepare_rtree);
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, prepare_rtree,
+                               kPixelRatio);
     builder.Scale(3.5, 3.5);
     builder.Translate(10.3, 6.9);
     InvokeAllRenderingOps(builder);
@@ -91,8 +91,8 @@ static void BM_DisplayListBuilderWithPerspective(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, kPixelRatio,
-                               prepare_rtree);
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, prepare_rtree,
+                               kPixelRatio);
     builder.TransformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0,
                                      0, 0, 12);
     InvokeAllRenderingOps(builder);
@@ -106,8 +106,8 @@ static void BM_DisplayListBuilderWithClipRect(
   SkRect clip_bounds = SkRect::MakeLTRB(6.5, 7.3, 90.2, 85.7);
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, kPixelRatio,
-                               prepare_rtree);
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, prepare_rtree,
+                               kPixelRatio);
     builder.ClipRect(clip_bounds, DlCanvas::ClipOp::kIntersect, true);
     InvokeAllRenderingOps(builder);
     Complete(builder, type);
@@ -119,8 +119,8 @@ static void BM_DisplayListBuilderWithSaveLayer(
     DisplayListBuilderBenchmarkType type) {
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, kPixelRatio,
-                               prepare_rtree);
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, prepare_rtree,
+                               kPixelRatio);
     DlOpReceiver& receiver = DisplayListBuilderBenchmarkAccessor(builder);
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {
@@ -142,8 +142,8 @@ static void BM_DisplayListBuilderWithSaveLayerAndImageFilter(
   SkRect layer_bounds = SkRect::MakeLTRB(6.5, 7.3, 35.2, 42.7);
   bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, kPixelRatio,
-                               prepare_rtree);
+    DisplayListBuilder builder(DisplayListBuilder::kMaxCullRect, prepare_rtree,
+                               kPixelRatio);
     DlOpReceiver& receiver = DisplayListBuilderBenchmarkAccessor(builder);
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {

@@ -33,16 +33,18 @@ class DisplayListBuilder final : public virtual DlCanvas,
       SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   explicit DisplayListBuilder(bool prepare_rtree)
-      : DisplayListBuilder(kMaxCullRect, kDefaultPixelRatio, prepare_rtree) {}
+      : DisplayListBuilder(kMaxCullRect, prepare_rtree, kDefaultPixelRatio) {}
 
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
-                              float pixel_ratio = kDefaultPixelRatio,
-                              bool prepare_rtree = false);
+                              bool prepare_rtree = false,
+                              float pixel_ratio = kDefaultPixelRatio);
 
   ~DisplayListBuilder();
 
   // |DlCanvas|
   SkISize GetBaseLayerSize() const override;
+  // |DlCanvas|
+  float GetBaseLayerPixelRatio() const override;
   // |DlCanvas|
   SkImageInfo GetImageInfo() const override;
 

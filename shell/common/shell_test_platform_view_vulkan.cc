@@ -189,8 +189,8 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
 }
 
 std::unique_ptr<SurfaceFrame>
-ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
-    const SkISize& size) {
+ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(const SkISize& size,
+                                                            float pixel_ratio) {
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);
   auto surface = SkSurfaces::RenderTarget(context_.get(), skgpu::Budgeted::kNo,
@@ -204,9 +204,9 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info,
-                                        std::move(callback),
-                                        /*frame_size=*/SkISize::Make(800, 600));
+  return std::make_unique<SurfaceFrame>(
+      std::move(surface), framebuffer_info, std::move(callback),
+      /*frame_size=*/SkISize::Make(800, 600), pixel_ratio);
 }
 
 GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {

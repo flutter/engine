@@ -31,7 +31,8 @@ class GPUSurfaceVulkanImpeller final : public Surface {
   bool is_valid_ = false;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size,
+                                             float pixel_ratio) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

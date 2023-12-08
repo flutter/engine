@@ -33,7 +33,8 @@ bool GPUSurfaceVulkan::IsValid() {
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
-    const SkISize& frame_size) {
+    const SkISize& frame_size,
+    float pixel_ratio) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";
     return nullptr;
@@ -50,7 +51,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        frame_size);
+        frame_size, pixel_ratio);
   }
 
   FlutterVulkanImage image = delegate_->AcquireImage(frame_size);
@@ -85,7 +86,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
   SurfaceFrame::FramebufferInfo framebuffer_info{.supports_readback = true};
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info,
-                                        std::move(callback), frame_size);
+                                        std::move(callback), frame_size,
+                                        pixel_ratio);
 }
 
 SkMatrix GPUSurfaceVulkan::GetRootTransformation() const {

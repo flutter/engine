@@ -10,8 +10,8 @@ DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds,
                                                            float pixel_ratio) {
   builder_ = std::make_unique<DisplayListBuilder>(
       /*bounds=*/view_bounds,
-      /*pixel_ratio=*/pixel_ratio,
-      /*prepare_rtree=*/true);
+      /*prepare_rtree=*/true,
+      /*pixel_ratio=*/pixel_ratio);
 }
 
 DlCanvas* DisplayListEmbedderViewSlice::canvas() {

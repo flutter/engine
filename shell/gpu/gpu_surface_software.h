@@ -23,7 +23,8 @@ class GPUSurfaceSoftware : public Surface {
   bool IsValid() override;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size,
+                                             float pixel_ratio) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

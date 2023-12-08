@@ -44,7 +44,8 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   std::map<uintptr_t, SkIRect> damage_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size,
+                                             float pixel_ratio) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;
@@ -59,10 +60,12 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   bool AllowsDrawingWhenGpuDisabled() const override;
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
-      const SkISize& frame_info);
+      const SkISize& frame_info,
+      float pixel_ratio);
 
   std::unique_ptr<SurfaceFrame> AcquireFrameFromMTLTexture(
-      const SkISize& frame_info);
+      const SkISize& frame_info,
+      float pixel_ratio);
 
   void PrecompileKnownSkSLsIfNecessary();
 

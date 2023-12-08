@@ -17,7 +17,6 @@ namespace flutter {
 /// @see        DlCanvas
 class DlSkCanvasAdapter final : public virtual DlCanvas {
  public:
-  DlSkCanvasAdapter() : delegate_(nullptr) {}
   explicit DlSkCanvasAdapter(SkCanvas* canvas, float pixel_ratio)
       : delegate_(canvas), pixel_ratio_(pixel_ratio) {}
   ~DlSkCanvasAdapter() override = default;
@@ -26,6 +25,7 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   SkCanvas* canvas() { return delegate_; }
 
   SkISize GetBaseLayerSize() const override;
+  float GetBaseLayerPixelRatio() const override;
   SkImageInfo GetImageInfo() const override;
 
   void Save() override;

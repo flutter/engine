@@ -679,7 +679,8 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
-  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
+  auto frame =
+      surface_->AcquireFrame(layer_tree.frame_size(), device_pixel_ratio);
   if (frame == nullptr) {
     return DrawSurfaceStatus::kFailed;
   }
@@ -828,7 +829,8 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
   // Attempt to create a snapshot surface depending on whether we have access
   // to a valid GPU rendering context.
   std::unique_ptr<OffscreenSurface> snapshot_surface =
-      std::make_unique<OffscreenSurface>(surface_context, tree->frame_size());
+      std::make_unique<OffscreenSurface>(surface_context, tree->frame_size(),
+                                         pixel_ratio);
 
   if (!snapshot_surface->IsValid()) {
     FML_LOG(ERROR) << "Screenshot: unable to create snapshot surface";

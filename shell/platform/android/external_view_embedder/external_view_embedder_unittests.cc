@@ -27,7 +27,8 @@ namespace testing {
 using ::testing::ByMove;
 using ::testing::Return;
 
-constexpr int64_t kImplicitViewId = 0;
+static constexpr int64_t kImplicitViewId = 0;
+static constexpr float kDefaultPixelRatio = 1.5f;
 
 class TestAndroidSurfaceFactory : public AndroidSurfaceFactory {
  public:
@@ -53,7 +54,7 @@ class SurfaceMock : public Surface {
 
   MOCK_METHOD(std::unique_ptr<SurfaceFrame>,
               AcquireFrame,
-              (const SkISize& size),
+              (const SkISize& size, float pixel_ratio),
               (override));
 
   MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
@@ -273,16 +274,16 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
         auto surface_frame_2 = std::make_unique<SurfaceFrame>(
             SkSurfaces::Null(1000, 1000), framebuffer_info,
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .Times(2 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))))
             .WillOnce(Return(ByMove(std::move(surface_frame_2))));
@@ -314,7 +315,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
           }
           return true;
         },
-        /*frame_size=*/SkISize::Make(800, 600));
+        /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
     embedder->SubmitFlutterView(gr_context.get(), nullptr,
                                 std::move(surface_frame));
@@ -384,7 +385,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
           }
           return true;
         },
-        /*frame_size=*/SkISize::Make(800, 600));
+        /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
     embedder->SubmitFlutterView(gr_context.get(), nullptr,
                                 std::move(surface_frame));
@@ -452,7 +453,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFlutterView) {
           }
           return true;
         },
-        /*frame_size=*/SkISize::Make(800, 600));
+        /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
     embedder->SubmitFlutterView(gr_context.get(), nullptr,
                                 std::move(surface_frame));
     // Submits frame if there are Android views in the previous frame.
@@ -485,10 +486,10 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .Times(1 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
@@ -560,7 +561,7 @@ TEST(AndroidExternalViewEmbedder, OverlayCoverTwoPlatformViews) {
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) mutable {
         return true;
       },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
   embedder->SubmitFlutterView(gr_context.get(), nullptr,
                               std::move(surface_frame));
@@ -585,10 +586,10 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .Times(1 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
@@ -665,7 +666,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrameOverlayComposition) {
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) mutable {
         return true;
       },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
   embedder->SubmitFlutterView(gr_context.get(), nullptr,
                               std::move(surface_frame));
@@ -690,10 +691,10 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .Times(1 /* frames */)
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
@@ -735,7 +736,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFramePlatformViewWithoutAnyOverlay) {
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) mutable {
         return true;
       },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
   embedder->SubmitFlutterView(gr_context.get(), nullptr,
                               std::move(surface_frame));
@@ -780,10 +781,10 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
         auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
@@ -839,7 +840,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        /*frame_size=*/SkISize::Make(800, 600));
+        /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
     embedder->SubmitFlutterView(gr_context.get(), nullptr,
                                 std::move(surface_frame));
 
@@ -870,10 +871,10 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
         auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
@@ -928,7 +929,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
         [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
-        /*frame_size=*/SkISize::Make(800, 600));
+        /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
     embedder->SubmitFlutterView(gr_context.get(), nullptr,
                                 std::move(surface_frame));
 
@@ -998,10 +999,10 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
             [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
               return true;
             },
-            /*frame_size=*/SkISize::Make(800, 600));
+            /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
 
         auto surface_mock = std::make_unique<SurfaceMock>();
-        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size))
+        EXPECT_CALL(*surface_mock, AcquireFrame(frame_size, kDefaultPixelRatio))
             .WillOnce(Return(ByMove(std::move(surface_frame_1))));
 
         auto android_surface_mock = std::make_unique<AndroidSurfaceMock>();
@@ -1042,7 +1043,7 @@ TEST(AndroidExternalViewEmbedder, Teardown) {
   auto surface_frame = std::make_unique<SurfaceFrame>(
       SkSurfaces::Null(1000, 1000), framebuffer_info,
       [](const SurfaceFrame& surface_frame, DlCanvas* canvas) { return true; },
-      /*frame_size=*/SkISize::Make(800, 600));
+      /*frame_size=*/SkISize::Make(800, 600), kDefaultPixelRatio);
   embedder->SubmitFlutterView(gr_context.get(), nullptr,
                               std::move(surface_frame));
 

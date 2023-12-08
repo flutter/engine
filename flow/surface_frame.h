@@ -60,6 +60,7 @@ class SurfaceFrame {
                FramebufferInfo framebuffer_info,
                const SubmitCallback& submit_callback,
                SkISize frame_size,
+               float pixel_ratio,
                std::unique_ptr<GLContextResult> context_result = nullptr,
                bool display_list_fallback = false);
 
