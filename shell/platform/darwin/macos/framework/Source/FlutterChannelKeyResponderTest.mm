@@ -10,7 +10,7 @@
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #include "flutter/testing/autoreleasepool_test.h"
 #include "flutter/testing/testing.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 // FlutterBasicMessageChannel fake instance that records Flutter key event messages.
 //

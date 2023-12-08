@@ -309,7 +309,7 @@ deps = {
   'src/flutter/third_party/benchmark':
    Var('chromium_git') + '/external/github.com/google/benchmark' + '@' + '431abd149fd76a072f821913c0340137cc755f36',
 
-  'src/third_party/googletest':
+  'src/flutter/third_party/googletest':
    Var('chromium_git') + '/external/github.com/google/googletest' + '@' + '7f036c5563af7d0329f20e8bb42effb04629f0c0',
 
   'src/third_party/boringssl':

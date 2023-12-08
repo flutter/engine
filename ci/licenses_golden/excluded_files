@@ -1973,7 +1973,7 @@
 ../../../third_party/boringssl/src/third_party/fiat/METADATA
 ../../../third_party/boringssl/src/third_party/fiat/README.chromium
 ../../../third_party/boringssl/src/third_party/fiat/README.md
-../../../third_party/boringssl/src/third_party/googletest
+../../../third_party/boringssl/src/flutter/third_party/googletest
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/METADATA
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aead_aes_siv_cmac_test.json
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/aegis128L_test.json
@@ -2600,7 +2600,7 @@
 ../../../third_party/freetype2/tests
 ../../../third_party/freetype2/vms_make.com
 ../../../third_party/google_fonts_for_unit_tests
-../../../third_party/googletest
+../../../flutter/third_party/googletest
 ../../../third_party/gradle
 ../../../third_party/harfbuzz/.ci/requirements.txt
 ../../../third_party/harfbuzz/.clang-format

@@ -11,7 +11,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #import "flutter/testing/testing.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace {
 

@@ -5,7 +5,7 @@
 #import "KeyCodeMap_Internal.h"
 
 #import "flutter/testing/testing.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace flutter {
 

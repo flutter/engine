@@ -325,15 +325,15 @@ if (enable_unittests) {
 
     sources = [ "tests/suite_impl_unittests.cc" ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     deps = [
       ":jit_runner_sources_for_test",
       "//flutter/fml",
+      "//flutter/third_party/googletest:gtest_main",
       "//third_party/dart/runtime:libdart_jit",
       "//third_party/dart/runtime/platform:libdart_platform_jit",
-      "//third_party/googletest:gtest_main",
     ]
   }
 

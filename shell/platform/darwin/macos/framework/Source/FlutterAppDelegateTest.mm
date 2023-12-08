@@ -5,7 +5,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 
 #import "flutter/testing/testing.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 @interface AppDelegateNoopFlutterAppLifecycleDelegate : NSObject <FlutterAppLifecycleDelegate>
 @property(nonatomic, copy, nullable) NSArray<NSURL*>* receivedURLs;

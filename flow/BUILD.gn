@@ -134,7 +134,7 @@ if (enable_unittests) {
 
     public_deps = [
       "//flutter/testing:skia",
-      "//third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest",
     ]
 
     deps = [
@@ -194,8 +194,8 @@ if (enable_unittests) {
       "//flutter/skia",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
+      "//flutter/third_party/googletest:gtest",
       "//third_party/dart/runtime:libdart_jit",  # for tracing
-      "//third_party/googletest:gtest",
     ]
 
     if (!defined(defines)) {

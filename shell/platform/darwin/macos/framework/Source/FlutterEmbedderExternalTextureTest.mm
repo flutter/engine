@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/embedder/embedder_external_texture_metal.h"
 #include "flutter/testing/autoreleasepool_test.h"
 #include "flutter/testing/testing.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
 #include "third_party/skia/include/core/SkSurface.h"

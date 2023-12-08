@@ -6,7 +6,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "shell/platform/android/context/android_context.h"
-#include "third_party/googletest/googlemock/include/gmock/gmock-nice-strict.h"
+#include "flutter/third_party/googletest/googlemock/include/gmock/gmock-nice-strict.h"
 
 namespace flutter {
 namespace testing {

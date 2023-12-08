@@ -4,7 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h"
 
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h"
 

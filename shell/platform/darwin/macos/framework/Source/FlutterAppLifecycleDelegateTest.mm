@@ -5,7 +5,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppLifecycleDelegate.h"
 
 #import "flutter/testing/testing.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 @interface TestFlutterAppLifecycleDelegate : NSObject <FlutterAppLifecycleDelegate>
 @property(nonatomic, readwrite, nullable) NSNotification* lastNotification;

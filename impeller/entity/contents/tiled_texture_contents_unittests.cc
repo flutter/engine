@@ -9,7 +9,7 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/playground/playground_test.h"
-#include "third_party/googletest/googletest/include/gtest/gtest.h"
+#include "flutter/third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace impeller {
 namespace testing {
