@@ -22,22 +22,21 @@ external Object _lookupEntryPoint(Pointer<Utf8> library, Pointer<Utf8> name);
 @Native<Void Function(Pointer<Utf8>, Pointer<Utf8>)>(symbol: 'Spawn')
 external void _spawn(Pointer<Utf8> entrypoint, Pointer<Utf8> route);
 
-void spawn(
-    {required SendPort port, String entrypoint = 'main', String route = '/'}) {
-  // Get off the UI isolate, otherwise there will be a current isolate that
-  // cannot safely be exited.
-  Isolate.run(() {
-    assert(
-      entrypoint != 'main' || route != '/',
-      'Spawn should not be used to spawn main with the default route name',
-    );
-    IsolateNameServer.registerPortWithName(port, route);
-    final Pointer<Utf8> nativeEntrypoint = entrypoint.toNativeUtf8();
-    final Pointer<Utf8> nativeRoute = route.toNativeUtf8();
-    _spawn(nativeEntrypoint, nativeRoute);
-    malloc.free(nativeEntrypoint);
-    malloc.free(nativeRoute);
-  });
+void spawn({
+  required SendPort port,
+  String entrypoint = 'main',
+  String route = '/',
+}) {
+  assert(
+    entrypoint != 'main' || route != '/',
+    'Spawn should not be used to spawn main with the default route name',
+  );
+  IsolateNameServer.registerPortWithName(port, route);
+  final Pointer<Utf8> nativeEntrypoint = entrypoint.toNativeUtf8();
+  final Pointer<Utf8> nativeRoute = route.toNativeUtf8();
+  _spawn(nativeEntrypoint, nativeRoute);
+  malloc.free(nativeEntrypoint);
+  malloc.free(nativeRoute);
 }
 
 const String kTestEntrypointRouteName = 'testEntrypoint';

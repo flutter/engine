@@ -551,6 +551,8 @@ EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
 EXPORTED void Spawn(const char* entrypoint, const char* route) {
   auto shell = g_shell->get();
   fml::AutoResetWaitableEvent latch;
+  auto isolate = Dart_CurrentIsolate();
+  Dart_ExitIsolate();
   auto spawn_task = [shell, &latch, entrypoint = std::string(entrypoint),
                      route = std::string(route)]() {
     auto configuration = RunConfiguration::InferFromSettings(
@@ -606,6 +608,7 @@ EXPORTED void Spawn(const char* entrypoint, const char* route) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), spawn_task);
   latch.Wait();
+  Dart_EnterIsolate(isolate);
 }
 }
 
