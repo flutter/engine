@@ -33,15 +33,13 @@ GeometryResult CircleGeometry::GetPositionBuffer(const ContentContext& renderer,
   Scalar half_width = stroke_width_ < 0 ? 0.0
                                         : LineGeometry::ComputePixelHalfWidth(
                                               transform, stroke_width_);
-  Scalar outer_radius = radius_ + half_width;
-  Scalar inner_radius = half_width <= 0 ? 0.0 : radius_ - half_width;
 
   std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
 
   // We call the StrokedCircle method which will simplify to a
   // FilledCircleGenerator if the inner_radius is <= 0.
-  auto generator = tessellator->StrokedCircle(transform, center_, outer_radius,
-                                              inner_radius);
+  auto generator =
+      tessellator->StrokedCircle(transform, center_, radius_, half_width);
 
   return ComputePositionGeometry(generator, entity, pass);
 }
@@ -60,15 +58,12 @@ GeometryResult CircleGeometry::GetPositionUVBuffer(
   Scalar half_width = stroke_width_ < 0 ? 0.0
                                         : LineGeometry::ComputePixelHalfWidth(
                                               transform, stroke_width_);
-  Scalar outer_radius = radius_ + half_width;
-  Scalar inner_radius = half_width <= 0 ? 0.0 : radius_ - half_width;
-
   std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
 
   // We call the StrokedCircle method which will simplify to a
   // FilledCircleGenerator if the inner_radius is <= 0.
-  auto generator = tessellator->StrokedCircle(transform, center_, outer_radius,
-                                              inner_radius);
+  auto generator =
+      tessellator->StrokedCircle(transform, center_, radius_, half_width);
 
   return ComputePositionUVGeometry(generator, uv_transform, entity, pass);
 }

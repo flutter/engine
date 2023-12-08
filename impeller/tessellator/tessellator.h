@@ -36,6 +36,43 @@ enum class WindingOrder {
 ///             called from multiple threads.
 ///
 class Tessellator {
+ private:
+  /// Essentially just a vector of Trig objects, but supports storing a
+  /// reference to either a cached vector or a locally generated vector.
+  /// The constructor will fill the vector with quarter circular samples
+  /// for the indicated number of equal divisions if the vector is new.
+  class Trigs {
+   public:
+    explicit Trigs(std::vector<Trig>& trigs, size_t divisions) : trigs_(trigs) {
+      init(divisions);
+      FML_DCHECK(trigs_.size() == divisions + 1);
+    }
+
+    explicit Trigs(size_t divisions)
+        : local_storage_(std::make_unique<std::vector<Trig>>()),
+          trigs_(*local_storage_) {
+      init(divisions);
+      FML_DCHECK(trigs_.size() == divisions + 1);
+    }
+
+    // Utility forwards of the indicated vector methods.
+    auto inline size() const { return trigs_.size(); }
+    auto inline begin() const { return trigs_.begin(); }
+    auto inline end() const { return trigs_.end(); }
+
+   private:
+    // nullptr if a cached vector is used, otherwise the actual storage
+    std::unique_ptr<std::vector<Trig>> local_storage_;
+
+    // Whether or not a cached vector or the local storage is used, this
+    // this reference will always be valid
+    std::vector<Trig>& trigs_;
+
+    // Fill the vector with the indicated number of equal divisions of
+    // trigonometric values if it is empty.
+    void init(size_t divisions);
+  };
+
  public:
   enum class Result {
     kSuccess,
@@ -60,32 +97,81 @@ class Tessellator {
   /// @see |Tessellator::FilledEllipse|
   class VertexGenerator {
    public:
-    virtual ~VertexGenerator() = default;
-
-    /// @brief  Returns the |PrimitiveType| that describe the relationship
+    /// @brief  Returns the |PrimitiveType| that describes the relationship
     ///         among the list of vertices produced by the |GenerateVertices|
     ///         method.
     ///
     ///         Most generators will deliver |kTriangleStrip| triangles
-    virtual PrimitiveType GetPrimitiveType() const = 0;
+    virtual PrimitiveType GetTriangleType() const = 0;
 
     /// @brief  Returns the number of vertices that the generator plans to
     ///         produce, if known.
     ///
-    ///         The return value for this method is advisory only and
-    ///         can be used to reserve space where the vertices will
-    ///         be placed, but the count may be an estimate.
+    ///         This value is advisory only and can be used to reserve space
+    ///         where the vertices will be placed, but the count may be an
+    ///         estimate.
     ///
     ///         Implementations are encouraged to avoid overestimating
     ///         the count by too large a number and to provide a best
     ///         guess so as to minimize potential buffer reallocations
     ///         as the vertices are delivered.
-    virtual size_t VertexCount() const = 0;
+    virtual size_t GetVertexCount() const = 0;
 
     /// @brief  Generate the vertices and deliver them in the necessary
     ///         order (as required by the PrimitiveType) to the given
     ///         callback function.
     virtual void GenerateVertices(const TessellatedVertexProc& proc) const = 0;
+  };
+
+  /// @brief  The |VertexGenerator| implementation common to all shapes
+  ///         that are based on a polygonal representation of an ellipse.
+  class EllipticalVertexGenerator : public virtual VertexGenerator {
+   public:
+    /// |VertexGenerator|
+    PrimitiveType GetTriangleType() const override {
+      return PrimitiveType::kTriangleStrip;
+    }
+
+    /// |VertexGenerator|
+    size_t GetVertexCount() const override {
+      return trigs_.size() * vertices_per_trig_;
+    }
+
+    /// |VertexGenerator|
+    void GenerateVertices(const TessellatedVertexProc& proc) const override {
+      impl_(trigs_, data_, proc);
+    }
+
+   private:
+    friend class Tessellator;
+
+    struct Data {
+      // Circles and Ellipses only use one of these points.
+      // RoundCapLines use both as the endpoints of the unexpanded line.
+      // A round rect can specify its interior rectangle by using the
+      // 2 points as opposing corners.
+      const Point reference_centers[2];
+      // Circular shapes have the same value in radii.width and radii.height
+      const Size radii;
+      // half_width is only used in cases where the generator will be
+      // generating 2 different outlines, such as StrokedCircle
+      const Scalar half_width;
+    };
+
+    typedef void GeneratorProc(const Trigs& trigs,
+                               const Data& data,
+                               const TessellatedVertexProc& proc);
+
+    GeneratorProc& impl_;
+    const Trigs trigs_;
+    const Data data_;
+    const size_t vertices_per_trig_;
+
+    EllipticalVertexGenerator(GeneratorProc& generator,
+                              Trigs&& trigs,
+                              PrimitiveType triangle_type,
+                              size_t vertices_per_trig,
+                              Data&& data);
   };
 
   Tessellator();
@@ -147,24 +233,26 @@ class Tessellator {
   ///          number of sample points to use per quarter circle and the
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the center point.
-  std::unique_ptr<VertexGenerator> FilledCircle(const Matrix& view_transform,
-                                                const Point& center,
-                                                Scalar radius);
+  EllipticalVertexGenerator FilledCircle(const Matrix& view_transform,
+                                         const Point& center,
+                                         Scalar radius);
 
   /// @brief   Create a |VertexGenerator| that can produce vertices for
-  ///          a stroked circle of the given outer and inner radii around
+  ///          a stroked circle of the given radius and half_width around
   ///          the given shared center with enough polygon sub-divisions
   ///          to provide reasonable fidelity when viewed under the given
-  ///          view transform.
+  ///          view transform. The outer edge of the stroked circle is
+  ///          generated at (radius + half_width) and the inner edge is
+  ///          generated at (radius - half_width).
   ///
   ///          Note that the view transform is only used to choose the
   ///          number of sample points to use per quarter circle and the
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the center point.
-  std::unique_ptr<VertexGenerator> StrokedCircle(const Matrix& view_transform,
-                                                 const Point& center,
-                                                 Scalar outer_radius,
-                                                 Scalar inner_radius);
+  EllipticalVertexGenerator StrokedCircle(const Matrix& view_transform,
+                                          const Point& center,
+                                          Scalar radius,
+                                          Scalar half_width);
 
   /// @brief   Create a |VertexGenerator| that can produce vertices for
   ///          a line with round end caps of the given radius with enough
@@ -175,10 +263,10 @@ class Tessellator {
   ///          number of sample points to use per quarter circle and the
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the two points.
-  std::unique_ptr<VertexGenerator> RoundCapLine(const Matrix& view_transform,
-                                                const Point& p0,
-                                                const Point& p1,
-                                                Scalar radius);
+  EllipticalVertexGenerator RoundCapLine(const Matrix& view_transform,
+                                         const Point& p0,
+                                         const Point& p1,
+                                         Scalar radius);
 
   /// @brief   Create a |VertexGenerator| that can produce vertices for
   ///          a filled ellipse inscribed within the given bounds with
@@ -189,49 +277,13 @@ class Tessellator {
   ///          number of sample points to use per quarter circle and the
   ///          returned points are not transformed by it, instead they are
   ///          relative to the coordinate space of the bounds.
-  std::unique_ptr<VertexGenerator> FilledEllipse(const Matrix& view_transform,
-                                                 const Rect& bounds);
+  EllipticalVertexGenerator FilledEllipse(const Matrix& view_transform,
+                                          const Rect& bounds);
 
  private:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
   CTessellator c_tessellator_;
-
-  /// Essentially just a vector of Trig objects, but supports storing a
-  /// reference to either a cached vector or a locally generated vector.
-  /// The constructor will fill the vector with quarter circular samples
-  /// for the indicated number of equal divisions if the vector is new.
-  class Trigs {
-   public:
-    explicit Trigs(std::vector<Trig>& trigs, size_t divisions) : trigs_(trigs) {
-      init(divisions);
-      FML_DCHECK(trigs_.size() == divisions + 1);
-    }
-
-    explicit Trigs(size_t divisions)
-        : local_storage_(std::make_unique<std::vector<Trig>>()),
-          trigs_(*local_storage_) {
-      init(divisions);
-      FML_DCHECK(trigs_.size() == divisions + 1);
-    }
-
-    // Utility forwards of the indicated vector methods.
-    auto inline size() const { return trigs_.size(); }
-    auto inline begin() const { return trigs_.begin(); }
-    auto inline end() const { return trigs_.end(); }
-
-   private:
-    // nullptr if a cached vector is used, otherwise the actual storage
-    std::unique_ptr<std::vector<Trig>> local_storage_;
-
-    // Whether or not a cached vector or the local storage is used, this
-    // this reference will always be valid
-    std::vector<Trig>& trigs_;
-
-    // Fill the vector with the indicated number of equal divisions of
-    // trigonometric values if it is empty.
-    void init(size_t divisions);
-  };
 
   // Data for variouos Circle/EllipseGenerator classes, cached per
   // Tessellator instance which is usually the foreground life of an app
@@ -241,100 +293,21 @@ class Tessellator {
 
   Trigs GetTrigsForDivisions(size_t divisions);
 
-  // Base class for all of the generators that use a vector of |Trig|
-  // values to generate their geometry.
-  class TrigGeneratorBase : public VertexGenerator {
-   public:
-    explicit TrigGeneratorBase(Trigs&& trigs) : trigs_(std::move(trigs)) {}
+  static void GenerateFilledCircle(const Trigs& trigs,
+                                   const EllipticalVertexGenerator::Data& data,
+                                   const TessellatedVertexProc& proc);
 
-    ~TrigGeneratorBase() = default;
+  static void GenerateStrokedCircle(const Trigs& trigs,
+                                    const EllipticalVertexGenerator::Data& data,
+                                    const TessellatedVertexProc& proc);
 
-   protected:
-    const Trigs trigs_;
-  };
+  static void GenerateRoundCapLine(const Trigs& trigs,
+                                   const EllipticalVertexGenerator::Data& data,
+                                   const TessellatedVertexProc& proc);
 
-  class FilledCircleGenerator : public TrigGeneratorBase {
-   public:
-    FilledCircleGenerator(Trigs&& trigs, const Point& center, Scalar radius);
-
-    ~FilledCircleGenerator() = default;
-
-    PrimitiveType GetPrimitiveType() const override {
-      return PrimitiveType::kTriangleStrip;
-    }
-
-    size_t VertexCount() const override { return trigs_.size() * 4; }
-
-    void GenerateVertices(const TessellatedVertexProc& proc) const override;
-
-   private:
-    const Point center_;
-    const Scalar radius_;
-  };
-
-  class StrokedCircleGenerator : public TrigGeneratorBase {
-   public:
-    StrokedCircleGenerator(Trigs&& trigs,
-                           const Point& center,
-                           Scalar outer_radius,
-                           Scalar inner_radius);
-
-    ~StrokedCircleGenerator() = default;
-
-    PrimitiveType GetPrimitiveType() const override {
-      return PrimitiveType::kTriangleStrip;
-    }
-
-    size_t VertexCount() const override { return trigs_.size() * 8; }
-
-    void GenerateVertices(const TessellatedVertexProc& proc) const override;
-
-   private:
-    const Point center_;
-    const Scalar outer_radius_;
-    const Scalar inner_radius_;
-  };
-
-  class RoundCapLineGenerator : public TrigGeneratorBase {
-   public:
-    RoundCapLineGenerator(Trigs&& trigs,
-                          const Point& p0,
-                          const Point& p1,
-                          Scalar radius);
-
-    ~RoundCapLineGenerator() = default;
-
-    PrimitiveType GetPrimitiveType() const override {
-      return PrimitiveType::kTriangleStrip;
-    }
-
-    size_t VertexCount() const override { return trigs_.size() * 4; }
-
-    void GenerateVertices(const TessellatedVertexProc& proc) const override;
-
-   private:
-    const Point p0_;
-    const Point p1_;
-    const Scalar radius_;
-  };
-
-  class FilledEllipseGenerator : public TrigGeneratorBase {
-   public:
-    FilledEllipseGenerator(Trigs&& trigs, const Rect& bounds);
-
-    ~FilledEllipseGenerator() = default;
-
-    PrimitiveType GetPrimitiveType() const override {
-      return PrimitiveType::kTriangleStrip;
-    }
-
-    size_t VertexCount() const override { return trigs_.size() * 4; }
-
-    void GenerateVertices(const TessellatedVertexProc& proc) const override;
-
-   private:
-    const Rect bounds_;
-  };
+  static void GenerateFilledEllipse(const Trigs& trigs,
+                                    const EllipticalVertexGenerator::Data& data,
+                                    const TessellatedVertexProc& proc);
 
   Tessellator(const Tessellator&) = delete;
 

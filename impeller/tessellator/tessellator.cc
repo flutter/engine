@@ -374,184 +374,114 @@ Tessellator::Trigs Tessellator::GetTrigsForDivisions(size_t divisions) {
 }
 
 using TessellatedVertexProc = Tessellator::TessellatedVertexProc;
-using VertexGenerator = Tessellator::VertexGenerator;
+using EllipticalVertexGenerator = Tessellator::EllipticalVertexGenerator;
 
-std::unique_ptr<VertexGenerator> Tessellator::FilledCircle(
+EllipticalVertexGenerator::EllipticalVertexGenerator(
+    EllipticalVertexGenerator::GeneratorProc& generator,
+    Trigs&& trigs,
+    PrimitiveType triangle_type,
+    size_t vertices_per_trig,
+    Data&& data)
+    : impl_(generator),
+      trigs_(std::move(trigs)),
+      data_(data),
+      vertices_per_trig_(vertices_per_trig) {}
+
+EllipticalVertexGenerator Tessellator::FilledCircle(
     const Matrix& view_transform,
     const Point& center,
     Scalar radius) {
   auto divisions =
       ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() * radius);
-  return std::make_unique<FilledCircleGenerator>(
-      GetTrigsForDivisions(divisions), center, radius);
+  return EllipticalVertexGenerator(Tessellator::GenerateFilledCircle,
+                                   GetTrigsForDivisions(divisions),
+                                   PrimitiveType::kTriangleStrip, 4,
+                                   {
+                                       .reference_centers = {center, center},
+                                       .radii = {radius, radius},
+                                       .half_width = -1.0f,
+                                   });
 }
 
-std::unique_ptr<VertexGenerator> Tessellator::StrokedCircle(
+EllipticalVertexGenerator Tessellator::StrokedCircle(
     const Matrix& view_transform,
     const Point& center,
-    Scalar outer_radius,
-    Scalar inner_radius) {
-  auto divisions = ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() *
-                                            outer_radius);
-  if (inner_radius > 0) {
-    return std::make_unique<StrokedCircleGenerator>(
-        GetTrigsForDivisions(divisions), center, outer_radius, inner_radius);
+    Scalar radius,
+    Scalar half_width) {
+  if (half_width > 0) {
+    auto divisions = ComputeQuadrantDivisions(
+        view_transform.GetMaxBasisLength() * radius + half_width);
+    return EllipticalVertexGenerator(Tessellator::GenerateStrokedCircle,
+                                     GetTrigsForDivisions(divisions),
+                                     PrimitiveType::kTriangleStrip, 8,
+                                     {
+                                         .reference_centers = {center, center},
+                                         .radii = {radius, radius},
+                                         .half_width = half_width,
+                                     });
   } else {
-    return std::make_unique<FilledCircleGenerator>(
-        GetTrigsForDivisions(divisions), center, outer_radius);
+    return FilledCircle(view_transform, center, radius);
   }
 }
 
-std::unique_ptr<VertexGenerator> Tessellator::RoundCapLine(
+EllipticalVertexGenerator Tessellator::RoundCapLine(
     const Matrix& view_transform,
     const Point& p0,
     const Point& p1,
     Scalar radius) {
   auto along = p1 - p0;
   auto length = along.GetLength();
-  if (length < kEhCloseEnough) {
+  if (length > kEhCloseEnough) {
+    auto divisions =
+        ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() * radius);
+    return EllipticalVertexGenerator(Tessellator::GenerateRoundCapLine,
+                                     GetTrigsForDivisions(divisions),
+                                     PrimitiveType::kTriangleStrip, 4,
+                                     {
+                                         .reference_centers = {p0, p1},
+                                         .radii = {radius, radius},
+                                         .half_width = -1.0f,
+                                     });
+  } else {
     return FilledCircle(view_transform, p0, radius);
   }
-  auto divisions =
-      ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() * radius);
-  return std::make_unique<RoundCapLineGenerator>(
-      GetTrigsForDivisions(divisions), p0, p1, radius);
 }
 
-std::unique_ptr<VertexGenerator> Tessellator::FilledEllipse(
+EllipticalVertexGenerator Tessellator::FilledEllipse(
     const Matrix& view_transform,
     const Rect& bounds) {
-  if (bounds.GetSize().width == bounds.GetSize().height) {
+  if (bounds.IsSquare()) {
     return FilledCircle(view_transform, bounds.GetCenter(),
                         bounds.GetSize().width * 0.5f);
   }
   auto max_radius = bounds.GetSize().MaxDimension();
   auto divisions =
       ComputeQuadrantDivisions(view_transform.GetMaxBasisLength() * max_radius);
-  return std::make_unique<FilledEllipseGenerator>(
-      GetTrigsForDivisions(divisions), bounds);
+  auto center = bounds.GetCenter();
+  return EllipticalVertexGenerator(Tessellator::GenerateFilledEllipse,
+                                   GetTrigsForDivisions(divisions),
+                                   PrimitiveType::kTriangleStrip, 4,
+                                   {
+                                       .reference_centers = {center, center},
+                                       .radii = bounds.GetSize() * 0.5f,
+                                       .half_width = -1.0f,
+                                   });
 }
 
-Tessellator::FilledCircleGenerator::FilledCircleGenerator(Trigs&& trigs,
-                                                          const Point& center,
-                                                          Scalar radius)
-    : TrigGeneratorBase(std::move(trigs)), center_(center), radius_(radius) {}
+void Tessellator::GenerateFilledCircle(
+    const Trigs& trigs,
+    const EllipticalVertexGenerator::Data& data,
+    const TessellatedVertexProc& proc) {
+  auto center = data.reference_centers[0];
+  auto radius = data.radii.width;
 
-void Tessellator::FilledCircleGenerator::GenerateVertices(
-    const TessellatedVertexProc& proc) const {
+  FML_DCHECK(center == data.reference_centers[1]);
+  FML_DCHECK(radius == data.radii.height);
+  FML_DCHECK(data.half_width < 0);
+
   // Quadrant 1 connecting with Quadrant 4:
-  for (auto& trig : trigs_) {
-    auto offset = trig * radius_;
-    proc({center_.x - offset.x, center_.y + offset.y});
-    proc({center_.x - offset.x, center_.y - offset.y});
-  }
-
-  // The second half of the circle should be iterated in reverse, but
-  // we can instead iterate forward and swap the x/y values of the
-  // offset as the angles should be symmetric and thus should generate
-  // symmetrically reversed trig vectors.
-  // Quadrant 2 connecting with Quadrant 2:
-  for (auto& trig : trigs_) {
-    auto offset = trig * radius_;
-    proc({center_.x + offset.y, center_.y + offset.x});
-    proc({center_.x + offset.y, center_.y - offset.x});
-  }
-}
-
-Tessellator::StrokedCircleGenerator::StrokedCircleGenerator(Trigs&& trigs,
-                                                            const Point& center,
-                                                            Scalar outer_radius,
-                                                            Scalar inner_radius)
-    : TrigGeneratorBase(std::move(trigs)),
-      center_(center),
-      outer_radius_(outer_radius),
-      inner_radius_(inner_radius) {}
-
-void Tessellator::StrokedCircleGenerator::GenerateVertices(
-    const TessellatedVertexProc& proc) const {
-  // Zig-zag back and forth between points on the outer circle and the
-  // inner circle. Both circles are evaluated at the same number of
-  // quadrant divisions so the points for a given division should match
-  // 1 for 1 other than their applied radius.
-
-  // Quadrant 1:
-  for (auto& trig : trigs_) {
-    auto outer = trig * outer_radius_;
-    auto inner = trig * inner_radius_;
-    proc({center_.x - outer.x, center_.y - outer.y});
-    proc({center_.x - inner.x, center_.y - inner.y});
-  }
-
-  // The even quadrants of the circle should be iterated in reverse, but
-  // we can instead iterate forward and swap the x/y values of the
-  // offset as the angles should be symmetric and thus should generate
-  // symmetrically reversed trig vectors.
-  // Quadrant 2:
-  for (auto& trig : trigs_) {
-    auto outer = trig * outer_radius_;
-    auto inner = trig * inner_radius_;
-    proc({center_.x + outer.y, center_.y - outer.x});
-    proc({center_.x + inner.y, center_.y - inner.x});
-  }
-
-  // Quadrant 3:
-  for (auto& trig : trigs_) {
-    auto outer = trig * outer_radius_;
-    auto inner = trig * inner_radius_;
-    proc({center_.x + outer.x, center_.y + outer.y});
-    proc({center_.x + inner.x, center_.y + inner.y});
-  }
-
-  // Quadrant 4:
-  for (auto& trig : trigs_) {
-    auto outer = trig * outer_radius_;
-    auto inner = trig * inner_radius_;
-    proc({center_.x - outer.y, center_.y + outer.x});
-    proc({center_.x - inner.y, center_.y + inner.x});
-  }
-}
-
-Tessellator::RoundCapLineGenerator::RoundCapLineGenerator(Trigs&& trigs,
-                                                          const Point& p0,
-                                                          const Point& p1,
-                                                          Scalar radius)
-    : TrigGeneratorBase(std::move(trigs)), p0_(p0), p1_(p1), radius_(radius) {}
-
-void Tessellator::RoundCapLineGenerator::GenerateVertices(
-    const TessellatedVertexProc& proc) const {
-  auto along = p1_ - p0_;
-  along *= radius_ / along.GetLength();
-  auto across = Point(-along.y, along.x);
-
-  for (auto& trig : trigs_) {
-    auto relative_along = along * trig.cos;
-    auto relative_across = across * trig.sin;
-    proc(p0_ - relative_along + relative_across);
-    proc(p0_ - relative_along - relative_across);
-  }
-
-  // The second half of the round caps should be iterated in reverse, but
-  // we can instead iterate forward and swap the sin/cos values as they
-  // should be symmetric.
-  for (auto& trig : trigs_) {
-    auto relative_along = along * trig.sin;
-    auto relative_across = across * trig.cos;
-    proc(p1_ + relative_along + relative_across);
-    proc(p1_ + relative_along - relative_across);
-  }
-}
-
-Tessellator::FilledEllipseGenerator::FilledEllipseGenerator(Trigs&& trigs,
-                                                            const Rect& bounds)
-    : TrigGeneratorBase(std::move(trigs)), bounds_(bounds) {}
-
-void Tessellator::FilledEllipseGenerator::GenerateVertices(
-    const TessellatedVertexProc& proc) const {
-  auto half_size = bounds_.GetSize() * 0.5f;
-  auto center = bounds_.GetCenter();
-  // Quadrant 1 connecting with Quadrant 4:
-  for (auto& trig : trigs_) {
-    auto offset = trig * half_size;
+  for (auto& trig : trigs) {
+    auto offset = trig * radius;
     proc({center.x - offset.x, center.y + offset.y});
     proc({center.x - offset.x, center.y - offset.y});
   }
@@ -561,9 +491,125 @@ void Tessellator::FilledEllipseGenerator::GenerateVertices(
   // offset as the angles should be symmetric and thus should generate
   // symmetrically reversed trig vectors.
   // Quadrant 2 connecting with Quadrant 2:
-  for (auto& trig : trigs_) {
-    auto offset =
-        Point(trig.sin * half_size.width, trig.cos * half_size.height);
+  for (auto& trig : trigs) {
+    auto offset = trig * radius;
+    proc({center.x + offset.y, center.y + offset.x});
+    proc({center.x + offset.y, center.y - offset.x});
+  }
+}
+
+void Tessellator::GenerateStrokedCircle(
+    const Trigs& trigs,
+    const EllipticalVertexGenerator::Data& data,
+    const TessellatedVertexProc& proc) {
+  auto center = data.reference_centers[0];
+
+  FML_DCHECK(center == data.reference_centers[1]);
+  FML_DCHECK(data.radii.IsSquare());
+  FML_DCHECK(data.half_width > 0 && data.half_width < data.radii.width);
+
+  auto outer_radius = data.radii.width + data.half_width;
+  auto inner_radius = data.radii.width - data.half_width;
+
+  // Zig-zag back and forth between points on the outer circle and the
+  // inner circle. Both circles are evaluated at the same number of
+  // quadrant divisions so the points for a given division should match
+  // 1 for 1 other than their applied radius.
+
+  // Quadrant 1:
+  for (auto& trig : trigs) {
+    auto outer = trig * outer_radius;
+    auto inner = trig * inner_radius;
+    proc({center.x - outer.x, center.y - outer.y});
+    proc({center.x - inner.x, center.y - inner.y});
+  }
+
+  // The even quadrants of the circle should be iterated in reverse, but
+  // we can instead iterate forward and swap the x/y values of the
+  // offset as the angles should be symmetric and thus should generate
+  // symmetrically reversed trig vectors.
+  // Quadrant 2:
+  for (auto& trig : trigs) {
+    auto outer = trig * outer_radius;
+    auto inner = trig * inner_radius;
+    proc({center.x + outer.y, center.y - outer.x});
+    proc({center.x + inner.y, center.y - inner.x});
+  }
+
+  // Quadrant 3:
+  for (auto& trig : trigs) {
+    auto outer = trig * outer_radius;
+    auto inner = trig * inner_radius;
+    proc({center.x + outer.x, center.y + outer.y});
+    proc({center.x + inner.x, center.y + inner.y});
+  }
+
+  // Quadrant 4:
+  for (auto& trig : trigs) {
+    auto outer = trig * outer_radius;
+    auto inner = trig * inner_radius;
+    proc({center.x - outer.y, center.y + outer.x});
+    proc({center.x - inner.y, center.y + inner.x});
+  }
+}
+
+void Tessellator::GenerateRoundCapLine(
+    const Trigs& trigs,
+    const EllipticalVertexGenerator::Data& data,
+    const TessellatedVertexProc& proc) {
+  auto p0 = data.reference_centers[0];
+  auto p1 = data.reference_centers[1];
+  auto radius = data.radii.width;
+
+  FML_DCHECK(radius == data.radii.height);
+  FML_DCHECK(data.half_width < 0);
+
+  auto along = p1 - p0;
+  along *= radius / along.GetLength();
+  auto across = Point(-along.y, along.x);
+
+  for (auto& trig : trigs) {
+    auto relative_along = along * trig.cos;
+    auto relative_across = across * trig.sin;
+    proc(p0 - relative_along + relative_across);
+    proc(p0 - relative_along - relative_across);
+  }
+
+  // The second half of the round caps should be iterated in reverse, but
+  // we can instead iterate forward and swap the sin/cos values as they
+  // should be symmetric.
+  for (auto& trig : trigs) {
+    auto relative_along = along * trig.sin;
+    auto relative_across = across * trig.cos;
+    proc(p1 + relative_along + relative_across);
+    proc(p1 + relative_along - relative_across);
+  }
+}
+
+void Tessellator::GenerateFilledEllipse(
+    const Trigs& trigs,
+    const EllipticalVertexGenerator::Data& data,
+    const TessellatedVertexProc& proc) {
+  auto center = data.reference_centers[0];
+  auto radii = data.radii;
+
+  FML_DCHECK(center == data.reference_centers[1]);
+  FML_DCHECK(data.half_width < 0);
+
+  // Quadrant 1 connecting with Quadrant 4:
+  for (auto& trig : trigs) {
+    auto offset = trig * radii;
+    proc({center.x - offset.x, center.y + offset.y});
+    proc({center.x - offset.x, center.y - offset.y});
+  }
+
+  // The second half of the circle should be iterated in reverse, but
+  // we can instead iterate forward and swap the x/y values of the
+  // offset as the angles should be symmetric and thus should generate
+  // symmetrically reversed trig vectors.
+  // Quadrant 2 connecting with Quadrant 2:
+  for (auto& trig : trigs) {
+    auto offset = Point(trig.sin * radii.width, trig.cos * radii.height);
     proc({center.x + offset.x, center.y + offset.y});
     proc({center.x + offset.x, center.y - offset.y});
   }

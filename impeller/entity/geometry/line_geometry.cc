@@ -67,14 +67,11 @@ bool LineGeometry::ComputeCorners(Point corners[4],
 GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) const {
-  auto& host_buffer = pass.GetTransientsBuffer();
   using VT = SolidFillVertexShader::PerVertexData;
 
   auto& transform = entity.GetTransform();
   auto radius = ComputePixelHalfWidth(transform, width_);
 
-  size_t count;
-  BufferView vertex_buffer;
   if (cap_ == Cap::kRound) {
     std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
     auto generator = tessellator->RoundCapLine(transform, p0_, p1_, radius);
@@ -82,20 +79,22 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
   }
 
   Point corners[4];
-  if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-    count = 4;
-    vertex_buffer = host_buffer.Emplace(
-        count * sizeof(VT), alignof(VT), [&corners](uint8_t* buffer) {
-          auto vertices = reinterpret_cast<VT*>(buffer);
-          for (auto& corner : corners) {
-            *vertices++ = {
-                .position = corner,
-            };
-          }
-        });
-  } else {
-    return {};
+  if (!ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
+    return kEmptyResult;
   }
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  size_t count = 4;
+  BufferView vertex_buffer = host_buffer.Emplace(
+      count * sizeof(VT), alignof(VT), [&corners](uint8_t* buffer) {
+        auto vertices = reinterpret_cast<VT*>(buffer);
+        for (auto& corner : corners) {
+          *vertices++ = {
+              .position = corner,
+          };
+        }
+      });
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
@@ -126,8 +125,6 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
 
-  size_t count;
-  BufferView vertex_buffer;
   if (cap_ == Cap::kRound) {
     std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
     auto generator = tessellator->RoundCapLine(transform, p0_, p1_, radius);
@@ -135,22 +132,22 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
   }
 
   Point corners[4];
-  if (ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
-    count = 4;
-    vertex_buffer =
-        host_buffer.Emplace(count * sizeof(VT), alignof(VT),
-                            [&uv_transform, &corners](uint8_t* buffer) {
-                              auto vertices = reinterpret_cast<VT*>(buffer);
-                              for (auto& corner : corners) {
-                                *vertices++ = {
-                                    .position = corner,
-                                    .texture_coords = uv_transform * corner,
-                                };
-                              }
-                            });
-  } else {
-    return {};
+  if (!ComputeCorners(corners, transform, cap_ == Cap::kSquare)) {
+    return kEmptyResult;
   }
+
+  size_t count = 4;
+  BufferView vertex_buffer =
+      host_buffer.Emplace(count * sizeof(VT), alignof(VT),
+                          [&uv_transform, &corners](uint8_t* buffer) {
+                            auto vertices = reinterpret_cast<VT*>(buffer);
+                            for (auto& corner : corners) {
+                              *vertices++ = {
+                                  .position = corner,
+                                  .texture_coords = uv_transform * corner,
+                              };
+                            }
+                          });
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,

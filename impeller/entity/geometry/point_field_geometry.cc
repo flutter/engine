@@ -87,13 +87,13 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
     // point in turn.
     auto generator =
         renderer.GetTessellator()->FilledCircle(transform, {}, radius);
-    FML_DCHECK(generator->GetPrimitiveType() == PrimitiveType::kTriangleStrip);
+    FML_DCHECK(generator.GetTriangleType() == PrimitiveType::kTriangleStrip);
     std::vector<Point> circle_vertices;
-    circle_vertices.reserve(generator->VertexCount());
-    generator->GenerateVertices([&circle_vertices](const Point& p) {  //
+    circle_vertices.reserve(generator.GetVertexCount());
+    generator.GenerateVertices([&circle_vertices](const Point& p) {  //
       circle_vertices.push_back(p);
     });
-    FML_DCHECK(circle_vertices.size() == generator->VertexCount());
+    FML_DCHECK(circle_vertices.size() == generator.GetVertexCount());
 
     vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
     for (auto& center : points_) {

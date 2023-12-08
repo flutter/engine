@@ -23,6 +23,13 @@ struct GeometryResult {
   bool prevent_overdraw;
 };
 
+static const GeometryResult kEmptyResult = {
+    .vertex_buffer =
+        {
+            .index_type = IndexType::kNone,
+        },
+};
+
 enum GeometryVertexType {
   kPosition,
   kColor,
@@ -112,12 +119,12 @@ class Geometry {
 
  protected:
   static GeometryResult ComputePositionGeometry(
-      const std::unique_ptr<Tessellator::VertexGenerator>& generator,
+      const Tessellator::VertexGenerator& generator,
       const Entity& entity,
       RenderPass& pass);
 
   static GeometryResult ComputePositionUVGeometry(
-      const std::unique_ptr<Tessellator::VertexGenerator>& generator,
+      const Tessellator::VertexGenerator& generator,
       const Matrix& uv_transform,
       const Entity& entity,
       RenderPass& pass);

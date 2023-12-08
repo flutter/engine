@@ -139,7 +139,7 @@ TEST(TessellatorTest, CircleVertexCounts) {
 
   auto test = [&tessellator](const Matrix& transform, Scalar radius) {
     auto generator = tessellator->FilledCircle(transform, {}, radius);
-    size_t quadrant_divisions = generator->VertexCount() / 4;
+    size_t quadrant_divisions = generator.GetVertexCount() / 4;
 
     // Confirm the approximation error is within the currently accepted
     // |kCircleTolerance| value advertised by |CircleTessellator|.
@@ -176,10 +176,11 @@ TEST(TessellatorTest, FilledCircleTessellationVertices) {
   auto test = [&tessellator](const Matrix& transform, const Point& center,
                              Scalar radius) {
     auto generator = tessellator->FilledCircle(transform, center, radius);
+    EXPECT_EQ(generator.GetTriangleType(), PrimitiveType::kTriangleStrip);
 
-    auto vertex_count = generator->VertexCount();
+    auto vertex_count = generator.GetVertexCount();
     auto vertices = std::vector<Point>();
-    generator->GenerateVertices([&vertices](const Point& p) {  //
+    generator.GenerateVertices([&vertices](const Point& p) {  //
       vertices.push_back(p);
     });
     EXPECT_EQ(vertices.size(), vertex_count);
@@ -216,14 +217,15 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
   auto tessellator = std::make_shared<Tessellator>();
 
   auto test = [&tessellator](const Matrix& transform, const Point& center,
-                             Scalar radius, Scalar width) {
-    ASSERT_GT(radius, width);
-    auto generator = tessellator->StrokedCircle(transform, center,
-                                                radius + width, radius - width);
+                             Scalar radius, Scalar half_width) {
+    ASSERT_GT(radius, half_width);
+    auto generator =
+        tessellator->StrokedCircle(transform, center, radius, half_width);
+    EXPECT_EQ(generator.GetTriangleType(), PrimitiveType::kTriangleStrip);
 
-    auto vertex_count = generator->VertexCount();
+    auto vertex_count = generator.GetVertexCount();
     auto vertices = std::vector<Point>();
-    generator->GenerateVertices([&vertices](const Point& p) {  //
+    generator.GenerateVertices([&vertices](const Point& p) {  //
       vertices.push_back(p);
     });
     EXPECT_EQ(vertices.size(), vertex_count);
@@ -235,8 +237,8 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rsin = sin(angle) * (radius + width);
-      double rcos = cos(angle) * (radius + width);
+      double rsin = sin(angle) * (radius + half_width);
+      double rcos = cos(angle) * (radius + half_width);
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -255,8 +257,8 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rsin = sin(angle) * (radius - width);
-      double rcos = cos(angle) * (radius - width);
+      double rsin = sin(angle) * (radius - half_width);
+      double rcos = cos(angle) * (radius - half_width);
       EXPECT_POINT_NEAR(vertices[i * 2 + 1],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -285,10 +287,11 @@ TEST(TessellatorTest, RoundCapLineTessellationVertices) {
   auto test = [&tessellator](const Matrix& transform, const Point& p0,
                              const Point& p1, Scalar radius) {
     auto generator = tessellator->RoundCapLine(transform, p0, p1, radius);
+    EXPECT_EQ(generator.GetTriangleType(), PrimitiveType::kTriangleStrip);
 
-    auto vertex_count = generator->VertexCount();
+    auto vertex_count = generator.GetVertexCount();
     auto vertices = std::vector<Point>();
-    generator->GenerateVertices([&vertices](const Point& p) {  //
+    generator.GenerateVertices([&vertices](const Point& p) {  //
       vertices.push_back(p);
     });
     EXPECT_EQ(vertices.size(), vertex_count);
@@ -353,13 +356,15 @@ TEST(TessellatorTest, FilledEllipseTessellationVertices) {
   auto tessellator = std::make_shared<Tessellator>();
 
   auto test = [&tessellator](const Matrix& transform, const Rect& bounds) {
-    auto generator = tessellator->FilledEllipse(transform, bounds);
     auto center = bounds.GetCenter();
     auto half_size = bounds.GetSize() * 0.5f;
 
-    auto vertex_count = generator->VertexCount();
+    auto generator = tessellator->FilledEllipse(transform, bounds);
+    EXPECT_EQ(generator.GetTriangleType(), PrimitiveType::kTriangleStrip);
+
+    auto vertex_count = generator.GetVertexCount();
     auto vertices = std::vector<Point>();
-    generator->GenerateVertices([&vertices](const Point& p) {  //
+    generator.GenerateVertices([&vertices](const Point& p) {  //
       vertices.push_back(p);
     });
     EXPECT_EQ(vertices.size(), vertex_count);

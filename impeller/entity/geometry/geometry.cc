@@ -20,28 +20,28 @@
 namespace impeller {
 
 GeometryResult Geometry::ComputePositionGeometry(
-    const std::unique_ptr<Tessellator::VertexGenerator>& generator,
+    const Tessellator::VertexGenerator& generator,
     const Entity& entity,
     RenderPass& pass) {
   using VT = SolidFillVertexShader::PerVertexData;
 
-  size_t count = generator->VertexCount();
+  size_t count = generator.GetVertexCount();
 
   return GeometryResult{
-      .type = generator->GetPrimitiveType(),
+      .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
               .vertex_buffer = pass.GetTransientsBuffer().Emplace(
                   count * sizeof(VT), alignof(VT),
                   [&generator](uint8_t* buffer) {
                     auto vertices = reinterpret_cast<VT*>(buffer);
-                    generator->GenerateVertices([&vertices](const Point& p) {
+                    generator.GenerateVertices([&vertices](const Point& p) {
                       *vertices++ = {
                           .position = p,
                       };
                     });
                     FML_DCHECK(vertices == reinterpret_cast<VT*>(buffer) +
-                                               generator->VertexCount());
+                                               generator.GetVertexCount());
                   }),
               .vertex_count = count,
               .index_type = IndexType::kNone,
@@ -53,23 +53,23 @@ GeometryResult Geometry::ComputePositionGeometry(
 }
 
 GeometryResult Geometry::ComputePositionUVGeometry(
-    const std::unique_ptr<Tessellator::VertexGenerator>& generator,
+    const Tessellator::VertexGenerator& generator,
     const Matrix& uv_transform,
     const Entity& entity,
     RenderPass& pass) {
   using VT = TextureFillVertexShader::PerVertexData;
 
-  size_t count = generator->VertexCount();
+  size_t count = generator.GetVertexCount();
 
   return GeometryResult{
-      .type = generator->GetPrimitiveType(),
+      .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
               .vertex_buffer = pass.GetTransientsBuffer().Emplace(
                   count * sizeof(VT), alignof(VT),
                   [&generator, &uv_transform](uint8_t* buffer) {
                     auto vertices = reinterpret_cast<VT*>(buffer);
-                    generator->GenerateVertices(
+                    generator.GenerateVertices(
                         [&vertices, &uv_transform](const Point& p) {  //
                           *vertices++ = {
                               .position = p,
@@ -77,7 +77,7 @@ GeometryResult Geometry::ComputePositionUVGeometry(
                           };
                         });
                     FML_DCHECK(vertices == reinterpret_cast<VT*>(buffer) +
-                                               generator->VertexCount());
+                                               generator.GetVertexCount());
                   }),
               .vertex_count = count,
               .index_type = IndexType::kNone,
