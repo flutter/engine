@@ -315,6 +315,13 @@ extern CFTimeInterval display_link_target;
       }
       // Return first drawable that is not in use or the one that was presented
       // the longest time ago.
+      // isInUse means the compositor has picked up the surface. This is useful
+      // to detect a skipped frame, in which case the surface will be returned
+      // in the next call to nextDrawable.
+      // It is possible that both back buffers are in use, in which case we
+      // don't block here but return the oldest presented texture.
+      // The assumption here is that the compositor is already aware of the
+      // newer texture and is unlikely to use the older one.
       FlutterTexture* res = nil;
       for (FlutterTexture* texture in _availableTextures) {
         if (!texture.surface.isInUse) {
