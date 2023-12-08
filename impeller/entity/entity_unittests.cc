@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "fml/logging.h"
 #include "gtest/gtest.h"
 #include "impeller/core/formats.h"
@@ -1605,6 +1606,20 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
   }
 }
 
+TEST_P(EntityTest, DoesNotCullEntitiesByDefault) {
+  auto fill = std::make_shared<SolidColorContents>();
+  fill->SetColor(Color::CornflowerBlue());
+  fill->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-1000, -1000, -900, -900)));
+
+  Entity entity;
+  entity.SetContents(fill);
+
+  // Even though the entity is offscreen, this should still render because we do
+  // not compute the coverage intersection by default.
+  EXPECT_TRUE(entity.ShouldRender(Rect::MakeLTRB(0, 0, 100, 100)));
+}
+
 TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
   // For clip ops, `ShouldRender` should always return true.
 
@@ -2178,8 +2193,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
 
   // Text contents can accept opacity if the text frames do not
   // overlap
-  SkFont font;
-  font.setSize(30);
+  SkFont font = flutter::testing::CreateTestFontOfSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = MakeTextFrameFromTextBlobSkia(blob);
   auto lazy_glyph_atlas =
@@ -2443,6 +2457,14 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
                     "for advanced blends.";
   }
 
+  auto background_contents = std::make_shared<SolidColorContents>();
+  background_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeXYWH(200, 200, 200, 200)));
+  background_contents->SetColor(Color::Blue());
+  Entity background_entity;
+  background_entity.SetTransform(Matrix::MakeScale(Vector3(2, 2, 1)));
+  background_entity.SetContents(background_contents);
+
   auto contents = std::make_shared<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
@@ -2468,6 +2490,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
+  pass->AddEntity(std::move(background_entity));
   pass->AddEntity(std::move(entity));
 
   EXPECT_TRUE(pass->Render(content_context, rt));
