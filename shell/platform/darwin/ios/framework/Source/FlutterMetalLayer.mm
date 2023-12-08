@@ -371,6 +371,7 @@ extern CFTimeInterval display_link_target;
     if ([NSThread isMainThread]) {
       [self presentOnMainThread:texture];
     } else {
+      // Core animation layers can only be updated on main thread.
       dispatch_async(dispatch_get_main_queue(), ^{
         [self presentOnMainThread:texture];
       });

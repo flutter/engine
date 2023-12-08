@@ -262,6 +262,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterFakeKeyEvents.h",
     "framework/Source/FlutterFakeKeyEvents.mm",
     "framework/Source/FlutterKeyboardManagerTest.mm",
+    "framework/Source/FlutterMetalLayerTest.mm",
     "framework/Source/FlutterPlatformPluginTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
