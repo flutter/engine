@@ -214,15 +214,14 @@ struct CaptureElement final : public CaptureCursorListElement<CaptureElement> {
 };
 
 #ifdef IMPELLER_ENABLE_CAPTURE
-#define _CAPTURE_PROPERTY_RECORDER_DECLARATION(type_name, pascal_name,       \
-                                               lower_name)                   \
-  type_name Add##pascal_name(const std::string_view& label, type_name value, \
+#define _CAPTURE_PROPERTY_RECORDER_DECLARATION(type_name, pascal_name, \
+                                               lower_name)             \
+  type_name Add##pascal_name(std::string_view label, type_name value,  \
                              CaptureProperty::Options options = {});
 #else
 #define _CAPTURE_PROPERTY_RECORDER_DECLARATION(type_name, pascal_name,       \
                                                lower_name)                   \
-  inline type_name Add##pascal_name(const std::string_view& label,           \
-                                    type_name value,                         \
+  inline type_name Add##pascal_name(std::string_view label, type_name value, \
                                     CaptureProperty::Options options = {}) { \
     return value;                                                            \
   }
@@ -236,7 +235,7 @@ class Capture {
 
   static Capture MakeInactive();
 
-  inline Capture CreateChild(const std::string_view& label) {
+  inline Capture CreateChild(std::string_view label) {
 #ifdef IMPELLER_ENABLE_CAPTURE
     if (!active_) {
       return Capture();

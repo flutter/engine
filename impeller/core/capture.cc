@@ -117,8 +117,7 @@ void Capture::Rewind() {
 #ifdef IMPELLER_ENABLE_CAPTURE
 #define _CAPTURE_PROPERTY_RECORDER_DEFINITION(type_name, pascal_name,          \
                                               lower_name)                      \
-  type_name Capture::Add##pascal_name(const std::string_view& label,           \
-                                      type_name value,                         \
+  type_name Capture::Add##pascal_name(std::string_view label, type_name value, \
                                       CaptureProperty::Options options) {      \
     if (!active_) {                                                            \
       return value;                                                            \
