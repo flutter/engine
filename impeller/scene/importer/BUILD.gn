@@ -85,7 +85,7 @@ generated_file("scenec_license") {
     "",
     "### tinygltf",
     "",
-    read_file("//third_party/tinygltf/LICENSE", "string"),
+    read_file("//flutter/third_party/tinygltf/LICENSE", "string"),
   ]
 }
 
