@@ -134,12 +134,11 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
                               eRasterizationOrderAttachmentColorAccessARM);
     subpass_desc.setInputAttachments(subpass_color_ref);
-  } else if (supports_advanced_blend) {
-    subpass_desc.setInputAttachments(subpass_color_ref);
   }
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
 
+  // See https://github.com/google/angle/blob/46817856888e74d23169e79ac98064600fd00127/src/libANGLE/renderer/vulkan/vk_cache_utils.cpp#L672-L693
   if (supports_advanced_blend) {
     vk::SubpassDependency subpass_dependency;
     subpass_dependency.setSrcSubpass(0);
@@ -154,8 +153,6 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     subpass_dependency.dstAccessMask =
         vk::AccessFlagBits::eColorAttachmentReadNoncoherentEXT;
     subpass_dependencies.emplace_back(subpass_dependency);
-    // subpass_dependency.dstStageMask = 0;
-    // subpass_dependency.dstAccessMask = 0;
   }
 
   vk::RenderPassCreateInfo render_pass_desc;
@@ -404,15 +401,15 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   blend_state.setAttachments(attachment_blend_state);
   pipeline_info.setPColorBlendState(&blend_state);
 
-  vk::PipelineColorBlendAdvancedStateCreateInfoEXT state;
-  if (desc.GetColorAttachmentDescriptors()
-          .find(0u)
-          ->second.advanced_blend_override.has_value()) {
-    state.setBlendOverlap(vk::BlendOverlapEXT::eUncorrelated);  // dunno
-    state.setSrcPremultiplied(true);                            // double check
-    state.setDstPremultiplied(true);
-    blend_state.pNext = &state;
-  }
+  // vk::PipelineColorBlendAdvancedStateCreateInfoEXT state;
+  // if (desc.GetColorAttachmentDescriptors()
+  //         .find(0u)
+  //         ->second.advanced_blend_override.has_value()) {
+  //   state.setBlendOverlap(vk::BlendOverlapEXT::eUncorrelated);  // dunno
+  //   state.setSrcPremultiplied(true);                            // double check
+  //   state.setDstPremultiplied(true);
+  //   blend_state.pNext = &state;
+  // }
 
   std::shared_ptr<DeviceHolder> strong_device = device_holder_.lock();
   if (!strong_device) {

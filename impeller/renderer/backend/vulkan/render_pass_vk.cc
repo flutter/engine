@@ -127,7 +127,7 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
     color_refs[bind_point] = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
-        (supports_framebuffer_fetch || supports_advanced_blend)
+        (supports_framebuffer_fetch)
             ? vk::ImageLayout::eGeneral
             : vk::ImageLayout::eColorAttachmentOptimal};
     attachments.emplace_back(CreateAttachmentDescription(
@@ -137,7 +137,7 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
           static_cast<uint32_t>(attachments.size()),
-          (supports_framebuffer_fetch || supports_advanced_blend)
+          (supports_framebuffer_fetch)
               ? vk::ImageLayout::eGeneral
               : vk::ImageLayout::eColorAttachmentOptimal};
       attachments.emplace_back(CreateAttachmentDescription(
@@ -181,8 +181,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   if (supports_framebuffer_fetch) {
     subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
                               eRasterizationOrderAttachmentColorAccessARM);
-    subpass_desc.setInputAttachments(subpass_color_ref);
-  } else if (supports_advanced_blend) {
     subpass_desc.setInputAttachments(subpass_color_ref);
   }
 
@@ -409,14 +407,12 @@ static bool EncodeCommand(const Context& context,
   if (pipeline_vk.GetDescriptor()
           .GetColorAttachmentDescriptor(0u)
           ->advanced_blend_override.has_value()) {
-    auto dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    auto dstAccess = VK_ACCESS_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
     vk::ImageMemoryBarrier barrier;
     barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
     barrier.dstAccessMask =
         vk::AccessFlagBits::eColorAttachmentReadNoncoherentEXT;
-    barrier.oldLayout = vk::ImageLayout::eGeneral;
-    barrier.newLayout = vk::ImageLayout::eGeneral;
+    barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+    barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = texture.GetImage();
