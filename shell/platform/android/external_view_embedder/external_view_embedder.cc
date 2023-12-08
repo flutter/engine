@@ -98,7 +98,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     // This is done by querying the r-tree that holds the records for the
     // picture recorder corresponding to the flow layers added after a platform
     // view layer.
-    for (size_t j = i; j >= 0; j--) {
+    for (ptrdiff_t /* portable, ssize_t is not */ j = i; j >= 0; j--) {
       int64_t current_view_id = composition_order_[j];
       SkRect current_view_rect = GetViewRect(current_view_id);
       // The rect above the `current_view_rect`
