@@ -8,12 +8,15 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "fml/logging.h"
 #include "gtest/gtest.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -41,6 +44,7 @@
 #include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -59,7 +63,7 @@ INSTANTIATE_PLAYGROUND_SUITE(EntityTest);
 
 TEST_P(EntityTest, CanCreateEntity) {
   Entity entity;
-  ASSERT_TRUE(entity.GetTransformation().IsIdentity());
+  ASSERT_TRUE(entity.GetTransform().IsIdentity());
 }
 
 class TestPassDelegate final : public EntityPassDelegate {
@@ -103,7 +107,7 @@ auto CreatePassWithRectPath(Rect rect,
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  subpass->AddEntity(entity);
+  subpass->AddEntity(std::move(entity));
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
   subpass->SetBoundsLimit(bounds_hint);
   return subpass;
@@ -146,13 +150,13 @@ TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
   pass.AddSubpass(std::move(subpass));
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
   contents->SetColor(Color::Blue());
   entity.SetContents(std::move(contents));
 
-  pass.AddEntity(entity);
+  pass.AddEntity(std::move(entity));
 
   ASSERT_TRUE(OpenPlaygroundHere(pass));
 }
@@ -218,10 +222,10 @@ TEST_P(EntityTest, CanDrawRect) {
   contents->SetColor(Color::Red());
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, CanDrawRRect) {
@@ -230,14 +234,14 @@ TEST_P(EntityTest, CanDrawRRect) {
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10.0)
                   .TakePath();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
   contents->SetColor(Color::Red());
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
@@ -259,12 +263,12 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
                   .TakePath();
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 5.0));
   contents->SetColor(Color::Red());
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, StrokeWithTextureContents) {
@@ -279,13 +283,13 @@ TEST_P(EntityTest, StrokeWithTextureContents) {
                   .TakePath();
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<TiledTextureContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(path, 100.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 100.0));
   contents->SetTexture(bridge);
   contents->SetTileModes(Entity::TileMode::kClamp, Entity::TileMode::kClamp);
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, TriangleInsideASquare) {
@@ -319,9 +323,9 @@ TEST_P(EntityTest, TriangleInsideASquare) {
                     .TakePath();
 
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()));
     auto contents = std::make_unique<SolidColorContents>();
-    contents->SetGeometry(Geometry::MakeStrokePath(path, 20.0));
+    contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 20.0));
     contents->SetColor(Color::Red());
     entity.SetContents(std::move(contents));
 
@@ -356,12 +360,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     auto render_path = [width = width, &context, &pass, &world_matrix](
                            const Path& path, Cap cap, Join join) {
       auto contents = std::make_unique<SolidColorContents>();
-      contents->SetGeometry(
-          Geometry::MakeStrokePath(path, width, miter_limit, cap, join));
+      contents->SetGeometry(Geometry::MakeStrokePath(path.Clone(), width,
+                                                     miter_limit, cap, join));
       contents->SetColor(Color::Red());
 
       Entity entity;
-      entity.SetTransformation(world_matrix);
+      entity.SetTransform(world_matrix);
       entity.SetContents(std::move(contents));
 
       auto coverage = entity.GetCoverage();
@@ -469,12 +473,12 @@ TEST_P(EntityTest, CubicCurveTest) {
           .Close()
           .TakePath();
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
-TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransformation) {
+TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransform) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     const char* input_axis[] = {"X", "Y", "Z"};
     static int rotation_axis_index = 0;
@@ -513,8 +517,8 @@ TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransformation) {
         PathBuilder{}.AddRect(Rect::MakeXYWH(-300, -400, 600, 800)).TakePath();
 
     Entity entity;
-    entity.SetTransformation(result_transform);
-    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    entity.SetTransform(result_transform);
+    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -743,9 +747,9 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
           .Close()
           .TakePath();
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, SolidColorContentsStrokeSetStrokeCapsAndJoins) {
@@ -927,7 +931,7 @@ TEST_P(EntityTest, BezierCircleScaled) {
     ImGui::End();
 
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()));
     auto path = PathBuilder{}
                     .MoveTo({97.325, 34.818})
                     .CubicCurveTo({98.50862885295136, 34.81812293973836},
@@ -944,9 +948,9 @@ TEST_P(EntityTest, BezierCircleScaled) {
                                   {97.32499434685802, 34.81799797758954})
                     .Close()
                     .TakePath();
-    entity.SetTransformation(
+    entity.SetTransform(
         Matrix::MakeScale({scale, scale, 1.0}).Translate({-90, -20, 0}));
-    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -971,9 +975,9 @@ TEST_P(EntityTest, Filters) {
         {FilterInput::Make(blend0), fi_bridge, fi_bridge, fi_bridge});
 
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(blend1);
     return entity.Render(context, pass);
   };
@@ -1105,7 +1109,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
 
     Entity entity;
     entity.SetContents(target_contents);
-    entity.SetTransformation(ctm);
+    entity.SetTransform(ctm);
 
     entity.Render(context, pass);
 
@@ -1114,20 +1118,24 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     Entity cover_entity;
     cover_entity.SetContents(SolidColorContents::Make(
         PathBuilder{}.AddRect(input_rect).TakePath(), cover_color));
-    cover_entity.SetTransformation(ctm);
+    cover_entity.SetTransform(ctm);
 
     cover_entity.Render(context, pass);
 
     // Renders a green bounding rect of the target filter.
     Entity bounds_entity;
-    bounds_entity.SetContents(SolidColorContents::Make(
-        PathBuilder{}
-            .AddRect(target_contents->GetCoverage(entity).value())
-            .TakePath(),
-        bounds_color));
-    bounds_entity.SetTransformation(Matrix());
+    std::optional<Rect> target_contents_coverage =
+        target_contents->GetCoverage(entity);
+    if (target_contents_coverage.has_value()) {
+      bounds_entity.SetContents(SolidColorContents::Make(
+          PathBuilder{}
+              .AddRect(target_contents->GetCoverage(entity).value())
+              .TakePath(),
+          bounds_color));
+      bounds_entity.SetTransform(Matrix());
 
-    bounds_entity.Render(context, pass);
+      bounds_entity.Render(context, pass);
+    }
 
     return true;
   };
@@ -1207,7 +1215,7 @@ TEST_P(EntityTest, MorphologyFilter) {
 
     Entity entity;
     entity.SetContents(contents);
-    entity.SetTransformation(ctm);
+    entity.SetTransform(ctm);
 
     entity.Render(context, pass);
 
@@ -1216,7 +1224,7 @@ TEST_P(EntityTest, MorphologyFilter) {
     Entity cover_entity;
     cover_entity.SetContents(SolidColorContents::Make(
         PathBuilder{}.AddRect(input_rect).TakePath(), cover_color));
-    cover_entity.SetTransformation(ctm);
+    cover_entity.SetTransform(ctm);
 
     cover_entity.Render(context, pass);
 
@@ -1225,7 +1233,7 @@ TEST_P(EntityTest, MorphologyFilter) {
     bounds_entity.SetContents(SolidColorContents::Make(
         PathBuilder{}.AddRect(contents->GetCoverage(entity).value()).TakePath(),
         bounds_color));
-    bounds_entity.SetTransformation(Matrix());
+    bounds_entity.SetTransform(Matrix());
 
     bounds_entity.Render(context, pass);
 
@@ -1310,7 +1318,7 @@ TEST_P(EntityTest, BorderMaskBlurCoverageIsCorrect) {
 
   {
     Entity e;
-    e.SetTransformation(Matrix());
+    e.SetTransform(Matrix());
     auto actual = border_mask_blur->GetCoverage(e);
     auto expected = Rect::MakeXYWH(-3, -4, 306, 408);
     ASSERT_TRUE(actual.has_value());
@@ -1319,7 +1327,7 @@ TEST_P(EntityTest, BorderMaskBlurCoverageIsCorrect) {
 
   {
     Entity e;
-    e.SetTransformation(Matrix::MakeRotationZ(Radians{kPi / 4}));
+    e.SetTransform(Matrix::MakeRotationZ(Radians{kPi / 4}));
     auto actual = border_mask_blur->GetCoverage(e);
     auto expected = Rect::MakeXYWH(-287.792, -4.94975, 504.874, 504.874);
     ASSERT_TRUE(actual.has_value());
@@ -1353,10 +1361,10 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   contents->SetBlendMode(BlendMode::kSource);
 
   Entity e;
-  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
@@ -1388,10 +1396,10 @@ TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
   contents->SetBlendMode(BlendMode::kModulate);
 
   Entity e;
-  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasWithColorSimple) {
@@ -1424,10 +1432,10 @@ TEST_P(EntityTest, DrawAtlasWithColorSimple) {
   contents->SetBlendMode(BlendMode::kSourceATop);
 
   Entity e;
-  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
@@ -1456,7 +1464,7 @@ TEST_P(EntityTest, DrawAtlasUsesProvidedCullRectForCoverage) {
 
   auto transform = Matrix::MakeScale(GetContentScale());
   Entity e;
-  e.SetTransformation(transform);
+  e.SetTransform(transform);
   e.SetContents(contents);
 
   ASSERT_EQ(contents->GetCoverage(e).value(),
@@ -1497,10 +1505,10 @@ TEST_P(EntityTest, DrawAtlasWithOpacity) {
   contents->SetAlpha(0.5);
 
   Entity e;
-  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
@@ -1517,10 +1525,10 @@ TEST_P(EntityTest, DrawAtlasNoColorFullSize) {
   contents->SetBlendMode(BlendMode::kSource);
 
   Entity e;
-  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetTransform(Matrix::MakeScale(GetContentScale()));
   e.SetContents(contents);
 
-  ASSERT_TRUE(OpenPlaygroundHere(e));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
 TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
@@ -1545,7 +1553,7 @@ TEST_P(EntityTest, SolidFillCoverageIsCorrect) {
         PathBuilder{}.AddRect(Rect::MakeLTRB(100, 110, 200, 220)).TakePath()));
 
     Entity entity;
-    entity.SetTransformation(Matrix::MakeTranslation(Vector2(4, 5)));
+    entity.SetTransform(Matrix::MakeTranslation(Vector2(4, 5)));
     entity.SetContents(std::move(fill));
 
     auto coverage = entity.GetCoverage();
@@ -1596,6 +1604,20 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     ASSERT_TRUE(
         fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
+}
+
+TEST_P(EntityTest, DoesNotCullEntitiesByDefault) {
+  auto fill = std::make_shared<SolidColorContents>();
+  fill->SetColor(Color::CornflowerBlue());
+  fill->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-1000, -1000, -900, -900)));
+
+  Entity entity;
+  entity.SetContents(fill);
+
+  // Even though the entity is offscreen, this should still render because we do
+  // not compute the coverage intersection by default.
+  EXPECT_TRUE(entity.ShouldRender(Rect::MakeLTRB(0, 0, 100, 100)));
 }
 
 TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
@@ -1712,7 +1734,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     contents->SetSigma(Radius(blur_radius));
 
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()));
     entity.SetContents(std::move(contents));
     entity.Render(context, pass);
 
@@ -1751,7 +1773,7 @@ TEST_P(EntityTest, ColorMatrixFilterCoverageIsCorrect) {
       ColorFilterContents::MakeColorMatrix(FilterInput::Make(fill), matrix);
 
   Entity e;
-  e.SetTransformation(Matrix());
+  e.SetTransform(Matrix());
 
   // Confirm that the actual filter coverage matches the expected coverage.
   auto actual = filter->GetCoverage(e);
@@ -1803,7 +1825,7 @@ TEST_P(EntityTest, ColorMatrixFilterEditable) {
 
     // Define the entity with the color matrix filter.
     Entity entity;
-    entity.SetTransformation(
+    entity.SetTransform(
         Matrix::MakeScale(GetContentScale()) *
         Matrix::MakeTranslation(Vector3(offset[0], offset[1])) *
         Matrix::MakeRotationZ(Radians(rotation)) *
@@ -1830,7 +1852,7 @@ TEST_P(EntityTest, LinearToSrgbFilterCoverageIsCorrect) {
       ColorFilterContents::MakeLinearToSrgbFilter(FilterInput::Make(fill));
 
   Entity e;
-  e.SetTransformation(Matrix());
+  e.SetTransform(Matrix());
 
   // Confirm that the actual filter coverage matches the expected coverage.
   auto actual = filter->GetCoverage(e);
@@ -1851,18 +1873,18 @@ TEST_P(EntityTest, LinearToSrgbFilter) {
     // Define the entity that will serve as the control image as a Gaussian blur
     // filter with no filter at all.
     Entity entity_left;
-    entity_left.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                                  Matrix::MakeTranslation({100, 300}) *
-                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity_left.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({100, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
     auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
                                                        Sigma{0}, Sigma{0});
     entity_left.SetContents(unfiltered);
 
     // Define the entity that will be filtered from linear to sRGB.
     Entity entity_right;
-    entity_right.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                                   Matrix::MakeTranslation({500, 300}) *
-                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity_right.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                              Matrix::MakeTranslation({500, 300}) *
+                              Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity_right.SetContents(filtered);
     return entity_left.Render(context, pass) &&
            entity_right.Render(context, pass);
@@ -1882,7 +1904,7 @@ TEST_P(EntityTest, SrgbToLinearFilterCoverageIsCorrect) {
       ColorFilterContents::MakeSrgbToLinearFilter(FilterInput::Make(fill));
 
   Entity e;
-  e.SetTransformation(Matrix());
+  e.SetTransform(Matrix());
 
   // Confirm that the actual filter coverage matches the expected coverage.
   auto actual = filter->GetCoverage(e);
@@ -1903,18 +1925,18 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
     // Define the entity that will serve as the control image as a Gaussian blur
     // filter with no filter at all.
     Entity entity_left;
-    entity_left.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                                  Matrix::MakeTranslation({100, 300}) *
-                                  Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity_left.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                             Matrix::MakeTranslation({100, 300}) *
+                             Matrix::MakeScale(Vector2{0.5, 0.5}));
     auto unfiltered = FilterContents::MakeGaussianBlur(FilterInput::Make(image),
                                                        Sigma{0}, Sigma{0});
     entity_left.SetContents(unfiltered);
 
     // Define the entity that will be filtered from sRGB to linear.
     Entity entity_right;
-    entity_right.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                                   Matrix::MakeTranslation({500, 300}) *
-                                   Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity_right.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                              Matrix::MakeTranslation({500, 300}) *
+                              Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity_right.SetContents(filtered);
     return entity_left.Render(context, pass) &&
            entity_right.Render(context, pass);
@@ -2078,7 +2100,7 @@ TEST_P(EntityTest, YUVToRGBFilter) {
       contents->SetTexture(snapshot->texture);
       contents->SetSourceRect(Rect::MakeSize(snapshot->texture->GetSize()));
       entity.SetContents(contents);
-      entity.SetTransformation(
+      entity.SetTransform(
           Matrix::MakeTranslation({static_cast<Scalar>(100 + 400 * i), 300}));
       entity.Render(context, pass);
     }
@@ -2171,8 +2193,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
 
   // Text contents can accept opacity if the text frames do not
   // overlap
-  SkFont font;
-  font.setSize(30);
+  SkFont font = flutter::testing::CreateTestFontOfSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = MakeTextFrameFromTextBlobSkia(blob);
   auto lazy_glyph_atlas =
@@ -2206,9 +2227,9 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorAdvancedBlend) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2222,9 +2243,9 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorClearBlend) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2238,9 +2259,9 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorSrcBlend) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2254,9 +2275,9 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorDstBlend) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2270,9 +2291,9 @@ TEST_P(EntityTest, ColorFilterWithForegroundColorSrcInBlend) {
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     Entity entity;
-    entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
-                             Matrix::MakeTranslation({500, 300}) *
-                             Matrix::MakeScale(Vector2{0.5, 0.5}));
+    entity.SetTransform(Matrix::MakeScale(GetContentScale()) *
+                        Matrix::MakeTranslation({500, 300}) *
+                        Matrix::MakeScale(Vector2{0.5, 0.5}));
     entity.SetContents(filter);
     return entity.Render(context, pass);
   };
@@ -2285,8 +2306,8 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
                         .LineTo({120, 190})
                         .LineTo({190, 120})
                         .TakePath();
-  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
-                                           Join::kRound);
+  auto geometry = Geometry::MakeStrokePath(std::move(arrow_head), 15.0, 4.0,
+                                           Cap::kRound, Join::kRound);
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));
@@ -2382,7 +2403,7 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
 
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto src_contents = std::make_shared<SolidColorContents>();
   src_contents->SetGeometry(
       Geometry::MakeRect(Rect::MakeLTRB(-300, -500, 30000, 50000)));
@@ -2397,7 +2418,7 @@ TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
       BlendMode::kSourceOver, {FilterInput::Make(dst_contents, false),
                                FilterInput::Make(src_contents, false)});
   entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
@@ -2436,12 +2457,20 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
                     "for advanced blends.";
   }
 
+  auto background_contents = std::make_shared<SolidColorContents>();
+  background_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeXYWH(200, 200, 200, 200)));
+  background_contents->SetColor(Color::Blue());
+  Entity background_entity;
+  background_entity.SetTransform(Matrix::MakeScale(Vector3(2, 2, 1)));
+  background_entity.SetContents(background_contents);
+
   auto contents = std::make_shared<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
 
   Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(Vector3(2, 2, 1)));
+  entity.SetTransform(Matrix::MakeScale(Vector3(2, 2, 1)));
   entity.SetBlendMode(BlendMode::kColorBurn);
   entity.SetContents(contents);
 
@@ -2461,7 +2490,8 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
-  pass->AddEntity(entity);
+  pass->AddEntity(std::move(background_entity));
+  pass->AddEntity(std::move(entity));
 
   EXPECT_TRUE(pass->Render(content_context, rt));
 
@@ -2503,12 +2533,82 @@ TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
   ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
             alt_color_burn->GetDescriptor().GetSpecializationConstants());
 
-  auto decal_supported = static_cast<int32_t>(
+  auto decal_supported = static_cast<Scalar>(
       GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
-  std::vector<int32_t> expected_constants = {5, decal_supported};
+  std::vector<Scalar> expected_constants = {5, decal_supported};
   ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
             expected_constants);
 }
+
+TEST_P(EntityTest, DecalSpecializationAppliedToMorphologyFilter) {
+  auto content_context =
+      ContentContext(GetContext(), TypographerContextSkia::Make());
+
+  auto default_color_burn = content_context.GetMorphologyFilterPipeline({});
+
+  auto decal_supported = static_cast<Scalar>(
+      GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
+  std::vector<Scalar> expected_constants = {decal_supported};
+  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+            expected_constants);
+}
+
+TEST_P(EntityTest, FramebufferFetchPipelinesDeclareUsage) {
+  auto content_context =
+      ContentContext(GetContext(), TypographerContextSkia::Make());
+  if (!content_context.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    GTEST_SKIP() << "Framebuffer fetch not supported.";
+  }
+
+  ContentContextOptions options;
+  options.color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt;
+  auto color_burn =
+      content_context.GetFramebufferBlendColorBurnPipeline(options);
+
+  EXPECT_TRUE(color_burn->GetDescriptor().UsesSubpassInput());
+}
+
+TEST_P(EntityTest, PipelineDescriptorEqAndHash) {
+  auto desc_1 = std::make_shared<PipelineDescriptor>();
+  auto desc_2 = std::make_shared<PipelineDescriptor>();
+
+  EXPECT_TRUE(desc_1->IsEqual(*desc_2));
+  EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
+
+  desc_1->SetUseSubpassInput(UseSubpassInput::kYes);
+
+  EXPECT_FALSE(desc_1->IsEqual(*desc_2));
+  EXPECT_NE(desc_1->GetHash(), desc_2->GetHash());
+
+  desc_2->SetUseSubpassInput(UseSubpassInput::kYes);
+
+  EXPECT_TRUE(desc_1->IsEqual(*desc_2));
+  EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
+}
+
+#ifdef FML_OS_LINUX
+TEST_P(EntityTest, FramebufferFetchVulkanBindingOffsetIsTheSame) {
+  // Using framebuffer fetch on Vulkan requires that we maintain a subpass input
+  // binding that we don't have a good route for configuring with the current
+  // metadata approach. This test verifies that the binding value doesn't change
+  // from the expected constant.
+  // See also:
+  //   * impeller/renderer/backend/vulkan/binding_helpers_vk.cc
+  //   * impeller/entity/shaders/blending/framebuffer_blend.frag
+  // This test only works on Linux because macOS hosts incorrectly populate the
+  // Vulkan descriptor sets based on the MSL compiler settings.
+
+  bool expected_layout = false;
+  for (const DescriptorSetLayout& layout : FramebufferBlendColorBurnPipeline::
+           FragmentShader::kDescriptorSetLayouts) {
+    if (layout.binding == 64 &&
+        layout.descriptor_type == DescriptorType::kInputAttachment) {
+      expected_layout = true;
+    }
+  }
+  EXPECT_TRUE(expected_layout);
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller

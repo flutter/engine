@@ -13,13 +13,13 @@ PathBuilder::PathBuilder() = default;
 PathBuilder::~PathBuilder() = default;
 
 Path PathBuilder::CopyPath(FillType fill) const {
-  auto path = prototype_;
+  auto path = prototype_.Clone();
   path.SetFillType(fill);
   return path;
 }
 
 Path PathBuilder::TakePath(FillType fill) {
-  auto path = prototype_;
+  auto path = std::move(prototype_);
   path.SetFillType(fill);
   path.SetConvexity(convexity_);
   if (!did_compute_bounds_) {
@@ -27,6 +27,11 @@ Path PathBuilder::TakePath(FillType fill) {
   }
   did_compute_bounds_ = false;
   return path;
+}
+
+void PathBuilder::Reserve(size_t point_size, size_t verb_size) {
+  prototype_.points_.reserve(point_size);
+  prototype_.points_.reserve(verb_size);
 }
 
 PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {

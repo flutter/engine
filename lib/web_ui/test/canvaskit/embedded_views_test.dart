@@ -16,9 +16,8 @@ import 'test_data.dart';
 EngineFlutterWindow get implicitView =>
     EnginePlatformDispatcher.instance.implicitView!;
 
-DomElement get platformViewsHost {
-  return EnginePlatformDispatcher.instance.implicitView!.dom.platformViewsHost;
-}
+DomElement get platformViewsHost => implicitView.dom.platformViewsHost;
+DomElement get sceneHost => implicitView.dom.sceneHost;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -33,7 +32,6 @@ void testMain() {
     });
 
     test('embeds interactive platform views', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -43,14 +41,13 @@ void testMain() {
       final LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // The platform view is now split in two parts. The contents live
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
       final DomElement contents = platformViewsHost.querySelector('#view-0')!;
-      final DomElement slot =
-          flutterViewEmbedder.sceneElement!.querySelector('slot')!;
+      final DomElement slot = sceneHost.querySelector('slot')!;
       final DomElement contentsHost = contents.parent!;
       final DomElement slotHost = slot.parent!;
 
@@ -67,7 +64,6 @@ void testMain() {
     });
 
     test('clips platform views with RRects', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -79,16 +75,14 @@ void testMain() {
       sb.pushClipRRect(
           ui.RRect.fromLTRBR(0, 0, 10, 10, const ui.Radius.circular(3)));
       sb.addPlatformView(0, width: 10, height: 10);
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       expect(
-        flutterViewEmbedder.sceneElement!
-            .querySelectorAll('#sk_path_defs')
-            .single,
+        sceneHost.querySelectorAll('#sk_path_defs').single,
         isNotNull,
       );
       expect(
-        flutterViewEmbedder.sceneElement!
+        sceneHost
             .querySelectorAll('#sk_path_defs')
             .single
             .querySelectorAll('clipPath')
@@ -96,33 +90,20 @@ void testMain() {
         isNotNull,
       );
       expect(
-        flutterViewEmbedder.sceneElement!
-            .querySelectorAll('flt-clip')
-            .single
-            .style
-            .clipPath,
+        sceneHost.querySelectorAll('flt-clip').single.style.clipPath,
         'url("#svgClip1")',
       );
       expect(
-        flutterViewEmbedder.sceneElement!
-            .querySelectorAll('flt-clip')
-            .single
-            .style
-            .width,
+        sceneHost.querySelectorAll('flt-clip').single.style.width,
         '100%',
       );
       expect(
-        flutterViewEmbedder.sceneElement!
-            .querySelectorAll('flt-clip')
-            .single
-            .style
-            .height,
+        sceneHost.querySelectorAll('flt-clip').single.style.height,
         '100%',
       );
     });
 
     test('correctly transforms platform views', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -137,11 +118,11 @@ void testMain() {
       sb.pushTransform(scaleMatrix.toFloat64());
       sb.pushOffset(3, 3);
       sb.addPlatformView(0, width: 10, height: 10);
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // Transformations happen on the slot element.
-      final DomElement slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+      final DomElement slotHost =
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         slotHost.style.transform,
@@ -161,10 +142,10 @@ void testMain() {
 
       final LayerSceneBuilder sb = LayerSceneBuilder();
       sb.addPlatformView(0, offset: const ui.Offset(3, 4), width: 5, height: 6);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
-      final DomElement slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+      final DomElement slotHost =
+          sceneHost.querySelector('flt-platform-view-slot')!;
       final DomCSSStyleDeclaration style = slotHost.style;
 
       expect(style.transform, 'matrix(1, 0, 0, 1, 3, 4)');
@@ -179,11 +160,13 @@ void testMain() {
     });
 
     // Returns the list of CSS transforms applied to the ancestor chain of
-    // elements starting from `viewHost`, up until and excluding <flt-scene>.
+    // elements starting from `viewHost`, up until and excluding
+    // <flt-scene-host>.
     List<String> getTransformChain(DomElement viewHost) {
       final List<String> chain = <String>[];
       DomElement? element = viewHost;
-      while (element != null && element.tagName.toLowerCase() != 'flt-scene') {
+      while (element != null &&
+          element.tagName.toLowerCase() != 'flt-scene-host') {
         chain.add(element.style.transform);
         element = element.parent;
       }
@@ -203,11 +186,11 @@ void testMain() {
       sb.pushOffset(6, 6);
       sb.addPlatformView(0, width: 10, height: 10);
       sb.pop();
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // Transformations happen on the slot element.
-      DomElement slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+      DomElement slotHost =
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -224,11 +207,10 @@ void testMain() {
       sb.pushClipRect(ui.Rect.largest);
       sb.pushOffset(9, 9);
       sb.addPlatformView(0, width: 10, height: 10);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // Transformations happen on the slot element.
-      slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+      slotHost = sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -253,11 +235,11 @@ void testMain() {
       sb.pushOffset(2, 2);
       sb.pushOffset(3, 3);
       sb.addPlatformView(0, width: 10, height: 10);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // Transformations happen on the slot element.
-      final DomElement slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+      final DomElement slotHost =
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -280,11 +262,11 @@ void testMain() {
       sb.pushClipRect(ui.Rect.largest);
       sb.pushOffset(9, 9);
       sb.addPlatformView(0, width: 10, height: 10);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       // Transformations happen on the slot element.
-      final DomElement slotHost = flutterViewEmbedder.sceneElement!
-          .querySelector('flt-platform-view-slot')!;
+      final DomElement slotHost =
+          sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -297,7 +279,6 @@ void testMain() {
     });
 
     test('renders overlays on top of platform views', () async {
-      expect(RenderCanvasFactory.instance.debugCacheSize, 0);
       final CkPicture testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
@@ -321,7 +302,7 @@ void testMain() {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(i, width: 10, height: 10);
         }
-        CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+        CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       }
 
       // Frame 1:
@@ -474,7 +455,7 @@ void testMain() {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(view, width: 10, height: 10);
         }
-        CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+        CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       }
 
       // Frame 1:
@@ -593,7 +574,7 @@ void testMain() {
       LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -606,7 +587,7 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
 
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
@@ -642,7 +623,7 @@ void testMain() {
 
       implicitView.debugPhysicalSizeOverride = const ui.Size(100, 100);
       implicitView.debugForceResize();
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -651,7 +632,7 @@ void testMain() {
 
       implicitView.debugPhysicalSizeOverride = const ui.Size(200, 200);
       implicitView.debugForceResize();
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -664,7 +645,6 @@ void testMain() {
     }, skip: isSafari || isFirefox);
 
     test('removed the DOM node of an unrendered platform view', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -674,7 +654,7 @@ void testMain() {
       LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -688,7 +668,7 @@ void testMain() {
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(1, width: 10, height: 10);
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -704,7 +684,7 @@ void testMain() {
       // the platform view.
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
       ]);
@@ -720,7 +700,6 @@ void testMain() {
     test(
         'removes old SVG clip definitions from the DOM when the view is recomposited',
         () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'test-view',
@@ -733,11 +712,10 @@ void testMain() {
         sb.pushClipRRect(
             ui.RRect.fromLTRBR(0, 0, 10, 10, const ui.Radius.circular(3)));
         sb.addPlatformView(0, width: 10, height: 10);
-        rasterizer.draw(sb.build().layerTree);
+        CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       }
 
-      final DomNode skPathDefs =
-          flutterViewEmbedder.sceneElement!.querySelector('#sk_path_defs')!;
+      final DomNode skPathDefs = sceneHost.querySelector('#sk_path_defs')!;
 
       expect(skPathDefs.childNodes, hasLength(0));
 
@@ -755,7 +733,6 @@ void testMain() {
 
     test('does not crash when a prerolled platform view is not composited',
         () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -768,14 +745,13 @@ void testMain() {
       sb.addPlatformView(0, width: 10, height: 10);
       sb.pop();
       // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
       ]);
     });
 
     test('does not create overlays for invisible platform views', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
       ui_web.platformViewRegistry.registerViewFactory(
           'test-visible-view',
           (int viewId) =>
@@ -801,7 +777,7 @@ void testMain() {
       sb.pushOffset(0, 0);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -812,7 +788,7 @@ void testMain() {
       sb.addPlatformView(0, width: 10, height: 10);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -826,7 +802,7 @@ void testMain() {
       sb.addPlatformView(1, width: 10, height: 10);
       sb.addPlatformView(2, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -845,7 +821,7 @@ void testMain() {
       sb.addPlatformView(2, width: 10, height: 10);
       sb.addPlatformView(3, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -864,7 +840,7 @@ void testMain() {
       sb.addPlatformView(3, width: 10, height: 10);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -885,7 +861,7 @@ void testMain() {
       sb.addPlatformView(4, width: 10, height: 10);
       sb.addPlatformView(5, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -908,7 +884,7 @@ void testMain() {
       sb.addPlatformView(5, width: 10, height: 10);
       sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -930,7 +906,7 @@ void testMain() {
       sb.addPlatformView(5, width: 10, height: 10);
       sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -949,7 +925,7 @@ void testMain() {
       sb.addPlatformView(3, width: 10, height: 10);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -966,7 +942,7 @@ void testMain() {
       sb.addPlatformView(2, width: 10, height: 10);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
-      rasterizer.draw(sb.build().layerTree);
+      CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
@@ -1000,8 +976,7 @@ void _expectSceneMatches(
   String? reason,
 }) {
   // Convert the scene elements to its corresponding array of _EmbeddedViewMarker
-  final List<_EmbeddedViewMarker> sceneElements = flutterViewEmbedder
-      .sceneElement!.children
+  final List<_EmbeddedViewMarker> sceneElements = sceneHost.children
       .where((DomElement element) => element.tagName != 'svg')
       .map((DomElement element) =>
           _tagToViewMarker[element.tagName.toLowerCase()]!)

@@ -67,7 +67,7 @@ TEST(RectTest, RectGetNormalizingTransform) {
   }
 
   {
-    // Checks for expected transformation of points relative to the rect
+    // Checks for expected transform of points relative to the rect
 
     auto r = Rect::MakeLTRB(300, 500, 400, 700);
     auto m = r.GetNormalizingTransform();
@@ -155,7 +155,7 @@ TEST(RectTest, IRectGetNormalizingTransform) {
   }
 
   {
-    // Checks for expected transformation of points relative to the rect
+    // Checks for expected transform of points relative to the rect
 
     auto r = IRect::MakeLTRB(300, 500, 400, 700);
     auto m = r.GetNormalizingTransform();
@@ -232,6 +232,39 @@ TEST(SizeTest, IRectIsEmpty) {
   EXPECT_TRUE(IRect::MakeXYWH(1, 2, 10, -1).IsEmpty());
   EXPECT_TRUE(IRect::MakeXYWH(1, 2, 0, 7).IsEmpty());
   EXPECT_TRUE(IRect::MakeXYWH(1, 2, -1, 7).IsEmpty());
+}
+
+TEST(RectTest, MakePointBoundsQuad) {
+  Quad quad = {
+      Point(10, 10),
+      Point(20, 10),
+      Point(10, 20),
+      Point(20, 20),
+  };
+  std::optional<Rect> bounds = Rect::MakePointBounds(quad);
+  EXPECT_TRUE(bounds.has_value());
+  if (bounds.has_value()) {
+    EXPECT_TRUE(RectNear(bounds.value(), Rect::MakeLTRB(10, 10, 20, 20)));
+  }
+}
+
+TEST(RectTest, IsSquare) {
+  EXPECT_TRUE(Rect::MakeXYWH(10, 30, 20, 20).IsSquare());
+  EXPECT_FALSE(Rect::MakeXYWH(10, 30, 20, 19).IsSquare());
+  EXPECT_FALSE(Rect::MakeXYWH(10, 30, 19, 20).IsSquare());
+
+  EXPECT_TRUE(IRect::MakeXYWH(10, 30, 20, 20).IsSquare());
+  EXPECT_FALSE(IRect::MakeXYWH(10, 30, 20, 19).IsSquare());
+  EXPECT_FALSE(IRect::MakeXYWH(10, 30, 19, 20).IsSquare());
+}
+
+TEST(RectTest, GetCenter) {
+  EXPECT_EQ(Rect::MakeXYWH(10, 30, 20, 20).GetCenter(), Point(20, 40));
+  EXPECT_EQ(Rect::MakeXYWH(10, 30, 20, 19).GetCenter(), Point(20, 39.5));
+
+  // Note that we expect a Point as the answer from an IRect
+  EXPECT_EQ(IRect::MakeXYWH(10, 30, 20, 20).GetCenter(), Point(20, 40));
+  EXPECT_EQ(IRect::MakeXYWH(10, 30, 20, 19).GetCenter(), Point(20, 39.5));
 }
 
 }  // namespace testing

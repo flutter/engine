@@ -22,8 +22,8 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+void ClipContents::SetGeometry(const std::shared_ptr<Geometry>& geometry) {
+  geometry_ = geometry;
 }
 
 void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
@@ -50,7 +50,7 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
       if (!geometry_) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
-      auto coverage = geometry_->GetCoverage(entity.GetTransformation());
+      auto coverage = geometry_->GetCoverage(entity.GetTransform());
       if (!coverage.has_value() || !current_clip_coverage.has_value()) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
@@ -62,9 +62,8 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
   FML_UNREACHABLE();
 }
 
-bool ClipContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect>& clip_coverage) const {
+bool ClipContents::ShouldRender(const Entity& entity,
+                                const std::optional<Rect> clip_coverage) const {
   return true;
 }
 
@@ -98,7 +97,7 @@ bool ClipContents::Render(const ContentContext& renderer,
           VertexBufferBuilder<VS::PerVertexData>{}
               .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
               .CreateVertexBuffer(pass.GetTransientsBuffer());
-      cmd.BindVertices(vertices);
+      cmd.BindVertices(std::move(vertices));
 
       info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
       VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
@@ -126,7 +125,7 @@ bool ClipContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetClipPipeline(options);
 
   auto allocator = renderer.GetContext()->GetResourceAllocator();
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
 
   info.mvp = geometry_result.transform;
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
@@ -161,7 +160,7 @@ Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
 
 bool ClipRestoreContents::ShouldRender(
     const Entity& entity,
-    const std::optional<Rect>& clip_coverage) const {
+    const std::optional<Rect> clip_coverage) const {
   return true;
 }
 

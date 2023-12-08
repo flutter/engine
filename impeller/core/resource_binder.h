@@ -4,13 +4,8 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
-#include <optional>
-#include <string>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler.h"
@@ -30,13 +25,13 @@ struct ResourceBinder {
   virtual bool BindResource(ShaderStage stage,
                             const ShaderUniformSlot& slot,
                             const ShaderMetadata& metadata,
-                            const BufferView& view) = 0;
+                            BufferView view) = 0;
 
   virtual bool BindResource(ShaderStage stage,
                             const SampledImageSlot& slot,
                             const ShaderMetadata& metadata,
-                            const std::shared_ptr<const Texture>& texture,
-                            const std::shared_ptr<const Sampler>& sampler) = 0;
+                            std::shared_ptr<const Texture> texture,
+                            std::shared_ptr<const Sampler> sampler) = 0;
 };
 
 }  // namespace impeller

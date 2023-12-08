@@ -5,6 +5,7 @@
 #include "flutter/lib/gpu/device_buffer.h"
 
 #include "dart_api.h"
+#include "flutter/lib/gpu/formats.h"
 #include "fml/mapping.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/device_buffer_descriptor.h"
@@ -15,14 +16,19 @@
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
+namespace gpu {
 
-IMPLEMENT_WRAPPERTYPEINFO(gpu, DeviceBuffer);
+IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, DeviceBuffer);
 
 DeviceBuffer::DeviceBuffer(
     std::shared_ptr<impeller::DeviceBuffer> device_buffer)
     : device_buffer_(std::move(device_buffer)) {}
 
 DeviceBuffer::~DeviceBuffer() = default;
+
+std::shared_ptr<impeller::DeviceBuffer> DeviceBuffer::GetBuffer() {
+  return device_buffer_;
+}
 
 bool DeviceBuffer::Overwrite(const tonic::DartByteData& source_bytes,
                              size_t destination_offset_in_bytes) {
@@ -35,18 +41,20 @@ bool DeviceBuffer::Overwrite(const tonic::DartByteData& source_bytes,
   return true;
 }
 
+}  // namespace gpu
 }  // namespace flutter
 
 //----------------------------------------------------------------------------
 /// Exports
 ///
 
-bool InternalFlutterGpu_DeviceBuffer_Initialize(Dart_Handle wrapper,
-                                                flutter::Context* gpu_context,
-                                                int storage_mode,
-                                                int size_in_bytes) {
+bool InternalFlutterGpu_DeviceBuffer_Initialize(
+    Dart_Handle wrapper,
+    flutter::gpu::Context* gpu_context,
+    int storage_mode,
+    int size_in_bytes) {
   impeller::DeviceBufferDescriptor desc;
-  desc.storage_mode = static_cast<impeller::StorageMode>(storage_mode);
+  desc.storage_mode = flutter::gpu::ToImpellerStorageMode(storage_mode);
   desc.size = size_in_bytes;
   auto device_buffer =
       gpu_context->GetContext()->GetResourceAllocator()->CreateBuffer(desc);
@@ -56,7 +64,7 @@ bool InternalFlutterGpu_DeviceBuffer_Initialize(Dart_Handle wrapper,
   }
 
   auto res =
-      fml::MakeRefCounted<flutter::DeviceBuffer>(std::move(device_buffer));
+      fml::MakeRefCounted<flutter::gpu::DeviceBuffer>(std::move(device_buffer));
   res->AssociateWithDartWrapper(wrapper);
 
   return true;
@@ -64,7 +72,7 @@ bool InternalFlutterGpu_DeviceBuffer_Initialize(Dart_Handle wrapper,
 
 bool InternalFlutterGpu_DeviceBuffer_InitializeWithHostData(
     Dart_Handle wrapper,
-    flutter::Context* gpu_context,
+    flutter::gpu::Context* gpu_context,
     Dart_Handle byte_data) {
   auto data = tonic::DartByteData(byte_data);
   auto mapping = fml::NonOwnedMapping(reinterpret_cast<uint8_t*>(data.data()),
@@ -78,14 +86,14 @@ bool InternalFlutterGpu_DeviceBuffer_InitializeWithHostData(
   }
 
   auto res =
-      fml::MakeRefCounted<flutter::DeviceBuffer>(std::move(device_buffer));
+      fml::MakeRefCounted<flutter::gpu::DeviceBuffer>(std::move(device_buffer));
   res->AssociateWithDartWrapper(wrapper);
 
   return true;
 }
 
 bool InternalFlutterGpu_DeviceBuffer_Overwrite(
-    flutter::DeviceBuffer* device_buffer,
+    flutter::gpu::DeviceBuffer* device_buffer,
     Dart_Handle source_byte_data,
     int destination_offset_in_bytes) {
   return device_buffer->Overwrite(tonic::DartByteData(source_byte_data),

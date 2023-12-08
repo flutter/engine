@@ -693,14 +693,14 @@ void DlDispatcher::transformFullPerspective(SkScalar mxx,
   // The order of arguments is row-major but Impeller matrices are
   // column-major.
   // clang-format off
-  auto xformation = Matrix{
+  auto transform = Matrix{
     mxx, myx, mzx, mwx,
     mxy, myy, mzy, mwy,
     mxz, myz, mzz, mwz,
     mxt, myt, mzt, mwt
   };
   // clang-format on
-  canvas_.Transform(xformation);
+  canvas_.Transform(transform);
 }
 
 // |flutter::DlOpReceiver|
@@ -770,16 +770,7 @@ void DlDispatcher::drawRect(const SkRect& rect) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawOval(const SkRect& bounds) {
-  if (bounds.width() == bounds.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
-                       bounds.width() * 0.5, paint_);
-  } else {
-    auto path = PathBuilder{}
-                    .AddOval(skia_conversions::ToRect(bounds))
-                    .SetConvexity(Convexity::kConvex)
-                    .TakePath();
-    canvas_.DrawPath(path, paint_);
-  }
+  canvas_.DrawOval(skia_conversions::ToRect(bounds), paint_);
 }
 
 // |flutter::DlOpReceiver|
@@ -831,9 +822,8 @@ void DlDispatcher::SimplifyOrDrawPath(CanvasType& canvas,
   }
 
   SkRect oval;
-  if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas.DrawCircle(skia_conversions::ToPoint(oval.center()),
-                      oval.width() * 0.5, paint);
+  if (path.isOval(&oval)) {
+    canvas.DrawOval(skia_conversions::ToRect(oval), paint);
     return;
   }
 
@@ -989,7 +979,7 @@ void DlDispatcher::drawDisplayList(
   // Matrix and clip are left untouched, the current
   // transform is saved as the new base matrix, and paint
   // values are reset to defaults.
-  initial_matrix_ = canvas_.GetCurrentTransformation();
+  initial_matrix_ = canvas_.GetCurrentTransform();
   paint_ = Paint();
 
   // Handle passed opacity in the most brute-force way by using
@@ -1096,7 +1086,7 @@ void DlDispatcher::drawShadow(const SkPath& path,
   paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
       .style = FilterContents::BlurStyle::kNormal,
       .sigma = Radius{kLightRadius * occluder_z /
-                      canvas_.GetCurrentTransformation().GetScale().y},
+                      canvas_.GetCurrentTransform().GetScale().y},
   };
 
   canvas_.Save();

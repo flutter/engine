@@ -18,6 +18,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -84,6 +85,7 @@
 
 #ifdef IMPELLER_ENABLE_OPENGLES
 #include "impeller/entity/texture_fill_external.frag.h"
+#include "impeller/entity/tiled_texture_fill_external.frag.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
 
 #if IMPELLER_ENABLE_3D
@@ -249,6 +251,10 @@ using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
 #ifdef IMPELLER_ENABLE_OPENGLES
 using TextureExternalPipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
+
+using TiledTextureExternalPipeline =
+    RenderPipelineT<TextureFillVertexShader,
+                    TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
 /// Pipeline state configuration.
@@ -397,6 +403,13 @@ class ContentContext {
     FML_DCHECK(GetContext()->GetBackendType() ==
                Context::BackendType::kOpenGLES);
     return GetPipeline(texture_external_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTextureExternalPipeline(
+      ContentContextOptions opts) const {
+    FML_DCHECK(GetContext()->GetBackendType() ==
+               Context::BackendType::kOpenGLES);
+    return GetPipeline(tiled_texture_external_pipelines_, opts);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
@@ -701,13 +714,15 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<int32_t>& constants = {}) {
+                       const std::initializer_list<Scalar>& constants = {},
+                       UseSubpassInput subpass_input = UseSubpassInput::kNo) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
+      desc->SetUseSubpassInput(subpass_input);
       options.ApplyToPipelineDescriptor(*desc);
       SetDefault(options, std::make_unique<PipelineT>(context, desc));
     }
@@ -768,6 +783,8 @@ class ContentContext {
   mutable Variants<TexturePipeline> texture_pipelines_;
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
+  mutable Variants<TiledTextureExternalPipeline>
+      tiled_texture_external_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;

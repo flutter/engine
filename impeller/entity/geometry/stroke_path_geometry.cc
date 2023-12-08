@@ -8,12 +8,12 @@
 
 namespace impeller {
 
-StrokePathGeometry::StrokePathGeometry(const Path& path,
+StrokePathGeometry::StrokePathGeometry(Path path,
                                        Scalar stroke_width,
                                        Scalar miter_limit,
                                        Cap stroke_cap,
                                        Join stroke_join)
-    : path_(path),
+    : path_(std::move(path)),
       stroke_width_(stroke_width),
       miter_limit_(miter_limit),
       stroke_cap_(stroke_cap),
@@ -439,11 +439,11 @@ StrokePathGeometry::CreateSolidStrokeVertices(
 GeometryResult StrokePathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   if (stroke_width_ < 0.0) {
     return {};
   }
-  auto determinant = entity.GetTransformation().GetDeterminant();
+  auto determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return {};
   }
@@ -455,13 +455,13 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   auto vertex_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
-      entity.GetTransformation().GetMaxBasisLength());
+      entity.GetTransform().GetMaxBasisLength());
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = true,
   };
 }
@@ -471,11 +471,11 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
+    RenderPass& pass) const {
   if (stroke_width_ < 0.0) {
     return {};
   }
-  auto determinant = entity.GetTransformation().GetDeterminant();
+  auto determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return {};
   }
@@ -487,7 +487,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   auto stroke_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
-      entity.GetTransformation().GetMaxBasisLength());
+      entity.GetTransform().GetMaxBasisLength());
   auto vertex_builder = ComputeUVGeometryCPU(
       stroke_builder, {0, 0}, texture_coverage.size, effect_transform);
 
@@ -495,7 +495,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+                   entity.GetTransform(),
       .prevent_overdraw = true,
   };
 }

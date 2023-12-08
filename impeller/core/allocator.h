@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include <string>
-
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/texture.h"
@@ -17,7 +14,6 @@ namespace impeller {
 
 class Context;
 class DeviceBuffer;
-class Texture;
 
 //------------------------------------------------------------------------------
 /// @brief      An object that allocates device memory.

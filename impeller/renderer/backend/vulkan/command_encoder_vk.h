@@ -8,7 +8,6 @@
 #include <functional>
 #include <optional>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
@@ -85,6 +84,7 @@ class CommandEncoderVK {
   fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateDescriptorSets(
       uint32_t buffer_count,
       uint32_t sampler_count,
+      uint32_t subpass_count,
       const std::vector<vk::DescriptorSetLayout>& layouts);
 
  private:

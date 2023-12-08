@@ -9,6 +9,7 @@
 #include <ostream>
 #include <vector>
 
+#include "fml/logging.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
@@ -46,6 +47,11 @@ struct TRect {
   template <class U>
   constexpr static TRect MakeSize(const TSize<U>& size) {
     return TRect(0.0, 0.0, size.width, size.height);
+  }
+
+  template <typename U>
+  constexpr static std::optional<TRect> MakePointBounds(const U& value) {
+    return MakePointBounds(value.begin(), value.end());
   }
 
   template <typename PointIter>
@@ -126,6 +132,9 @@ struct TRect {
   /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
+  /// Returns true if width and height are equal and neither is NaN.
+  constexpr bool IsSquare() const { return size.IsSquare(); }
+
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
 
   /// @brief Returns the upper left corner of the rectangle as specified
@@ -180,6 +189,11 @@ struct TRect {
     return {GetRight(), GetBottom()};
   }
 
+  /// @brief  Get the center point as a |Point|.
+  constexpr Point GetCenter() const {
+    return Point(origin.x + size.width * 0.5f, origin.y + size.height * 0.5f);
+  }
+
   constexpr std::array<T, 4> GetLTRB() const {
     return {GetLeft(), GetTop(), GetRight(), GetBottom()};
   }
@@ -211,7 +225,11 @@ struct TRect {
   ///         rectangle.
   constexpr TRect TransformBounds(const Matrix& transform) const {
     auto points = GetTransformedPoints(transform);
-    return TRect::MakePointBounds(points.begin(), points.end()).value();
+    auto bounds = TRect::MakePointBounds(points.begin(), points.end());
+    if (bounds.has_value()) {
+      return bounds.value();
+    }
+    FML_UNREACHABLE();
   }
 
   /// @brief  Constructs a Matrix that will map all points in the coordinate
