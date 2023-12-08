@@ -24,7 +24,7 @@
 
 namespace impeller {
 
-// This function was calculated by observing Skia's behavior.  It's blur at 500
+// This function was calculated by observing Skia's behavior. Its blur at 500
 // seemed to be 0.15.  Since we clamp at 500 I solved the quadratic equation
 // that puts the minima there and a f(0)=1.
 Sigma ScaleSigma(Sigma sigma) {
