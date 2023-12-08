@@ -60,7 +60,9 @@ void RenderPass::SetLabel(std::string label) {
   OnSetLabel(std::move(label));
 }
 
-bool RenderPass::AddCommand(Command&& command) {
+bool RenderPass::AddCommand(Command&& command,
+                            std::initializer_list<BoundBuffer> buffers,
+                            std::initializer_list<BoundTexture> textures) {
   if (!command.IsValid()) {
     VALIDATION_LOG << "Attempted to add an invalid command to the render pass.";
     return false;
@@ -82,26 +84,52 @@ bool RenderPass::AddCommand(Command&& command) {
     return true;
   }
 
+  command.buffer_bindings.offset = bound_buffers_.size();
+  command.buffer_bindings.length = buffers.size();
+  command.texture_bindings.offset = bound_textures_.size();
+  command.texture_bindings.length = textures.size();
+
   commands_.emplace_back(std::move(command));
+  bound_buffers_.insert(bound_buffers_.end(), buffers.begin(), buffers.end());
+  bound_textures_.insert(bound_textures_.end(), textures.begin(),
+                         textures.end());
   return true;
 }
 
-// bool RenderPass::AddCommand(Command&& command,
-//                 std::vector<BoundBuffer> buffers,
-//                 std::vector<BoundTexture> textures) {
-//   // TODO
-//   // size_t buffer_start = bound_buffers_.size();
-//   // size_t texture_start = bound_textures_.size();
-//   commands_.emplace_back(std::move(command));
-//   // for (const auto& buffer : buffers) {
-//   //   bound_buffers_.emplace_back(std::move(buffer));
-//   // }
-//   // for (const auto& texture : textures) {
-//   //   bound_textures_.emplace_back(std::move(texture));
-//   // }
-//   return true;
-// }
+bool RenderPass::AddCommand(Command&& command,
+                            std::vector<BoundBuffer> buffers,
+                            std::vector<BoundTexture> textures) {
+  if (!command.IsValid()) {
+    VALIDATION_LOG << "Attempted to add an invalid command to the render pass.";
+    return false;
+  }
 
+  if (command.scissor.has_value()) {
+    auto target_rect = IRect::MakeSize(render_target_.GetRenderTargetSize());
+    if (!target_rect.Contains(command.scissor.value())) {
+      VALIDATION_LOG << "Cannot apply a scissor that lies outside the bounds "
+                        "of the render target.";
+      return false;
+    }
+  }
+
+  if (command.vertex_buffer.vertex_count == 0u ||
+      command.instance_count == 0u) {
+    // Essentially a no-op. Don't record the command but this is not necessary
+    // an error either.
+    return true;
+  }
+  command.buffer_bindings.offset = bound_buffers_.size();
+  command.buffer_bindings.length = buffers.size();
+  command.texture_bindings.offset = bound_textures_.size();
+  command.texture_bindings.length = textures.size();
+
+  commands_.emplace_back(std::move(command));
+  bound_buffers_.insert(bound_buffers_.end(), buffers.begin(), buffers.end());
+  bound_textures_.insert(bound_textures_.end(), textures.begin(),
+                         textures.end());
+  return true;
+}
 bool RenderPass::EncodeCommands() const {
   auto context = context_.lock();
   // The context could have been collected in the meantime.

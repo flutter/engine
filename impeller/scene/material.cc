@@ -107,15 +107,19 @@ MaterialType UnlitMaterial::GetMaterialType() const {
 }
 
 // |Material|
-void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
-                                  HostBuffer& buffer,
-                                  Command& command) const {
+void UnlitMaterial::BindToCommand(
+    const SceneContext& scene_context,
+    HostBuffer& buffer,
+    Command& command,
+    std::vector<BoundBuffer>& bound_buffers,
+    std::vector<BoundTexture>& bound_textures) const {
   // Uniform buffer.
   UnlitFragmentShader::FragInfo info;
   info.color = color_;
   info.vertex_color_weight = vertex_color_weight_;
-  // TODO
-  // UnlitFragmentShader::BindFragInfo(command, buffer.EmplaceUniform(info));
+
+  bound_buffers.push_back(
+      UnlitFragmentShader::BindFragInfo(buffer.EmplaceUniform(info)));
 
   // Textures.
   SamplerDescriptor sampler_descriptor;
@@ -123,13 +127,11 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
   sampler_descriptor.min_filter = MinMagFilter::kLinear;
   sampler_descriptor.mag_filter = MinMagFilter::kLinear;
   sampler_descriptor.mip_filter = MipFilter::kLinear;
-  // TODO
-  // UnlitFragmentShader::BindBaseColorTexture(
-  //     command,
-  //     color_texture_ ? color_texture_ :
-  //     scene_context.GetPlaceholderTexture(),
-  //     scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
-  //         sampler_descriptor));
+
+  bound_textures.push_back(UnlitFragmentShader::BindBaseColorTexture(
+      color_texture_ ? color_texture_ : scene_context.GetPlaceholderTexture(),
+      scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
+          sampler_descriptor)));
 }
 
 //------------------------------------------------------------------------------
@@ -223,9 +225,12 @@ MaterialType PhysicallyBasedMaterial::GetMaterialType() const {
 }
 
 // |Material|
-void PhysicallyBasedMaterial::BindToCommand(const SceneContext& scene_context,
-                                            HostBuffer& buffer,
-                                            Command& command) const {}
+void PhysicallyBasedMaterial::BindToCommand(
+    const SceneContext& scene_context,
+    HostBuffer& buffer,
+    Command& command,
+    std::vector<BoundBuffer>& bound_buffers,
+    std::vector<BoundTexture>& bound_textures) const {}
 
 }  // namespace scene
 }  // namespace impeller

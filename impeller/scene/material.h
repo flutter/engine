@@ -58,9 +58,12 @@ class Material {
 
   virtual MaterialType GetMaterialType() const = 0;
 
-  virtual void BindToCommand(const SceneContext& scene_context,
-                             HostBuffer& buffer,
-                             Command& command) const = 0;
+  virtual void BindToCommand(
+      const SceneContext& scene_context,
+      HostBuffer& buffer,
+      Command& command,
+      std::vector<BoundBuffer>& bound_buffers,
+      std::vector<BoundTexture>& bound_textures) const = 0;
 
  protected:
   Scalar vertex_color_weight_ = 1;
@@ -87,7 +90,9 @@ class UnlitMaterial final : public Material {
   // |Material|
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
-                     Command& command) const override;
+                     Command& command,
+                     std::vector<BoundBuffer>& bound_buffers,
+                     std::vector<BoundTexture>& bound_textures) const override;
 
  private:
   Color color_ = Color::White();
@@ -120,7 +125,9 @@ class PhysicallyBasedMaterial final : public Material {
   // |Material|
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
-                     Command& command) const override;
+                     Command& command,
+                     std::vector<BoundBuffer>& bound_buffers,
+                     std::vector<BoundTexture>& bound_textures) const override;
 
  private:
   Color albedo_ = Color::White();

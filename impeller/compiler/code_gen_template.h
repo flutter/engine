@@ -159,8 +159,7 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
 {% endfor %}) {
     return {{proto.return_type}}({% for arg in proto.args %}
   {% if loop.is_first %}
-{{to_shader_stage(shader_stage)}}, kResource{{ proto.name }}, kMetadata{{ proto.name }}, std::move({{ arg.argument_name }})
-  {% if not loop.is_last %}, {% endif %} {% else %}
+{{to_shader_stage(shader_stage)}}, kResource{{ proto.name }}, kMetadata{{ proto.name }}, std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %} {% else %}
 std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
   {% endif %}
   {% endfor %});

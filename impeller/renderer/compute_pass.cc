@@ -50,8 +50,15 @@ bool ComputePass::AddCommand(ComputeCommand command) {
 bool ComputePass::AddCommand(ComputeCommand command,
                              std::initializer_list<BoundBuffer> buffers,
                              std::initializer_list<BoundTexture> textures) {
+  command.buffer_bindings.offset = bound_buffers_.size();
+  command.buffer_bindings.length = buffers.size();
+  command.texture_bindings.offset = bound_textures_.size();
+  command.texture_bindings.length = textures.size();
+
   commands_.emplace_back(std::move(command));
-  // TODO
+  bound_buffers_.insert(bound_buffers_.end(), buffers.begin(), buffers.end());
+  bound_textures_.insert(bound_textures_.end(), textures.begin(),
+                         textures.end());
   return true;
 }
 

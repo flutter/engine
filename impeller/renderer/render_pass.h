@@ -8,6 +8,7 @@
 #include <string>
 
 #include "impeller/core/formats.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
@@ -53,58 +54,29 @@ class RenderPass {
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
-  ///             command buffer. No work is encoded into the command buffer at
-  ///             this time.
+  ///             command buffer, along with its binding information. No work is
+  ///             encoded into the command buffer at this time.
   ///
   /// @param[in]  command  The command
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
-  bool AddCommand(Command&& command);
+  bool AddCommand(Command&& command,
+                  std::initializer_list<BoundBuffer> buffers = {},
+                  std::initializer_list<BoundTexture> textures = {});
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
-  ///             command buffer. No work is encoded into the command buffer at
-  ///             this time.
+  ///             command buffer, along with its binding information. No work is
+  ///             encoded into the command buffer at this time.
   ///
   /// @param[in]  command  The command
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
-
-  bool AddCommand(Command&& command,
-                  std::initializer_list<BoundBuffer> buffers = {},
-                  std::initializer_list<BoundTexture> textures = {}) {
-    command.buffer_bindings.offset = bound_buffers_.size();
-    command.buffer_bindings.length = buffers.size();
-    command.texture_bindings.offset = bound_textures_.size();
-    command.texture_bindings.length = textures.size();
-
-    commands_.emplace_back(std::move(command));
-    bound_buffers_.insert(bound_buffers_.end(), buffers.begin(), buffers.end());
-    bound_textures_.insert(bound_textures_.end(), textures.begin(),
-                           textures.end());
-    return true;
-  }
-
   bool AddCommand(Command&& command,
                   std::vector<BoundBuffer> buffers,
-                  std::vector<BoundTexture> textures) {
-    command.buffer_bindings.offset = bound_buffers_.size();
-    command.buffer_bindings.length = buffers.size();
-    command.texture_bindings.offset = bound_textures_.size();
-    command.texture_bindings.length = textures.size();
-
-    commands_.emplace_back(std::move(command));
-    bound_buffers_.insert(bound_buffers_.end(), buffers.begin(), buffers.end());
-    bound_textures_.insert(bound_textures_.end(), textures.begin(),
-                           textures.end());
-    return true;
-  }
-
-  // bool AddCommand(Command&& command,
-  //                 std::vector<BoundBuffer> buffers = {},
-  //                 std::vector<BoundTexture> textures = {});
+                  std::vector<BoundTexture> textures);
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
@@ -120,6 +92,16 @@ class RenderPass {
   /// @details    Visible for testing.
   ///
   const std::vector<Command>& GetCommands() const { return commands_; }
+
+  //  Visible for testing.
+  const std::vector<BoundBuffer>& GetBoundBuffers() const {
+    return bound_buffers_;
+  }
+
+  //  Visible for testing.
+  const std::vector<BoundTexture>& GetBoundTextures() const {
+    return bound_textures_;
+  }
 
   //----------------------------------------------------------------------------
   /// @brief      The sample count of the attached render target.

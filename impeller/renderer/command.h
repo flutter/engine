@@ -27,6 +27,7 @@ namespace impeller {
 #define DEBUG_COMMAND_INFO(obj, arg)
 #endif  // IMPELLER_DEBUG
 
+/// An offset and length into a vector of binding data.
 struct BindingOffsets {
   size_t offset;
   size_t length;
@@ -52,13 +53,12 @@ struct Command {
   ///
   std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
   //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the vertex pipeline
-  /// stage.
+  /// The offsets and size of the buffer bindings for this command.
   ///
   BindingOffsets buffer_bindings;
+
   //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the fragment pipeline
-  /// stage.
+  /// The offsets and size of the texture bindings for this command.
   ///
   BindingOffsets texture_bindings;
 

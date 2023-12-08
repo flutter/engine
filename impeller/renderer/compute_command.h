@@ -31,15 +31,14 @@ struct ComputeCommand {
   /// The pipeline to use for this command.
   ///
   std::shared_ptr<Pipeline<ComputePipelineDescriptor>> pipeline;
+
   //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the compute pipeline
-  /// stage.
+  /// The offsets and size of the buffer bindings for this command.
   ///
   BindingOffsets buffer_bindings;
 
   //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the compute pipeline
-  /// stage.
+  /// The offsets and size of the texture bindings for this command.
   ///
   BindingOffsets texture_bindings;
 

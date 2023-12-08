@@ -42,7 +42,8 @@ static void EncodeCommand(const SceneContext& scene_context,
   scene_command.geometry->BindToCommand(
       scene_context, host_buffer, view_transform * scene_command.transform, cmd,
       bound_buffers, bound_textures);
-  scene_command.material->BindToCommand(scene_context, host_buffer, cmd);
+  scene_command.material->BindToCommand(scene_context, host_buffer, cmd,
+                                        bound_buffers, bound_textures);
 
   render_pass.AddCommand(std::move(cmd), std::move(bound_buffers),
                          std::move(bound_textures));
