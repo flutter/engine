@@ -82,6 +82,10 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
   FML_DCHECK(layers[0]->backing_store->open_gl.type ==
              kFlutterOpenGLTargetTypeFramebuffer);
 
+  if (!engine_->view()) {
+    return false;
+  }
+
   auto width = layers[0]->size.width;
   auto height = layers[0]->size.height;
 

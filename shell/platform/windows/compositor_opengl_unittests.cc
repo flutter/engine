@@ -5,9 +5,13 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/impeller/renderer/backend/gles/gles.h"
+#include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/compositor_opengl.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -60,45 +64,128 @@ class MockAngleSurfaceManager : public AngleSurfaceManager {
   FML_DISALLOW_COPY_AND_ASSIGN(MockAngleSurfaceManager);
 };
 
-class CompositorOpenGLTest : public WindowsTest {};
+class MockFlutterWindowsView : public FlutterWindowsView {
+ public:
+  MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window)
+      : FlutterWindowsView(std::move(window)) {}
+  virtual ~MockFlutterWindowsView() = default;
+
+  MOCK_METHOD(bool, SwapBuffers, (), (override));
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
+};
+
+class CompositorOpenGLTest : public WindowsTest {
+ public:
+  CompositorOpenGLTest() = default;
+  virtual ~CompositorOpenGLTest() = default;
+
+ protected:
+  FlutterWindowsEngine* engine() { return engine_.get(); }
+  MockFlutterWindowsView* view() { return view_.get(); }
+  MockAngleSurfaceManager* surface_manager() { return surface_manager_; }
+
+  void UseHeadlessEngine() {
+    auto surface_manager = std::make_unique<MockAngleSurfaceManager>();
+    surface_manager_ = surface_manager.get();
+
+    FlutterWindowsEngineBuilder builder{GetContext()};
+
+    engine_ = builder.Build();
+    EngineModifier modifier(engine_.get());
+    modifier.SetSurfaceManager(surface_manager.release());
+  }
+
+  void UseEngineWithView() {
+    UseHeadlessEngine();
+
+    auto window = std::make_unique<MockWindowBindingHandler>();
+    EXPECT_CALL(*window.get(), SetView).Times(1);
+    EXPECT_CALL(*window.get(), GetRenderTarget).WillRepeatedly(Return(nullptr));
+
+    view_ = std::make_unique<MockFlutterWindowsView>(std::move(window));
+
+    engine_->SetView(view_.get());
+  }
+
+ private:
+  std::unique_ptr<FlutterWindowsEngine> engine_;
+  std::unique_ptr<MockFlutterWindowsView> view_;
+  MockAngleSurfaceManager* surface_manager_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(CompositorOpenGLTest);
+};
 
 }  // namespace
 
 TEST_F(CompositorOpenGLTest, CreateBackingStore) {
-  auto surface_manager = std::make_unique<MockAngleSurfaceManager>();
+  UseHeadlessEngine();
 
-  EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(true));
-
-  auto engine = FlutterWindowsEngineBuilder{GetContext()}.Build();
-  EngineModifier modifier(engine.get());
-  modifier.SetSurfaceManager(surface_manager.release());
-
-  auto compositor = CompositorOpenGL{engine.get(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
 
+  EXPECT_CALL(*surface_manager(), MakeCurrent).WillOnce(Return(true));
   ASSERT_TRUE(compositor.CreateBackingStore(config, &backing_store));
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
 }
 
 TEST_F(CompositorOpenGLTest, InitializationFailure) {
-  auto surface_manager = std::make_unique<MockAngleSurfaceManager>();
+  UseHeadlessEngine();
 
-  EXPECT_CALL(*surface_manager.get(), MakeCurrent).WillOnce(Return(false));
-
-  auto engine = FlutterWindowsEngineBuilder{GetContext()}.Build();
-  EngineModifier modifier(engine.get());
-  modifier.SetSurfaceManager(surface_manager.release());
-
-  auto compositor = CompositorOpenGL{engine.get(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
 
-  bool result = compositor.CreateBackingStore(config, &backing_store);
+  EXPECT_CALL(*surface_manager(), MakeCurrent).WillOnce(Return(false));
+  EXPECT_FALSE(compositor.CreateBackingStore(config, &backing_store));
+}
 
-  EXPECT_FALSE(result);
+TEST_F(CompositorOpenGLTest, Present) {
+  UseEngineWithView();
+
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
+
+  FlutterBackingStoreConfig config = {};
+  FlutterBackingStore backing_store = {};
+
+  EXPECT_CALL(*surface_manager(), MakeCurrent).WillOnce(Return(true));
+  ASSERT_TRUE(compositor.CreateBackingStore(config, &backing_store));
+
+  FlutterLayer layer = {};
+  layer.type = kFlutterLayerContentTypeBackingStore;
+  layer.backing_store = &backing_store;
+  const FlutterLayer* layer_ptr = &layer;
+
+  EXPECT_CALL(*surface_manager(), MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*view(), SwapBuffers).WillOnce(Return(true));
+  EXPECT_TRUE(compositor.Present(&layer_ptr, 1));
+
+  ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
+}
+
+TEST_F(CompositorOpenGLTest, HeadlessPresentIgnored) {
+  UseHeadlessEngine();
+
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
+
+  FlutterBackingStoreConfig config = {};
+  FlutterBackingStore backing_store = {};
+
+  EXPECT_CALL(*surface_manager(), MakeCurrent).WillOnce(Return(true));
+  ASSERT_TRUE(compositor.CreateBackingStore(config, &backing_store));
+
+  FlutterLayer layer = {};
+  layer.type = kFlutterLayerContentTypeBackingStore;
+  layer.backing_store = &backing_store;
+  const FlutterLayer* layer_ptr = &layer;
+
+  EXPECT_FALSE(compositor.Present(&layer_ptr, 1));
+
+  ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
 }
 
 }  // namespace testing

@@ -40,6 +40,10 @@ bool CompositorSoftware::Present(const FlutterLayer** layers,
   FML_DCHECK(layers[0]->backing_store->type ==
              kFlutterBackingStoreTypeSoftware);
 
+  if (!engine_->view()) {
+    return false;
+  }
+
   const auto& backing_store = layers[0]->backing_store->software;
 
   return engine_->view()->PresentSoftwareBitmap(
