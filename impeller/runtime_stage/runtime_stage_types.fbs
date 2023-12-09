@@ -55,7 +55,6 @@ enum InputDataType:uint32 {
   kUnsignedInt,
   kSignedInt64,
   kUnsignedInt64,
-  kHalfFloat,
   kFloat,
   kDouble,
 }

@@ -177,14 +177,13 @@ static std::optional<fb::InputDataType> ToInputType(
       return fb::InputDataType::kSignedInt64;
     case spirv_cross::SPIRType::UInt64:
       return fb::InputDataType::kUnsignedInt64;
-    case spirv_cross::SPIRType::Half:
-      return fb::InputDataType::kHalfFloat;
     case spirv_cross::SPIRType::Float:
       return fb::InputDataType::kFloat;
     case spirv_cross::SPIRType::Double:
       return fb::InputDataType::kDouble;
     case spirv_cross::SPIRType::Unknown:
     case spirv_cross::SPIRType::Void:
+    case spirv_cross::SPIRType::Half:
     case spirv_cross::SPIRType::AtomicCounter:
     case spirv_cross::SPIRType::Struct:
     case spirv_cross::SPIRType::Image:

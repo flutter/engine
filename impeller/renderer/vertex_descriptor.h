@@ -38,6 +38,9 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
                           layout.size());
   }
 
+  void SetStageInputs(const std::vector<ShaderStageIOSlot>& inputs,
+                      const std::vector<ShaderStageBufferLayout>& layout);
+
   template <size_t Size>
   void RegisterDescriptorSetLayouts(
       const std::array<DescriptorSetLayout, Size>& inputs) {
