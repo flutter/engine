@@ -9,14 +9,12 @@
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
 namespace testing {
 
 namespace {
-using ::testing::Return;
 
 class CompositorSoftwareTest : public WindowsTest {};
 
