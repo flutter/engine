@@ -20,6 +20,7 @@ export interface ApplicationBuild {
 export interface BuildConfig {
     serviceWorkerVersion: string;
     builds: ApplicationBuild[];
+    url: string?;
 }
 
 export interface BrowserEnvironment {
