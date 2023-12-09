@@ -28,10 +28,6 @@ const unsigned char* MockGetString(GLenum name) {
   }
 }
 
-const unsigned char* MockGetStringi(GLenum name, GLuint index) {
-  return (unsigned char*)"";
-}
-
 void MockGetIntegerv(GLenum name, int* value) {
   *value = 0;
 }
@@ -45,8 +41,6 @@ void DoNothing() {}
 const impeller::ProcTableGLES::Resolver kMockResolver = [](const char* name) {
   if (strcmp(name, "glGetString") == 0) {
     return reinterpret_cast<void*>(&MockGetString);
-  } else if (strcmp(name, "glGetStringi") == 0) {
-    return reinterpret_cast<void*>(&MockGetStringi);
   } else if (strcmp(name, "glGetIntegerv") == 0) {
     return reinterpret_cast<void*>(&MockGetIntegerv);
   } else if (strcmp(name, "glGetError") == 0) {
