@@ -36,6 +36,7 @@ bool CompositorOpenGL::CreateBackingStore(
   gl_->GenFramebuffers(1, &store->framebuffer_id);
 
   gl_->BindFramebuffer(GL_FRAMEBUFFER, store->framebuffer_id);
+
   gl_->BindTexture(GL_TEXTURE_2D, store->texture_id);
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
