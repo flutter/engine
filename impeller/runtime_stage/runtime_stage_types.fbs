@@ -17,6 +17,7 @@ enum TargetPlatform:byte {
   kVulkan,
 }
 
+// The subset of impeller::ShaderType that may be used for uniform bindings.
 enum UniformDataType:uint32 {
   kBoolean,
   kSignedByte,
@@ -43,10 +44,41 @@ table UniformDescription {
   array_elements: uint64;
 }
 
+// The subset of impeller::ShaderType that may be used for vertex attributes.
+enum InputDataType:uint32 {
+  kBoolean,
+  kSignedByte,
+  kUnsignedByte,
+  kSignedShort,
+  kUnsignedShort,
+  kSignedInt,
+  kUnsignedInt,
+  kSignedInt64,
+  kUnsignedInt64,
+  kHalfFloat,
+  kFloat,
+  kDouble,
+}
+
+// This contains the same attribute reflection data as
+// impeller::ShaderStageIOSlot.
+table StageInput {
+  name: string;
+  location: uint64;
+  set: uint64;
+  binding: uint64;
+  type: InputDataType;
+  bit_width: uint64;
+  vec_size: uint64;
+  columns: uint64;
+  offset: uint64;
+}
+
 table RuntimeStage {
   stage: Stage;
   target_platform: TargetPlatform;
   entrypoint: string;
+  inputs: [StageInput];
   uniforms: [UniformDescription];
   shader: [ubyte];
   sksl: [ubyte];

@@ -11,12 +11,10 @@
 #include <set>
 #include <sstream>
 
-#include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/compiler/code_gen_template.h"
-#include "impeller/compiler/types.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
 #include "impeller/geometry/half.h"
@@ -353,6 +351,35 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
     uniform_description.array_elements = GetArrayElements(spir_type);
     data->AddUniformDescription(std::move(uniform_description));
   }
+
+  // We only need to worry about reflecting vertex attributes.
+  if (entrypoints.front().execution_model == spv::ExecutionModelVertex) {
+    const auto inputs = compiler_->get_shader_resources().stage_inputs;
+    auto input_offsets = ComputeOffsets(inputs);
+    for (const auto& input : inputs) {
+      auto location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      std::optional<size_t> offset = input_offsets[location];
+
+      const auto type = compiler_->get_type(input.type_id);
+
+      InputDescription input_description;
+      input_description.name = input.name;
+      input_description.location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      input_description.set = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationDescriptorSet);
+      input_description.binding = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationBinding);
+      input_description.type = type.basetype;
+      input_description.bit_width = type.width;
+      input_description.vec_size = type.vecsize;
+      input_description.columns = type.columns;
+      input_description.offset = offset.value_or(0u);
+      data->AddInputDescription(std::move(input_description));
+    }
+  }
+
   return data;
 }
 
