@@ -6,8 +6,12 @@
 
 #include <utility>
 
+#include "flutter/assets/asset_manager.h"
+#include "flutter/impeller/runtime_stage/runtime_stage_types_flatbuffers.h"
 #include "flutter/lib/gpu/fixtures.h"
 #include "flutter/lib/gpu/shader.h"
+#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "fml/mapping.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/runtime_types.h"
@@ -15,55 +19,9 @@
 #include "impeller/renderer/vertex_descriptor.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/shader_bundle/shader_bundle_flatbuffers.h"
-#include "runtime_stage_types_flatbuffers.h"
 
 namespace flutter {
 namespace gpu {
-
-// ===[ BEGIN MEMES ]===========================================================
-static fml::RefPtr<Shader> OpenRuntimeStageAsShader(
-    std::shared_ptr<fml::Mapping> payload,
-    const std::shared_ptr<impeller::VertexDescriptor>& vertex_desc) {
-  impeller::RuntimeStage stage(std::move(payload));
-  return Shader::Make(stage.GetEntrypoint(),
-                      ToShaderStage(stage.GetShaderStage()),
-                      stage.GetCodeMapping(), stage.GetUniforms(), vertex_desc);
-}
-
-static fml::RefPtr<ShaderLibrary> InstantiateTestShaderLibrary() {
-  ShaderLibrary::ShaderMap shaders;
-  {
-    auto vertex_desc = std::make_shared<impeller::VertexDescriptor>();
-    vertex_desc->SetStageInputs(
-        FlutterGPUUnlitVertexShader::kAllShaderStageInputs,
-        FlutterGPUUnlitVertexShader::kInterleavedBufferLayout);
-    shaders["UnlitVertex"] = OpenRuntimeStageAsShader(
-        std::make_shared<fml::NonOwnedMapping>(kFlutterGPUUnlitVertIPLR,
-                                               kFlutterGPUUnlitVertIPLRLength),
-        vertex_desc);
-    shaders["UnlitFragment"] = OpenRuntimeStageAsShader(
-        std::make_shared<fml::NonOwnedMapping>(kFlutterGPUUnlitFragIPLR,
-                                               kFlutterGPUUnlitFragIPLRLength),
-        nullptr);
-  }
-  {
-    auto vertex_desc = std::make_shared<impeller::VertexDescriptor>();
-    vertex_desc->SetStageInputs(
-        FlutterGPUTextureVertexShader::kAllShaderStageInputs,
-        FlutterGPUTextureVertexShader::kInterleavedBufferLayout);
-    shaders["TextureVertex"] = OpenRuntimeStageAsShader(
-        std::make_shared<fml::NonOwnedMapping>(
-            kFlutterGPUTextureVertIPLR, kFlutterGPUTextureVertIPLRLength),
-        vertex_desc);
-    shaders["TextureFragment"] = OpenRuntimeStageAsShader(
-        std::make_shared<fml::NonOwnedMapping>(
-            kFlutterGPUTextureFragIPLR, kFlutterGPUTextureFragIPLRLength),
-        nullptr);
-  }
-  auto library = ShaderLibrary::MakeFromShaders(std::move(shaders));
-  return library;
-}
-// ===[ END MEMES ]=============================================================
 
 IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, ShaderLibrary);
 
@@ -72,20 +30,21 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::override_shader_library_;
 fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromAsset(
     const std::string& name,
     std::string& out_error) {
-  // ===========================================================================
-  // This is a temporary hack to get the shader library populated in the
-  // framework before the shader bundle format is landed!
-  if (!override_shader_library_) {
-    return InstantiateTestShaderLibrary();
-  }
-  // ===========================================================================
-
   if (override_shader_library_) {
     return override_shader_library_;
   }
-  // TODO(bdero): Load the ShaderLibrary asset.
-  out_error = "Shader bundle asset unimplemented";
-  return nullptr;
+
+  auto dart_state = UIDartState::Current();
+  std::shared_ptr<AssetManager> asset_manager =
+      dart_state->platform_configuration()->client()->GetAssetManager();
+
+  std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(name);
+  if (data == nullptr) {
+    out_error = std::string("Asset '") + name + std::string("' not found.");
+    return nullptr;
+  }
+
+  return MakeFromFlatbuffer(std::move(data));
 }
 
 fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromShaders(ShaderMap shaders) {
