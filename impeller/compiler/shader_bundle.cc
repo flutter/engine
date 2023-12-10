@@ -93,9 +93,11 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
   }
 
   /// Override options.
-  options.entry_point_name = shader_config.entry_point;
   options.type = shader_config.type;
   options.source_language = shader_config.language;
+  options.entry_point_name = EntryPointFunctionNameFromSourceName(
+      shader_config.source_file_name, options.type, options.source_language,
+      shader_config.entry_point);
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = options.target_platform;

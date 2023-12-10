@@ -172,7 +172,8 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
       vertex_descriptor = std::make_shared<impeller::VertexDescriptor>();
       auto inputs_fb = runtime_stage->inputs();
 
-      std::vector<impeller::ShaderStageIOSlot> inputs(inputs_fb->size());
+      std::vector<impeller::ShaderStageIOSlot> inputs;
+      inputs.reserve(inputs_fb->size());
       size_t default_stride = 0;
       for (const auto& input : *inputs_fb) {
         impeller::ShaderStageIOSlot slot;
