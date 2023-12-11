@@ -420,7 +420,7 @@ class PointerData {
              'panDeltaY: $panDeltaY, '
              'scale: $scale, '
              'rotation: $rotation, '
-             'viewId: $viewId '
+             'viewId: $viewId'
            ')';
   }
 }

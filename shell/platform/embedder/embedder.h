@@ -268,11 +268,11 @@ typedef struct _FlutterEngine* FLUTTER_API_SYMBOL(FlutterEngine);
 
 /// Identifier for views.
 ///
-/// The responsibility for generating view IDs lies with the embedding. The
-/// engine does not assume any specifics about the generation algorithm,
-/// including whether it utilizes the entire range of int64_t or permits the
-/// use of zero or negative IDs. The only requirement is that at any given
-/// moment, no two views share the same ID.
+/// How view IDs are generated is decided by the embedding. The engine does not
+/// assume any specifics about the generation algorithm, including whether it
+/// utilizes the entire range of int64_t or permits the use of zero or negative
+/// IDs. The only requirement is that at any given moment, no two views share
+/// the same ID.
 typedef int64_t FlutterViewId;
 
 typedef struct {

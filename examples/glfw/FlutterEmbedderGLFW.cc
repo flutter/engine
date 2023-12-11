@@ -13,7 +13,7 @@
 static double g_pixelRatio = 1.0;
 static const size_t kInitialWindowWidth = 800;
 static const size_t kInitialWindowHeight = 600;
-static constexpr int64_t kImplicitViewId = 0;
+static constexpr FlutterViewId kImplicitViewId = 0;
 
 static_assert(FLUTTER_ENGINE_VERSION == 1,
               "This Flutter Embedder was authored against the stable Flutter "

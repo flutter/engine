@@ -26,7 +26,7 @@ static const size_t kInitialWindowHeight = 600;
 // Maximum damage history - for triple buffering we need to store damage for
 // last two frames; Some Android devices (Pixel 4) use quad buffering.
 static const int kMaxHistorySize = 10;
-static constexpr int64_t kImplicitViewId = 0;
+static constexpr FlutterViewId kImplicitViewId = 0;
 
 // Keeps track of the most recent frame damages so that existing damage can
 // be easily computed.
