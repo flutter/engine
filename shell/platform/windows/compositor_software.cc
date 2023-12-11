@@ -14,7 +14,8 @@ CompositorSoftware::CompositorSoftware(FlutterWindowsEngine* engine)
 bool CompositorSoftware::CreateBackingStore(
     const FlutterBackingStoreConfig& config,
     FlutterBackingStore* result) {
-  void* allocation = std::malloc(config.size.width * config.size.height * 4);
+  size_t size = config.size.width * config.size.height * 4;
+  void* allocation = std::calloc(size, sizeof(uint8_t));
   if (!allocation) {
     return false;
   }
