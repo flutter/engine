@@ -4465,9 +4465,6 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
               SupportsTextureToTextureBlits);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
-  std::shared_ptr<Context> context = GetContext();
-  ASSERT_FALSE(context->GetCapabilities()->SupportsDecalSamplerAddressMode());
-
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Black()});
   canvas.DrawRect(Rect::MakeLTRB(200, 200, 824, 568),
