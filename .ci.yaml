@@ -64,6 +64,8 @@ targets:
       - lib/ui/**
       - shell/platform/android/**
 
+# Task to run Linux linux_android_emulator_tests on AVDs running Android 33
+# instead of 34 for investigating https://github.com/flutter/flutter/issues/137947.
   - name: Linux linux_android_emulator_tests_api_33
     bringup: true
     enabled_branches:
