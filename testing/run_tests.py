@@ -434,6 +434,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     unittests += [
         # The accessibility library only supports Mac and Windows.
         make_test('accessibility_unittests'),
+        make_test('availability_version_check_unittests'),
         make_test('framework_common_unittests'),
         make_test('spring_animation_unittests'),
     ]
