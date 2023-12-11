@@ -8,6 +8,9 @@
 namespace impeller {
 namespace compiler {
 
+std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
+    const std::string& json_config);
+
 bool GenerateShaderBundle(Switches& switches, SourceOptions& options);
 
 }  // namespace compiler

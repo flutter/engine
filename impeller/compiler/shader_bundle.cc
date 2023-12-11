@@ -15,8 +15,8 @@
 namespace impeller {
 namespace compiler {
 
-static std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
-    std::string& json_config) {
+std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
+    const std::string& json_config) {
   auto json = nlohmann::json::parse(json_config);
   if (!json.is_object()) {
     std::cerr << "The shader bundle must be a JSON object." << std::endl;

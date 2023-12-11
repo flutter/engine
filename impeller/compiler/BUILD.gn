@@ -105,6 +105,7 @@ impeller_component("compiler_unittests") {
     "compiler_test.cc",
     "compiler_test.h",
     "compiler_unittests.cc",
+    "shader_bundle_unittests.cc",
     "switches_unittests.cc",
   ]
 
