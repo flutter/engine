@@ -36,8 +36,6 @@ class FlutterViewEmbedder {
   /// global resources such svg filters and clip paths when using webkit.
   DomElement? _resourcesHost;
 
-  DomElement get _semanticsHostElement => window.dom.semanticsHost;
-
   DomElement get _flutterViewElement => window.dom.rootElement;
   DomShadowRoot get _glassPaneShadow => window.dom.renderingHost;
 
