@@ -260,7 +260,7 @@ public class AndroidTouchProcessor {
     }
     // TODO(dkwingsmt): Use the correct source view ID once Android supports
     // multiple views.
-    // https://github.com/flutter/flutter/issues/138167
+    // https://github.com/flutter/flutter/issues/134405
     final int viewId = IMPLICIT_VIEW_ID;
     final int pointerId = event.getPointerId(pointerIndex);
 

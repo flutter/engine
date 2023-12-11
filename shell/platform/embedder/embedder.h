@@ -266,6 +266,15 @@ typedef enum {
 
 typedef struct _FlutterEngine* FLUTTER_API_SYMBOL(FlutterEngine);
 
+/// Identifier for views.
+///
+/// The responsibility for generating view IDs lies with the embedding. The
+/// engine does not assume any specifics about the generation algorithm,
+/// including whether it utilizes the entire range of int64_t or permits the
+/// use of zero or negative IDs. The only requirement is that at any given
+/// moment, no two views share the same ID.
+typedef int64_t FlutterViewId;
+
 typedef struct {
   /// horizontal scale factor
   double scaleX;
@@ -962,7 +971,7 @@ typedef struct {
   /// The rotation of the pan/zoom in radians, where 0.0 is the initial angle.
   double rotation;
   /// The identifier of the view that received the pointer event.
-  int64_t view_id;
+  FlutterViewId view_id;
 } FlutterPointerEvent;
 
 typedef enum {
