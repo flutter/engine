@@ -445,8 +445,7 @@ void testMain() {
       for (int i = 0; i < 16; i++) {
         await disposePlatformView(i);
       }
-      // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
-    }, skip: isSafari);
+    });
 
     test('correctly reuses overlays', () async {
       final CkPicture testPicture =
@@ -582,8 +581,7 @@ void testMain() {
         await disposePlatformView(i);
       }
 
-      // TODO(yjbanov): skipped due to https://github.com/flutter/flutter/issues/73867
-    }, skip: isSafari);
+    });
 
     test('embeds and disposes of a platform view', () async {
       ui_web.platformViewRegistry.registerViewFactory(
