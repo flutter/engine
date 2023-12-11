@@ -22,6 +22,7 @@ dependencies:
   engine_repo_tools: any
   meta: any
   path: any
+  source_span: any
 
 dev_dependencies:
   async_helper: any
@@ -35,6 +36,8 @@ dependency_overrides:
     path: ../../../third_party/dart/third_party/pkg/args
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
+  collection:
+    path: ../../../third_party/dart/third_party/pkg/collection
   engine_repo_tools:
     path: ../pkg/engine_repo_tools
   expect:
@@ -57,3 +60,7 @@ dependency_overrides:
     path: ../../third_party/pkg/process_runner
   smith:
     path: ../../../third_party/dart/pkg/smith
+  source_span:
+    path: ../../../third_party/dart/third_party/pkg/source_span
+  term_glyph:
+    path: ../../../third_party/dart/third_party/pkg/term_glyph
