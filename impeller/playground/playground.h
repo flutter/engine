@@ -10,6 +10,7 @@
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/status.h"
 #include "flutter/fml/time/time_delta.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
@@ -87,6 +88,9 @@ class Playground {
       std::string asset_name) const = 0;
 
   virtual std::string GetWindowTitle() const = 0;
+
+  fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities);
 
  protected:
   const PlaygroundSwitches switches_;
