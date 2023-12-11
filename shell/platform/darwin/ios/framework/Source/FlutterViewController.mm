@@ -219,12 +219,6 @@ typedef struct MouseState {
   return self;
 }
 
-- (int64_t)viewId {
-  // TODO(dkwingsmt): Fill the view ID property with the correct value once the
-  // iOS shell supports multiple views.
-  return flutter::kFlutterImplicitViewId;
-}
-
 - (void)awakeFromNib {
   [super awakeFromNib];
   if (!_engine) {
@@ -653,6 +647,12 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 #pragma mark - Properties
+
+- (int64_t)viewId {
+  // TODO(dkwingsmt): Fill the view ID property with the correct value once the
+  // iOS shell supports multiple views.
+  return flutter::kFlutterImplicitViewId;
+}
 
 - (UIView*)splashScreenView {
   if (!_splashScreenView) {
