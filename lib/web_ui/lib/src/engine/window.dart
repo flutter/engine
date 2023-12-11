@@ -57,10 +57,10 @@ base class EngineFlutterView implements ui.FlutterView {
     DomElement? hostElement,
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
         dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
-    pointerBinding = PointerBinding(this);
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
     embeddingStrategy.attachViewRoot(dom.rootElement);
+    pointerBinding = PointerBinding(this);
     registerHotRestartListener(dispose);
   }
 
