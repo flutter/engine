@@ -145,7 +145,7 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
       GrBackendRenderTargets::MakeGL(size.width(),     // width
                                      size.height(),    // height
                                      0,                // sample count
-                                     0,                // stencil bits
+                                     8,                // stencil bits
                                      framebuffer_info  // framebuffer info
       );
 

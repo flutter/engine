@@ -787,7 +787,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       GrBackendRenderTargets::MakeGL(config.size.width,   // width
                                      config.size.height,  // height
                                      1,                   // sample count
-                                     0,                   // stencil bits
+                                     8,                   // stencil bits
                                      framebuffer_info     // framebuffer info
       );
 
