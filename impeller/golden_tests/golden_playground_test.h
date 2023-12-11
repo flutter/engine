@@ -58,6 +58,9 @@ class GoldenPlaygroundTest
 
   ISize GetWindowSize() const;
 
+  fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities);
+
  protected:
   void SetWindowSize(ISize size);
 
