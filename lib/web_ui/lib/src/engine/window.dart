@@ -60,7 +60,7 @@ base class EngineFlutterView implements ui.FlutterView {
     pointerBinding = PointerBinding(this);
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
-    embeddingStrategy.attachGlassPane(dom.rootElement);
+    embeddingStrategy.attachViewRoot(dom.rootElement);
     registerHotRestartListener(dispose);
   }
 

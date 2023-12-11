@@ -499,17 +499,8 @@ abstract class _BaseAdapter {
   DomWheelEvent? _lastWheelEvent;
   bool _lastWheelEventWasTrackpad = false;
 
-  DomElement get _viewTarget => _view.dom.rootElement;
-  DomEventTarget get _globalTarget {
-    // When the Flutter app owns the full page, we want to listen on window for
-    // some events. Otherwise, we just want to listen on the root element of the
-    // view.
-    // TODO(mdebbar): Is there a better way of doing this?
-    if (_view == EnginePlatformDispatcher.instance.implicitView) {
-      return domWindow;
-    }
-    return _viewTarget;
-  }
+  DomEventTarget get _viewTarget => _view.dom.rootElement;
+  DomEventTarget get _globalTarget => _view.embeddingStrategy.globalEventTarget;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
