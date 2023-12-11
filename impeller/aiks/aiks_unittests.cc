@@ -4555,5 +4555,28 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, GaussianBlurRotatedAndClipped) {
+  // Smoketest to catch issues with the coverage hint.
+  Paint paint = {.image_filter =
+                     ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kDecal)};
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  canvas.ClipRect(Rect::MakeLTRB(100, 200, 450, 350));
+
+  canvas.Scale(Vector2(0.5, 0.5));
+  canvas.Translate(Vector2(300, 100));
+  canvas.Rotate(Degrees(25));
+
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  auto bounds =
+      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
+  canvas.DrawImageRect(std::make_shared<Image>(boston), bounds, bounds, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
