@@ -19,6 +19,7 @@
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
+#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
@@ -227,9 +228,10 @@ void EntityPass::AddSubpassInline(std::unique_ptr<EntityPass> pass) {
   }
   FML_DCHECK(pass->superpass_ == nullptr);
 
-  elements_.insert(elements_.end(),
-                   std::make_move_iterator(pass->elements_.begin()),
-                   std::make_move_iterator(pass->elements_.end()));
+  std::vector<Element>& elements = pass->elements_;
+  for (auto i = 0u; i < elements.size(); i++) {
+    elements_.emplace_back(std::move(elements[i]));
+  }
 
   backdrop_filter_reads_from_pass_texture_ +=
       pass->backdrop_filter_reads_from_pass_texture_;
@@ -474,13 +476,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     uint32_t pass_depth,
     ClipCoverageStack& clip_coverage_stack,
     size_t clip_depth_floor) const {
-  Entity element_entity;
-
   //--------------------------------------------------------------------------
   /// Setup entity element.
   ///
   if (const auto& entity = std::get_if<Entity>(&element)) {
-    element_entity = *entity;
+    Entity element_entity = entity->Clone();
     element_entity.SetCapture(capture.CreateChild("Entity"));
 
     if (!global_pass_position.IsZero()) {
@@ -491,7 +491,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
           Matrix::MakeTranslation(Vector3(-global_pass_position)) *
           element_entity.GetTransform());
     }
-    return EntityPass::EntityResult::Success(element_entity);
+    return EntityPass::EntityResult::Success(std::move(element_entity));
   }
 
   //--------------------------------------------------------------------------
@@ -661,6 +661,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // right thing.
       return EntityPass::EntityResult::Failure();
     }
+    Entity element_entity;
     Capture subpass_texture_capture =
         capture.CreateChild("Entity (Subpass texture)");
     element_entity.SetCapture(subpass_texture_capture);
@@ -671,7 +672,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
                                                      global_pass_position))));
 
-    return EntityPass::EntityResult::Success(element_entity);
+    return EntityPass::EntityResult::Success(std::move(element_entity));
   }
   FML_UNREACHABLE();
 }
@@ -877,6 +878,7 @@ bool EntityPass::OnRender(
                                     !backdrop_filter_proc_;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
+    bool was_collapsing_clear_colors = is_collapsing_clear_colors;
     if (is_collapsing_clear_colors) {
       auto [entity_color, _] =
           ElementAsBackgroundColor(element, clear_color_size);
@@ -950,9 +952,20 @@ bool EntityPass::OnRender(
         FilterInput::Vector inputs = {
             FilterInput::Make(texture, result.entity.GetTransform().Invert()),
             FilterInput::Make(result.entity.GetContents())};
+        std::optional<Color> foreground_color;
+        std::optional<Rect> coverage;
+        if (was_collapsing_clear_colors) {
+          // If all previous elements were skipped due to clear color
+          // optimization, then provide the clear color as the foreground of the
+          // advanced blend.
+          foreground_color = GetClearColor(clear_color_size);
+          coverage = Rect::MakeSize(clear_color_size);
+        } else {
+          coverage = result.entity.GetCoverage();
+        }
         auto contents = ColorFilterContents::MakeBlend(
-            result.entity.GetBlendMode(), inputs);
-        contents->SetCoverageHint(result.entity.GetCoverage());
+            result.entity.GetBlendMode(), inputs, foreground_color);
+        contents->SetCoverageHint(coverage);
         result.entity.SetContents(std::move(contents));
         result.entity.SetBlendMode(BlendMode::kSource);
       }
@@ -1084,7 +1097,7 @@ std::unique_ptr<EntityPass> EntityPass::Clone() const {
 
   for (const auto& element : elements_) {
     if (auto entity = std::get_if<Entity>(&element)) {
-      new_elements.push_back(*entity);
+      new_elements.push_back(entity->Clone());
       continue;
     }
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
@@ -1164,7 +1177,7 @@ void EntityPassClipRecorder::RecordEntity(const Entity& entity,
     case Contents::ClipCoverage::Type::kNoChange:
       return;
     case Contents::ClipCoverage::Type::kAppend:
-      rendered_clip_entities_.push_back(entity);
+      rendered_clip_entities_.push_back(entity.Clone());
       break;
     case Contents::ClipCoverage::Type::kRestore:
       rendered_clip_entities_.pop_back();

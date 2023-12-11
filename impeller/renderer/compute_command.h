@@ -4,26 +4,18 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
-#include <optional>
 #include <string>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/resource_binder.h"
 #include "impeller/core/sampler.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/core/texture.h"
-#include "impeller/core/vertex_buffer.h"
-#include "impeller/geometry/rect.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -62,14 +54,14 @@ struct ComputeCommand : public ResourceBinder {
   bool BindResource(ShaderStage stage,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
-                    const BufferView& view) override;
+                    BufferView view) override;
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    const std::shared_ptr<const Texture>& texture,
-                    const std::shared_ptr<const Sampler>& sampler) override;
+                    std::shared_ptr<const Texture> texture,
+                    std::shared_ptr<const Sampler> sampler) override;
 
   constexpr explicit operator bool() const {
     return pipeline && pipeline->IsValid();
