@@ -14,19 +14,3 @@ flatbuffers("shader_bundle_flatbuffers") {
     "//flutter/third_party/flatbuffers",
   ]
 }
-
-impeller_component("shader_bundle") {
-  sources = [
-    "shader.cc",
-    "shader.h",
-    "shader_bundle.cc",
-    "shader_bundle.h",
-  ]
-  public_deps = [
-    ":shader_bundle_flatbuffers",
-    "../base",
-    "../core",
-    "//flutter/fml",
-    "//flutter/impeller/runtime_stage:runtime_stage",
-  ]
-}
