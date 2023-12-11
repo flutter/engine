@@ -16,44 +16,46 @@ namespace impeller {
 namespace compiler {
 
 std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
-    const std::string& json_config) {
+    const std::string& json_config,
+    std::ostream& error_stream) {
   auto json = nlohmann::json::parse(json_config);
   if (!json.is_object()) {
-    std::cerr << "The shader bundle must be a JSON object." << std::endl;
+    error_stream << "The shader bundle must be a JSON object." << std::endl;
     return std::nullopt;
   }
 
   ShaderBundleConfig bundle;
   for (auto& [shader_name, shader_value] : json.items()) {
     if (bundle.find(shader_name) != bundle.end()) {
-      std::cerr << "Duplicate shader \"" << shader_name << "\"." << std::endl;
+      error_stream << "Duplicate shader \"" << shader_name << "\"."
+                   << std::endl;
       return std::nullopt;
     }
     if (!shader_value.is_object()) {
-      std::cerr << "Invalid shader entry \"" << shader_name
-                << "\": Entry is not a JSON object." << std::endl;
+      error_stream << "Invalid shader entry \"" << shader_name
+                   << "\": Entry is not a JSON object." << std::endl;
       return std::nullopt;
     }
 
     ShaderConfig shader;
 
     if (!shader_value.contains("file")) {
-      std::cerr << "Invalid shader entry \"" << shader_name
-                << "\": Missing required \"file\" field. \"" << std::endl;
+      error_stream << "Invalid shader entry \"" << shader_name
+                   << "\": Missing required \"file\" field. \"" << std::endl;
       return std::nullopt;
     }
     shader.source_file_name = shader_value["file"];
 
     if (!shader_value.contains("type")) {
-      std::cerr << "Invalid shader entry \"" << shader_name
-                << "\": Missing required \"type\" field. \"" << std::endl;
+      error_stream << "Invalid shader entry \"" << shader_name
+                   << "\": Missing required \"type\" field. \"" << std::endl;
       return std::nullopt;
     }
     shader.type = SourceTypeFromString(shader_value["type"]);
     if (shader.type == SourceType::kUnknown) {
-      std::cerr << "Invalid shader entry \"" << shader_name
-                << "\": Shader type \"" << shader_value["type"]
-                << "\" is unknown. \"" << std::endl;
+      error_stream << "Invalid shader entry \"" << shader_name
+                   << "\": Shader type \"" << shader_value["type"]
+                   << "\" is unknown. \"" << std::endl;
       return std::nullopt;
     }
 
@@ -61,9 +63,9 @@ std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
                           ? ToSourceLanguage(shader_value["language"])
                           : SourceLanguage::kGLSL;
     if (shader.language == SourceLanguage::kUnknown) {
-      std::cerr << "Invalid shader entry \"" << shader_name
-                << "\": Unknown language type \"" << shader_value["language"]
-                << "\"." << std::endl;
+      error_stream << "Invalid shader entry \"" << shader_name
+                   << "\": Unknown language type \"" << shader_value["language"]
+                   << "\"." << std::endl;
       return std::nullopt;
     }
 
@@ -146,7 +148,7 @@ bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
   ///
 
   std::optional<ShaderBundleConfig> bundle_config =
-      ParseShaderBundleConfig(switches.shader_bundle);
+      ParseShaderBundleConfig(switches.shader_bundle, std::cerr);
   if (!bundle_config) {
     return false;
   }
