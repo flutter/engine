@@ -64,7 +64,7 @@ void testMain() {
   tearDown(() {
     keyboardConverter.dispose();
     view.dispose();
-    PointerBinding.resetGlobalState();
+    PointerBinding.debugResetGlobalState();
   });
 
   test('ios workaround', () {

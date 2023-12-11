@@ -117,7 +117,8 @@ class PointerBinding {
 
   /// Resets global pointer state that's not tied to any single [PointerBinding]
   /// instance.
-  static void resetGlobalState() {
+  @visibleForTesting
+  static void debugResetGlobalState() {
     clickDebouncer.reset();
     PointerDataConverter.globalPointerState.reset();
   }
