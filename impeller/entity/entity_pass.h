@@ -72,6 +72,7 @@ class EntityPass {
 
   std::unique_ptr<EntityPass> Clone() const;
 
+  /// @brief Add an entity to the current entity pass.
   void AddEntity(Entity entity);
 
   void SetElements(std::vector<Element> elements);
@@ -126,7 +127,7 @@ class EntityPass {
   ///
   size_t GetElementCount() const;
 
-  void SetTransformation(Matrix xformation);
+  void SetTransform(Matrix transform);
 
   void SetClipDepth(size_t clip_depth);
 
@@ -183,7 +184,7 @@ class EntityPass {
     ///         error while resolving the Entity.
     Status status = kFailure;
 
-    static EntityResult Success(const Entity& e) { return {e, kSuccess}; }
+    static EntityResult Success(Entity e) { return {std::move(e), kSuccess}; }
     static EntityResult Failure() { return {{}, kFailure}; }
     static EntityResult Skip() { return {{}, kSkip}; }
   };
@@ -281,7 +282,7 @@ class EntityPass {
   std::vector<Element> elements_;
 
   EntityPass* superpass_ = nullptr;
-  Matrix xformation_;
+  Matrix transform_;
   size_t clip_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;

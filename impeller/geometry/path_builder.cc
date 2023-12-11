@@ -13,13 +13,13 @@ PathBuilder::PathBuilder() = default;
 PathBuilder::~PathBuilder() = default;
 
 Path PathBuilder::CopyPath(FillType fill) const {
-  auto path = prototype_;
+  auto path = prototype_.Clone();
   path.SetFillType(fill);
   return path;
 }
 
 Path PathBuilder::TakePath(FillType fill) {
-  auto path = prototype_;
+  auto path = std::move(prototype_);
   path.SetFillType(fill);
   path.SetConvexity(convexity_);
   if (!did_compute_bounds_) {
@@ -27,6 +27,11 @@ Path PathBuilder::TakePath(FillType fill) {
   }
   did_compute_bounds_ = false;
   return path;
+}
+
+void PathBuilder::Reserve(size_t point_size, size_t verb_size) {
+  prototype_.points_.reserve(point_size);
+  prototype_.points_.reserve(verb_size);
 }
 
 PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
@@ -76,38 +81,6 @@ PathBuilder& PathBuilder::QuadraticCurveTo(Point controlPoint,
   return *this;
 }
 
-Point PathBuilder::ReflectedQuadraticControlPoint1() const {
-  /*
-   *  If there is no previous command or if the previous command was not a
-   *  quadratic, assume the control point is coincident with the current point.
-   */
-  if (prototype_.GetComponentCount() == 0) {
-    return current_;
-  }
-
-  QuadraticPathComponent quad;
-  if (!prototype_.GetQuadraticComponentAtIndex(
-          prototype_.GetComponentCount() - 1, quad)) {
-    return current_;
-  }
-
-  /*
-   *  The control point is assumed to be the reflection of the control point on
-   *  the previous command relative to the current point.
-   */
-  return (current_ * 2.0) - quad.cp;
-}
-
-PathBuilder& PathBuilder::SmoothQuadraticCurveTo(Point point, bool relative) {
-  point = relative ? current_ + point : point;
-  /*
-   *  The reflected control point is absolute and we made the endpoint absolute
-   *  too. So there the last argument is always false (i.e, not relative).
-   */
-  QuadraticCurveTo(point, ReflectedQuadraticControlPoint1(), false);
-  return *this;
-}
-
 PathBuilder& PathBuilder::SetConvexity(Convexity value) {
   convexity_ = value;
   return *this;
@@ -122,44 +95,6 @@ PathBuilder& PathBuilder::CubicCurveTo(Point controlPoint1,
   point = relative ? current_ + point : point;
   prototype_.AddCubicComponent(current_, controlPoint1, controlPoint2, point);
   current_ = point;
-  return *this;
-}
-
-Point PathBuilder::ReflectedCubicControlPoint1() const {
-  /*
-   *  If there is no previous command or if the previous command was not a
-   *  cubic, assume the first control point is coincident with the current
-   *  point.
-   */
-  if (prototype_.GetComponentCount() == 0) {
-    return current_;
-  }
-
-  CubicPathComponent cubic;
-  if (!prototype_.GetCubicComponentAtIndex(prototype_.GetComponentCount() - 1,
-                                           cubic)) {
-    return current_;
-  }
-
-  /*
-   *  The first control point is assumed to be the reflection of the second
-   *  control point on the previous command relative to the current point.
-   */
-  return (current_ * 2.0) - cubic.cp2;
-}
-
-PathBuilder& PathBuilder::SmoothCubicCurveTo(Point controlPoint2,
-                                             Point point,
-                                             bool relative) {
-  auto controlPoint1 = ReflectedCubicControlPoint1();
-  controlPoint2 = relative ? current_ + controlPoint2 : controlPoint2;
-  auto endpoint = relative ? current_ + point : point;
-
-  CubicCurveTo(endpoint,       // endpoint
-               controlPoint1,  // control point 1
-               controlPoint2,  // control point 2
-               false           // relative since all points are already absolute
-  );
   return *this;
 }
 
@@ -201,7 +136,13 @@ PathBuilder& PathBuilder::AddCircle(const Point& c, Scalar r) {
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Scalar radius) {
   return radius <= 0.0 ? AddRect(rect)
-                       : AddRoundedRect(rect, {radius, radius, radius, radius});
+                       : AddRoundedRect(rect, RoundingRadii(radius));
+}
+
+PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Point radii) {
+  return radii.x <= 0 || radii.y <= 0
+             ? AddRect(rect)
+             : AddRoundedRect(rect, RoundingRadii(radii));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {

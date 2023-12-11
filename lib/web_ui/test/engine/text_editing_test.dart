@@ -373,10 +373,10 @@ Future<void> testMain() async {
     });
 
    test('handling keyboard event prevents triggering input action', () {
-      final ui.PlatformMessageCallback? savedCallback = ui.window.onPlatformMessage;
+      final ui.PlatformMessageCallback? savedCallback = ui.PlatformDispatcher.instance.onPlatformMessage;
 
       bool markTextEventHandled = false;
-      ui.window.onPlatformMessage = (String channel, ByteData? data,
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
           ui.PlatformMessageResponseCallback? callback) {
         final ByteData response = const JSONMessageCodec()
             .encodeMessage(<String, dynamic>{'handled': markTextEventHandled})!;
@@ -414,7 +414,7 @@ Future<void> testMain() async {
       // Input action received.
       expect(lastInputAction, 'TextInputAction.done');
 
-      ui.window.onPlatformMessage = savedCallback;
+      ui.PlatformDispatcher.instance.onPlatformMessage = savedCallback;
       RawKeyboard.instance?.dispose();
     });
 
@@ -2551,6 +2551,46 @@ Future<void> testMain() async {
       expect(autofillForm.formElement.style.pointerEvents, 'none');
     }, skip: !isSafari);
 
+    test(
+        'the focused element within a form should explicitly set pointer events on Safari',
+        () {
+      final List<dynamic> fields = createFieldValues(<String>[
+        'email',
+        'username',
+        'password',
+      ], <String>[
+        'field1',
+        'field2',
+        'field3'
+      ]);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('email', 'field1'), fields)!;
+
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
+      testInputElement.name = 'email';
+      autofillForm.placeForm(testInputElement);
+
+      final List<DomHTMLInputElement> formChildNodes =
+          autofillForm.formElement.childNodes.toList()
+              as List<DomHTMLInputElement>;
+      final DomHTMLInputElement email = formChildNodes[0];
+      final DomHTMLInputElement username = formChildNodes[1];
+      final DomHTMLInputElement password = formChildNodes[2];
+
+      expect(email.name, 'email');
+      expect(username.name, 'username');
+      expect(password.name, 'current-password');
+
+      // pointer events are none on the form and all non-focused elements
+      expect(autofillForm.formElement.style.pointerEvents, 'none');
+      expect(username.style.pointerEvents, 'none');
+      expect(password.style.pointerEvents, 'none');
+
+      // pointer events are set to all on the activeDomElement
+      expect(email.style.pointerEvents, 'all');
+    }, skip: !isSafari);
+
     tearDown(() {
       clearForms();
     });
@@ -3035,11 +3075,18 @@ Future<void> testMain() async {
 
       final DomHTMLElement input = editingStrategy!.activeDomElement;
       expect(input.style.color, contains('transparent'));
-      expect(input.style.background, contains('transparent'));
+      if (isSafari) {
+        // macOS 13 returns different values than macOS 12.
+        expect(input.style.background, anyOf(contains('transparent'), contains('none')));
+        expect(input.style.outline, anyOf(contains('none'), contains('currentcolor')));
+        expect(input.style.border, anyOf(contains('none'), contains('medium')));
+      } else {
+        expect(input.style.background, contains('transparent'));
+        expect(input.style.outline, contains('none'));
+        expect(input.style.border, contains('none'));
+      }
       expect(input.style.backgroundColor, contains('transparent'));
       expect(input.style.caretColor, contains('transparent'));
-      expect(input.style.outline, contains('none'));
-      expect(input.style.border, contains('none'));
       expect(input.style.textShadow, contains('none'));
     });
 

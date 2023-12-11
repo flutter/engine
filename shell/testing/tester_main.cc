@@ -37,6 +37,7 @@
 #include "flutter/vulkan/procs/vulkan_proc_table.h"               // nogncheck
 #include "flutter/vulkan/swiftshader_path.h"                      // nogncheck
 #include "impeller/entity/vk/entity_shaders_vk.h"                 // nogncheck
+#include "impeller/entity/vk/framebuffer_blend_shaders_vk.h"      // nogncheck
 #include "impeller/entity/vk/modern_shaders_vk.h"                 // nogncheck
 #include "impeller/renderer/backend/vulkan/context_vk.h"          // nogncheck
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"  // nogncheck
@@ -53,6 +54,9 @@ static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
                                              impeller_entity_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_vk_data,
                                              impeller_modern_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_vk_data,
+          impeller_framebuffer_blend_shaders_vk_length),
 #if IMPELLER_ENABLE_3D
       std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
                                              impeller_scene_shaders_vk_length),
@@ -138,11 +142,14 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   void CancelFrame() override {}
 
   // |ExternalViewEmbedder|
-  void BeginFrame(
-      SkISize frame_size,
-      GrDirectContext* context,
-      double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+  void BeginFrame(GrDirectContext* context,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override {}
+
+  // |ExternalViewEmbedder|
+  void PrepareFlutterView(int64_t flutter_view_id,
+                          SkISize frame_size,
+                          double device_pixel_ratio) override {}
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
@@ -337,8 +344,8 @@ int RunTester(const flutter::Settings& settings,
 
   if (multithreaded) {
     threadhost = std::make_unique<ThreadHost>(
-        thread_label, ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                          ThreadHost::Type::UI | ThreadHost::Type::RASTER);
+        thread_label, ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
+                          ThreadHost::Type::kUi | ThreadHost::Type::kRaster);
     platform_task_runner = current_task_runner;
     raster_task_runner = threadhost->raster_thread->GetTaskRunner();
     ui_task_runner = threadhost->ui_thread->GetTaskRunner();

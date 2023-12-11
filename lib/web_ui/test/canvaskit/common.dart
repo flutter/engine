@@ -23,17 +23,18 @@ void setUpCanvasKitTest() {
   );
 
   tearDown(() {
-    HtmlViewEmbedder.instance.debugClear();
-    RenderCanvasFactory.instance.debugClear();
+    CanvasKitRenderer.instance.debugClear();
   });
 
-  setUp(() =>
-    renderer.fontCollection.fontFallbackManager!.downloadQueue.fallbackFontUrlPrefixOverride
-      = 'assets/fallback_fonts/');
-  tearDown(() =>
-    renderer.fontCollection.fontFallbackManager!.downloadQueue.fallbackFontUrlPrefixOverride
-      = null);
+  setUp(() => renderer.fontCollection.fontFallbackManager!.downloadQueue
+      .fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/');
+  tearDown(() => renderer.fontCollection.fontFallbackManager!.downloadQueue
+      .fallbackFontUrlPrefixOverride = null);
 }
+
+/// Convenience getter for the implicit view.
+ui.FlutterView get implicitView =>
+    EnginePlatformDispatcher.instance.implicitView!;
 
 /// Utility function for CanvasKit tests to draw pictures without
 /// the [CkPictureRecorder] boilerplate.
@@ -45,10 +46,15 @@ CkPicture paintPicture(
   return recorder.endRecording();
 }
 
-Future<void> matchSceneGolden(String goldenFile, LayerScene scene, {
+Future<void> matchSceneGolden(
+  String goldenFile,
+  LayerScene scene, {
   required ui.Rect region,
 }) async {
-  CanvasKitRenderer.instance.rasterizer.draw(scene.layerTree);
+  // TODO(harryterkelsen): Enforce the render rule. Render can only be called in
+  // the scope of `onBeginFrame` or `onDrawFrame`,
+  // https://github.com/flutter/flutter/issues/137073.
+  CanvasKitRenderer.instance.renderScene(scene, implicitView);
   await matchGoldenFile(goldenFile, region: region);
 }
 
@@ -61,7 +67,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+  CanvasKitRenderer.instance.renderScene(sb.build(), implicitView);
   await matchGoldenFile(goldenFile, region: region);
 }
 
@@ -69,7 +75,8 @@ Future<bool> matchImage(ui.Image left, ui.Image right) async {
   if (left.width != right.width || left.height != right.height) {
     return false;
   }
-  int getPixel(ByteData data, int x, int y) => data.getUint32((x + y * left.width) * 4);
+  int getPixel(ByteData data, int x, int y) =>
+      data.getUint32((x + y * left.width) * 4);
   final ByteData leftData = (await left.toByteData())!;
   final ByteData rightData = (await right.toByteData())!;
   for (int y = 0; y < left.height; y++) {
@@ -85,7 +92,7 @@ Future<bool> matchImage(ui.Image left, ui.Image right) async {
 /// Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> createPlatformView(int id, String viewType) {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
       'create',
@@ -102,7 +109,7 @@ Future<void> createPlatformView(int id, String viewType) {
 /// Disposes of the platform view with the given [id].
 Future<void> disposePlatformView(int id) {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall('dispose', id)),
     (dynamic _) => completer.complete(),
@@ -113,7 +120,8 @@ Future<void> disposePlatformView(int id) {
 /// Creates a pre-laid out one-line paragraph of text.
 ///
 /// Useful in tests that need a simple label to annotate goldens.
-CkParagraph makeSimpleText(String text, {
+CkParagraph makeSimpleText(
+  String text, {
   String? fontFamily,
   double? fontSize,
   ui.FontStyle? fontStyle,

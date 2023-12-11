@@ -21,13 +21,13 @@ namespace impeller {
 namespace testing {
 
 using EntityTest = EntityPlayground;
-INSTANTIATE_PLAYGROUND_SUITE(EntityTest);
 
 std::shared_ptr<VerticesGeometry> CreateColorVertices(
     const std::vector<Point>& vertices,
     const std::vector<Color>& colors) {
   auto bounds = Rect::MakePointBounds(vertices.begin(), vertices.end());
   std::vector<uint16_t> indices = {};
+  indices.reserve(vertices.size());
   for (auto i = 0u; i < vertices.size(); i++) {
     indices.emplace_back(i);
   }

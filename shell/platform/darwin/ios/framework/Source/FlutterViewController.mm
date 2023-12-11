@@ -120,7 +120,7 @@ int64_t _viewIdForPointerEvent() {
 @end
 
 @implementation FlutterViewController {
-  std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
 
   // We keep a separate reference to this and create it ahead of time because we want to be able to
@@ -179,7 +179,7 @@ int64_t _viewIdForPointerEvent() {
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine
                                                       opaque:self.isViewOpaque
                                              enableWideGamut:engine.project.isWideGamutEnabled]);
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+    _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
     _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
     [self performCommonViewControllerInitialization];
@@ -240,7 +240,7 @@ int64_t _viewIdForPointerEvent() {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -294,8 +294,8 @@ int64_t _viewIdForPointerEvent() {
   return _engine.get();
 }
 
-- (fml::WeakPtr<FlutterViewController>)getWeakPtr {
-  return _weakFactory->GetWeakPtr();
+- (fml::WeakNSObject<FlutterViewController>)getWeakNSObject {
+  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)setUpNotificationCenterObservers {
@@ -625,7 +625,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
   }
 
   // Start on the platform thread.
-  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
+  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakNSObject],
                                           platformTaskRunner = [_engine.get() platformTaskRunner],
                                           rasterTaskRunner = [_engine.get() rasterTaskRunner]]() {
     FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
@@ -725,7 +725,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::kRetain);
+  _flutterViewRenderedCallback.reset(callback, fml::scoped_policy::OwnershipPolicy::kRetain);
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -808,7 +808,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 
 - (void)addInternalPlugins {
   self.keyboardManager = [[[FlutterKeyboardManager alloc] init] autorelease];
-  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterViewController> weakSelf = [self getWeakNSObject];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
         if (weakSelf) {
@@ -1713,7 +1713,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
 
-  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterViewController> weakSelf = [self getWeakNSObject];
   FlutterKeyboardAnimationCallback keyboardAnimationCallback = ^(
       fml::TimePoint keyboardAnimationTargetTime) {
     if (!weakSelf) {

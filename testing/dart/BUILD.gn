@@ -38,6 +38,7 @@ tests = [
   "paragraph_test.dart",
   "path_test.dart",
   "picture_test.dart",
+  "platform_dispatcher_test.dart",
   "platform_view_test.dart",
   "plugin_utilities_test.dart",
   "semantics_test.dart",
@@ -48,12 +49,18 @@ tests = [
 ]
 
 foreach(test, tests) {
+  flutter_build_dir = rebase_path("$root_gen_dir")
   skia_gold_work_dir = rebase_path("$root_gen_dir/skia_gold_$test")
   flutter_frontend_server("compile_$test") {
     main_dart = test
     kernel_output = "$root_gen_dir/$test.dill"
-    extra_args = [ "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir" ]
+    extra_args = [
+      "-DkFlutterBuildDirectory=$flutter_build_dir",
+      "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir",
+    ]
     package_config = ".dart_tool/package_config.json"
+    deps = [ "//flutter/third_party/txt:txt_fixtures" ]
+    testonly = true
   }
 }
 

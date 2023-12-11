@@ -2265,6 +2265,8 @@ typedef struct {
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
 
+// NOLINTBEGIN(google-objc-function-naming)
+
 //------------------------------------------------------------------------------
 /// @brief      Creates the necessary data structures to launch a Flutter Dart
 ///             application in AOT mode. The data may only be collected after
@@ -3135,6 +3137,8 @@ typedef struct {
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table);
+
+// NOLINTEND(google-objc-function-naming)
 
 #if defined(__cplusplus)
 }  // extern "C"
