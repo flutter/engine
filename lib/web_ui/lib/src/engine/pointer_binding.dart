@@ -74,16 +74,22 @@ int convertButtonToButtons(int button) {
 /// Wrapping the Safari iOS workaround that adds a dummy event listener
 /// More info about the issue and workaround: https://github.com/flutter/flutter/issues/70858
 class SafariPointerEventWorkaround {
+  SafariPointerEventWorkaround._();
+
   DomEventListener? _listener;
 
   void workAroundMissingPointerEvents() {
-    _listener = createDomEventListener((_) {});
-    domDocument.addEventListener('touchstart', _listener);
+    // We only need to attach the listener once.
+    if (_listener == null) {
+      _listener = createDomEventListener((_) {});
+      domDocument.addEventListener('touchstart', _listener);
+    }
   }
 
   void dispose() {
     if (_listener != null) {
       domDocument.removeEventListener('touchstart', _listener);
+      _listener = null;
     }
   }
 }
@@ -96,7 +102,7 @@ class PointerBinding {
   })  : _pointerDataConverter = PointerDataConverter(),
         _detector = detector {
     if (isIosSafari) {
-      _safariWorkaround = safariWorkaround ?? SafariPointerEventWorkaround();
+      _safariWorkaround = safariWorkaround ?? _defaultSafariWorkaround;
       _safariWorkaround!.workAroundMissingPointerEvents();
     }
     _adapter = _createAdapter();
@@ -106,6 +112,7 @@ class PointerBinding {
     }());
   }
 
+  static final SafariPointerEventWorkaround _defaultSafariWorkaround = SafariPointerEventWorkaround._();
   static final ClickDebouncer clickDebouncer = ClickDebouncer();
 
   /// Resets global pointer state that's not tied to any single [PointerBinding]
