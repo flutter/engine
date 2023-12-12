@@ -116,7 +116,7 @@ Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
     // TODO(jacksongardner): Stop filtering to Mac-12 after macOS 13 issues are fixed:
     // https://github.com/flutter/flutter/issues/136274,
     // https://github.com/flutter/flutter/issues/136279
-    ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-12|Mac-13', (TestSuite suite) =>
+    ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-13', (TestSuite suite) =>
       suite.runConfig.browser == BrowserName.safari
     ),
     ..._getTestStepsForPlatform(suites, 'Windows', (TestSuite suite) =>
