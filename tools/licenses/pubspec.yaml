@@ -49,7 +49,7 @@ dependency_overrides:
   path:
     path: ../../../third_party/dart/third_party/pkg/path
   pc-dart:
-    path: ../../third_party/pkg/archive
+    path: ../../third_party/pkg/pc-dart
   smith:
     path: ../../../third_party/dart/pkg/smith
   typed_data:
