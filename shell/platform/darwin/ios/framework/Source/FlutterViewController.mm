@@ -154,6 +154,7 @@ typedef struct MouseState {
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
 @synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
+@dynamic viewId;
 
 #pragma mark - Manage and override all designated initializers
 
