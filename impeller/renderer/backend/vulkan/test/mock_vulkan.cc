@@ -9,11 +9,11 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/third_party/swiftshader/include/vulkan/vulkan_core.h"
 #include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
-#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
 #include "vulkan/vulkan_core.h"
 
 namespace impeller {

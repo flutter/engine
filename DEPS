@@ -273,7 +273,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e0aa3ae49a32df7dd00655ee4dd55b00d84a47ea',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '0141e94b34cbd3db77f28796587334857fa985da',
 
   'src/flutter/third_party/rapidjson':
    Var('fuchsia_git') + '/third_party/rapidjson' + '@' + 'ef3564c5c8824989393b87df25355baf35ff544b',
@@ -666,7 +666,7 @@ deps = {
   'src/flutter/third_party/pyyaml':
    Var('fuchsia_git') + '/third_party/pyyaml.git' + '@' + '25e97546488eee166b1abb229a27856cecd8b7ac',
 
-   'src/third_party/swiftshader':
+   'src/flutter/third_party/swiftshader':
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '5b6f768198ce6a6485da31e1be06b5a17a2bf0a0',
 
    'src/third_party/angle':
