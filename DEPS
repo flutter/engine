@@ -320,7 +320,7 @@ deps = {
   'src/third_party/boringssl/src':
    'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('dart_boringssl_rev'),
 
-  'src/third_party/perfetto':
+  'src/flutter/third_party/perfetto':
    Var('fuchsia_git') + "/third_party/android.googlesource.com/platform/external/perfetto"
    + '@' + Var('dart_perfetto_rev'),
 
