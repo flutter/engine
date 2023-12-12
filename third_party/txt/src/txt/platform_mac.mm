@@ -29,7 +29,6 @@ static const std::string kSFProTextName = "CupertinoSystemText";
 // Font weight representing Regular
 float kNormalWeightValue = 400;
 
-
 namespace txt {
 
 const FourCharCode kWeightTag = 'wght';
@@ -108,7 +107,7 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
       (CTFontRef)CFAutorelease(MatchSystemUIFont(0, kSFProDisplayBreakPoint)));
   if (large_system_font_lightweight) {
     dynamic_font_manager.font_provider().RegisterTypeface(
-      large_system_font_lightweight, "CupertinoSystemDisplayw100");
+        large_system_font_lightweight, "CupertinoSystemDisplayw100");
   }
   sk_sp<SkTypeface> regular_system_font = SkMakeTypefaceFromCTFont(
       (CTFontRef)CFAutorelease(CTFontCreateUIFontForLanguage(
