@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_FLUTTER_WINDOWS_ENGINE_BUILDER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_FLUTTER_WINDOWS_ENGINE_BUILDER_H_
+#pragma once
 
 #include <memory>
 
@@ -51,5 +50,3 @@ class FlutterWindowsEngineBuilder {
 
 }  // namespace testing
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_FLUTTER_WINDOWS_ENGINE_BUILDER_H_

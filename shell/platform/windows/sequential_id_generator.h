@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_SEQUENTIAL_ID_GENERATOR_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_SEQUENTIAL_ID_GENERATOR_H_
+#pragma once
 
 #include <cstdint>
 #include <unordered_map>
@@ -59,5 +58,3 @@ class SequentialIdGenerator {
 };
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_SEQUENTIAL_ID_GENERATOR_H_

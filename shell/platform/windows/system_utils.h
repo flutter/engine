@@ -4,8 +4,7 @@
 
 // This file contains utilities for system-level information/settings.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_SYSTEM_UTILS_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_SYSTEM_UTILS_H_
+#pragma once
 
 #include <string>
 #include <vector>
@@ -51,5 +50,3 @@ std::wstring GetUserTimeFormat();
 bool Prefer24HourTime(std::wstring time_format);
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_SYSTEM_UTILS_H_

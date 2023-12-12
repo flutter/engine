@@ -4,8 +4,7 @@
 
 #include "Windows.h"
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_DPI_UTILS_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_DPI_UTILS_H_
+#pragma once
 
 namespace flutter {
 
@@ -20,5 +19,3 @@ UINT GetDpiForHWND(HWND hwnd);
 UINT GetDpiForMonitor(HMONITOR monitor);
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_DPI_UTILS_H_

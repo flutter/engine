@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_CURSOR_HANDLER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_CURSOR_HANDLER_H_
+#pragma once
 
 #include <unordered_map>
 
@@ -53,5 +52,3 @@ HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
 void GetMaskBitmaps(HBITMAP bitmap, HBITMAP& mask_bitmap);
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_CURSOR_HANDLER_H_

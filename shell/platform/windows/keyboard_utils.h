@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_WIN32_COMMON_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_WIN32_COMMON_H_
+#pragma once
 
 #include <stdint.h>
 
@@ -42,5 +41,3 @@ inline uint32_t UndeadChar(uint32_t ch) {
 std::u16string EncodeUtf16(char32_t character);
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_KEYBOARD_WIN32_COMMON_H_

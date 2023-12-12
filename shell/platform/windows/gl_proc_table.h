@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_GL_PROC_TABLE_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_GL_PROC_TABLE_H_
+#pragma once
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -66,5 +65,3 @@ class GlProcTable {
 };
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_GL_PROC_TABLE_H_

@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_DESKTOP_MESSENGER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_DESKTOP_MESSENGER_H_
+#pragma once
 
 #include <atomic>
 #include <mutex>
@@ -79,5 +78,3 @@ class FlutterDesktopMessenger {
 };
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_STATE_H_

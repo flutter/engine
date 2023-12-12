@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WINDOWS_TEST_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WINDOWS_TEST_H_
+#pragma once
 
 #include <string>
 
@@ -43,5 +42,3 @@ class WindowsTest : public ThreadTest {
 
 }  // namespace testing
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_WINDOWS_TEST_H_

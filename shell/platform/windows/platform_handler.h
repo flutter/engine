@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PLATFORM_HANDLER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_PLATFORM_HANDLER_H_
+#pragma once
 
 #include <Windows.h>
 
@@ -154,5 +153,3 @@ class ScopedClipboardInterface {
 };
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_PLATFORM_HANDLER_H_

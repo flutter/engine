@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_DELEGATE_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_DELEGATE_H_
+#pragma once
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
@@ -83,5 +82,3 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
 
 }  // namespace testing
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_DELEGATE_H_

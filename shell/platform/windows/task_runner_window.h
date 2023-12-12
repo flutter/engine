@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TASK_RUNNER_WIN32_WINDOW_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_TASK_RUNNER_WIN32_WINDOW_H_
+#pragma once
 
 #include <windows.h>
 
@@ -64,5 +63,3 @@ class TaskRunnerWindow {
   FML_DISALLOW_COPY_AND_ASSIGN(TaskRunnerWindow);
 };
 }  // namespace flutter
-
-#endif

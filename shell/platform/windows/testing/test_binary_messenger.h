@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_TEST_BINARY_MESSENGER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_TEST_BINARY_MESSENGER_H_
+#pragma once
 
 #include <functional>
 #include <map>
@@ -75,5 +74,3 @@ class TestBinaryMessenger : public BinaryMessenger {
 };
 
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_TEST_BINARY_MESSENGER_H_
