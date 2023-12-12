@@ -24,8 +24,11 @@ bool CompositorSoftware::CreateBackingStore(
   result->software.allocation = allocation;
   result->software.height = config.size.height;
   result->software.row_bytes = config.size.width * 4;
-  result->software.destruction_callback = nullptr;
   result->software.user_data = nullptr;
+  result->software.destruction_callback = [](void* user_data) {
+    // Backing store destroyed in `CompositorSoftware::CollectBackingStore`, set
+    // on FlutterCompositor.collect_backing_store_callback during engine start.
+  };
   return true;
 }
 

@@ -54,7 +54,10 @@ bool CompositorOpenGL::CreateBackingStore(
   result->open_gl.framebuffer.name = store->framebuffer_id;
   result->open_gl.framebuffer.target = format_;
   result->open_gl.framebuffer.user_data = store.release();
-  result->open_gl.framebuffer.destruction_callback = nullptr;
+  result->open_gl.framebuffer.destruction_callback = [](void* user_data) {
+    // Backing store destroyed in `CompositorOpenGL::CollectBackingStore`, set
+    // on FlutterCompositor.collect_backing_store_callback during engine start.
+  };
   return true;
 }
 
