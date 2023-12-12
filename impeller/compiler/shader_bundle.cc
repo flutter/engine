@@ -18,9 +18,10 @@ namespace compiler {
 std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
     const std::string& json_config,
     std::ostream& error_stream) {
-  auto json = nlohmann::json::parse(json_config);
-  if (!json.is_object()) {
-    error_stream << "The shader bundle must be a JSON object." << std::endl;
+  auto json = nlohmann::json::parse(json_config, nullptr, false);
+  if (json.is_discarded() || !json.is_object()) {
+    error_stream << "The shader bundle is not a valid JSON object."
+                 << std::endl;
     return std::nullopt;
   }
 
@@ -41,21 +42,21 @@ std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
 
     if (!shader_value.contains("file")) {
       error_stream << "Invalid shader entry \"" << shader_name
-                   << "\": Missing required \"file\" field. \"" << std::endl;
+                   << "\": Missing required \"file\" field." << std::endl;
       return std::nullopt;
     }
     shader.source_file_name = shader_value["file"];
 
     if (!shader_value.contains("type")) {
       error_stream << "Invalid shader entry \"" << shader_name
-                   << "\": Missing required \"type\" field. \"" << std::endl;
+                   << "\": Missing required \"type\" field." << std::endl;
       return std::nullopt;
     }
     shader.type = SourceTypeFromString(shader_value["type"]);
     if (shader.type == SourceType::kUnknown) {
       error_stream << "Invalid shader entry \"" << shader_name
-                   << "\": Shader type \"" << shader_value["type"]
-                   << "\" is unknown. \"" << std::endl;
+                   << "\": Shader type " << shader_value["type"]
+                   << " is unknown." << std::endl;
       return std::nullopt;
     }
 
@@ -64,8 +65,8 @@ std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
                           : SourceLanguage::kGLSL;
     if (shader.language == SourceLanguage::kUnknown) {
       error_stream << "Invalid shader entry \"" << shader_name
-                   << "\": Unknown language type \"" << shader_value["language"]
-                   << "\"." << std::endl;
+                   << "\": Unknown language type " << shader_value["language"]
+                   << "." << std::endl;
       return std::nullopt;
     }
 
