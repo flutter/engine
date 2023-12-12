@@ -1,0 +1,7 @@
+# The "real" directory is actually //flutter//third_party/root_certificates.
+# However, at least one reference to the directory is hard-coded in the Dart
+# SDK, so we need to create a "forwarding" rule (group) to make it work.
+
+group("root_certificates") {
+  deps = [ "//flutter/third_party/root_certificates" ]
+}
