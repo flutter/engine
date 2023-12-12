@@ -123,6 +123,7 @@ final ArgParser _parser = ArgParser()
     valueHelp: 'path/to/dir',
     defaultsTo: _engine != null ? <String>[
       p.join(_engine!.flutterDir.path, 'build'),
+      p.join(_engine!.flutterDir.path, 'prebuilts'),
       p.join(_engine!.flutterDir.path, 'third_party'),
     ] : null,
   );
