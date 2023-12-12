@@ -134,6 +134,9 @@ targets:
 
   - name: Linux Fuchsia FEMU
     recipe: engine/femu_test
+    enabled_branches:
+      - main
+      - fuchsia_r\d+[a-z]*
     properties:
       add_recipes_cq: "true"
       build_fuchsia: "true"
@@ -155,6 +158,9 @@ targets:
 
   - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
+    enabled_branches:
+      - main
+      - fuchsia_r\d+[a-z]*
     properties:
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
@@ -177,6 +183,9 @@ targets:
   - name: Linux linux_fuchsia
     recipe: engine_v2/engine_v2
     timeout: 60
+    enabled_branches:
+      - main
+      - fuchsia_r\d+[a-z]*
     properties:
       release_build: "true"
       config_name: linux_fuchsia
