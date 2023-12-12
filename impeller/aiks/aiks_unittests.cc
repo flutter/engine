@@ -4505,6 +4505,7 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+<<<<<<< HEAD
 #define FLT_FORWARD(mock, real, method) \
   EXPECT_CALL(*mock, method())          \
       .WillRepeatedly(::testing::Return(real->method()));
@@ -4555,25 +4556,37 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+=======
+// Smoketest to catch issues with the coverage hint.
+// Draws a rotated blurred image within a rectangle clip. The center of the clip
+// rectangle is the center of the rotated image. The entire area of the clip
+// rectangle should be filled with opaque colors output by the blur.
+>>>>>>> a178d2a245 (Center the clip over the blurred image)
 TEST_P(AiksTest, GaussianBlurRotatedAndClipped) {
-  // Smoketest to catch issues with the coverage hint.
   Paint paint = {.image_filter =
                      ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
                                            FilterContents::BlurStyle::kNormal,
                                            Entity::TileMode::kDecal)};
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-
-  canvas.ClipRect(Rect::MakeLTRB(100, 200, 450, 350));
-
-  canvas.Scale(Vector2(0.5, 0.5));
-  canvas.Translate(Vector2(300, 100));
-  canvas.Rotate(Degrees(25));
 
   std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
   auto bounds =
       Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
-  canvas.DrawImageRect(std::make_shared<Image>(boston), bounds, bounds, paint);
+
+  Vector2 scale = GetContentScale() * 0.5;
+  Vector2 pivot(450, 300);
+  Vector2 image_center = Vector2(bounds.GetSize() / 2);
+
+  Canvas canvas;
+  canvas.Scale(scale);
+
+  canvas.Translate(pivot);
+  canvas.ClipRect(Rect::MakeLTRB(-350, -150, 350, 150));
+
+  canvas.Translate(-pivot);
+  canvas.Rotate(Degrees(25));
+  canvas.PreConcat(Matrix::MakeTranslation(pivot * scale));
+  canvas.DrawImageRect(std::make_shared<Image>(boston), bounds,
+                       bounds.Shift(-image_center), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
