@@ -64,7 +64,7 @@ base class EngineFlutterView implements ui.FlutterView {
     // hot restart.
     embeddingStrategy.attachViewRoot(dom.rootElement);
     pointerBinding = PointerBinding(this);
-    onResize.listen(_didResize);
+    _resizeSubscription = onResize.listen(_didResize);
     registerHotRestartListener(dispose);
   }
 
@@ -82,6 +82,8 @@ base class EngineFlutterView implements ui.FlutterView {
   /// Abstracts all the DOM manipulations required to embed a Flutter view in a user-supplied `hostElement`.
   final EmbeddingStrategy embeddingStrategy;
 
+  late final StreamSubscription<ui.Size?> _resizeSubscription;
+
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
   /// Whether this [EngineFlutterView] has been disposed or not.
@@ -95,6 +97,7 @@ base class EngineFlutterView implements ui.FlutterView {
       return;
     }
     isDisposed = true;
+    _resizeSubscription.cancel();
     dimensionsProvider.close();
     pointerBinding.dispose();
     dom.rootElement.remove();
