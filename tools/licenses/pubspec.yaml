@@ -24,6 +24,7 @@ dependencies:
   crypto: any
   meta: any
   path: any
+  pc-dart: any
 
 dev_dependencies:
   litetest: any
@@ -47,6 +48,8 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/meta
   path:
     path: ../../../third_party/dart/third_party/pkg/path
+  pc-dart:
+    path: ../../third_party/pkg/archive
   smith:
     path: ../../../third_party/dart/pkg/smith
   typed_data:
