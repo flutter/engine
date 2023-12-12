@@ -1,7 +1,5 @@
-# The "real" directory is actually //flutter//third_party/root_certificates.
-# However, at least one reference to the directory is hard-coded in the Dart
-# SDK, so we need to create a "forwarding" rule (group) to make it work.
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
 
-group("root_certificates") {
-  deps = [ "//flutter/third_party/root_certificates" ]
-}
+source_root = "/flutter//third_party/root_certificates"
