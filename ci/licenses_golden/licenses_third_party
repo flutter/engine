@@ -44483,9 +44483,9 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 
 ====================================================================================================
 LIBRARY: root_certificates
-ORIGIN: ../../../third_party/root_certificates/LICENSE
+ORIGIN: ../../../third_party/flutter/root_certificates/LICENSE
 TYPE: LicenseType.mpl
-FILE: ../../../third_party/root_certificates/root_certificates.cc
+FILE: ../../../third_party/flutter/root_certificates/root_certificates.cc
 ----------------------------------------------------------------------------------------------------
 Mozilla Public License Version 2.0
 ==================================

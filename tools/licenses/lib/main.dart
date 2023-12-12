@@ -1034,6 +1034,7 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     '/flutter/third_party/libjpeg-turbo/src/README.ijg': _RepositoryReadmeIjgFile.new,
     '/flutter/third_party/rapidjson/LICENSE': _RepositoryOpaqueLicenseFile.new,
     '/flutter/third_party/rapidjson/license.txt': _RepositoryOpaqueLicenseFile.new,
+    '/flutter/third_party/root_certificates/LICENSE': _RepositoryMpl2File.new,
     '/fuchsia/sdk/linux/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/fuchsia/sdk/mac/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
@@ -1044,7 +1045,6 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     '/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
     '/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
     '/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
-    '/third_party/root_certificates/LICENSE': _RepositoryMpl2File.new,
     '/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
   };
 
@@ -1612,7 +1612,7 @@ class _RepositoryRootCertificatesDirectory extends _RepositoryDirectory {
     if (result.exitCode != 0) {
       throw 'Failed to run "gclient revinfo"; got non-zero exit code ${result.exitCode}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}';
     }
-    final List<String> matchingLines = (result.stdout as String).split('\n').where((String line) => line.startsWith('src/third_party/root_certificates:')).toList();
+    final List<String> matchingLines = (result.stdout as String).split('\n').where((String line) => line.startsWith('src/flutter/third_party/root_certificates:')).toList();
     if (matchingLines.length != 1) {
       throw 'Failed to find root_certificates in "gclient revinfo" output:\n${result.stdout}';
     }
@@ -1620,7 +1620,7 @@ class _RepositoryRootCertificatesDirectory extends _RepositoryDirectory {
     if (match == null) {
       throw 'Failed to find root_certificates in "gclient revinfo" output:\n${result.stdout}';
     }
-    if ((match.group(1) != 'src/third_party/root_certificates') ||
+    if ((match.group(1) != 'src/flutter/third_party/root_certificates') ||
         (match.group(2) != 'https://dart.googlesource.com/root_certificates.git')) {
       throw 'Failed to verify root_certificates entry in "gclient revinfo" output:\n${result.stdout}';
     }

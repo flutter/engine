@@ -698,6 +698,11 @@
 ../../../flutter/third_party/rapidjson/readme.md
 ../../../flutter/third_party/rapidjson/readme.zh-cn.md
 ../../../flutter/third_party/rapidjson/test
+../../../flutter/third_party/root_certificates/.git
+../../../flutter/third_party/root_certificates/README.google
+../../../flutter/third_party/root_certificates/certdata.pem
+../../../flutter/third_party/root_certificates/certdata.txt
+../../..flutter//third_party/root_certificates/codereview.settings
 ../../../flutter/third_party/shaderc/.clang-format
 ../../../flutter/third_party/shaderc/.git
 ../../../flutter/third_party/shaderc/.github
@@ -3017,11 +3022,6 @@
 ../../../third_party/perfetto/ui/src/plugins/dev.perfetto.LargeScreensPerf/OWNERS
 ../../../third_party/perfetto/ui/src/test
 ../../../third_party/protobuf
-../../../third_party/root_certificates/.git
-../../../third_party/root_certificates/README.google
-../../../third_party/root_certificates/certdata.pem
-../../../third_party/root_certificates/certdata.txt
-../../../third_party/root_certificates/codereview.settings
 ../../../third_party/swiftshader
 ../../../third_party/vulkan-deps/.git
 ../../../third_party/vulkan-deps/.gitattributes

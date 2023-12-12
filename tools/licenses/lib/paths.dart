@@ -69,6 +69,8 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/pyyaml', // build-time dependency only
   r'flutter/third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable
   r'flutter/third_party/rapidjson/doc', // documentation
+  r'flutter/third_party/root_certificates/certdata.pem',
+  r'flutter/third_party/root_certificates/certdata.txt',
   r'flutter/third_party/shaderc/third_party/LICENSE.glslang', // unclear what the purpose of this file is
   r'flutter/third_party/shaderc/third_party/LICENSE.spirv-tools', // unclear what the purpose of this file is
   r'flutter/third_party/skia/bazel', // contains nothing that ends up in the binary executable
@@ -183,8 +185,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
   r'third_party/protobuf', // build-time dependency only
-  r'third_party/root_certificates/certdata.pem',
-  r'third_party/root_certificates/certdata.txt',
   r'third_party/swiftshader', // only used on hosts for tests
   r'third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
   r'third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files
