@@ -280,10 +280,19 @@ struct ContentContextOptions {
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      return fml::HashCombine(
-          o.sample_count, o.blend_mode, o.stencil_compare, o.stencil_operation,
-          o.primitive_type, o.color_attachment_pixel_format,
-          o.has_stencil_attachment, o.wireframe, o.is_for_rrect_blur_clear);
+      static_assert(sizeof(std::size_t) >= 8);
+      size_t key = static_cast<uint64_t>(o.sample_count) << 56 |       //
+                   static_cast<uint64_t>(o.blend_mode) << 48 |         //
+                   static_cast<uint64_t>(o.stencil_compare) << 40 |    //
+                   static_cast<uint64_t>(o.stencil_operation) << 32 |  //
+                   static_cast<uint64_t>(o.primitive_type) << 24 |     //
+                   static_cast<uint64_t>(o.color_attachment_pixel_format)
+                       << 16 |  //
+                   // bools
+                   static_cast<uint64_t>(o.has_stencil_attachment) << 2 |  //
+                   static_cast<uint64_t>(o.wireframe) << 1 |               //
+                   static_cast<uint64_t>(o.is_for_rrect_blur_clear) << 0;  //
+      return key;
     }
   };
 
@@ -678,7 +687,8 @@ class ContentContext {
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
-  ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
+  ///         `subpass_callback` with a `RenderPass` for drawing to the
+  ///         texture.
   std::shared_ptr<Texture> MakeSubpass(const std::string& label,
                                        ISize texture_size,
                                        const SubpassCallback& subpass_callback,
@@ -757,8 +767,8 @@ class ContentContext {
   };
 
   // These are mutable because while the prototypes are created eagerly, any
-  // variants requested from that are lazily created and cached in the variants
-  // map.
+  // variants requested from that are lazily created and cached in the
+  // variants map.
 
 #ifdef IMPELLER_DEBUG
   mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
