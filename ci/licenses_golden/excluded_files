@@ -1043,6 +1043,7 @@
 ../../../flutter/third_party/sqlite/Makefile
 ../../../flutter/third_party/sqlite/README.md
 ../../../flutter/third_party/sqlite/VERSION
+../../../flutter/third_party/stb
 ../../../flutter/third_party/test_shaders
 ../../../flutter/third_party/tinygltf
 ../../../flutter/third_party/tonic/.clang-format
@@ -1072,6 +1073,7 @@
 ../../../flutter/third_party/wuffs/release/c/README.md
 ../../../flutter/third_party/wuffs/script
 ../../../flutter/third_party/wuffs/sync.txt
+../../../flutter/third_party/yapf
 ../../../flutter/tools
 ../../../flutter/tools/licenses/.dart_tool
 ../../../flutter/tools/licenses/.gitignore
@@ -3020,7 +3022,6 @@
 ../../../third_party/root_certificates/certdata.pem
 ../../../third_party/root_certificates/certdata.txt
 ../../../third_party/root_certificates/codereview.settings
-../../../third_party/stb
 ../../../third_party/swiftshader
 ../../../third_party/vulkan-deps/.git
 ../../../third_party/vulkan-deps/.gitattributes
@@ -3194,7 +3195,6 @@
 ../../../third_party/vulkan_memory_allocator/src
 ../../../third_party/vulkan_memory_allocator/tools
 ../../../third_party/web_dependencies/canvaskit
-../../../third_party/yapf
 ../../../third_party/zlib/.git
 ../../../third_party/zlib/CMakeLists.txt
 ../../../third_party/zlib/DIR_METADATA
