@@ -682,8 +682,7 @@ class ContentContext {
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
-  ///         `subpass_callback` with a `RenderPass` for drawing to the
-  ///         texture.
+  ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
   std::shared_ptr<Texture> MakeSubpass(const std::string& label,
                                        ISize texture_size,
                                        const SubpassCallback& subpass_callback,
@@ -762,8 +761,8 @@ class ContentContext {
   };
 
   // These are mutable because while the prototypes are created eagerly, any
-  // variants requested from that are lazily created and cached in the
-  // variants map.
+  // variants requested from that are lazily created and cached in the variants
+  // map.
 
 #ifdef IMPELLER_DEBUG
   mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
