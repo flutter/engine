@@ -8,7 +8,6 @@
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archive_transaction.h"
 
 namespace impeller {
@@ -22,7 +21,7 @@ struct ArchiveDef;
 ///
 class ArchiveDatabase {
  public:
-  ArchiveDatabase(const std::string& filename);
+  explicit ArchiveDatabase(const std::string& filename);
 
   ~ArchiveDatabase();
 
@@ -48,7 +47,9 @@ class ArchiveDatabase {
 
   ArchiveStatement CreateStatement(const std::string& statementString) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveDatabase);
+  ArchiveDatabase(const ArchiveDatabase&) = delete;
+
+  ArchiveDatabase& operator=(const ArchiveDatabase&) = delete;
 };
 
 }  // namespace impeller

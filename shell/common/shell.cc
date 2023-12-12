@@ -23,6 +23,7 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/common/base64.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
@@ -39,7 +40,6 @@
 #include "third_party/skia/include/codec/SkWbmpDecoder.h"
 #include "third_party/skia/include/codec/SkWebpDecoder.h"
 #include "third_party/skia/include/core/SkGraphics.h"
-#include "third_party/skia/include/utils/SkBase64.h"
 #include "third_party/tonic/common/log.h"
 
 namespace flutter {
@@ -177,16 +177,17 @@ std::unique_ptr<Shell> Shell::Create(
   auto resource_cache_limit_calculator =
       std::make_shared<ResourceCacheLimitCalculator>(
           settings.resource_cache_max_bytes_threshold);
-  return CreateWithSnapshot(platform_data,                    //
-                            task_runners,                     //
-                            /*parent_merger=*/nullptr,        //
-                            /*parent_io_manager=*/nullptr,    //
-                            resource_cache_limit_calculator,  //
-                            settings,                         //
-                            std::move(vm),                    //
-                            std::move(isolate_snapshot),      //
-                            on_create_platform_view,          //
-                            on_create_rasterizer,             //
+
+  return CreateWithSnapshot(platform_data,                     //
+                            task_runners,                      //
+                            /*parent_thread_merger=*/nullptr,  //
+                            /*parent_io_manager=*/nullptr,     //
+                            resource_cache_limit_calculator,   //
+                            settings,                          //
+                            std::move(vm),                     //
+                            std::move(isolate_snapshot),       //
+                            on_create_platform_view,           //
+                            on_create_rasterizer,              //
                             CreateEngine, is_gpu_disabled);
 }
 
@@ -814,7 +815,6 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
-  fml::AutoResetWaitableEvent latch;
   auto raster_task = fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,  //
        rasterizer = rasterizer_->GetWeakPtr(),               //
@@ -841,8 +841,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // weak pointer. However, we are preventing the platform view from being
   // collected by using a latch.
   auto* platform_view = platform_view_.get();
-
   FML_DCHECK(platform_view);
+  fml::AutoResetWaitableEvent latch;
 
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
@@ -1220,16 +1220,16 @@ void Shell::OnAnimatorUpdateLatestFrameTargetTime(
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
+void Shell::OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) {
   FML_DCHECK(is_set_up_);
 
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,
        rasterizer = rasterizer_->GetWeakPtr(),
-       weak_pipeline = std::weak_ptr<LayerTreePipeline>(pipeline)]() mutable {
+       weak_pipeline = std::weak_ptr<FramePipeline>(pipeline)]() mutable {
         if (rasterizer) {
-          std::shared_ptr<LayerTreePipeline> pipeline = weak_pipeline.lock();
+          std::shared_ptr<FramePipeline> pipeline = weak_pipeline.lock();
           if (pipeline) {
             rasterizer->Draw(pipeline);
           }
@@ -1243,7 +1243,7 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorDrawLastLayerTree(
+void Shell::OnAnimatorDrawLastLayerTrees(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   FML_DCHECK(is_set_up_);
 
@@ -1251,7 +1251,7 @@ void Shell::OnAnimatorDrawLastLayerTree(
       [rasterizer = rasterizer_->GetWeakPtr(),
        frame_timings_recorder = std::move(frame_timings_recorder)]() mutable {
         if (rasterizer) {
-          rasterizer->DrawLastLayerTree(std::move(frame_timings_recorder));
+          rasterizer->DrawLastLayerTrees(std::move(frame_timings_recorder));
         }
       });
 
@@ -1695,6 +1695,11 @@ bool Shell::OnServiceProtocolScreenshotSKP(
     const ServiceProtocol::Handler::ServiceProtocolMap& params,
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
+  if (settings_.enable_impeller) {
+    ServiceProtocolFailureError(
+        response, "Cannot capture SKP screenshot with Impeller enabled.");
+    return false;
+  }
   auto screenshot = rasterizer_->ScreenshotLastLayerTree(
       Rasterizer::ScreenshotType::SkiaPicture, true);
   if (screenshot.data) {
@@ -1840,11 +1845,10 @@ bool Shell::OnServiceProtocolGetSkSLs(
   PersistentCache* persistent_cache = PersistentCache::GetCacheForProcess();
   std::vector<PersistentCache::SkSLCache> sksls = persistent_cache->LoadSkSLs();
   for (const auto& sksl : sksls) {
-    size_t b64_size =
-        SkBase64::Encode(sksl.value->data(), sksl.value->size(), nullptr);
+    size_t b64_size = Base64::EncodedSize(sksl.value->size());
     sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size + 1);
     char* b64_char = static_cast<char*>(b64_data->writable_data());
-    SkBase64::Encode(sksl.value->data(), sksl.value->size(), b64_char);
+    Base64::Encode(sksl.value->data(), sksl.value->size(), b64_char);
     b64_char[b64_size] = 0;  // make it null terminated for printing
     rapidjson::Value shader_value(b64_char, response->GetAllocator());
     std::string_view key_view(reinterpret_cast<const char*>(sksl.key->data()),
@@ -1968,10 +1972,18 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
+  // Impeller does not support this protocol method.
+  if (io_manager_->GetImpellerContext()) {
+    const char* error = "Raster status not supported on Impeller backend.";
+    ServiceProtocolFailureError(response, error);
+    return false;
+  }
+
   // TODO(dkwingsmt): This method only handles view #0, including the snapshot
   // and the frame size. We need to adapt this method to multi-view.
   // https://github.com/flutter/flutter/issues/131892
-  if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
+  int64_t view_id = kFlutterImplicitViewId;
+  if (auto last_layer_tree = rasterizer_->GetLastLayerTree(view_id)) {
     auto& allocator = response->GetAllocator();
     response->SetObject();
     response->AddMember("type", "RenderFrameWithRasterStats", allocator);
@@ -1986,7 +1998,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     frame_timings_recorder->RecordBuildEnd(now);
 
     last_layer_tree->enable_leaf_layer_tracing(true);
-    rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder));
+    rasterizer_->DrawLastLayerTrees(std::move(frame_timings_recorder));
     last_layer_tree->enable_leaf_layer_tracing(false);
 
     rapidjson::Value snapshots;
@@ -2002,7 +2014,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
 
     response->AddMember("snapshots", snapshots, allocator);
 
-    const auto& frame_size = ExpectedFrameSize(kFlutterImplicitViewId);
+    const auto& frame_size = ExpectedFrameSize(view_id);
     response->AddMember("frame_width", frame_size.width(), allocator);
     response->AddMember("frame_height", frame_size.height(), allocator);
 
@@ -2207,6 +2219,7 @@ void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   std::vector<DisplayData> display_data;
+  display_data.reserve(displays.size());
   for (const auto& display : displays) {
     display_data.push_back(display->GetDisplayData());
   }

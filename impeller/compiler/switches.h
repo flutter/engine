@@ -4,13 +4,12 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
-#include "impeller/compiler/compiler.h"
 #include "impeller/compiler/include_dir.h"
 #include "impeller/compiler/types.h"
 
@@ -25,6 +24,7 @@ struct Switches {
   SourceType input_type = SourceType::kUnknown;
   std::string sl_file_name = "";
   bool iplr = false;
+  std::string iplr_bundle = "";
   std::string spirv_file_name = "";
   std::string reflection_json_name = "";
   std::string reflection_header_name = "";
@@ -37,12 +37,13 @@ struct Switches {
   std::string metal_version = "";
   std::string entry_point = "";
   bool use_half_textures = false;
+  bool require_framebuffer_fetch = false;
 
   Switches();
 
   ~Switches();
 
-  Switches(const fml::CommandLine& command_line);
+  explicit Switches(const fml::CommandLine& command_line);
 
   bool AreValid(std::ostream& explain) const;
 

@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -308,6 +309,7 @@ using IPoint = TPoint<int64_t>;
 using IPoint32 = TPoint<int32_t>;
 using UintPoint32 = TPoint<uint32_t>;
 using Vector2 = Point;
+using Quad = std::array<Point, 4>;
 
 }  // namespace impeller
 

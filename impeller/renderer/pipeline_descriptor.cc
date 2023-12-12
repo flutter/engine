@@ -4,6 +4,9 @@
 
 #include "impeller/renderer/pipeline_descriptor.h"
 
+#include <utility>
+
+#include "impeller/base/comparable.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/shader_function.h"
 #include "impeller/renderer/shader_library.h"
@@ -42,6 +45,7 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, cull_mode_);
   fml::HashCombineSeed(seed, primitive_type_);
   fml::HashCombineSeed(seed, polygon_mode_);
+  fml::HashCombineSeed(seed, use_subpass_input_);
   return seed;
 }
 
@@ -61,7 +65,9 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
          winding_order_ == other.winding_order_ &&
          cull_mode_ == other.cull_mode_ &&
          primitive_type_ == other.primitive_type_ &&
-         polygon_mode_ == other.polygon_mode_;
+         polygon_mode_ == other.polygon_mode_ &&
+         specialization_constants_ == other.specialization_constants_ &&
+         use_subpass_input_ == other.use_subpass_input_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
@@ -275,6 +281,16 @@ void PipelineDescriptor::SetPolygonMode(PolygonMode mode) {
 
 PolygonMode PipelineDescriptor::GetPolygonMode() const {
   return polygon_mode_;
+}
+
+void PipelineDescriptor::SetSpecializationConstants(
+    std::vector<Scalar> values) {
+  specialization_constants_ = std::move(values);
+}
+
+const std::vector<Scalar>& PipelineDescriptor::GetSpecializationConstants()
+    const {
+  return specialization_constants_;
 }
 
 }  // namespace impeller

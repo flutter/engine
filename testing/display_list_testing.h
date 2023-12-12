@@ -58,7 +58,6 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
       : os_(os), cur_indent_(cur_indent), indent_(indent) {}
 
   void setAntiAlias(bool aa) override;
-  void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
   void setStrokeWidth(SkScalar width) override;
@@ -144,6 +143,9 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override;
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,

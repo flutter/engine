@@ -56,7 +56,6 @@ namespace flutter {
 
 #define FOR_EACH_DISPLAY_LIST_OP(V) \
   V(SetAntiAlias)                   \
-  V(SetDither)                      \
   V(SetInvertColors)                \
                                     \
   V(SetStrokeCap)                   \
@@ -136,6 +135,7 @@ namespace flutter {
                                     \
   V(DrawDisplayList)                \
   V(DrawTextBlob)                   \
+  V(DrawTextFrame)                  \
                                     \
   V(DrawShadow)                     \
   V(DrawShadowTransparentOccluder)

@@ -159,6 +159,13 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
 }
 
 bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer_);
+#endif  // IMPELLER_DEBUG
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -176,9 +183,9 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   return true;
 }
 
-bool CommandBufferMTL::SubmitCommandsAsync(
-    std::shared_ptr<RenderPass> render_pass) {
-  TRACE_EVENT0("impeller", "CommandBufferMTL::SubmitCommandsAsync");
+bool CommandBufferMTL::EncodeAndSubmit(
+    const std::shared_ptr<RenderPass>& render_pass) {
+  TRACE_EVENT0("impeller", "CommandBufferMTL::EncodeAndSubmit");
   if (!IsValid() || !render_pass->IsValid()) {
     return false;
   }
@@ -189,6 +196,10 @@ bool CommandBufferMTL::SubmitCommandsAsync(
   [buffer_ enqueue];
   auto buffer = buffer_;
   buffer_ = nil;
+
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer);
+#endif  // IMPELLER_DEBUG
 
   auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
   auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
@@ -223,6 +234,34 @@ bool CommandBufferMTL::SubmitCommandsAsync(
         } else {
           VALIDATION_LOG << "Failed to encode command buffer";
         }
+      });
+  worker_task_runner->PostTask(task);
+  return true;
+}
+
+bool CommandBufferMTL::EncodeAndSubmit(
+    const std::shared_ptr<BlitPass>& blit_pass,
+    const std::shared_ptr<Allocator>& allocator) {
+  if (!IsValid() || !blit_pass->IsValid()) {
+    return false;
+  }
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+  [buffer_ enqueue];
+  auto buffer = buffer_;
+  buffer_ = nil;
+
+  auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
+  auto task = fml::MakeCopyable(
+      [blit_pass, buffer, weak_context = context_, allocator]() {
+        auto context = weak_context.lock();
+        if (!blit_pass->EncodeCommands(allocator)) {
+          VALIDATION_LOG << "Failed to encode blit pass.";
+          return;
+        }
+        [buffer commit];
       });
   worker_task_runner->PostTask(task);
   return true;

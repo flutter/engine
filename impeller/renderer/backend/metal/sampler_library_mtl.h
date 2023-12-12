@@ -29,13 +29,15 @@ class SamplerLibraryMTL final
   id<MTLDevice> device_ = nullptr;
   SamplerMap samplers_;
 
-  SamplerLibraryMTL(id<MTLDevice> device);
+  explicit SamplerLibraryMTL(id<MTLDevice> device);
 
   // |SamplerLibrary|
   std::shared_ptr<const Sampler> GetSampler(
       SamplerDescriptor descriptor) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SamplerLibraryMTL);
+  SamplerLibraryMTL(const SamplerLibraryMTL&) = delete;
+
+  SamplerLibraryMTL& operator=(const SamplerLibraryMTL&) = delete;
 };
 
 }  // namespace impeller

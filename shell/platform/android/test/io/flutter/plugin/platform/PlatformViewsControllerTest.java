@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.platform;
 
 import static android.os.Looper.getMainLooper;
@@ -1579,9 +1583,35 @@ public class PlatformViewsControllerTest {
 
               @Override
               public void pushImage(Image image) {}
+            };
+          }
+
+          @Override
+          public SurfaceProducer createSurfaceProducer() {
+            return new SurfaceProducer() {
+              @Override
+              public long id() {
+                return 0;
+              }
 
               @Override
-              public Image acquireLatestImage() {
+              public void release() {}
+
+              @Override
+              public int getWidth() {
+                return 0;
+              }
+
+              @Override
+              public int getHeight() {
+                return 0;
+              }
+
+              @Override
+              public void setSize(int width, int height) {}
+
+              @Override
+              public Surface getSurface() {
                 return null;
               }
             };

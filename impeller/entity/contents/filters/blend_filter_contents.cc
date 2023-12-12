@@ -114,7 +114,7 @@ static std::optional<Entity> AdvancedBlend(
         return std::nullopt;
       }
       return Entity::FromSnapshot(dst_snapshot, entity.GetBlendMode(),
-                                  entity.GetStencilDepth());
+                                  entity.GetClipDepth());
     }
     auto maybe_src_uvs = src_snapshot->GetCoverageUVs(coverage);
     if (!maybe_src_uvs.has_value()) {
@@ -122,7 +122,7 @@ static std::optional<Entity> AdvancedBlend(
         return std::nullopt;
       }
       return Entity::FromSnapshot(dst_snapshot, entity.GetBlendMode(),
-                                  entity.GetStencilDepth());
+                                  entity.GetClipDepth());
     }
     src_uvs = maybe_src_uvs.value();
   }
@@ -155,14 +155,13 @@ static std::optional<Entity> AdvancedBlend(
     vtx_builder.AddVertices({
         {Point(0, 0), dst_uvs[0], src_uvs[0]},
         {Point(size.width, 0), dst_uvs[1], src_uvs[1]},
-        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
-        {Point(0, 0), dst_uvs[0], src_uvs[0]},
-        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
         {Point(0, size.height), dst_uvs[2], src_uvs[2]},
+        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
     std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
         std::invoke(pipeline_proc, renderer, options);
@@ -170,7 +169,7 @@ static std::optional<Entity> AdvancedBlend(
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Advanced Blend Filter (%s)",
                                     BlendModeToString(blend_mode)));
-    cmd.BindVertices(vtx_buffer);
+    cmd.BindVertices(std::move(vtx_buffer));
     cmd.pipeline = std::move(pipeline);
 
     typename FS::BlendInfo blend_info;
@@ -242,7 +241,7 @@ static std::optional<Entity> AdvancedBlend(
                           ? 1.0f
                           : dst_snapshot->opacity) *
                      alpha.value_or(1.0)},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+      entity.GetBlendMode(), entity.GetClipDepth());
 }
 
 std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
@@ -281,21 +280,19 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     vtx_builder.AddVertices({
         {origin, dst_uvs[0], dst_uvs[0]},
         {Point(origin.x + size.width, origin.y), dst_uvs[1], dst_uvs[1]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
-         dst_uvs[3]},
-        {origin, dst_uvs[0], dst_uvs[0]},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
-         dst_uvs[3]},
         {Point(origin.x, origin.y + size.height), dst_uvs[2], dst_uvs[2]},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
+         dst_uvs[3]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Foreground Advanced Blend Filter (%s)",
                                     BlendModeToString(blend_mode)));
-    cmd.BindVertices(vtx_buffer);
-    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.BindVertices(std::move(vtx_buffer));
+    cmd.stencil_reference = entity.GetClipDepth();
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
 
     switch (blend_mode) {
       case BlendMode::kScreen:
@@ -375,7 +372,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     FS::BindBlendInfo(cmd, blend_uniform);
 
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
+                     entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -384,14 +381,14 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
   };
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetClipDepth(entity.GetClipDepth());
 
   return sub_entity;
 }
@@ -416,7 +413,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     Entity foreground_entity;
     foreground_entity.SetBlendMode(entity.GetBlendMode());
-    foreground_entity.SetStencilDepth(entity.GetStencilDepth());
+    foreground_entity.SetClipDepth(entity.GetClipDepth());
     foreground_entity.SetContents(std::move(contents));
     return foreground_entity;
   }
@@ -429,7 +426,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
   if (blend_mode == BlendMode::kDestination) {
     return Entity::FromSnapshot(dst_snapshot, entity.GetBlendMode(),
-                                entity.GetStencilDepth());
+                                entity.GetClipDepth());
   }
 
   RenderProc render_proc = [foreground_color, coverage, dst_snapshot,
@@ -454,21 +451,19 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     vtx_builder.AddVertices({
         {origin, dst_uvs[0], color},
         {Point(origin.x + size.width, origin.y), dst_uvs[1], color},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
-         color},
-        {origin, dst_uvs[0], color},
-        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
-         color},
         {Point(origin.x, origin.y + size.height), dst_uvs[2], color},
+        {Point(origin.x + size.width, origin.y + size.height), dst_uvs[3],
+         color},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Foreground PorterDuff Blend Filter (%s)",
                                     BlendModeToString(blend_mode)));
-    cmd.BindVertices(vtx_buffer);
-    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.BindVertices(std::move(vtx_buffer));
+    cmd.stencil_reference = entity.GetClipDepth();
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     cmd.pipeline = renderer.GetPorterDuffBlendPipeline(options);
 
     FS::FragInfo frag_info;
@@ -502,7 +497,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
+                     entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -512,14 +507,14 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetStencilDepth(entity.GetStencilDepth());
+  sub_entity.SetClipDepth(entity.GetClipDepth());
 
   return sub_entity;
 }
@@ -565,6 +560,7 @@ static std::optional<Entity> PipelineBlend(
     DEBUG_COMMAND_INFO(cmd, SPrintF("Pipeline Blend Filter (%s)",
                                     BlendModeToString(blend_mode)));
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
 
     auto add_blend_command = [&](std::optional<Snapshot> input) {
       if (!input.has_value()) {
@@ -584,13 +580,10 @@ static std::optional<Entity> PipelineBlend(
       vtx_builder.AddVertices({
           {Point(0, 0), Point(0, 0)},
           {Point(size.width, 0), Point(1, 0)},
-          {Point(size.width, size.height), Point(1, 1)},
-          {Point(0, 0), Point(0, 0)},
-          {Point(size.width, size.height), Point(1, 1)},
           {Point(0, size.height), Point(0, 1)},
+          {Point(size.width, size.height), Point(1, 1)},
       });
-      auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-      cmd.BindVertices(vtx_buffer);
+      cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
       VS::FrameInfo frame_info;
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -672,7 +665,7 @@ static std::optional<Entity> PipelineBlend(
                           ? 1.0f
                           : dst_snapshot->opacity) *
                      alpha.value_or(1.0)},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+      entity.GetBlendMode(), entity.GetClipDepth());
 }
 
 #define BLEND_CASE(mode)                                                      \

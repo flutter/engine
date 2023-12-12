@@ -971,6 +971,14 @@ typedef enum {
   kFlutterKeyEventTypeRepeat,
 } FlutterKeyEventType;
 
+typedef enum {
+  kFlutterKeyEventDeviceTypeKeyboard = 1,
+  kFlutterKeyEventDeviceTypeDirectionalPad,
+  kFlutterKeyEventDeviceTypeGamepad,
+  kFlutterKeyEventDeviceTypeJoystick,
+  kFlutterKeyEventDeviceTypeHdmi,
+} FlutterKeyEventDeviceType;
+
 /// A structure to represent a key event.
 ///
 /// Sending `FlutterKeyEvent` via `FlutterEngineSendKeyEvent` results in a
@@ -1034,6 +1042,8 @@ typedef struct {
   /// An event being synthesized means that the `timestamp` might greatly
   /// deviate from the actual time when the event occurs physically.
   bool synthesized;
+  /// The source device for the key event.
+  FlutterKeyEventDeviceType device_type;
 } FlutterKeyEvent;
 
 typedef void (*FlutterKeyEventCallback)(bool /* handled */,
@@ -2255,6 +2265,8 @@ typedef struct {
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
 
+// NOLINTBEGIN(google-objc-function-naming)
+
 //------------------------------------------------------------------------------
 /// @brief      Creates the necessary data structures to launch a Flutter Dart
 ///             application in AOT mode. The data may only be collected after
@@ -3125,6 +3137,8 @@ typedef struct {
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table);
+
+// NOLINTEND(google-objc-function-naming)
 
 #if defined(__cplusplus)
 }  // extern "C"

@@ -33,17 +33,21 @@ class AngleSurfaceManager {
 
   // Creates an EGLSurface wrapper and backing DirectX 11 SwapChain
   // associated with window, in the appropriate format for display.
-  // Target represents the visual entity to bind to.  Width and
+  // Target represents the visual entity to bind to. Width and
   // height represent dimensions surface is created at.
+  //
+  // After the surface is created, |SetVSyncEnabled| should be called on a
+  // thread that can bind the |egl_context_|.
   virtual bool CreateSurface(WindowsRenderTarget* render_target,
                              EGLint width,
-                             EGLint height,
-                             bool enable_vsync);
+                             EGLint height);
 
   // Resizes backing surface from current size to newly requested size
   // based on width and height for the specific case when width and height do
-  // not match current surface dimensions.  Target represents the visual entity
+  // not match current surface dimensions. Target represents the visual entity
   // to bind to.
+  //
+  // This binds |egl_context_| to the current thread.
   virtual void ResizeSurface(WindowsRenderTarget* render_target,
                              EGLint width,
                              EGLint height,
@@ -56,11 +60,17 @@ class AngleSurfaceManager {
   // Releases the pass-in EGLSurface wrapping and backing resources if not null.
   virtual void DestroySurface();
 
-  // Binds egl_context_ to the current rendering thread and to the draw and read
-  // surfaces returning a boolean result reflecting success.
-  bool MakeCurrent();
+  // Check if the current thread has a context bound.
+  bool HasContextCurrent();
 
-  // Clears current egl_context_
+  // Binds |egl_context_| to the current rendering thread and to the draw and
+  // read surfaces returning a boolean result reflecting success.
+  virtual bool MakeCurrent();
+
+  // Unbinds the current EGL context from the current thread.
+  virtual bool ClearCurrent();
+
+  // Clears the |egl_context_| draw and read surfaces.
   bool ClearContext();
 
   // Binds egl_resource_context_ to the current rendering thread and to the draw
@@ -81,6 +91,12 @@ class AngleSurfaceManager {
 
   // If enabled, makes the current surface's buffer swaps block until the
   // v-blank.
+  //
+  // If disabled, allows one thread to swap multiple buffers per v-blank
+  // but can result in screen tearing if the system compositor is disabled.
+  //
+  // This binds |egl_context_| to the current thread and makes the render
+  // surface current.
   virtual void SetVSyncEnabled(bool enabled);
 
   // Gets the |ID3D11Device| chosen by ANGLE.

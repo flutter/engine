@@ -4,11 +4,11 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/compiler/include_dir.h"
 #include "impeller/compiler/types.h"
@@ -32,6 +32,11 @@ struct SourceOptions {
   /// @brief Whether half-precision textures should be supported, requiring
   /// opengl semantics. Only used on metal targets.
   bool use_half_textures = false;
+
+  /// @brief Whether the GLSL framebuffer fetch extension will be required.
+  ///
+  /// Only used on OpenGLES targets.
+  bool require_framebuffer_fetch = false;
 
   SourceOptions();
 

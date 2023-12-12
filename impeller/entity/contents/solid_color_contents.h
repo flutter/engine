@@ -27,8 +27,7 @@ class SolidColorContents final : public ColorSourceContents {
 
   ~SolidColorContents() override;
 
-  static std::unique_ptr<SolidColorContents> Make(const Path& path,
-                                                  Color color);
+  static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
 
   void SetColor(Color color);
 
@@ -58,7 +57,9 @@ class SolidColorContents final : public ColorSourceContents {
  private:
   Color color_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SolidColorContents);
+  SolidColorContents(const SolidColorContents&) = delete;
+
+  SolidColorContents& operator=(const SolidColorContents&) = delete;
 };
 
 }  // namespace impeller

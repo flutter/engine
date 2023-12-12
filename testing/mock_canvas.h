@@ -37,8 +37,8 @@ static constexpr SkRect kEmptyRect = SkRect::MakeEmpty();
 class MockCanvas final : public DlCanvas {
  public:
   enum ClipEdgeStyle {
-    kHard_ClipEdgeStyle,
-    kSoft_ClipEdgeStyle,
+    kHardClipEdgeStyle,
+    kSoftClipEdgeStyle,
   };
 
   struct SaveData {
@@ -273,6 +273,10 @@ class MockCanvas final : public DlCanvas {
                     SkScalar x,
                     SkScalar y,
                     const DlPaint& paint) override;
+  void DrawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y,
+                     const DlPaint& paint) override;
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,

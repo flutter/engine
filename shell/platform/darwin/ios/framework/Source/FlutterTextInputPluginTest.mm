@@ -769,6 +769,53 @@ FLUTTER_ASSERT_ARC
   OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/textinput" message:encodedMethodCall]);
 }
 
+- (void)testDisablingAutocorrectDisablesSpellChecking {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+
+  // Disable the interactive selection.
+  NSDictionary* config = self.mutableTemplateCopy;
+  [inputView configureWithDictionary:config];
+
+  XCTAssertEqual(inputView.autocorrectionType, UITextAutocorrectionTypeDefault);
+  XCTAssertEqual(inputView.spellCheckingType, UITextSpellCheckingTypeDefault);
+
+  [config setValue:@(NO) forKey:@"autocorrect"];
+  [inputView configureWithDictionary:config];
+
+  XCTAssertEqual(inputView.autocorrectionType, UITextAutocorrectionTypeNo);
+  XCTAssertEqual(inputView.spellCheckingType, UITextSpellCheckingTypeNo);
+}
+
+- (void)testReplaceTestLocalAdjustSelectionAndMarkedTextRange {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView setMarkedText:@"test text" selectedRange:NSMakeRange(0, 5)];
+  NSRange selectedTextRange = ((FlutterTextRange*)inputView.selectedTextRange).range;
+  const NSRange markedTextRange = ((FlutterTextRange*)inputView.markedTextRange).range;
+  XCTAssertEqual(selectedTextRange.location, 0ul);
+  XCTAssertEqual(selectedTextRange.length, 5ul);
+  XCTAssertEqual(markedTextRange.location, 0ul);
+  XCTAssertEqual(markedTextRange.length, 9ul);
+
+  // Replaces space with space.
+  [inputView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(4, 1)] withText:@" "];
+  selectedTextRange = ((FlutterTextRange*)inputView.selectedTextRange).range;
+
+  XCTAssertEqual(selectedTextRange.location, 5ul);
+  XCTAssertEqual(selectedTextRange.length, 0ul);
+  XCTAssertEqual(inputView.markedTextRange, nil);
+}
+
+- (void)testFlutterTextInputViewOnlyRespondsToInsertionPointColorBelowIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  BOOL respondsToInsertionPointColor =
+      [inputView respondsToSelector:@selector(insertionPointColor)];
+  if (@available(iOS 17, *)) {
+    XCTAssertFalse(respondsToInsertionPointColor);
+  } else {
+    XCTAssertTrue(respondsToInsertionPointColor);
+  }
+}
+
 #pragma mark - TextEditingDelta tests
 - (void)testTextEditingDeltasAreGeneratedOnTextInput {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
@@ -1511,6 +1558,31 @@ FLUTTER_ASSERT_ARC
                                   [inputView firstRectForRange:range]));
 }
 
+- (void)testFirstRectForRangeReturnsNoneZeroRectWhenScribbleIsEnabled {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
+
+  FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
+  OCMStub([mockInputView isScribbleAvailable]).andReturn(YES);
+
+  [inputView setSelectionRects:@[
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 0, 100, 100) position:0U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(100, 0, 100, 100) position:1U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(200, 0, 100, 100) position:2U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 0, 100, 100) position:3U],
+  ]];
+
+  FlutterTextRange* multiRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 3)];
+
+  if (@available(iOS 17, *)) {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 300, 100),
+                                    [inputView firstRectForRange:multiRectRange]));
+  } else {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
+                                    [inputView firstRectForRange:multiRectRange]));
+  }
+}
+
 - (void)testFirstRectForRangeReturnsCorrectRectOnASingleLineLeftToRight {
   FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
   [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
@@ -1522,8 +1594,12 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 0, 100, 100) position:3U],
   ]];
   FlutterTextRange* singleRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
-  XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
-                                  [inputView firstRectForRange:singleRectRange]));
+  if (@available(iOS 17, *)) {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
+                                    [inputView firstRectForRange:singleRectRange]));
+  } else {
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:singleRectRange]));
+  }
 
   FlutterTextRange* multiRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 3)];
 
@@ -1531,8 +1607,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 
   [inputView setTextInputState:@{@"text" : @"COM"}];
@@ -1551,16 +1626,19 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 0, 100, 100) position:3U],
   ]];
   FlutterTextRange* singleRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
-  XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
-                                  [inputView firstRectForRange:singleRectRange]));
+  if (@available(iOS 17, *)) {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
+                                    [inputView firstRectForRange:singleRectRange]));
+  } else {
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:singleRectRange]));
+  }
 
   FlutterTextRange* multiRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 3)];
   if (@available(iOS 17, *)) {
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(0, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 
   [inputView setTextInputState:@{@"text" : @"COM"}];
@@ -1583,8 +1661,12 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(300, 100, 100, 100) position:7U],
   ]];
   FlutterTextRange* singleRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
-  XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
-                                  [inputView firstRectForRange:singleRectRange]));
+  if (@available(iOS 17, *)) {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
+                                    [inputView firstRectForRange:singleRectRange]));
+  } else {
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:singleRectRange]));
+  }
 
   FlutterTextRange* multiRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 4)];
 
@@ -1592,8 +1674,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1612,16 +1693,19 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 100, 100, 100) position:7U],
   ]];
   FlutterTextRange* singleRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 1)];
-  XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
-                                  [inputView firstRectForRange:singleRectRange]));
+  if (@available(iOS 17, *)) {
+    XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
+                                    [inputView firstRectForRange:singleRectRange]));
+  } else {
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:singleRectRange]));
+  }
 
   FlutterTextRange* multiRectRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(1, 4)];
   if (@available(iOS 17, *)) {
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(0, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1644,8 +1728,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, -10, 300, 120),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 10, 100, 80),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1668,8 +1751,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(0, -10, 300, 120),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, -10, 100, 120),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1692,8 +1774,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1716,8 +1797,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(0, 0, 300, 100),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(200, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1740,8 +1820,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 400, 140),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(100, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -1764,8 +1843,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertTrue(CGRectEqualToRect(CGRectMake(0, 0, 400, 140),
                                     [inputView firstRectForRange:multiRectRange]));
   } else {
-    XCTAssertTrue(CGRectEqualToRect(CGRectMake(300, 0, 100, 100),
-                                    [inputView firstRectForRange:multiRectRange]));
+    XCTAssertTrue(CGRectEqualToRect(CGRectZero, [inputView firstRectForRange:multiRectRange]));
   }
 }
 
@@ -2641,6 +2719,54 @@ FLUTTER_ASSERT_ARC
   range = [self getLineRangeFromTokenizer:tokenizer atIndex:32];
   XCTAssertEqual(range.range.location, 12u);
   XCTAssertEqual(range.range.length, 20u);
+}
+
+- (void)testFlutterTokenizerLineEnclosingEndOfDocumentInBackwardDirectionShouldNotReturnNil {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:[inputView endOfDocument]
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionBackward];
+  XCTAssertEqual(range.range.location, 11u);
+  XCTAssertEqual(range.range.length, 6u);
+}
+
+- (void)testFlutterTokenizerLineEnclosingEndOfDocumentInForwardDirectionShouldReturnNilOnIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:[inputView endOfDocument]
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionForward];
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 11u);
+    XCTAssertEqual(range.range.length, 6u);
+  }
+}
+
+- (void)testFlutterTokenizerLineEnclosingOutOfRangePositionShouldReturnNilOnIOS17 {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView insertText:@"0123456789\n012345"];
+  id<UITextInputTokenizer> tokenizer = [inputView tokenizer];
+
+  FlutterTextPosition* position = [FlutterTextPosition positionWithIndex:100];
+  FlutterTextRange* range =
+      (FlutterTextRange*)[tokenizer rangeEnclosingPosition:position
+                                           withGranularity:UITextGranularityLine
+                                               inDirection:UITextStorageDirectionForward];
+  if (@available(iOS 17.0, *)) {
+    XCTAssertNil(range);
+  } else {
+    XCTAssertEqual(range.range.location, 0u);
+    XCTAssertEqual(range.range.length, 0u);
+  }
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {

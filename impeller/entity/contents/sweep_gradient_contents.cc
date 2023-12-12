@@ -42,10 +42,6 @@ void SweepGradientContents::SetTileMode(Entity::TileMode tile_mode) {
   tile_mode_ = tile_mode;
 }
 
-void SweepGradientContents::SetDither(bool dither) {
-  dither_ = dither;
-}
-
 const std::vector<Color>& SweepGradientContents::GetColors() const {
   return colors_;
 }
@@ -88,7 +84,6 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.decal_border_color = decal_border_color_;
   frag_info.alpha = GetOpacityFactor();
-  frag_info.dither = dither_;
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
@@ -100,12 +95,12 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+                   entity.GetTransform();
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "SweepGradientSSBOFill");
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
   auto geometry_result =
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
@@ -117,7 +112,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   options.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetSweepGradientSSBOFillPipeline(options);
 
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
   FS::BindColorData(cmd, color_buffer);
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -167,7 +162,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "SweepGradientFill");
-  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.stencil_reference = entity.GetClipDepth();
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -177,7 +172,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
   options.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetSweepGradientFillPipeline(options);
 
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
   SamplerDescriptor sampler_desc;

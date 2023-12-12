@@ -29,7 +29,6 @@ class CommandPoolRecyclerVK;
 /// @see        |CommandPoolRecyclerVK|
 class CommandPoolVK final {
  public:
-  CommandPoolVK(CommandPoolVK&&) = default;
   ~CommandPoolVK();
 
   /// @brief      Creates a resource that manages the life of a command pool.
@@ -54,14 +53,21 @@ class CommandPoolVK final {
   /// @see        |GarbageCollectBuffersIfAble|
   void CollectCommandBuffer(vk::UniqueCommandBuffer&& buffer);
 
- private:
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
+  /// @brief      Delete all Vulkan objects in this command pool.
+  void Destroy();
 
-  vk::UniqueCommandPool pool_;
+ private:
+  CommandPoolVK(const CommandPoolVK&) = delete;
+
+  CommandPoolVK& operator=(const CommandPoolVK&) = delete;
+
+  Mutex pool_mutex_;
+  vk::UniqueCommandPool pool_ IPLR_GUARDED_BY(pool_mutex_);
   std::weak_ptr<ContextVK>& context_;
 
   // Used to retain a reference on these until the pool is reset.
-  std::vector<vk::UniqueCommandBuffer> collected_buffers_;
+  std::vector<vk::UniqueCommandBuffer> collected_buffers_
+      IPLR_GUARDED_BY(pool_mutex_);
 };
 
 //------------------------------------------------------------------------------
@@ -92,6 +98,12 @@ class CommandPoolRecyclerVK final
     : public std::enable_shared_from_this<CommandPoolRecyclerVK> {
  public:
   ~CommandPoolRecyclerVK();
+
+  /// @brief      Clean up resources held by all per-thread command pools
+  ///             associated with the given context.
+  ///
+  /// @param[in]  context The context.
+  static void DestroyThreadLocalPools(const ContextVK* context);
 
   /// @brief      Creates a recycler for the given |ContextVK|.
   ///
@@ -128,7 +140,9 @@ class CommandPoolRecyclerVK final
   /// @returns    Returns a |std::nullopt| if a pool was not available.
   std::optional<vk::UniqueCommandPool> Reuse();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolRecyclerVK);
+  CommandPoolRecyclerVK(const CommandPoolRecyclerVK&) = delete;
+
+  CommandPoolRecyclerVK& operator=(const CommandPoolRecyclerVK&) = delete;
 };
 
 }  // namespace impeller

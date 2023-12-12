@@ -221,29 +221,6 @@ void callNotifyDestroyed() {
 external void notifyMessage(String string);
 
 @pragma('vm:entry-point')
-void canConvertMappings() {
-  sendFixtureMapping(getFixtureMapping());
-}
-
-@pragma('vm:external-name', 'GetFixtureMapping')
-external List<int> getFixtureMapping();
-@pragma('vm:external-name', 'SendFixtureMapping')
-external void sendFixtureMapping(List<int> list);
-
-@pragma('vm:entry-point')
-void canDecompressImageFromAsset() {
-  decodeImageFromList(
-    Uint8List.fromList(getFixtureImage()),
-    (Image result) {
-      notifyWidthHeight(result.width, result.height);
-    },
-  );
-}
-
-@pragma('vm:external-name', 'GetFixtureImage')
-external List<int> getFixtureImage();
-
-@pragma('vm:entry-point')
 void canRegisterImageDecoders() {
   decodeImageFromList(
     // The test ImageGenerator will always behave the same regardless of input.
@@ -530,7 +507,7 @@ List<int> getCurrentViewWidths() {
   final List<int> result = <int>[];
   for (final FlutterView view in PlatformDispatcher.instance.views) {
     result.add(view.viewId);
-    result.add(view.physicalGeometry.width.round());
+    result.add(view.physicalSize.width.round());
   }
   return result;
 }
@@ -546,4 +523,25 @@ void testReportViewWidths() {
   PlatformDispatcher.instance.onMetricsChanged = () {
     nativeReportViewWidthsCallback(getCurrentViewWidths());
   };
+}
+
+@pragma('vm:entry-point')
+void onBeginFrameRendersMultipleViews() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      final SceneBuilder builder = SceneBuilder();
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+      final Picture picture = recorder.endRecording();
+      builder.addPicture(Offset.zero, picture);
+
+      final Scene scene = builder.build();
+      view.render(scene);
+
+      scene.dispose();
+      picture.dispose();
+    }
+  };
+  notifyNative();
 }

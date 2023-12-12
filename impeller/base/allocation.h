@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include <limits>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
 namespace impeller {
@@ -37,7 +37,9 @@ class Allocation {
 
   [[nodiscard]] bool ReserveNPOT(size_t reserved);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Allocation);
+  Allocation(const Allocation&) = delete;
+
+  Allocation& operator=(const Allocation&) = delete;
 };
 
 std::shared_ptr<fml::Mapping> CreateMappingWithCopy(const uint8_t* contents,

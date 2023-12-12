@@ -45,6 +45,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.EnableVulkanValidation";
   private static final String IMPELLER_BACKEND_META_DATA_KEY =
       "io.flutter.embedding.android.ImpellerBackend";
+  private static final String IMPELLER_OPENGL_GPU_TRACING_DATA_KEY =
+      "io.flutter.embedding.android.EnableOpenGLGPUTracing";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -334,6 +336,9 @@ public class FlutterLoader {
         if (metaData.getBoolean(
             ENABLE_VULKAN_VALIDATION_META_DATA_KEY, areValidationLayersOnByDefault())) {
           shellArgs.add("--enable-vulkan-validation");
+        }
+        if (metaData.getBoolean(IMPELLER_OPENGL_GPU_TRACING_DATA_KEY, false)) {
+          shellArgs.add("--enable-opengl-gpu-tracing");
         }
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {

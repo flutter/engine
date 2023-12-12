@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archive.h"
 
 namespace impeller {
@@ -28,9 +27,11 @@ class ArchiveVector : public Archivable {
 
   ArchiveVector();
 
-  ArchiveVector(std::vector<int64_t> keys);
+  explicit ArchiveVector(std::vector<int64_t> keys);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveVector);
+  ArchiveVector(const ArchiveVector&) = delete;
+
+  ArchiveVector& operator=(const ArchiveVector&) = delete;
 };
 
 }  // namespace impeller

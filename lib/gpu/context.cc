@@ -6,14 +6,15 @@
 
 #include <future>
 
-#include "dart_api.h"
+#include "flutter/lib/gpu/formats.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "fml/make_copyable.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
+namespace gpu {
 
-IMPLEMENT_WRAPPERTYPEINFO(gpu, Context);
+IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, Context);
 
 std::shared_ptr<impeller::Context> Context::default_context_;
 
@@ -34,6 +35,7 @@ std::shared_ptr<impeller::Context> Context::GetContext() {
   return context_;
 }
 
+}  // namespace gpu
 }  // namespace flutter
 
 //----------------------------------------------------------------------------
@@ -44,7 +46,7 @@ Dart_Handle InternalFlutterGpu_Context_InitializeDefault(Dart_Handle wrapper) {
   auto dart_state = flutter::UIDartState::Current();
 
   std::shared_ptr<impeller::Context> impeller_context =
-      flutter::Context::GetDefaultContext();
+      flutter::gpu::Context::GetDefaultContext();
 
   if (!impeller_context) {
     if (!dart_state->IsImpellerEnabled()) {
@@ -55,7 +57,8 @@ Dart_Handle InternalFlutterGpu_Context_InitializeDefault(Dart_Handle wrapper) {
     // Grab the Impeller context from the IO manager.
     std::promise<std::shared_ptr<impeller::Context>> context_promise;
     auto impeller_context_future = context_promise.get_future();
-    dart_state->GetTaskRunners().GetIOTaskRunner()->PostTask(
+    fml::TaskRunner::RunNowOrPostTask(
+        dart_state->GetTaskRunners().GetIOTaskRunner(),
         fml::MakeCopyable([promise = std::move(context_promise),
                            io_manager = dart_state->GetIOManager()]() mutable {
           promise.set_value(io_manager ? io_manager->GetImpellerContext()
@@ -67,8 +70,28 @@ Dart_Handle InternalFlutterGpu_Context_InitializeDefault(Dart_Handle wrapper) {
   if (!impeller_context) {
     return tonic::ToDart("Unable to retrieve the Impeller context.");
   }
-  auto res = fml::MakeRefCounted<flutter::Context>(impeller_context);
+  auto res = fml::MakeRefCounted<flutter::gpu::Context>(impeller_context);
   res->AssociateWithDartWrapper(wrapper);
 
   return Dart_Null();
+}
+
+extern int InternalFlutterGpu_Context_GetDefaultColorFormat(
+    flutter::gpu::Context* wrapper) {
+  return static_cast<int>(flutter::gpu::FromImpellerPixelFormat(
+      wrapper->GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+}
+
+extern int InternalFlutterGpu_Context_GetDefaultStencilFormat(
+    flutter::gpu::Context* wrapper) {
+  return static_cast<int>(flutter::gpu::FromImpellerPixelFormat(
+      wrapper->GetContext()->GetCapabilities()->GetDefaultStencilFormat()));
+}
+
+extern int InternalFlutterGpu_Context_GetDefaultDepthStencilFormat(
+    flutter::gpu::Context* wrapper) {
+  return static_cast<int>(flutter::gpu::FromImpellerPixelFormat(
+      wrapper->GetContext()
+          ->GetCapabilities()
+          ->GetDefaultDepthStencilFormat()));
 }

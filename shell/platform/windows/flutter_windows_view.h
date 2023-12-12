@@ -20,7 +20,6 @@
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
@@ -30,10 +29,9 @@ namespace flutter {
 // ID for the window frame buffer.
 inline constexpr uint32_t kWindowFrameBufferID = 0;
 
-// An OS-windowing neutral abstration for flutter
-// view that works with win32 hwnds and Windows::UI::Composition visuals.
-class FlutterWindowsView : public WindowBindingHandlerDelegate,
-                           public TextInputPluginDelegate {
+// An OS-windowing neutral abstration for a Flutter view that works
+// with win32 HWNDs.
+class FlutterWindowsView : public WindowBindingHandlerDelegate {
  public:
   // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
@@ -46,7 +44,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Configures the window instance with an instance of a running Flutter
   // engine.
-  void SetEngine(std::unique_ptr<FlutterWindowsEngine> engine);
+  void SetEngine(FlutterWindowsEngine* engine);
 
   // Creates rendering surface for Flutter engine to draw into.
   // Should be called before calling FlutterEngineRun using this view.
@@ -67,11 +65,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Tells the engine to generate a new frame
   void ForceRedraw();
 
-  // Callbacks for clearing context, settings context and swapping buffers,
-  // these are typically called on an engine-controlled (non-platform) thread.
-  bool ClearContext();
-  bool MakeCurrent();
-  bool MakeResourceCurrent();
+  // Swap the view's surface buffers. Must be called on the engine's raster
+  // thread. Returns true if the buffers were swapped.
+  //
+  // If the view is resizing, this returns false if the frame is not the target
+  // size. Otherwise, it unblocks the platform thread and blocks the raster
+  // thread until the v-blank.
   bool SwapBuffers();
 
   // Callback for presenting a software bitmap.
@@ -82,14 +81,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
 
-  // Send the initial accessibility features to the window
-  void SendInitialAccessibilityFeatures();
-
   // Set the text of the alert, and create it if it does not yet exist.
   void AnnounceAlert(const std::wstring& text);
 
   // |WindowBindingHandlerDelegate|
-  void UpdateHighContrastEnabled(bool enabled) override;
+  void OnHighContrastChanged() override;
 
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
@@ -189,11 +185,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |WindowBindingHandlerDelegate|
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
-  // |TextInputPluginDelegate|
-  void OnCursorRectUpdated(const Rect& rect) override;
+  // Notifies the delegate of the updated the cursor rect in Flutter root view
+  // coordinates.
+  virtual void OnCursorRectUpdated(const Rect& rect);
 
-  // |TextInputPluginDelegate|
-  void OnResetImeComposing() override;
+  // Notifies the delegate that the system IME composing state should be reset.
+  virtual void OnResetImeComposing();
 
   // Called when a WM_ONCOMPOSITIONCHANGED message is received.
   void OnDwmCompositionChanged();
@@ -364,7 +361,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   std::unique_ptr<WindowsRenderTarget> render_target_;
 
   // The engine associated with this view.
-  std::unique_ptr<FlutterWindowsEngine> engine_;
+  FlutterWindowsEngine* engine_ = nullptr;
 
   // Keeps track of pointer states in relation to the window.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

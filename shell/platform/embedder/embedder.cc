@@ -361,8 +361,7 @@ InferOpenGLPlatformViewCreationCallback(
     if (!populate_existing_damage) {
       return flutter::GLFBOInfo{
           .fbo_id = static_cast<uint32_t>(id),
-          .partial_repaint_enabled = false,
-          .existing_damage = SkIRect::MakeEmpty(),
+          .existing_damage = std::nullopt,
       };
     }
 
@@ -370,29 +369,22 @@ InferOpenGLPlatformViewCreationCallback(
     FlutterDamage existing_damage;
     populate_existing_damage(user_data, id, &existing_damage);
 
-    bool partial_repaint_enabled = true;
-    SkIRect existing_damage_rect;
+    std::optional<SkIRect> existing_damage_rect = std::nullopt;
 
     // Verify that at least one damage rectangle was provided.
     if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
       FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
-      existing_damage_rect = SkIRect::MakeEmpty();
-      partial_repaint_enabled = false;
-    } else if (existing_damage.num_rects > 1) {
-      // Log message notifying users that multi-damage is not yet available in
-      // case they try to make use of it.
-      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
-                       "Repainting the whole frame.";
-      existing_damage_rect = SkIRect::MakeEmpty();
-      partial_repaint_enabled = false;
     } else {
-      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+      existing_damage_rect = SkIRect::MakeEmpty();
+      for (size_t i = 0; i < existing_damage.num_rects; i++) {
+        existing_damage_rect->join(
+            FlutterRectToSkIRect(existing_damage.damage[i]));
+      }
     }
 
     // Pass the information about this FBO to the rendering backend.
     return flutter::GLFBOInfo{
         .fbo_id = static_cast<uint32_t>(id),
-        .partial_repaint_enabled = partial_repaint_enabled,
         .existing_damage = existing_damage_rect,
     };
   };
@@ -1984,16 +1976,16 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
     FlutterThreadPriority priority = FlutterThreadPriority::kNormal;
     switch (config.priority) {
-      case fml::Thread::ThreadPriority::BACKGROUND:
+      case fml::Thread::ThreadPriority::kBackground:
         priority = FlutterThreadPriority::kBackground;
         break;
-      case fml::Thread::ThreadPriority::NORMAL:
+      case fml::Thread::ThreadPriority::kNormal:
         priority = FlutterThreadPriority::kNormal;
         break;
-      case fml::Thread::ThreadPriority::DISPLAY:
+      case fml::Thread::ThreadPriority::kDisplay:
         priority = FlutterThreadPriority::kDisplay;
         break;
-      case fml::Thread::ThreadPriority::RASTER:
+      case fml::Thread::ThreadPriority::kRaster:
         priority = FlutterThreadPriority::kRaster;
         break;
     }
@@ -2357,6 +2349,23 @@ static inline flutter::KeyEventType MapKeyEventType(
   return flutter::KeyEventType::kUp;
 }
 
+static inline flutter::KeyEventDeviceType MapKeyEventDeviceType(
+    FlutterKeyEventDeviceType event_kind) {
+  switch (event_kind) {
+    case kFlutterKeyEventDeviceTypeKeyboard:
+      return flutter::KeyEventDeviceType::kKeyboard;
+    case kFlutterKeyEventDeviceTypeDirectionalPad:
+      return flutter::KeyEventDeviceType::kDirectionalPad;
+    case kFlutterKeyEventDeviceTypeGamepad:
+      return flutter::KeyEventDeviceType::kGamepad;
+    case kFlutterKeyEventDeviceTypeJoystick:
+      return flutter::KeyEventDeviceType::kJoystick;
+    case kFlutterKeyEventDeviceTypeHdmi:
+      return flutter::KeyEventDeviceType::kHdmi;
+  }
+  return flutter::KeyEventDeviceType::kKeyboard;
+}
+
 // Send a platform message to the framework.
 //
 // The `data_callback` will be invoked with `user_data`, and must not be empty.
@@ -2419,6 +2428,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
   key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
+  key_data.device_type = MapKeyEventDeviceType(SAFE_ACCESS(
+      event, device_type,
+      FlutterKeyEventDeviceType::kFlutterKeyEventDeviceTypeKeyboard));
 
   auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
 
@@ -2733,7 +2745,7 @@ FlutterEngineResult FlutterEngineReloadSystemFonts(
 
 void FlutterEngineTraceEventDurationBegin(const char* name) {
   fml::tracing::TraceEvent0("flutter", name, /*flow_id_count=*/0,
-                            /*flow_id=*/nullptr);
+                            /*flow_ids=*/nullptr);
 }
 
 void FlutterEngineTraceEventDurationEnd(const char* name) {
@@ -2742,7 +2754,7 @@ void FlutterEngineTraceEventDurationEnd(const char* name) {
 
 void FlutterEngineTraceEventInstant(const char* name) {
   fml::tracing::TraceEventInstant0("flutter", name, /*flow_id_count=*/0,
-                                   /*flow_id=*/nullptr);
+                                   /*flow_ids=*/nullptr);
 }
 
 FlutterEngineResult FlutterEnginePostRenderThreadTask(

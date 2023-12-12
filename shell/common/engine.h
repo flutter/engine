@@ -29,7 +29,6 @@
 #include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
-#include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
 
@@ -77,6 +76,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Indicates the result of the call to `Engine::Run`.
   ///
   enum class RunStatus {
+    // NOLINTBEGIN(readability-identifier-naming)
     //--------------------------------------------------------------------------
     /// The call to |Engine::Run| was successful and the root isolate is in the
     /// `DartIsolate::Phase::Running` phase with its entry-point invocation
@@ -126,6 +126,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///   AOT mode operation of the Dart VM.
     ///
     Failure,
+    // NOLINTEND(readability-identifier-naming)
   };
 
   //----------------------------------------------------------------------------
@@ -828,7 +829,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void SetAccessibilityFeatures(int32_t flags);
 
   // |RuntimeDelegate|
-  void ScheduleFrame(bool regenerate_layer_tree) override;
+  void ScheduleFrame(bool regenerate_layer_trees) override;
 
   /// Schedule a frame with the default parameter of regenerating the layer
   /// tree.
@@ -960,7 +961,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|

@@ -20,6 +20,10 @@ class MockBinaryMessenger {
   MockBinaryMessenger();
   ~MockBinaryMessenger();
 
+  // This was an existing use of operator overloading. It's against our style
+  // guide but enabling clang tidy on header files is a higher priority than
+  // fixing this.
+  // NOLINTNEXTLINE(google-explicit-constructor)
   operator FlBinaryMessenger*();
 
   MOCK_METHOD(void,
@@ -59,10 +63,10 @@ class MockBinaryMessenger {
                int64_t new_size));
 
   MOCK_METHOD(void,
-              fl_binary_messenger_set_allow_channel_overflow,
+              fl_binary_messenger_set_warns_on_channel_overflow,
               (FlBinaryMessenger * messenger,
                const gchar* channel,
-               bool allowed));
+               bool warns));
 
   bool HasMessageHandler(const gchar* channel) const;
 
@@ -75,10 +79,10 @@ class MockBinaryMessenger {
  private:
   FlBinaryMessenger* instance_ = nullptr;
   std::unordered_map<std::string, FlBinaryMessengerMessageHandler>
-      message_handlers;
+      message_handlers_;
   std::unordered_map<std::string, FlBinaryMessengerResponseHandle*>
-      response_handles;
-  std::unordered_map<std::string, gpointer> user_datas;
+      response_handles_;
+  std::unordered_map<std::string, gpointer> user_datas_;
 };
 
 }  // namespace testing

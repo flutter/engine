@@ -15,7 +15,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12",
+                "os=Mac-12|Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -47,21 +47,23 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             },
             "tests": [
                 {
                     "language": "python3",
                     "name": "Host Tests for host_debug",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_debug",
                         "--type",
-                        "dart,engine",
+                        "dart,dart-host,engine",
                         "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -79,7 +81,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12",
+                "os=Mac-12|Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -106,21 +108,23 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             },
             "tests": [
                 {
                     "language": "python3",
                     "name": "Host Tests for host_profile",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_profile",
                         "--type",
-                        "dart,engine",
+                        "dart,dart-host,engine",
                         "--engine-capture-core-dump"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                    ]
                 }
             ]
         },
@@ -139,14 +143,14 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12",
+                "os=Mac-12|Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
             "dependencies": [
                 {
                     "dependency": "goldctl",
-                    "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"
+                    "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
                 }
             ],
             "gclient_variables": {
@@ -176,20 +180,22 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             },
             "tests": [
                 {
                     "language": "python3",
                     "name": "Impeller-golden, dart and engine tests for host_release",
+                    "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_release",
                         "--type",
-                        "dart,engine,impeller-golden"
-                    ],
-                    "script": "flutter/testing/run_tests.py"
+                        "dart,dart-host,engine,impeller-golden"
+                    ]
                 }
             ]
         },
@@ -208,7 +214,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12",
+                "os=Mac-12|Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -237,7 +243,9 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
@@ -255,7 +263,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12",
+                "os=Mac-12|Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -280,7 +288,9 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         },
@@ -299,7 +309,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12",
+                "os=Mac-12|Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -325,7 +335,9 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "14e300c",
+                    "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
+                    "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
                 }
             }
         }

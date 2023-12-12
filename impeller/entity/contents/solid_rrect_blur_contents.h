@@ -43,6 +43,10 @@ class SolidRRectBlurContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  [[nodiscard]] bool ApplyColorFilter(
+      const ColorFilterProc& color_filter_proc) override;
+
  private:
   std::optional<Rect> rect_;
   Scalar corner_radius_;
@@ -50,7 +54,9 @@ class SolidRRectBlurContents final : public Contents {
 
   Color color_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SolidRRectBlurContents);
+  SolidRRectBlurContents(const SolidRRectBlurContents&) = delete;
+
+  SolidRRectBlurContents& operator=(const SolidRRectBlurContents&) = delete;
 };
 
 }  // namespace impeller

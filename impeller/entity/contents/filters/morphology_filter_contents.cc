@@ -6,10 +6,12 @@
 
 #include <cmath>
 
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -59,7 +61,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
 
   if (radius_.radius < kEhCloseEnough) {
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
-                                entity.GetStencilDepth());
+                                entity.GetClipDepth());
   }
 
   auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
@@ -80,24 +82,20 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0), input_uvs[0]},
         {Point(1, 0), input_uvs[1]},
-        {Point(1, 1), input_uvs[3]},
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 1), input_uvs[3]},
         {Point(0, 1), input_uvs[2]},
+        {Point(1, 1), input_uvs[3]},
     });
-
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
-    auto transform = entity.GetTransformation() * effect_transform.Basis();
+    auto transform = entity.GetTransform() * effect_transform.Basis();
     auto transformed_radius =
         transform.TransformDirection(direction_ * radius_.radius);
     auto transformed_texture_vertices =
-        Rect(Size(input_snapshot->texture->GetSize()))
+        Rect::MakeSize(input_snapshot->texture->GetSize())
             .GetTransformedPoints(input_snapshot->transform);
     auto transformed_texture_width =
         transformed_texture_vertices[0].GetDistance(
@@ -118,9 +116,10 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, "Morphology Filter");
     auto options = OptionsFromPass(pass);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
-    cmd.BindVertices(vtx_buffer);
+    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
     auto sampler_descriptor = input_snapshot->sampler_descriptor;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
@@ -153,7 +152,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
                .transform = Matrix::MakeTranslation(coverage.origin),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
-      entity.GetBlendMode(), entity.GetStencilDepth());
+      entity.GetBlendMode(), entity.GetClipDepth());
 }
 
 std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
@@ -187,7 +186,21 @@ std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
   if (size.x < 0 || size.y < 0) {
     return Rect::MakeSize(Size(0, 0));
   }
-  return Rect(origin, Size(size.x, size.y));
+  return Rect::MakeOriginSize(origin, Size(size.x, size.y));
+}
+
+std::optional<Rect>
+DirectionalMorphologyFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto transformed_vector =
+      effect_transform.TransformDirection(direction_ * radius_.radius).Abs();
+  switch (morph_type_) {
+    case FilterContents::MorphType::kDilate:
+      return output_limit.Expand(-transformed_vector);
+    case FilterContents::MorphType::kErode:
+      return output_limit.Expand(transformed_vector);
+  }
 }
 
 }  // namespace impeller

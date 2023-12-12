@@ -39,7 +39,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
   MOCK_METHOD(void,
               Render,
-              (std::unique_ptr<flutter::LayerTree>, float),
+              (int64_t, std::unique_ptr<flutter::LayerTree>, float),
               (override));
   MOCK_METHOD(void,
               UpdateSemantics,
@@ -176,9 +176,6 @@ class RuntimeControllerContext {
 }  // namespace
 
 namespace testing {
-
-using ::testing::_;
-using ::testing::Return;
 
 class PlatformConfigurationTest : public ShellTest {};
 
@@ -491,85 +488,6 @@ TEST_F(PlatformConfigurationTest, SetDartPerformanceMode) {
 
   message_latch->Wait();
   DestroyShell(std::move(shell), task_runners);
-}
-
-TEST_F(PlatformConfigurationTest, OutOfScopeRenderCallsAreIgnored) {
-  Settings settings = CreateSettingsForFixture();
-  TaskRunners task_runners = GetTaskRunnersForFixture();
-
-  MockRuntimeDelegate client;
-  auto platform_message_handler =
-      std::make_shared<MockPlatformMessageHandler>();
-  EXPECT_CALL(client, GetPlatformMessageHandler)
-      .WillOnce(Return(platform_message_handler));
-  // Render should not be called.
-  EXPECT_CALL(client, Render).Times(0);
-
-  auto finish_latch = std::make_shared<fml::AutoResetWaitableEvent>();
-  auto finish = [finish_latch](Dart_NativeArguments args) {
-    finish_latch->Signal();
-  };
-  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
-
-  auto runtime_controller_context =
-      RuntimeControllerContext::Create(settings, task_runners, client);
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("incorrectImmediateRender");
-  runtime_controller_context->LaunchRootIsolate(
-      configuration, [](RuntimeController& runtime_controller) {
-        runtime_controller.AddView(
-            kImplicitViewId,
-            ViewportMetrics(
-                /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                /*touch_slop=*/2, /*display_id=*/0));
-      });
-
-  // Wait for the Dart main function to end.
-  finish_latch->Wait();
-}
-
-TEST_F(PlatformConfigurationTest, DuplicateRenderCallsAreIgnored) {
-  Settings settings = CreateSettingsForFixture();
-  TaskRunners task_runners = GetTaskRunnersForFixture();
-
-  MockRuntimeDelegate client;
-  auto platform_message_handler =
-      std::make_shared<MockPlatformMessageHandler>();
-  EXPECT_CALL(client, GetPlatformMessageHandler)
-      .WillOnce(Return(platform_message_handler));
-  // Render should only be called once, because the second call is ignored.
-  EXPECT_CALL(client, Render).Times(1);
-
-  auto finish_latch = std::make_shared<fml::AutoResetWaitableEvent>();
-  auto finish = [finish_latch](Dart_NativeArguments args) {
-    finish_latch->Signal();
-  };
-  AddNativeCallback("Finish", CREATE_NATIVE_ENTRY(finish));
-
-  auto runtime_controller_context =
-      RuntimeControllerContext::Create(settings, task_runners, client);
-
-  auto configuration = RunConfiguration::InferFromSettings(settings);
-  configuration.SetEntrypoint("incorrectDoubleRender");
-  runtime_controller_context->LaunchRootIsolate(
-      configuration, [](RuntimeController& runtime_controller) {
-        runtime_controller.AddView(
-            kImplicitViewId,
-            ViewportMetrics(
-                /*pixel_ratio=*/1.0, /*width=*/20, /*height=*/20,
-                /*touch_slop=*/2, /*display_id=*/0));
-      });
-
-  // Wait for the Dart main function to end.
-  finish_latch->Wait();
-
-  // This call synchronously calls PlatformDispatcher's handleBeginFrame and
-  // handleDrawFrame. Therefore it doesn't have to wait for latches.
-  runtime_controller_context->ControllerTaskSync(
-      [](RuntimeController& runtime_controller) {
-        runtime_controller.BeginFrame(fml::TimePoint::Now(), 0);
-      });
 }
 
 }  // namespace testing

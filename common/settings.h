@@ -90,6 +90,9 @@ using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
 class DartIsolate;
 
+// TODO(https://github.com/flutter/flutter/issues/138750): Re-order fields to
+// reduce padding.
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 struct Settings {
   Settings();
 
@@ -224,6 +227,10 @@ struct Settings {
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
   bool enable_vulkan_validation = false;
+
+  // Enable GPU tracing in GLES backends.
+  // Some devices claim to support the required APIs but crash on their usage.
+  bool enable_opengl_gpu_tracing = false;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;

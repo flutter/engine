@@ -4,17 +4,10 @@
 
 #pragma once
 
-#include <functional>
-#include <future>
 #include <map>
 #include <memory>
 #include <string>
-#include <string_view>
-#include <type_traits>
-#include <unordered_map>
 
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -26,6 +19,11 @@ class ShaderFunction;
 class VertexDescriptor;
 template <typename T>
 class Pipeline;
+
+enum class UseSubpassInput {
+  kYes,
+  kNo,
+};
 
 class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
  public:
@@ -131,6 +129,21 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
+  void SetSpecializationConstants(std::vector<Scalar> values);
+
+  const std::vector<Scalar>& GetSpecializationConstants() const;
+
+  void SetUseSubpassInput(UseSubpassInput value) { use_subpass_input_ = value; }
+
+  bool UsesSubpassInput() const {
+    switch (use_subpass_input_) {
+      case UseSubpassInput::kYes:
+        return true;
+      case UseSubpassInput::kNo:
+        return false;
+    }
+  }
+
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -149,6 +162,8 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
+  UseSubpassInput use_subpass_input_ = UseSubpassInput::kNo;
+  std::vector<Scalar> specialization_constants_;
 };
 
 }  // namespace impeller

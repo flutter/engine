@@ -23,6 +23,8 @@
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+
 namespace flutter {
 namespace testing {
 
@@ -224,6 +226,122 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
 }
 }  // namespace
 
+TEST_F(ShellTest, EncodeImageRetries) {
+#ifndef FML_OS_MACOSX
+  // Only works on macos currently.
+  GTEST_SKIP();
+#endif
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // raster
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .task_runners = task_runners,
+  });
+
+  auto turn_off_gpu = [&](Dart_NativeArguments args) {
+    auto handle = Dart_GetNativeArgument(args, 0);
+    bool value = true;
+    ASSERT_TRUE(Dart_IsBoolean(handle));
+    Dart_BooleanValue(handle, &value);
+    TurnOffGPU(shell.get(), value);
+  };
+
+  AddNativeCallback("TurnOffGPU", CREATE_NATIVE_ENTRY(turn_off_gpu));
+
+  auto validate_not_null = [&](Dart_NativeArguments args) {
+    auto handle = Dart_GetNativeArgument(args, 0);
+    EXPECT_FALSE(Dart_IsNull(handle));
+    message_latch.Signal();
+  };
+
+  AddNativeCallback("ValidateNotNull", CREATE_NATIVE_ENTRY(validate_not_null));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("toByteDataRetries");
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
+  DestroyShell(std::move(shell), task_runners);
+}
+
+TEST_F(ShellTest, EncodeImageFailsWithoutGPUImpeller) {
+#ifndef FML_OS_MACOSX
+  // Only works on macos currently.
+  GTEST_SKIP();
+#endif
+  Settings settings = CreateSettingsForFixture();
+  settings.enable_impeller = true;
+  TaskRunners task_runners("test",                  // label
+                           GetCurrentTaskRunner(),  // platform
+                           CreateNewThread(),       // raster
+                           CreateNewThread(),       // ui
+                           CreateNewThread()        // io
+  );
+
+  auto native_validate_error = [&](Dart_NativeArguments args) {
+    auto handle = Dart_GetNativeArgument(args, 0);
+
+    EXPECT_FALSE(Dart_IsNull(handle));
+
+    message_latch.Signal();
+  };
+
+  AddNativeCallback("ValidateError",
+                    CREATE_NATIVE_ENTRY(native_validate_error));
+
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .task_runners = task_runners,
+  });
+
+  auto turn_off_gpu = [&](Dart_NativeArguments args) {
+    auto handle = Dart_GetNativeArgument(args, 0);
+    bool value = true;
+    ASSERT_TRUE(Dart_IsBoolean(handle));
+    Dart_BooleanValue(handle, &value);
+    TurnOffGPU(shell.get(), true);
+  };
+
+  AddNativeCallback("TurnOffGPU", CREATE_NATIVE_ENTRY(turn_off_gpu));
+
+  auto flush_awaiting_tasks = [&](Dart_NativeArguments args) {
+    task_runners.GetIOTaskRunner()->PostTask([&] {
+      std::shared_ptr<impeller::Context> impeller_context =
+          shell->GetIOManager()->GetImpellerContext();
+      // This will cause the stored tasks to overflow and start throwing them
+      // away.
+      for (int i = 0; i < impeller::Context::kMaxTasksAwaitingGPU; ++i) {
+        impeller_context->StoreTaskForGPU([] {});
+      }
+    });
+  };
+
+  AddNativeCallback("FlushGpuAwaitingTasks",
+                    CREATE_NATIVE_ENTRY(flush_awaiting_tasks));
+
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("toByteDataWithoutGPU");
+
+  shell->RunEngine(std::move(configuration), [&](auto result) {
+    ASSERT_EQ(result, Engine::RunStatus::Success);
+  });
+
+  message_latch.Wait();
+  DestroyShell(std::move(shell), task_runners);
+}
+
 TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
   sk_sp<MockDlImage> image(new MockDlImage());
   EXPECT_CALL(*image, dimensions)
@@ -238,13 +356,14 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage16Float) {
   bool did_call = false;
   ImageEncodingImpeller::ConvertDlImageToSkImage(
       image,
-      [&did_call](const sk_sp<SkImage>& image) {
+      [&did_call](const fml::StatusOr<sk_sp<SkImage>>& image) {
         did_call = true;
-        ASSERT_TRUE(image);
-        EXPECT_EQ(100, image->width());
-        EXPECT_EQ(100, image->height());
-        EXPECT_EQ(kRGBA_F16_SkColorType, image->colorType());
-        EXPECT_EQ(nullptr, image->colorSpace());
+        ASSERT_TRUE(image.ok());
+        ASSERT_TRUE(image.value());
+        EXPECT_EQ(100, image.value()->width());
+        EXPECT_EQ(100, image.value()->height());
+        EXPECT_EQ(kRGBA_F16_SkColorType, image.value()->colorType());
+        EXPECT_EQ(nullptr, image.value()->colorSpace());
       },
       context);
   EXPECT_TRUE(did_call);
@@ -264,13 +383,14 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage10XR) {
   bool did_call = false;
   ImageEncodingImpeller::ConvertDlImageToSkImage(
       image,
-      [&did_call](const sk_sp<SkImage>& image) {
+      [&did_call](const fml::StatusOr<sk_sp<SkImage>>& image) {
         did_call = true;
-        ASSERT_TRUE(image);
-        EXPECT_EQ(100, image->width());
-        EXPECT_EQ(100, image->height());
-        EXPECT_EQ(kBGR_101010x_XR_SkColorType, image->colorType());
-        EXPECT_EQ(nullptr, image->colorSpace());
+        ASSERT_TRUE(image.ok());
+        ASSERT_TRUE(image.value());
+        EXPECT_EQ(100, image.value()->width());
+        EXPECT_EQ(100, image.value()->height());
+        EXPECT_EQ(kBGR_101010x_XR_SkColorType, image.value()->colorType());
+        EXPECT_EQ(nullptr, image.value()->colorSpace());
       },
       context);
   EXPECT_TRUE(did_call);

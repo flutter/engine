@@ -76,10 +76,6 @@ static std::string ExecutionModelToString(spv::ExecutionModel model) {
       return "vertex";
     case spv::ExecutionModel::ExecutionModelFragment:
       return "fragment";
-    case spv::ExecutionModel::ExecutionModelTessellationControl:
-      return "tessellation_control";
-    case spv::ExecutionModel::ExecutionModelTessellationEvaluation:
-      return "tessellation_evaluation";
     case spv::ExecutionModel::ExecutionModelGLCompute:
       return "compute";
     default:
@@ -94,14 +90,6 @@ static std::string StringToShaderStage(std::string str) {
 
   if (str == "fragment") {
     return "ShaderStage::kFragment";
-  }
-
-  if (str == "tessellation_control") {
-    return "ShaderStage::kTessellationControl";
-  }
-
-  if (str == "tessellation_evaluation") {
-    return "ShaderStage::kTessellationEvaluation";
   }
 
   if (str == "compute") {
@@ -199,6 +187,21 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
   }
 
   const auto shader_resources = compiler_->get_shader_resources();
+
+  // Subpass Inputs.
+  {
+    auto& subpass_inputs = root["subpass_inputs"] = nlohmann::json::array_t{};
+    if (auto subpass_inputs_json =
+            ReflectResources(shader_resources.subpass_inputs);
+        subpass_inputs_json.has_value()) {
+      for (auto subpass_input : subpass_inputs_json.value()) {
+        subpass_input["descriptor_type"] = "DescriptorType::kInputAttachment";
+        subpass_inputs.emplace_back(std::move(subpass_input));
+      }
+    } else {
+      return std::nullopt;
+    }
+  }
 
   // Uniform and storage buffers.
   {

@@ -26,9 +26,15 @@ class TextContents final : public Contents {
 
   ~TextContents();
 
-  void SetTextFrame(TextFrame&& frame);
+  void SetTextFrame(const std::shared_ptr<TextFrame>& frame);
 
   void SetColor(Color color);
+
+  /// @brief Force the text color to apply to the rendered glyphs, even if those
+  ///        glyphs are bitmaps.
+  ///
+  ///        This is used to ensure that mask blurs work correctly on emoji.
+  void SetForceTextColor(bool value);
 
   Color GetColor() const;
 
@@ -56,18 +62,21 @@ class TextContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  TextFrame frame_;
+  std::shared_ptr<TextFrame> frame_;
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
+  bool force_text_color_ = false;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
       Context& context,
       GlyphAtlas::Type type,
       const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextContents);
+  TextContents(const TextContents&) = delete;
+
+  TextContents& operator=(const TextContents&) = delete;
 };
 
 }  // namespace impeller

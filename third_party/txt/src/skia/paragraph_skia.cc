@@ -18,7 +18,10 @@
 
 #include <algorithm>
 #include <numeric>
+#include "display_list/dl_paint.h"
 #include "fml/logging.h"
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
+#include "include/core/SkMatrix.h"
 
 namespace txt {
 
@@ -65,10 +68,10 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
   ///             decision (i.e. with `#ifdef`) instead of a runtime option.
   DisplayListParagraphPainter(DisplayListBuilder* builder,
                               const std::vector<DlPaint>& dl_paints,
-                              bool draw_path_effect)
+                              bool impeller_enabled)
       : builder_(builder),
         dl_paints_(dl_paints),
-        draw_path_effect_(draw_path_effect) {}
+        impeller_enabled_(impeller_enabled) {}
 
   void drawTextBlob(const sk_sp<SkTextBlob>& blob,
                     SkScalar x,
@@ -79,6 +82,22 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     }
     size_t paint_id = std::get<PaintID>(paint);
     FML_DCHECK(paint_id < dl_paints_.size());
+
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled_) {
+      if (ShouldRenderAsPath(dl_paints_[paint_id])) {
+        auto path = skia::textlayout::Paragraph::GetPath(blob.get());
+        auto transformed = path.makeTransform(SkMatrix::Translate(
+            x + blob->bounds().left(), y + blob->bounds().top()));
+        builder_->DrawPath(transformed, dl_paints_[paint_id]);
+        return;
+      }
+
+      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
+                              y, dl_paints_[paint_id]);
+      return;
+    }
+#endif  // IMPELLER_SUPPORTS_RENDERING
     builder_->DrawTextBlob(blob, x, y, dl_paints_[paint_id]);
   }
 
@@ -95,6 +114,11 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     if (blur_sigma > 0.0) {
       DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
       paint.setMaskFilter(&filter);
+    }
+    if (impeller_enabled_) {
+      builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob), x,
+                              y, paint);
+      return;
     }
     builder_->DrawTextBlob(blob, x, y, paint);
   }
@@ -129,11 +153,13 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     // the line directly using the `drawLine` API instead of using a path effect
     // (because Impeller does not support path effects).
     auto dash_path_effect = decor_style.getDashPathEffect();
-    if (draw_path_effect_ && dash_path_effect) {
+#ifdef IMPELLER_SUPPORTS_RENDERING
+    if (impeller_enabled_ && dash_path_effect) {
       auto path = dashedLine(x0, x1, y0, *dash_path_effect);
       builder_->DrawPath(path, toDlPaint(decor_style));
       return;
     }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
     auto paint = toDlPaint(decor_style);
     if (dash_path_effect) {
@@ -180,6 +206,16 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     return path;
   }
 
+  bool ShouldRenderAsPath(const DlPaint& paint) const {
+    FML_DCHECK(impeller_enabled_);
+    // Text with non-trivial color sources or stroke paint mode should be
+    // rendered as a path when running on Impeller for correctness. These
+    // filters rely on having the glyph coverage, whereas regular text is
+    // drawn as rectangular texture samples.
+    return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
+            paint.getDrawStyle() != DlDrawStyle::kFill);
+  }
+
   DlPaint toDlPaint(const DecorationStyle& decor_style,
                     DlDrawStyle draw_style = DlDrawStyle::kStroke) {
     DlPaint paint;
@@ -192,7 +228,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 
   void setPathEffect(DlPaint& paint, const DashPathEffect& dash_path_effect) {
     // Impeller does not support path effects, so we should never be setting.
-    FML_DCHECK(!draw_path_effect_);
+    FML_DCHECK(!impeller_enabled_);
 
     std::array<SkScalar, 2> intervals{dash_path_effect.fOnLength,
                                       dash_path_effect.fOffLength};
@@ -202,7 +238,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 
   DisplayListBuilder* builder_;
   const std::vector<DlPaint>& dl_paints_;
-  bool draw_path_effect_;
+  const bool impeller_enabled_;
 };
 
 }  // anonymous namespace
@@ -264,6 +300,11 @@ std::vector<LineMetrics>& ParagraphSkia::GetLineMetrics() {
 
   return line_metrics_.value();
 }
+
+bool ParagraphSkia::GetLineMetricsAt(int lineNumber,
+                                     skt::LineMetrics* lineMetrics) const {
+  return paragraph_->getLineMetricsAt(lineNumber, lineMetrics);
+};
 
 double ParagraphSkia::GetMinIntrinsicWidth() {
   return SkScalarToDouble(paragraph_->getMinIntrinsicWidth());
@@ -337,9 +378,30 @@ Paragraph::PositionWithAffinity ParagraphSkia::GetGlyphPositionAtCoordinate(
       skia_pos.position, static_cast<Affinity>(skia_pos.affinity));
 }
 
+bool ParagraphSkia::GetGlyphInfoAt(
+    unsigned offset,
+    skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const {
+  return paragraph_->getGlyphInfoAtUTF16Offset(offset, glyphInfo);
+}
+
+bool ParagraphSkia::GetClosestGlyphInfoAtCoordinate(
+    double dx,
+    double dy,
+    skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const {
+  return paragraph_->getClosestUTF16GlyphInfoAt(dx, dy, glyphInfo);
+};
+
 Paragraph::Range<size_t> ParagraphSkia::GetWordBoundary(size_t offset) {
   skt::SkRange<size_t> range = paragraph_->getWordBoundary(offset);
   return Paragraph::Range<size_t>(range.start, range.end);
+}
+
+size_t ParagraphSkia::GetNumberOfLines() const {
+  return paragraph_->lineNumber();
+}
+
+int ParagraphSkia::GetLineNumberAt(size_t codeUnitIndex) const {
+  return paragraph_->getLineNumberAtUTF16Offset(codeUnitIndex);
 }
 
 TextStyle ParagraphSkia::SkiaToTxt(const skt::TextStyle& skia) {

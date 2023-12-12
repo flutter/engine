@@ -19,11 +19,9 @@ namespace impeller {
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  opts.sample_count = pass.GetSampleCount();
+  opts.color_attachment_pixel_format = pass.GetRenderTargetPixelFormat();
+  opts.has_stencil_attachment = pass.HasStencilAttachment();
   return opts;
 }
 
@@ -49,11 +47,11 @@ bool Contents::IsOpaque() const {
   return false;
 }
 
-Contents::StencilCoverage Contents::GetStencilCoverage(
+Contents::ClipCoverage Contents::GetClipCoverage(
     const Entity& entity,
-    const std::optional<Rect>& current_stencil_coverage) const {
-  return {.type = StencilCoverage::Type::kNoChange,
-          .coverage = current_stencil_coverage};
+    const std::optional<Rect>& current_clip_coverage) const {
+  return {.type = ClipCoverage::Type::kNoChange,
+          .coverage = current_clip_coverage};
 }
 
 std::optional<Snapshot> Contents::RenderToSnapshot(
@@ -87,9 +85,9 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
+        sub_entity.SetTransform(
             Matrix::MakeTranslation(Vector3(-coverage->origin)) *
-            entity.GetTransformation());
+            entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
       msaa_enabled);
@@ -133,11 +131,10 @@ bool Contents::ApplyColorFilter(
 }
 
 bool Contents::ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& stencil_coverage) const {
-  if (!stencil_coverage.has_value()) {
+                            const std::optional<Rect> clip_coverage) const {
+  if (!clip_coverage.has_value()) {
     return false;
   }
-
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return false;
@@ -145,7 +142,7 @@ bool Contents::ShouldRender(const Entity& entity,
   if (coverage == Rect::MakeMaximum()) {
     return true;
   }
-  return stencil_coverage->IntersectsWithRect(coverage.value());
+  return clip_coverage->IntersectsWithRect(coverage.value());
 }
 
 void Contents::SetCoverageHint(std::optional<Rect> coverage_hint) {

@@ -50,17 +50,21 @@ class PlaygroundTest : public Playground,
   fml::ScopedNSAutoreleasePool autorelease_pool_;
 #endif
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PlaygroundTest);
+  PlaygroundTest(const PlaygroundTest&) = delete;
+
+  PlaygroundTest& operator=(const PlaygroundTest&) = delete;
 };
 
-#define INSTANTIATE_PLAYGROUND_SUITE(playground)                            \
-  INSTANTIATE_TEST_SUITE_P(                                                 \
-      Play, playground,                                                     \
-      ::testing::Values(PlaygroundBackend::kMetal,                          \
-                        PlaygroundBackend::kOpenGLES,                       \
-                        PlaygroundBackend::kVulkan),                        \
-      [](const ::testing::TestParamInfo<PlaygroundTest::ParamType>& info) { \
-        return PlaygroundBackendToString(info.param);                       \
+#define INSTANTIATE_PLAYGROUND_SUITE(playground)                             \
+  [[maybe_unused]] const char* kYouInstantiated##playground##MultipleTimes = \
+      "";                                                                    \
+  INSTANTIATE_TEST_SUITE_P(                                                  \
+      Play, playground,                                                      \
+      ::testing::Values(PlaygroundBackend::kMetal,                           \
+                        PlaygroundBackend::kOpenGLES,                        \
+                        PlaygroundBackend::kVulkan),                         \
+      [](const ::testing::TestParamInfo<PlaygroundTest::ParamType>& info) {  \
+        return PlaygroundBackendToString(info.param);                        \
       });
 
 }  // namespace impeller

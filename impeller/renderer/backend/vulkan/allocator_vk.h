@@ -13,6 +13,7 @@
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 namespace impeller {
@@ -32,6 +33,7 @@ class AllocatorVK final : public Allocator {
   ISize max_texture_size_;
   bool is_valid_ = false;
   bool supports_memoryless_textures_ = false;
+  bool supports_framebuffer_fetch_ = false;
   // TODO(jonahwilliams): figure out why CI can't create these buffer pools.
   bool created_buffer_pool_ = true;
   uint32_t frame_count_ = 0;
@@ -61,7 +63,9 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
+  AllocatorVK(const AllocatorVK&) = delete;
+
+  AllocatorVK& operator=(const AllocatorVK&) = delete;
 };
 
 }  // namespace impeller

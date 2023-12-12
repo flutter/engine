@@ -8,9 +8,6 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/pass_bindings_cache.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
-#include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 
@@ -46,13 +43,16 @@ class RenderPassVK final : public RenderPass {
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
-      const std::shared_ptr<CommandBufferVK>& command_buffer) const;
+      const std::shared_ptr<CommandBufferVK>& command_buffer,
+      bool has_subpass_dependency) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,
       const vk::RenderPass& pass) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);
+  RenderPassVK(const RenderPassVK&) = delete;
+
+  RenderPassVK& operator=(const RenderPassVK&) = delete;
 };
 
 }  // namespace impeller

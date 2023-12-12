@@ -14,7 +14,7 @@ class CompressedImageSkia final : public CompressedImage {
   static std::shared_ptr<CompressedImage> Create(
       std::shared_ptr<const fml::Mapping> allocation);
 
-  CompressedImageSkia(std::shared_ptr<const fml::Mapping> allocation);
+  explicit CompressedImageSkia(std::shared_ptr<const fml::Mapping> allocation);
 
   ~CompressedImageSkia() override;
 
@@ -22,7 +22,9 @@ class CompressedImageSkia final : public CompressedImage {
   DecompressedImage Decode() const override;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(CompressedImageSkia);
+  CompressedImageSkia(const CompressedImageSkia&) = delete;
+
+  CompressedImageSkia& operator=(const CompressedImageSkia&) = delete;
 };
 
 }  // namespace impeller

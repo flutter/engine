@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -21,8 +22,6 @@ enum class ShaderStage {
   kUnknown,
   kVertex,
   kFragment,
-  kTessellationControl,
-  kTessellationEvaluation,
   kCompute,
 };
 
@@ -34,10 +33,6 @@ constexpr ShaderStage ToShaderStage(RuntimeShaderStage stage) {
       return ShaderStage::kFragment;
     case RuntimeShaderStage::kCompute:
       return ShaderStage::kCompute;
-    case RuntimeShaderStage::kTessellationControl:
-      return ShaderStage::kTessellationControl;
-    case RuntimeShaderStage::kTessellationEvaluation:
-      return ShaderStage::kTessellationEvaluation;
   }
   FML_UNREACHABLE();
 }
@@ -78,10 +73,37 @@ struct ShaderMetadata {
   std::vector<ShaderStructMemberMetadata> members;
 };
 
+/// @brief Metadata required to bind a buffer.
+///
+/// OpenGL binding requires the usage of the separate shader metadata struct.
 struct ShaderUniformSlot {
+  /// @brief The name of the uniform slot.
   const char* name;
+
+  /// @brief `ext_res_0` is the Metal binding value.
   size_t ext_res_0;
+
+  /// @brief The Vulkan descriptor set index.
   size_t set;
+
+  /// @brief The Vulkan binding value.
+  size_t binding;
+};
+
+/// @brief Metadata required to bind a combined texture and sampler.
+///
+/// OpenGL binding requires the usage of the separate shader metadata struct.
+struct SampledImageSlot {
+  /// @brief The name of the uniform slot.
+  const char* name;
+
+  /// @brief `ext_res_0` is the Metal binding value.
+  size_t texture_index;
+
+  /// @brief The Vulkan descriptor set index.
+  size_t set;
+
+  /// @brief The Vulkan binding value.
   size_t binding;
 };
 
@@ -126,24 +148,13 @@ struct ShaderStageBufferLayout {
   }
 };
 
-struct SampledImageSlot {
-  const char* name;
-  size_t texture_index;
-  size_t sampler_index;
-  size_t binding;
-  size_t set;
-
-  constexpr bool HasTexture() const { return texture_index < 32u; }
-
-  constexpr bool HasSampler() const { return sampler_index < 32u; }
-};
-
 enum class DescriptorType {
   kUniformBuffer,
   kStorageBuffer,
   kSampledImage,
   kImage,
   kSampler,
+  kInputAttachment,
 };
 
 struct DescriptorSetLayout {

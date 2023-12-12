@@ -5,13 +5,17 @@
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/util.dart' show setElementStyle;
 
+import '../hot_restart_cache_handler.dart' show registerElementForCleanup;
 import 'embedding_strategy.dart';
 
 /// An [EmbeddingStrategy] that takes over the whole web page.
 ///
 /// This strategy takes over the <body> element, modifies the viewport meta-tag,
 /// and ensures that the root Flutter view covers the whole screen.
-class FullPageEmbeddingStrategy extends EmbeddingStrategy {
+class FullPageEmbeddingStrategy implements EmbeddingStrategy {
+  @override
+  DomEventTarget get globalEventTarget => domWindow;
+
   @override
   void initialize({
     Map<String, String>? hostElementAttributes,
@@ -27,18 +31,18 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
   }
 
   @override
-  void attachGlassPane(DomElement glassPaneElement) {
-    /// Tweaks style so the glassPane works well with the hostElement.
-    glassPaneElement.style
+  void attachViewRoot(DomElement rootElement) {
+    /// Tweaks style so the rootElement works well with the hostElement.
+    rootElement.style
       ..position = 'absolute'
       ..top = '0'
       ..right = '0'
       ..bottom = '0'
       ..left = '0';
 
-    domDocument.body!.append(glassPaneElement);
+    domDocument.body!.append(rootElement);
 
-    registerElementForCleanup(glassPaneElement);
+    registerElementForCleanup(rootElement);
   }
 
   @override

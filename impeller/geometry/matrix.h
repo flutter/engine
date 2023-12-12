@@ -219,6 +219,7 @@ struct Matrix {
     // clang-format on
   }
 
+  /// The Matrix without its `w` components (without translation).
   constexpr Matrix Basis() const {
     // clang-format off
     return Matrix(
@@ -442,6 +443,15 @@ struct Matrix {
 
   constexpr Vector2 TransformDirection(const Vector2& v) const {
     return Vector2(v.x * m[0] + v.y * m[4], v.x * m[1] + v.y * m[5]);
+  }
+
+  constexpr Quad Transform(const Quad& quad) const {
+    return {
+        *this * quad[0],
+        *this * quad[1],
+        *this * quad[2],
+        *this * quad[3],
+    };
   }
 
   template <class T>

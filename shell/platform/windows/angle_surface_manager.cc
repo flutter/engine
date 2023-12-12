@@ -231,8 +231,7 @@ void AngleSurfaceManager::CleanUp() {
 
 bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
                                         EGLint width,
-                                        EGLint height,
-                                        bool vsync_enabled) {
+                                        EGLint height) {
   if (!render_target || !initialize_succeeded_) {
     return false;
   }
@@ -255,8 +254,6 @@ bool AngleSurfaceManager::CreateSurface(WindowsRenderTarget* render_target,
   surface_width_ = width;
   surface_height_ = height;
   render_surface_ = surface;
-
-  SetVSyncEnabled(vsync_enabled);
   return true;
 }
 
@@ -272,11 +269,13 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
 
     ClearContext();
     DestroySurface();
-    if (!CreateSurface(render_target, width, height, vsync_enabled)) {
+    if (!CreateSurface(render_target, width, height)) {
       FML_LOG(ERROR)
           << "AngleSurfaceManager::ResizeSurface failed to create surface";
     }
   }
+
+  SetVSyncEnabled(vsync_enabled);
 }
 
 void AngleSurfaceManager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
@@ -300,9 +299,18 @@ void AngleSurfaceManager::DestroySurface() {
   render_surface_ = EGL_NO_SURFACE;
 }
 
+bool AngleSurfaceManager::HasContextCurrent() {
+  return eglGetCurrentContext() != EGL_NO_CONTEXT;
+}
+
 bool AngleSurfaceManager::MakeCurrent() {
   return (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
                          egl_context_) == EGL_TRUE);
+}
+
+bool AngleSurfaceManager::ClearCurrent() {
+  return (eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
+                         EGL_NO_CONTEXT) == EGL_TRUE);
 }
 
 bool AngleSurfaceManager::ClearContext() {
@@ -328,8 +336,7 @@ EGLSurface AngleSurfaceManager::CreateSurfaceFromHandle(
 }
 
 void AngleSurfaceManager::SetVSyncEnabled(bool enabled) {
-  if (eglMakeCurrent(egl_display_, render_surface_, render_surface_,
-                     egl_context_) != EGL_TRUE) {
+  if (!MakeCurrent()) {
     LogEglError("Unable to make surface current to update the swap interval");
     return;
   }

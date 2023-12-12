@@ -123,8 +123,12 @@ class DiffContext {
   // The idea of readback region is that if any part of the readback region
   // needs to be repainted, then the whole readback region must be repainted;
   //
-  // Readback rect is in screen coordinates.
-  void AddReadbackRegion(const SkIRect& rect);
+  // paint_rect - rectangle where the filter paints contents (in screen
+  //              coordinates)
+  // readback_rect - rectangle where the filter samples from (in screen
+  //                 coordinates)
+  void AddReadbackRegion(const SkIRect& paint_rect,
+                         const SkIRect& readback_rect);
 
   // Returns the paint region for current subtree; Each rect in paint region is
   // in screen coordinates; Once a layer accumulates the paint regions of its
@@ -204,9 +208,9 @@ class DiffContext {
   struct State {
     State();
 
-    bool dirty;
+    bool dirty = false;
 
-    size_t rect_index;
+    size_t rect_index = 0;
 
     // In order to replicate paint process closely, DiffContext needs to take
     // into account that some layers are painted with transform translation
@@ -217,17 +221,17 @@ class DiffContext {
     // during paint. This means the integral coordinates must be applied after
     // culling before painting the layer content (either the layer itself, or
     // when starting subtree to paint layer children).
-    bool integral_transform;
+    bool integral_transform = false;
 
     // Used to restoring clip tracker when popping state.
-    int clip_tracker_save_count;
+    int clip_tracker_save_count = 0;
 
     // Whether this subtree has filter bounds adjustment function. If so,
     // it will need to be removed from stack when subtree is closed.
-    bool has_filter_bounds_adjustment;
+    bool has_filter_bounds_adjustment = false;
 
     // Whether there is a texture layer in this subtree.
-    bool has_texture;
+    bool has_texture = false;
   };
 
   void MakeCurrentTransformIntegral();
@@ -261,8 +265,11 @@ class DiffContext {
     // determine if subtree has any readback
     size_t position;
 
-    // readback area, in screen coordinates
-    SkIRect rect;
+    // Paint region of the filter performing readback, in screen coordinates.
+    SkIRect paint_rect;
+
+    // Readback area of the filter, in screen coordinates.
+    SkIRect readback_rect;
   };
 
   std::vector<Readback> readbacks_;

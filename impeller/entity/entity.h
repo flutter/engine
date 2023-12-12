@@ -4,14 +4,13 @@
 
 #pragma once
 
-#include <variant>
+#include <cstdint>
+
 #include "impeller/core/capture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
-#include "impeller/image/decompressed_image.h"
 
 namespace impeller {
 
@@ -25,12 +24,12 @@ class Entity {
 
   enum class RenderingMode {
     /// In direct mode, the Entity's transform is used as the current
-    /// local-to-screen transformation matrix.
+    /// local-to-screen transform matrix.
     kDirect,
     /// In subpass mode, the Entity passed through the filter is in screen space
     /// rather than local space, and so some filters (namely,
     /// MatrixFilterContents) need to interpret the given EffectTransform as the
-    /// current transformation matrix.
+    /// current transform matrix.
     kSubpass,
   };
 
@@ -65,32 +64,36 @@ class Entity {
   static std::optional<Entity> FromSnapshot(
       const std::optional<Snapshot>& snapshot,
       BlendMode blend_mode = BlendMode::kSourceOver,
-      uint32_t stencil_depth = 0);
+      uint32_t clip_depth = 0);
 
   Entity();
 
   ~Entity();
 
-  const Matrix& GetTransformation() const;
+  Entity(Entity&&) = default;
 
-  void SetTransformation(const Matrix& transformation);
+  /// @brief  Get the global transform matrix for this Entity.
+  const Matrix& GetTransform() const;
+
+  /// @brief  Set the global transform matrix for this Entity.
+  void SetTransform(const Matrix& transform);
 
   std::optional<Rect> GetCoverage() const;
 
-  Contents::StencilCoverage GetStencilCoverage(
-      const std::optional<Rect>& current_stencil_coverage) const;
+  Contents::ClipCoverage GetClipCoverage(
+      const std::optional<Rect>& current_clip_coverage) const;
 
-  bool ShouldRender(const std::optional<Rect>& stencil_coverage) const;
+  bool ShouldRender(const std::optional<Rect>& clip_coverage) const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 
   const std::shared_ptr<Contents>& GetContents() const;
 
-  void SetStencilDepth(uint32_t stencil_depth);
+  void SetClipDepth(uint32_t clip_depth);
 
   void IncrementStencilDepth(uint32_t increment);
 
-  uint32_t GetStencilDepth() const;
+  uint32_t GetClipDepth() const;
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -112,11 +115,15 @@ class Entity {
 
   void SetCapture(Capture capture) const;
 
+  Entity Clone() const;
+
  private:
-  Matrix transformation_;
+  Entity(const Entity&) = default;
+
+  Matrix transform_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
-  uint32_t stencil_depth_ = 0u;
+  uint32_t clip_depth_ = 0u;
   mutable Capture capture_;
 };
 

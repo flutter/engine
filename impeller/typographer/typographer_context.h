@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <functional>
 #include <memory>
 
 #include "flutter/fml/macros.h"
@@ -48,7 +47,9 @@ class TypographerContext {
  private:
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TypographerContext);
+  TypographerContext(const TypographerContext&) = delete;
+
+  TypographerContext& operator=(const TypographerContext&) = delete;
 };
 
 }  // namespace impeller

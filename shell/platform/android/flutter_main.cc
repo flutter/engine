@@ -25,7 +25,7 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
-#include "third_party/skia/include/core/SkFontMgr.h"
+#include "txt/platform.h"
 
 namespace flutter {
 
@@ -59,7 +59,7 @@ fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 }  // anonymous namespace
 
 FlutterMain::FlutterMain(const flutter::Settings& settings)
-    : settings_(settings), vm_service_uri_callback_() {}
+    : settings_(settings) {}
 
 FlutterMain::~FlutterMain() = default;
 
@@ -198,7 +198,7 @@ void FlutterMain::SetupDartVMServiceUriCallback(JNIEnv* env) {
 
 static void PrefetchDefaultFontManager(JNIEnv* env, jclass jcaller) {
   // Initialize a singleton owned by Skia.
-  SkFontMgr::RefDefault();
+  txt::GetDefaultFontManager();
 }
 
 bool FlutterMain::Register(JNIEnv* env) {

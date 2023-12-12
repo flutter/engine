@@ -82,8 +82,6 @@ test_fixtures("file_fixtures") {
     "resources_limit.vert",
     "sample.comp",
     "sample.frag",
-    "sample.tesc",
-    "sample.tese",
     "sample.vert",
     "sample_with_binding.vert",
     "simple.vert.hlsl",
@@ -101,6 +99,7 @@ test_fixtures("file_fixtures") {
     "two_triangles.glb",
     "types.h",
     "wtf.otf",
+    "texture_lookup.frag",
   ]
   if (host_os == "mac") {
     fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
@@ -112,6 +111,29 @@ test_fixtures("file_fixtures") {
     ":runtime_stages",
     ":scene_fixtures",
   ]
+}
+
+impellerc("flutter_gpu_shaders") {
+  shaders = [
+    # Temporarily build Flutter GPU test shaders as runtime stages.
+    "flutter_gpu_unlit.frag",
+    "flutter_gpu_unlit.vert",
+    "flutter_gpu_texture.frag",
+    "flutter_gpu_texture.vert",
+  ]
+  sl_file_extension = "iplr"
+  shader_target_flag = "--runtime-stage-metal"
+  iplr = true
+  iplr_bundle = "temporary"
+}
+
+test_fixtures("flutter_gpu_fixtures") {
+  dart_main = "dart_tests.dart"
+
+  fixtures =
+      filter_include(get_target_outputs(":flutter_gpu_shaders"), [ "*.iplr" ])
+
+  deps = [ ":flutter_gpu_shaders" ]
 }
 
 group("fixtures") {

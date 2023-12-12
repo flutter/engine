@@ -9,6 +9,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 
@@ -156,6 +157,10 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
   switch (ext) {
     case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
       return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kARMRasterizationOrderAttachmentAccess:
+      return VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess:
+      return VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -401,12 +406,29 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     });
   }
 
+  {
+    supports_framebuffer_fetch_ =
+        (optional_device_extensions_.find(
+             OptionalDeviceExtensionVK::
+                 kARMRasterizationOrderAttachmentAccess) !=
+             optional_device_extensions_.end() ||
+         optional_device_extensions_.find(
+             OptionalDeviceExtensionVK::
+                 kEXTRasterizationOrderAttachmentAccess) !=
+             optional_device_extensions_.end());
+  }
+
   return true;
 }
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsOffscreenMSAA() const {
   return true;
+}
+
+// |Capabilities|
+bool CapabilitiesVK::SupportsImplicitResolvingMSAA() const {
+  return false;
 }
 
 // |Capabilities|
@@ -426,7 +448,7 @@ bool CapabilitiesVK::SupportsTextureToTextureBlits() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsFramebufferFetch() const {
-  return false;
+  return supports_framebuffer_fetch_;
 }
 
 // |Capabilities|
@@ -443,11 +465,6 @@ bool CapabilitiesVK::SupportsComputeSubgroups() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsReadFromResolve() const {
-  return false;
-}
-
-// |Capabilities|
-bool CapabilitiesVK::SupportsReadFromOnscreenTexture() const {
   return false;
 }
 

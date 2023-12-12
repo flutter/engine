@@ -12,8 +12,6 @@
 
 #include <sstream>
 
-#include "flutter/fml/macros.h"
-
 namespace impeller {
 
 class ValidationLog {
@@ -27,7 +25,13 @@ class ValidationLog {
  private:
   std::ostringstream stream_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ValidationLog);
+  ValidationLog(const ValidationLog&) = delete;
+
+  ValidationLog(ValidationLog&&) = delete;
+
+  ValidationLog& operator=(const ValidationLog&) = delete;
+
+  ValidationLog& operator=(ValidationLog&&) = delete;
 };
 
 void ImpellerValidationBreak(const char* message);
@@ -39,7 +43,9 @@ struct ScopedValidationDisable {
 
   ~ScopedValidationDisable();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ScopedValidationDisable);
+  ScopedValidationDisable(const ScopedValidationDisable&) = delete;
+
+  ScopedValidationDisable& operator=(const ScopedValidationDisable&) = delete;
 };
 
 }  // namespace impeller

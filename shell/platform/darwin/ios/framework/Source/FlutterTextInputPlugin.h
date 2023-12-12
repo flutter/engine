@@ -15,15 +15,19 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
 typedef NS_ENUM(NSInteger, FlutterScribbleFocusStatus) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterScribbleFocusStatusUnfocused,
   FlutterScribbleFocusStatusFocusing,
   FlutterScribbleFocusStatusFocused,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
+  // NOLINTBEGIN(readability-identifier-naming)
   FlutterScribbleInteractionStatusNone,
   FlutterScribbleInteractionStatusStarted,
   FlutterScribbleInteractionStatusEnding,
+  // NOLINTEND(readability-identifier-naming)
 };
 
 @interface FlutterTextInputPlugin
@@ -128,7 +132,6 @@ FLUTTER_DARWIN_EXPORT
 
 // UITextInput
 @property(nonatomic, readonly) NSMutableString* text;
-@property(nonatomic, readonly) NSMutableString* markedText;
 @property(readwrite, copy) UITextRange* selectedTextRange;
 @property(nonatomic, strong) UITextRange* markedTextRange;
 @property(nonatomic, copy) NSDictionary* markedTextStyle;
@@ -164,6 +167,10 @@ FLUTTER_DARWIN_EXPORT
 - (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
 
+// TODO(louisehsu): These are being exposed to support Share in FlutterPlatformPlugin
+// Consider moving that feature into FlutterTextInputPlugin to avoid exposing extra methods
+- (CGRect)localRectFromFrameworkTransform:(CGRect)incomingRect;
+- (CGRect)caretRectForPosition:(UITextPosition*)position;
 @end
 
 @interface UIView (FindFirstResponder)

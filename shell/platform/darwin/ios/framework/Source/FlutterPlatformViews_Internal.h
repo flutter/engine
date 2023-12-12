@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
+#include <Metal/Metal.h>
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/shell.h"
@@ -12,6 +13,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 
 @class FlutterTouchInterceptingView;
@@ -166,9 +168,9 @@ class FlutterPlatformViewLayerPool {
 
   // Gets a layer from the pool if available, or allocates a new one.
   // Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(
-      GrDirectContext* gr_context,
-      const std::shared_ptr<IOSContext>& ios_context);
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
+                                                     const std::shared_ptr<IOSContext>& ios_context,
+                                                     MTLPixelFormat pixel_format);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -230,9 +232,16 @@ class FlutterPlatformViewsController {
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
-  // a `FlutterPlatformView` object asscociated with the view_id cannot be found, the method
+  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
   // returns nil.
   UIView* GetPlatformViewByID(int64_t view_id);
+
+  // Returns the `FlutterTouchInterceptingView` with the view_id.
+  //
+  // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
+  // a `FlutterPlatformView` object associated with the view_id cannot be found, the method
+  // returns nil.
+  FlutterTouchInterceptingView* GetFlutterTouchInterceptingViewByID(int64_t view_id);
 
   PostPrerollResult PostPrerollAction(
       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
@@ -253,7 +262,7 @@ class FlutterPlatformViewsController {
                    const std::shared_ptr<IOSContext>& ios_context,
                    std::unique_ptr<SurfaceFrame> frame);
 
-  void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+  void OnMethodCall(FlutterMethodCall* call, FlutterResult result);
 
   // Returns the platform view id if the platform view (or any of its descendant view) is the first
   // responder. Returns -1 if no such platform view is found.
@@ -271,10 +280,10 @@ class FlutterPlatformViewsController {
 
   using LayersMap = std::map<int64_t, std::vector<std::shared_ptr<FlutterPlatformViewLayer>>>;
 
-  void OnCreate(FlutterMethodCall* call, FlutterResult& result);
-  void OnDispose(FlutterMethodCall* call, FlutterResult& result);
-  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
-  void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
+  void OnCreate(FlutterMethodCall* call, FlutterResult result);
+  void OnDispose(FlutterMethodCall* call, FlutterResult result);
+  void OnAcceptGesture(FlutterMethodCall* call, FlutterResult result);
+  void OnRejectGesture(FlutterMethodCall* call, FlutterResult result);
   // Dispose the views in `views_to_dispose_`.
   void DisposeViews();
 
@@ -310,9 +319,10 @@ class FlutterPlatformViewsController {
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
-                                                     SkRect rect,
+                                                     SkIRect rect,
                                                      int64_t view_id,
-                                                     int64_t overlay_id);
+                                                     int64_t overlay_id,
+                                                     MTLPixelFormat pixel_format);
   // Removes overlay views and platform views that aren't needed in the current frame.
   // Must run on the platform thread.
   void RemoveUnusedLayers();
@@ -385,7 +395,7 @@ class FlutterPlatformViewsController {
 
   // The FlutterPlatformViewGestureRecognizersBlockingPolicy for each type of platform view.
   std::map<std::string, FlutterPlatformViewGestureRecognizersBlockingPolicy>
-      gesture_recognizers_blocking_policies;
+      gesture_recognizers_blocking_policies_;
 
   bool catransaction_added_ = false;
 
@@ -424,6 +434,9 @@ class FlutterPlatformViewsController {
 
 // Get embedded view
 - (UIView*)embeddedView;
+
+// Sets flutterAccessibilityContainer as this view's accessibilityContainer.
+- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer;
 @end
 
 @interface UIView (FirstResponder)
