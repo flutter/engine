@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "gtest/gtest.h"
 #include "impeller/compiler/shader_bundle.h"
 
 #include "flutter/testing/testing.h"
+#include "impeller/compiler/source_options.h"
 #include "impeller/compiler/types.h"
+#include "impeller/runtime_stage/runtime_stage_types_flatbuffers.h"
+#include "impeller/shader_bundle/shader_bundle_flatbuffers.h"
 
 namespace impeller {
 namespace compiler {
@@ -110,6 +114,99 @@ TEST(ShaderBundleTest, ParseShaderBundleConfigReturnsExpectedConfig) {
   EXPECT_STREQ(fragment.entry_point.c_str(), "main");
   EXPECT_STREQ(fragment.source_file_name.c_str(),
                "shaders/flutter_gpu_unlit.frag");
+}
+
+template <typename T>
+const T* FindByName(const std::vector<std::unique_ptr<T>>& collection,
+                    const std::string& name) {
+  const auto maybe = std::find_if(
+      collection.begin(), collection.end(),
+      [&name](const std::unique_ptr<T>& value) { return value->name == name; });
+  if (maybe == collection.end()) {
+    return nullptr;
+  }
+  return maybe->get();
+}
+
+TEST(ShaderBundleTest, GenerateShaderBundleFlatbufferProducesCorrectResult) {
+  std::string fixtures_path = flutter::testing::GetFixturesPath();
+  std::string config =
+      "{\"UnlitFragment\": {\"type\": \"fragment\", \"file\": \"" +
+      fixtures_path +
+      "/flutter_gpu_unlit.frag\"}, \"UnlitVertex\": {\"type\": "
+      "\"vertex\", \"file\": \"" +
+      fixtures_path + "/flutter_gpu_unlit.vert\"}}";
+
+  SourceOptions options;
+  options.target_platform = TargetPlatform::kRuntimeStageMetal;
+  options.source_language = SourceLanguage::kGLSL;
+
+  std::optional<fb::ShaderBundleT> bundle =
+      GenerateShaderBundleFlatbuffer(config, options);
+  ASSERT_TRUE(bundle.has_value());
+
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+  const auto& shaders = bundle->shaders;
+  const auto* vertex = FindByName(shaders, "UnlitVertex");
+  const auto* fragment = FindByName(shaders, "UnlitFragment");
+  ASSERT_NE(vertex, nullptr);
+  ASSERT_NE(fragment, nullptr);
+
+  // --------------------------------------------------------------------------
+  /// Verify vertex shader.
+  ///
+
+  EXPECT_STREQ(vertex->shader->entrypoint.c_str(),
+               "flutter_gpu_unlit_vertex_main");
+  EXPECT_EQ(vertex->shader->stage, fb::Stage::kVertex);
+  EXPECT_EQ(vertex->shader->target_platform, fb::TargetPlatform::kMetal);
+
+  // Inputs.
+  ASSERT_EQ(vertex->shader->inputs.size(), 1u);
+  const auto& v_in_position = vertex->shader->inputs[0];
+  EXPECT_STREQ(v_in_position->name.c_str(), "position");
+  EXPECT_EQ(v_in_position->location, 0u);
+  EXPECT_EQ(v_in_position->set, 0u);
+  EXPECT_EQ(v_in_position->binding, 0u);
+  EXPECT_EQ(v_in_position->type, fb::InputDataType::kFloat);
+  EXPECT_EQ(v_in_position->bit_width, 32u);
+  EXPECT_EQ(v_in_position->vec_size, 2u);
+  EXPECT_EQ(v_in_position->columns, 1u);
+  EXPECT_EQ(v_in_position->offset, 0u);
+
+  // Uniforms.
+  ASSERT_EQ(vertex->shader->uniforms.size(), 2u);
+  const auto* v_mvp = FindByName(vertex->shader->uniforms, "mvp");
+  ASSERT_NE(v_mvp, nullptr);
+  EXPECT_EQ(v_mvp->location, 0u);
+  EXPECT_EQ(v_mvp->type, fb::UniformDataType::kFloat);
+  EXPECT_EQ(v_mvp->bit_width, 32u);
+  EXPECT_EQ(v_mvp->rows, 4u);
+  EXPECT_EQ(v_mvp->columns, 4u);
+  EXPECT_EQ(v_mvp->array_elements, 0u);
+  const auto* v_color = FindByName(vertex->shader->uniforms, "color");
+  ASSERT_NE(v_color, nullptr);
+  EXPECT_EQ(v_color->location, 1u);
+  EXPECT_EQ(v_color->type, fb::UniformDataType::kFloat);
+  EXPECT_EQ(v_color->bit_width, 32u);
+  EXPECT_EQ(v_color->rows, 4u);
+  EXPECT_EQ(v_color->columns, 1u);
+  EXPECT_EQ(v_color->array_elements, 0u);
+
+  // --------------------------------------------------------------------------
+  /// Verify fragment shader.
+  ///
+
+  EXPECT_STREQ(fragment->shader->entrypoint.c_str(),
+               "flutter_gpu_unlit_fragment_main");
+  EXPECT_EQ(fragment->shader->stage, fb::Stage::kFragment);
+  EXPECT_EQ(fragment->shader->target_platform, fb::TargetPlatform::kMetal);
+
+  // Inputs (not recorded for fragment shaders).
+  ASSERT_EQ(fragment->shader->inputs.size(), 0u);
+
+  // Uniforms.
+  ASSERT_EQ(fragment->shader->inputs.size(), 0u);
 }
 
 }  // namespace testing

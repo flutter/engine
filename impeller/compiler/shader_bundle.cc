@@ -16,9 +16,9 @@ namespace impeller {
 namespace compiler {
 
 std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
-    const std::string& json_config,
+    const std::string& bundle_config_json,
     std::ostream& error_stream) {
-  auto json = nlohmann::json::parse(json_config, nullptr, false);
+  auto json = nlohmann::json::parse(bundle_config_json, nullptr, false);
   if (json.is_discarded() || !json.is_object()) {
     error_stream << "The shader bundle is not a valid JSON object."
                  << std::endl;
@@ -141,17 +141,17 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
   return result;
 }
 
-/// Parses the given JSON shader bundle configuration and invokes the compiler
-/// multiple times to produce a shader bundle file.
-bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
+std::optional<fb::ShaderBundleT> GenerateShaderBundleFlatbuffer(
+    const std::string& bundle_config_json,
+    SourceOptions& options) {
   // --------------------------------------------------------------------------
   /// 1. Parse the bundle configuration.
   ///
 
   std::optional<ShaderBundleConfig> bundle_config =
-      ParseShaderBundleConfig(switches.shader_bundle, std::cerr);
+      ParseShaderBundleConfig(bundle_config_json, std::cerr);
   if (!bundle_config) {
-    return false;
+    return std::nullopt;
   }
 
   // --------------------------------------------------------------------------
@@ -164,18 +164,35 @@ bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
     std::unique_ptr<fb::ShaderT> shader =
         GenerateShaderFB(options, shader_name, shader_config);
     if (!shader) {
-      return false;
+      return std::nullopt;
     }
     shader_bundle.shaders.push_back(std::move(shader));
   }
 
+  return shader_bundle;
+}
+
+bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
   // --------------------------------------------------------------------------
-  /// 3. Serialize the shader bundle and write to disk.
+  /// 1. Parse the shader bundle and generate the flatbuffer result.
+  ///
+
+  auto shader_bundle =
+      GenerateShaderBundleFlatbuffer(switches.shader_bundle, options);
+  if (!shader_bundle.has_value()) {
+    // Specific error messages are already handled by
+    // GenerateShaderBundleFlatbuffer.
+    return false;
+  }
+
+  // --------------------------------------------------------------------------
+  /// 2. Serialize the shader bundle and write to disk.
   ///
 
   auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-  builder->Finish(fb::ShaderBundle::Pack(*builder.get(), &shader_bundle),
-                  fb::ShaderBundleIdentifier());
+  builder->Finish(
+      fb::ShaderBundle::Pack(*builder.get(), &shader_bundle.value()),
+      fb::ShaderBundleIdentifier());
   auto mapping = std::make_shared<fml::NonOwnedMapping>(
       builder->GetBufferPointer(), builder->GetSize(),
       [builder](auto, auto) {});
