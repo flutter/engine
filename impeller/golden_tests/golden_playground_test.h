@@ -61,6 +61,9 @@ class GoldenPlaygroundTest
   fml::Status SetCapabilities(
       const std::shared_ptr<Capabilities>& capabilities);
 
+  /// Returns true if `OpenPlaygroundHere` will actually render anything.
+  bool WillRenderSomething() const { return true; }
+
  protected:
   void SetWindowSize(ISize size);
 

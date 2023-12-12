@@ -92,6 +92,9 @@ class Playground {
   fml::Status SetCapabilities(
       const std::shared_ptr<Capabilities>& capabilities);
 
+  /// Returns true if `OpenPlaygroundHere` will actually render anything.
+  bool WillRenderSomething() const;
+
  protected:
   const PlaygroundSwitches switches_;
 

@@ -537,4 +537,8 @@ fml::Status Playground::SetCapabilities(
   return impl_->SetCapabilities(capabilities);
 }
 
+bool Playground::WillRenderSomething() const {
+  return switches_.enable_playground;
+}
+
 }  // namespace impeller
