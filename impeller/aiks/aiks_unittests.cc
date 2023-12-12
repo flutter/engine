@@ -4443,7 +4443,8 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
 
 TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't setting device capabilities.");
+    GTEST_SKIP_(
+        "This backend doesn't yet support setting device capabilities.");
   }
   if (!WillRenderSomething()) {
     // Sometimes these tests are run without playgrounds enabled which is
