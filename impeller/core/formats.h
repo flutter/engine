@@ -108,6 +108,8 @@ enum class PixelFormat : uint8_t {
   kS8UInt,
   kD24UnormS8Uint,
   kD32FloatS8UInt,
+
+  kLast = kD32FloatS8UInt,
 };
 
 constexpr bool IsDepthWritable(PixelFormat format) {
@@ -289,6 +291,7 @@ constexpr bool IsMultisampleCapable(TextureType type) {
 enum class SampleCount : uint8_t {
   kCount1 = 1,
   kCount4 = 4,
+  kLast = kCount4,
 };
 
 using TextureUsageMask = uint64_t;
@@ -375,6 +378,8 @@ enum class PrimitiveType : uint8_t {
   kPoint,
   // Triangle fans are implementation dependent and need extra extensions
   // checks. Hence, they are not supported here.
+
+  kLast = kPoint,
 };
 
 enum class PolygonMode {
@@ -542,6 +547,8 @@ enum class CompareFunction : uint8_t {
   kNotEqual,
   /// Comparison test passes if new_value >= current_value.
   kGreaterEqual,
+
+  kLast = kGreaterEqual,
 };
 
 enum class StencilOperation : uint8_t {
@@ -561,6 +568,8 @@ enum class StencilOperation : uint8_t {
   kIncrementWrap,
   /// Decrement the current stencil value by 1. If at zero, set to maximum.
   kDecrementWrap,
+
+  kLast = kDecrementWrap,
 };
 
 struct DepthAttachmentDescriptor {

@@ -10,9 +10,7 @@
 #include <unordered_map>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
@@ -279,20 +277,17 @@ struct ContentContextOptions {
   bool is_for_rrect_blur_clear = false;
 
   struct Hash {
-    constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      static_assert(sizeof(std::size_t) >= 8);
-      size_t key = static_cast<uint64_t>(o.sample_count) << 56 |       //
-                   static_cast<uint64_t>(o.blend_mode) << 48 |         //
-                   static_cast<uint64_t>(o.stencil_compare) << 40 |    //
-                   static_cast<uint64_t>(o.stencil_operation) << 32 |  //
-                   static_cast<uint64_t>(o.primitive_type) << 24 |     //
-                   static_cast<uint64_t>(o.color_attachment_pixel_format)
-                       << 16 |  //
-                   // bools
-                   static_cast<uint64_t>(o.has_stencil_attachment) << 2 |  //
-                   static_cast<uint64_t>(o.wireframe) << 1 |               //
-                   static_cast<uint64_t>(o.is_for_rrect_blur_clear) << 0;  //
-      return key;
+    constexpr uint64_t operator()(const ContentContextOptions& o) const {
+      return static_cast<uint64_t>(o.sample_count) << 56 |                   //
+             static_cast<uint64_t>(o.blend_mode) << 48 |                     //
+             static_cast<uint64_t>(o.stencil_compare) << 40 |                //
+             static_cast<uint64_t>(o.stencil_operation) << 32 |              //
+             static_cast<uint64_t>(o.primitive_type) << 24 |                 //
+             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |  //
+             // bools
+             static_cast<uint64_t>(o.has_stencil_attachment) << 2 |
+             static_cast<uint64_t>(o.wireframe) << 1 |
+             static_cast<uint64_t>(o.is_for_rrect_blur_clear) << 0;
     }
   };
 
