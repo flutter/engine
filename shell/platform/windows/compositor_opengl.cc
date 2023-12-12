@@ -122,14 +122,15 @@ bool CompositorOpenGL::Initialize() {
     return false;
   }
 
-  auto gl = std::make_unique<impeller::ProcTableGLES>(resolver_);
-  if (!gl->IsValid()) {
+  gl_ = std::make_unique<impeller::ProcTableGLES>(resolver_);
+  if (!gl_->IsValid()) {
+    gl_.reset();
     return false;
   }
 
   // Based off Skia's logic:
   // https://github.com/google/skia/blob/4738ed711e03212aceec3cd502a4adb545f38e63/src/gpu/ganesh/gl/GrGLCaps.cpp#L1963-L2116
-  auto description = gl->GetDescription();
+  auto description = gl_->GetDescription();
   if (description->HasExtension("GL_EXT_texture_format_BGRA8888")) {
     format_ = GL_BGRA8_EXT;
   } else if (description->HasExtension("GL_APPLE_texture_format_BGRA8888") &&
@@ -139,7 +140,6 @@ bool CompositorOpenGL::Initialize() {
     format_ = GL_RGBA8;
   }
 
-  gl_ = std::move(gl);
   is_initialized_ = true;
   return true;
 }

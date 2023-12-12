@@ -26,9 +26,9 @@ const unsigned char* MockGetString(GLenum name) {
   switch (name) {
     case GL_VERSION:
     case GL_SHADING_LANGUAGE_VERSION:
-      return (unsigned char*)"3.0";
+      return reinterpret_cast<const unsigned char*>("3.0");
     default:
-      return (unsigned char*)"";
+      return reinterpret_cast<const unsigned char*>("");
   }
 }
 
@@ -43,11 +43,13 @@ GLenum MockGetError() {
 void DoNothing() {}
 
 const impeller::ProcTableGLES::Resolver kMockResolver = [](const char* name) {
-  if (strcmp(name, "glGetString") == 0) {
+  std::string function_name{name};
+
+  if (function_name == "glGetString") {
     return reinterpret_cast<void*>(&MockGetString);
-  } else if (strcmp(name, "glGetIntegerv") == 0) {
+  } else if (function_name == "glGetIntegerv") {
     return reinterpret_cast<void*>(&MockGetIntegerv);
-  } else if (strcmp(name, "glGetError") == 0) {
+  } else if (function_name == "glGetError") {
     return reinterpret_cast<void*>(&MockGetError);
   } else {
     return reinterpret_cast<void*>(&DoNothing);

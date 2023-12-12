@@ -40,14 +40,14 @@ class CompositorOpenGL : public Compositor {
   bool is_initialized_ = false;
 
   // Function used to resolve GLES functions.
-  impeller::ProcTableGLES::Resolver resolver_;
+  impeller::ProcTableGLES::Resolver resolver_ = nullptr;
 
   // Table of resolved GLES functions. Null until the compositor is initialized.
-  std::unique_ptr<impeller::ProcTableGLES> gl_;
+  std::unique_ptr<impeller::ProcTableGLES> gl_ = nullptr;
 
   // The OpenGL texture target format for backing stores. Invalid value until
   // the compositor is initialized.
-  uint32_t format_;
+  uint32_t format_ = 0;
 
   // Initialize the compositor. This must run on the raster thread.
   bool Initialize();
