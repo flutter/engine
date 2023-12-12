@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '3678212a85b83854fc24fbf9d9090686c48acdce',
+  'skia_revision': '8e8d92ac15366f61d5566a09a34b4b069b7fb3c2',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -195,7 +195,6 @@ vars = {
   "upstream_libpng": "https://github.com/glennrp/libpng.git",
   "upstream_libtess2": "https://github.com/memononen/libtess2.git",
   "upstream_libwebp": "https://chromium.googlesource.com/webm/libwebp.git",
-  "upstream_libxml": "https://gitlab.gnome.org/GNOME/libxml2.git",
   "upstream_leak_tracker": "https://github.com/dart-lang/leak_tracker.git",
   "upstream_logging": "https://github.com/dart-lang/logging.git",
   "upstream_markdown": "https://github.com/dart-lang/markdown.git",
@@ -647,9 +646,6 @@ deps = {
 
   'src/flutter/third_party/wuffs':
    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + '600cd96cf47788ee3a74b40a6028b035c9fd6a61',
-
-  'src/third_party/libxml':
-   Var('flutter_git') + '/third_party/libxml' + '@' + 'a143e452b5fc7d872813eeadc8db421694058098',
 
   'src/third_party/zlib':
    Var('chromium_git') + '/chromium/src/third_party/zlib.git' + '@' + Var('dart_zlib_rev'),
