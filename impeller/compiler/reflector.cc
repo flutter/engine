@@ -352,7 +352,7 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
     data->AddUniformDescription(std::move(uniform_description));
   }
 
-  // We only need to worry about reflecting vertex attributes.
+  // We only need to worry about storing vertex attributes.
   if (entrypoints.front().execution_model == spv::ExecutionModelVertex) {
     const auto inputs = compiler_->get_shader_resources().stage_inputs;
     auto input_offsets = ComputeOffsets(inputs);
@@ -1155,7 +1155,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& uniform_buffer : resources.uniform_buffers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(uniform_buffer.name);
+    proto.name = ToCamelCase(uniform_buffer.name);
     {
       std::stringstream stream;
       stream << "Bind uniform buffer for resource named " << uniform_buffer.name
@@ -1174,7 +1174,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& storage_buffer : resources.storage_buffers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(storage_buffer.name);
+    proto.name = ToCamelCase(storage_buffer.name);
     {
       std::stringstream stream;
       stream << "Bind storage buffer for resource named " << storage_buffer.name
@@ -1193,7 +1193,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& sampled_image : resources.sampled_images) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(sampled_image.name);
+    proto.name = ToCamelCase(sampled_image.name);
     {
       std::stringstream stream;
       stream << "Bind combined image sampler for resource named "
@@ -1216,7 +1216,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& separate_image : resources.separate_images) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(separate_image.name);
+    proto.name = ToCamelCase(separate_image.name);
     {
       std::stringstream stream;
       stream << "Bind separate image for resource named " << separate_image.name
@@ -1235,7 +1235,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& separate_sampler : resources.separate_samplers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(separate_sampler.name);
+    proto.name = ToCamelCase(separate_sampler.name);
     {
       std::stringstream stream;
       stream << "Bind separate sampler for resource named "

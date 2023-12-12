@@ -136,8 +136,6 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
     return nullptr;
   }
 
-  // TODO(bdero): Vertex attributes.
-
   return result;
 }
 

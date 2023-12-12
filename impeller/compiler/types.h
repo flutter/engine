@@ -51,7 +51,7 @@ struct ShaderConfig {
   std::string entry_point;
 };
 
-using ShaderBundleConfig = std::map<std::string, ShaderConfig>;
+using ShaderBundleConfig = std::unordered_map<std::string, ShaderConfig>;
 
 bool TargetPlatformIsMetal(TargetPlatform platform);
 

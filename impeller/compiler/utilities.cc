@@ -4,6 +4,7 @@
 
 #include "impeller/compiler/utilities.h"
 
+#include <algorithm>
 #include <cctype>
 #include <filesystem>
 #include <iostream>
@@ -35,7 +36,7 @@ std::string InferShaderNameFromPath(std::string_view path) {
   return Utf8FromPath(p);
 }
 
-std::string ConvertToCamelCase(std::string_view string) {
+std::string ToCamelCase(std::string_view string) {
   if (string.empty()) {
     return "";
   }
@@ -56,6 +57,13 @@ std::string ConvertToCamelCase(std::string_view string) {
     stream << ch;
   }
   return stream.str();
+}
+
+std::string ToLowerCase(std::string_view string) {
+  std::string result = std::string(string);
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](char x) { return std::tolower(x); });
+  return result;
 }
 
 std::string ConvertToEntrypointName(std::string_view string) {

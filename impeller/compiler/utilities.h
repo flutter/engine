@@ -24,7 +24,9 @@ std::string Utf8FromPath(const std::filesystem::path& path);
 
 std::string InferShaderNameFromPath(std::string_view path);
 
-std::string ConvertToCamelCase(std::string_view string);
+std::string ToCamelCase(std::string_view string);
+
+std::string ToLowerCase(std::string_view string);
 
 /// @brief  Ensure that the entrypoint name is a valid identifier in the target
 ///         language.

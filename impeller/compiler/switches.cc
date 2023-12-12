@@ -144,10 +144,8 @@ Switches::Switches(const fml::CommandLine& command_line)
       use_half_textures(command_line.HasOption("use-half-textures")),
       require_framebuffer_fetch(
           command_line.HasOption("require-framebuffer-fetch")) {
-  auto language =
-      command_line.GetOptionValueWithDefault("source-language", "glsl");
-  std::transform(language.begin(), language.end(), language.begin(),
-                 [](char x) { return std::tolower(x); });
+  auto language = ToLowerCase(
+      command_line.GetOptionValueWithDefault("source-language", "glsl"));
 
   source_language = ToSourceLanguage(language);
 

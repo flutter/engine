@@ -44,9 +44,7 @@ SourceType SourceTypeFromFileName(const std::string& file_name) {
 }
 
 SourceType SourceTypeFromString(std::string name) {
-  for (auto it = name.begin(); it != name.end(); it++) {
-    *it = std::tolower(static_cast<unsigned char>(*it));
-  }
+  name = ToLowerCase(name);
 
   if (name == "vertex") {
     return SourceType::kVertexShader;
@@ -66,7 +64,8 @@ SourceType SourceTypeFromString(std::string name) {
 SourceLanguage ToSourceLanguage(const std::string& source_language) {
   if (source_language == "glsl") {
     return SourceLanguage::kGLSL;
-  } else if (source_language == "hlsl") {
+  }
+  if (source_language == "hlsl") {
     return SourceLanguage::kHLSL;
   }
   return SourceLanguage::kUnknown;
