@@ -171,7 +171,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libpng/powerpc', // not linked in
   r'third_party/libpng/projects', // not linked in
   r'third_party/libpng/scripts', // not linked in
-  r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/protos', // contains nothing that ends up in the binary executable

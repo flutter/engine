@@ -195,7 +195,6 @@ vars = {
   "upstream_libpng": "https://github.com/glennrp/libpng.git",
   "upstream_libtess2": "https://github.com/memononen/libtess2.git",
   "upstream_libwebp": "https://chromium.googlesource.com/webm/libwebp.git",
-  "upstream_libxml": "https://gitlab.gnome.org/GNOME/libxml2.git",
   "upstream_leak_tracker": "https://github.com/dart-lang/leak_tracker.git",
   "upstream_logging": "https://github.com/dart-lang/logging.git",
   "upstream_markdown": "https://github.com/dart-lang/markdown.git",
@@ -647,9 +646,6 @@ deps = {
 
   'src/flutter/third_party/wuffs':
    Var('skia_git') + '/external/github.com/google/wuffs-mirror-release-c.git' + '@' + '600cd96cf47788ee3a74b40a6028b035c9fd6a61',
-
-  'src/third_party/libxml':
-   Var('flutter_git') + '/third_party/libxml' + '@' + 'a143e452b5fc7d872813eeadc8db421694058098',
 
   'src/third_party/zlib':
    Var('chromium_git') + '/chromium/src/third_party/zlib.git' + '@' + Var('dart_zlib_rev'),
