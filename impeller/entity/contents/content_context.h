@@ -278,16 +278,24 @@ struct ContentContextOptions {
 
   struct Hash {
     constexpr uint64_t operator()(const ContentContextOptions& o) const {
-      return static_cast<uint64_t>(o.sample_count) << 56 |                   //
-             static_cast<uint64_t>(o.blend_mode) << 48 |                     //
-             static_cast<uint64_t>(o.stencil_compare) << 40 |                //
-             static_cast<uint64_t>(o.stencil_operation) << 32 |              //
-             static_cast<uint64_t>(o.primitive_type) << 24 |                 //
-             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |  //
-             // bools
-             static_cast<uint64_t>(o.has_stencil_attachment) << 2 |
-             static_cast<uint64_t>(o.wireframe) << 1 |
-             static_cast<uint64_t>(o.is_for_rrect_blur_clear) << 0;
+      static_assert(sizeof(o.sample_count) == 1);
+      static_assert(sizeof(o.blend_mode) == 1);
+      static_assert(sizeof(o.sample_count) == 1);
+      static_assert(sizeof(o.stencil_compare) == 1);
+      static_assert(sizeof(o.stencil_operation) == 1);
+      static_assert(sizeof(o.primitive_type) == 1);
+      static_assert(sizeof(o.color_attachment_pixel_format) == 1);
+
+      return static_cast<uint64_t>(o.is_for_rrect_blur_clear ? 1u : 0u) << 0 |
+             static_cast<uint64_t>(o.wireframe ? 1u : 0u) << 1 |
+             static_cast<uint64_t>(o.has_stencil_attachment ? 1u : 0u) << 2 |
+             // enums
+             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
+             static_cast<uint64_t>(o.primitive_type) << 24 |
+             static_cast<uint64_t>(o.stencil_operation) << 32 |
+             static_cast<uint64_t>(o.stencil_compare) << 40 |
+             static_cast<uint64_t>(o.blend_mode) << 48 |
+             static_cast<uint64_t>(o.sample_count) << 56;
     }
   };
 
