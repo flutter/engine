@@ -26,8 +26,13 @@ static const CGFloat kSFProTextBreakPoint = 16;
 static const std::string kSFProDisplayName = "CupertinoSystemDisplay";
 // Font name represents the "SF Pro Text" system font on Apple platforms.
 static const std::string kSFProTextName = "CupertinoSystemText";
+// Font weight representing Regular
+float kNormalWeightValue = 400;
+
 
 namespace txt {
+
+const FourCharCode kWeightTag = 'wght';
 
 std::vector<std::string> GetDefaultFontFamilies() {
   if (fml::IsPlatformVersionAtLeast(9)) {
@@ -40,6 +45,42 @@ std::vector<std::string> GetDefaultFontFamilies() {
 sk_sp<SkFontMgr> GetDefaultFontManager(uint32_t font_initialization_data) {
   static sk_sp<SkFontMgr> mgr = SkFontMgr_New_CoreText(nullptr);
   return mgr;
+}
+
+CTFontRef MatchSystemUIFont(float desired_weight, float size) {
+  CTFontRef ct_font(
+      CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, size, nullptr));
+
+  if (desired_weight == kNormalWeightValue) {
+    return ct_font;
+  }
+
+  CFMutableDictionaryRef variations(CFDictionaryCreateMutable(
+      kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
+      &kCFTypeDictionaryValueCallBacks));
+
+  auto add_axis_to_variations = [&variations](const FourCharCode tag,
+                                              float desired_value,
+                                              float normal_value) {
+    if (desired_value != normal_value) {
+      CFNumberRef tag_number(
+          CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &tag));
+      CFNumberRef value_number(CFNumberCreate(
+          kCFAllocatorDefault, kCFNumberFloatType, &desired_value));
+      CFDictionarySetValue(variations, tag_number, value_number);
+    }
+  };
+  add_axis_to_variations(kWeightTag, desired_weight, kNormalWeightValue);
+
+  CFMutableDictionaryRef attributes(CFDictionaryCreateMutable(
+      kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
+      &kCFTypeDictionaryValueCallBacks));
+  CFDictionarySetValue(attributes, kCTFontVariationAttribute, variations);
+
+  CTFontDescriptorRef var_font_desc(
+      CTFontDescriptorCreateWithAttributes(attributes));
+
+  return CTFontCreateCopyWithAttributes(ct_font, size, nullptr, var_font_desc);
 }
 
 void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
@@ -62,6 +103,12 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   if (large_system_font) {
     dynamic_font_manager.font_provider().RegisterTypeface(large_system_font,
                                                           kSFProDisplayName);
+  }
+  sk_sp<SkTypeface> large_system_font_lightweight = SkMakeTypefaceFromCTFont(
+      (CTFontRef)CFAutorelease(MatchSystemUIFont(0, kSFProDisplayBreakPoint)));
+  if (large_system_font_lightweight) {
+    dynamic_font_manager.font_provider().RegisterTypeface(
+      large_system_font_lightweight, "CupertinoSystemDisplayw100");
   }
   sk_sp<SkTypeface> regular_system_font = SkMakeTypefaceFromCTFont(
       (CTFontRef)CFAutorelease(CTFontCreateUIFontForLanguage(
