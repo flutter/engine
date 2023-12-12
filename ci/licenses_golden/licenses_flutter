@@ -4933,7 +4933,6 @@ ORIGIN: ../../../flutter/impeller/compiler/reflector.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/impeller/compiler/reflector.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/runtime_stage_data.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/runtime_stage_data.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/compiler/shader_bundle_unittests.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_bundle.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_bundle.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl + ../../../flutter/LICENSE
@@ -7739,7 +7738,6 @@ FILE: ../../../flutter/impeller/compiler/reflector.cc
 FILE: ../../../flutter/impeller/compiler/reflector.h
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
-FILE: ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 FILE: ../../../flutter/impeller/compiler/shader_bundle.cc
 FILE: ../../../flutter/impeller/compiler/shader_bundle.h
 FILE: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl
