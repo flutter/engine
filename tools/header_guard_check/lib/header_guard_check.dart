@@ -38,8 +38,8 @@ final class HeaderGuardCheck {
   /// Runs the header guard check.
   Future<int> run() async {
     final List<io.File> files = <io.File>[];
-    
-    // Recursive search for header files.
+
+  // Recursive search for header files.
   final io.Directory dir = source.flutterDir;
   await for (final io.FileSystemEntity entity in dir.list(recursive: true)) {
     if (entity is io.File && entity.path.endsWith('.h')) {

@@ -67,7 +67,7 @@ final class HeaderFile {
     // Now iterate backwards to find the (last) #endif directive.
     for (int i = sourceFile.lines - 1; i > 0; i--) {
       final int start = sourceFile.getOffset(i);
-      final int end = i == sourceFile.lines - 1 ? 
+      final int end = i == sourceFile.lines - 1 ?
           sourceFile.length :
           sourceFile.getOffset(i + 1) - 1;
       final String line = sourceFile.getText(start, end);
