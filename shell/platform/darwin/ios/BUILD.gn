@@ -373,6 +373,9 @@ copy("copy_framework_module_map") {
   outputs = [ "$_flutter_framework_dir/Modules/module.modulemap" ]
 }
 
+# Copy privacy manifest. This file is required by Apple for third-party SDKs,
+# and documents engine and third_party usage of timestamps and boot time APIs.
+# See https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
 copy("copy_framework_privacy_manifest") {
   visibility = [ ":*" ]
   sources = [ "framework/PrivacyInfo.xcprivacy" ]
