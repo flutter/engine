@@ -4474,6 +4474,7 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
 
   auto texture = std::make_shared<Image>(CreateTextureForFixture("boston.jpg"));
   Canvas canvas;
+  canvas.Scale(GetContentScale() * 0.5);
   canvas.DrawPaint({.color = Color::Black()});
   canvas.DrawImage(
       texture, Point(200, 200),
