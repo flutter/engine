@@ -17,6 +17,19 @@ struct FramebufferBackingStore {
   uint32_t texture_id;
 };
 
+// Based off Skia's logic:
+// https://github.com/google/skia/blob/4738ed711e03212aceec3cd502a4adb545f38e63/src/gpu/ganesh/gl/GrGLCaps.cpp#L1963-L2116
+int GetSupportedTextureFormat(const impeller::DescriptionGLES* description) {
+  if (description->HasExtension("GL_EXT_texture_format_BGRA8888")) {
+    return GL_BGRA8_EXT;
+  } else if (description->HasExtension("GL_APPLE_texture_format_BGRA8888") &&
+             description->GetGlVersion().IsAtLeast(impeller::Version(3, 0))) {
+    return GL_BGRA8_EXT;
+  } else {
+    return GL_RGBA8;
+  }
+}
+
 }  // namespace
 
 CompositorOpenGL::CompositorOpenGL(FlutterWindowsEngine* engine,
@@ -133,18 +146,7 @@ bool CompositorOpenGL::Initialize() {
     return false;
   }
 
-  // Based off Skia's logic:
-  // https://github.com/google/skia/blob/4738ed711e03212aceec3cd502a4adb545f38e63/src/gpu/ganesh/gl/GrGLCaps.cpp#L1963-L2116
-  auto description = gl_->GetDescription();
-  if (description->HasExtension("GL_EXT_texture_format_BGRA8888")) {
-    format_ = GL_BGRA8_EXT;
-  } else if (description->HasExtension("GL_APPLE_texture_format_BGRA8888") &&
-             description->GetGlVersion().IsAtLeast(impeller::Version(3, 0))) {
-    format_ = GL_BGRA8_EXT;
-  } else {
-    format_ = GL_RGBA8;
-  }
-
+  format_ = GetSupportedTextureFormat(gl_->GetDescription());
   is_initialized_ = true;
   return true;
 }
