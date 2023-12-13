@@ -57,7 +57,7 @@ final class HeaderGuardCheck {
         bool included = include.isEmpty;
         for (final String includePath in include) {
           final String relativePath = p.relative(includePath, from: source.flutterDir.path);
-          if (p.isWithin(relativePath, entity.path)) {
+          if (p.isWithin(relativePath, entity.path) || p.equals(relativePath, entity.path)) {
             included = true;
             break;
           }
@@ -70,7 +70,7 @@ final class HeaderGuardCheck {
         bool excluded = false;
         for (final String excludePath in exclude) {
           final String relativePath = p.relative(excludePath, from: source.flutterDir.path);
-          if (p.isWithin(relativePath, entity.path)) {
+          if (p.isWithin(relativePath, entity.path) || p.equals(relativePath, entity.path)) {
             excluded = true;
             break;
           }
@@ -154,17 +154,18 @@ final ArgParser _parser = ArgParser()
   ..addMultiOption(
     'include',
     abbr: 'i',
-    help: 'Path directories to include in the check.',
-    valueHelp: 'path/to/dir (relative to the engine root)',
+    help: 'Paths to include in the check.',
+    valueHelp: 'path/to/dir/or/file (relative to the engine root)',
     defaultsTo: <String>[],
   )
   ..addMultiOption(
     'exclude',
     abbr: 'e',
-    help: 'Path directories to exclude from the check.',
-    valueHelp: 'path/to/dir (relative to the engine root)',
+    help: 'Paths to exclude from the check.',
+    valueHelp: 'path/to/dir/or/file (relative to the engine root)',
     defaultsTo: _engine != null ? <String>[
       'build',
+      'impeller/compiler/code_gen_template.h',
       'prebuilts',
       'third_party',
     ] : null,
