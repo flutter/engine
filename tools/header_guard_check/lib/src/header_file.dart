@@ -147,7 +147,7 @@ final class HeaderFile {
     // append an endif and a newline at the end of the file.
     if (pragmaOnce != null) {
       final String expectedGuard = expectedName(engineRoot: engineRoot);
-      
+
       // Append the endif and newline.
       String newContents = '$oldContents\n#endif  // $expectedGuard\n';
 
@@ -169,7 +169,7 @@ final class HeaderFile {
     // expected header guard.
     if (guard != null) {
       final String expectedGuard = expectedName(engineRoot: engineRoot);
-      
+
       // Replace endif:
       String newContents = oldContents.replaceRange(
         guard!.endifSpan!.start.offset,
