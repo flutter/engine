@@ -88,16 +88,27 @@ class PlatformViewMessageHandler {
       return;
     }
 
-    final DomElement content = _contentManager.renderContent(
+    // Ensure the DomElement of the view is *created*, so programmers can
+    // access it through `_contentManager.getViewById` (maybe not the DOM!).
+    _contentManager.renderContent(
       platformViewType,
       platformViewId,
       params,
     );
 
+    callback(_codec.encodeSuccessEnvelope(null));
+  }
+
+  /// Injects a platform view with [viewId] into this handler's `platformViewsContainer`.
+  void injectPlatformView(int viewId) {
     // For now, we don't need anything fancier. If needed, this can be converted
     // to a PlatformViewStrategy class for each web-renderer backend?
-    _platformViewsContainer.append(content);
-    callback(_codec.encodeSuccessEnvelope(null));
+    final DomElement pv = _contentManager.getContents(viewId);
+    // If pv is a descendant of _platformViewsContainer -> noop
+    if (_platformViewsContainer.contains(pv)) {
+      return;
+    }
+    _platformViewsContainer.append(pv);
   }
 
   /// Handle a `dispose` Platform View message.

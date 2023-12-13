@@ -143,6 +143,10 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int viewId, EmbeddedViewParams params) {
+    // Ensure platform view with `viewId` is injected into the `rasterizer.view`
+    // before rendering its shadow DOM `slot`.
+    rasterizer.view.platformViewMessageHandler.injectPlatformView(viewId);
+
     // If we haven't seen this viewId yet, cache it for clips/transforms.
     final ViewClipChain clipChain = _viewClipChains.putIfAbsent(viewId, () {
       return ViewClipChain(view: createPlatformViewSlot(viewId));

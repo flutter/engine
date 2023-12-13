@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 import '../dom.dart';
+import '../platform_dispatcher.dart';
 import '../platform_views/slots.dart';
+import '../window.dart';
 import 'surface.dart';
 
 /// A surface containing a platform view, which is an HTML element.
@@ -18,6 +20,11 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
   @override
   DomElement createElement() {
+    // Ensure platform view with `viewId` is injected into the `implicitView`
+    // before rendering its shadow DOM `slot`.
+    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+    implicitView.platformViewMessageHandler.injectPlatformView(viewId);
+
     return createPlatformViewSlot(viewId);
   }
 

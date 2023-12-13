@@ -65,6 +65,11 @@ class PlatformViewManager {
     return _contents.containsKey(viewId);
   }
 
+  /// Returns the pre-rendered contents of [viewId], to inject them into the DOM.
+  DomElement getContents(int viewId) {
+    return _contents[viewId]!;
+  }
+
   /// Returns the HTML element created by a registered factory for [viewId].
   ///
   /// Throws an [AssertionError] if [viewId] hasn't been rendered before.
