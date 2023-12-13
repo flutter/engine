@@ -58,7 +58,7 @@ class GoldenPlaygroundTest
 
   ISize GetWindowSize() const;
 
-  fml::Status SetCapabilities(
+  [[nodiscard]] fml::Status SetCapabilities(
       const std::shared_ptr<Capabilities>& capabilities);
 
   /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.

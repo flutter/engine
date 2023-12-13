@@ -4472,15 +4472,16 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
               SupportsTextureToTextureBlits);
   ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
 
+  auto texture = std::make_shared<Image>(CreateTextureForFixture("boston.jpg"));
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Black()});
-  canvas.DrawRect(Rect::MakeLTRB(200, 200, 824, 568),
-                  {.color = Color::Green()});
-  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(50), Sigma(50),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kDecal));
-  canvas.Restore();
+  canvas.DrawImage(
+      texture, Point(200, 200),
+      {
+          .image_filter = ImageFilter::MakeBlur(
+              Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
+              Entity::TileMode::kDecal),
+      });
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
