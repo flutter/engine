@@ -19,6 +19,7 @@ final class HeaderGuardCheck {
     required this.source,
     required this.exclude,
     this.include = const <String>[],
+    this.fix = false,
   });
 
   /// Parses the command line arguments and creates a new header guard checker.
@@ -28,11 +29,15 @@ final class HeaderGuardCheck {
       source: Engine.fromSrcPath(argResults['root'] as String),
       include: argResults['include'] as List<String>,
       exclude: argResults['exclude'] as List<String>,
+      fix: argResults['fix'] as bool,
     );
   }
 
   /// Engine source root.
   final Engine source;
+
+  /// Whether to automatically fix most header guards.
+  final bool fix;
 
   /// Path directories to include in the check.
   final List<String> include;
@@ -114,6 +119,17 @@ final class HeaderGuardCheck {
       for (final HeaderFile headerFile in badFiles) {
         io.stdout.writeln('  ${headerFile.path}');
       }
+
+      // If we're fixing, fix the files.
+      if (fix) {
+        for (final HeaderFile headerFile in badFiles) {
+          headerFile.fix(engineRoot: source.flutterDir.path);
+        }
+
+        io.stdout.writeln('Fixed ${badFiles.length} files.');
+        return 0;
+      }
+
       return 1;
     }
 
@@ -124,6 +140,10 @@ final class HeaderGuardCheck {
 final Engine? _engine = Engine.tryFindWithin(p.dirname(p.fromUri(io.Platform.script)));
 
 final ArgParser _parser = ArgParser()
+  ..addFlag(
+    'fix',
+    help: 'Automatically fixes most header guards.',
+  )
   ..addOption(
     'root',
     abbr: 'r',
