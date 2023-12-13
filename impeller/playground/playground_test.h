@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_
 
 #include <memory>
 
@@ -55,14 +56,18 @@ class PlaygroundTest : public Playground,
   PlaygroundTest& operator=(const PlaygroundTest&) = delete;
 };
 
-#define INSTANTIATE_PLAYGROUND_SUITE(playground)                            \
-  INSTANTIATE_TEST_SUITE_P(                                                 \
-      Play, playground,                                                     \
-      ::testing::Values(PlaygroundBackend::kMetal,                          \
-                        PlaygroundBackend::kOpenGLES,                       \
-                        PlaygroundBackend::kVulkan),                        \
-      [](const ::testing::TestParamInfo<PlaygroundTest::ParamType>& info) { \
-        return PlaygroundBackendToString(info.param);                       \
+#define INSTANTIATE_PLAYGROUND_SUITE(playground)                             \
+  [[maybe_unused]] const char* kYouInstantiated##playground##MultipleTimes = \
+      "";                                                                    \
+  INSTANTIATE_TEST_SUITE_P(                                                  \
+      Play, playground,                                                      \
+      ::testing::Values(PlaygroundBackend::kMetal,                           \
+                        PlaygroundBackend::kOpenGLES,                        \
+                        PlaygroundBackend::kVulkan),                         \
+      [](const ::testing::TestParamInfo<PlaygroundTest::ParamType>& info) {  \
+        return PlaygroundBackendToString(info.param);                        \
       });
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_

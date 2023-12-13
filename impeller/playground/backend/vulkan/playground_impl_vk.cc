@@ -13,6 +13,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/entity/vk/entity_shaders_vk.h"
+#include "impeller/entity/vk/framebuffer_blend_shaders_vk.h"
 #include "impeller/entity/vk/modern_shaders_vk.h"
 #include "impeller/fixtures/vk/fixtures_shaders_vk.h"
 #include "impeller/playground/imgui/vk/imgui_shaders_vk.h"
@@ -33,6 +34,9 @@ ShaderLibraryMappingsForPlayground() {
                                              impeller_entity_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_vk_data,
                                              impeller_modern_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_vk_data,
+          impeller_framebuffer_blend_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_fixtures_shaders_vk_data,
           impeller_fixtures_shaders_vk_length),
@@ -176,6 +180,13 @@ void PlaygroundImplVK::InitGlobalVulkanInstance() {
   FML_CHECK(instance_result.result == vk::Result::eSuccess)
       << "Unable to initialize global Vulkan instance";
   global_instance_ = std::move(instance_result.value);
+}
+
+fml::Status PlaygroundImplVK::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "PlaygroundImplVK doesn't support setting the capabilities.");
 }
 
 }  // namespace impeller

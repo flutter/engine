@@ -248,5 +248,44 @@ TEST(RectTest, MakePointBoundsQuad) {
   }
 }
 
+TEST(RectTest, IsSquare) {
+  EXPECT_TRUE(Rect::MakeXYWH(10, 30, 20, 20).IsSquare());
+  EXPECT_FALSE(Rect::MakeXYWH(10, 30, 20, 19).IsSquare());
+  EXPECT_FALSE(Rect::MakeXYWH(10, 30, 19, 20).IsSquare());
+
+  EXPECT_TRUE(IRect::MakeXYWH(10, 30, 20, 20).IsSquare());
+  EXPECT_FALSE(IRect::MakeXYWH(10, 30, 20, 19).IsSquare());
+  EXPECT_FALSE(IRect::MakeXYWH(10, 30, 19, 20).IsSquare());
+}
+
+TEST(RectTest, GetCenter) {
+  EXPECT_EQ(Rect::MakeXYWH(10, 30, 20, 20).GetCenter(), Point(20, 40));
+  EXPECT_EQ(Rect::MakeXYWH(10, 30, 20, 19).GetCenter(), Point(20, 39.5));
+
+  // Note that we expect a Point as the answer from an IRect
+  EXPECT_EQ(IRect::MakeXYWH(10, 30, 20, 20).GetCenter(), Point(20, 40));
+  EXPECT_EQ(IRect::MakeXYWH(10, 30, 20, 19).GetCenter(), Point(20, 39.5));
+}
+
+TEST(RectTest, Expand) {
+  auto rect = Rect::MakeLTRB(100, 100, 200, 200);
+
+  // Expand(T amount)
+  EXPECT_EQ(rect.Expand(10), Rect::MakeLTRB(90, 90, 210, 210));
+  EXPECT_EQ(rect.Expand(-10), Rect::MakeLTRB(110, 110, 190, 190));
+
+  // Expand(Point amount)
+  EXPECT_EQ(rect.Expand(Point{10, 10}), Rect::MakeLTRB(90, 90, 210, 210));
+  EXPECT_EQ(rect.Expand(Point{10, -10}), Rect::MakeLTRB(90, 110, 210, 190));
+  EXPECT_EQ(rect.Expand(Point{-10, 10}), Rect::MakeLTRB(110, 90, 190, 210));
+  EXPECT_EQ(rect.Expand(Point{-10, -10}), Rect::MakeLTRB(110, 110, 190, 190));
+
+  // Expand(Size amount)
+  EXPECT_EQ(rect.Expand(Size{10, 10}), Rect::MakeLTRB(90, 90, 210, 210));
+  EXPECT_EQ(rect.Expand(Size{10, -10}), Rect::MakeLTRB(90, 110, 210, 190));
+  EXPECT_EQ(rect.Expand(Size{-10, 10}), Rect::MakeLTRB(110, 90, 190, 210));
+  EXPECT_EQ(rect.Expand(Size{-10, -10}), Rect::MakeLTRB(110, 110, 190, 190));
+}
+
 }  // namespace testing
 }  // namespace impeller

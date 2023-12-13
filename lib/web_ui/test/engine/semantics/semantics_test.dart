@@ -799,7 +799,12 @@ void _testContainer() {
         owner().semanticsHost.querySelector('flt-semantics-container')!;
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
-    expect(parentElement.style.transformOrigin, '0px 0px 0px');
+    if (isSafari) {
+      // macOS 13 returns different values than macOS 12.
+      expect(parentElement.style.transformOrigin, anyOf(contains('0px 0px 0px'), contains('0px 0px')));
+    } else {
+      expect(parentElement.style.transformOrigin, '0px 0px 0px');
+    }
     expect(container.style.top, '-10px');
     expect(container.style.left, '-10px');
     semantics().semanticsEnabled = false;
@@ -3051,6 +3056,7 @@ void updateNode(
   double elevation = 0.0,
   double thickness = 0.0,
   ui.Rect rect = ui.Rect.zero,
+  String identifier = '',
   String label = '',
   List<ui.StringAttribute> labelAttributes = const <ui.StringAttribute>[],
   String hint = '',
@@ -3091,6 +3097,7 @@ void updateNode(
     elevation: elevation,
     thickness: thickness,
     rect: rect,
+    identifier: identifier,
     label: label,
     labelAttributes: labelAttributes,
     hint: hint,

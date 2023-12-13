@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_H_
+#define FLUTTER_IMPELLER_GEOMETRY_PATH_H_
 
 #include <functional>
 #include <optional>
@@ -132,6 +133,11 @@ class Path {
 
   ~Path();
 
+  Path(Path&& other) = default;
+
+  /// @brief Deeply clone this path and all data associated with it.
+  Path Clone() const;
+
   size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
   FillType GetFillType() const;
@@ -177,6 +183,8 @@ class Path {
 
  private:
   friend class PathBuilder;
+
+  Path(const Path& other) = default;
 
   void SetConvexity(Convexity value);
 
@@ -227,3 +235,5 @@ class Path {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_PATH_H_

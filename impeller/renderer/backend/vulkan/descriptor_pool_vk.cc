@@ -9,6 +9,7 @@
 #include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+#include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -82,12 +83,14 @@ fml::StatusOr<std::vector<vk::DescriptorSet>>
 DescriptorPoolVK::AllocateDescriptorSets(
     uint32_t buffer_count,
     uint32_t sampler_count,
+    uint32_t subpass_count,
     const std::vector<vk::DescriptorSetLayout>& layouts) {
   std::shared_ptr<const ContextVK> strong_context = context_.lock();
   if (!strong_context) {
     return fml::Status(fml::StatusCode::kUnknown, "No device");
   }
-  auto minimum_capacity = std::max(sampler_count, buffer_count);
+  auto minimum_capacity =
+      std::max(std::max(sampler_count, buffer_count), subpass_count);
   auto [new_pool, capacity] =
       strong_context->GetDescriptorPoolRecycler()->Get(minimum_capacity);
   if (!new_pool) {
@@ -113,8 +116,6 @@ DescriptorPoolVK::AllocateDescriptorSets(
 
 void DescriptorPoolRecyclerVK::Reclaim(vk::UniqueDescriptorPool&& pool,
                                        uint32_t allocated_capacity) {
-  TRACE_EVENT0("impeller", "DescriptorPoolRecyclerVK::Reclaim");
-
   // Reset the pool on a background thread.
   auto strong_context = context_.lock();
   if (!strong_context) {
@@ -169,8 +170,6 @@ DescriptorPoolAndSize DescriptorPoolRecyclerVK::Get(uint32_t minimum_capacity) {
 
 DescriptorPoolAndSize DescriptorPoolRecyclerVK::Create(
     uint32_t minimum_capacity) {
-  TRACE_EVENT0("impeller", "DescriptorPoolRecyclerVK::Create");
-
   FML_DCHECK(Allocation::NextPowerOfTwoSize(minimum_capacity) ==
              minimum_capacity);
   auto strong_context = context_.lock();
@@ -185,6 +184,8 @@ DescriptorPoolAndSize DescriptorPoolRecyclerVK::Create(
       vk::DescriptorPoolSize{vk::DescriptorType::eUniformBuffer,
                              minimum_capacity},
       vk::DescriptorPoolSize{vk::DescriptorType::eStorageBuffer,
+                             minimum_capacity},
+      vk::DescriptorPoolSize{vk::DescriptorType::eInputAttachment,
                              minimum_capacity}};
   vk::DescriptorPoolCreateInfo pool_info;
   pool_info.setMaxSets(minimum_capacity + minimum_capacity);
@@ -199,8 +200,6 @@ DescriptorPoolAndSize DescriptorPoolRecyclerVK::Create(
 
 std::optional<DescriptorPoolAndSize> DescriptorPoolRecyclerVK::Reuse(
     uint32_t minimum_capacity) {
-  TRACE_EVENT0("impeller", "DescriptorPoolRecyclerVK::Reuse");
-
   FML_DCHECK(Allocation::NextPowerOfTwoSize(minimum_capacity) ==
              minimum_capacity);
   Lock lock(recycled_mutex_);

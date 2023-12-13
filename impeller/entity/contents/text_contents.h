@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -29,6 +30,12 @@ class TextContents final : public Contents {
   void SetTextFrame(const std::shared_ptr<TextFrame>& frame);
 
   void SetColor(Color color);
+
+  /// @brief Force the text color to apply to the rendered glyphs, even if those
+  ///        glyphs are bitmaps.
+  ///
+  ///        This is used to ensure that mask blurs work correctly on emoji.
+  void SetForceTextColor(bool value);
 
   Color GetColor() const;
 
@@ -61,6 +68,7 @@ class TextContents final : public Contents {
   Color color_;
   Scalar inherited_opacity_ = 1.0;
   Vector2 offset_;
+  bool force_text_color_ = false;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
       Context& context,
@@ -73,3 +81,5 @@ class TextContents final : public Contents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_

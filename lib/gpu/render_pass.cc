@@ -386,7 +386,6 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
 
   impeller::SampledImageSlot image_slot;
   image_slot.texture_index = slot_id;
-  image_slot.sampler_index = slot_id;
   return command.BindResource(flutter::gpu::ToImpellerShaderStage(stage),
                               image_slot, metadata, texture->GetTexture(),
                               sampler);
@@ -395,10 +394,9 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
 void InternalFlutterGpu_RenderPass_ClearBindings(
     flutter::gpu::RenderPass* wrapper) {
   auto& command = wrapper->GetCommand();
-  command.vertex_count = 0;
+  command.vertex_buffer = {};
   command.vertex_bindings = {};
   command.fragment_bindings = {};
-  command.index_buffer = {};
 }
 
 void InternalFlutterGpu_RenderPass_SetColorBlendEnable(
