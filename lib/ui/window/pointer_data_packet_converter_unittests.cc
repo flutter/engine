@@ -716,5 +716,25 @@ TEST(PointerDataPacketConverterTest, CanConvertTrackpadGesture) {
   ASSERT_EQ(result[3].synthesized, 0);
 }
 
+TEST(PointerDataPacketConverterTest, CanConvertViewId) {
+  PointerDataPacketConverter converter;
+  auto packet = std::make_unique<PointerDataPacket>(2);
+  PointerData data;
+  CreateSimulatedPointerData(data, PointerData::Change::kAdd, 0, 0.0, 0.0, 0);
+  data.view_id = 100;
+  packet->SetPointerData(0, data);
+  CreateSimulatedPointerData(data, PointerData::Change::kHover, 0, 1.0, 0.0, 0);
+  data.view_id = 200;
+  packet->SetPointerData(1, data);
+  auto converted_packet = converter.Convert(std::move(packet));
+
+  std::vector<PointerData> result;
+  UnpackPointerPacket(result, std::move(converted_packet));
+
+  ASSERT_EQ(result.size(), (size_t)2);
+  ASSERT_EQ(result[0].view_id, 100);
+  ASSERT_EQ(result[1].view_id, 200);
+}
+
 }  // namespace testing
 }  // namespace flutter
