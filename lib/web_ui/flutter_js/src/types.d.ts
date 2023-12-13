@@ -2,25 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-export type CompileTarget =
-    "dart2js" |
-    "dartdevc" |
-    "dart2wasm";
+type JSCompileTarget = "dart2js" | "dartdevc";
+type WasmCompileTarget = "dart2wasm";
+
+export type CompileTarget = JSCompileTarget | WasmCompileTarget;
 
 export type WebRenderer =
     "html" |
     "canvaskit" |
     "skwasm";
 
-export interface ApplicationBuild {
-    target: CompileTarget;
+interface ApplicationBuildBase {
     renderer: WebRenderer;
 }
+
+export interface JSApplicationBuild extends ApplicationBuildBase {
+    compileTarget: JSCompileTarget;
+    mainJsPath: String;
+}
+
+export interface WasmApplicationBuild extends ApplicationBuildBase {
+    compileTarget: WasmCompileTarget;
+    mainWasmPath: String;
+    jsSupportRuntimePath: String;
+}
+
+export type ApplicationBuild = JSApplicationBuild | WasmApplicationBuild;
 
 export interface BuildConfig {
     serviceWorkerVersion: string;
     builds: ApplicationBuild[];
-    url: string?;
 }
 
 export interface BrowserEnvironment {

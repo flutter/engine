@@ -526,47 +526,60 @@ class BrowserPlatform extends PlatformPlugin {
     }
   }
 
+  String _makeBuildConfigString(String scriptBase, CompileConfiguration config) {
+    return config.compiler == Compiler.dart2wasm ? '''
+      {
+        compileTarget: "${config.compiler.name}",
+        renderer: "${config.renderer.name}",
+        mainWasmPath: "$scriptBase.browser_test.dart.wasm",
+        jsSupportRuntimePath: "$scriptBase.browser_test.dart.mjs",
+      }
+''' : '''
+      {
+        compileTarget: "${config.compiler.name}",
+        renderer: "${config.renderer.name}",
+        mainJsPath: "$scriptBase.browser_test.dart.js",
+      }
+''';
+  }
+
   /// Serves the HTML file that bootstraps the test.
   shelf.Response _testBootstrapHandler(shelf.Request request) {
     final String path = p.fromUri(request.url);
 
     if (path.endsWith('.html')) {
       final String test = '${p.withoutExtension(path)}.dart';
-
-      final bool linkSkwasm = suite.testBundle.compileConfig.renderer == Renderer.skwasm;
-      // Link to the Dart wrapper.
       final String scriptBase = htmlEscape.convert(p.basename(test));
-      final String link = '<link rel="x-dart-test" href="$scriptBase"${linkSkwasm ? " skwasm" : ""}>';
 
-      final String bootstrapScript = isWasm ? '''
-<script>
-  window.flutterConfiguration = {
-    canvasKitBaseUrl: "/canvaskit/",
-    // Some of our tests rely on color emoji
-    useColorEmoji: true,
-    canvasKitVariant: "${getCanvasKitVariant()}",
-  };
-</script>
-<script src="/test_dart2wasm.js"></script>
-      ''' : '''
+      final String bootstrapScript = '''
 <script src="/flutter_js/flutter.js"></script>
-<script type="module">
-  import { runTest } from "/test_dart2js.js";
-
-  runTest({
-    canvasKitBaseUrl: "/canvaskit/",
-    // Some of our tests rely on color emoji
-    useColorEmoji: true,
-    canvasKitVariant: "${getCanvasKitVariant()}",
+<script>
+  _flutter.buildConfig = {
+    builds: [
+      ${_makeBuildConfigString(scriptBase, suite.testBundle.compileConfig)}
+    ]
+  };
+  _flutter.loader.load({
+    options: {
+      canvasKitBaseUrl: "/canvaskit/",
+      // Some of our tests rely on color emoji
+      useColorEmoji: true,
+      canvasKitVariant: "${getCanvasKitVariant()}",
+    },
+    onEntrypointLoaded: function(engineInitializer) {
+      engineInitializer.initializeEngine(configuration).then(function(appRunner) {
+        appRunner.runApp();
+      });
+    },
   });
 </script>
 ''';
+
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
           <meta name="assetBase" content="/">
-          $link
           $bootstrapScript
         </head>
         </html>
