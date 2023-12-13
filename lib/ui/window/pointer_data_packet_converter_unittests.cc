@@ -45,6 +45,7 @@ void CreateSimulatedPointerData(PointerData& data,  // NOLINT
   data.platformData = 0;
   data.scroll_delta_x = 0.0;
   data.scroll_delta_y = 0.0;
+  data.view_id = 0;
 }
 
 void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
@@ -84,6 +85,7 @@ void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
   data.platformData = 0;
   data.scroll_delta_x = scroll_delta_x;
   data.scroll_delta_y = scroll_delta_y;
+  data.view_id = 0;
 }
 
 void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT

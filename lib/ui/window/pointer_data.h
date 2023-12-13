@@ -30,9 +30,11 @@ enum PointerButtonStylus : int64_t {
 
 // This structure is unpacked by platform_dispatcher.dart.
 //
-// If this struct changes, update kPointerDataFieldCount in pointer_data.cc.
-// (The pointer_data.cc also listed out other locations that must be kept
-// consistent.)
+// If this struct changes, update:
+//  * kPointerDataFieldCount in pointer_data.cc. (The pointer_data.cc also
+//    listed out other locations that must be kept consistent.)
+//  * The functions to create simulated data in
+//    pointer_data_packet_converter_unittests.cc.
 struct alignas(8) PointerData {
   // Must match the PointerChange enum in pointer.dart.
   enum class Change : int64_t {

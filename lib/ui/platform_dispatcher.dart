@@ -415,8 +415,7 @@ class PlatformDispatcher {
   }
 
   // This value must match kPointerDataFieldCount in pointer_data.cc. (The
-  // pointer_data.cc also listed out other locations that must be kept
-  // consistent.)
+  // pointer_data.cc also lists other locations that must be kept consistent.)
   static const int _kPointerDataFieldCount = 36;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
