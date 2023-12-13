@@ -96,7 +96,7 @@ class CompositorOpenGLTest : public WindowsTest {
 
     engine_ = builder.Build();
     EngineModifier modifier(engine_.get());
-    modifier.SetSurfaceManager(surface_manager.release());
+    modifier.SetSurfaceManager(std::move(surface_manager));
   }
 
   void UseEngineWithView() {

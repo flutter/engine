@@ -78,6 +78,8 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
 
 bool CompositorOpenGL::Present(const FlutterLayer** layers,
                                size_t layers_count) {
+  // TODO: Support compositing layers and platform views.
+  // See: https://github.com/flutter/flutter/issues/31713
   FML_DCHECK(is_initialized_);
   FML_DCHECK(layers_count == 1);
   FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
