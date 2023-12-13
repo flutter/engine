@@ -34,6 +34,8 @@ class FontCollection {
                                Dart_Handle callback,
                                const std::string& family_name);
 
+  // sk_sp<SkTypeface> FontCollection::matchTypeface(const SkString& familyName, SkFontStyle fontStyle) override;
+
  private:
   std::shared_ptr<txt::FontCollection> collection_;
   sk_sp<txt::DynamicFontManager> dynamic_font_manager_;

@@ -103,11 +103,14 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
     dynamic_font_manager.font_provider().RegisterTypeface(large_system_font,
                                                           kSFProDisplayName);
   }
-  sk_sp<SkTypeface> large_system_font_lightweight = SkMakeTypefaceFromCTFont(
-      (CTFontRef)CFAutorelease(MatchSystemUIFont(0, kSFProDisplayBreakPoint)));
-  if (large_system_font_lightweight) {
-    dynamic_font_manager.font_provider().RegisterTypeface(
-        large_system_font_lightweight, "CupertinoSystemDisplayw100");
+  for (int i = 0; i < 9; i++) {
+    const int font_weight = i * 100;
+    sk_sp<SkTypeface> large_system_font_weighted = SkMakeTypefaceFromCTFont(
+      (CTFontRef)CFAutorelease(MatchSystemUIFont(font_weight, kSFProDisplayBreakPoint)));
+    if (large_system_font_weighted) {
+      dynamic_font_manager.font_provider().RegisterTypeface(
+          large_system_font_weighted, kSFProDisplayName + "w" + std::to_string(font_weight + 100));
+    }
   }
   sk_sp<SkTypeface> regular_system_font = SkMakeTypefaceFromCTFont(
       (CTFontRef)CFAutorelease(CTFontCreateUIFontForLanguage(
@@ -115,6 +118,15 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   if (regular_system_font) {
     dynamic_font_manager.font_provider().RegisterTypeface(regular_system_font,
                                                           kSFProTextName);
+  }
+  for (int i = 0; i < 9; i++) {
+    const int font_weight = i * 100;
+    sk_sp<SkTypeface> large_system_font_weighted = SkMakeTypefaceFromCTFont(
+      (CTFontRef)CFAutorelease(MatchSystemUIFont(font_weight, kSFProTextBreakPoint)));
+    if (large_system_font_weighted) {
+      dynamic_font_manager.font_provider().RegisterTypeface(
+          large_system_font_weighted, kSFProTextName + "w" + std::to_string(font_weight + 100));
+    }
   }
 }
 
