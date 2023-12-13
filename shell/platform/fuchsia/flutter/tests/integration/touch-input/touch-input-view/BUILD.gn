@@ -11,8 +11,8 @@ import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 dart_library("lib") {
   package_name = "touch-input-view"
   sources = [ "touch-input-view.dart" ]
-
   deps = [ "//flutter/shell/platform/fuchsia/dart:args" ]
+  null_safe = true
 }
 
 flutter_component("component") {

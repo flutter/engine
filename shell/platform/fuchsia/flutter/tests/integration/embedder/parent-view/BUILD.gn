@@ -10,11 +10,11 @@ import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 dart_library("lib") {
   package_name = "parent-view"
   sources = [ "parent_view.dart" ]
-
   deps = [
     "//flutter/shell/platform/fuchsia/dart:args",
     "//flutter/shell/platform/fuchsia/dart:vector_math",
   ]
+  null_safe = true
 }
 
 flutter_component("component") {

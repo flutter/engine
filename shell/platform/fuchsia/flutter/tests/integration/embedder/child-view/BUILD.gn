@@ -10,6 +10,7 @@ import("//flutter/tools/fuchsia/gn-sdk/package.gni")
 dart_library("lib") {
   package_name = "child-view"
   sources = [ "child_view.dart" ]
+  null_safe = true
 }
 
 flutter_component("component") {

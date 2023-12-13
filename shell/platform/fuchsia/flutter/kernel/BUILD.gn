@@ -20,7 +20,7 @@ compile_platform("kernel_platform_files") {
   ]
 
   args = [
-    "--nnbd-agnostic",
+    "--nnbd-strong",
     "--target=flutter_runner",
     "dart:core",
   ]
@@ -78,6 +78,7 @@ template("core_snapshot") {
           rebase_path(isolate_snapshot_instructions, root_build_dir),
       "--write_v8_snapshot_profile_to=" +
           rebase_path(snapshot_profile, root_build_dir),
+      "--sound_null_safety",
     ]
 
     # No asserts in debug or release product.

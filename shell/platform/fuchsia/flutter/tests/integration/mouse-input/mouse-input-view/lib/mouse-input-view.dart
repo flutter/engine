@@ -100,13 +100,13 @@ class MyApp {
   }
 
   void _reportMouseInput(
-      {double localX,
-      double localY,
-      int timeReceived,
-      int buttons,
-      String phase,
-      double wheelXPhysicalPixel,
-      double wheelYPhysicalPixel}) {
+      {required double localX,
+      required double localY,
+      required int timeReceived,
+      required int buttons,
+      required String phase,
+      required double wheelXPhysicalPixel,
+      required double wheelYPhysicalPixel}) {
     print('mouse-input-view reporting mouse input to MouseInputListener');
     final message = ByteData.sublistView(utf8.encode(json.encode({
         'method': 'MouseInputListener.ReportMouseInput',

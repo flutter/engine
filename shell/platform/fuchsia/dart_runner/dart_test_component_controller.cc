@@ -341,9 +341,18 @@ bool DartTestComponentController::CreateIsolate(
   auto state = new std::shared_ptr<tonic::DartState>(new tonic::DartState(
       namespace_fd, [this](Dart_Handle result) { MessageEpilogue(result); }));
 
+  Dart_IsolateFlags flags;
+  flags.null_safety = Dart_DetectNullSafety(
+      /*script_uri=*/nullptr, /*package_config=*/nullptr,
+      /*original_working_directory=*/nullptr,
+      /*snapshot_data=*/isolate_snapshot_data,
+      /*snapshot_instructions=*/isolate_snapshot_instructions,
+      /*kernel_buffer=*/nullptr,
+      /*kernel_buffer_size=*/0);
+
   isolate_ = Dart_CreateIsolateGroup(
       url_.c_str(), label_.c_str(), isolate_snapshot_data,
-      isolate_snapshot_instructions, nullptr /* flags */, state, state, &error);
+      isolate_snapshot_instructions, &flags, state, state, &error);
   if (!isolate_) {
     FX_LOGF(ERROR, LOG_TAG, "Dart_CreateIsolateGroup failed: %s", error);
     return false;

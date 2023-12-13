@@ -258,7 +258,8 @@ template("dart_kernel") {
     }
     args += [
       "--verbosity=warning",
-      "--no-sound-null-safety",
+
+      # "--no-sound-null-safety",
       "--target",
       invoker.platform_name,
       "--platform",

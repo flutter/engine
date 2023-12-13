@@ -25,8 +25,11 @@ final Map<int, String> hidToKey = {
   458759: 'D', // Keyboard d and D
 };
 
-int main() {
+void main() {
   print('Launching text-input-view');
+  if (<int?>[null, 1 , 2] is List<int>) {
+    throw Exception('Unsound mode!');
+  }
   TestApp app = TestApp();
   app.run();
 }
@@ -37,7 +40,7 @@ class TestApp {
 
   void run() {
     // Set up window callbacks
-    window.onPlatformMessage = (String name, ByteData data, PlatformMessageResponseCallback callback) {
+    window.onPlatformMessage = (String name, ByteData? data, PlatformMessageResponseCallback? callback) {
       this.decodeAndReportPlatformMessage(name, data);
     };
     window.onMetricsChanged = () {
@@ -72,8 +75,8 @@ class TestApp {
     window.render(sceneBuilder.build());
   }
 
-  void decodeAndReportPlatformMessage(String name, ByteData data) async {
-    final buffer = data.buffer;
+  void decodeAndReportPlatformMessage(String name, ByteData? data) async {
+    final buffer = data!.buffer;
     var list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     var decoded = utf8.decode(list);
     var decodedJson = json.decode(decoded);
@@ -81,7 +84,7 @@ class TestApp {
 
     if (name == "flutter/keyevent" && decodedJson["type"] == "keydown") {
       if (hidToKey[decodedJson["hidUsage"]] != null) {
-        _reportTextInput(hidToKey[decodedJson["hidUsage"]]);
+        _reportTextInput(hidToKey[decodedJson["hidUsage"]]!);
       }
     }
 
