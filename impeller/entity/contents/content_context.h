@@ -286,9 +286,9 @@ struct ContentContextOptions {
       static_assert(sizeof(o.primitive_type) == 1);
       static_assert(sizeof(o.color_attachment_pixel_format) == 1);
 
-      return static_cast<uint64_t>(o.is_for_rrect_blur_clear ? 1u : 0u) << 0 |
-             static_cast<uint64_t>(o.wireframe ? 1u : 0u) << 1 |
-             static_cast<uint64_t>(o.has_stencil_attachment ? 1u : 0u) << 2 |
+      return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
+             (o.wireframe ? 1llu : 0llu) << 1 |
+             (o.has_stencil_attachment ? 1llu : 0llu) << 2 |
              // enums
              static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
              static_cast<uint64_t>(o.primitive_type) << 24 |
