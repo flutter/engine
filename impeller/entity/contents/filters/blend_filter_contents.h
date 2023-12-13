@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_BLEND_FILTER_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_BLEND_FILTER_CONTENTS_H_
+
 
 #include <optional>
 #include "impeller/entity/contents/filters/color_filter_contents.h"
@@ -101,3 +103,5 @@ class BlendFilterContents : public ColorFilterContents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_BLEND_FILTER_CONTENTS_H_

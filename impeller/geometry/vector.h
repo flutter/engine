@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
+#define FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
+
 
 #include <cmath>
 #include <string>
@@ -329,3 +331,5 @@ inline std::ostream& operator<<(std::ostream& out, const impeller::Vector4& p) {
 // NOLINTEND(google-explicit-constructor)
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_

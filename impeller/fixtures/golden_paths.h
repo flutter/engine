@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_FIXTURES_GOLDEN_PATHS_H_
+#define FLUTTER_IMPELLER_FIXTURES_GOLDEN_PATHS_H_
+
 
 #include <vector>
 
@@ -67,3 +69,5 @@ std::vector<Point> golden_cubic_and_quad_points = {
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_FIXTURES_GOLDEN_PATHS_H_

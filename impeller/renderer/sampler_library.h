@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
+#define FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
+
 
 #include "impeller/core/sampler.h"
 #include "impeller/core/sampler_descriptor.h"
@@ -26,3 +28,5 @@ class SamplerLibrary {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_

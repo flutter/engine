@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVIST_FIXTURE_H_
+#define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVIST_FIXTURE_H_
+
 
 #include "flutter/fml/macros.h"
 #include "flutter/testing/testing.h"
@@ -36,3 +38,5 @@ class ArchivistFixture : public ::testing::Test {
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ARCHIVIST_ARCHIVIST_FIXTURE_H_
