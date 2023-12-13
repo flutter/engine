@@ -156,7 +156,7 @@ final class HeaderFile {
         pragmaOnce!.start.offset,
         pragmaOnce!.end.offset,
         '#ifndef $expectedGuard\n'
-        '#define $expectedGuard\n'
+        '#define $expectedGuard'
       );
 
       // Write the new contents to the file.
@@ -181,7 +181,7 @@ final class HeaderFile {
       newContents = newContents.replaceRange(
         guard!.defineSpan!.start.offset,
         guard!.defineSpan!.end.offset,
-        '#define $expectedGuard\n'
+        '#define $expectedGuard'
       );
 
       // Replace ifndef:
