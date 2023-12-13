@@ -91,11 +91,7 @@ final class HeaderGuardCheck {
         continue;
       }
 
-      // Determine what the expected guard should be.
-      // Find the relative path from the engine root to the file.
-      final String relativePath = p.relative(file.path, from: source.flutterDir.path);
-      final String underscoredRelativePath = relativePath.replaceAll(p.separator, '_');
-      final String expectedGuard = 'FLUTTER_${p.withoutExtension(underscoredRelativePath).toUpperCase().replaceAll('.', '_')}_H_';
+      final String expectedGuard = headerFile.expectedName(engineRoot: source.flutterDir.path);
       if (headerFile.guard!.ifndefValue != expectedGuard) {
         io.stderr.writeln(headerFile.guard!.ifndefSpan!.message('Expected #ifndef $expectedGuard'));
         badFiles.add(headerFile);

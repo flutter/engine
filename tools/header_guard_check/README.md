@@ -25,3 +25,15 @@ use this pattern, see [the Google C++ style guide](https://google.github.io/styl
 > [!IMPORTANT]
 > This is a prototype tool and is not yet integrated into the engine's CI, nor
 > provides a way to fix the header guards automatically.
+
+## Advanced usage
+
+### Restricting the files to check
+
+By default, the tool checks all header files in the engine. You can restrict the
+files to check by passing a relative (to the `engine/src/flutter` root) paths to
+include:
+
+```shell
+dart ./tools/header_guard_check/bin/main.dart --include impeller
+```

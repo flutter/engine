@@ -28,7 +28,8 @@ final class HeaderFile {
     }
 
     final String contents = file.readAsStringSync();
-    final SourceFile sourceFile = SourceFile.fromString(contents, url: p.toUri(path));
+    final SourceFile sourceFile =
+        SourceFile.fromString(contents, url: p.toUri(path));
     return HeaderFile.from(
       path,
       guard: _parseGuard(sourceFile),
@@ -67,9 +68,9 @@ final class HeaderFile {
     // Now iterate backwards to find the (last) #endif directive.
     for (int i = sourceFile.lines - 1; i > 0; i--) {
       final int start = sourceFile.getOffset(i);
-      final int end = i == sourceFile.lines - 1 ?
-          sourceFile.length :
-          sourceFile.getOffset(i + 1) - 1;
+      final int end = i == sourceFile.lines - 1
+          ? sourceFile.length
+          : sourceFile.getOffset(i + 1) - 1;
       final String line = sourceFile.getText(start, end);
 
       // Check if the line is a header guard directive.
@@ -117,6 +118,85 @@ final class HeaderFile {
   ///
   /// This is `null` if the file does not have a `#pragma once` directive.
   final SourceSpan? pragmaOnce;
+
+  /// Returns the expected header guard for this file, relative to [engineRoot].
+  ///
+  /// For example, if the file is `foo/bar/baz.h`, this will return `FLUTTER_FOO_BAR_BAZ_H_`.
+  String expectedName({required String engineRoot}) {
+    final String relativePath = p.relative(path, from: engineRoot);
+    final String underscoredRelativePath = relativePath.replaceAll(p.separator, '_');
+    return 'FLUTTER_${p.withoutExtension(underscoredRelativePath).toUpperCase().replaceAll('.', '_')}_H_';
+  }
+
+  /// Updates the file at [path] to have the expected header guard.
+  bool fix({required String engineRoot}) {
+    // Check if the file already has a valid header guard.
+    if (guard != null) {
+      final String expectedGuard = expectedName(engineRoot: engineRoot);
+      if (guard!.ifndefValue == expectedGuard &&
+          guard!.defineValue == expectedGuard &&
+          guard!.endifValue == expectedGuard) {
+        return false;
+      }
+    }
+
+    // Get the contents of the file.
+    final String oldContents = io.File(path).readAsStringSync();
+
+    // If we're using pragma once, replace it with an ifndef/define, and
+    // append an endif and a newline at the end of the file.
+    if (pragmaOnce != null) {
+      final String expectedGuard = expectedName(engineRoot: engineRoot);
+      
+      // Append the endif and newline.
+      String newContents = '$oldContents\n#endif  // $expectedGuard\n';
+
+      // Replace the span with the ifndef/define.
+      newContents = newContents.replaceRange(
+        pragmaOnce!.start.offset,
+        pragmaOnce!.end.offset,
+        '#ifndef $expectedGuard\n'
+        '#define $expectedGuard\n'
+      );
+
+      // Write the new contents to the file.
+      io.File(path).writeAsStringSync(newContents);
+
+      return true;
+    }
+
+    // If we're not using pragma once, replace the header guard with the
+    // expected header guard.
+    if (guard != null) {
+      final String expectedGuard = expectedName(engineRoot: engineRoot);
+      
+      // Replace endif:
+      String newContents = oldContents.replaceRange(
+        guard!.endifSpan!.start.offset,
+        guard!.endifSpan!.end.offset,
+        '#endif  // $expectedGuard\n'
+      );
+
+      // Replace define:
+      newContents = newContents.replaceRange(
+        guard!.defineSpan!.start.offset,
+        guard!.defineSpan!.end.offset,
+        '#define $expectedGuard\n'
+      );
+
+      // Replace ifndef:
+      newContents = newContents.replaceRange(
+        guard!.ifndefSpan!.start.offset,
+        guard!.ifndefSpan!.end.offset,
+        '#ifndef $expectedGuard\n'
+      );
+
+      // Write the new contents to the file.
+      io.File(path).writeAsStringSync(newContents);
+
+      return true;
+    }
+  }
 
   @override
   bool operator ==(Object other) {
