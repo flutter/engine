@@ -136,6 +136,10 @@ class Canvas {
       const Rect& rect,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
+  void ClipOval(
+      const Rect& bounds,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
   void ClipRRect(
       const Rect& rect,
       const Size& corner_radii,
