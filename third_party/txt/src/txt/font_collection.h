@@ -56,7 +56,6 @@ class FontCollection : public std::enable_shared_from_this<FontCollection> {
   // Construct a Skia text layout FontCollection based on this collection.
   sk_sp<skia::textlayout::FontCollection> CreateSktFontCollection();
 
-
  private:
   sk_sp<SkFontMgr> default_font_manager_;
   sk_sp<SkFontMgr> asset_font_manager_;

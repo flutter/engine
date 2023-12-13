@@ -105,11 +105,13 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   }
   for (int i = 0; i < 9; i++) {
     const int font_weight = i * 100;
-    sk_sp<SkTypeface> large_system_font_weighted = SkMakeTypefaceFromCTFont(
-      (CTFontRef)CFAutorelease(MatchSystemUIFont(font_weight, kSFProDisplayBreakPoint)));
+    sk_sp<SkTypeface> large_system_font_weighted =
+        SkMakeTypefaceFromCTFont((CTFontRef)CFAutorelease(
+            MatchSystemUIFont(font_weight, kSFProDisplayBreakPoint)));
     if (large_system_font_weighted) {
       dynamic_font_manager.font_provider().RegisterTypeface(
-          large_system_font_weighted, kSFProDisplayName + "w" + std::to_string(font_weight + 100));
+          large_system_font_weighted,
+          kSFProDisplayName + "w" + std::to_string(font_weight + 100));
     }
   }
   sk_sp<SkTypeface> regular_system_font = SkMakeTypefaceFromCTFont(
@@ -121,11 +123,13 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   }
   for (int i = 0; i < 9; i++) {
     const int font_weight = i * 100;
-    sk_sp<SkTypeface> large_system_font_weighted = SkMakeTypefaceFromCTFont(
-      (CTFontRef)CFAutorelease(MatchSystemUIFont(font_weight, kSFProTextBreakPoint)));
+    sk_sp<SkTypeface> large_system_font_weighted =
+        SkMakeTypefaceFromCTFont((CTFontRef)CFAutorelease(
+            MatchSystemUIFont(font_weight, kSFProTextBreakPoint)));
     if (large_system_font_weighted) {
       dynamic_font_manager.font_provider().RegisterTypeface(
-          large_system_font_weighted, kSFProTextName + "w" + std::to_string(font_weight + 100));
+          large_system_font_weighted,
+          kSFProTextName + "w" + std::to_string(font_weight + 100));
     }
   }
 }
