@@ -956,6 +956,7 @@
 ../../../flutter/third_party/skia/src/encode/BUILD.bazel
 ../../../flutter/third_party/skia/src/fonts/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/BUILD.bazel
+../../../flutter/third_party/skia/src/gpu/android/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/effects/BUILD.bazel
@@ -1044,6 +1045,7 @@
 ../../../flutter/third_party/sqlite/README.md
 ../../../flutter/third_party/sqlite/VERSION
 ../../../flutter/third_party/stb
+../../../flutter/third_party/swiftshader
 ../../../flutter/third_party/test_shaders
 ../../../flutter/third_party/tinygltf
 ../../../flutter/third_party/tonic/.clang-format
@@ -1073,6 +1075,7 @@
 ../../../flutter/third_party/wuffs/release/c/README.md
 ../../../flutter/third_party/wuffs/script
 ../../../flutter/third_party/wuffs/sync.txt
+../../../flutter/third_party/yapf
 ../../../flutter/tools
 ../../../flutter/tools/licenses/.dart_tool
 ../../../flutter/tools/licenses/.gitignore
@@ -2872,7 +2875,6 @@
 ../../../third_party/libpng/projects
 ../../../third_party/libpng/scripts
 ../../../third_party/libpng/tests
-../../../third_party/libxml
 ../../../third_party/perfetto/.clang-format
 ../../../third_party/perfetto/.clang-tidy
 ../../../third_party/perfetto/.git
@@ -3021,7 +3023,6 @@
 ../../../third_party/root_certificates/certdata.pem
 ../../../third_party/root_certificates/certdata.txt
 ../../../third_party/root_certificates/codereview.settings
-../../../third_party/swiftshader
 ../../../third_party/vulkan-deps/.git
 ../../../third_party/vulkan-deps/.gitattributes
 ../../../third_party/vulkan-deps/.gitignore
@@ -3194,7 +3195,6 @@
 ../../../third_party/vulkan_memory_allocator/src
 ../../../third_party/vulkan_memory_allocator/tools
 ../../../third_party/web_dependencies/canvaskit
-../../../third_party/yapf
 ../../../third_party/zlib/.git
 ../../../third_party/zlib/CMakeLists.txt
 ../../../third_party/zlib/DIR_METADATA
