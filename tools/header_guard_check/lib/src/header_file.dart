@@ -196,6 +196,8 @@ final class HeaderFile {
 
       return true;
     }
+
+    return false;
   }
 
   @override
