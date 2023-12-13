@@ -21,7 +21,7 @@ base class ShaderLibrary extends NativeFieldWrapperClass1 {
   // Hold a Dart-side reference to shaders in the library as they're wrapped for
   // the first time. This prevents the wrapper from getting prematurely
   // destroyed.
-  final Map<String, Shader> shaders_ = {};
+  final Map<String, Shader?> shaders_ = {};
 
   Shader? operator [](String shaderName) {
     // This `flutter_gpu` library isn't always registered as part of the builtin
@@ -30,14 +30,8 @@ base class ShaderLibrary extends NativeFieldWrapperClass1 {
     // Providing a new wrapper to [_getShader] for wrapping the native
     // counterpart (if it hasn't been wrapped already) is a hack to work around
     // this.
-    Shader? result = shaders_[shaderName];
-    if (result == null) {
-      result = _getShader(shaderName, Shader._());
-      if (result != null) {
-        shaders_[shaderName] = result;
-      }
-    }
-    return result;
+    return shaders_.putIfAbsent(
+        shaderName, () => _getShader(shaderName, Shader._()));
   }
 
   @Native<Handle Function(Handle, Handle)>(
