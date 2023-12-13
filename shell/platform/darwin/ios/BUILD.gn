@@ -314,6 +314,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
     "framework/Source/UIViewController_FlutterScreenAndSceneIfLoadedTest.mm",
+    "framework/Source/availability_version_check_test.mm",
     "framework/Source/connection_collection_test.mm",
   ]
   deps = [
