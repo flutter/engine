@@ -146,7 +146,7 @@ base class EngineFlutterView implements ui.FlutterView {
 
   @override
   ViewConstraints get physicalConstraints {
-    computePhysicalSize();
+    _computePhysicalSize();
     return ViewConstraints.fromJsOptions(_jsViewConstraints, physicalSize);
   }
   // The configured constraints used to compute the actual physicalConstraints.
