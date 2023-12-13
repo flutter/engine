@@ -239,8 +239,12 @@ template("embed_blob") {
 }
 
 # Dispatches to the build or prebuilt impellerc depending on the value of
-# the impeller_use_prebuilt_impellerc argument. Forwards all variables to
-# compiled_action_foreach or action_foreach as appropriate.
+# the `impeller_use_prebuilt_impellerc` argument.
+# * When the `single_invocation` argument is false, all variables are
+#   forwarded to `compiled_action_foreach` or `action_foreach`, which will
+#   invoke `impellerc` separately for each source.
+# * When the `single_invocation` argument is true, `impellerc` is only
+#   invoked once via `compiled_action` or `action`.
 template("_impellerc") {
   if (invoker.single_invocation) {
     if (impeller_use_prebuilt_impellerc == "") {
@@ -275,6 +279,30 @@ template("_impellerc") {
   }
 }
 
+# Required: shaders                 The list of shaders inputs to compile.
+# Required: shader_target_flag      The target flag to append. Valid options:
+#                                       --sksl
+#                                       --metal-ios
+#                                       --metal-desktop
+#                                       --opengl-es
+#                                       --opengl-desktop
+#                                       --vulkan
+#                                       --runtime-stage-metal
+# Required: sl_file_extension       The file extension to use for output files.
+#                                   Not required for --shader_bundle mode.
+# Optional: iplr                    Causes --sl output to be in iplr/runtime
+#                                   stage flatbuffer format.
+# Optional: shader_bundle           Specifies a Flutter GPU shader bundle
+#                                   configuration.
+#   Required: shader_bundle_output  Specifies the output filename of the shader
+#                                   bundle. This is only required if
+#                                   shader_bundle is supplied.
+# Optional: defines                 Specifies a list of valueless macro
+#                                   definitions.
+# Optional: intermediates_subdir    Specifies the subdirectory in which to put
+#                                   intermediates.
+# Optional: json                    Causes output format to be JSON instead of
+#                                   flatbuffer.
 template("impellerc") {
   assert(defined(invoker.shaders), "Impeller shaders must be specified.")
   assert(defined(invoker.shader_target_flag),
@@ -304,15 +332,6 @@ template("impellerc") {
                "shader_bundle",
                "shader_bundle_output",
              ])
-
-  # Optional: invoker.iplr Causes --sl output to be in iplr format.
-  # Optional: invoker.shader_bundle specifies a Flutter GPU shader bundle configuration.
-  # Optional: invoker.shader_bundle_output specifies the output filename of the shader
-  #           bundle. This is required if invoker.shader_bundle is supplied.
-  # Optional: invoker.defines specifies a list of valueless macro definitions.
-  # Optional: invoker.intermediates_subdir specifies the subdirectory in which
-  #           to put intermediates.
-  # Optional: invoker.json Causes output format to be JSON instead of flatbuffer.
 
   _impellerc(target_name) {
     shader_bundle = defined(invoker.shader_bundle)

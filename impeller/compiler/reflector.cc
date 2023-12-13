@@ -414,7 +414,7 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
   env.set_lstrip_blocks(true);
 
   env.add_callback("camel_case", 1u, [](inja::Arguments& args) {
-    return ConvertToCamelCase(args.at(0u)->get<std::string>());
+    return ToCamelCase(args.at(0u)->get<std::string>());
   });
 
   env.add_callback("to_shader_stage", 1u, [](inja::Arguments& args) {
