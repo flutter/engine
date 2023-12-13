@@ -21,11 +21,6 @@
 
 namespace vulkan {
 
-// static
-fml::RefPtr<VulkanProcTable> VulkanProcTable::CreateForCurrentProcess() {
-  return fml::MakeRefCounted<VulkanProcTable>(&vkGetInstanceProcAddr);
-}
-
 VulkanProcTable::VulkanProcTable() : VulkanProcTable("libvulkan.so"){};
 
 VulkanProcTable::VulkanProcTable(const char* so_path)
