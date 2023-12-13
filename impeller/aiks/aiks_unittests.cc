@@ -4505,7 +4505,6 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-<<<<<<< HEAD
 #define FLT_FORWARD(mock, real, method) \
   EXPECT_CALL(*mock, method())          \
       .WillRepeatedly(::testing::Return(real->method()));
@@ -4556,12 +4555,10 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-=======
 // Smoketest to catch issues with the coverage hint.
 // Draws a rotated blurred image within a rectangle clip. The center of the clip
 // rectangle is the center of the rotated image. The entire area of the clip
 // rectangle should be filled with opaque colors output by the blur.
->>>>>>> a178d2a245 (Center the clip over the blurred image)
 TEST_P(AiksTest, GaussianBlurRotatedAndClipped) {
   Canvas canvas;
   std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
