@@ -30,11 +30,9 @@ enum PointerButtonStylus : int64_t {
 
 // This structure is unpacked by platform_dispatcher.dart.
 //
-// If this struct changes, update:
-//
-//  * kPointerDataFieldCount in pointer_data.cc
-//  * the unpacking code in platform_dispatcher.dart
-//  * the packing code in AndroidTouchProcessor.java
+// If this struct changes, update kPointerDataFieldCount in pointer_data.cc.
+// (The pointer_data.cc also listed out other locations that must be kept
+// consistent.)
 struct alignas(8) PointerData {
   // Must match the PointerChange enum in pointer.dart.
   enum class Change : int64_t {

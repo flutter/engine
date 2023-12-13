@@ -80,7 +80,9 @@ public class AndroidTouchProcessor {
     int UNKNOWN = 4;
   }
 
-  // This value must match kPointerDataFieldCount in pointer_data.cc.
+  // This value must match kPointerDataFieldCount in pointer_data.cc. (The
+  // pointer_data.cc also listed out other locations that must be kept
+  // consistent.)
   private static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
