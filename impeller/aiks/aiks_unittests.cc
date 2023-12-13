@@ -4563,30 +4563,26 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
 // rectangle should be filled with opaque colors output by the blur.
 >>>>>>> a178d2a245 (Center the clip over the blurred image)
 TEST_P(AiksTest, GaussianBlurRotatedAndClipped) {
+  Canvas canvas;
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  Rect bounds =
+      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
+  Vector2 image_center = Vector2(bounds.GetSize() / 2);
   Paint paint = {.image_filter =
                      ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
                                            FilterContents::BlurStyle::kNormal,
                                            Entity::TileMode::kDecal)};
-
-  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
-  auto bounds =
-      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
-
-  Vector2 scale = GetContentScale() * 0.5;
-  Vector2 pivot(450, 300);
-  Vector2 image_center = Vector2(bounds.GetSize() / 2);
-
-  Canvas canvas;
-  canvas.Scale(scale);
-
-  canvas.Translate(pivot);
-  canvas.ClipRect(Rect::MakeLTRB(-350, -150, 350, 150));
-
-  canvas.Translate(-pivot);
+  Vector2 clip_size = {150, 75};
+  Vector2 center = Vector2(1024, 768) / 2;
+  canvas.Scale(GetContentScale());
+  canvas.ClipRect(
+      Rect::MakeLTRB(center.x, center.y, center.x, center.y).Expand(clip_size));
+  canvas.Translate({center.x, center.y, 0});
+  canvas.Scale({0.6, 0.6, 1});
   canvas.Rotate(Degrees(25));
-  canvas.PreConcat(Matrix::MakeTranslation(pivot * scale));
-  canvas.DrawImageRect(std::make_shared<Image>(boston), bounds,
-                       bounds.Shift(-image_center), paint);
+
+  canvas.DrawImageRect(std::make_shared<Image>(boston), /*source=*/bounds,
+                       /*dest=*/bounds.Shift(-image_center), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
