@@ -18,6 +18,7 @@ final class HeaderGuardCheck {
   const HeaderGuardCheck({
     required this.source,
     required this.exclude,
+    this.include = const <String>[],
   });
 
   /// Parses the command line arguments and creates a new header guard checker.
@@ -25,12 +26,16 @@ final class HeaderGuardCheck {
     final ArgResults argResults = _parser.parse(arguments);
     return HeaderGuardCheck(
       source: Engine.fromSrcPath(argResults['root'] as String),
+      include: argResults['include'] as List<String>,
       exclude: argResults['exclude'] as List<String>,
     );
   }
 
   /// Engine source root.
   final Engine source;
+
+  /// Path directories to include in the check.
+  final List<String> include;
 
   /// Path directories to exclude from the check.
   final List<String> exclude;
@@ -39,23 +44,37 @@ final class HeaderGuardCheck {
   Future<int> run() async {
     final List<io.File> files = <io.File>[];
 
-  // Recursive search for header files.
-  final io.Directory dir = source.flutterDir;
-  await for (final io.FileSystemEntity entity in dir.list(recursive: true)) {
-    if (entity is io.File && entity.path.endsWith('.h')) {
-      // Check that the file is not excluded.
-      bool excluded = false;
-      for (final String excludePath in exclude) {
-        if (p.isWithin(excludePath, entity.path)) {
-          excluded = true;
-          break;
+    // Recursive search for header files.
+    final io.Directory dir = source.flutterDir;
+    await for (final io.FileSystemEntity entity in dir.list(recursive: true)) {
+      if (entity is io.File && entity.path.endsWith('.h')) {
+        // Check that the file is included.
+        bool included = include.isEmpty;
+        for (final String includePath in include) {
+          final String relativePath = p.relative(includePath, from: source.flutterDir.path);
+          if (p.isWithin(relativePath, entity.path)) {
+            included = true;
+            break;
+          }
+        }
+        if (!included) {
+          continue;
+        }
+
+        // Check that the file is not excluded.
+        bool excluded = false;
+        for (final String excludePath in exclude) {
+          final String relativePath = p.relative(excludePath, from: source.flutterDir.path);
+          if (p.isWithin(relativePath, entity.path)) {
+            excluded = true;
+            break;
+          }
+        }
+        if (!excluded) {
+          files.add(entity);
         }
       }
-      if (!excluded) {
-        files.add(entity);
-      }
     }
-  }
 
     // Check each file.
     final List<HeaderFile> badFiles = <HeaderFile>[];
@@ -117,13 +136,20 @@ final ArgParser _parser = ArgParser()
     defaultsTo: _engine?.srcDir.path,
   )
   ..addMultiOption(
+    'include',
+    abbr: 'i',
+    help: 'Path directories to include in the check.',
+    valueHelp: 'path/to/dir (relative to the engine root)',
+    defaultsTo: <String>[],
+  )
+  ..addMultiOption(
     'exclude',
     abbr: 'e',
     help: 'Path directories to exclude from the check.',
-    valueHelp: 'path/to/dir',
+    valueHelp: 'path/to/dir (relative to the engine root)',
     defaultsTo: _engine != null ? <String>[
-      p.join(_engine!.flutterDir.path, 'build'),
-      p.join(_engine!.flutterDir.path, 'prebuilts'),
-      p.join(_engine!.flutterDir.path, 'third_party'),
+      'build',
+      'prebuilts',
+      'third_party',
     ] : null,
   );
