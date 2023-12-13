@@ -64,14 +64,11 @@ class CanvasKitRenderer implements Renderer {
   Future<void> initialize() async {
     _initialized ??= () async {
       if (windowFlutterCanvasKit != null) {
-        print('ALREADY LOADED');
         canvasKit = windowFlutterCanvasKit!;
       } else if (windowFlutterCanvasKitLoaded != null) {
-        print('PRELOAD');
         // CanvasKit is being preloaded by flutter.js. Wait for it to complete.
         canvasKit = await promiseToFuture<CanvasKit>(windowFlutterCanvasKitLoaded!);
       } else {
-        print('LOAD OURSELVES');
         canvasKit = await downloadCanvasKit();
         windowFlutterCanvasKit = canvasKit;
       }

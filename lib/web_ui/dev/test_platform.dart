@@ -156,7 +156,7 @@ class BrowserPlatform extends PlatformPlugin {
   Uri get url => server.url.resolve('/');
 
   bool get isWasm => suite.testBundle.compileConfig.compiler == Compiler.dart2wasm;
-  bool get needsCrossOriginIsolated => isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
+  bool get needsCrossOriginIsolated => true; //isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
 
   /// A [OneOffHandler] for servicing WebSocket connections for
   /// [BrowserManager]s.
@@ -560,16 +560,11 @@ class BrowserPlatform extends PlatformPlugin {
     ]
   };
   _flutter.loader.load({
-    options: {
+    config: {
       canvasKitBaseUrl: "/canvaskit/",
       // Some of our tests rely on color emoji
       useColorEmoji: true,
       canvasKitVariant: "${getCanvasKitVariant()}",
-    },
-    onEntrypointLoaded: function(engineInitializer) {
-      engineInitializer.initializeEngine(configuration).then(function(appRunner) {
-        appRunner.runApp();
-      });
     },
   });
 </script>
