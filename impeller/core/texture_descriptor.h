@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_TEXTURE_DESCRIPTOR_H_
 #define FLUTTER_IMPELLER_CORE_TEXTURE_DESCRIPTOR_H_
 
-
 #include "impeller/core/formats.h"
 #include "impeller/geometry/size.h"
 

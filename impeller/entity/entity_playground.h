@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PLAYGROUND_H_
 #define FLUTTER_IMPELLER_ENTITY_ENTITY_PLAYGROUND_H_
 
-
 #include "impeller/playground/playground_test.h"
 
 #include "flutter/fml/macros.h"

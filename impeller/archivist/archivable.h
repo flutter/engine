@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVABLE_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVABLE_H_
 
-
 #include <cstdint>
 #include <optional>
 #include <string>

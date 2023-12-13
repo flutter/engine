@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_RANGE_H_
 #define FLUTTER_IMPELLER_CORE_RANGE_H_
 
-
 #include <cstddef>
 
 #include "flutter/fml/macros.h"

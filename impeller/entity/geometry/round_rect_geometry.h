@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_ROUND_RECT_GEOMETRY_H_
 #define FLUTTER_IMPELLER_ENTITY_GEOMETRY_ROUND_RECT_GEOMETRY_H_
 
-
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {

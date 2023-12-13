@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SHADER_LIBRARY_H_
 #define FLUTTER_IMPELLER_RENDERER_SHADER_LIBRARY_H_
 
-
 #include <future>
 #include <memory>
 #include <string_view>

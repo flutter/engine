@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_
 #define FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_
 
-
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_SCENE_H_
 #define FLUTTER_IMPELLER_SCENE_SCENE_H_
 
-
 #include <memory>
 #include <vector>
 

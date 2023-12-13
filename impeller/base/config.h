@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_CONFIG_H_
 #define FLUTTER_IMPELLER_BASE_CONFIG_H_
 
-
 #include <cstdlib>
 
 #include "flutter/fml/logging.h"

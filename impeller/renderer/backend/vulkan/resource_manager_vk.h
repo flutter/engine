@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_RESOURCE_MANAGER_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_RESOURCE_MANAGER_VK_H_
 
-
 #include <condition_variable>
 #include <memory>
 #include <mutex>

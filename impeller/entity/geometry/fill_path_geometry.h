@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_
 #define FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_
 
-
 #include <optional>
 
 #include "impeller/entity/geometry/geometry.h"

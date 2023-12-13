@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_
 
-
 #include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
 

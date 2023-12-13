@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_WORKING_DIRECTORY_H_
 #define FLUTTER_IMPELLER_GOLDEN_TESTS_WORKING_DIRECTORY_H_
 
-
 #include <string>
 
 #include "flutter/fml/macros.h"

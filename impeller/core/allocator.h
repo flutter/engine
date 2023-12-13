@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_ALLOCATOR_H_
 #define FLUTTER_IMPELLER_CORE_ALLOCATOR_H_
 
-
 #include "flutter/fml/mapping.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/texture.h"

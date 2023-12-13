@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_H_
 #define FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_H_
 
-
 #include <memory>
 #include <string>
 

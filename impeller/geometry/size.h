@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
 #define FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
 
-
 #include <algorithm>
 #include <cmath>
 #include <limits>

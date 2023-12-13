@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_
 
-
 #include <QuartzCore/CAMetalLayer.h>
 #include <memory>
 

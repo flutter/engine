@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_BORDER_MASK_BLUR_FILTER_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_BORDER_MASK_BLUR_FILTER_CONTENTS_H_
 
-
 #include <memory>
 #include <optional>
 #include "impeller/entity/contents/filters/filter_contents.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_DISPLAY_H_
 #define FLUTTER_IMPELLER_TOOLKIT_EGL_DISPLAY_H_
 
-
 #include <memory>
 #include <optional>
 

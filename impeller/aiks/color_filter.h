@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_COLOR_FILTER_H_
 #define FLUTTER_IMPELLER_AIKS_COLOR_FILTER_H_
 
-
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/geometry/color.h"
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_UTILITIES_H_
 #define FLUTTER_IMPELLER_COMPILER_UTILITIES_H_
 
-
 #include <filesystem>
 #include <string>
 #include <string_view>

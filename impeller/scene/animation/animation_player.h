@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_
 #define FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_
 
-
 #include <map>
 #include <memory>
 #include <optional>

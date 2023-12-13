@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_FORMATS_H_
 #define FLUTTER_IMPELLER_CORE_FORMATS_H_
 
-
 #include <cstdint>
 #include <functional>
 #include <memory>

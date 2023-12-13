@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_COMMAND_BUFFER_H_
 #define FLUTTER_IMPELLER_RENDERER_COMMAND_BUFFER_H_
 
-
 #include <functional>
 #include <memory>
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_SWITCHES_H_
 #define FLUTTER_IMPELLER_COMPILER_SWITCHES_H_
 
-
 #include <cstdint>
 #include <iostream>
 #include <memory>

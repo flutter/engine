@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_LOCATION_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_LOCATION_H_
 
-
 #include <optional>
 #include <type_traits>
 

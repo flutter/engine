@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_PLAYGROUND_WIDGETS_H_
 #define FLUTTER_IMPELLER_PLAYGROUND_WIDGETS_H_
 
-
 #include <tuple>
 
 #include "impeller/base/strings.h"

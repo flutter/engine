@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_SPIRV_SKSL_H_
 #define FLUTTER_IMPELLER_COMPILER_SPIRV_SKSL_H_
 
-
 #include <cstdint>
 #include <memory>
 #include <utility>

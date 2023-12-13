@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_PAINT_H_
 #define FLUTTER_IMPELLER_AIKS_PAINT_H_
 
-
 #include <memory>
 
 #include "impeller/aiks/color_filter.h"

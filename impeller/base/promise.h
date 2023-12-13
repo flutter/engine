@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_PROMISE_H_
 #define FLUTTER_IMPELLER_BASE_PROMISE_H_
 
-
 #include <future>
 
 namespace impeller {

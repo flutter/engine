@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_SKIN_H_
 #define FLUTTER_IMPELLER_SCENE_SKIN_H_
 
-
 #include <memory>
 #include <optional>
 

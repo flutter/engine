@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
 
-
 #include <memory>
 #include <optional>
 #include <variant>

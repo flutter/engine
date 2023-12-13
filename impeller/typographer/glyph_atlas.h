@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_
 
-
 #include <functional>
 #include <memory>
 #include <optional>

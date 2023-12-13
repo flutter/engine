@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_IMPORTER_SWITCHES_H_
 #define FLUTTER_IMPELLER_SCENE_IMPORTER_SWITCHES_H_
 
-
 #include <iostream>
 #include <memory>
 

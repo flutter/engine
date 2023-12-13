@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_THREAD_SAFETY_H_
 #define FLUTTER_IMPELLER_BASE_THREAD_SAFETY_H_
 
-
 #if defined(__clang__)
 #define IPLR_THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
 #else

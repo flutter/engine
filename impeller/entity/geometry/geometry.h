@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
 #define FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
 
-
 #include "impeller/core/formats.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"

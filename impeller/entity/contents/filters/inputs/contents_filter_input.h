@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_CONTENTS_FILTER_INPUT_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_CONTENTS_FILTER_INPUT_H_
 
-
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 namespace impeller {

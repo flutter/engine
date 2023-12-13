@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_CLIP_H_
 #define FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_CLIP_H_
 
-
 #include <memory>
 #include <unordered_map>
 #include <vector>

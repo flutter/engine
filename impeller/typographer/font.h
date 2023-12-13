@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_FONT_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_FONT_H_
 
-
 #include <memory>
 #include <optional>
 

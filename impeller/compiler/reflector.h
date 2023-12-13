@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_REFLECTOR_H_
 #define FLUTTER_IMPELLER_COMPILER_REFLECTOR_H_
 
-
 #include <cstdint>
 #include <memory>
 #include <optional>

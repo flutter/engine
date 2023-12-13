@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_SCALAR_H_
 #define FLUTTER_IMPELLER_GEOMETRY_SCALAR_H_
 
-
 #include <cfloat>
 #include <type_traits>
 #include <valarray>

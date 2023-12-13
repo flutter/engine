@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_TEXTURE_H_
 #define FLUTTER_IMPELLER_CORE_TEXTURE_H_
 
-
 #include <string_view>
 
 #include "flutter/fml/mapping.h"

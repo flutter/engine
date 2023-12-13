@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_PLAYGROUND_BACKEND_METAL_PLAYGROUND_IMPL_MTL_H_
 #define FLUTTER_IMPELLER_PLAYGROUND_BACKEND_METAL_PLAYGROUND_IMPL_MTL_H_
 
-
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"

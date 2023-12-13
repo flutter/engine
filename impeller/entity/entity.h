@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_H_
 #define FLUTTER_IMPELLER_ENTITY_ENTITY_H_
 
-
 #include <cstdint>
 
 #include "impeller/core/capture.h"

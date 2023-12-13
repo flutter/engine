@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEST_MOCK_VULKAN_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEST_MOCK_VULKAN_H_
 
-
 #include <functional>
 #include <memory>
 #include <string>

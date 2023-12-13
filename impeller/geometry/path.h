@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_H_
 #define FLUTTER_IMPELLER_GEOMETRY_PATH_H_
 
-
 #include <functional>
 #include <optional>
 #include <set>

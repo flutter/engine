@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_CONTENTS_TEST_HELPERS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_CONTENTS_TEST_HELPERS_H_
 
-
 #include "impeller/renderer/command.h"
 
 namespace impeller {

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SNAPSHOT_H_
 #define FLUTTER_IMPELLER_RENDERER_SNAPSHOT_H_
 
-
 #include <functional>
 #include <memory>
 #include <vector>

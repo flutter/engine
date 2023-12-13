@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GPU_TRACER_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GPU_TRACER_GLES_H_
 
-
 #include <cstdint>
 #include <deque>
 #include <thread>

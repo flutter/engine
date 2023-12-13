@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_MATERIAL_H_
 #define FLUTTER_IMPELLER_SCENE_MATERIAL_H_
 
-
 #include <memory>
 
 #include "impeller/core/formats.h"

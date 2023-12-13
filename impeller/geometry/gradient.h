@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_GRADIENT_H_
 #define FLUTTER_IMPELLER_GEOMETRY_GRADIENT_H_
 
-
 #include <cstdint>
 #include <memory>
 #include <vector>

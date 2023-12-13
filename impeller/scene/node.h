@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_NODE_H_
 #define FLUTTER_IMPELLER_SCENE_NODE_H_
 
-
 #include <memory>
 #include <mutex>
 #include <optional>

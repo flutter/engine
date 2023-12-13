@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SURFACE_H_
 #define FLUTTER_IMPELLER_RENDERER_SURFACE_H_
 
-
 #include <functional>
 #include <memory>
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
 #define FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
 
-
 #include <type_traits>
 #include <variant>
 #include <vector>

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_
 #define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_
 
-
 #include <memory>
 
 #include "flutter/fml/macros.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
 #define FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
 
-
 #include <memory>
 
 #include "flutter/fml/macros.h"

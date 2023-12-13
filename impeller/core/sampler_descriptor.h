@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_SAMPLER_DESCRIPTOR_H_
 #define FLUTTER_IMPELLER_CORE_SAMPLER_DESCRIPTOR_H_
 
-
 #include "impeller/base/comparable.h"
 #include "impeller/core/formats.h"
 

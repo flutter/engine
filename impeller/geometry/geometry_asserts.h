@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_
 #define FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_
 
-
 #include <array>
 #include <iostream>
 

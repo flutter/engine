@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_RENDER_PASS_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_RENDER_PASS_GLES_H_
 
-
 #include <memory>
 
 #include "flutter/fml/macros.h"

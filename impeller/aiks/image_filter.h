@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_IMAGE_FILTER_H_
 #define FLUTTER_IMPELLER_AIKS_IMAGE_FILTER_H_
 
-
 #include "impeller/aiks/color_filter.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/filters/filter_contents.h"

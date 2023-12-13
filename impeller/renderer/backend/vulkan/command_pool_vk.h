@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_POOL_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_POOL_VK_H_
 
-
 #include <memory>
 #include <optional>
 #include <utility>

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_IMPORTER_CONVERSIONS_H_
 #define FLUTTER_IMPELLER_SCENE_IMPORTER_CONVERSIONS_H_
 
-
 #include <cstddef>
 #include <map>
 #include <vector>

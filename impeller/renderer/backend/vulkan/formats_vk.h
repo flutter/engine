@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_
 
-
 #include <cstdint>
 
 #include "flutter/fml/macros.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_DESCRIPTOR_H_
 #define FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_DESCRIPTOR_H_
 
-
 #include <cstddef>
 
 #include "impeller/core/formats.h"

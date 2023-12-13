@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FENCE_WAITER_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FENCE_WAITER_VK_H_
 
-
 #include <condition_variable>
 #include <memory>
 #include <thread>

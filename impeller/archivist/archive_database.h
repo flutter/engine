@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_DATABASE_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_DATABASE_H_
 
-
 #include <map>
 #include <memory>
 #include <string>

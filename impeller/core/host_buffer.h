@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_
 #define FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_
 
-
 #include <algorithm>
 #include <memory>
 #include <string>

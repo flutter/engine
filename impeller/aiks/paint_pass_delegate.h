@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_PAINT_PASS_DELEGATE_H_
 #define FLUTTER_IMPELLER_AIKS_PAINT_PASS_DELEGATE_H_
 
-
 #include <optional>
 
 #include "flutter/fml/macros.h"

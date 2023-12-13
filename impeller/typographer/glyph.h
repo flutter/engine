@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_
 
-
 #include <cstdint>
 #include <functional>
 

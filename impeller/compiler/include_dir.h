@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_INCLUDE_DIR_H_
 #define FLUTTER_IMPELLER_COMPILER_INCLUDE_DIR_H_
 
-
 #include <memory>
 #include <string>
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_CANVAS_TYPE_H_
 #define FLUTTER_IMPELLER_AIKS_CANVAS_TYPE_H_
 
-
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/canvas_recorder.h"
 #include "impeller/aiks/trace_serializer.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_VECTOR_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_VECTOR_H_
 
-
 #include "impeller/archivist/archive.h"
 
 namespace impeller {

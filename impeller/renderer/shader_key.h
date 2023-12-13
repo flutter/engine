@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SHADER_KEY_H_
 #define FLUTTER_IMPELLER_RENDERER_SHADER_KEY_H_
 
-
 #include <memory>
 #include <string>
 #include <unordered_map>

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_GLYPH_ATLAS_CONTEXT_STB_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_GLYPH_ATLAS_CONTEXT_STB_H_
 
-
 #include "impeller/base/backend_cast.h"
 #include "impeller/typographer/glyph_atlas.h"
 

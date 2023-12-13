@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_TYPOGRAPHER_CONTEXT_STB_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_TYPOGRAPHER_CONTEXT_STB_H_
 
-
 #include "impeller/typographer/typographer_context.h"
 
 #include <memory>

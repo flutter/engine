@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_
 #define FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_
 
-
 #include "gmock/gmock.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/sampler_descriptor.h"

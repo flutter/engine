@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GLES_H_
 
-
 // IWYU pragma: begin_exports
 #include "GLES3/gl3.h"
 

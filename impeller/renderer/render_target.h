@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_RENDER_TARGET_H_
 #define FLUTTER_IMPELLER_RENDERER_RENDER_TARGET_H_
 
-
 #include <functional>
 #include <map>
 #include <optional>

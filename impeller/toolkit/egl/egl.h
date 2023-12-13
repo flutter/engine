@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_EGL_H_
 #define FLUTTER_IMPELLER_TOOLKIT_EGL_EGL_H_
 
-
 #include <EGL/egl.h>
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/eglext.h>

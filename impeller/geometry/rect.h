@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_RECT_H_
 #define FLUTTER_IMPELLER_GEOMETRY_RECT_H_
 
-
 #include <array>
 #include <optional>
 #include <ostream>

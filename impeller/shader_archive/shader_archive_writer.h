@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_WRITER_H_
 #define FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_WRITER_H_
 
-
 #include <memory>
 #include <string>
 #include <vector>

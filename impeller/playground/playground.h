@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
 #define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
 
-
 #include <chrono>
 #include <memory>
 

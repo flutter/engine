@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_SHADER_TYPES_H_
 #define FLUTTER_IMPELLER_CORE_SHADER_TYPES_H_
 
-
 #include <cstddef>
 #include <cstdint>
 #include <optional>

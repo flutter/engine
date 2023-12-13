@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_
 
-
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"

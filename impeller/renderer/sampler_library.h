@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
 #define FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
 
-
 #include "impeller/core/sampler.h"
 #include "impeller/core/sampler_descriptor.h"
 

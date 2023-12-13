@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_TYPEFACE_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_TYPEFACE_H_
 
-
 #include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/geometry/rect.h"

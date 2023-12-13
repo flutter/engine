@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_UNIFORM_SORTER_H_
 #define FLUTTER_IMPELLER_COMPILER_UNIFORM_SORTER_H_
 
-
 #include <optional>
 
 #include "impeller/compiler/compiler_backend.h"

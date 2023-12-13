@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SHADER_FUNCTION_H_
 #define FLUTTER_IMPELLER_RENDERER_SHADER_FUNCTION_H_
 
-
 #include <string>
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"

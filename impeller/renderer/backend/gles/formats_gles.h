@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_FORMATS_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_FORMATS_GLES_H_
 
-
 #include <optional>
 
 #include "flutter/fml/logging.h"

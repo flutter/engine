@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_
 #define FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_
 
-
 #include <map>
 #include <string>
 #include <vector>

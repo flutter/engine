@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_SOURCE_OPTIONS_H_
 #define FLUTTER_IMPELLER_COMPILER_SOURCE_OPTIONS_H_
 
-
 #include <cstdint>
 #include <memory>
 #include <string>

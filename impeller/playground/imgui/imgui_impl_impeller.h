@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_PLAYGROUND_IMGUI_IMGUI_IMPL_IMPELLER_H_
 #define FLUTTER_IMPELLER_PLAYGROUND_IMGUI_IMGUI_IMPL_IMPELLER_H_
 
-
 #include <memory>
 
 #include "third_party/imgui/imgui.h"

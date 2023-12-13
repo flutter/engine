@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_INCLUDER_H_
 #define FLUTTER_IMPELLER_COMPILER_INCLUDER_H_
 
-
 #include <string>
 
 #include "flutter/fml/mapping.h"

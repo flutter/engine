@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_RUNTIME_STAGE_DATA_H_
 #define FLUTTER_IMPELLER_COMPILER_RUNTIME_STAGE_DATA_H_
 
-
 #include <memory>
 #include <vector>
 

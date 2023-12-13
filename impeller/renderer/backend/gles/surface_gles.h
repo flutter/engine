@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_SURFACE_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_SURFACE_GLES_H_
 
-
 #include <functional>
 #include <memory>
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_TYPE_TRAITS_H_
 #define FLUTTER_IMPELLER_GEOMETRY_TYPE_TRAITS_H_
 
-
 #include <type_traits>
 
 namespace impeller {

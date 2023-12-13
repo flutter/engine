@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_
 #define FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_
 
-
 #include <cstdint>
 
 #include "impeller/aiks/canvas.h"

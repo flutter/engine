@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FRAMEBUFFER_BLEND_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FRAMEBUFFER_BLEND_CONTENTS_H_
 
-
 #include <memory>
 
 #include "impeller/entity/contents/color_source_contents.h"

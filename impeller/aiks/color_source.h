@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_COLOR_SOURCE_H_
 #define FLUTTER_IMPELLER_AIKS_COLOR_SOURCE_H_
 
-
 #include <functional>
 #include <memory>
 #include <vector>

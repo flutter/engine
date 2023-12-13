@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_H_
 
-
 #include <functional>
 #include <memory>
 #include <optional>

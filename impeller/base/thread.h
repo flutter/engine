@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_THREAD_H_
 #define FLUTTER_IMPELLER_BASE_THREAD_H_
 
-
 #include <chrono>
 #include <condition_variable>
 #include <functional>

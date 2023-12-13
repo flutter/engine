@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_
 #define FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_
 
-
 #include <memory>
 
 #include "impeller/core/buffer_view.h"

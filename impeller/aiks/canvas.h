@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_CANVAS_H_
 #define FLUTTER_IMPELLER_AIKS_CANVAS_H_
 
-
 #include <deque>
 #include <functional>
 #include <memory>

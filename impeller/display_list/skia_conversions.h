@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_SKIA_CONVERSIONS_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_SKIA_CONVERSIONS_H_
 
-
 #include "display_list/dl_color.h"
 #include "display_list/effects/dl_color_source.h"
 #include "impeller/core/formats.h"

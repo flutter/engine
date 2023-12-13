@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_TYPES_H_
 #define FLUTTER_IMPELLER_COMPILER_TYPES_H_
 
-
 #include <codecvt>
 #include <locale>
 #include <string>

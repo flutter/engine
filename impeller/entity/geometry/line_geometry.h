@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
 #define FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
 
-
 #include <type_traits>
 #include "impeller/entity/geometry/geometry.h"
 

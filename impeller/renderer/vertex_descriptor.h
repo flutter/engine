@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_VERTEX_DESCRIPTOR_H_
 #define FLUTTER_IMPELLER_RENDERER_VERTEX_DESCRIPTOR_H_
 
-
 #include <vector>
 
 #include "flutter/fml/macros.h"

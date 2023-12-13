@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_SAMPLER_H_
 #define FLUTTER_IMPELLER_CORE_SAMPLER_H_
 
-
 #include <unordered_map>
 
 #include "impeller/base/comparable.h"

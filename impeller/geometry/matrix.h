@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_MATRIX_H_
 #define FLUTTER_IMPELLER_GEOMETRY_MATRIX_H_
 
-
 #include <cmath>
 #include <iomanip>
 #include <limits>

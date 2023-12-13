@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_VMA_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_VMA_H_
 
-
 #include "flutter/flutter_vma/flutter_vma.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/fml/unique_object.h"

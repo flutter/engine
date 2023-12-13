@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_LIBRARY_H_
 #define FLUTTER_IMPELLER_RENDERER_PIPELINE_LIBRARY_H_
 
-
 #include <optional>
 
 #include "compute_pipeline_descriptor.h"

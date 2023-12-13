@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_GEOMETRY_H_
 #define FLUTTER_IMPELLER_SCENE_GEOMETRY_H_
 
-
 #include <memory>
 
 #include "flutter/fml/macros.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_HALF_H_
 #define FLUTTER_IMPELLER_GEOMETRY_HALF_H_
 
-
 #include <cstdint>
 
 #include "flutter/fml/build_config.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_CAPTURE_H_
 #define FLUTTER_IMPELLER_CORE_CAPTURE_H_
 
-
 #include <functional>
 #include <initializer_list>
 #include <memory>

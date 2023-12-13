@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_FIXTURES_TYPES_H_
 #define FLUTTER_IMPELLER_FIXTURES_TYPES_H_
 
-
 struct Uniforms {
   mat4 model;
   mat4 view;

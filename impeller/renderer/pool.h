@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_POOL_H_
 #define FLUTTER_IMPELLER_RENDERER_POOL_H_
 
-
 #include <cstdint>
 #include <memory>
 #include <mutex>

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_LOCAL_MATRIX_FILTER_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_LOCAL_MATRIX_FILTER_CONTENTS_H_
 
-
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 

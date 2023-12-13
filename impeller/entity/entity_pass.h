@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
 #define FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
 
-
 #include <cstdint>
 #include <functional>
 #include <memory>

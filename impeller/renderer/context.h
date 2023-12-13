@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_CONTEXT_H_
 #define FLUTTER_IMPELLER_RENDERER_CONTEXT_H_
 
-
 #include <memory>
 #include <string>
 

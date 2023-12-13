@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_
 #define FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_
 
-
 #include <initializer_list>
 #include <map>
 #include <vector>

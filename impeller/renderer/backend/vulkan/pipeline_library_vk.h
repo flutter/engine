@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_LIBRARY_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_LIBRARY_VK_H_
 
-
 #include <atomic>
 
 #include "flutter/fml/concurrent_message_loop.h"

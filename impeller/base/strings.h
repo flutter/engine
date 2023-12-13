@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_STRINGS_H_
 #define FLUTTER_IMPELLER_BASE_STRINGS_H_
 
-
 #include <string>
 
 #include "impeller/base/config.h"

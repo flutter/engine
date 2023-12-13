@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BLIT_COMMAND_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BLIT_COMMAND_VK_H_
 
-
 #include <memory>
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"

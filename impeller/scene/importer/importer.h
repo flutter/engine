@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_IMPORTER_IMPORTER_H_
 #define FLUTTER_IMPELLER_SCENE_IMPORTER_IMPORTER_H_
 
-
 #include <array>
 #include <memory>
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_CORE_BUFFER_VIEW_H_
 #define FLUTTER_IMPELLER_CORE_BUFFER_VIEW_H_
 
-
 #include "impeller/core/buffer.h"
 #include "impeller/core/range.h"
 

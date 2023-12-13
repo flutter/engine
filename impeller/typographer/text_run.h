@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_RUN_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_RUN_H_
 
-
 #include <vector>
 
 #include "impeller/geometry/matrix.h"

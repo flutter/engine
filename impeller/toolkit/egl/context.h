@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_CONTEXT_H_
 #define FLUTTER_IMPELLER_TOOLKIT_EGL_CONTEXT_H_
 
-
 #include <functional>
 
 #include "flutter/fml/macros.h"

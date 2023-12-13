@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_TEXTURE_WRAPPER_MTL_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_TEXTURE_WRAPPER_MTL_H_
 
-
 #include "impeller/core/texture.h"
 
 namespace impeller {

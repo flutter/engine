@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_INLINE_PASS_CONTEXT_H_
 #define FLUTTER_IMPELLER_ENTITY_INLINE_PASS_CONTEXT_H_
 
-
 #include <cstdint>
 
 #include "impeller/entity/entity_pass_target.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_COLOR_H_
 #define FLUTTER_IMPELLER_GEOMETRY_COLOR_H_
 
-
 #include <stdint.h>
 #include <algorithm>
 #include <array>

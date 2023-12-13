@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_COMPUTE_COMMAND_H_
 #define FLUTTER_IMPELLER_RENDERER_COMPUTE_COMMAND_H_
 
-
 #include <memory>
 #include <string>
 

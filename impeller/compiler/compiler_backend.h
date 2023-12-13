@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_COMPILER_BACKEND_H_
 #define FLUTTER_IMPELLER_COMPILER_COMPILER_BACKEND_H_
 
-
 #include <cstdint>
 #include <memory>
 #include <variant>

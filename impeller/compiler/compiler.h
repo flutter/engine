@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_COMPILER_H_
 #define FLUTTER_IMPELLER_COMPILER_COMPILER_H_
 
-
 #include <initializer_list>
 #include <sstream>
 #include <string>

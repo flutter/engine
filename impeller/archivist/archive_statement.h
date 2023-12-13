@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_
 
-
 #include <memory>
 #include <type_traits>
 

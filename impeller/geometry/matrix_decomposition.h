@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_MATRIX_DECOMPOSITION_H_
 #define FLUTTER_IMPELLER_GEOMETRY_MATRIX_DECOMPOSITION_H_
 
-
 #include "impeller/geometry/quaternion.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/shear.h"

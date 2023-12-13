@@ -1,7 +1,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_LIMITS_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_LIMITS_VK_H_
 
-
 #include <stdint.h>
 
 namespace impeller {

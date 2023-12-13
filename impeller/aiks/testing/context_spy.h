@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_SPY_H_
 #define FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_SPY_H_
 
-
 #include <memory>
 #include "impeller/aiks/testing/context_mock.h"
 

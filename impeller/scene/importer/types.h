@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_IMPORTER_TYPES_H_
 #define FLUTTER_IMPELLER_SCENE_IMPORTER_TYPES_H_
 
-
 namespace impeller {
 namespace scene {
 namespace importer {

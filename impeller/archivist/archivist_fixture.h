@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVIST_FIXTURE_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVIST_FIXTURE_H_
 
-
 #include "flutter/fml/macros.h"
 #include "flutter/testing/testing.h"
 

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TESSELLATOR_C_TESSELLATOR_H_
 #define FLUTTER_IMPELLER_TESSELLATOR_C_TESSELLATOR_H_
 
-
 #include <cstdint>
 
 #include "impeller/geometry/path_builder.h"

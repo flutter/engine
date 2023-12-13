@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
 
-
 #include <memory>
 
 #include "flutter/fml/macros.h"

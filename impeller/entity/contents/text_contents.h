@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_
 
-
 #include <functional>
 #include <memory>
 #include <variant>

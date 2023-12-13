@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_
 #define FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_
 
-
 #include <map>
 #include <memory>
 #include <string>

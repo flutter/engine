@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_H_
 #define FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_H_
 
-
 #include <memory>
 #include <type_traits>
 #include <unordered_map>

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_NINE_PATCH_CONVERTER_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_NINE_PATCH_CONVERTER_H_
 
-
 #include <memory>
 
 #include "impeller/aiks/canvas_type.h"

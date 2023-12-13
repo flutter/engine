@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_LOGGER_H_
 #define FLUTTER_IMPELLER_COMPILER_LOGGER_H_
 
-
 #include <sstream>
 #include <string>
 

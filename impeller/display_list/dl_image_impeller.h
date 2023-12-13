@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_IMAGE_IMPELLER_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_DL_IMAGE_IMPELLER_H_
 
-
 #include "flutter/display_list/image/dl_image.h"
 #include "impeller/core/texture.h"
 

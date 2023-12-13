@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_GLES_GLES_H_
 #define FLUTTER_IMPELLER_TOOLKIT_GLES_GLES_H_
 
-
 #include "GLES3/gl3.h"
 #define GL_GLEXT_PROTOTYPES
 #include "GLES2/gl2ext.h"

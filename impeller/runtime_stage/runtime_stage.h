@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
 #define FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
 
-
 #include <memory>
 #include <string>
 

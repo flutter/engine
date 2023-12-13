@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_SHEAR_H_
 #define FLUTTER_IMPELLER_GEOMETRY_SHEAR_H_
 
-
 #include <string>
 
 namespace impeller {

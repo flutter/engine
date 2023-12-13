@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
 #define FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
 
-
 #include <cmath>
 #include <string>
 

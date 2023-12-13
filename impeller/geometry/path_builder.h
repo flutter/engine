@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
 #define FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
 
-
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"

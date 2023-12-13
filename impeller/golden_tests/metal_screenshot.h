@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_
 #define FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_
 
-
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreImage/CoreImage.h>
 #include <string>

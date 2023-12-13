@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_FIXTURES_GOLDEN_PATHS_H_
 #define FLUTTER_IMPELLER_FIXTURES_GOLDEN_PATHS_H_
 
-
 #include <vector>
 
 #include "impeller/geometry/path_component.h"

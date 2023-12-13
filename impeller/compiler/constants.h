@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_COMPILER_CONSTANTS_H_
 #define FLUTTER_IMPELLER_COMPILER_CONSTANTS_H_
 
-
 namespace impeller {
 namespace compiler {
 

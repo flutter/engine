@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TESSELLATOR_TESSELLATOR_H_
 #define FLUTTER_IMPELLER_TESSELLATOR_TESSELLATOR_H_
 
-
 #include <functional>
 #include <memory>
 #include <vector>

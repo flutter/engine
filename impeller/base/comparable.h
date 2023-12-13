@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_COMPARABLE_H_
 #define FLUTTER_IMPELLER_BASE_COMPARABLE_H_
 
-
 #include <cstddef>
 #include <functional>
 #include <map>

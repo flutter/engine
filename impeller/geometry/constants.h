@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_CONSTANTS_H_
 #define FLUTTER_IMPELLER_GEOMETRY_CONSTANTS_H_
 
-
 namespace impeller {
 
 // e

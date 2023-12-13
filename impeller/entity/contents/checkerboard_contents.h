@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CHECKERBOARD_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_CHECKERBOARD_CONTENTS_H_
 
-
 #include "impeller/entity/contents/contents.h"
 
 namespace impeller {

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_ALLOCATION_H_
 #define FLUTTER_IMPELLER_BASE_ALLOCATION_H_
 
-
 #include <cstdint>
 #include <limits>
 #include <memory>

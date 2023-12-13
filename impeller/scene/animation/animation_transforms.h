@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_TRANSFORMS_H_
 #define FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_TRANSFORMS_H_
 
-
 #include "impeller/geometry/matrix_decomposition.h"
 
 namespace impeller {

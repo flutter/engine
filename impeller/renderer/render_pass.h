@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_RENDER_PASS_H_
 #define FLUTTER_IMPELLER_RENDERER_RENDER_PASS_H_
 
-
 #include <string>
 
 #include "impeller/core/formats.h"

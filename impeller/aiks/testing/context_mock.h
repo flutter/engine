@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_
 #define FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_
 
-
 #include <string>
 #include <utility>
 #include <vector>

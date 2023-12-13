@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_AIKS_PICTURE_H_
 #define FLUTTER_IMPELLER_AIKS_PICTURE_H_
 
-
 #include <deque>
 #include <memory>
 #include <optional>

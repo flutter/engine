@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_IMAGE_H_
 #define FLUTTER_IMPELLER_TOOLKIT_EGL_IMAGE_H_
 
-
 #include "flutter/fml/unique_object.h"
 #include "flutter/impeller/toolkit/egl/egl.h"
 

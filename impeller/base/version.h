@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_VERSION_H_
 #define FLUTTER_IMPELLER_BASE_VERSION_H_
 
-
 #include <cstddef>
 #include <optional>
 #include <string>

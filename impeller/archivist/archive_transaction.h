@@ -4,7 +4,6 @@
 #ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_TRANSACTION_H_
 #define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_TRANSACTION_H_
 
-
 #include <cstdint>
 
 namespace impeller {

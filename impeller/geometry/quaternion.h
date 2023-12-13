@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_QUATERNION_H_
 #define FLUTTER_IMPELLER_GEOMETRY_QUATERNION_H_
 
-
 #include <ostream>
 
 #include "impeller/geometry/vector.h"

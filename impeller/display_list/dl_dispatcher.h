@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 
-
 #include "flutter/display_list/dl_op_receiver.h"
 #include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/paint.h"

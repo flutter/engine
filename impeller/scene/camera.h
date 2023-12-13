@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_CAMERA_H_
 #define FLUTTER_IMPELLER_SCENE_CAMERA_H_
 
-
 #include <optional>
 
 #include "impeller/geometry/matrix.h"

@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_SCENE_MESH_H_
 #define FLUTTER_IMPELLER_SCENE_MESH_H_
 
-
 #include <memory>
 #include <type_traits>
 

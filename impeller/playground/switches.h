@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_PLAYGROUND_SWITCHES_H_
 #define FLUTTER_IMPELLER_PLAYGROUND_SWITCHES_H_
 
-
 #include <chrono>
 #include <optional>
 
