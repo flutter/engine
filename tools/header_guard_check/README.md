@@ -23,8 +23,7 @@ message and exit with a non-zero exit code. For more information about why we
 use this pattern, see [the Google C++ style guide](https://google.github.io/styleguide/cppguide.html#The__define_Guard).
 
 > [!IMPORTANT]
-> This is a prototype tool and is not yet integrated into the engine's CI, nor
-> provides a way to fix the header guards automatically.
+> This is a prototype tool and is not yet integrated into the engine's CI.
 
 ## Advanced usage
 
