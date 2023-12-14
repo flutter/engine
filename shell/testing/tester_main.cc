@@ -545,6 +545,9 @@ EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
     return Dart_Null();
   }
   Dart_Handle lib = Dart_LookupLibrary(Dart_NewStringFromCString(uri));
+  if (Dart_IsError(lib)) {
+    return lib;
+  }
   return Dart_GetField(lib, Dart_NewStringFromCString(name));
 }
 
