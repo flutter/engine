@@ -27,13 +27,17 @@
   }
   [button tap];
   BOOL launchedExtensionInFlutter = NO;
-  // Custom share extension button (like the one in this test) does not have a unique
-  // identity. They are all identified as `XCElementSnapshotPrivilegedValuePlaceholder`.
-  // Loop through all the `XCElementSnapshotPrivilegedValuePlaceholder` and find the Flutter one.
+  // Custom share extension button (like the one in this test) does not have a
+  // unique identity on older versions of iOS. They are all identified as
+  // `XCElementSnapshotPrivilegedValuePlaceholder`. On iOS 17, they are
+  // identified by name. Loop through all the buttons labeled
+  // `XCElementSnapshotPrivilegedValuePlaceholder` or `Scenarios` to find the
+  // Flutter one.
   for (int i = 0; i < self.hostApplication.collectionViews.cells.count; i++) {
     XCUIElement* shareSheetCell =
         [self.hostApplication.collectionViews.cells elementBoundByIndex:i];
-    if (![shareSheetCell.label isEqualToString:@"XCElementSnapshotPrivilegedValuePlaceholder"]) {
+    if (![shareSheetCell.label isEqualToString:@"XCElementSnapshotPrivilegedValuePlaceholder"] &&
+        ![shareSheetCell.label isEqualToString:@"Scenarios"]) {
       continue;
     }
     [shareSheetCell tap];
