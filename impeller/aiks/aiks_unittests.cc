@@ -4570,6 +4570,9 @@ TEST_P(AiksTest, SubpassWithClearColorOptimization) {
       {.color = Color::Blue(), .blend_mode = BlendMode::kDestinationOver});
   canvas.Restore();
 
+  // This playground should appear blank on CI since we are only drawing
+  // transparent black. If the clear color optimization is broken, the texture
+  // will be filled with NaNs and may produce a magenta texture on macOS or iOS.
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
