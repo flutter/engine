@@ -22,6 +22,43 @@
 
 @end
 
+/// A fake compositor that simulates presenting layer surface by increasing
+/// and decreasing IOSurface use count.
+@interface TestCompositor : NSObject {
+  FlutterMetalLayer* _layer;
+  IOSurfaceRef _presentedSurface;
+}
+@end
+
+@implementation TestCompositor
+
+- (instancetype)initWithLayer:(FlutterMetalLayer*)layer {
+  self = [super init];
+  if (self) {
+    self->_layer = layer;
+  }
+  return self;
+}
+
+/// Increment use count of currently presented surface and decrement use count
+/// of previously presented surface.
+- (void)commitTransaction {
+  IOSurfaceRef surface = (__bridge IOSurfaceRef)self->_layer.contents;
+  if (self->_presentedSurface) {
+    IOSurfaceDecrementUseCount(self->_presentedSurface);
+  }
+  IOSurfaceIncrementUseCount(surface);
+  self->_presentedSurface = surface;
+}
+
+- (void)dealloc {
+  if (self->_presentedSurface) {
+    IOSurfaceDecrementUseCount(self->_presentedSurface);
+  }
+}
+
+@end
+
 @implementation FlutterMetalLayerTest
 
 - (FlutterMetalLayer*)addMetalLayer {
@@ -29,92 +66,83 @@
       [[TestFlutterMetalLayerView alloc] initWithFrame:CGRectMake(0, 0, 100, 100)];
   FlutterMetalLayer* layer = (FlutterMetalLayer*)view.layer;
   layer.drawableSize = CGSizeMake(100, 100);
-  [UIApplication.sharedApplication.keyWindow addSubview:view];
   return layer;
 }
 
 - (void)removeMetalLayer:(FlutterMetalLayer*)layer {
-  [(UIView*)layer.delegate removeFromSuperview];
-}
-
-/// Waits until compositor picks up front surface.
-- (void)waitUntilFrontSurfaceIsInUse:(FlutterMetalLayer*)layer {
-  IOSurfaceRef surface = (__bridge IOSurfaceRef)layer.contents;
-  while (!IOSurfaceIsInUse(surface)) {
-    [NSRunLoop.mainRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.001]];
-  }
 }
 
 - (void)testFlip {
   FlutterMetalLayer* layer = [self addMetalLayer];
+  TestCompositor* compositor = [[TestCompositor alloc] initWithLayer:layer];
 
   id<MTLTexture> t1, t2, t3;
 
   id<CAMetalDrawable> drawable = [layer nextDrawable];
   t1 = drawable.texture;
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
-  XCTAssertTrue(IOSurfaceIsInUse(t1.iosurface));
+  [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
   t2 = drawable.texture;
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
-  XCTAssertTrue(IOSurfaceIsInUse(t2.iosurface));
+  [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
   t3 = drawable.texture;
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
-  XCTAssertTrue(IOSurfaceIsInUse(t3.iosurface));
+  [compositor commitTransaction];
 
   // If there was no frame drop, layer should return oldest presented
   // texture.
+
   drawable = [layer nextDrawable];
   XCTAssertEqual(drawable.texture, t1);
+
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
+  [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
   XCTAssertEqual(drawable.texture, t2);
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
+  [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
   XCTAssertEqual(drawable.texture, t3);
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
+  [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
   XCTAssertEqual(drawable.texture, t1);
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
 
   [self removeMetalLayer:layer];
 }
 
 - (void)testFlipWithDroppedFrame {
   FlutterMetalLayer* layer = [self addMetalLayer];
+  TestCompositor* compositor = [[TestCompositor alloc] initWithLayer:layer];
 
   id<MTLTexture> t1, t2, t3;
 
   id<CAMetalDrawable> drawable = [layer nextDrawable];
   t1 = drawable.texture;
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
+  [compositor commitTransaction];
   XCTAssertTrue(IOSurfaceIsInUse(t1.iosurface));
 
   drawable = [layer nextDrawable];
   t2 = drawable.texture;
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
-  XCTAssertTrue(IOSurfaceIsInUse(t2.iosurface));
+  [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
   t3 = drawable.texture;
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
-  XCTAssertTrue(IOSurfaceIsInUse(t3.iosurface));
+  [compositor commitTransaction];
+
+  // Simulate compositor holding on to t3 for a while.
+  IOSurfaceIncrementUseCount(t3.iosurface);
 
   // Here the drawable is presented, but immediately replaced by another drawable
   // (before the compositor has a chance to pick it up). This should result
@@ -127,11 +155,13 @@
   drawable = [layer nextDrawable];
   XCTAssertEqual(drawable.texture, t2);
   [drawable present];
-  [self waitUntilFrontSurfaceIsInUse:layer];
+  [compositor commitTransaction];
 
   // Next drawable should be t1, since it was never picked up by compositor.
   drawable = [layer nextDrawable];
   XCTAssertEqual(drawable.texture, t1);
+
+  IOSurfaceDecrementUseCount(t3.iosurface);
 
   [self removeMetalLayer:layer];
 }
