@@ -815,13 +815,12 @@ void testMain() {
   );
 
   test(
-    'converts scroll delta to physical pixels (Firefox)',
+    'converts scroll delta to physical pixels (macOs)',
     () {
       final _ButtonedEventMixin context = _PointerEventContext();
 
       const double dpi = 2.5;
       debugOperatingSystemOverride = OperatingSystem.macOs;
-      debugBrowserEngineOverride = BrowserEngine.firefox;
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(dpi);
 
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -854,7 +853,6 @@ void testMain() {
       expect(packets[0].data[0].scrollDeltaY, equals(10.0 * dpi));
 
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
-      debugOperatingSystemOverride = null;
       debugBrowserEngineOverride = null;
     },
   );
