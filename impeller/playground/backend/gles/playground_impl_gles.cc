@@ -13,7 +13,10 @@
 #include "impeller/playground/imgui/gles/imgui_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogncheck
+#endif  // IMPELLER_ENABLE_3D
 
 namespace impeller {
 
@@ -98,8 +101,10 @@ ShaderLibraryMappingsForPlayground() {
           impeller_fixtures_shaders_gles_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_imgui_shaders_gles_data, impeller_imgui_shaders_gles_length),
+#if IMPELLER_ENABLE_3D
       std::make_shared<fml::NonOwnedMapping>(
           impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
+#endif
   };
 }
 
