@@ -2926,19 +2926,18 @@ TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
   Picture picture = canvas.EndRecordingAsPicture();
 
   std::optional<Color> actual_color;
+  bool found_subpass = false;
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       actual_color = subpass->get()->GetClearColor();
+      found_subpass = true;
     }
     // Fail if the first element isn't a subpass.
     return true;
   });
 
-  ASSERT_TRUE(actual_color.has_value());
-  if (!actual_color) {
-    return;
-  }
-  ASSERT_EQ(actual_color.value(), Color::BlackTransparent());
+  EXPECT_TRUE(found_subpass);
+  EXPECT_FALSE(actual_color.has_value());
 }
 
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
