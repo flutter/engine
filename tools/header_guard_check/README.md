@@ -25,6 +25,14 @@ use this pattern, see [the Google C++ style guide](https://google.github.io/styl
 > [!IMPORTANT]
 > This is a prototype tool and is not yet integrated into the engine's CI.
 
+## Automatic fixes
+
+The tool can automatically fix header files that do not follow the pattern:
+
+```shell
+dart ./tools/header_guard_check/bin/main.dart --fix
+```
+
 ## Advanced usage
 
 ### Restricting the files to check
