@@ -11,7 +11,8 @@
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 
 #if IMPELLER_ENABLE_3D
-#include "flutter/impeller/scene/shaders/vk/scene_shaders_vk.h"
+// This include was turned to an error since it breaks GN.
+#error Need to include "flutter/impeller/scene/shaders/vk/scene_shaders_vk.h"
 #endif  // IMPELLER_ENABLE_3D
 
 namespace flutter {
