@@ -51,6 +51,11 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
   r'flutter/third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
   r'flutter/third_party/libtess2/Example',
+  r'flutter/third_party/libpng/contrib', // not linked in
+  r'flutter/third_party/libpng/mips', // not linked in
+  r'flutter/third_party/libpng/powerpc', // not linked in
+  r'flutter/third_party/libpng/projects', // not linked in
+  r'flutter/third_party/libpng/scripts', // not linked in
   r'flutter/third_party/libwebp/doc',
   r'flutter/third_party/libwebp/gradle', // not included in our build
   r'flutter/third_party/libwebp/swig', // not included in our build
@@ -167,11 +172,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libcxx/src/support/solaris',
   r'third_party/libcxx/utils',
   r'third_party/libcxxabi/www',
-  r'third_party/libpng/contrib', // not linked in
-  r'third_party/libpng/mips', // not linked in
-  r'third_party/libpng/powerpc', // not linked in
-  r'third_party/libpng/projects', // not linked in
-  r'third_party/libpng/scripts', // not linked in
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
