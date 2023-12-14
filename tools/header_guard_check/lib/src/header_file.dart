@@ -174,7 +174,7 @@ final class HeaderFile {
       String newContents = oldContents.replaceRange(
         guard!.endifSpan!.start.offset,
         guard!.endifSpan!.end.offset,
-        '#endif  // $expectedGuard\n'
+        '#endif  // $expectedGuard'
       );
 
       // Replace define:
@@ -188,7 +188,7 @@ final class HeaderFile {
       newContents = newContents.replaceRange(
         guard!.ifndefSpan!.start.offset,
         guard!.ifndefSpan!.end.offset,
-        '#ifndef $expectedGuard\n'
+        '#ifndef $expectedGuard'
       );
 
       // Write the new contents to the file.
