@@ -67,6 +67,20 @@ impeller_component("aiks_playground") {
   ]
 }
 
+impeller_component("context_spy") {
+  testonly = true
+
+  sources = [
+    "testing/context_mock.h",
+    "testing/context_spy.cc",
+    "testing/context_spy.h",
+  ]
+  deps = [
+    "//flutter/impeller/renderer",
+    "//flutter/testing:testing_lib",
+  ]
+}
+
 impeller_component("aiks_unittests") {
   testonly = true
 
@@ -76,14 +90,12 @@ impeller_component("aiks_unittests") {
     "aiks_unittests.h",
     "canvas_recorder_unittests.cc",
     "canvas_unittests.cc",
-    "testing/context_mock.h",
-    "testing/context_spy.cc",
-    "testing/context_spy.h",
     "trace_serializer_unittests.cc",
   ]
   deps = [
     ":aiks",
     ":aiks_playground",
+    ":context_spy",
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
@@ -111,13 +123,11 @@ impeller_component("aiks_unittests_golden") {
     "aiks_gradient_unittests.cc",
     "aiks_unittests.cc",
     "aiks_unittests.h",
-    "testing/context_mock.h",
-    "testing/context_spy.cc",
-    "testing/context_spy.h",
   ]
   deps = [
     ":aiks",
     ":aiks_playground",
+    ":context_spy",
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
