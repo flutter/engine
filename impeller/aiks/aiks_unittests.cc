@@ -348,6 +348,18 @@ TEST_P(AiksTest, CanRenderSimpleClips) {
       canvas.DrawPaint(paint);
       canvas.Restore();
     }
+    {
+      canvas.Save();
+      canvas.ClipRRect(Rect::MakeLTRB(200, 230, 300, 270), {20, 20});
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipRRect(Rect::MakeLTRB(230, 200, 270, 300), {20, 20});
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
     canvas.Restore();
   };
 
@@ -2355,6 +2367,10 @@ TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
                        Size(i * 5 + 10, j * 5 + 10), paint);
     }
   }
+  paint.color = colors[(c_index++) % color_count];
+  canvas.DrawRRect(Rect::MakeXYWH(10, 420, 380, 80), Size(40, 40), paint);
+  paint.color = colors[(c_index++) % color_count];
+  canvas.DrawRRect(Rect::MakeXYWH(410, 20, 80, 380), Size(40, 40), paint);
 
   std::vector<Color> gradient_colors = {
       Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
@@ -2377,26 +2393,37 @@ TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
                                          /*enable_mipmapping=*/true);
 
   paint.color = Color::White().WithAlpha(0.1);
-
   paint.color_source = ColorSource::MakeRadialGradient(
-      {500, 550}, 75, std::move(gradient_colors), std::move(stops),
-      Entity::TileMode::kMirror, {});
+      {550, 550}, 75, gradient_colors, stops, Entity::TileMode::kMirror, {});
   for (int i = 1; i <= 10; i++) {
     int j = 11 - i;
-    canvas.DrawRRect(Rect::MakeLTRB(500 - i * 20, 550 - j * 20,  //
-                                    500 + i * 20, 550 + j * 20),
+    canvas.DrawRRect(Rect::MakeLTRB(550 - i * 20, 550 - j * 20,  //
+                                    550 + i * 20, 550 + j * 20),
                      Size(i * 10, j * 10), paint);
   }
+  paint.color = Color::White().WithAlpha(0.5);
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {200, 650}, 75, std::move(gradient_colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  canvas.DrawRRect(Rect::MakeLTRB(100, 610, 300, 690), Size(40, 40), paint);
+  canvas.DrawRRect(Rect::MakeLTRB(160, 550, 240, 750), Size(40, 40), paint);
 
+  paint.color = Color::White().WithAlpha(0.1);
   paint.color_source = ColorSource::MakeImage(
       texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
-      Matrix::MakeTranslation({500, 20}));
+      Matrix::MakeTranslation({520, 20}));
   for (int i = 1; i <= 10; i++) {
     int j = 11 - i;
-    canvas.DrawRRect(Rect::MakeLTRB(700 - i * 20, 220 - j * 20,  //
-                                    700 + i * 20, 220 + j * 20),
+    canvas.DrawRRect(Rect::MakeLTRB(720 - i * 20, 220 - j * 20,  //
+                                    720 + i * 20, 220 + j * 20),
                      Size(i * 10, j * 10), paint);
   }
+  paint.color = Color::White().WithAlpha(0.5);
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({800, 300}));
+  canvas.DrawRRect(Rect::MakeLTRB(800, 410, 1000, 490), Size(40, 40), paint);
+  canvas.DrawRRect(Rect::MakeLTRB(860, 350, 940, 550), Size(40, 40), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -2926,19 +2953,18 @@ TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
   Picture picture = canvas.EndRecordingAsPicture();
 
   std::optional<Color> actual_color;
+  bool found_subpass = false;
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       actual_color = subpass->get()->GetClearColor();
+      found_subpass = true;
     }
     // Fail if the first element isn't a subpass.
     return true;
   });
 
-  ASSERT_TRUE(actual_color.has_value());
-  if (!actual_color) {
-    return;
-  }
-  ASSERT_EQ(actual_color.value(), Color::BlackTransparent());
+  EXPECT_TRUE(found_subpass);
+  EXPECT_FALSE(actual_color.has_value());
 }
 
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
@@ -4551,7 +4577,72 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
               Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
               Entity::TileMode::kDecal),
       });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
 
+TEST_P(AiksTest, GaussianBlurOneDimension) {
+  Canvas canvas;
+
+  canvas.Scale(GetContentScale());
+  canvas.Scale({0.5, 0.5, 1.0});
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  canvas.DrawImage(std::make_shared<Image>(boston), Point(100, 100), Paint{});
+  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(50.0), Sigma(0.0),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Smoketest to catch issues with the coverage hint.
+// Draws a rotated blurred image within a rectangle clip. The center of the clip
+// rectangle is the center of the rotated image. The entire area of the clip
+// rectangle should be filled with opaque colors output by the blur.
+TEST_P(AiksTest, GaussianBlurRotatedAndClipped) {
+  Canvas canvas;
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  Rect bounds =
+      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height);
+  Vector2 image_center = Vector2(bounds.GetSize() / 2);
+  Paint paint = {.image_filter =
+                     ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kDecal)};
+  Vector2 clip_size = {150, 75};
+  Vector2 center = Vector2(1024, 768) / 2;
+  canvas.Scale(GetContentScale());
+  canvas.ClipRect(
+      Rect::MakeLTRB(center.x, center.y, center.x, center.y).Expand(clip_size));
+  canvas.Translate({center.x, center.y, 0});
+  canvas.Scale({0.6, 0.6, 1});
+  canvas.Rotate(Degrees(25));
+
+  canvas.DrawImageRect(std::make_shared<Image>(boston), /*source=*/bounds,
+                       /*dest=*/bounds.Shift(-image_center), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SubpassWithClearColorOptimization) {
+  Canvas canvas;
+
+  // Use a non-srcOver blend mode to ensure that we don't detect this as an
+  // opacity peephole optimization.
+  canvas.SaveLayer(
+      {.color = Color::Blue().WithAlpha(0.5), .blend_mode = BlendMode::kSource},
+      Rect::MakeLTRB(0, 0, 200, 200));
+  canvas.DrawPaint(
+      {.color = Color::BlackTransparent(), .blend_mode = BlendMode::kSource});
+  canvas.Restore();
+
+  canvas.SaveLayer(
+      {.color = Color::Blue(), .blend_mode = BlendMode::kDestinationOver});
+  canvas.Restore();
+
+  // This playground should appear blank on CI since we are only drawing
+  // transparent black. If the clear color optimization is broken, the texture
+  // will be filled with NaNs and may produce a magenta texture on macOS or iOS.
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
