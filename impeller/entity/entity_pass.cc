@@ -339,9 +339,9 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (reads_from_onscreen_backdrop) {
-    auto offscreen_target =
-        CreateRenderTarget(renderer, root_render_target.GetRenderTargetSize(),
-                           GetClearColorOrDefault(render_target.GetRenderTargetSize()));
+    auto offscreen_target = CreateRenderTarget(
+        renderer, root_render_target.GetRenderTargetSize(),
+        GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
                   capture,   // capture
@@ -446,7 +446,8 @@ bool EntityPass::Render(ContentContext& renderer,
   }
 
   // Set up the clear color of the root pass.
-  color0.clear_color = GetClearColorOrDefault(render_target.GetRenderTargetSize());
+  color0.clear_color =
+      GetClearColorOrDefault(render_target.GetRenderTargetSize());
   root_render_target.SetColorAttachment(color0, 0);
 
   EntityPassTarget pass_target(
@@ -599,8 +600,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,      // renderer
-        subpass_size,  // size
+        renderer,                                        // renderer
+        subpass_size,                                    // size
         subpass->GetClearColorOrDefault(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
