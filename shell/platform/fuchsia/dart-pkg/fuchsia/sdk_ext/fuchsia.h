@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART - PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART -PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
 
 #include <lib/zx/channel.h>
 #include <lib/zx/eventpair.h>
@@ -20,4 +20,4 @@ void Initialize(zx::channel directory_request,
 }  // namespace dart
 }  // namespace fuchsia
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART-PKG_FUCHSIA_SDK_EXT_FUCHSIA_H_
