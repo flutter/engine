@@ -19,6 +19,11 @@
 }
 
 - (void)testAppExtensionLaunching {
+  // Launch the Scenarios app first to ensure it's installed then close it.
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  [app launch];
+  [app terminate];
+
   [self.hostApplication launch];
   XCUIElement* button = self.hostApplication.buttons[@"Open Share"];
   if (![button waitForExistenceWithTimeout:10]) {
