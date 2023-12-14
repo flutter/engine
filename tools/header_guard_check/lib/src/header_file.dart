@@ -28,8 +28,7 @@ final class HeaderFile {
     }
 
     final String contents = file.readAsStringSync();
-    final SourceFile sourceFile =
-        SourceFile.fromString(contents, url: p.toUri(path));
+    final SourceFile sourceFile = SourceFile.fromString(contents, url: p.toUri(path));
     return HeaderFile.from(
       path,
       guard: _parseGuard(sourceFile),
@@ -119,13 +118,15 @@ final class HeaderFile {
   /// This is `null` if the file does not have a `#pragma once` directive.
   final SourceSpan? pragmaOnce;
 
+  static final RegExp _nonAlphaNumeric = RegExp(r'[^a-zA-Z0-9]');
+
   /// Returns the expected header guard for this file, relative to [engineRoot].
   ///
   /// For example, if the file is `foo/bar/baz.h`, this will return `FLUTTER_FOO_BAR_BAZ_H_`.
   String expectedName({required String engineRoot}) {
     final String relativePath = p.relative(path, from: engineRoot);
-    final String underscoredRelativePath = relativePath.replaceAll(p.separator, '_');
-    return 'FLUTTER_${p.withoutExtension(underscoredRelativePath).toUpperCase().replaceAll('.', '_')}_H_';
+    final String underscoredRelativePath = p.withoutExtension(relativePath).replaceAll(_nonAlphaNumeric, '_');
+    return 'FLUTTER_${underscoredRelativePath.toUpperCase()}_H_';
   }
 
   /// Updates the file at [path] to have the expected header guard.

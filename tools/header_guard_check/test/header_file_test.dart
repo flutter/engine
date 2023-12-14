@@ -142,6 +142,25 @@ Future<int> main(List<String> args) async {
   });
 
   group('HeaderFile', () {
+    test('produces a valid header guard name from various file names', () {
+      // All of these should produce the name `FOO_BAR_BAZ_H_`.
+      const List<String> inputs = <String>[
+        'foo_bar_baz.h',
+        'foo-bar-baz.h',
+        'foo_bar-baz.h',
+        'foo-bar_baz.h',
+        'foo+bar+baz.h',
+      ];
+      for (final String input in inputs) {
+        final HeaderFile headerFile = HeaderFile.from(
+          input, 
+          guard: null,
+          pragmaOnce: null,
+        );
+        expect(headerFile.expectedName(engineRoot: ''), endsWith('FOO_BAR_BAZ_H_'));
+      }
+    });
+
     test('parses a header file with a valid guard', () {
       final String input = <String>[
         '#ifndef FOO_H_',
