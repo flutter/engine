@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_CANVAS_H_
+#define FLUTTER_IMPELLER_AIKS_CANVAS_H_
 
 #include <deque>
 #include <functional>
@@ -136,6 +137,10 @@ class Canvas {
       const Rect& rect,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
+  void ClipOval(
+      const Rect& bounds,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
   void ClipRRect(
       const Rect& rect,
       const Size& corner_radii,
@@ -198,3 +203,5 @@ class Canvas {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_CANVAS_H_
