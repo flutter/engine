@@ -67,44 +67,23 @@ impeller_component("aiks_playground") {
   ]
 }
 
-# All the source code to compile aiks_unittests.cc and its derivatives.
-source_set("aiks_unittests_source") {
-  testonly = true
-  sources = [
-    "aiks_gradient_unittests.cc",
-    "aiks_unittests.cc",
-    "aiks_unittests.h",
-    "testing/context_mock.h",
-    "testing/context_spy.cc",
-    "testing/context_spy.h",
-  ]
-  deps = [
-    ":aiks",
-    ":aiks_playground",
-    "//flutter/impeller/geometry:geometry_asserts",
-    "//flutter/impeller/golden_tests:golden_playground_test",
-    "//flutter/impeller/playground",
-    "//flutter/impeller/playground:playground_test",
-    "//flutter/impeller/scene",
-    "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
-    "//flutter/testing:testing_lib",
-    "//flutter/third_party/imgui",
-    "//flutter/third_party/txt",
-  ]
-}
-
 impeller_component("aiks_unittests") {
   testonly = true
 
   sources = [
+    "aiks_gradient_unittests.cc",
+    "aiks_unittests.cc",
+    "aiks_unittests.h",
     "canvas_recorder_unittests.cc",
     "canvas_unittests.cc",
+    "testing/context_mock.h",
+    "testing/context_spy.cc",
+    "testing/context_spy.h",
     "trace_serializer_unittests.cc",
   ]
   deps = [
     ":aiks",
     ":aiks_playground",
-    ":aiks_unittests_source",
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
@@ -129,6 +108,9 @@ impeller_component("aiks_unittests_golden") {
   ]
 
   sources = [
+    "aiks_gradient_unittests.cc",
+    "aiks_unittests.cc",
+    "aiks_unittests.h",
     "testing/context_mock.h",
     "testing/context_spy.cc",
     "testing/context_spy.h",
@@ -136,7 +118,6 @@ impeller_component("aiks_unittests_golden") {
   deps = [
     ":aiks",
     ":aiks_playground",
-    ":aiks_unittests_source",
     "//flutter/impeller/geometry:geometry_asserts",
     "//flutter/impeller/golden_tests:golden_playground_test",
     "//flutter/impeller/playground:playground_test",
