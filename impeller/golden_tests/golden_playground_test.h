@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_PLAYGROUND_TEST_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_PLAYGROUND_TEST_H_
 
 #include <memory>
 
@@ -57,6 +58,13 @@ class GoldenPlaygroundTest
 
   ISize GetWindowSize() const;
 
+  [[nodiscard]] fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities);
+
+  /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.
+  /// Returns true if `OpenPlaygroundHere` will actually render anything.
+  bool WillRenderSomething() const { return true; }
+
  protected:
   void SetWindowSize(ISize size);
 
@@ -79,3 +87,5 @@ class GoldenPlaygroundTest
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_PLAYGROUND_TEST_H_

@@ -90,10 +90,14 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/skia/third_party/lua', // not linked in
   r'flutter/third_party/skia/third_party/vello', // not linked in
   r'flutter/third_party/skia/tools', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/stb',
+  r'flutter/third_party/swiftshader', // only used on hosts for tests
   r'flutter/third_party/test_shaders', // for tests only
+  r'flutter/third_party/tinygltf',
   r'flutter/third_party/txt/third_party/fonts',
   r'flutter/third_party/wuffs/docs',
   r'flutter/third_party/wuffs/script',
+  r'flutter/third_party/yapf', // only used for code formatting
   r'flutter/tools',
   r'flutter/web_sdk', // this code is not linked into Flutter apps; it's only used by engine tests and tools
   r'fuchsia/sdk/linux/docs',
@@ -123,8 +127,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/boringssl/src/fuzz', // testing tools, not shipped
   r'third_party/boringssl/src/rust', // rust-related code is not shipped
   r'third_party/boringssl/src/util', // code generators, not shipped
-  r'third_party/colorama/src/demos',
-  r'third_party/colorama/src/screenshots',
   r'third_party/dart/benchmarks', // not shipped in binary
   r'third_party/dart/build', // not shipped in binary
   r'third_party/dart/docs', // not shipped in binary
@@ -184,9 +186,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/protobuf', // build-time dependency only
   r'third_party/root_certificates/certdata.pem',
   r'third_party/root_certificates/certdata.txt',
-  r'third_party/stb',
-  r'third_party/swiftshader', // only used on hosts for tests
-  r'third_party/tinygltf',
   r'third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
   r'third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files
   r'third_party/vulkan-deps/glslang/src/glslang/OSDependent/Web', // we only use glslang in impellerc, not in web apps
@@ -214,7 +213,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/vulkan_memory_allocator/src',
   r'third_party/vulkan_memory_allocator/tools',
   r'third_party/web_dependencies/canvaskit', // redundant; covered by Skia dependencies
-  r'third_party/yapf', // only used for code formatting
   r'third_party/zlib/contrib/minizip/miniunz.c', // sample file
   r'third_party/zlib/contrib/minizip/minizip.c', // sample file
   r'tools', // not distributed in binary

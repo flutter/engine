@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -123,7 +124,7 @@ class Contents {
       const std::string& label = "Snapshot") const;
 
   virtual bool ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const;
+                            const std::optional<Rect> clip_coverage) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Return the color source's intrinsic size, if available.
@@ -201,3 +202,5 @@ class Contents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_

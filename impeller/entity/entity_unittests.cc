@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "fml/logging.h"
 #include "gtest/gtest.h"
 #include "impeller/core/formats.h"
@@ -19,6 +20,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
@@ -990,7 +992,8 @@ TEST_P(EntityTest, GaussianBlurFilter) {
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     const char* input_type_names[] = {"Texture", "Solid Color"};
     const char* blur_type_names[] = {"Image blur", "Mask blur"};
-    const char* pass_variation_names[] = {"Two pass", "Directional"};
+    const char* pass_variation_names[] = {"New", "2D Directional",
+                                          "Directional"};
     const char* blur_style_names[] = {"Normal", "Solid", "Outer", "Inner"};
     const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
     const FilterContents::BlurStyle blur_styles[] = {
@@ -1082,16 +1085,26 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     }
 
     std::shared_ptr<FilterContents> blur;
-    if (selected_pass_variation == 0) {
-      blur = FilterContents::MakeGaussianBlur(
-          FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
-          blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
-    } else {
-      Vector2 blur_vector(blur_sigma_x.sigma, blur_sigma_y.sigma);
-      blur = FilterContents::MakeDirectionalGaussianBlur(
-          FilterInput::Make(input), Sigma{blur_vector.GetLength()},
-          blur_vector.Normalize());
-    }
+    switch (selected_pass_variation) {
+      case 0:
+        blur = std::make_shared<GaussianBlurFilterContents>(
+            blur_sigma_x.sigma, tile_modes[selected_tile_mode]);
+        blur->SetInputs({FilterInput::Make(input)});
+        break;
+      case 1:
+        blur = FilterContents::MakeGaussianBlur(
+            FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
+            blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
+        break;
+      case 2: {
+        Vector2 blur_vector(blur_sigma_x.sigma, blur_sigma_y.sigma);
+        blur = FilterContents::MakeDirectionalGaussianBlur(
+            FilterInput::Make(input), Sigma{blur_vector.GetLength()},
+            blur_vector.Normalize());
+        break;
+      }
+    };
+    FML_CHECK(blur);
 
     auto mask_blur = FilterContents::MakeBorderMaskBlur(
         FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
@@ -1603,6 +1616,20 @@ TEST_P(EntityTest, SolidFillShouldRenderIsCorrect) {
     ASSERT_TRUE(
         fill->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
   }
+}
+
+TEST_P(EntityTest, DoesNotCullEntitiesByDefault) {
+  auto fill = std::make_shared<SolidColorContents>();
+  fill->SetColor(Color::CornflowerBlue());
+  fill->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(-1000, -1000, -900, -900)));
+
+  Entity entity;
+  entity.SetContents(fill);
+
+  // Even though the entity is offscreen, this should still render because we do
+  // not compute the coverage intersection by default.
+  EXPECT_TRUE(entity.ShouldRender(Rect::MakeLTRB(0, 0, 100, 100)));
 }
 
 TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
@@ -2178,8 +2205,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
 
   // Text contents can accept opacity if the text frames do not
   // overlap
-  SkFont font;
-  font.setSize(30);
+  SkFont font = flutter::testing::CreateTestFontOfSize(30);
   auto blob = SkTextBlob::MakeFromString("A", font);
   auto frame = MakeTextFrameFromTextBlobSkia(blob);
   auto lazy_glyph_atlas =
@@ -2443,6 +2469,14 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
                     "for advanced blends.";
   }
 
+  auto background_contents = std::make_shared<SolidColorContents>();
+  background_contents->SetGeometry(
+      Geometry::MakeRect(Rect::MakeXYWH(200, 200, 200, 200)));
+  background_contents->SetColor(Color::Blue());
+  Entity background_entity;
+  background_entity.SetTransform(Matrix::MakeScale(Vector3(2, 2, 1)));
+  background_entity.SetContents(background_contents);
+
   auto contents = std::make_shared<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
@@ -2468,6 +2502,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
+  pass->AddEntity(std::move(background_entity));
   pass->AddEntity(std::move(entity));
 
   EXPECT_TRUE(pass->Render(content_context, rt));
@@ -2561,6 +2596,27 @@ TEST_P(EntityTest, PipelineDescriptorEqAndHash) {
 
   EXPECT_TRUE(desc_1->IsEqual(*desc_2));
   EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
+}
+
+// This doesn't really tell you if the hashes will have frequent
+// collisions, but since this type is only used to hash a bounded
+// set of options, we can just compare benchmarks.
+TEST_P(EntityTest, ContentContextOptionsHasReasonableHashFunctions) {
+  ContentContextOptions opts;
+  auto hash_a = ContentContextOptions::Hash{}(opts);
+
+  opts.blend_mode = BlendMode::kColorBurn;
+  auto hash_b = ContentContextOptions::Hash{}(opts);
+
+  opts.has_stencil_attachment = false;
+  auto hash_c = ContentContextOptions::Hash{}(opts);
+
+  opts.primitive_type = PrimitiveType::kPoint;
+  auto hash_d = ContentContextOptions::Hash{}(opts);
+
+  EXPECT_NE(hash_a, hash_b);
+  EXPECT_NE(hash_b, hash_c);
+  EXPECT_NE(hash_c, hash_d);
 }
 
 #ifdef FML_OS_LINUX

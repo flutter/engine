@@ -2,14 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_
+#define FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_
 
-#include <map>
 #include <memory>
-#include <optional>
-#include <string>
 
-#include "flutter/fml/logging.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler.h"
@@ -39,3 +36,5 @@ struct ResourceBinder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_

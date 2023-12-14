@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_BACKEND_GLES_PLAYGROUND_IMPL_GLES_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_BACKEND_GLES_PLAYGROUND_IMPL_GLES_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_impl.h"
@@ -14,6 +15,9 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
   explicit PlaygroundImplGLES(PlaygroundSwitches switches);
 
   ~PlaygroundImplGLES();
+
+  fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities) override;
 
  private:
   class ReactorWorker;
@@ -39,3 +43,5 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_BACKEND_GLES_PLAYGROUND_IMPL_GLES_H_
