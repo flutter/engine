@@ -5,7 +5,6 @@
 import 'dart:js_interop';
 
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/ui_web/src/ui_web/testing.dart';
 
 import '../browser_detection.dart';
 import '../configuration.dart';
