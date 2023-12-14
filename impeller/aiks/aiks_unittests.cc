@@ -35,6 +35,7 @@
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
+#include "impeller/renderer/testing/mocks.h"
 #include "impeller/scene/material.h"
 #include "impeller/scene/node.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -315,6 +316,74 @@ TEST_P(AiksTest, CanRenderClips) {
   canvas.ClipPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 500, 500)).TakePath());
   canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderSimpleClips) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+
+  paint.color = Color::White();
+  canvas.DrawPaint(paint);
+
+  auto draw = [&canvas](const Paint& paint, Scalar x, Scalar y) {
+    canvas.Save();
+    canvas.Translate({x, y});
+    {
+      canvas.Save();
+      canvas.ClipRect(Rect::MakeLTRB(50, 50, 150, 150));
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipOval(Rect::MakeLTRB(200, 50, 300, 150));
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipRRect(Rect::MakeLTRB(50, 200, 150, 300), {20, 20});
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    canvas.Restore();
+  };
+
+  paint.color = Color::Blue();
+  draw(paint, 0, 0);
+
+  std::vector<Color> gradient_colors = {
+      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      (1.0 / 6.0) * 1,
+      (1.0 / 6.0) * 2,
+      (1.0 / 6.0) * 3,
+      (1.0 / 6.0) * 4,
+      (1.0 / 6.0) * 5,
+      1.0,
+  };
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {500, 600}, 75, std::move(gradient_colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  draw(paint, 0, 300);
+
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({0, 0}));
+  draw(paint, 300, 0);
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -4433,6 +4502,56 @@ TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
                                          FilterContents::BlurStyle::kNormal,
                                          Entity::TileMode::kClamp));
   canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+#define FLT_FORWARD(mock, real, method) \
+  EXPECT_CALL(*mock, method())          \
+      .WillRepeatedly(::testing::Return(real->method()));
+
+TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_(
+        "This backend doesn't yet support setting device capabilities.");
+  }
+  if (!WillRenderSomething()) {
+    // Sometimes these tests are run without playgrounds enabled which is
+    // pointless for this test since we are asserting that
+    // `SupportsDecalSamplerAddressMode` is called.
+    GTEST_SKIP_("This test requires playgrounds.");
+  }
+
+  std::shared_ptr<const Capabilities> old_capabilities =
+      GetContext()->GetCapabilities();
+  auto mock_capabilities = std::make_shared<MockCapabilities>();
+  EXPECT_CALL(*mock_capabilities, SupportsDecalSamplerAddressMode())
+      .Times(::testing::AtLeast(1))
+      .WillRepeatedly(::testing::Return(false));
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsImplicitResolvingMSAA);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsReadFromResolve);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsFramebufferFetch);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsSSBO);
+  FLT_FORWARD(mock_capabilities, old_capabilities, SupportsCompute);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              SupportsTextureToTextureBlits);
+  ASSERT_TRUE(SetCapabilities(mock_capabilities).ok());
+
+  auto texture = std::make_shared<Image>(CreateTextureForFixture("boston.jpg"));
+  Canvas canvas;
+  canvas.Scale(GetContentScale() * 0.5);
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.DrawImage(
+      texture, Point(200, 200),
+      {
+          .image_filter = ImageFilter::MakeBlur(
+              Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
+              Entity::TileMode::kDecal),
+      });
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
