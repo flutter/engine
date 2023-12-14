@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART - PKG_ZIRCON_FFI_CHANNEL_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART -PKG_ZIRCON_FFI_CHANNEL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_CHANNEL_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_CHANNEL_H_
 
 #include "basic_types.h"
 #include "handle.h"
@@ -27,4 +27,4 @@ zircon_dart_channel_write(zircon_dart_handle_t* handle,
 }
 #endif
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART-PKG_ZIRCON_FFI_CHANNEL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DART_PKG_ZIRCON_FFI_CHANNEL_H_
