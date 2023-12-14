@@ -324,11 +324,14 @@ extern CFTimeInterval display_link_target;
       // newer texture and is unlikely to use the older one.
       FlutterTexture* res = nil;
       for (FlutterTexture* texture in _availableTextures) {
-        if (!texture.surface.isInUse) {
+        if (res == nil) {
           res = texture;
-          break;
-        }
-        if (res == nil || texture.presentedTime < res.presentedTime) {
+        } else if (res.surface.isInUse && !texture.surface.isInUse) {
+          // prefer texture that is not in use.
+          res = texture;
+        } else if (res.surface.isInUse == texture.surface.isInUse &&
+                   texture.presentedTime < res.presentedTime) {
+          // prefer texture with older presented time.
           res = texture;
         }
       }
