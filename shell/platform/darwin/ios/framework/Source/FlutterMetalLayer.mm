@@ -313,15 +313,15 @@ extern CFTimeInterval display_link_target;
           NSLog(@"Had to wait %f seconds for a drawable", elapsed);
         }
       }
-      // Return first drawable that is not in use or the one that was presented
-      // the longest time ago.
-      // isInUse means the compositor has picked up the surface. This is useful
-      // to detect a skipped frame, in which case the surface will be returned
-      // in the next call to nextDrawable.
-      // It is possible that both back buffers are in use, in which case we
-      // don't block here but return the oldest presented texture.
+
+      // Prefer surface that is not in use and has been presented the longest
+      // time ago.
+      // When isInUse is false, the surface is definitely not used by the compositor.
+      // When isInUse is true, the surface may be used by the compositor.
+      // When both surfaces are in use, the one presented earlier will be returned.
       // The assumption here is that the compositor is already aware of the
-      // newer texture and is unlikely to use the older one.
+      // newer texture and is unlikely to read from the older one, even though it
+      // has not decreased the use count yet (there seems to be certain latency).
       FlutterTexture* res = nil;
       for (FlutterTexture* texture in _availableTextures) {
         if (res == nil) {
