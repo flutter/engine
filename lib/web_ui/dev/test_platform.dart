@@ -156,7 +156,7 @@ class BrowserPlatform extends PlatformPlugin {
   Uri get url => server.url.resolve('/');
 
   bool get isWasm => suite.testBundle.compileConfig.compiler == Compiler.dart2wasm;
-  bool get needsCrossOriginIsolated => true; //isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
+  bool get needsCrossOriginIsolated => isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
 
   /// A [OneOffHandler] for servicing WebSocket connections for
   /// [BrowserManager]s.
