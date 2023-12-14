@@ -544,15 +544,14 @@ EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
   if (!uri || !name) {
     return Dart_Null();
   }
-  return Dart_GetField(Dart_LookupLibrary(Dart_NewStringFromCString(uri)),
-                       Dart_NewStringFromCString(name));
+  Dart_Handle lib = Dart_LookupLibrary(Dart_NewStringFromCString(uri));
+  return Dart_GetField(lib, Dart_NewStringFromCString(name));
 }
 
 EXPORTED void Spawn(const char* entrypoint, const char* route) {
   auto shell = g_shell->get();
   fml::AutoResetWaitableEvent latch;
   auto isolate = Dart_CurrentIsolate();
-  Dart_ExitIsolate();
   auto spawn_task = [shell, &latch, entrypoint = std::string(entrypoint),
                      route = std::string(route)]() {
     auto configuration = RunConfiguration::InferFromSettings(
@@ -601,6 +600,7 @@ EXPORTED void Spawn(const char* entrypoint, const char* route) {
         });
     latch.Signal();
   };
+  Dart_ExitIsolate();
   // The global shell pointer is kept alive by the RunTester routine above.
   // This in turn keeps the isolate group alive. The UI task runner is blocked
   // until the isolate spawns, which guarantees the global shell pointer won't
