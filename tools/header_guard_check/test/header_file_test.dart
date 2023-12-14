@@ -153,7 +153,7 @@ Future<int> main(List<String> args) async {
       ];
       for (final String input in inputs) {
         final HeaderFile headerFile = HeaderFile.from(
-          input, 
+          input,
           guard: null,
           pragmaOnce: null,
         );
