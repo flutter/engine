@@ -136,7 +136,11 @@ class EntityPass {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  Color GetClearColor(ISize size = ISize::Infinite()) const;
+  /// @brief Return the clear color of the pass entities.
+  ///
+  /// If the returned value is std::nullopt, the clear color can be assumed to
+  /// be transparent black.
+  std::optional<Color> GetClearColor(ISize size = ISize::Infinite()) const;
 
   void SetBackdropFilter(BackdropFilterProc proc);
 

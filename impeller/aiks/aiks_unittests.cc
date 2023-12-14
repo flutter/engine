@@ -4555,5 +4555,24 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, SubpassWithClearColorOptimization) {
+  Canvas canvas;
+
+  // Use a non-srcOver blend mode to ensure that we don't detect this as an
+  // opacity peephole optimization.
+  canvas.SaveLayer(
+      {.color = Color::Blue().WithAlpha(0.5), .blend_mode = BlendMode::kSource},
+      Rect::MakeLTRB(0, 0, 200, 200));
+  canvas.DrawPaint(
+      {.color = Color::BlackTransparent(), .blend_mode = BlendMode::kSource});
+  canvas.Restore();
+
+  canvas.SaveLayer(
+      {.color = Color::Blue(), .blend_mode = BlendMode::kDestinationOver});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
