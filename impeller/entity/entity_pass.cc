@@ -368,7 +368,7 @@ bool EntityPass::Render(ContentContext& renderer,
   if (!supports_onscreen_backdrop_reads && reads_from_onscreen_backdrop) {
     auto offscreen_target = CreateRenderTarget(
         renderer, root_render_target.GetRenderTargetSize(), true,
-        GetClearColor(render_target.GetRenderTargetSize()));
+        GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
                   capture,   // capture
@@ -475,7 +475,8 @@ bool EntityPass::Render(ContentContext& renderer,
   }
 
   // Set up the clear color of the root pass.
-  color0.clear_color = GetClearColor(render_target.GetRenderTargetSize());
+  color0.clear_color =
+      GetClearColorOrDefault(render_target.GetRenderTargetSize());
   root_render_target.SetColorAttachment(color0, 0);
 
   EntityPassTarget pass_target(
@@ -628,10 +629,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,                                  // renderer
-        subpass_size,                              // size
-        subpass->GetTotalPassReads(renderer) > 0,  // readable
-        subpass->GetClearColor(subpass_size));     // clear_color
+        renderer,                                        // renderer
+        subpass_size,                                    // size
+        subpass->GetTotalPassReads(renderer) > 0,        // readable
+        subpass->GetClearColorOrDefault(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
       VALIDATION_LOG << "Subpass render target is invalid.";
@@ -722,8 +723,7 @@ bool EntityPass::OnRender(
   }
   auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
-  if (!collapsed_parent_pass &&
-      !GetClearColor(clear_color_size).IsTransparent()) {
+  if (!collapsed_parent_pass && GetClearColor(clear_color_size).has_value()) {
     // Force the pass context to create at least one new pass if the clear color
     // is present.
     pass_context.GetRenderPass(pass_depth);
@@ -1140,21 +1140,29 @@ void EntityPass::SetBlendMode(BlendMode blend_mode) {
   flood_clip_ = Entity::IsBlendModeDestructive(blend_mode);
 }
 
-Color EntityPass::GetClearColor(ISize target_size) const {
-  Color result = Color::BlackTransparent();
+Color EntityPass::GetClearColorOrDefault(ISize size) const {
+  return GetClearColor(size).value_or(Color::BlackTransparent());
+}
+
+std::optional<Color> EntityPass::GetClearColor(ISize target_size) const {
   if (backdrop_filter_proc_) {
-    return result;
+    return std::nullopt;
   }
 
+  std::optional<Color> result = std::nullopt;
   for (const Element& element : elements_) {
     auto [entity_color, blend_mode] =
         ElementAsBackgroundColor(element, target_size);
     if (!entity_color.has_value()) {
       break;
     }
-    result = result.Blend(entity_color.value(), blend_mode);
+    result = result.value_or(Color::BlackTransparent())
+                 .Blend(entity_color.value(), blend_mode);
   }
-  return result.Premultiply();
+  if (result.has_value()) {
+    return result->Premultiply();
+  }
+  return result;
 }
 
 void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
