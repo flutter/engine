@@ -926,7 +926,6 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-
 TEST_P(AiksTest, CanCanvasDrawPicture) {
   Canvas subcanvas;
   subcanvas.DrawRect(Rect::MakeLTRB(-100, -50, 100, 50),
@@ -996,7 +995,7 @@ TEST_P(AiksTest, DrawPictureClipped) {
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
-}
+}  // namespace pictures
 
 /// These tests check the visual results of drawing text.
 namespace text {
@@ -1189,8 +1188,8 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas,
-                                     "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊", kFontFixture));
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊", kFontFixture));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -1211,9 +1210,9 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas,
-                                     "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊", kFontFixture,
-                                     {.color = Color::Black().WithAlpha(0.5)}));
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊", kFontFixture,
+      {.color = Color::Black().WithAlpha(0.5)}));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -2737,7 +2736,6 @@ TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
-
 
 TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
