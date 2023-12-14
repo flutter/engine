@@ -1329,124 +1329,8 @@ TEST_P(AiksTest, DrawScaledTextWithPerspectiveSaveLayer) {
 
 }  // namespace text
 
-namespace unsorted {
-
-TEST_P(AiksTest, RotateColorFilteredPath) {
-  Canvas canvas;
-  canvas.Concat(Matrix::MakeTranslation({300, 300}));
-  canvas.Concat(Matrix::MakeRotationZ(Radians(kPiOver2)));
-  auto arrow_stem =
-      PathBuilder{}.MoveTo({120, 190}).LineTo({120, 50}).TakePath();
-  auto arrow_head = PathBuilder{}
-                        .MoveTo({50, 120})
-                        .LineTo({120, 190})
-                        .LineTo({190, 120})
-                        .TakePath();
-  auto paint = Paint{
-      .stroke_width = 15.0,
-      .stroke_cap = Cap::kRound,
-      .stroke_join = Join::kRound,
-      .style = Paint::Style::kStroke,
-      .color_filter =
-          ColorFilter::MakeBlend(BlendMode::kSourceIn, Color::AliceBlue()),
-  };
-
-  canvas.DrawPath(std::move(arrow_stem), paint);
-  canvas.DrawPath(std::move(arrow_head), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
-  Canvas canvas;
-  Matrix identity;
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(), identity);
-  canvas.Translate(Size{100, 100});
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
-                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
-}
-
-TEST_P(AiksTest, CanvasCanPushPopCTM) {
-  Canvas canvas;
-  ASSERT_EQ(canvas.GetSaveCount(), 1u);
-  ASSERT_EQ(canvas.Restore(), false);
-
-  canvas.Translate(Size{100, 100});
-  canvas.Save();
-  ASSERT_EQ(canvas.GetSaveCount(), 2u);
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
-                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
-  ASSERT_TRUE(canvas.Restore());
-  ASSERT_EQ(canvas.GetSaveCount(), 1u);
-  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
-                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
-}
-
-TEST_P(AiksTest, CanRenderColoredRect) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Blue();
-  canvas.DrawPath(PathBuilder{}
-                      .AddRect(Rect::MakeXYWH(100.0, 100.0, 100.0, 100.0))
-                      .TakePath(),
-                  paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderColorFilterWithInvertColors) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.color_filter =
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
-  paint.invert_colors = true;
-
-  canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.color_filter =
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
-  paint.invert_colors = true;
-
-  canvas.DrawPaint(paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderStrokes) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.stroke_width = 20.0;
-  paint.style = Paint::Style::kStroke;
-  canvas.DrawPath(PathBuilder{}.AddLine({200, 100}, {800, 100}).TakePath(),
-                  paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderCurvedStrokes) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.stroke_width = 25.0;
-  paint.style = Paint::Style::kStroke;
-  canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.stroke_width = 100.0;
-  paint.style = Paint::Style::kStroke;
-  canvas.DrawPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
+/// These tests check the visual results of clipping.
+namespace clips {
 TEST_P(AiksTest, CanRenderClips) {
   Canvas canvas;
   Paint paint;
@@ -1613,6 +1497,210 @@ TEST_P(AiksTest, ClipsUseCurrentTransform) {
     canvas.ClipPath(PathBuilder{}.AddCircle({0, 0}, 300).TakePath());
     canvas.DrawRect(Rect::MakeXYWH(-300, -300, 600, 600), paint);
   }
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, ClipRectElidesNoOpClips) {
+  Canvas canvas(Rect::MakeXYWH(0, 0, 100, 100));
+  canvas.ClipRect(Rect::MakeXYWH(0, 0, 100, 100));
+  canvas.ClipRect(Rect::MakeXYWH(-100, -100, 300, 300));
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
+                    .blend_mode = BlendMode::kSourceOver});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  auto expected = Color::Red().Blend(Color::CornflowerBlue().WithAlpha(0.75),
+                                     BlendMode::kSourceOver);
+  ASSERT_EQ(picture.pass->GetClearColor(), expected);
+
+  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
+  std::shared_ptr<Context> real_context = GetContext();
+  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
+  AiksContext renderer(mock_context, nullptr);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
+  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
+}
+
+TEST_P(AiksTest, CanRenderClippedLayers) {
+  Canvas canvas;
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  // Draw a green circle on the screen.
+  {
+    // Increase the clip depth for the savelayer to contend with.
+    canvas.ClipPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath());
+
+    canvas.SaveLayer({}, Rect::MakeXYWH(50, 50, 100, 100));
+
+    // Fill the layer with white.
+    canvas.DrawRect(Rect::MakeSize(Size{400, 400}), {.color = Color::White()});
+    // Fill the layer with green, but do so with a color blend that can't be
+    // collapsed into the parent pass.
+    // TODO(jonahwilliams): this blend mode was changed from color burn to
+    // hardlight to work around https://github.com/flutter/flutter/issues/136554
+    // .
+    canvas.DrawRect(
+        Rect::MakeSize(Size{400, 400}),
+        {.color = Color::Green(), .blend_mode = BlendMode::kHardLight});
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/126701 .
+TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
+  auto runtime_stage =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  struct FragUniforms {
+    Vector2 iResolution;
+    Scalar iTime;
+  } frag_uniforms = {.iResolution = Vector2(400, 400), .iTime = 100.0};
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(FragUniforms));
+  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
+
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
+
+  Paint paint;
+  paint.color_source = ColorSource::MakeRuntimeEffect(
+      runtime_stage, uniform_data, texture_inputs);
+
+  Canvas canvas;
+  canvas.Save();
+  canvas.ClipRRect(Rect::MakeXYWH(0, 0, 400, 400), {10.0, 10.0},
+                   Entity::ClipOperation::kIntersect);
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+}  // namespace clips
+
+namespace unsorted {
+
+TEST_P(AiksTest, RotateColorFilteredPath) {
+  Canvas canvas;
+  canvas.Concat(Matrix::MakeTranslation({300, 300}));
+  canvas.Concat(Matrix::MakeRotationZ(Radians(kPiOver2)));
+  auto arrow_stem =
+      PathBuilder{}.MoveTo({120, 190}).LineTo({120, 50}).TakePath();
+  auto arrow_head = PathBuilder{}
+                        .MoveTo({50, 120})
+                        .LineTo({120, 190})
+                        .LineTo({190, 120})
+                        .TakePath();
+  auto paint = Paint{
+      .stroke_width = 15.0,
+      .stroke_cap = Cap::kRound,
+      .stroke_join = Join::kRound,
+      .style = Paint::Style::kStroke,
+      .color_filter =
+          ColorFilter::MakeBlend(BlendMode::kSourceIn, Color::AliceBlue()),
+  };
+
+  canvas.DrawPath(std::move(arrow_stem), paint);
+  canvas.DrawPath(std::move(arrow_head), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
+  Canvas canvas;
+  Matrix identity;
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(), identity);
+  canvas.Translate(Size{100, 100});
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
+                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
+}
+
+TEST_P(AiksTest, CanvasCanPushPopCTM) {
+  Canvas canvas;
+  ASSERT_EQ(canvas.GetSaveCount(), 1u);
+  ASSERT_EQ(canvas.Restore(), false);
+
+  canvas.Translate(Size{100, 100});
+  canvas.Save();
+  ASSERT_EQ(canvas.GetSaveCount(), 2u);
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
+                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
+  ASSERT_TRUE(canvas.Restore());
+  ASSERT_EQ(canvas.GetSaveCount(), 1u);
+  ASSERT_MATRIX_NEAR(canvas.GetCurrentTransform(),
+                     Matrix::MakeTranslation({100.0, 100.0, 0.0}));
+}
+
+TEST_P(AiksTest, CanRenderColoredRect) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Blue();
+  canvas.DrawPath(PathBuilder{}
+                      .AddRect(Rect::MakeXYWH(100.0, 100.0, 100.0, 100.0))
+                      .TakePath(),
+                  paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderColorFilterWithInvertColors) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.color_filter =
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
+  paint.invert_colors = true;
+
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.color_filter =
+      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Yellow());
+  paint.invert_colors = true;
+
+  canvas.DrawPaint(paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.stroke_width = 20.0;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddLine({200, 100}, {800, 100}).TakePath(),
+                  paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderCurvedStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.stroke_width = 25.0;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  paint.stroke_width = 100.0;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath(), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -2773,33 +2861,6 @@ TEST_P(AiksTest, SiblingSaveLayerBoundsAreRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderClippedLayers) {
-  Canvas canvas;
-
-  canvas.DrawPaint({.color = Color::White()});
-
-  // Draw a green circle on the screen.
-  {
-    // Increase the clip depth for the savelayer to contend with.
-    canvas.ClipPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath());
-
-    canvas.SaveLayer({}, Rect::MakeXYWH(50, 50, 100, 100));
-
-    // Fill the layer with white.
-    canvas.DrawRect(Rect::MakeSize(Size{400, 400}), {.color = Color::White()});
-    // Fill the layer with green, but do so with a color blend that can't be
-    // collapsed into the parent pass.
-    // TODO(jonahwilliams): this blend mode was changed from color burn to
-    // hardlight to work around https://github.com/flutter/flutter/issues/136554
-    // .
-    canvas.DrawRect(
-        Rect::MakeSize(Size{400, 400}),
-        {.color = Color::Green(), .blend_mode = BlendMode::kHardLight});
-  }
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -3059,30 +3120,6 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
-}
-
-TEST_P(AiksTest, ClipRectElidesNoOpClips) {
-  Canvas canvas(Rect::MakeXYWH(0, 0, 100, 100));
-  canvas.ClipRect(Rect::MakeXYWH(0, 0, 100, 100));
-  canvas.ClipRect(Rect::MakeXYWH(-100, -100, 300, 300));
-  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
-  canvas.DrawPaint({.color = Color::CornflowerBlue().WithAlpha(0.75),
-                    .blend_mode = BlendMode::kSourceOver});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  auto expected = Color::Red().Blend(Color::CornflowerBlue().WithAlpha(0.75),
-                                     BlendMode::kSourceOver);
-  ASSERT_EQ(picture.pass->GetClearColor(), expected);
-
-  std::shared_ptr<ContextSpy> spy = ContextSpy::Make();
-  std::shared_ptr<Context> real_context = GetContext();
-  std::shared_ptr<ContextMock> mock_context = spy->MakeContext(real_context);
-  AiksContext renderer(mock_context, nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
-
-  ASSERT_EQ(spy->render_passes_.size(), 1llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
-  ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
 TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
@@ -3769,40 +3806,6 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
                                 .sigma = Radius(20),
                             },
                     });
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/126701 .
-TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
-  auto runtime_stage =
-      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
-  ASSERT_TRUE(runtime_stage->IsDirty());
-
-  struct FragUniforms {
-    Vector2 iResolution;
-    Scalar iTime;
-  } frag_uniforms = {.iResolution = Vector2(400, 400), .iTime = 100.0};
-  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
-  uniform_data->resize(sizeof(FragUniforms));
-  memcpy(uniform_data->data(), &frag_uniforms, sizeof(FragUniforms));
-
-  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
-
-  Paint paint;
-  paint.color_source = ColorSource::MakeRuntimeEffect(
-      runtime_stage, uniform_data, texture_inputs);
-
-  Canvas canvas;
-  canvas.Save();
-  canvas.ClipRRect(Rect::MakeXYWH(0, 0, 400, 400), {10.0, 10.0},
-                   Entity::ClipOperation::kIntersect);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
   canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
