@@ -3,5 +3,5 @@
 # found in the LICENSE file.
 
 group("libpng") {
-  deps = [ "//third_party/libpng:libpng" ]
+  public_deps = [ "//third_party/libpng:libpng" ]
 }
