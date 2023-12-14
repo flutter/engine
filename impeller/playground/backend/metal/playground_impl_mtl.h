@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_BACKEND_METAL_PLAYGROUND_IMPL_MTL_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_BACKEND_METAL_PLAYGROUND_IMPL_MTL_H_
 
 #include <memory>
 
@@ -13,11 +14,17 @@
 
 namespace impeller {
 
+// Forward declared to avoid objc in a C++ header.
+class ContextMTL;
+
 class PlaygroundImplMTL final : public PlaygroundImpl {
  public:
   explicit PlaygroundImplMTL(PlaygroundSwitches switches);
 
   ~PlaygroundImplMTL();
+
+  fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities) override;
 
  private:
   struct Data;
@@ -28,7 +35,7 @@ class PlaygroundImplMTL final : public PlaygroundImpl {
 
   // To ensure that ObjC stuff doesn't leak into C++ TUs.
   std::unique_ptr<Data> data_;
-  std::shared_ptr<Context> context_;
+  std::shared_ptr<ContextMTL> context_;
   std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 
@@ -48,3 +55,5 @@ class PlaygroundImplMTL final : public PlaygroundImpl {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_BACKEND_METAL_PLAYGROUND_IMPL_MTL_H_

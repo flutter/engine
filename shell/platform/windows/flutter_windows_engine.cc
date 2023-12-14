@@ -168,6 +168,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
     windows_proc_table_ = std::make_shared<WindowsProcTable>();
   }
 
+  gl_ = GlProcTable::Create();
+
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -204,9 +206,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       },
       static_cast<void*>(this));
 
-  FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
   texture_registrar_ =
-      std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
+      std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_);
 
   // Check for impeller support.
   auto& switches = project_->GetSwitches();
@@ -685,7 +686,7 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
-bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
+bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) const {
   struct Captures {
     fml::closure callback;
   };

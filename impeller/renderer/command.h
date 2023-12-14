@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMMAND_H_
+#define FLUTTER_IMPELLER_RENDERER_COMMAND_H_
 
 #include <cstdint>
 #include <map>
@@ -10,8 +11,6 @@
 #include <optional>
 #include <string>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/resource_binder.h"
@@ -21,8 +20,6 @@
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -75,8 +72,8 @@ struct BufferAndUniformSlot {
 };
 
 struct Bindings {
-  std::map<size_t, TextureAndSampler> sampled_images;
-  std::map<size_t, BufferAndUniformSlot> buffers;
+  std::vector<TextureAndSampler> sampled_images;
+  std::vector<BufferAndUniformSlot> buffers;
 };
 
 //------------------------------------------------------------------------------
@@ -193,3 +190,5 @@ struct Command : public ResourceBinder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMMAND_H_

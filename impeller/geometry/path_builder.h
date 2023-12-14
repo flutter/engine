@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
+#define FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
 
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
@@ -132,6 +133,12 @@ class PathBuilder {
           top_right(radii),
           bottom_right(radii) {}
 
+    explicit RoundingRadii(Size radii)
+        : top_left(radii),
+          bottom_left(radii),
+          top_right(radii),
+          bottom_right(radii) {}
+
     bool AreAllZero() const {
       return top_left.IsZero() &&     //
              bottom_left.IsZero() &&  //
@@ -142,7 +149,7 @@ class PathBuilder {
 
   PathBuilder& AddRoundedRect(Rect rect, RoundingRadii radii);
 
-  PathBuilder& AddRoundedRect(Rect rect, Point radii);
+  PathBuilder& AddRoundedRect(Rect rect, Size radii);
 
   PathBuilder& AddRoundedRect(Rect rect, Scalar radius);
 
@@ -168,3 +175,5 @@ class PathBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_

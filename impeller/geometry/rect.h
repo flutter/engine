@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_RECT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_RECT_H_
 
 #include <array>
 #include <optional>
@@ -132,6 +133,9 @@ struct TRect {
   /// Returns true if either of the width or height are 0, negative, or NaN.
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
+  /// Returns true if width and height are equal and neither is NaN.
+  constexpr bool IsSquare() const { return size.IsSquare(); }
+
   constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
 
   /// @brief Returns the upper left corner of the rectangle as specified
@@ -184,6 +188,11 @@ struct TRect {
 
   constexpr TPoint<T> GetRightBottom() const {
     return {GetRight(), GetBottom()};
+  }
+
+  /// @brief  Get the center point as a |Point|.
+  constexpr Point GetCenter() const {
+    return Point(origin.x + size.width * 0.5f, origin.y + size.height * 0.5f);
   }
 
   constexpr std::array<T, 4> GetLTRB() const {
@@ -348,6 +357,15 @@ struct TRect {
                  size.height + amount.y * 2);
   }
 
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(TSize<T> amount) const {
+    return TRect(origin.x - amount.width,        //
+                 origin.y - amount.height,       //
+                 size.width + amount.width * 2,  //
+                 size.height + amount.height * 2);
+  }
+
   /// @brief  Returns a new rectangle that represents the projection of the
   ///         source rectangle onto this rectangle. In other words, the source
   ///         rectangle is redefined in terms of the corrdinate space of this
@@ -419,3 +437,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_RECT_H_

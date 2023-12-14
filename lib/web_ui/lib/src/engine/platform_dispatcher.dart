@@ -635,7 +635,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         const StandardMessageCodec codec = StandardMessageCodec();
         // TODO(yjbanov): Dispatch the announcement to the correct view?
         //                https://github.com/flutter/flutter/issues/137445
-        implicitView!.accessibilityAnnouncements.handleMessage(codec, data);
+        implicitView?.accessibilityAnnouncements.handleMessage(codec, data);
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
@@ -987,8 +987,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _addFontSizeObserver() {
     const String styleAttribute = 'style';
 
-    _fontSizeObserver =
-        createDomMutationObserver((JSArray mutations, DomMutationObserver _) {
+    _fontSizeObserver = createDomMutationObserver(
+        (JSArray<JSAny?> mutations, DomMutationObserver _) {
       for (final JSAny? mutation in mutations.toDart) {
         final DomMutationRecord record = mutation! as DomMutationRecord;
         if (record.type == 'attributes' &&

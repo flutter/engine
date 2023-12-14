@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_FORMATS_H_
+#define FLUTTER_IMPELLER_CORE_FORMATS_H_
 
 #include <cstdint>
 #include <functional>
@@ -90,7 +91,7 @@ constexpr const char* StorageModeToString(StorageMode mode) {
 ///             esoteric formats and use blit passes to convert to a
 ///             non-esoteric pass.
 ///
-enum class PixelFormat {
+enum class PixelFormat : uint8_t {
   kUnknown,
   kA8UNormInt,
   kR8UNormInt,
@@ -286,7 +287,7 @@ constexpr bool IsMultisampleCapable(TextureType type) {
   return false;
 }
 
-enum class SampleCount {
+enum class SampleCount : uint8_t {
   kCount1 = 1,
   kCount4 = 4,
 };
@@ -346,7 +347,7 @@ enum class IndexType {
 };
 
 /// Decides how backend draws pixels based on input vertices.
-enum class PrimitiveType {
+enum class PrimitiveType : uint8_t {
   /// Draws a triage for each separate set of three vertices.
   ///
   /// Vertices [A, B, C, D, E, F] will produce triages
@@ -525,7 +526,7 @@ struct ColorAttachmentDescriptor {
   }
 };
 
-enum class CompareFunction {
+enum class CompareFunction : uint8_t {
   /// Comparison test never passes.
   kNever,
   /// Comparison test passes always passes.
@@ -544,7 +545,7 @@ enum class CompareFunction {
   kGreaterEqual,
 };
 
-enum class StencilOperation {
+enum class StencilOperation : uint8_t {
   /// Don't modify the current stencil value.
   kKeep,
   /// Reset the stencil value to zero.
@@ -679,3 +680,5 @@ struct hash<impeller::StencilAttachmentDescriptor> {
 };
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_CORE_FORMATS_H_

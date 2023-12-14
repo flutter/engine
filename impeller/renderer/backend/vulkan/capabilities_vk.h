@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CAPABILITIES_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CAPABILITIES_VK_H_
 
 #include <cstdint>
 #include <map>
@@ -10,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
@@ -22,6 +22,8 @@ class ContextVK;
 enum class OptionalDeviceExtensionVK : uint32_t {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_pipeline_creation_feedback.html
   kEXTPipelineCreationFeedback,
+  kARMRasterizationOrderAttachmentAccess,
+  kEXTRasterizationOrderAttachmentAccess,
   kLast,
 };
 
@@ -110,6 +112,7 @@ class CapabilitiesVK final : public Capabilities,
   vk::PhysicalDeviceProperties device_properties_;
   bool supports_compute_subgroups_ = false;
   bool supports_device_transient_textures_ = false;
+  bool supports_framebuffer_fetch_ = false;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;
@@ -122,3 +125,5 @@ class CapabilitiesVK final : public Capabilities,
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CAPABILITIES_VK_H_
