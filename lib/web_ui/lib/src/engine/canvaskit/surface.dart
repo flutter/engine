@@ -5,6 +5,7 @@
 import 'dart:js_interop';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web/testing.dart';
 
 import '../browser_detection.dart';
 import '../configuration.dart';
@@ -61,6 +62,10 @@ class Surface {
   bool _contextLost = false;
   bool get debugContextLost => _contextLost;
 
+  /// If `true`, we received a `webglcontextlost` event during a test. This
+  /// is a sign that there is a memory leak.
+  bool _contextLostInFlutterTest = false;
+
   /// A cached copy of the most recently created `webglcontextlost` listener.
   ///
   /// We must cache this function because each time we access the tear-off it
@@ -109,6 +114,16 @@ class Surface {
 
   Future<void> rasterizeToCanvas(
       ui.Size frameSize, RenderCanvas canvas, List<CkPicture> pictures) async {
+    if (ui.debugEmulateFlutterTesterEnvironment) {
+      // If we are running in flutter_tester, we:
+      //   1. don't need to rasterize and display the scene, and
+      //   2. are probably in a fake async zone, meaning that the code below
+      //      will cause the Surface to create a bitmap, but we will never
+      //      return from awaiting the bitmap and rendering it to the
+      //      bitmaprenderer canvas, which means that the bitmap will be created
+      //      and never disposed, causing memory leaks.
+      return;
+    }
     final CkCanvas skCanvas = _surface!.getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);
@@ -195,6 +210,10 @@ class Surface {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
 
+    if (ui.debugEmulateFlutterTesterEnvironment && _contextLostInFlutterTest) {
+      throw CanvasKitError('Lost the WebGL context while running tests.');
+    }
+
     if (!_forceNewContext) {
       // Check if the window is the same size as before, and if so, don't allocate
       // a new canvas as the previous canvas is big enough to fit everything.
@@ -260,6 +279,9 @@ class Surface {
   JSVoid _contextLostListener(DomEvent event) {
     assert(event.target == _offscreenCanvas || event.target == _canvasElement,
         'Received a context lost event for a disposed canvas');
+    if (ui.debugEmulateFlutterTesterEnvironment) {
+      _contextLostInFlutterTest = true;
+    }
     _contextLost = true;
     _forceNewContext = true;
     event.preventDefault();
