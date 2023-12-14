@@ -41,6 +41,7 @@
   for (int i = 0; i < self.hostApplication.collectionViews.cells.count; i++) {
     XCUIElement* shareSheetCell =
         [self.hostApplication.collectionViews.cells elementBoundByIndex:i];
+    NSLog(@"%@", shareSheetCell.label);
     if (![shareSheetCell.label isEqualToString:@"XCElementSnapshotPrivilegedValuePlaceholder"] &&
         ![shareSheetCell.label isEqualToString:@"Scenarios"]) {
       continue;
