@@ -18,13 +18,13 @@ interface ApplicationBuildBase {
 
 export interface JSApplicationBuild extends ApplicationBuildBase {
     compileTarget: JSCompileTarget;
-    mainJsPath: String;
+    mainJsPath: string;
 }
 
 export interface WasmApplicationBuild extends ApplicationBuildBase {
     compileTarget: WasmCompileTarget;
-    mainWasmPath: String;
-    jsSupportRuntimePath: String;
+    mainWasmPath: string;
+    jsSupportRuntimePath: string;
 }
 
 export type ApplicationBuild = JSApplicationBuild | WasmApplicationBuild;
@@ -40,3 +40,33 @@ export interface BrowserEnvironment {
     supportsWasmGC: boolean;
     crossOriginIsolated: boolean;
 }
+
+type CanvasKitVariant =
+  "auto" |
+  "full" |
+  "chromium";
+
+export interface FlutterConfiguration {
+    assetBase: string?;
+    canvasKitBaseUrl: string?;
+    canvasKitVariant: CanvasKitVariant?;
+    renderer: WebRenderer?;
+    hostElement: HtmlElement?;
+}
+
+export interface ServiceWorkerSettings {
+    serviceWorkerVersion: string;
+    serviceWorkerUrl: string?;
+    timeoutMillis: number?;
+}
+
+export interface AppRunner {
+    runApp: () => void;
+}
+
+export interface EngineInitializer {
+    initializeEngine: () => Promise<AppRunner>;
+}
+
+export type OnEntrypointLoadedCallback =
+  (initializer: EngineInitializer) => void;
