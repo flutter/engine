@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
+#define FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
 
 #include <algorithm>
 #include <cmath>
@@ -67,6 +68,8 @@ struct TSize {
   constexpr TSize operator-(const TSize& s) const {
     return {width - s.width, height - s.height};
   }
+
+  constexpr TSize operator-() const { return {-width, -height}; }
 
   constexpr TSize Min(const TSize& o) const {
     return {
@@ -148,3 +151,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_SIZE_H_

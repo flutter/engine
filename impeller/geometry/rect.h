@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_RECT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_RECT_H_
 
 #include <array>
 #include <optional>
@@ -356,6 +357,15 @@ struct TRect {
                  size.height + amount.y * 2);
   }
 
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(TSize<T> amount) const {
+    return TRect(origin.x - amount.width,        //
+                 origin.y - amount.height,       //
+                 size.width + amount.width * 2,  //
+                 size.height + amount.height * 2);
+  }
+
   /// @brief  Returns a new rectangle that represents the projection of the
   ///         source rectangle onto this rectangle. In other words, the source
   ///         rectangle is redefined in terms of the corrdinate space of this
@@ -427,3 +437,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_RECT_H_
