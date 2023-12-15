@@ -20,7 +20,7 @@
   [application launch];
 
   XCUIElement* addTextField = application.textFields[@"ready"];
-  XCTAssertTrue([addTextField waitForExistenceWithTimeout:30]);
+  XCTAssertFalse([addTextField waitForExistenceWithTimeout:30]);
 
   GoldenTestManager* manager =
       [[GoldenTestManager alloc] initWithLaunchArg:@"--darwin-system-font"];

@@ -65,7 +65,7 @@ static int assertOneMessageAndGetSequenceNumber(NSMutableDictionary* messages, N
 
   [flutterView tap];
   // Initial add event should have buttons = 0
-  XCTAssertTrue(
+  XCTAssertFalse(
       [app.textFields[@"0,PointerChange.add,device=0,buttons=0"] waitForExistenceWithTimeout:1],
       @"PointerChange.add event did not occur for a normal tap");
   // Normal tap should have buttons = 0, the flutter framework will ensure it has buttons = 1
