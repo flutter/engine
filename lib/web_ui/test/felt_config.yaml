@@ -42,11 +42,6 @@ test-sets:
   - name: ui
     directory: ui
 
-  # This just has a single test that makes sure the skwasm stub renderer is
-  # included when compiling to JS
-  - name: skwasm_stub
-    directory: skwasm_stub
-
 test-bundles:
   - name: dart2js-html-engine
     test-set: engine
@@ -67,10 +62,6 @@ test-bundles:
   - name: dart2js-canvaskit-ui
     test-set: ui
     compile-config: dart2js-canvaskit
-
-  - name: dart2js-skwasm-skwasm_stub
-    test-set: skwasm_stub
-    compile-config: dart2js-skwasm
 
   - name: dart2wasm-html-engine
     test-set: engine
@@ -143,10 +134,6 @@ test-suites:
     test-bundle: dart2js-canvaskit-ui
     run-config: chrome
     artifact-deps: [ canvaskit_chromium ]
-
-  - name: chrome-dart2js-skwasm-skwasm_stub
-    test-bundle: dart2js-skwasm-skwasm_stub
-    run-config: chrome
 
   - name: chrome-full-dart2js-canvaskit-canvaskit
     test-bundle: dart2js-canvaskit-canvaskit
