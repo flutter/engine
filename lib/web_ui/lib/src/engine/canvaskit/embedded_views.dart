@@ -142,14 +142,14 @@ class HtmlViewEmbedder {
     return recorderToUseForRendering?.recordingCanvas;
   }
 
-  void _compositeWithParams(int viewId, EmbeddedViewParams params) {
-    // Ensure platform view with `viewId` is injected into the `rasterizer.view`
+  void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
+    // Ensure platform view with `platformViewId` is injected into the `rasterizer.view`
     // before rendering its shadow DOM `slot`.
-    rasterizer.view.platformViewMessageHandler.injectPlatformView(viewId);
+    rasterizer.view.dom.injectPlatformView(platformViewId);
 
     // If we haven't seen this viewId yet, cache it for clips/transforms.
-    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(viewId, () {
-      return ViewClipChain(view: createPlatformViewSlot(viewId));
+    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(platformViewId, () {
+      return ViewClipChain(view: createPlatformViewSlot(platformViewId));
     });
 
     final DomElement slot = clipChain.slot;
@@ -179,7 +179,7 @@ class HtmlViewEmbedder {
     }
 
     // Apply mutators to the slot
-    _applyMutators(params, slot, viewId);
+    _applyMutators(params, slot, platformViewId);
   }
 
   int _countClips(MutatorsStack mutators) {

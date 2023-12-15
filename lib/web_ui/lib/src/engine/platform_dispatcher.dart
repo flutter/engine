@@ -614,18 +614,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 _handleWebTestEnd2EndMessage(jsonCodec, data)));
         return;
 
-      case 'flutter/platform_views':
+      case PlatformViewMessageHandler.channelName:
+        // `arguments` can be a Map<String, Object> for `create`,
+        // but an `int` for `dispose`, hence why `dynamic` everywhere.
         final MethodCall(:String method, :dynamic arguments) =
             standardCodec.decodeMethodCall(data);
-        final int? flutterViewId = tryViewId(arguments);
-        if (flutterViewId == null) {
-          implicitView!.platformViewMessageHandler
-              .handleLegacyPlatformViewCall(method, arguments, callback!);
-          return;
-        }
-        arguments as Map<dynamic, dynamic>;
-        viewManager[flutterViewId]!
-            .platformViewMessageHandler
+        PlatformViewMessageHandler.instance
             .handlePlatformViewCall(method, arguments, callback!);
         return;
 

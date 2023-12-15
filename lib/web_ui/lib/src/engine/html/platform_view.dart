@@ -10,9 +10,9 @@ import 'surface.dart';
 
 /// A surface containing a platform view, which is an HTML element.
 class PersistedPlatformView extends PersistedLeafSurface {
-  PersistedPlatformView(this.viewId, this.dx, this.dy, this.width, this.height);
+  PersistedPlatformView(this.platformViewId, this.dx, this.dy, this.width, this.height);
 
-  final int viewId;
+  final int platformViewId;
   final double dx;
   final double dy;
   final double width;
@@ -23,9 +23,9 @@ class PersistedPlatformView extends PersistedLeafSurface {
     // Ensure platform view with `viewId` is injected into the `implicitView`
     // before rendering its shadow DOM `slot`.
     final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.platformViewMessageHandler.injectPlatformView(viewId);
+    implicitView.dom.injectPlatformView(platformViewId);
 
-    return createPlatformViewSlot(viewId);
+    return createPlatformViewSlot(platformViewId);
   }
 
   @override
@@ -43,21 +43,21 @@ class PersistedPlatformView extends PersistedLeafSurface {
   bool canUpdateAsMatch(PersistedSurface oldSurface) {
     if (super.canUpdateAsMatch(oldSurface)) {
       // super checks the runtimeType of the surface, so we can just cast...
-      return viewId == ((oldSurface as PersistedPlatformView).viewId);
+      return platformViewId == ((oldSurface as PersistedPlatformView).platformViewId);
     }
     return false;
   }
 
   @override
   double matchForUpdate(PersistedPlatformView existingSurface) {
-    return existingSurface.viewId == viewId ? 0.0 : 1.0;
+    return existingSurface.platformViewId == platformViewId ? 0.0 : 1.0;
   }
 
   @override
   void update(PersistedPlatformView oldSurface) {
     assert(
-      viewId == oldSurface.viewId,
-      'PersistedPlatformView with different viewId should never be updated. Check the canUpdateAsMatch method.',
+      platformViewId == oldSurface.platformViewId,
+      'PersistedPlatformView with different platformViewId should never be updated. Check the canUpdateAsMatch method.',
     );
     super.update(oldSurface);
     // Only update if the view has been resized
