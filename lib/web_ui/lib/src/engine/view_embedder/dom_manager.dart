@@ -221,7 +221,7 @@ class DomManager {
     // For now, we don't need anything fancier. If needed, this can be converted
     // to a PlatformViewStrategy class for each web-renderer backend?
     final DomElement pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
-    // If pv is a descendant of _platformViewsContainer -> noop
+    // If pv is already a descendant of platformViewsHost -> noop
     if (pv.parent == platformViewsHost) {
       return;
     }
