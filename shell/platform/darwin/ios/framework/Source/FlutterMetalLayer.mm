@@ -287,10 +287,10 @@ extern CFTimeInterval display_link_target;
                                                             height:_drawableSize.height
                                                          mipmapped:NO];
 
-      FML_DCHECK(surface.bytesPerElement > 0);
-      FML_DCHECK(_drawableSize.width > 0);
+      FML_CHECK(surface.bytesPerElement > 0);
+      FML_CHECK(_drawableSize.width > 0);
       // >= because of alignment
-      FML_DCHECK(surface.bytesPerRow >= _drawableSize.width * surface.bytesPerElement);
+      FML_CHECK(surface.bytesPerRow >= _drawableSize.width * surface.bytesPerElement);
 
       if (_framebufferOnly) {
         textureDescriptor.usage = MTLTextureUsageRenderTarget;
