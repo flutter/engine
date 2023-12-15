@@ -22,7 +22,7 @@ FLUTTER_ASSERT_ARC
   [application launch];
 
   XCUIElement* addTextField = application.textFields[@"ready"];
-  XCTAssertFalse([addTextField waitForExistenceWithTimeout:30]);
+  XCTAssertTrue([addTextField waitForExistenceWithTimeout:30]);
 
   GoldenTestManager* manager = [[GoldenTestManager alloc] initWithLaunchArg:@"--bogus-font-text"];
   [manager checkGoldenForTest:self rmesThreshold:kDefaultRmseThreshold];
