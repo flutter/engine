@@ -267,6 +267,9 @@ extern CFTimeInterval display_link_target;
   };
 
   IOSurfaceRef res = IOSurfaceCreate((CFDictionaryRef)options);
+  FML_CHECK(res != nil) << "Failed to create IOSurface with options "
+                        << options.debugDescription.UTF8String;
+
   if (self.colorspace != nil) {
     CFStringRef name = CGColorSpaceGetName(self.colorspace);
     IOSurfaceSetValue(res, CFSTR("IOSurfaceColorSpace"), name);
