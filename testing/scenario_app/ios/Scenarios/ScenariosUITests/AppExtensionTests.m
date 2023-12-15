@@ -33,17 +33,11 @@
   [button tap];
   BOOL launchedExtensionInFlutter = NO;
 
-  XCUIScreenshot* screenshot = [[XCUIScreen mainScreen] screenshot];
-  XCTAttachment* attachment = [XCTAttachment attachmentWithScreenshot:screenshot];
-  attachment.lifetime = XCTAttachmentLifetimeKeepAlways;
-  [self addAttachment:attachment];
-
-  NSPredicate* count = [NSPredicate predicateWithFormat:@"count >= 1"];
-  XCTestExpectation* collectionPopulated =
-      [self expectationForPredicate:count
-                evaluatedWithObject:self.hostApplication.collectionViews.cells
-                            handler:nil];
-  [self waitForExpectations:@[ collectionPopulated ] timeout:10.0];
+  XCUIElement* firstCell = self.hostApplication.collectionViews.cells.firstMatch;
+  if (![firstCell waitForExistenceWithTimeout:10]) {
+    NSLog(@"%@", self.hostApplication.debugDescription);
+    XCTFail(@"Failed due to not able to find any cells with %@ seconds", @(10));
+  }
 
   // Custom share extension button (like the one in this test) does not have a
   // unique identity on older versions of iOS. They are all identified as
@@ -74,9 +68,7 @@
       [cancel tap];
     }
   }
-  XCUIScreenshot* afterScreenshot = [[XCUIScreen mainScreen] screenshot];
-  XCTAttachment* afterAttachment = [XCTAttachment attachmentWithScreenshot:afterScreenshot];
-  [self addAttachment:afterAttachment];
+
   // App extension successfully launched flutter view.
   XCTAssertTrue(launchedExtensionInFlutter);
 }
