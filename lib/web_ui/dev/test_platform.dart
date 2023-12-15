@@ -155,8 +155,9 @@ class BrowserPlatform extends PlatformPlugin {
   /// The URL for this server.
   Uri get url => server.url.resolve('/');
 
-  bool get isWasm => suite.testBundle.compileConfig.compiler == Compiler.dart2wasm;
-  bool get needsCrossOriginIsolated => isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
+  bool get needsCrossOriginIsolated => suite.testBundle.compileConfigs.any(
+    (CompileConfiguration config) => config.renderer == Renderer.skwasm
+  );
 
   /// A [OneOffHandler] for servicing WebSocket connections for
   /// [BrowserManager]s.
@@ -551,12 +552,15 @@ class BrowserPlatform extends PlatformPlugin {
       final String test = '${p.withoutExtension(path)}.dart';
       final String scriptBase = htmlEscape.convert(p.basename(test));
 
+      final String buildConfigsString = suite.testBundle.compileConfigs.map(
+        (CompileConfiguration config) => _makeBuildConfigString(scriptBase, config)
+      ).join(',\n');
       final String bootstrapScript = '''
 <script src="/flutter_js/flutter.js"></script>
 <script>
   _flutter.buildConfig = {
     builds: [
-      ${_makeBuildConfigString(scriptBase, suite.testBundle.compileConfig)}
+      $buildConfigsString
     ]
   };
   _flutter.loader.load({
@@ -651,13 +655,16 @@ class BrowserPlatform extends PlatformPlugin {
           'debug': isDebug.toString()
         });
 
+    final bool hasSourceMaps = suite.testBundle.compileConfigs.any(
+      (CompileConfiguration config) => config.compiler == Compiler.dart2js
+    );
     final Future<BrowserManager?> future = BrowserManager.start(
       browserEnvironment: browserEnvironment,
       url: hostUrl,
       future: completer.future,
       packageConfig: packageConfig,
       debug: isDebug,
-      sourceMapDirectory: isWasm ? null : getBundleBuildDirectory(suite.testBundle),
+      sourceMapDirectory: hasSourceMaps ? getBundleBuildDirectory(suite.testBundle) : null,
     );
 
     // Store null values for browsers that error out so we know not to load them

@@ -45,47 +45,47 @@ test-sets:
 test-bundles:
   - name: dart2js-html-engine
     test-set: engine
-    compile-config: dart2js-html
+    compile-configs: dart2js-html
 
   - name: dart2js-html-html
     test-set: html
-    compile-config: dart2js-html
+    compile-configs: dart2js-html
 
   - name: dart2js-html-ui
     test-set: ui
-    compile-config: dart2js-html
+    compile-configs: dart2js-html
 
   - name: dart2js-canvaskit-canvaskit
     test-set: canvaskit
-    compile-config: dart2js-canvaskit
+    compile-configs: dart2js-canvaskit
 
   - name: dart2js-canvaskit-ui
     test-set: ui
-    compile-config: dart2js-canvaskit
+    compile-configs: dart2js-canvaskit
 
   - name: dart2wasm-html-engine
     test-set: engine
-    compile-config: dart2wasm-html
+    compile-configs: dart2wasm-html
 
   - name: dart2wasm-html-html
     test-set: html
-    compile-config: dart2wasm-html
+    compile-configs: dart2wasm-html
 
   - name: dart2wasm-html-ui
     test-set: ui
-    compile-config: dart2wasm-html
+    compile-configs: dart2wasm-html
 
   - name: dart2wasm-canvaskit-canvaskit
     test-set: canvaskit
-    compile-config: dart2wasm-canvaskit
+    compile-configs: dart2wasm-canvaskit
 
   - name: dart2wasm-canvaskit-ui
     test-set: ui
-    compile-config: dart2wasm-canvaskit
+    compile-configs: dart2wasm-canvaskit
 
   - name: dart2wasm-skwasm-ui
     test-set: ui
-    compile-config: dart2wasm-skwasm
+    compile-configs: dart2wasm-skwasm
 
 run-configs:
   - name: chrome
