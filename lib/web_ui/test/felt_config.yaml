@@ -42,6 +42,10 @@ test-sets:
   - name: ui
     directory: ui
 
+  # Tests for fallback functionality between build variants
+  - name: fallbacks
+    directory: fallbacks
+
 test-bundles:
   - name: dart2js-html-engine
     test-set: engine
@@ -86,6 +90,12 @@ test-bundles:
   - name: dart2wasm-skwasm-ui
     test-set: ui
     compile-configs: dart2wasm-skwasm
+
+  - name: fallbacks
+    test-set: fallbacks
+    compile-configs:
+      - dart2wasm-skwasm
+      - dart2js-canvaskit
 
 run-configs:
   - name: chrome
@@ -256,4 +266,19 @@ test-suites:
   - name: chrome-full-dart2wasm-canvaskit-ui
     test-bundle: dart2wasm-canvaskit-ui
     run-config: chrome-full
+    artifact-deps: [ canvaskit ]
+
+  - name: chrome-fallbacks
+    test-bundle: fallbacks
+    run-config: chrome
+    artifact-deps: [ canvaskit, skwasm ]
+
+  - name: firefox-fallbacks
+    test-bundle: fallbacks
+    run-config: firefox
+    artifact-deps: [ canvaskit ]
+
+  - name: safari-fallbacks
+    test-bundle: fallbacks
+    run-config: safari
     artifact-deps: [ canvaskit ]
