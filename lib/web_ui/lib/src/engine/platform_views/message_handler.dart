@@ -138,7 +138,7 @@ class PlatformViewMessageHandler {
   ) {
     switch (method) {
       case 'create':
-        arguments as Map<String, Object?>;
+        arguments as Map<dynamic, dynamic>;
         _createPlatformView(
           callback,
           platformViewId: arguments.readInt('id'),
