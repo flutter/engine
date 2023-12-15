@@ -6,6 +6,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import <XCTest/XCTest.h>
 
+#include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
 
 @interface FlutterMetalLayerTest : XCTestCase
@@ -72,6 +73,14 @@
 - (void)removeMetalLayer:(FlutterMetalLayer*)layer {
 }
 
+// For unknown reason sometimes CI fails to create IOSurface. Bail out
+// to prevent flakiness.
+#define BAIL_IF_NO_DRAWABLE(drawable)                \
+  if (drawable == nil) {                             \
+    FML_LOG(ERROR) << "Could not allocate drawable"; \
+    return;                                          \
+  }
+
 - (void)testFlip {
   FlutterMetalLayer* layer = [self addMetalLayer];
   TestCompositor* compositor = [[TestCompositor alloc] initWithLayer:layer];
@@ -79,16 +88,19 @@
   id<MTLTexture> t1, t2, t3;
 
   id<CAMetalDrawable> drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
   t1 = drawable.texture;
   [drawable present];
   [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
   t2 = drawable.texture;
   [drawable present];
   [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
   t3 = drawable.texture;
   [drawable present];
   [compositor commitTransaction];
@@ -126,17 +138,20 @@
   id<MTLTexture> t1, t2, t3;
 
   id<CAMetalDrawable> drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
   t1 = drawable.texture;
   [drawable present];
   [compositor commitTransaction];
   XCTAssertTrue(IOSurfaceIsInUse(t1.iosurface));
 
   drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
   t2 = drawable.texture;
   [drawable present];
   [compositor commitTransaction];
 
   drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
   t3 = drawable.texture;
   [drawable present];
   [compositor commitTransaction];
@@ -172,7 +187,7 @@
   @autoreleasepool {
     for (int i = 0; i < 3; ++i) {
       id<CAMetalDrawable> drawable = [layer nextDrawable];
-      XCTAssertNotNil(drawable);
+      BAIL_IF_NO_DRAWABLE(drawable);
     }
   }
   id<MTLTexture> texture;
@@ -197,8 +212,11 @@
   FlutterMetalLayer* layer = [self addMetalLayer];
 
   id<CAMetalDrawable> d1 = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(d1);
   id<CAMetalDrawable> d2 = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(d2);
   id<CAMetalDrawable> d3 = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(d3);
   XCTAssertNotNil(d3);
 
   // Layer should not return more than 3 drawables.

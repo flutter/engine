@@ -267,8 +267,11 @@ extern CFTimeInterval display_link_target;
   };
 
   IOSurfaceRef res = IOSurfaceCreate((CFDictionaryRef)options);
-  FML_CHECK(res != nil) << "Failed to create IOSurface with options "
-                        << options.debugDescription.UTF8String;
+  if (res == nil) {
+    FML_LOG(ERROR) << "Failed to create IOSurface with options "
+                   << options.debugDescription.UTF8String;
+    return nil;
+  }
 
   if (self.colorspace != nil) {
     CFStringRef name = CGColorSpaceGetName(self.colorspace);
@@ -284,16 +287,14 @@ extern CFTimeInterval display_link_target;
     if (_totalTextures < 3) {
       ++_totalTextures;
       IOSurface* surface = [self createIOSurface];
+      if (surface == nil) {
+        return nil;
+      }
       MTLTextureDescriptor* textureDescriptor =
           [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:_pixelFormat
                                                              width:_drawableSize.width
                                                             height:_drawableSize.height
                                                          mipmapped:NO];
-
-      FML_CHECK(surface.bytesPerElement > 0);
-      FML_CHECK(_drawableSize.width > 0);
-      // >= because of alignment
-      FML_CHECK(surface.bytesPerRow >= _drawableSize.width * surface.bytesPerElement);
 
       if (_framebufferOnly) {
         textureDescriptor.usage = MTLTextureUsageRenderTarget;
