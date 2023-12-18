@@ -60,10 +60,11 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
             connectSurfaceToRenderer();
 
             // Workaround for https://github.com/flutter/flutter/issues/139630
-            // We should not need this if Samsung fixes b/316626640
+            // We should not need this if Samsung fixes b/316626640, which is
+            // visible only to Googlers and Samsung partners.
             // This requires painful manually testing to reproduce.
             // Run the default counter application on a Samsung phone running
-            // on Anroid 14. Background the application. Wait a few minutes.
+            // on Android 14. Background the application. Wait a few minutes.
             // Resume the application (bring it to the foreground again).
             // Sometimes, on resuming, the surface frame has been marked as
             // not visible and renders a black screen. Rotating the device will
