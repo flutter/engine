@@ -668,7 +668,7 @@
 ../../../flutter/third_party/pkg/flutter_packages
 ../../../flutter/third_party/pkg/gcloud
 ../../../flutter/third_party/pkg/googleapis
-../../../flutter/third_party/pkg/pc-dart
+../../../flutter/third_party/pkg/pointycastle
 ../../../flutter/third_party/pkg/platform
 ../../../flutter/third_party/pkg/process
 ../../../flutter/third_party/pkg/process_runner

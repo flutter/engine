@@ -58,7 +58,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/ninja', // build system
   r'flutter/third_party/ocmock', // only used for tests
   r'flutter/third_party/pkg/archive', // contains nothing that ends up in the binary executable
-  r'flutter/third_party/pkg/pc-dart',
+  r'flutter/third_party/pkg/pointycastle',
   r'flutter/third_party/pkg/equatable',
   r'flutter/third_party/pkg/flutter_packages',
   r'flutter/third_party/pkg/gcloud',
