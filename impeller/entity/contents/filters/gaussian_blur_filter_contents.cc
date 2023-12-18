@@ -271,11 +271,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                          CalculateBlurRadius(scaled_sigma.y)};
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
 
+  Matrix source_to_local = entity.GetTransform() * effect_transform;
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
   // transparent gutter.
   std::optional<Rect> expanded_coverage_hint = ExpandCoverageHint(
-      coverage_hint, entity.GetTransform() * effect_transform, padding);
+      coverage_hint, source_to_local, padding);
   // TODO(gaaclarke): How much of the gutter is thrown away can be used to
   //                  adjust the padding that is added in the downsample pass.
   //                  For example, if we get all the padding we requested from
