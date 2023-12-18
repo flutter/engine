@@ -728,7 +728,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
   if (current_clip_coverage.has_value()) {
     // Entity transforms are relative to the current pass position, so we need
     // to check clip coverage in the same space.
-    current_clip_coverage->Shift(-global_pass_position);
+    current_clip_coverage = current_clip_coverage->Shift(-global_pass_position);
   }
 
   if (!element_entity.ShouldRender(current_clip_coverage)) {
@@ -737,7 +737,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
 
   auto clip_coverage = element_entity.GetClipCoverage(current_clip_coverage);
   if (clip_coverage.coverage.has_value()) {
-    clip_coverage.coverage->Shift(global_pass_position);
+    clip_coverage.coverage =
+        clip_coverage.coverage->Shift(global_pass_position);
   }
 
   // The coverage hint tells the rendered Contents which portion of the
@@ -785,7 +786,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
               : std::nullopt;
       if (restore_coverage.has_value()) {
         // Make the coverage rectangle relative to the current pass.
-        restore_coverage->Shift(-global_pass_position);
+        restore_coverage = restore_coverage->Shift(-global_pass_position);
       }
       clip_coverage_stack.resize(restoration_index + 1);
 
@@ -805,7 +806,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
   {
     auto element_entity_coverage = element_entity.GetCoverage();
     if (element_entity_coverage.has_value()) {
-      element_entity_coverage->Shift(global_pass_position);
+      element_entity_coverage =
+          element_entity_coverage->Shift(global_pass_position);
       element_entity.GetCapture().AddRect("Coverage", *element_entity_coverage,
                                           {.readonly = true});
     }
