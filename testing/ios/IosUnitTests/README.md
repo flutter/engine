@@ -16,8 +16,7 @@ And if you're on Apple Silicon:
 ```sh
 ./flutter/testing/run_tests.py \
   --type=objc \
-  --variant=host_debug_unopt_arm64 \
-  --ios=ios_debug_sim_unopt_arm64
+  --ios-variant ios_debug_sim_unopt_arm64
 ```
 
 The `.xcresult` is automatically removed after testing ends. To change this:
