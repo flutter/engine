@@ -66,7 +66,7 @@ Contents::StencilCoverage ClipContents::GetStencilCoverage(
 
 bool ClipContents::ShouldRender(
     const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
+    const std::optional<Rect> stencil_coverage) const {
   return true;
 }
 
@@ -163,7 +163,7 @@ Contents::StencilCoverage ClipRestoreContents::GetStencilCoverage(
 
 bool ClipRestoreContents::ShouldRender(
     const Entity& entity,
-    const std::optional<Rect>& stencil_coverage) const {
+    const std::optional<Rect> stencil_coverage) const {
   return true;
 }
 
