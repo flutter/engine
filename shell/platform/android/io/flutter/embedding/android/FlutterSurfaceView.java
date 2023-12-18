@@ -7,7 +7,9 @@ package io.flutter.embedding.android;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Region;
+import android.os.Build;
 import android.util.AttributeSet;
+import android.view.Choreographer;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import androidx.annotation.NonNull;
@@ -56,6 +58,35 @@ public class FlutterSurfaceView extends SurfaceView implements RenderSurface {
 
           if (shouldNotify()) {
             connectSurfaceToRenderer();
+
+            // Workaround for https://github.com/flutter/flutter/issues/139630
+            // We should not need this if Samsung fixes b/316626640
+            // This requires painful manually testing to reproduce.
+            // Run the default counter application on a Samsung phone running
+            // on Anroid 14. Background the application. Wait a few minutes.
+            // Resume the application (bring it to the foreground again).
+            // Sometimes, on resuming, the surface frame has been marked as
+            // not visible and renders a black screen. Rotating the device will
+            // resolve this, or requesting a layout on the surface view.
+            // However, requesting layout on the very next frame is not enough.
+            // Requesting it on the next three frames has locally made the bug
+            // fail to reproduce.
+            if (Build.VERSION.SDK_INT >= 34 && Build.MANUFACTURER.equals("samsung")) {
+              Choreographer.getInstance()
+                  .postFrameCallback(
+                      new Choreographer.FrameCallback() {
+                        int count = 3;
+
+                        @Override
+                        public void doFrame(long frameTimeNanos) {
+                          requestLayout();
+                          count--;
+                          if (count > 0) {
+                            Choreographer.getInstance().postFrameCallback(this);
+                          }
+                        }
+                      });
+            }
           }
         }
 
