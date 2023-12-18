@@ -122,7 +122,7 @@ public class KeyboardManager
           new KeyEmbedderResponder(viewDelegate.getBinaryMessenger()),
           new KeyChannelResponder(new KeyEventChannel(viewDelegate.getBinaryMessenger())),
         };
-    final KeyboardChannel keyboardChannel = new KeyboardChannel(viewDelegate.getBinaryMessenger());
+    this.keyboardChannel = new KeyboardChannel(viewDelegate.getBinaryMessenger());
     keyboardChannel.setKeyboardMethodHandler(this);
   }
 
@@ -215,6 +215,7 @@ public class KeyboardManager
   protected final Responder[] responders;
   private final HashSet<KeyEvent> redispatchedEvents = new HashSet<>();
   private final ViewDelegate viewDelegate;
+  private final KeyboardChannel keyboardChannel;
 
   @Override
   public boolean handleEvent(@NonNull KeyEvent keyEvent) {
@@ -236,6 +237,7 @@ public class KeyboardManager
   }
 
   public void destroy() {
+    keyboardChannel.setKeyboardMethodHandler(null);
     final int remainingRedispatchCount = redispatchedEvents.size();
     if (remainingRedispatchCount > 0) {
       Log.w(
