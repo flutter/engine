@@ -309,8 +309,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       ISize(round(downsampled_size.x), round(downsampled_size.y));
   Vector2 effective_scalar = subpass_size / padded_size;
 
+  Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
   Quad uvs =
-      CalculateUVs(inputs[0], entity, input_snapshot->texture->GetSize());
+      CalculateUVs(inputs[0], entity, source_rect);
 
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
@@ -360,14 +361,12 @@ Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
 Quad GaussianBlurFilterContents::CalculateUVs(
     const std::shared_ptr<FilterInput>& filter_input,
     const Entity& entity,
-    const ISize& texture_size) {
+    const Rect& source_rect) {
   Matrix input_transform = filter_input->GetLocalTransform(entity);
-  Rect snapshot_rect =
-      Rect::MakeXYWH(0, 0, texture_size.width, texture_size.height);
-  Quad coverage_quad = snapshot_rect.GetTransformedPoints(input_transform);
+  Quad coverage_quad = source_rect.GetTransformedPoints(input_transform);
 
   Matrix uv_transform = Matrix::MakeScale(
-      {1.0f / texture_size.width, 1.0f / texture_size.height, 1.0f});
+      {1.0f / source_rect.size.width, 1.0f / source_rect.size.height, 1.0f});
   return uv_transform.Transform(coverage_quad);
 }
 
