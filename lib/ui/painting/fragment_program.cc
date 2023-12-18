@@ -38,15 +38,26 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     return std::string("Asset '") + asset_name + std::string("' not found");
   }
 
-  auto runtime_stage = impeller::RuntimeStage(std::move(data));
-  if (!runtime_stage.IsValid()) {
+  auto runtime_stages =
+      impeller::RuntimeStage::DecodeRuntimeStages(std::move(data));
+
+  if (runtime_stages.empty()) {
     return std::string("Asset '") + asset_name +
-           std::string("' does not contain valid shader data.");
+           std::string("' does not contain any shader data.");
+  }
+
+  auto backend = UIDartState::Current()->GetRuntimeStageBackend();
+  auto runtime_stage = std::move(runtime_stages[backend]);
+  if (!runtime_stage) {
+    return std::string("Asset '") + asset_name +
+           std::string(
+               "' does not contain appropriate runtime stage data for current "
+               "backend.");
   }
 
   int sampled_image_count = 0;
   size_t other_uniforms_bytes = 0;
-  for (const auto& uniform_description : runtime_stage.GetUniforms()) {
+  for (const auto& uniform_description : runtime_stage->GetUniforms()) {
     if (uniform_description.type ==
         impeller::RuntimeUniformType::kSampledImage) {
       sampled_image_count++;
@@ -56,10 +67,9 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   }
 
   if (UIDartState::Current()->IsImpellerEnabled()) {
-    runtime_effect_ = DlRuntimeEffect::MakeImpeller(
-        std::make_unique<impeller::RuntimeStage>(std::move(runtime_stage)));
+    runtime_effect_ = DlRuntimeEffect::MakeImpeller(std::move(runtime_stage));
   } else {
-    const auto& code_mapping = runtime_stage.GetSkSLMapping();
+    const auto& code_mapping = runtime_stage->GetCodeMapping();
     auto code_size = code_mapping->GetSize();
     const char* sksl =
         reinterpret_cast<const char*>(code_mapping->GetMapping());
