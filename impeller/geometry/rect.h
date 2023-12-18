@@ -22,11 +22,6 @@ template <class T>
 struct TRect {
   using Type = T;
 
-  /// DEPRECATED: Use |GetOrigin|
-  TPoint<Type> origin;
-  /// DEPRECATED: Use |GetSize|
-  TSize<Type> size;
-
   constexpr TRect() : origin({0, 0}), size({0, 0}) {}
 
   constexpr static TRect MakeLTRB(Type left,
@@ -83,8 +78,9 @@ struct TRect {
 
   template <class U>
   constexpr explicit TRect(const TRect<U>& other)
-      : origin(static_cast<TPoint<Type>>(other.origin)),
-        size(static_cast<TSize<Type>>(other.size)) {}
+      : origin(static_cast<T>(other.GetX()), static_cast<T>(other.GetY())),
+        size(static_cast<T>(other.GetWidth()),
+             static_cast<T>(other.GetHeight())) {}
 
   constexpr TRect operator+(const TRect& r) const {
     return TRect({origin.x + r.origin.x, origin.y + r.origin.y},
@@ -110,6 +106,11 @@ struct TRect {
   constexpr TRect Scale(Type scale) const {
     return TRect({origin.x * scale, origin.y * scale},
                  {size.width * scale, size.height * scale});
+  }
+
+  constexpr TRect Scale(Type scale_x, Type scale_y) const {
+    return TRect({origin.x * scale_x, origin.y * scale_y},
+                 {size.width * scale_x, size.height * scale_y});
   }
 
   constexpr TRect Scale(TPoint<T> scale) const {
@@ -152,6 +153,22 @@ struct TRect {
   ///        height.
   constexpr TSize<Type> GetSize() const { return size; }
 
+  /// @brief Returns the X coordinate of the upper left corner, equivalent
+  ///        to |GetOrigin().x|
+  constexpr Type GetX() const { return origin.x; }
+
+  /// @brief Returns the Y coordinate of the upper left corner, equivalent
+  ///        to |GetOrigin().y|
+  constexpr Type GetY() const { return origin.y; }
+
+  /// @brief Returns the width of the rectangle, equivalent to
+  ///        |GetSize().width|
+  constexpr Type GetWidth() const { return size.width; }
+
+  /// @brief Returns the height of the rectangle, equivalent to
+  ///        |GetSize().height|
+  constexpr Type GetHeight() const { return size.height; }
+
   constexpr auto GetLeft() const {
     if (IsMaximum()) {
       return -std::numeric_limits<Type>::infinity();
@@ -190,13 +207,42 @@ struct TRect {
     return {GetRight(), GetBottom()};
   }
 
+  /// @brief  Get the area of the rectangle, equivalent to |GetSize().Area()|
+  constexpr T Area() const { return size.Area(); }
+
   /// @brief  Get the center point as a |Point|.
   constexpr Point GetCenter() const {
     return Point(origin.x + size.width * 0.5f, origin.y + size.height * 0.5f);
   }
 
+  /// @brief  Get the point related to this rectangle associated with
+  ///         the given fractional values |tx| and |ty| with a fractional
+  ///         value of 0 referring to the left or upper edge of the
+  ///         rectangle and a fractional value of 1 referring to the right
+  ///         or bottom edge of the rectangle.
+  ///
+  ///         GetRelative(0, 0) returns the upper left corner
+  ///         GetRelative(0.5, 0.5) returns the center of the rectangle
+  ///         GetRelative(1, 1) returns the lower right corner
+  constexpr Point GetRelative(Scalar tx, Scalar ty) const {
+    return {origin.x + size.width * tx, origin.y + size.height * ty};
+  }
+
+  /// @brief  Get the pointe related to this rectangle associated with
+  ///         the fractional values in the point |t|, equivalent to
+  ///         |GetRelative(t.x, t.y)|
+  constexpr Point GetRelative(const Point& t) const {
+    return GetRelative(t.x, t.y);
+  }
+
   constexpr std::array<T, 4> GetLTRB() const {
     return {GetLeft(), GetTop(), GetRight(), GetBottom()};
+  }
+
+  /// @brief  Get the x, y coordinates of the origin and the width and
+  ///         height of the rectangle in an array.
+  constexpr std::array<T, 4> GetXYWH() const {
+    return {origin.x, origin.y, size.width, size.height};
   }
 
   /// @brief  Get a version of this rectangle that has a non-negative size.
@@ -350,6 +396,15 @@ struct TRect {
 
   /// @brief  Returns a rectangle with expanded edges in all directions.
   ///         Negative expansion results in shrinking.
+  constexpr TRect<T> Expand(T horizontal_amount, T vertical_amount) const {
+    return TRect(origin.x - horizontal_amount,        //
+                 origin.y - vertical_amount,          //
+                 size.width + horizontal_amount * 2,  //
+                 size.height + vertical_amount * 2);
+  }
+
+  /// @brief  Returns a rectangle with expanded edges in all directions.
+  ///         Negative expansion results in shrinking.
   constexpr TRect<T> Expand(TPoint<T> amount) const {
     return TRect(origin.x - amount.x,        //
                  origin.y - amount.y,        //
@@ -420,6 +475,17 @@ struct TRect {
 
   constexpr TRect(TPoint<Type> origin, TSize<Type> size)
       : origin(origin), size(size) {}
+
+  // NOLINTBEGIN
+  // These fields should be named origin_ and size_, but will be renamed to
+  // left_/top_/right_/bottom_ during the next phase of the reworking of the
+  // TRect class and we will deal with the renaming of all the usages here
+  // and in path_builder.cc at that time
+  TPoint<Type> origin;
+  TSize<Type> size;
+  // NOLINTEND
+
+  friend class PathBuilder;
 };
 
 using Rect = TRect<Scalar>;
@@ -432,7 +498,7 @@ namespace std {
 template <class T>
 inline std::ostream& operator<<(std::ostream& out,
                                 const impeller::TRect<T>& r) {
-  out << "(" << r.origin << ", " << r.size << ")";
+  out << "(" << r.GetOrigin() << ", " << r.GetSize() << ")";
   return out;
 }
 
