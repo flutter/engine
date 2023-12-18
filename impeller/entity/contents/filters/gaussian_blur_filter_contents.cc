@@ -300,16 +300,15 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
-  Vector2 padded_size =
-      Vector2(input_snapshot->texture->GetSize()) + 2.0 * padding;
-  Vector2 downsampled_size = padded_size * downsample_scalar;
+  Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
+  Rect source_rect_padded = source_rect.Expand(padding);
+  Vector2 downsampled_size = source_rect_padded.size * downsample_scalar;
   // TODO(gaaclarke): I don't think we are correctly handling this fractional
   //                  amount we are throwing away.
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
-  Vector2 effective_scalar = subpass_size / padded_size;
+  Vector2 effective_scalar = Vector2(subpass_size) / source_rect_padded.size;
 
-  Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
   Quad uvs =
       CalculateUVs(inputs[0], entity, source_rect);
 
