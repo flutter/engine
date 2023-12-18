@@ -610,7 +610,7 @@ abstract class PrimaryRoleManager {
   /// input focus. For example, a plain text node cannot take input focus, but
   /// it can take accessibility focus.
   ///
-  /// Returns `true` if the this role manager took the focus. Returns `false` if
+  /// Returns `true` if the role manager took the focus. Returns `false` if
   /// this role manager did not take the focus. The return value can be used to
   /// decide whether to stop searching for a node that should take focus.
   bool focusAsRouteDefault();

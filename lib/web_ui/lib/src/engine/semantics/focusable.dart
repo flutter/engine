@@ -44,7 +44,7 @@ class Focusable extends RoleManager {
   /// programmatically, simulating the screen reader choosing a default element
   /// to focus on.
   ///
-  /// Returns `true` if the this role manager took the focus. Returns `false` if
+  /// Returns `true` if the role manager took the focus. Returns `false` if
   /// this role manager did not take the focus. The return value can be used to
   /// decide whether to stop searching for a node that should take focus.
   bool focusAsRouteDefault() {
