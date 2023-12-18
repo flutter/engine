@@ -44,7 +44,8 @@ class GaussianBlurFilterContents final : public FilterContents {
   /// @param texture_size The rect to convert in source coordinates.
   static Quad CalculateUVs(const std::shared_ptr<FilterInput>& filter_input,
                            const Entity& entity,
-                           const Rect& source_rect);
+                           const Rect& source_rect,
+                           const ISize& texture_size);
 
   /// Calculate the scale factor for the downsample pass given a sigma value.
   ///

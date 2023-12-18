@@ -97,14 +97,13 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
         frame_info.texture_sampler_y_coord_scale = 1.0;
         frame_info.alpha = 1.0;
 
-        BindVertices<TextureFillVertexShader>(
-            cmd, host_buffer,
-            {
-                {Point(0, 0), uvs[0]},
-                {Point(1, 0), uvs[1]},
-                {Point(0, 1), uvs[2]},
-                {Point(1, 1), uvs[3]},
-            });
+        BindVertices<TextureFillVertexShader>(cmd, host_buffer,
+                                              {
+                                                  {Point(0, 0), uvs[0]},
+                                                  {Point(1, 0), uvs[1]},
+                                                  {Point(0, 1), uvs[2]},
+                                                  {Point(1, 1), uvs[3]},
+                                              });
 
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
         SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
@@ -255,12 +254,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                          CalculateBlurRadius(scaled_sigma.y)};
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
 
-  Matrix source_to_local = entity.GetTransform() * effect_transform;
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
   // transparent gutter.
   std::optional<Rect> expanded_coverage_hint = ExpandCoverageHint(
-      coverage_hint, source_to_local, padding);
+      coverage_hint, entity.GetTransform() * effect_transform, padding);
   // TODO(gaaclarke): How much of the gutter is thrown away can be used to
   //                  adjust the padding that is added in the downsample pass.
   //                  For example, if we get all the padding we requested from
@@ -281,20 +279,31 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Scalar desired_scalar =
       std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
+  desired_scalar = 1.0;
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
   Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
-  Vector2 downsampled_size = source_rect.size * downsample_scalar;
+  Rect source_rect_padded = source_rect;
+  Matrix padding_snapshot_adjustment;
+  if (coverage_hint.has_value() && input_snapshot->GetCoverage().has_value() &&
+      coverage_hint->Contains(input_snapshot->GetCoverage().value())) {
+    // This means the expanded_coverage_hint was requested in order to get more
+    // content to sample from, but none was available.  So, we'll add our own
+    // padding.
+    source_rect_padded = source_rect_padded.Expand(padding);
+    padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
+  }
+  Vector2 downsampled_size = source_rect_padded.size * downsample_scalar;
   // TODO(gaaclarke): I don't think we are correctly handling this fractional
   //                  amount we are throwing away.
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
-  Vector2 effective_scalar = Vector2(subpass_size) / source_rect.size;
+  Vector2 effective_scalar = Vector2(subpass_size) / source_rect_padded.size;
 
-  Quad uvs =
-      CalculateUVs(inputs[0], entity, source_rect);
+  Quad uvs = CalculateUVs(inputs[0], entity, source_rect_padded,
+                          input_snapshot->texture->GetSize());
 
   std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
@@ -327,12 +336,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   return Entity::FromSnapshot(
-      Snapshot{
-          .texture = pass3_out_texture,
-          .transform = input_snapshot->transform *
-                       Matrix::MakeScale(1 / effective_scalar),
-          .sampler_descriptor = sampler_desc,
-          .opacity = input_snapshot->opacity},
+      Snapshot{.texture = pass3_out_texture,
+               .transform = input_snapshot->transform *
+                            padding_snapshot_adjustment *
+                            Matrix::MakeScale(1 / effective_scalar),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
@@ -343,12 +352,13 @@ Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
 Quad GaussianBlurFilterContents::CalculateUVs(
     const std::shared_ptr<FilterInput>& filter_input,
     const Entity& entity,
-    const Rect& source_rect) {
+    const Rect& source_rect,
+    const ISize& texture_size) {
   Matrix input_transform = filter_input->GetLocalTransform(entity);
   Quad coverage_quad = source_rect.GetTransformedPoints(input_transform);
 
   Matrix uv_transform = Matrix::MakeScale(
-      {1.0f / source_rect.size.width, 1.0f / source_rect.size.height, 1.0f});
+      {1.0f / texture_size.width, 1.0f / texture_size.height, 1.0f});
   return uv_transform.Transform(coverage_quad);
 }
 
