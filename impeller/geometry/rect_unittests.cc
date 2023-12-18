@@ -431,53 +431,6 @@ TEST(RectTest, IsSquare) {
   EXPECT_FALSE(IRect::MakeXYWH(10, 30, 19, 20).IsSquare());
 }
 
-TEST(RectTest, RectGetRelative) {
-  Rect rect = Rect::MakeXYWH(10, 30, 40, 50);
-  EXPECT_EQ(rect.GetRelative(0, 0), Point(10, 30));
-  EXPECT_EQ(rect.GetRelative(0, 1), Point(10, 80));
-  EXPECT_EQ(rect.GetRelative(1, 0), Point(50, 30));
-  EXPECT_EQ(rect.GetRelative(1, 1), Point(50, 80));
-  EXPECT_EQ(rect.GetRelative(0.5, 0.5), Point(30, 55));
-
-  EXPECT_EQ(rect.GetRelative(Point(0, 0)), Point(10, 30));
-  EXPECT_EQ(rect.GetRelative(Point(0, 1)), Point(10, 80));
-  EXPECT_EQ(rect.GetRelative(Point(1, 0)), Point(50, 30));
-  EXPECT_EQ(rect.GetRelative(Point(1, 1)), Point(50, 80));
-  EXPECT_EQ(rect.GetRelative(Point(0.5, 0.5)), Point(30, 55));
-
-  EXPECT_EQ(rect.GetRelative(0, 0), rect.GetLeftTop());
-  EXPECT_EQ(rect.GetRelative(0, 1), rect.GetLeftBottom());
-  EXPECT_EQ(rect.GetRelative(1, 0), rect.GetRightTop());
-  EXPECT_EQ(rect.GetRelative(1, 1), rect.GetRightBottom());
-  EXPECT_EQ(rect.GetRelative(0.5, 0.5), rect.GetCenter());
-}
-
-TEST(RectTest, IRectGetRelative) {
-  IRect rect = IRect::MakeXYWH(10, 30, 40, 50);
-  EXPECT_EQ(rect.GetRelative(0, 0), Point(10, 30));
-  EXPECT_EQ(rect.GetRelative(0, 1), Point(10, 80));
-  EXPECT_EQ(rect.GetRelative(1, 0), Point(50, 30));
-  EXPECT_EQ(rect.GetRelative(1, 1), Point(50, 80));
-  EXPECT_EQ(rect.GetRelative(0.5, 0.5), Point(30, 55));
-
-  EXPECT_EQ(rect.GetRelative(Point(0, 0)), Point(10, 30));
-  EXPECT_EQ(rect.GetRelative(Point(0, 1)), Point(10, 80));
-  EXPECT_EQ(rect.GetRelative(Point(1, 0)), Point(50, 30));
-  EXPECT_EQ(rect.GetRelative(Point(1, 1)), Point(50, 80));
-  EXPECT_EQ(rect.GetRelative(Point(0.5, 0.5)), Point(30, 55));
-
-  EXPECT_EQ(rect.GetRelative(0, 0), Point(rect.GetLeftTop()));
-  EXPECT_EQ(rect.GetRelative(0, 1), Point(rect.GetLeftBottom()));
-  EXPECT_EQ(rect.GetRelative(1, 0), Point(rect.GetRightTop()));
-  EXPECT_EQ(rect.GetRelative(1, 1), Point(rect.GetRightBottom()));
-  EXPECT_EQ(rect.GetRelative(0.5, 0.5), Point(rect.GetCenter()));
-
-  // Even IRect will return a Scalar Point value so it can reference
-  // sub-pixel precision:
-  EXPECT_EQ(IRect::MakeXYWH(10, 15, 5, 5).GetRelative(0.5, 0.5),
-            Point(12.5, 17.5));
-}
-
 TEST(RectTest, GetCenter) {
   EXPECT_EQ(Rect::MakeXYWH(10, 30, 20, 20).GetCenter(), Point(20, 40));
   EXPECT_EQ(Rect::MakeXYWH(10, 30, 20, 19).GetCenter(), Point(20, 39.5));

@@ -215,26 +215,6 @@ struct TRect {
     return Point(origin.x + size.width * 0.5f, origin.y + size.height * 0.5f);
   }
 
-  /// @brief  Get the point related to this rectangle associated with
-  ///         the given fractional values |tx| and |ty| with a fractional
-  ///         value of 0 referring to the left or upper edge of the
-  ///         rectangle and a fractional value of 1 referring to the right
-  ///         or bottom edge of the rectangle.
-  ///
-  ///         GetRelative(0, 0) returns the upper left corner
-  ///         GetRelative(0.5, 0.5) returns the center of the rectangle
-  ///         GetRelative(1, 1) returns the lower right corner
-  constexpr Point GetRelative(Scalar tx, Scalar ty) const {
-    return {origin.x + size.width * tx, origin.y + size.height * ty};
-  }
-
-  /// @brief  Get the pointe related to this rectangle associated with
-  ///         the fractional values in the point |t|, equivalent to
-  ///         |GetRelative(t.x, t.y)|
-  constexpr Point GetRelative(const Point& t) const {
-    return GetRelative(t.x, t.y);
-  }
-
   constexpr std::array<T, 4> GetLTRB() const {
     return {GetLeft(), GetTop(), GetRight(), GetBottom()};
   }

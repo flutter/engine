@@ -214,8 +214,6 @@ bool AtlasContents::Render(const ContentContext& renderer,
   }
 
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
-  constexpr Scalar width[6] = {0, 1, 0, 1, 0, 1};
-  constexpr Scalar height[6] = {0, 0, 1, 0, 1, 1};
 
   if (blend_mode_ <= BlendMode::kModulate) {
     // Simple Porter-Duff blends can be accomplished without a subpass.
@@ -230,14 +228,14 @@ bool AtlasContents::Render(const ContentContext& renderer,
     for (size_t i = 0; i < texture_coords_.size(); i++) {
       auto sample_rect = texture_coords_[i];
       auto matrix = transforms_[i];
+      auto points = sample_rect.GetPoints();
       auto transformed_points =
           Rect::MakeSize(sample_rect.GetSize()).GetTransformedPoints(matrix);
       auto color = colors_[i].Premultiply();
       for (size_t j = 0; j < 6; j++) {
         VS::PerVertexData data;
         data.vertices = transformed_points[indices[j]];
-        data.texture_coords =
-            sample_rect.GetRelative(width[j], height[j]) / texture_size;
+        data.texture_coords = points[indices[j]] / texture_size;
         data.color = color;
         vtx_builder.AppendVertex(data);
       }
@@ -386,19 +384,17 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   vertex_builder.Reserve(texture_coords.size() * 6);
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
-  constexpr Scalar width[6] = {0, 1, 0, 1, 0, 1};
-  constexpr Scalar height[6] = {0, 0, 1, 0, 1, 1};
   for (size_t i = 0; i < texture_coords.size(); i++) {
     auto sample_rect = texture_coords[i];
     auto matrix = transforms[i];
+    auto points = sample_rect.GetPoints();
     auto transformed_points =
         Rect::MakeSize(sample_rect.GetSize()).GetTransformedPoints(matrix);
 
     for (size_t j = 0; j < 6; j++) {
       VS::PerVertexData data;
       data.position = transformed_points[indices[j]];
-      data.texture_coords =
-          sample_rect.GetRelative(width[j], height[j]) / texture_size;
+      data.texture_coords = points[indices[j]] / texture_size;
       vertex_builder.AppendVertex(data);
     }
   }
