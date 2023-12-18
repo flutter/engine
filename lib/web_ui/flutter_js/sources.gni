@@ -3,6 +3,7 @@
 # found in the LICENSE file.
 
 flutter_js_source_list = [
+  "src/base_uri.js",
   "src/browser_environment.js",
   "src/canvaskit_loader.js",
   "src/entrypoint_loader.js",
