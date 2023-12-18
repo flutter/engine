@@ -126,21 +126,3 @@ Picture _drawBackground() {
         ..color = const Color(0xFFE0FFE0)) as SurfacePaint);
   return recorder.endRecording();
 }
-
-HtmlImage createTestImage({int width = 200, int height = 150}) {
-  final DomCanvasElement canvas =
-      createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
-  ctx.fillStyle = '#E04040';
-  ctx.fillRect(0, 0, width / 3, height);
-  ctx.fill();
-  ctx.fillStyle = '#40E080';
-  ctx.fillRect(width / 3, 0, width / 3, height);
-  ctx.fill();
-  ctx.fillStyle = '#2040E0';
-  ctx.fillRect(2 * width / 3, 0, width / 3, height);
-  ctx.fill();
-  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
-  imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
-  return HtmlImage(imageElement, width, height);
-}
