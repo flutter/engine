@@ -205,6 +205,40 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
   }
 }
 
+TEST_P(GaussianBlurFilterContentsTest, RenderCoverageNoBlurHalo) {
+  TextureDescriptor desc = {
+      .storage_mode = StorageMode::kDevicePrivate,
+      .format = PixelFormat::kB8G8R8A8UNormInt,
+      .size = ISize(100, 100),
+  };
+  std::shared_ptr<Texture> texture = MakeTexture(desc);
+  Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
+  auto contents = std::make_unique<GaussianBlurFilterContents>(
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
+  contents->SetInputs({FilterInput::Make(texture)});
+  std::shared_ptr<ContentContext> renderer = GetContentContext();
+
+  Entity entity;
+  std::optional<Entity> result = contents->GetEntity(
+      *renderer, entity, /*coverage_hint=*/Rect::MakeLTRB(25, 25, 75, 75));
+  EXPECT_TRUE(result.has_value());
+  if (result.has_value()) {
+    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+    std::optional<Rect> result_coverage = result.value().GetCoverage();
+    std::optional<Rect> contents_coverage = contents->GetCoverage(entity);
+    EXPECT_TRUE(result_coverage.has_value());
+    EXPECT_TRUE(contents_coverage.has_value());
+    if (result_coverage.has_value() && contents_coverage.has_value()) {
+      EXPECT_TRUE(RectNear(contents_coverage.value(),
+                           Rect::MakeLTRB(-1, -1, 101, 101)));
+      // The result coverage is inside the coverage as a result of an
+      // optimization that avoids adding a halo gutter.
+      EXPECT_TRUE(
+          RectNear(result_coverage.value(), Rect::MakeLTRB(0, 0, 100, 100)));
+    }
+  }
+}
+
 TEST_P(GaussianBlurFilterContentsTest,
        RenderCoverageMatchesGetCoverageTranslate) {
   TextureDescriptor desc = {
