@@ -111,6 +111,9 @@ class EngineSceneView {
 
         case PlatformViewSlice():
           for (final PlatformView view in slice.views) {
+            // Ensure the platform view contents are injected in the DOM.
+            EnginePlatformDispatcher.instance.implicitView?.dom.injectPlatformView(view.viewId);
+
             // Attempt to reuse a container for the existing view
             PlatformViewContainer? container;
             for (int j = 0; j < reusableContainers.length; j++) {
