@@ -776,7 +776,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     final bool shouldRender =
         _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
     if (shouldRender) {
-      await renderer.renderScene(scene, view ?? implicitView!);
+      await renderer.renderScene(scene, viewToRender);
     }
   }
 
