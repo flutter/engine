@@ -235,27 +235,6 @@ class _RepositoryReadmeIjgFile extends _RepositorySingleLicenseFile {
   }
 }
 
-class _RepositoryMpl2File extends _RepositorySingleLicenseFile {
-  _RepositoryMpl2File(_RepositoryDirectory parent, fs.TextFile io)
-    : super(parent, io, _parseLicense(io));
-
-  static License _parseLicense(fs.TextFile io) {
-    final String body = io.readString();
-    if (!body.startsWith('Mozilla Public License Version 2.0')) {
-      throw 'unexpected contents in file supposedly containing MPL';
-    }
-    return License.mozilla(body, origin: io.fullName);
-  }
-
-  @override
-  License? licenseWithName(String name) {
-    if (this.name == 'http://mozilla.org/MPL/2.0/') {
-      return license;
-    }
-    return null;
-  }
-}
-
 class _RepositoryDartLicenseFile extends _RepositorySingleLicenseFile {
   _RepositoryDartLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
@@ -1607,7 +1586,7 @@ class _RepositoryFallbackRootCertificatesDirectory extends _RepositoryDirectory 
       throw 'Failed to run "git rev-parse HEAD"; got non-zero exit code ${result.exitCode}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}';
     }
 
-    final rev = result.stdout as String;
+    final String rev = result.stdout as String;
     return 'https://dart.googlesource.com/sdk/+/$rev/third_party/fallback_root_certificates/';
   }
 }
