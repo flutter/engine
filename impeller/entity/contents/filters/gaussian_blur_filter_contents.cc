@@ -65,7 +65,7 @@ void SetTileMode(SamplerDescriptor* descriptor,
 
 /// Makes a subpass that will render the scaled down input and add the
 /// transparent gutter required for the blur halo.
-std::shared_ptr<Texture> MakeDownsampleSubpass(
+fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
@@ -112,20 +112,21 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
       };
   fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return render_target.ok() ? render_target.value().GetRenderTargetTexture()
-                            : nullptr;
+  return render_target;
 }
 
-std::shared_ptr<Texture> MakeBlurSubpass(
+fml::StatusOr<RenderTarget> MakeBlurSubpass(
     const ContentContext& renderer,
-    std::shared_ptr<Texture> input_texture,
+    const RenderTarget& input_pass,
     const SamplerDescriptor& sampler_descriptor,
     Entity::TileMode tile_mode,
     const GaussianBlurFragmentShader::BlurInfo& blur_info,
-    std::optional<std::shared_ptr<Texture>> destination_texture) {
+    std::optional<RenderTarget> destination_target) {
   if (blur_info.blur_sigma < kEhCloseEnough) {
-    return input_texture;
+    return input_pass;
   }
+
+  std::shared_ptr<Texture> input_texture = input_pass.GetRenderTargetTexture();
 
   // TODO(gaaclarke): This blurs the whole image, but because we know the clip
   //                  region we could focus on just blurring that.
@@ -180,8 +181,7 @@ std::shared_ptr<Texture> MakeBlurSubpass(
   // } else {
   fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return render_target.ok() ? render_target.value().GetRenderTargetTexture()
-                            : nullptr;
+  return render_target;
   // }
 }
 
@@ -302,14 +302,19 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Quad uvs = CalculateUVs(inputs[0], entity, source_rect_padded,
                           input_snapshot->texture->GetSize());
 
-  std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
+  fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
       uvs, subpass_size, tile_mode_);
 
-  Vector2 pass1_pixel_size = 1.0 / Vector2(pass1_out_texture->GetSize());
+  if (!pass1_out.ok()) {
+    return std::nullopt;
+  }
 
-  std::shared_ptr<Texture> pass2_out_texture =
-      MakeBlurSubpass(renderer, /*input_texture=*/pass1_out_texture,
+  Vector2 pass1_pixel_size =
+      1.0 / Vector2(pass1_out.value().GetRenderTargetTexture()->GetSize());
+
+  fml::StatusOr<RenderTarget> pass2_out =
+      MakeBlurSubpass(renderer, /*input_pass=*/pass1_out.value(),
                       input_snapshot->sampler_descriptor, tile_mode_,
                       GaussianBlurFragmentShader::BlurInfo{
                           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
@@ -319,9 +324,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                       },
                       /*destination_texture=*/std::nullopt);
 
+  if (!pass2_out.ok()) {
+    return std::nullopt;
+  }
+
   // TODO(gaaclarke): Make this pass reuse the texture from pass1.
-  std::shared_ptr<Texture> pass3_out_texture =
-      MakeBlurSubpass(renderer, /*input_texture=*/pass2_out_texture,
+  fml::StatusOr<RenderTarget> pass3_out =
+      MakeBlurSubpass(renderer, /*input_pass=*/pass2_out.value(),
                       input_snapshot->sampler_descriptor, tile_mode_,
                       GaussianBlurFragmentShader::BlurInfo{
                           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
@@ -329,13 +338,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                           .blur_radius = blur_radius.x * effective_scalar.x,
                           .step_size = 1.0,
                       },
-                      /*destination_texture=*/pass1_out_texture);
+                      /*destination_texture=*/pass1_out.value());
+
+  if (!pass3_out.ok()) {
+    return std::nullopt;
+  }
 
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   return Entity::FromSnapshot(
-      Snapshot{.texture = pass3_out_texture,
+      Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
                .transform = input_snapshot->transform *
                             padding_snapshot_adjustment *
                             Matrix::MakeScale(1 / effective_scalar),
