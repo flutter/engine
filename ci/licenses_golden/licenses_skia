@@ -1,4 +1,4 @@
-Signature: fd08bd6b6ac06a8f37f4a09732f59662
+Signature: 23c6d2d2154c1e23f8daa99979bcf63e
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8798,6 +8798,7 @@ ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/BruteFo
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/EventQueue.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/EventQueueInterface.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Int96.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Myers.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Point.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Segment.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/include/SweepLine.h + ../../../flutter/third_party/skia/LICENSE
@@ -8805,6 +8806,7 @@ ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/BentleyOttm
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/BruteForceCrossings.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/EventQueue.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Int96.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Myers.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Point.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Segment.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/bentleyottmann/src/SweepLine.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -8923,7 +8925,7 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/vk/GrVkDirectContext.cp
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/AtlasProvider.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/AtlasProvider.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/BackendSemaphore.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/DescriptorTypes.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/DescriptorData.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/ImageFactories.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/Image_Base_Graphite.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/Image_Base_Graphite.h + ../../../flutter/third_party/skia/LICENSE
@@ -9085,6 +9087,7 @@ FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/BruteForc
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/EventQueue.h
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/EventQueueInterface.h
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Int96.h
+FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Myers.h
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Point.h
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/Segment.h
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/include/SweepLine.h
@@ -9092,6 +9095,7 @@ FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/BentleyOttman
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/BruteForceCrossings.cpp
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/EventQueue.cpp
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Int96.cpp
+FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Myers.cpp
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Point.cpp
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/Segment.cpp
 FILE: ../../../flutter/third_party/skia/modules/bentleyottmann/src/SweepLine.cpp
@@ -9210,7 +9214,7 @@ FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/vk/GrVkDirectContext.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/AtlasProvider.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/AtlasProvider.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/BackendSemaphore.cpp
-FILE: ../../../flutter/third_party/skia/src/gpu/graphite/DescriptorTypes.h
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/DescriptorData.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/ImageFactories.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/Image_Base_Graphite.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/Image_Base_Graphite.h
