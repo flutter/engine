@@ -200,7 +200,7 @@ bool Switches::AreValid(std::ostream& explain) const {
   const bool shader_bundle_mode = !shader_bundle.empty();
 
   bool valid = true;
-  if (target_platform == TargetPlatform::kUnknown) {
+  if (target_platform == TargetPlatform::kUnknown && !shader_bundle_mode) {
     explain << "The target platform (only one) was not specified." << std::endl;
     valid = false;
   }

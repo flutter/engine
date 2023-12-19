@@ -10,7 +10,6 @@ flatbuffers("shader_bundle_flatbuffers") {
   public_configs = [ "//flutter/impeller/runtime_stage:runtime_stage_config" ]
   public_deps = [
     "//flutter/impeller/runtime_stage:runtime_stage_flatbuffers",
-    "//flutter/impeller/runtime_stage:runtime_stage_types_flatbuffers",
     "//flutter/third_party/flatbuffers",
   ]
 }

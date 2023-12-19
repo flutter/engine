@@ -8,7 +8,11 @@ namespace impeller.fb;
 
 table Shader {
   name: string;
-  shader: RuntimeStage;
+  metal_ios: RuntimeStage;
+  metal_desktop: RuntimeStage;
+  opengl_es: RuntimeStage;
+  opengl_desktop: RuntimeStage;
+  vulkan: RuntimeStage;
 }
 
 table ShaderBundle {

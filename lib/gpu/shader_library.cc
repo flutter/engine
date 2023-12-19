@@ -19,6 +19,7 @@
 #include "impeller/renderer/vertex_descriptor.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 #include "impeller/shader_bundle/shader_bundle_flatbuffers.h"
+#include "lib/gpu/context.h"
 
 namespace flutter {
 namespace gpu {
@@ -28,6 +29,7 @@ IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, ShaderLibrary);
 fml::RefPtr<ShaderLibrary> ShaderLibrary::override_shader_library_;
 
 fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromAsset(
+    impeller::Context::BackendType backend_type,
     const std::string& name,
     std::string& out_error) {
   if (override_shader_library_) {
@@ -44,7 +46,7 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromAsset(
     return nullptr;
   }
 
-  return MakeFromFlatbuffer(std::move(data));
+  return MakeFromFlatbuffer(backend_type, std::move(data));
 }
 
 fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromShaders(ShaderMap shaders) {
@@ -107,7 +109,29 @@ static size_t SizeOfInputType(impeller::fb::InputDataType input_type) {
   }
 }
 
+static const impeller::fb::RuntimeStage* GetShaderBackend(
+    impeller::Context::BackendType backend_type,
+    const impeller::fb::Shader* shader) {
+  switch (backend_type) {
+    case impeller::Context::BackendType::kMetal:
+#ifdef FML_OS_IOS
+      return shader->metal_ios();
+#else
+      return shader->metal_desktop();
+#endif
+    case impeller::Context::BackendType::kOpenGLES:
+#ifdef FML_OS_ANDROID
+      return shader->opengl_es();
+#else
+      return shader->opengl_desktop();
+#endif
+    case impeller::Context::BackendType::kVulkan:
+      return shader->vulkan();
+  }
+}
+
 fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
+    impeller::Context::BackendType backend_type,
     std::shared_ptr<fml::Mapping> payload) {
   if (payload == nullptr || !payload->GetMapping()) {
     return nullptr;
@@ -123,7 +147,14 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
   ShaderLibrary::ShaderMap shader_map;
 
   for (const auto* bundled_shader : *bundle->shaders()) {
-    const impeller::fb::RuntimeStage* runtime_stage = bundled_shader->shader();
+    const impeller::fb::RuntimeStage* runtime_stage =
+        GetShaderBackend(backend_type, bundled_shader);
+    if (!runtime_stage) {
+      FML_LOG(ERROR) << "Failed to unpack shader \""
+                     << bundled_shader->name()->c_str() << "\" from bundle.";
+      continue;
+    }
+
     impeller::RuntimeStage stage(runtime_stage);
 
     std::shared_ptr<impeller::VertexDescriptor> vertex_descriptor = nullptr;
@@ -209,9 +240,16 @@ Dart_Handle InternalFlutterGpu_ShaderLibrary_InitializeWithAsset(
     return tonic::ToDart("Asset name must be a string");
   }
 
+  std::optional<std::string> out_error;
+  auto impeller_context = flutter::gpu::Context::GetDefaultContext(out_error);
+  if (out_error.has_value()) {
+    return tonic::ToDart(out_error.value());
+  }
+
   std::string error;
   auto res = flutter::gpu::ShaderLibrary::MakeFromAsset(
-      tonic::StdStringFromDart(asset_name), error);
+      impeller_context->GetBackendType(), tonic::StdStringFromDart(asset_name),
+      error);
   if (!res) {
     return tonic::ToDart(error);
   }

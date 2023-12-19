@@ -80,12 +80,12 @@ std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
   return bundle;
 }
 
-static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
+static std::unique_ptr<fb::RuntimeStageT> GenerateShaderBackendFB(
+    TargetPlatform target_platform,
     SourceOptions& options,
     const std::string& shader_name,
     const ShaderConfig& shader_config) {
-  auto result = std::make_unique<fb::ShaderT>();
-  result->name = shader_name;
+  auto result = std::make_unique<fb::RuntimeStageT>();
 
   std::shared_ptr<fml::FileMapping> source_file_mapping =
       fml::FileMapping::CreateReadOnly(shader_config.source_file_name);
@@ -96,6 +96,8 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
   }
 
   /// Override options.
+  options.target_platform = target_platform;
+  options.file_name = shader_name;  // This is just used for error messages.
   options.type = shader_config.type;
   options.source_language = shader_config.language;
   options.entry_point_name = EntryPointFunctionNameFromSourceName(
@@ -129,13 +131,36 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
     return nullptr;
   }
 
-  result->shader = stage_data->CreateFlatbuffer();
-  if (!result->shader) {
+  result = stage_data->CreateFlatbuffer();
+  if (!result) {
     std::cerr << "Failed to create flatbuffer for bundled shader \""
               << shader_name << "\"." << std::endl;
     return nullptr;
   }
 
+  return result;
+}
+
+static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
+    SourceOptions& options,
+    const std::string& shader_name,
+    const ShaderConfig& shader_config) {
+  auto result = std::make_unique<fb::ShaderT>();
+  result->name = shader_name;
+  result->metal_ios = GenerateShaderBackendFB(
+      TargetPlatform::kMetalIOS, options, shader_name, shader_config);
+  result->metal_desktop = GenerateShaderBackendFB(
+      TargetPlatform::kMetalDesktop, options, shader_name, shader_config);
+  result->opengl_es = GenerateShaderBackendFB(
+      TargetPlatform::kOpenGLES, options, shader_name, shader_config);
+  result->opengl_desktop = GenerateShaderBackendFB(
+      TargetPlatform::kOpenGLDesktop, options, shader_name, shader_config);
+  result->vulkan = GenerateShaderBackendFB(TargetPlatform::kVulkan, options,
+                                           shader_name, shader_config);
+  if (!(result->metal_ios && result->metal_desktop && result->opengl_es &&
+        result->opengl_desktop && result->vulkan)) {
+    return nullptr;
+  }
   return result;
 }
 
