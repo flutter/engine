@@ -279,7 +279,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Scalar desired_scalar =
       std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
-  desired_scalar = 1.0;
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
