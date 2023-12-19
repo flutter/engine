@@ -9,6 +9,8 @@ import 'package:litetest/litetest.dart';
 import 'package:vm_service/vm_service.dart' as vms;
 import 'package:vm_service/vm_service_io.dart';
 
+import '../impeller_enabled.dart';
+
 void main() {
   test('simple iplr shader can be re-initialized', () async {
     vms.VmService? vmService;
@@ -46,7 +48,7 @@ void main() {
       await vmService?.dispose();
       shader?.dispose();
     }
-  });
+  }, skip: impellerEnabled); // Needs https://github.com/flutter/flutter/issues/129659
 }
 
 void _use(Shader shader) {

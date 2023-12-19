@@ -15,6 +15,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 
+#include "impeller/core/runtime_types.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -25,6 +26,20 @@
 namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentProgram);
+
+static std::string RuntimeStageBackendToString(
+    impeller::RuntimeStageBackend backend) {
+  switch (backend) {
+    case impeller::RuntimeStageBackend::kSkSL:
+      return "SkSL";
+    case impeller::RuntimeStageBackend::kMetal:
+      return "Metal";
+    case impeller::RuntimeStageBackend::kOpenGLES:
+      return "OpenGLES";
+    case impeller::RuntimeStageBackend::kVulkan:
+      return "Vulkan";
+  }
+}
 
 std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   FML_TRACE_EVENT("flutter", "FragmentProgram::initFromAsset", "asset",
@@ -47,12 +62,20 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   }
 
   auto backend = UIDartState::Current()->GetRuntimeStageBackend();
-  auto runtime_stage = std::move(runtime_stages[backend]);
+  auto runtime_stage = runtime_stages[backend];
   if (!runtime_stage) {
-    return std::string("Asset '") + asset_name +
-           std::string(
-               "' does not contain appropriate runtime stage data for current "
-               "backend.");
+    std::ostringstream stream;
+    stream << "Asset '" << asset_name
+           << "' does not contain appropriate runtime stage data for current "
+              "backend ("
+           << RuntimeStageBackendToString(backend) << ")." << std::endl
+           << "Found stages: ";
+    for (const auto& kvp : runtime_stages) {
+      if (kvp.second) {
+        stream << RuntimeStageBackendToString(kvp.first) << " ";
+      }
+    }
+    return stream.str();
   }
 
   int sampled_image_count = 0;
