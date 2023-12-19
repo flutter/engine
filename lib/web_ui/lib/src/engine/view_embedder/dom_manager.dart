@@ -220,12 +220,17 @@ class DomManager {
   void injectPlatformView(int platformViewId) {
     // For now, we don't need anything fancier. If needed, this can be converted
     // to a PlatformViewStrategy class for each web-renderer backend?
-    final DomElement pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
-    // If pv is already a descendant of platformViewsHost -> noop
-    if (pv.parent == platformViewsHost) {
-      return;
+    try {
+      final DomElement pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
+      // If pv is already a descendant of platformViewsHost -> noop
+      if (pv.parent == platformViewsHost) {
+        return;
+      }
+      platformViewsHost.append(pv);
+    } catch (e) {
+      // Do not fail, many tests expect this to not crash!
+      domWindow.console.warn(e);
     }
-    platformViewsHost.append(pv);
   }
 }
 
