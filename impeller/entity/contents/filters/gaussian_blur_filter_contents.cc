@@ -282,8 +282,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
   Rect source_rect_padded = source_rect;
   Matrix padding_snapshot_adjustment;
-  if (coverage_hint.has_value() && input_snapshot_coverage.has_value() &&
-      !input_snapshot_coverage->Contains(coverage_hint.value())) {
+  if (!coverage_hint.has_value() ||
+      (input_snapshot_coverage.has_value() &&
+       !input_snapshot_coverage->Contains(coverage_hint.value()))) {
     // This means that the snapshot does not contain all the data it needs to
     // render, so we add extra padding for the blur halo to render.
     // TODO(gaaclarke): This adds a gutter for the blur halo that is uniform,
