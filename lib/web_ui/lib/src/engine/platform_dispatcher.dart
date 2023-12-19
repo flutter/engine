@@ -600,9 +600,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
-            // TODO(mdebbar): This needs a view ID from the framework.
-            //                https://github.com/flutter/flutter/issues/137289
-            implicitView?.mouseCursor
+            // TODO(mdebbar): Once the framework starts sending us a viewId, we
+            //                should use it to grab the correct view.
+            //                https://github.com/flutter/flutter/issues/140226
+            views.firstOrNull?.mouseCursor
                 .activateSystemCursor(arguments.tryString('kind'));
         }
         return;
@@ -634,7 +635,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         const StandardMessageCodec codec = StandardMessageCodec();
         // TODO(yjbanov): Dispatch the announcement to the correct view?
         //                https://github.com/flutter/flutter/issues/137445
-        implicitView!.accessibilityAnnouncements.handleMessage(codec, data);
+        implicitView?.accessibilityAnnouncements.handleMessage(codec, data);
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
@@ -806,7 +807,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     call `updateSemantics`.
   ''')
   void updateSemantics(ui.SemanticsUpdate update) {
-    EngineSemanticsOwner.instance.updateSemantics(update);
+    implicitView?.semantics.updateSemantics(update);
   }
 
   /// This is equivalent to `locales.first`, except that it will provide an
@@ -986,8 +987,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _addFontSizeObserver() {
     const String styleAttribute = 'style';
 
-    _fontSizeObserver =
-        createDomMutationObserver((JSArray mutations, DomMutationObserver _) {
+    _fontSizeObserver = createDomMutationObserver(
+        (JSArray<JSAny?> mutations, DomMutationObserver _) {
       for (final JSAny? mutation in mutations.toDart) {
         final DomMutationRecord record = mutation! as DomMutationRecord;
         if (record.type == 'attributes' &&

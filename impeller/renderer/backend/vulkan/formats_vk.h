@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_
 
 #include <cstdint>
 
@@ -11,6 +12,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -125,10 +127,6 @@ constexpr std::optional<vk::ShaderStageFlagBits> ToVKShaderStageFlagBits(
       return vk::ShaderStageFlagBits::eVertex;
     case ShaderStage::kFragment:
       return vk::ShaderStageFlagBits::eFragment;
-    case ShaderStage::kTessellationControl:
-      return vk::ShaderStageFlagBits::eTessellationControl;
-    case ShaderStage::kTessellationEvaluation:
-      return vk::ShaderStageFlagBits::eTessellationEvaluation;
     case ShaderStage::kCompute:
       return vk::ShaderStageFlagBits::eCompute;
   }
@@ -259,10 +257,6 @@ constexpr vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
       return vk::ShaderStageFlagBits::eAll;
     case ShaderStage::kFragment:
       return vk::ShaderStageFlagBits::eFragment;
-    case ShaderStage::kTessellationControl:
-      return vk::ShaderStageFlagBits::eTessellationControl;
-    case ShaderStage::kTessellationEvaluation:
-      return vk::ShaderStageFlagBits::eTessellationEvaluation;
     case ShaderStage::kCompute:
       return vk::ShaderStageFlagBits::eCompute;
     case ShaderStage::kVertex:
@@ -289,6 +283,8 @@ constexpr vk::DescriptorType ToVKDescriptorType(DescriptorType type) {
     case DescriptorType::kSampler:
       return vk::DescriptorType::eSampler;
       break;
+    case DescriptorType::kInputAttachment:
+      return vk::DescriptorType::eInputAttachment;
   }
 
   FML_UNREACHABLE();
@@ -435,7 +431,8 @@ constexpr vk::AttachmentDescription CreateAttachmentDescription(
     SampleCount sample_count,
     LoadAction load_action,
     StoreAction store_action,
-    vk::ImageLayout current_layout) {
+    vk::ImageLayout current_layout,
+    bool supports_framebuffer_fetch) {
   vk::AttachmentDescription vk_attachment;
 
   vk_attachment.format = ToVKImageFormat(format);
@@ -474,7 +471,11 @@ constexpr vk::AttachmentDescription CreateAttachmentDescription(
   switch (kind) {
     case AttachmentKind::kColor:
       vk_attachment.initialLayout = current_layout;
-      vk_attachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+      if (supports_framebuffer_fetch) {
+        vk_attachment.finalLayout = vk::ImageLayout::eGeneral;
+      } else {
+        vk_attachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+      }
       break;
     case AttachmentKind::kDepth:
     case AttachmentKind::kStencil:
@@ -665,3 +666,5 @@ constexpr vk::ImageAspectFlags ToImageAspectFlags(PixelFormat format) {
 }
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_

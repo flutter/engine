@@ -4,6 +4,7 @@
 
 #include "impeller/compiler/types.h"
 
+#include <cctype>
 #include <filesystem>
 #include <sstream>
 
@@ -35,19 +36,39 @@ SourceType SourceTypeFromFileName(const std::string& file_name) {
     return SourceType::kFragmentShader;
   }
 
-  if (StringEndWith(file_name, ".tesc")) {
-    return SourceType::kTessellationControlShader;
-  }
-
-  if (StringEndWith(file_name, ".tese")) {
-    return SourceType::kTessellationEvaluationShader;
-  }
-
   if (StringEndWith(file_name, ".comp")) {
     return SourceType::kComputeShader;
   }
 
   return SourceType::kUnknown;
+}
+
+SourceType SourceTypeFromString(std::string name) {
+  name = ToLowerCase(name);
+
+  if (name == "vertex") {
+    return SourceType::kVertexShader;
+  }
+
+  if (name == "fragment") {
+    return SourceType::kFragmentShader;
+  }
+
+  if (name == "compute") {
+    return SourceType::kComputeShader;
+  }
+
+  return SourceType::kUnknown;
+}
+
+SourceLanguage ToSourceLanguage(const std::string& source_language) {
+  if (source_language == "glsl") {
+    return SourceLanguage::kGLSL;
+  }
+  if (source_language == "hlsl") {
+    return SourceLanguage::kHLSL;
+  }
+  return SourceLanguage::kUnknown;
 }
 
 std::string TargetPlatformToString(TargetPlatform platform) {
@@ -109,12 +130,6 @@ std::string EntryPointFunctionNameFromSourceName(
     case SourceType::kFragmentShader:
       stream << "fragment";
       break;
-    case SourceType::kTessellationControlShader:
-      stream << "tess_control";
-      break;
-    case SourceType::kTessellationEvaluationShader:
-      stream << "tess_eval";
-      break;
     case SourceType::kComputeShader:
       stream << "compute";
       break;
@@ -172,10 +187,6 @@ shaderc_shader_kind ToShaderCShaderKind(SourceType type) {
       return shaderc_shader_kind::shaderc_vertex_shader;
     case SourceType::kFragmentShader:
       return shaderc_shader_kind::shaderc_fragment_shader;
-    case SourceType::kTessellationControlShader:
-      return shaderc_shader_kind::shaderc_tess_control_shader;
-    case SourceType::kTessellationEvaluationShader:
-      return shaderc_shader_kind::shaderc_tess_evaluation_shader;
     case SourceType::kComputeShader:
       return shaderc_shader_kind::shaderc_compute_shader;
     case SourceType::kUnknown:
@@ -190,10 +201,6 @@ spv::ExecutionModel ToExecutionModel(SourceType type) {
       return spv::ExecutionModel::ExecutionModelVertex;
     case SourceType::kFragmentShader:
       return spv::ExecutionModel::ExecutionModelFragment;
-    case SourceType::kTessellationControlShader:
-      return spv::ExecutionModel::ExecutionModelTessellationControl;
-    case SourceType::kTessellationEvaluationShader:
-      return spv::ExecutionModel::ExecutionModelTessellationEvaluation;
     case SourceType::kComputeShader:
       return spv::ExecutionModel::ExecutionModelGLCompute;
     case SourceType::kUnknown:
@@ -230,10 +237,6 @@ std::string SourceTypeToString(SourceType type) {
       return "vert";
     case SourceType::kFragmentShader:
       return "frag";
-    case SourceType::kTessellationControlShader:
-      return "tesc";
-    case SourceType::kTessellationEvaluationShader:
-      return "tese";
     case SourceType::kComputeShader:
       return "comp";
   }
