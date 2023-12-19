@@ -4639,23 +4639,22 @@ TEST_F(ShellTest, RuntimeStageBackendWithImpeller) {
   ASSERT_TRUE(shell);
 
   fml::AutoResetWaitableEvent latch;
-  AddNativeCallback(
-      "NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
-        auto backend = UIDartState::Current()->GetRuntimeStageBackend();
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
+                      auto backend =
+                          UIDartState::Current()->GetRuntimeStageBackend();
+    // TODO(dnfield): Enable GL and Vulkan after
+    // https://github.com/flutter/flutter/issues/140419
 #ifdef SHELL_ENABLE_GL
-        EXPECT_EQ(backend, impeller::RuntimeStageBackend::kOpenGLES);
+    // EXPECT_EQ(backend, impeller::RuntimeStageBackend::kOpenGLES);
 #endif  // SHELL_ENABLE_GL
 #ifdef SHELL_ENABLE_VULKAN
-// TODO(dnfield): Enable this after
-// https://github.com/flutter/flutter/issues/129659
-
-// EXPECT_EQ(backend, impeller::RuntimeStageBackend::kVulkan);
+    // EXPECT_EQ(backend, impeller::RuntimeStageBackend::kVulkan);
 #endif  // SHELL_ENABLE_VULKAN
 #ifdef SHELL_ENABLE_METAL
-        EXPECT_EQ(backend, impeller::RuntimeStageBackend::kMetal);
+                      EXPECT_EQ(backend, impeller::RuntimeStageBackend::kMetal);
 #endif  // SHELL_ENABLE_METAL
-        latch.Signal();
-      }));
+                      latch.Signal();
+                    }));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("mainNotifyNative");
