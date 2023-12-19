@@ -202,7 +202,7 @@ class NmEntry {
   static Iterable<NmEntry> parse(String stdout) {
     return LineSplitter.split(stdout).map((String line) {
       final List<String> parts = line.split(' ');
-      return NmEntry._(parts[0], parts[1]);
+      return NmEntry._(parts[1], parts.last);
     });
   }
 
