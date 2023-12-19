@@ -404,7 +404,7 @@ public class FlutterJNI {
    * a Java Native Interface (JNI).
    */
   public boolean isAttached() {
-    return nativeShellHolderId != null;
+    return nativeShellHolderId != null && nativeShellHolderId != 0L;
   }
 
   /**
