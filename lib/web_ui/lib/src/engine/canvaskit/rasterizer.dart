@@ -52,7 +52,7 @@ class Rasterizer {
     await rasterizeToCanvas(renderCanvasFactory.baseCanvas,
         <CkPicture>[pictureRecorder.endRecording()]);
 
-    viewEmbedder.submitFrame();
+    await viewEmbedder.submitFrame();
   }
 
   /// Disposes of this rasterizer.
