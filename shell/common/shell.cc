@@ -155,7 +155,7 @@ Shell::InferVmInitDataFromSettings(Settings& settings) {
 
   // If the settings did not specify an `isolate_snapshot`, fall back to the
   // one the VM was launched with.
-  if (!isolate_snapshot) {
+  if (!isolate_snapshot && vm) {
     isolate_snapshot = vm->GetVMData()->GetIsolateSnapshot();
   }
   return {std::move(vm), isolate_snapshot};
@@ -369,7 +369,7 @@ std::unique_ptr<Shell> Shell::CreateWithSnapshot(
 
   const bool callbacks_valid =
       on_create_platform_view && on_create_rasterizer && on_create_engine;
-  if (!task_runners.IsValid() || !callbacks_valid) {
+  if (!task_runners.IsValid() || !callbacks_valid || !vm) {
     return nullptr;
   }
 
