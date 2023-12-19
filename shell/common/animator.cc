@@ -143,7 +143,6 @@ void Animator::BeginFrame(
 
 void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
-  FML_CHECK(frame_timings_recorder_ != nullptr);
 
   has_rendered_ = true;
 
