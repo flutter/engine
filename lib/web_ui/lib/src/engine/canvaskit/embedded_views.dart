@@ -361,7 +361,7 @@ class HtmlViewEmbedder {
     sceneHost.append(_svgPathDefs!);
   }
 
-  void submitFrame() {
+  Future<void> submitFrame() async {
     final ViewListDiffResult? diffResult =
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
@@ -385,7 +385,7 @@ class HtmlViewEmbedder {
             _context.pictureRecorders[pictureRecorderIndex].endRecording());
         pictureRecorderIndex++;
       }
-      rasterizer.rasterizeToCanvas(overlay, pictures);
+      await rasterizer.rasterizeToCanvas(overlay, pictures);
     }
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
@@ -657,8 +657,8 @@ class HtmlViewEmbedder {
     element.remove();
   }
 
-  /// Clears the state of this view embedder. Used in tests.
-  void debugClear() {
+  /// Disposes the state of this view embedder.
+  void dispose() {
     final Set<int> allViews = PlatformViewManager.instance.debugClear();
     disposeViews(allViews);
     _context = EmbedderFrameContext();

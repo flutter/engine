@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
+#define FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
 
 #include <memory>
 #include <string>
@@ -11,12 +12,15 @@
 #include "flutter/fml/mapping.h"
 
 #include "flutter/impeller/core/runtime_types.h"
+#include "runtime_stage_types_flatbuffers.h"
 
 namespace impeller {
 
 class RuntimeStage {
  public:
   explicit RuntimeStage(std::shared_ptr<fml::Mapping> payload);
+
+  explicit RuntimeStage(const fb::RuntimeStage* runtime_stage);
 
   ~RuntimeStage();
   RuntimeStage(RuntimeStage&&);
@@ -50,9 +54,13 @@ class RuntimeStage {
   bool is_valid_ = false;
   bool is_dirty_ = true;
 
+  void Setup(const fb::RuntimeStage* runtime_stage);
+
   RuntimeStage(const RuntimeStage&) = delete;
 
   RuntimeStage& operator=(const RuntimeStage&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_

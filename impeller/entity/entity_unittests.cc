@@ -1073,7 +1073,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       texture->SetOpacity(input_color.alpha);
 
       input = texture;
-      input_size = input_rect.size;
+      input_size = input_rect.GetSize();
     } else {
       auto fill = std::make_shared<SolidColorContents>();
       fill->SetColor(input_color);
@@ -1081,14 +1081,15 @@ TEST_P(EntityTest, GaussianBlurFilter) {
           Geometry::MakeFillPath(PathBuilder{}.AddRect(input_rect).TakePath()));
 
       input = fill;
-      input_size = input_rect.size;
+      input_size = input_rect.GetSize();
     }
 
     std::shared_ptr<FilterContents> blur;
     switch (selected_pass_variation) {
       case 0:
         blur = std::make_shared<GaussianBlurFilterContents>(
-            blur_sigma_x.sigma, tile_modes[selected_tile_mode]);
+            blur_sigma_x.sigma, blur_sigma_y.sigma,
+            tile_modes[selected_tile_mode]);
         blur->SetInputs({FilterInput::Make(input)});
         break;
       case 1:
@@ -1210,7 +1211,7 @@ TEST_P(EntityTest, MorphologyFilter) {
     texture->SetOpacity(input_color.alpha);
 
     input = texture;
-    input_size = input_rect.size;
+    input_size = input_rect.GetSize();
 
     auto contents = FilterContents::MakeMorphology(
         FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
@@ -2469,14 +2470,6 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
                     "for advanced blends.";
   }
 
-  auto background_contents = std::make_shared<SolidColorContents>();
-  background_contents->SetGeometry(
-      Geometry::MakeRect(Rect::MakeXYWH(200, 200, 200, 200)));
-  background_contents->SetColor(Color::Blue());
-  Entity background_entity;
-  background_entity.SetTransform(Matrix::MakeScale(Vector3(2, 2, 1)));
-  background_entity.SetContents(background_contents);
-
   auto contents = std::make_shared<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeRect(Rect::MakeXYWH(100, 100, 100, 100)));
   contents->SetColor(Color::Red());
@@ -2502,7 +2495,6 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       RenderTarget::kDefaultColorAttachmentConfig, stencil_config);
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
-  pass->AddEntity(std::move(background_entity));
   pass->AddEntity(std::move(entity));
 
   EXPECT_TRUE(pass->Render(content_context, rt));
@@ -2596,6 +2588,27 @@ TEST_P(EntityTest, PipelineDescriptorEqAndHash) {
 
   EXPECT_TRUE(desc_1->IsEqual(*desc_2));
   EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
+}
+
+// This doesn't really tell you if the hashes will have frequent
+// collisions, but since this type is only used to hash a bounded
+// set of options, we can just compare benchmarks.
+TEST_P(EntityTest, ContentContextOptionsHasReasonableHashFunctions) {
+  ContentContextOptions opts;
+  auto hash_a = ContentContextOptions::Hash{}(opts);
+
+  opts.blend_mode = BlendMode::kColorBurn;
+  auto hash_b = ContentContextOptions::Hash{}(opts);
+
+  opts.has_stencil_attachment = false;
+  auto hash_c = ContentContextOptions::Hash{}(opts);
+
+  opts.primitive_type = PrimitiveType::kPoint;
+  auto hash_d = ContentContextOptions::Hash{}(opts);
+
+  EXPECT_NE(hash_a, hash_b);
+  EXPECT_NE(hash_b, hash_c);
+  EXPECT_NE(hash_c, hash_d);
 }
 
 #ifdef FML_OS_LINUX

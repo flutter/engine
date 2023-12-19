@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
 
 #include <chrono>
 #include <memory>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/status.h"
 #include "flutter/fml/time/time_delta.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
@@ -87,6 +89,13 @@ class Playground {
 
   virtual std::string GetWindowTitle() const = 0;
 
+  [[nodiscard]] fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities);
+
+  /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.
+  /// Returns true if `OpenPlaygroundHere` will actually render anything.
+  bool WillRenderSomething() const;
+
  protected:
   const PlaygroundSwitches switches_;
 
@@ -113,3 +122,5 @@ class Playground {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
