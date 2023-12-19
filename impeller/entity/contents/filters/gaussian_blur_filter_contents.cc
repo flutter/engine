@@ -259,11 +259,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   // transparent gutter.
   std::optional<Rect> expanded_coverage_hint = ExpandCoverageHint(
       coverage_hint, entity.GetTransform() * effect_transform, padding);
-  // TODO(gaaclarke): How much of the gutter is thrown away can be used to
-  //                  adjust the padding that is added in the downsample pass.
-  //                  For example, if we get all the padding we requested from
-  //                  the expanded_coverage_hint, there is no need to add a
-  //                  transparent gutter.
 
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
@@ -291,6 +286,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       !input_snapshot_coverage->Contains(coverage_hint.value())) {
     // This means that the snapshot does not contain all the data it needs to
     // render, so we add extra padding for the blur halo to render.
+    // TODO(gaaclarke): This adds a gutter for the blur halo that is uniform,
+    //                  if we could only add padding where necessary that would
+    //                  be more efficient.
     source_rect_padded = source_rect_padded.Expand(padding);
     padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
   }
