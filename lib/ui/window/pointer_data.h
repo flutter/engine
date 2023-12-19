@@ -32,7 +32,7 @@ enum PointerButtonStylus : int64_t {
 //
 // If this struct changes, update:
 //  * kPointerDataFieldCount in pointer_data.cc. (The pointer_data.cc also
-//    listed out other locations that must be kept consistent.)
+//    lists out other locations that must be kept consistent.)
 //  * The functions to create simulated data in
 //    pointer_data_packet_converter_unittests.cc.
 struct alignas(8) PointerData {
