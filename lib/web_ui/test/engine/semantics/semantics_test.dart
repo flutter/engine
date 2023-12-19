@@ -33,6 +33,7 @@ void main() {
 
 Future<void> testMain() async {
   await bootstrapAndRunApp();
+  setUpRenderingForTests();
   runSemanticsTests();
 }
 
