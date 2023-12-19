@@ -174,15 +174,13 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
 
         return true;
       };
-  // if (destination_texture.has_value()) {
-  //   renderer.MakeSubpass("Gaussian Blur Filter", destination_texture.value(),
-  //                        subpass_callback);
-  //   return destination_texture;
-  // } else {
-  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
-      "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return render_target;
-  // }
+  if (destination_target.has_value()) {
+    return renderer.MakeSubpass("Gaussian Blur Filter",
+                                destination_target.value(), subpass_callback);
+  } else {
+    return renderer.MakeSubpass("Gaussian Blur Filter", subpass_size,
+                                subpass_callback);
+  }
 }
 
 }  // namespace
@@ -329,11 +327,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   // Only ping pong if the first pass actually created a render target.
-  auto pass3_destination =
-      pass2_out.value().GetRenderTargetTexture() !=
-              pass1_out.value().GetRenderTargetTexture()
-          ? std::optional<RenderTarget>(pass1_out.value())
-          : std::optional<RenderTarget>(std::nullopt);
+  auto pass3_destination = pass2_out.value().GetRenderTargetTexture() !=
+                                   pass1_out.value().GetRenderTargetTexture()
+                               ? std::optional<RenderTarget>(pass1_out.value())
+                               : std::optional<RenderTarget>(std::nullopt);
 
   // TODO(gaaclarke): Make this pass reuse the texture from pass1.
   fml::StatusOr<RenderTarget> pass3_out =

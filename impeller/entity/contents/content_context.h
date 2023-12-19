@@ -699,6 +699,12 @@ class ContentContext {
       const SubpassCallback& subpass_callback,
       bool msaa_enabled = true) const;
 
+  /// Makes a subpass that will render to `subpass_target`.
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      const RenderTarget subpass_target,
+      const SubpassCallback& subpass_callback) const;
+
   std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
   }

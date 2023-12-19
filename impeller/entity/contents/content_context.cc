@@ -410,8 +410,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled) const {
-  auto context = GetContext();
-
+  std::shared_ptr<Context> context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
@@ -428,6 +427,15 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
         std::nullopt  // stencil_attachment_config
     );
   }
+  return MakeSubpass(label, subpass_target, subpass_callback);
+}
+
+fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
+    const std::string& label,
+    const RenderTarget subpass_target,
+    const SubpassCallback& subpass_callback) const {
+  std::shared_ptr<Context> context = GetContext();
+
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
     return fml::Status(fml::StatusCode::kUnknown, "");
