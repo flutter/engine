@@ -213,7 +213,6 @@ vars = {
   "upstream_pyyaml": "https://github.com/yaml/pyyaml.git",
   "upstream_quiver-dart": "https://github.com/google/quiver-dart.git",
   "upstream_rapidjson": "https://github.com/Tencent/rapidjson.git",
-  "upstream_root_certificates": "https://github.com/dart-lang/root_certificates.git",
   "upstream_sdk": "https://github.com/dart-lang/sdk.git",
   "upstream_shaderc": "https://github.com/google/shaderc.git",
   "upstream_shelf": "https://github.com/dart-lang/shelf.git",
