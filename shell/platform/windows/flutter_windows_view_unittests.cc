@@ -896,7 +896,7 @@ TEST(FlutterWindowsViewTest, TestEmptyFrameResizes) {
   // Wait until the platform thread has started the window resize.
   metrics_sent_latch.Wait();
 
-  // Complete the window resize by reporting a frame with the new window size.
+  // Complete the window resize by reporting an empty frame.
   view.OnEmptyFrameGenerated();
   resized_latch.Wait();
 }
