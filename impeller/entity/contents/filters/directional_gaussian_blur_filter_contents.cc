@@ -256,10 +256,10 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   Vector2 scaled_size = pass_texture_rect.GetSize() * scale;
   ISize floored_size = ISize(scaled_size.x, scaled_size.y);
 
-  auto out_texture = renderer.MakeSubpass("Directional Gaussian Blur Filter",
-                                          floored_size, subpass_callback);
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      "Directional Gaussian Blur Filter", floored_size, subpass_callback);
 
-  if (!out_texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
@@ -270,14 +270,13 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   sampler_desc.width_address_mode = SamplerAddressMode::kClampToEdge;
 
   return Entity::FromSnapshot(
-      Snapshot{
-          .texture = out_texture,
-          .transform =
-              texture_rotate.Invert() *
-              Matrix::MakeTranslation(pass_texture_rect.GetOrigin()) *
-              Matrix::MakeScale((1 / scale) * (scaled_size / floored_size)),
-          .sampler_descriptor = sampler_desc,
-          .opacity = input_snapshot->opacity},
+      Snapshot{.texture = render_target.value().GetRenderTargetTexture(),
+               .transform = texture_rotate.Invert() *
+                            Matrix::MakeTranslation(pass_texture_rect.GetOrigin()) *
+                            Matrix::MakeScale((1 / scale) *
+                                              (scaled_size / floored_size)),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 

@@ -110,9 +110,10 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
 
         return true;
       };
-  std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return out_texture;
+  return render_target.ok() ? render_target.value().GetRenderTargetTexture()
+                            : nullptr;
 }
 
 std::shared_ptr<Texture> MakeBlurSubpass(
@@ -120,7 +121,8 @@ std::shared_ptr<Texture> MakeBlurSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     Entity::TileMode tile_mode,
-    const GaussianBlurFragmentShader::BlurInfo& blur_info) {
+    const GaussianBlurFragmentShader::BlurInfo& blur_info,
+    std::optional<std::shared_ptr<Texture>> destination_texture) {
   if (blur_info.blur_sigma < kEhCloseEnough) {
     return input_texture;
   }
@@ -171,9 +173,16 @@ std::shared_ptr<Texture> MakeBlurSubpass(
 
         return true;
       };
-  std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
+  // if (destination_texture.has_value()) {
+  //   renderer.MakeSubpass("Gaussian Blur Filter", destination_texture.value(),
+  //                        subpass_callback);
+  //   return destination_texture;
+  // } else {
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return out_texture;
+  return render_target.ok() ? render_target.value().GetRenderTargetTexture()
+                            : nullptr;
+  // }
 }
 
 }  // namespace
@@ -300,25 +309,27 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 pass1_pixel_size = 1.0 / Vector2(pass1_out_texture->GetSize());
 
   std::shared_ptr<Texture> pass2_out_texture =
-      MakeBlurSubpass(renderer, pass1_out_texture,
+      MakeBlurSubpass(renderer, /*input_texture=*/pass1_out_texture,
                       input_snapshot->sampler_descriptor, tile_mode_,
                       GaussianBlurFragmentShader::BlurInfo{
                           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
                           .blur_sigma = scaled_sigma.y * effective_scalar.y,
                           .blur_radius = blur_radius.y * effective_scalar.y,
                           .step_size = 1.0,
-                      });
+                      },
+                      /*destination_texture=*/std::nullopt);
 
   // TODO(gaaclarke): Make this pass reuse the texture from pass1.
   std::shared_ptr<Texture> pass3_out_texture =
-      MakeBlurSubpass(renderer, pass2_out_texture,
+      MakeBlurSubpass(renderer, /*input_texture=*/pass2_out_texture,
                       input_snapshot->sampler_descriptor, tile_mode_,
                       GaussianBlurFragmentShader::BlurInfo{
                           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
                           .blur_sigma = scaled_sigma.x * effective_scalar.x,
                           .blur_radius = blur_radius.x * effective_scalar.x,
                           .step_size = 1.0,
-                      });
+                      },
+                      /*destination_texture=*/pass1_out_texture);
 
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
