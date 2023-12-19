@@ -46,13 +46,13 @@
   // identified by name. Loop through all the buttons labeled
   // `XCElementSnapshotPrivilegedValuePlaceholder` or `Scenarios` to find the
   // Flutter one.
-  for (int i = 0; i < self.hostApplication.collectionViews.cells.count; i++) {
-    XCUIElement* shareSheetCell =
-        [self.hostApplication.collectionViews.cells elementBoundByIndex:i];
-    if (![shareSheetCell.label isEqualToString:@"XCElementSnapshotPrivilegedValuePlaceholder"] &&
-        ![shareSheetCell.label isEqualToString:@"Scenarios"]) {
-      continue;
-    }
+  NSPredicate* cellPredicate = [NSPredicate
+      predicateWithFormat:
+          @"label == 'XCElementSnapshotPrivilegedValuePlaceholder' OR label = 'Scenarios'"];
+  NSArray<XCUIElement*>* shareSheetCells =
+      [self.hostApplication.collectionViews.cells matchingPredicate:cellPredicate]
+          .allElementsBoundByIndex;
+  for (XCUIElement* shareSheetCell in shareSheetCells) {
     [shareSheetCell tap];
 
     XCUIElement* flutterView = self.hostApplication.otherElements[@"flutter_view"];
