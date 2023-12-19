@@ -23,7 +23,7 @@ Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
   final SceneBuilder sb = SceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(Offset.zero, picture);
-  renderScene(sb.build());
+  await renderScene(sb.build());
 }
 
 /// Convenience getter for the implicit view.

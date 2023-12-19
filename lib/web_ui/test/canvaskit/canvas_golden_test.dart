@@ -145,7 +145,7 @@ void testMain() {
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, picture);
       final LayerScene scene = builder.build();
-      renderScene(scene);
+      await renderScene(scene);
 
       // Now draw an empty layer tree and confirm that the red rectangle is
       // no longer drawn.

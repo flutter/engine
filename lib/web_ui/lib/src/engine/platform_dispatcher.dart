@@ -761,7 +761,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   @override
-  void render(ui.Scene scene, [ui.FlutterView? view]) {
+  Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
     assert(view != null || implicitView != null,
         'Calling render without a FlutterView');
     if (view == null && implicitView == null) {
@@ -776,7 +776,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     final bool shouldRender =
         _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
     if (shouldRender) {
-      renderer.renderScene(scene, view ?? implicitView!);
+      await renderer.renderScene(scene, view ?? implicitView!);
     }
   }
 

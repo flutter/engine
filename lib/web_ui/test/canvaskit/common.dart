@@ -50,7 +50,7 @@ Future<void> matchSceneGolden(
   ui.Scene scene, {
   required ui.Rect region,
 }) async {
-  renderScene(scene);
+  await renderScene(scene);
   await matchGoldenFile(goldenFile, region: region);
 }
 
@@ -63,7 +63,7 @@ Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  renderScene(sb.build());
+  await renderScene(sb.build());
   await matchGoldenFile(goldenFile, region: region);
 }
 

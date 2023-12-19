@@ -65,7 +65,7 @@ Future<void> testMain() async {
       width: 50,
       height: 50,
     );
-    renderScene(sb.build());
+    await renderScene(sb.build());
 
     await matchGoldenFile('picture_platformview_overlap.png', region: region);
   });
@@ -97,7 +97,7 @@ Future<void> testMain() async {
     );
 
     sb.addPicture(const ui.Offset(125, 125), picture);
-    renderScene(sb.build());
+    await renderScene(sb.build());
 
     await matchGoldenFile('picture_platformview_sandwich.png', region: region);
   });
@@ -126,7 +126,7 @@ Future<void> testMain() async {
       width: 50,
       height: 50,
     );
-    renderScene(sb.build());
+    await renderScene(sb.build());
 
     await matchGoldenFile('platformview_transformed.png', region: region);
   });
@@ -155,7 +155,7 @@ Future<void> testMain() async {
       width: 50,
       height: 50,
     );
-    renderScene(sb.build());
+    await renderScene(sb.build());
 
     await matchGoldenFile('platformview_opacity.png', region: region);
   });
