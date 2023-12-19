@@ -288,10 +288,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Rect source_rect_padded = source_rect;
   Matrix padding_snapshot_adjustment;
   if (coverage_hint.has_value() && input_snapshot->GetCoverage().has_value() &&
-      coverage_hint->Contains(input_snapshot->GetCoverage().value())) {
-    // This means the expanded_coverage_hint was requested in order to get more
-    // content to sample from, but none was available.  So, we'll add our own
-    // padding.
+      !input_snapshot->GetCoverage()->Contains(coverage_hint.value())) {
+    // This means that the snapshot does not contain all the data it needs to
+    // render, so we add extra padding for the blur halo to render.
     source_rect_padded = source_rect_padded.Expand(padding);
     padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
   }
