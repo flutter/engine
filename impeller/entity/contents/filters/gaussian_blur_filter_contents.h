@@ -41,6 +41,7 @@ class GaussianBlurFilterContents final : public FilterContents {
   /// Calculate the UV coordinates for rendering the filter_input.
   /// @param filter_input The FilterInput that should be rendered.
   /// @param entity The associated entity for the filter_input.
+  /// @param source_rect The rect in source coordinates to convert to uvs.
   /// @param texture_size The rect to convert in source coordinates.
   static Quad CalculateUVs(const std::shared_ptr<FilterInput>& filter_input,
                            const Entity& entity,
