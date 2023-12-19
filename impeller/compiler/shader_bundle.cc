@@ -124,14 +124,14 @@ static std::unique_ptr<fb::RuntimeStageT> GenerateShaderBackendFB(
     return nullptr;
   }
 
-  auto stage_data = reflector->GetRuntimeStageData();
-  if (!stage_data) {
-    std::cerr << "Runtime stage information was nil for bundled shader \""
-              << shader_name << "\"." << std::endl;
+  auto bundle_data = reflector->GetShaderBundleData();
+  if (!bundle_data) {
+    std::cerr << "Bundled shader information was nil for \"" << shader_name
+              << "\"." << std::endl;
     return nullptr;
   }
 
-  result = stage_data->CreateFlatbuffer();
+  result = bundle_data->CreateFlatbuffer();
   if (!result) {
     std::cerr << "Failed to create flatbuffer for bundled shader \""
               << shader_name << "\"." << std::endl;

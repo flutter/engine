@@ -2,28 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_COMPILER_RUNTIME_STAGE_DATA_H_
-#define FLUTTER_IMPELLER_COMPILER_RUNTIME_STAGE_DATA_H_
+#ifndef FLUTTER_IMPELLER_COMPILER_SHADER_BUNDLE_DATA_H_
+#define FLUTTER_IMPELLER_COMPILER_SHADER_BUNDLE_DATA_H_
 
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/types.h"
 #include "runtime_stage_types_flatbuffers.h"
-#include "spirv_parser.hpp"
 
 namespace impeller {
 namespace compiler {
 
-class RuntimeStageData {
+class ShaderBundleData {
  public:
-  RuntimeStageData(std::string entrypoint,
+  ShaderBundleData(std::string entrypoint,
                    spv::ExecutionModel stage,
                    TargetPlatform target_platform);
 
-  ~RuntimeStageData();
+  ~ShaderBundleData();
 
   void AddUniformDescription(UniformDescription uniform);
 
@@ -35,10 +33,6 @@ class RuntimeStageData {
 
   std::unique_ptr<fb::RuntimeStageT> CreateFlatbuffer() const;
 
-  std::shared_ptr<fml::Mapping> CreateMapping() const;
-
-  std::shared_ptr<fml::Mapping> CreateJsonMapping() const;
-
  private:
   const std::string entrypoint_;
   const spv::ExecutionModel stage_;
@@ -48,12 +42,12 @@ class RuntimeStageData {
   std::shared_ptr<fml::Mapping> shader_;
   std::shared_ptr<fml::Mapping> sksl_;
 
-  RuntimeStageData(const RuntimeStageData&) = delete;
+  ShaderBundleData(const ShaderBundleData&) = delete;
 
-  RuntimeStageData& operator=(const RuntimeStageData&) = delete;
+  ShaderBundleData& operator=(const ShaderBundleData&) = delete;
 };
 
 }  // namespace compiler
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_COMPILER_RUNTIME_STAGE_DATA_H_
+#endif  // FLUTTER_IMPELLER_COMPILER_SHADER_BUNDLE_DATA_H_

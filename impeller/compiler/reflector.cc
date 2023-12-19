@@ -132,6 +132,11 @@ Reflector::Reflector(Options options,
     return;
   }
 
+  shader_bundle_data_ = GenerateShaderBundleData();
+  if (!shader_bundle_data_) {
+    return;
+  }
+
   is_valid_ = true;
 }
 
@@ -164,6 +169,10 @@ std::shared_ptr<fml::Mapping> Reflector::GetReflectionCC() const {
 
 std::shared_ptr<RuntimeStageData> Reflector::GetRuntimeStageData() const {
   return runtime_stage_data_;
+}
+
+std::shared_ptr<ShaderBundleData> Reflector::GetShaderBundleData() const {
+  return shader_bundle_data_;
 }
 
 std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
@@ -324,6 +333,69 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
     return nullptr;
   }
   auto data = std::make_shared<RuntimeStageData>(
+      options_.entry_point_name,            //
+      entrypoints.front().execution_model,  //
+      options_.target_platform              //
+  );
+  data->SetShaderData(shader_data_);
+
+  // Sort the IR so that the uniforms are in declaration order.
+  std::vector<spirv_cross::ID> uniforms =
+      SortUniforms(ir_.get(), compiler_.GetCompiler());
+
+  for (auto& sorted_id : uniforms) {
+    auto var = ir_->ids[sorted_id].get<spirv_cross::SPIRVariable>();
+    const auto spir_type = compiler_->get_type(var.basetype);
+    UniformDescription uniform_description;
+    uniform_description.name = compiler_->get_name(var.self);
+    uniform_description.location = compiler_->get_decoration(
+        var.self, spv::Decoration::DecorationLocation);
+    uniform_description.type = spir_type.basetype;
+    uniform_description.rows = spir_type.vecsize;
+    uniform_description.columns = spir_type.columns;
+    uniform_description.bit_width = spir_type.width;
+    uniform_description.array_elements = GetArrayElements(spir_type);
+    data->AddUniformDescription(std::move(uniform_description));
+  }
+
+  // We only need to worry about storing vertex attributes.
+  if (entrypoints.front().execution_model == spv::ExecutionModelVertex) {
+    const auto inputs = compiler_->get_shader_resources().stage_inputs;
+    auto input_offsets = ComputeOffsets(inputs);
+    for (const auto& input : inputs) {
+      auto location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      std::optional<size_t> offset = input_offsets[location];
+
+      const auto type = compiler_->get_type(input.type_id);
+
+      InputDescription input_description;
+      input_description.name = input.name;
+      input_description.location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      input_description.set = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationDescriptorSet);
+      input_description.binding = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationBinding);
+      input_description.type = type.basetype;
+      input_description.bit_width = type.width;
+      input_description.vec_size = type.vecsize;
+      input_description.columns = type.columns;
+      input_description.offset = offset.value_or(0u);
+      data->AddInputDescription(std::move(input_description));
+    }
+  }
+
+  return data;
+}
+
+std::shared_ptr<ShaderBundleData> Reflector::GenerateShaderBundleData() const {
+  const auto& entrypoints = compiler_->get_entry_points_and_stages();
+  if (entrypoints.size() != 1u) {
+    VALIDATION_LOG << "Single entrypoint not found.";
+    return nullptr;
+  }
+  auto data = std::make_shared<ShaderBundleData>(
       options_.entry_point_name,            //
       entrypoints.front().execution_model,  //
       options_.target_platform              //

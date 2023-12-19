@@ -13,6 +13,7 @@
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/compiler_backend.h"
 #include "impeller/compiler/runtime_stage_data.h"
+#include "impeller/compiler/shader_bundle_data.h"
 #include "inja/inja.hpp"
 #include "spirv_msl.hpp"
 #include "spirv_parser.hpp"
@@ -74,6 +75,8 @@ class Reflector {
 
   std::shared_ptr<RuntimeStageData> GetRuntimeStageData() const;
 
+  std::shared_ptr<ShaderBundleData> GetShaderBundleData() const;
+
  private:
   struct StructDefinition {
     std::string name;
@@ -101,6 +104,7 @@ class Reflector {
   std::shared_ptr<fml::Mapping> reflection_header_;
   std::shared_ptr<fml::Mapping> reflection_cc_;
   std::shared_ptr<RuntimeStageData> runtime_stage_data_;
+  std::shared_ptr<ShaderBundleData> shader_bundle_data_;
   bool is_valid_ = false;
 
   std::optional<nlohmann::json> GenerateTemplateArguments() const;
@@ -110,6 +114,8 @@ class Reflector {
   std::shared_ptr<fml::Mapping> GenerateReflectionCC() const;
 
   std::shared_ptr<RuntimeStageData> GenerateRuntimeStageData() const;
+
+  std::shared_ptr<ShaderBundleData> GenerateShaderBundleData() const;
 
   std::shared_ptr<fml::Mapping> InflateTemplate(std::string_view tmpl) const;
 

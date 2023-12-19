@@ -208,21 +208,18 @@ void canCreateRenderPassAndSubmit() {
     0.5, 0.5, //
     0.5, -0.5, //
   ]));
-  final gpu.BufferView color =
-      transients.emplace(float32(<double>[0, 1, 0, 1])); // rgba
-  final gpu.BufferView mvp = transients.emplace(float32(<double>[
-    1, 0, 0, 0, //
-    0, 1, 0, 0, //
-    0, 0, 1, 0, //
-    0, 0, 0, 1, //
+  final gpu.BufferView vertInfoData = transients.emplace(float32(<double>[
+    1, 0, 0, 0, // mvp
+    0, 1, 0, 0, // mvp
+    0, 0, 1, 0, // mvp
+    0, 0, 0, 1, // mvp
+    0, 1, 0, 1, // color
   ]));
   encoder.bindVertexBuffer(vertices, 3);
 
-  final gpu.UniformSlot? colorSlot =
-      pipeline.vertexShader.getUniformSlot('color');
-  final gpu.UniformSlot? mvpSlot = pipeline.vertexShader.getUniformSlot('mvp');
-  encoder.bindUniform(mvpSlot!, mvp);
-  encoder.bindUniform(colorSlot!, color);
+  final gpu.UniformSlot? vertInfo =
+      pipeline.vertexShader.getUniformSlot('vert_info');
+  encoder.bindUniform(vertInfo!, vertInfoData);
   encoder.draw();
 
   commandBuffer.submit();
