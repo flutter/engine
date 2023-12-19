@@ -332,7 +332,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                ? std::optional<RenderTarget>(pass1_out.value())
                                : std::optional<RenderTarget>(std::nullopt);
 
-  // TODO(gaaclarke): Make this pass reuse the texture from pass1.
   fml::StatusOr<RenderTarget> pass3_out =
       MakeBlurSubpass(renderer, /*input_pass=*/pass2_out.value(),
                       input_snapshot->sampler_descriptor, tile_mode_,
