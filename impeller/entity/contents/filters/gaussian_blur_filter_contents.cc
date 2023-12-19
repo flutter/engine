@@ -271,6 +271,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
+  std::optional<Rect> input_snapshot_coverage = input_snapshot->GetCoverage();
 
   if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
@@ -286,8 +287,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
   Rect source_rect_padded = source_rect;
   Matrix padding_snapshot_adjustment;
-  if (coverage_hint.has_value() && input_snapshot->GetCoverage().has_value() &&
-      !input_snapshot->GetCoverage()->Contains(coverage_hint.value())) {
+  if (coverage_hint.has_value() && input_snapshot_coverage.has_value() &&
+      !input_snapshot_coverage->Contains(coverage_hint.value())) {
     // This means that the snapshot does not contain all the data it needs to
     // render, so we add extra padding for the blur halo to render.
     source_rect_padded = source_rect_padded.Expand(padding);
