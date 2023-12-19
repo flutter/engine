@@ -118,6 +118,9 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
+    // Ensure platform view with `viewId` is injected into the `rasterizer.view`.
+    rasterizer.view.dom.injectPlatformView(viewId);
+
     final int overlayIndex = _context.visibleViewCount;
     _compositionOrder.add(viewId);
     // Keep track of the number of visible platform views.
@@ -143,10 +146,6 @@ class HtmlViewEmbedder {
   }
 
   void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
-    // Ensure platform view with `platformViewId` is injected into the `rasterizer.view`
-    // before rendering its shadow DOM `slot`.
-    rasterizer.view.dom.injectPlatformView(platformViewId);
-
     // If we haven't seen this viewId yet, cache it for clips/transforms.
     final ViewClipChain clipChain = _viewClipChains.putIfAbsent(platformViewId, () {
       return ViewClipChain(view: createPlatformViewSlot(platformViewId));
