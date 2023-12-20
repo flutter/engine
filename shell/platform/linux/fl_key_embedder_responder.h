@@ -15,10 +15,18 @@
 
 constexpr int kMaxConvertedKeyData = 3;
 
-typedef std::function<void(const FlutterKeyEvent* event,
-                           FlutterKeyEventCallback callback,
-                           void* user_data)>
-    EmbedderSendKeyEvent;
+// The signature of a function to be called on every key event.
+//
+// The creation_user_data is an opaque pointer created by the object that
+// manages FlKeyEmbedderResponder.
+//
+// The callback_user_data is an opaque pointer created and managed by
+// FlKeyEmbedderResponder. After the event is processed, the callback should be
+// called with callback_user_data.
+typedef void (*EmbedderSendKeyEvent)(const FlutterKeyEvent* event,
+                                     FlutterKeyEventCallback callback,
+                                     void* callback_user_data,
+                                     void* creation_user_data);
 
 G_BEGIN_DECLS
 
@@ -44,11 +52,16 @@ G_DECLARE_FINAL_TYPE(FlKeyEmbedderResponder,
  * the event.
  *
  * Creates a new #FlKeyEmbedderResponder.
+ * @send_key_event: a function that is called on every key event.
+ * @send_key_event_user_data: an opaque pointer that will be sent back as the
+ * last argument of send_key_event, created and managed by the object that holds
+ * FlKeyEmbedderResponder.
  *
  * Returns: a new #FlKeyEmbedderResponder.
  */
 FlKeyEmbedderResponder* fl_key_embedder_responder_new(
-    EmbedderSendKeyEvent send_key_event);
+    EmbedderSendKeyEvent send_key_event,
+    void* send_key_event_user_data);
 
 /**
  * fl_key_embedder_responder_sync_modifiers_if_needed:
