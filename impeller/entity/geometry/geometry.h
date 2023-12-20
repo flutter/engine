@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
 
 #include "impeller/core/formats.h"
 #include "impeller/core/vertex_buffer.h"
@@ -21,6 +22,13 @@ struct GeometryResult {
   VertexBuffer vertex_buffer;
   Matrix transform;
   bool prevent_overdraw;
+};
+
+static const GeometryResult kEmptyResult = {
+    .vertex_buffer =
+        {
+            .index_type = IndexType::kNone,
+        },
 };
 
 enum GeometryVertexType {
@@ -62,18 +70,24 @@ class Geometry {
 
   static std::shared_ptr<Geometry> MakeCover();
 
-  static std::shared_ptr<Geometry> MakeRect(Rect rect);
+  static std::shared_ptr<Geometry> MakeRect(const Rect& rect);
 
-  static std::shared_ptr<Geometry> MakeLine(Point p0,
-                                            Point p1,
+  static std::shared_ptr<Geometry> MakeOval(const Rect& rect);
+
+  static std::shared_ptr<Geometry> MakeLine(const Point& p0,
+                                            const Point& p1,
                                             Scalar width,
                                             Cap cap);
 
-  static std::shared_ptr<Geometry> MakeCircle(Point center, Scalar radius);
+  static std::shared_ptr<Geometry> MakeCircle(const Point& center,
+                                              Scalar radius);
 
-  static std::shared_ptr<Geometry> MakeStrokedCircle(Point center,
+  static std::shared_ptr<Geometry> MakeStrokedCircle(const Point& center,
                                                      Scalar radius,
                                                      Scalar stroke_width);
+
+  static std::shared_ptr<Geometry> MakeRoundRect(const Rect& rect,
+                                                 const Size& radii);
 
   static std::shared_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,
@@ -106,6 +120,20 @@ class Geometry {
   virtual bool CoversArea(const Matrix& transform, const Rect& rect) const;
 
   virtual bool IsAxisAlignedRect() const;
+
+ protected:
+  static GeometryResult ComputePositionGeometry(
+      const Tessellator::VertexGenerator& generator,
+      const Entity& entity,
+      RenderPass& pass);
+
+  static GeometryResult ComputePositionUVGeometry(
+      const Tessellator::VertexGenerator& generator,
+      const Matrix& uv_transform,
+      const Entity& entity,
+      RenderPass& pass);
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
