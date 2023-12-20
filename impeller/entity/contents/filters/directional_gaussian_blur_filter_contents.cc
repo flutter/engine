@@ -270,13 +270,14 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   sampler_desc.width_address_mode = SamplerAddressMode::kClampToEdge;
 
   return Entity::FromSnapshot(
-      Snapshot{.texture = render_target.value().GetRenderTargetTexture(),
-               .transform = texture_rotate.Invert() *
-                            Matrix::MakeTranslation(pass_texture_rect.GetOrigin()) *
-                            Matrix::MakeScale((1 / scale) *
-                                              (scaled_size / floored_size)),
-               .sampler_descriptor = sampler_desc,
-               .opacity = input_snapshot->opacity},
+      Snapshot{
+          .texture = render_target.value().GetRenderTargetTexture(),
+          .transform =
+              texture_rotate.Invert() *
+              Matrix::MakeTranslation(pass_texture_rect.GetOrigin()) *
+              Matrix::MakeScale((1 / scale) * (scaled_size / floored_size)),
+          .sampler_descriptor = sampler_desc,
+          .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 }
 
