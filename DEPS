@@ -684,7 +684,7 @@ deps = {
   Var('flutter_git') + '/third_party/gcloud.git' + '@' + 'a5276b85c4714378e84b1fb478b8feeeb686ac26', # 0.8.6-dev
 
   'src/flutter/third_party/pkg/googleapis':
-  Var('flutter_git') + '/third_party/googleapis.git' + '@' + '526011f56d98eab183cc6075ee1392e8303e43e2', # various
+  Var('flutter_git') + '/third_party/googleapis.dart.git' + '@' + '526011f56d98eab183cc6075ee1392e8303e43e2', # various
 
   'src/flutter/third_party/pkg/platform':
   Var('dart_git') + '/platform.dart' + '@' + '1ffad63428bbd1b3ecaa15926bacfb724023648c', # 3.1.0
