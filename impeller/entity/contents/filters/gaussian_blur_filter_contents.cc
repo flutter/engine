@@ -244,7 +244,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                          CalculateBlurRadius(scaled_sigma.y)};
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
   Vector2 local_padding =
-      (entity.GetTransform().Basis() * effect_transform.Basis() * padding).Abs();
+      (entity.GetTransform().Basis() * effect_transform.Basis() * padding)
+          .Abs();
 
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
