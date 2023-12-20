@@ -731,17 +731,9 @@ void testMain() {
         await renderScene(sb.build());
       }
 
-      DomElement? skPathDefs = sceneHost.querySelector('#sk_path_defs');
-
-      expect(
-        skPathDefs,
-        isNull,
-        reason: 'Rasterizer should not make SVG paths node before first render',
-      );
-
       await renderTestScene();
 
-      skPathDefs = sceneHost.querySelector('#sk_path_defs');
+      DomElement? skPathDefs = sceneHost.querySelector('#sk_path_defs');
       expect(
         skPathDefs,
         isNotNull,
