@@ -21,7 +21,7 @@ class Compositor {
  public:
   virtual ~Compositor() = default;
 
-  // Create a backing store used for rendering Flutter content.
+  // Creates a backing store used for rendering Flutter content.
   //
   // The backing store's configuration is stored in |backing_store_out|.
   virtual bool CreateBackingStore(const FlutterBackingStoreConfig& config,
