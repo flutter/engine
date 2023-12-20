@@ -733,7 +733,7 @@ void testMain() {
 
       await renderTestScene();
 
-      DomElement? skPathDefs = sceneHost.querySelector('#sk_path_defs');
+      final DomElement? skPathDefs = sceneHost.querySelector('#sk_path_defs');
       expect(
         skPathDefs,
         isNotNull,
