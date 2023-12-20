@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_
+#define FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_
 
 #include <initializer_list>
 #include <map>
@@ -42,7 +43,7 @@ class VertexBufferBuilder {
     return impeller::IndexType::kUnknown;
   }
 
-  void SetLabel(std::string label) { label_ = std::move(label); }
+  void SetLabel(const std::string& label) { label_ = label; }
 
   void Reserve(size_t count) { return vertices_.reserve(count); }
 
@@ -54,6 +55,11 @@ class VertexBufferBuilder {
 
   size_t GetIndexCount() const {
     return indices_.size() > 0 ? indices_.size() : vertices_.size();
+  }
+
+  const VertexType& Last() const {
+    FML_DCHECK(!vertices_.empty());
+    return vertices_.back();
   }
 
   VertexBufferBuilder& AppendVertex(VertexType_ vertex) {
@@ -155,3 +161,5 @@ class VertexBufferBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_VERTEX_BUFFER_BUILDER_H_

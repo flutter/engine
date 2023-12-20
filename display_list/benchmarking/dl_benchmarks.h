@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_BENCHMARKS_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_BENCHMARKS_H_
+#ifndef FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_BENCHMARKS_H_
+#define FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_BENCHMARKS_H_
 
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/display_list/dl_sampling_options.h"
@@ -21,11 +21,11 @@ namespace flutter {
 namespace testing {
 
 enum BenchmarkAttributes {
-  kEmpty_Flag = 0,
-  kStrokedStyle_Flag = 1 << 0,
-  kFilledStyle_Flag = 1 << 1,
-  kHairlineStroke_Flag = 1 << 2,
-  kAntiAliasing_Flag = 1 << 3
+  kEmpty = 0,
+  kStrokedStyle = 1 << 0,
+  kFilledStyle = 1 << 1,
+  kHairlineStroke = 1 << 2,
+  kAntiAliasing = 1 << 3
 };
 
 DlPaint GetPaintForRun(unsigned attributes);
@@ -570,21 +570,21 @@ void BM_SaveLayer(benchmark::State& state,
   DRAW_SHADOW_BENCHMARKS(BACKEND, ATTRIBUTES)                            \
   SAVE_LAYER_BENCHMARKS(BACKEND, ATTRIBUTES)
 
-#define RUN_DISPLAYLIST_BENCHMARKS(BACKEND)                              \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag)                         \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag | kAntiAliasing_Flag)    \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag | kHairlineStroke_Flag)  \
-  STROKE_BENCHMARKS(BACKEND, kStrokedStyle_Flag | kHairlineStroke_Flag | \
-                             kAntiAliasing_Flag)                         \
-  FILL_BENCHMARKS(BACKEND, kFilledStyle_Flag)                            \
-  FILL_BENCHMARKS(BACKEND, kFilledStyle_Flag | kAntiAliasing_Flag)       \
-  ANTI_ALIASING_BENCHMARKS(BACKEND, kEmpty_Flag)                         \
-  ANTI_ALIASING_BENCHMARKS(BACKEND, kAntiAliasing_Flag)                  \
-  OTHER_BENCHMARKS(BACKEND, kEmpty_Flag)
+#define RUN_DISPLAYLIST_BENCHMARKS(BACKEND)                        \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle)                        \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kAntiAliasing)        \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kHairlineStroke)      \
+  STROKE_BENCHMARKS(BACKEND, kStrokedStyle | kHairlineStroke |     \
+                             kAntiAliasing)                         \
+  FILL_BENCHMARKS(BACKEND, kFilledStyle)                            \
+  FILL_BENCHMARKS(BACKEND, kFilledStyle | kAntiAliasing)            \
+  ANTI_ALIASING_BENCHMARKS(BACKEND, kEmpty)                         \
+  ANTI_ALIASING_BENCHMARKS(BACKEND, kAntiAliasing)                  \
+  OTHER_BENCHMARKS(BACKEND, kEmpty)
 
 // clang-format on
 
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_BENCHMARKS_H_
+#endif  // FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_BENCHMARKS_H_

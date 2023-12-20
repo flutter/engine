@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
+#define FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
 
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
@@ -28,6 +29,10 @@ class PathBuilder {
   Path CopyPath(FillType fill = FillType::kNonZero) const;
 
   Path TakePath(FillType fill = FillType::kNonZero);
+
+  /// @brief Reserve [point_size] points and [verb_size] verbs in the underlying
+  ///        path buffer.
+  void Reserve(size_t point_size, size_t verb_size);
 
   const Path& GetCurrentPath() const;
 
@@ -55,8 +60,6 @@ class PathBuilder {
                                 Point point,
                                 bool relative = false);
 
-  PathBuilder& SmoothQuadraticCurveTo(Point point, bool relative = false);
-
   /// @brief Insert a cubic curve from the curren position to `point` using the
   /// control points `controlPoint1` and `controlPoint2`.
   ///
@@ -66,10 +69,6 @@ class PathBuilder {
                             Point controlPoint2,
                             Point point,
                             bool relative = false);
-
-  PathBuilder& SmoothCubicCurveTo(Point controlPoint2,
-                                  Point point,
-                                  bool relative = false);
 
   PathBuilder& AddRect(Rect rect);
 
@@ -122,6 +121,24 @@ class PathBuilder {
           top_right(p_top_right, p_top_right),
           bottom_right(p_bottom_right, p_bottom_right) {}
 
+    explicit RoundingRadii(Scalar radius)
+        : top_left(radius, radius),
+          bottom_left(radius, radius),
+          top_right(radius, radius),
+          bottom_right(radius, radius) {}
+
+    explicit RoundingRadii(Point radii)
+        : top_left(radii),
+          bottom_left(radii),
+          top_right(radii),
+          bottom_right(radii) {}
+
+    explicit RoundingRadii(Size radii)
+        : top_left(radii),
+          bottom_left(radii),
+          top_right(radii),
+          bottom_right(radii) {}
+
     bool AreAllZero() const {
       return top_left.IsZero() &&     //
              bottom_left.IsZero() &&  //
@@ -131,6 +148,8 @@ class PathBuilder {
   };
 
   PathBuilder& AddRoundedRect(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRect(Rect rect, Size radii);
 
   PathBuilder& AddRoundedRect(Rect rect, Scalar radius);
 
@@ -151,12 +170,10 @@ class PathBuilder {
 
   PathBuilder& AddRoundedRectBottomLeft(Rect rect, RoundingRadii radii);
 
-  Point ReflectedQuadraticControlPoint1() const;
-
-  Point ReflectedCubicControlPoint1() const;
-
   PathBuilder(const PathBuilder&) = delete;
   PathBuilder& operator=(const PathBuilder&&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_

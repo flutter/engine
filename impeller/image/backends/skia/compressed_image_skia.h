@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_IMAGE_BACKENDS_SKIA_COMPRESSED_IMAGE_SKIA_H_
+#define FLUTTER_IMPELLER_IMAGE_BACKENDS_SKIA_COMPRESSED_IMAGE_SKIA_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/image/compressed_image.h"
@@ -14,7 +15,7 @@ class CompressedImageSkia final : public CompressedImage {
   static std::shared_ptr<CompressedImage> Create(
       std::shared_ptr<const fml::Mapping> allocation);
 
-  CompressedImageSkia(std::shared_ptr<const fml::Mapping> allocation);
+  explicit CompressedImageSkia(std::shared_ptr<const fml::Mapping> allocation);
 
   ~CompressedImageSkia() override;
 
@@ -28,3 +29,5 @@ class CompressedImageSkia final : public CompressedImage {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_IMAGE_BACKENDS_SKIA_COMPRESSED_IMAGE_SKIA_H_

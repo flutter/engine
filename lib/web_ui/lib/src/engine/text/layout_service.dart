@@ -390,7 +390,10 @@ class TextLayoutService {
     // it possible to do hit testing. Once we find the box, we look inside that
     // box to find where exactly the `offset` is located.
 
-    final ParagraphLine line = _findLineForY(offset.dy);
+    final ParagraphLine? line = _findLineForY(offset.dy);
+    if (line == null) {
+      return const ui.TextPosition(offset: 0);
+    }
     // [offset] is to the left of the line.
     if (offset.dx <= line.left) {
       return ui.TextPosition(
@@ -416,7 +419,52 @@ class TextLayoutService {
     return ui.TextPosition(offset: line.startIndex);
   }
 
-  ParagraphLine _findLineForY(double y) {
+  ui.GlyphInfo? getClosestGlyphInfo(ui.Offset offset) {
+    final ParagraphLine? line = _findLineForY(offset.dy);
+    if (line == null) {
+      return null;
+    }
+    final LayoutFragment? fragment = line.closestFragmentAtOffset(offset.dx - line.left);
+    if (fragment == null) {
+      return null;
+    }
+    final double dx = offset.dx;
+    final bool closestGraphemeStartInFragment = !fragment.hasLeadingBrokenGrapheme
+                                             || dx <= fragment.line.left
+                                             || fragment.line.left + fragment.line.width <= dx
+                                             || switch (fragment.textDirection!) {
+                                               // If dx is closer to the trailing edge, no need to check other fragments.
+                                               ui.TextDirection.ltr => dx >= line.left + (fragment.left + fragment.right) / 2,
+                                               ui.TextDirection.rtl => dx <= line.left + (fragment.left + fragment.right) / 2,
+                                             };
+    final ui.GlyphInfo candidate1 = fragment.getClosestCharacterBox(dx);
+    if (closestGraphemeStartInFragment) {
+      return candidate1;
+    }
+    final bool searchLeft = switch (fragment.textDirection!) {
+      ui.TextDirection.ltr => true,
+      ui.TextDirection.rtl => false,
+    };
+    final ui.GlyphInfo? candidate2 = fragment.line.closestFragmentTo(fragment, searchLeft)?.getClosestCharacterBox(dx);
+    if (candidate2 == null) {
+      return candidate1;
+    }
+
+    final double distance1 = math.min(
+      (candidate1.graphemeClusterLayoutBounds.left - dx).abs(),
+      (candidate1.graphemeClusterLayoutBounds.right - dx).abs(),
+    );
+    final double distance2 = math.min(
+      (candidate2.graphemeClusterLayoutBounds.left - dx).abs(),
+      (candidate2.graphemeClusterLayoutBounds.right - dx).abs(),
+    );
+    return distance2 > distance1 ? candidate1 : candidate2;
+  }
+
+  ParagraphLine? _findLineForY(double y) {
+    if (lines.isEmpty) {
+      return null;
+    }
     // We could do a binary search here but it's not worth it because the number
     // of line is typically low, and each iteration is a cheap comparison of
     // doubles.
@@ -850,6 +898,7 @@ class LineBuilder {
       descent: descent,
       fragments: _fragments,
       textDirection: _paragraphDirection,
+      paragraph: paragraph,
     );
 
     for (final LayoutFragment fragment in _fragments) {

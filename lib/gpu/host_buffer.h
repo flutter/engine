@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_GPU_HOST_BUFFER_H_
+#define FLUTTER_LIB_GPU_HOST_BUFFER_H_
 
 #include "flutter/lib/gpu/export.h"
 #include "flutter/lib/ui/dart_wrapper.h"
@@ -10,6 +11,7 @@
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
+namespace gpu {
 
 class HostBuffer : public RefCountedDartWrappable<HostBuffer> {
   DEFINE_WRAPPERTYPEINFO();
@@ -20,6 +22,8 @@ class HostBuffer : public RefCountedDartWrappable<HostBuffer> {
 
   ~HostBuffer() override;
 
+  std::shared_ptr<impeller::HostBuffer> GetBuffer();
+
   size_t EmplaceBytes(const tonic::DartByteData& byte_data);
 
  private:
@@ -28,6 +32,7 @@ class HostBuffer : public RefCountedDartWrappable<HostBuffer> {
   FML_DISALLOW_COPY_AND_ASSIGN(HostBuffer);
 };
 
+}  // namespace gpu
 }  // namespace flutter
 
 //----------------------------------------------------------------------------
@@ -41,7 +46,9 @@ extern void InternalFlutterGpu_HostBuffer_Initialize(Dart_Handle wrapper);
 
 FLUTTER_GPU_EXPORT
 extern size_t InternalFlutterGpu_HostBuffer_EmplaceBytes(
-    flutter::HostBuffer* wrapper,
+    flutter::gpu::HostBuffer* wrapper,
     Dart_Handle byte_data);
 
 }  // extern "C"
+
+#endif  // FLUTTER_LIB_GPU_HOST_BUFFER_H_

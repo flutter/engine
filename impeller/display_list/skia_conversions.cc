@@ -57,6 +57,8 @@ Path ToPath(const SkPath& path, Point shift) {
 
   PathBuilder builder;
   PathData data;
+  // Reserve a path size with some arbitrarily additional padding.
+  builder.Reserve(path.countPoints() + 8, path.countVerbs() + 8);
   auto verb = SkPath::Verb::kDone_Verb;
   do {
     verb = iterator.next(data.points);
@@ -137,6 +139,10 @@ Path ToPath(const SkRRect& rrect) {
 
 Point ToPoint(const SkPoint& point) {
   return Point::MakeXY(point.fX, point.fY);
+}
+
+Size ToSize(const SkPoint& point) {
+  return Size(point.fX, point.fY);
 }
 
 Color ToColor(const flutter::DlColor& color) {

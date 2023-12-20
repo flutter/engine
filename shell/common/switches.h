@@ -7,8 +7,8 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/command_line.h"
 
-#ifndef SHELL_COMMON_SWITCHES_H_
-#define SHELL_COMMON_SWITCHES_H_
+#ifndef FLUTTER_SHELL_COMMON_SWITCHES_H_
+#define FLUTTER_SHELL_COMMON_SWITCHES_H_
 
 namespace flutter {
 
@@ -284,9 +284,6 @@ DEF_SWITCH(LeakVM,
            "When the last shell shuts down, the shared VM is leaked by default "
            "(the leak_vm in VM settings is true). To clean up the leak VM, set "
            "this value to false.")
-DEF_SWITCH(DisableImageReaderPlatformViews,
-           "disable-image-reader-platform-views",
-           "Disables the use of ImageReader backed Platform Views on Android.")
 DEF_SWITCH(
     MsaaSamples,
     "msaa-samples",
@@ -307,4 +304,4 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SWITCHES_H_
+#endif  // FLUTTER_SHELL_COMMON_SWITCHES_H_

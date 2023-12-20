@@ -87,6 +87,7 @@ impeller_component("impeller_unittests") {
     "core:allocator_unittests",
     "display_list:skia_conversions_unittests",
     "geometry:geometry_unittests",
+    "renderer/backend/metal:metal_unittests",
     "runtime_stage:runtime_stage_unittests",
     "scene/importer:importer_unittests",
     "shader_archive:shader_archive_unittests",
@@ -98,7 +99,6 @@ impeller_component("impeller_unittests") {
       "aiks:aiks_unittests",
       "display_list:display_list_unittests",
       "entity:entity_unittests",
-      "entity:render_target_cache_unittests",
       "fixtures",
       "geometry:geometry_unittests",
       "image:image_unittests",
@@ -119,7 +119,7 @@ impeller_component("impeller_unittests") {
 
   if (glfw_vulkan_library != "") {
     deps += [
-      "//third_party/swiftshader",
+      "//flutter/third_party/swiftshader",
       "//third_party/vulkan-deps/vulkan-loader/src:libvulkan",
       "//third_party/vulkan_validation_layers",
       "//third_party/vulkan_validation_layers:vulkan_gen_json_files",

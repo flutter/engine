@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_TEXTURE_H_
+#define FLUTTER_IMPELLER_CORE_TEXTURE_H_
 
 #include <string_view>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -74,3 +74,5 @@ class Texture {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_TEXTURE_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
 
 #include <cstddef>
 
@@ -98,9 +99,6 @@ class CapabilitiesGLES final
   bool SupportsComputeSubgroups() const override;
 
   // |Capabilities|
-  bool SupportsReadFromOnscreenTexture() const override;
-
-  // |Capabilities|
   bool SupportsReadFromResolve() const override;
 
   // |Capabilities|
@@ -126,3 +124,5 @@ class CapabilitiesGLES final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_

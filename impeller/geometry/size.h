@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
+#define FLUTTER_IMPELLER_GEOMETRY_SIZE_H_
 
 #include <algorithm>
 #include <cmath>
@@ -68,6 +69,8 @@ struct TSize {
     return {width - s.width, height - s.height};
   }
 
+  constexpr TSize operator-() const { return {-width, -height}; }
+
   constexpr TSize Min(const TSize& o) const {
     return {
         std::min(width, o.width),
@@ -81,6 +84,8 @@ struct TSize {
         std::max(height, o.height),
     };
   }
+
+  constexpr Type MaxDimension() const { return std::max(width, height); }
 
   constexpr TSize Abs() const { return {std::fabs(width), std::fabs(height)}; }
 
@@ -96,13 +101,10 @@ struct TSize {
 
   constexpr Type Area() const { return width * height; }
 
-  constexpr bool IsPositive() const { return width > 0 && height > 0; }
+  /// Returns true if either of the width or height are 0, negative, or NaN.
+  constexpr bool IsEmpty() const { return !(width > 0 && height > 0); }
 
-  constexpr bool IsNegative() const { return width < 0 || height < 0; }
-
-  constexpr bool IsZero() const { return width == 0 || height == 0; }
-
-  constexpr bool IsEmpty() const { return IsNegative() || IsZero(); }
+  constexpr bool IsSquare() const { return width == height; }
 
   template <class U>
   static constexpr TSize Ceil(const TSize<U>& other) {
@@ -112,7 +114,7 @@ struct TSize {
 
   constexpr size_t MipCount() const {
     constexpr size_t minimum_mip = 1u;
-    if (!IsPositive()) {
+    if (IsEmpty()) {
       return minimum_mip;
     }
     size_t result = std::max(ceil(log2(width)), ceil(log2(height)));
@@ -149,3 +151,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_SIZE_H_

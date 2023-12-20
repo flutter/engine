@@ -151,9 +151,10 @@ public class FlutterJNI {
   private static native void nativePrefetchDefaultFontManager();
 
   /**
-   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   * Prefetch the default font manager provided by txt::GetDefaultFontManager() which is a
+   * process-wide singleton owned by Skia. Note that, the first call to txt::GetDefaultFontManager()
+   * will take noticeable time, but later calls will return a reference to the preexisting font
+   * manager.
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
@@ -237,17 +238,6 @@ public class FlutterJNI {
     return nativeGetIsSoftwareRenderingEnabled();
   }
 
-  private native boolean nativeGetDisableImageReaderPlatformViews();
-
-  /**
-   * Checks launch settings for whether image reader platform views are disabled.
-   *
-   * <p>The value is the same per program.
-   */
-  @UiThread
-  public boolean getDisableImageReaderPlatformViews() {
-    return nativeGetDisableImageReaderPlatformViews();
-  }
   /**
    * VM Service URI for the VM instance.
    *
@@ -931,19 +921,19 @@ public class FlutterJNI {
    */
   @UiThread
   public void registerImageTexture(
-      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+      long textureId, @NonNull TextureRegistry.ImageConsumer imageTexture) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRegisterImageTexture(
         nativeShellHolderId,
         textureId,
-        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+        new WeakReference<TextureRegistry.ImageConsumer>(imageTexture));
   }
 
   private native void nativeRegisterImageTexture(
       long nativeShellHolderId,
       long textureId,
-      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
+      @NonNull WeakReference<TextureRegistry.ImageConsumer> imageTexture);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link

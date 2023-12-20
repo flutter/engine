@@ -21,6 +21,8 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/command.h"
+#include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
 #include "vulkan/vulkan_to_string.hpp"
 
@@ -28,7 +30,8 @@ namespace impeller {
 
 static vk::AttachmentDescription CreateAttachmentDescription(
     const Attachment& attachment,
-    const std::shared_ptr<Texture> Attachment::*texture_ptr) {
+    const std::shared_ptr<Texture> Attachment::*texture_ptr,
+    bool supports_framebuffer_fetch) {
   const auto& texture = attachment.*texture_ptr;
   if (!texture) {
     return {};
@@ -50,6 +53,7 @@ static vk::AttachmentDescription CreateAttachmentDescription(
     store_action = StoreAction::kStore;
   }
 
+  // Always insert a barrier to transition to color attachment optimal.
   if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
       current_layout != vk::ImageLayout::eUndefined) {
     // Note: This should incur a barrier.
@@ -60,7 +64,8 @@ static vk::AttachmentDescription CreateAttachmentDescription(
                                      desc.sample_count,  //
                                      load_action,        //
                                      store_action,       //
-                                     current_layout      //
+                                     current_layout,
+                                     supports_framebuffer_fetch  //
   );
 }
 
@@ -96,7 +101,8 @@ static void SetTextureLayout(
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
-    const std::shared_ptr<CommandBufferVK>& command_buffer) const {
+    const std::shared_ptr<CommandBufferVK>& command_buffer,
+    bool supports_framebuffer_fetch) const {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -117,18 +123,22 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
                       kUnusedAttachmentReference);
 
   for (const auto& [bind_point, color] : render_target_.GetColorAttachments()) {
-    color_refs[bind_point] =
-        vk::AttachmentReference{static_cast<uint32_t>(attachments.size()),
-                                vk::ImageLayout::eColorAttachmentOptimal};
-    attachments.emplace_back(
-        CreateAttachmentDescription(color, &Attachment::texture));
+    color_refs[bind_point] = vk::AttachmentReference{
+        static_cast<uint32_t>(attachments.size()),
+        supports_framebuffer_fetch ? vk::ImageLayout::eGeneral
+                                   : vk::ImageLayout::eColorAttachmentOptimal};
+    attachments.emplace_back(CreateAttachmentDescription(
+        color, &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(color, attachments.back(), command_buffer,
                      &Attachment::texture);
     if (color.resolve_texture) {
       resolve_refs[bind_point] = vk::AttachmentReference{
-          static_cast<uint32_t>(attachments.size()), vk::ImageLayout::eGeneral};
-      attachments.emplace_back(
-          CreateAttachmentDescription(color, &Attachment::resolve_texture));
+          static_cast<uint32_t>(attachments.size()),
+          supports_framebuffer_fetch
+              ? vk::ImageLayout::eGeneral
+              : vk::ImageLayout::eColorAttachmentOptimal};
+      attachments.emplace_back(CreateAttachmentDescription(
+          color, &Attachment::resolve_texture, supports_framebuffer_fetch));
       SetTextureLayout(color, attachments.back(), command_buffer,
                        &Attachment::resolve_texture);
     }
@@ -138,8 +148,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
-    attachments.emplace_back(
-        CreateAttachmentDescription(depth.value(), &Attachment::texture));
+    attachments.emplace_back(CreateAttachmentDescription(
+        depth.value(), &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(depth.value(), attachments.back(), command_buffer,
                      &Attachment::texture);
   }
@@ -149,8 +159,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
-    attachments.emplace_back(
-        CreateAttachmentDescription(stencil.value(), &Attachment::texture));
+    attachments.emplace_back(CreateAttachmentDescription(
+        stencil.value(), &Attachment::texture, supports_framebuffer_fetch));
     SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
                      &Attachment::texture);
   }
@@ -160,6 +170,16 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setResolveAttachments(resolve_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
+
+  std::vector<vk::SubpassDependency> subpass_dependencies;
+  std::vector<vk::AttachmentReference> subpass_color_ref;
+  subpass_color_ref.push_back(vk::AttachmentReference{
+      static_cast<uint32_t>(0), vk::ImageLayout::eColorAttachmentOptimal});
+  if (supports_framebuffer_fetch) {
+    subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
+                              eRasterizationOrderAttachmentColorAccessARM);
+    subpass_desc.setInputAttachments(subpass_color_ref);
+  }
 
   vk::RenderPassCreateInfo render_pass_desc;
   render_pass_desc.setAttachments(attachments);
@@ -245,7 +265,6 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   const auto target_size = render_target_.GetRenderTargetSize();
   fb_info.width = target_size.width;
   fb_info.height = target_size.height;
-
   fb_info.layers = 1u;
 
   std::vector<vk::ImageView> attachments;
@@ -297,7 +316,7 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const auto& [_, data] : bindings.sampled_images) {
+  for (const TextureAndSampler& data : bindings.sampled_images) {
     if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
       return false;
     }
@@ -313,7 +332,7 @@ static bool UpdateBindingLayouts(const Command& command,
 
 static bool UpdateBindingLayouts(const std::vector<Command>& commands,
                                  const vk::CommandBuffer& buffer) {
-  for (const auto& command : commands) {
+  for (const Command& command : commands) {
     if (!UpdateBindingLayouts(command, buffer)) {
       return false;
     }
@@ -329,9 +348,9 @@ static void SetViewportAndScissor(const Command& command,
   const auto& vp = command.viewport.value_or<Viewport>(
       {.rect = Rect::MakeSize(target_size)});
   vk::Viewport viewport = vk::Viewport()
-                              .setWidth(vp.rect.size.width)
-                              .setHeight(-vp.rect.size.height)
-                              .setY(vp.rect.size.height)
+                              .setWidth(vp.rect.GetWidth())
+                              .setHeight(-vp.rect.GetHeight())
+                              .setY(vp.rect.GetHeight())
                               .setMinDepth(0.0f)
                               .setMaxDepth(1.0f);
   cmd_buffer_cache.SetViewport(cmd_buffer, 0, 1, &viewport);
@@ -340,8 +359,8 @@ static void SetViewportAndScissor(const Command& command,
   const auto& sc = command.scissor.value_or(IRect::MakeSize(target_size));
   vk::Rect2D scissor =
       vk::Rect2D()
-          .setOffset(vk::Offset2D(sc.origin.x, sc.origin.y))
-          .setExtent(vk::Extent2D(sc.size.width, sc.size.height));
+          .setOffset(vk::Offset2D(sc.GetX(), sc.GetY()))
+          .setExtent(vk::Extent2D(sc.GetWidth(), sc.GetHeight()));
   cmd_buffer_cache.SetScissor(cmd_buffer, 0, 1, &scissor);
 }
 
@@ -351,10 +370,6 @@ static bool EncodeCommand(const Context& context,
                           PassBindingsCache& command_buffer_cache,
                           const ISize& target_size,
                           const vk::DescriptorSet vk_desc_set) {
-  if (command.vertex_count == 0u || command.instance_count == 0u) {
-    return true;
-  }
-
 #ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_marker(
       [&encoder]() { encoder.PopDebugGroup(); });
@@ -388,14 +403,13 @@ static bool EncodeCommand(const Context& context,
       command.stencil_reference);
 
   // Configure vertex and index and buffers for binding.
-  auto vertex_buffer_view = command.GetVertexBuffer();
+  auto& vertex_buffer_view = command.vertex_buffer.vertex_buffer;
 
   if (!vertex_buffer_view) {
     return false;
   }
 
   auto& allocator = *context.GetResourceAllocator();
-
   auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer(allocator);
 
   if (!vertex_buffer) {
@@ -414,9 +428,9 @@ static bool EncodeCommand(const Context& context,
   vk::DeviceSize vertex_buffer_offsets[] = {vertex_buffer_view.range.offset};
   cmd_buffer.bindVertexBuffers(0u, 1u, vertex_buffers, vertex_buffer_offsets);
 
-  if (command.index_type != IndexType::kNone) {
+  if (command.vertex_buffer.index_type != IndexType::kNone) {
     // Bind the index buffer.
-    auto index_buffer_view = command.index_buffer;
+    auto index_buffer_view = command.vertex_buffer.index_buffer;
     if (!index_buffer_view) {
       return false;
     }
@@ -435,20 +449,20 @@ static bool EncodeCommand(const Context& context,
     auto index_buffer_handle = DeviceBufferVK::Cast(*index_buffer).GetBuffer();
     cmd_buffer.bindIndexBuffer(index_buffer_handle,
                                index_buffer_view.range.offset,
-                               ToVKIndexType(command.index_type));
+                               ToVKIndexType(command.vertex_buffer.index_type));
 
     // Engage!
-    cmd_buffer.drawIndexed(command.vertex_count,    // index count
+    cmd_buffer.drawIndexed(command.vertex_buffer.vertex_count,  // index count
                            command.instance_count,  // instance count
                            0u,                      // first index
                            command.base_vertex,     // vertex offset
                            0u                       // first instance
     );
   } else {
-    cmd_buffer.draw(command.vertex_count,    // vertex count
-                    command.instance_count,  // instance count
-                    command.base_vertex,     // vertex offset
-                    0u                       // first instance
+    cmd_buffer.draw(command.vertex_buffer.vertex_count,  // vertex count
+                    command.instance_count,              // instance count
+                    command.base_vertex,                 // vertex offset
+                    0u                                   // first instance
     );
   }
   return true;
@@ -495,7 +509,9 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  auto render_pass = CreateVKRenderPass(vk_context, command_buffer);
+  auto render_pass = CreateVKRenderPass(
+      vk_context, command_buffer,
+      vk_context.GetCapabilities()->SupportsFramebufferFetch());
   if (!render_pass) {
     VALIDATION_LOG << "Could not create renderpass.";
     return false;
@@ -521,8 +537,10 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  auto desc_sets_result =
-      AllocateAndBindDescriptorSets(vk_context, encoder, commands_);
+  const auto& color_image_vk = TextureVK::Cast(
+      *render_target_.GetColorAttachments().find(0u)->second.texture);
+  auto desc_sets_result = AllocateAndBindDescriptorSets(
+      vk_context, encoder, commands_, color_image_vk);
   if (!desc_sets_result.ok()) {
     return false;
   }

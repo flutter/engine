@@ -2,18 +2,33 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FRAMEBUFFER_BLEND_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FRAMEBUFFER_BLEND_CONTENTS_H_
 
-#include <functional>
 #include <memory>
-#include <vector>
 
-#include "flutter/fml/macros.h"
-#include "flutter/impeller/core/texture.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/entity.h"
 
 namespace impeller {
+
+enum class BlendSelectValues {
+  kScreen = 0,
+  kOverlay,
+  kDarken,
+  kLighten,
+  kColorDodge,
+  kColorBurn,
+  kHardLight,
+  kSoftLight,
+  kDifference,
+  kExclusion,
+  kMultiply,
+  kHue,
+  kSaturation,
+  kColor,
+  kLuminosity,
+};
 
 class FramebufferBlendContents final : public ColorSourceContents {
  public:
@@ -43,3 +58,5 @@ class FramebufferBlendContents final : public ColorSourceContents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FRAMEBUFFER_BLEND_CONTENTS_H_

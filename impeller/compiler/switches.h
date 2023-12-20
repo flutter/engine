@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_SWITCHES_H_
+#define FLUTTER_IMPELLER_COMPILER_SWITCHES_H_
 
+#include <cstdint>
 #include <iostream>
 #include <memory>
 
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
-#include "impeller/compiler/compiler.h"
 #include "impeller/compiler/include_dir.h"
 #include "impeller/compiler/types.h"
 
@@ -23,8 +23,12 @@ struct Switches {
   std::vector<IncludeDir> include_directories = {};
   std::string source_file_name = "";
   SourceType input_type = SourceType::kUnknown;
+  /// The raw shader file output by the compiler. For --iplr and
+  /// --shader-bundle modes, this is used as the filename for the output
+  /// flatbuffer output.
   std::string sl_file_name = "";
   bool iplr = false;
+  std::string shader_bundle = "";
   std::string spirv_file_name = "";
   std::string reflection_json_name = "";
   std::string reflection_header_name = "";
@@ -52,3 +56,5 @@ struct Switches {
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_SWITCHES_H_

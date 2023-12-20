@@ -13,6 +13,8 @@ import android.content.MutableContextWrapper;
 import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
+import android.view.MotionEvent.PointerCoords;
+import android.view.MotionEvent.PointerProperties;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -147,7 +149,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Whether software rendering is used.
   private boolean usesSoftwareRendering = false;
 
-  private static boolean enableHardwareBufferRenderingTarget = true;
+  private static boolean enableImageRenderTarget = true;
+
+  private static boolean enableSurfaceProducerRenderTarget = true;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
@@ -688,8 +692,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       return MotionEvent.obtain(
           trackedEvent.getDownTime(),
           trackedEvent.getEventTime(),
-          touch.action,
-          touch.pointerCount,
+          trackedEvent.getAction(),
+          trackedEvent.getPointerCount(),
           pointerProperties,
           pointerCoords,
           trackedEvent.getMetaState(),
@@ -774,10 +778,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   public void setSoftwareRendering(boolean useSoftwareRendering) {
     usesSoftwareRendering = useSoftwareRendering;
-  }
-
-  public void setDisableImageReaderPlatformViews(boolean disableImageReaderPlatformViews) {
-    enableHardwareBufferRenderingTarget = !disableImageReaderPlatformViews;
   }
 
   /**
@@ -977,7 +977,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private static PlatformViewRenderTarget makePlatformViewRenderTarget(
       TextureRegistry textureRegistry) {
-    if (enableHardwareBufferRenderingTarget && Build.VERSION.SDK_INT >= 33) {
+    if (enableSurfaceProducerRenderTarget && Build.VERSION.SDK_INT >= 33) {
+      final TextureRegistry.SurfaceProducer textureEntry = textureRegistry.createSurfaceProducer();
+      Log.i(TAG, "PlatformView is using SurfaceProducer backend");
+      return new SurfaceProducerPlatformViewRenderTarget(textureEntry);
+    }
+    if (enableImageRenderTarget && Build.VERSION.SDK_INT >= 33) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
       Log.i(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
@@ -1027,12 +1032,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     coords.orientation = (float) (double) coordsList.get(0);
     coords.pressure = (float) (double) coordsList.get(1);
     coords.size = (float) (double) coordsList.get(2);
-    coords.toolMajor = (float) (double) coordsList.get(3) * density;
-    coords.toolMinor = (float) (double) coordsList.get(4) * density;
-    coords.touchMajor = (float) (double) coordsList.get(5) * density;
-    coords.touchMinor = (float) (double) coordsList.get(6) * density;
-    coords.x = (float) (double) coordsList.get(7) * density;
-    coords.y = (float) (double) coordsList.get(8) * density;
+    coords.toolMajor = (float) ((double) coordsList.get(3) * density);
+    coords.toolMinor = (float) ((double) coordsList.get(4) * density);
+    coords.touchMajor = (float) ((double) coordsList.get(5) * density);
+    coords.touchMinor = (float) ((double) coordsList.get(6) * density);
+    coords.x = (float) ((double) coordsList.get(7) * density);
+    coords.y = (float) ((double) coordsList.get(8) * density);
     return coords;
   }
 

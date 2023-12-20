@@ -20,6 +20,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/dart_snapshot.h"
+#include "flutter/runtime/isolate_configuration.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
 
@@ -91,6 +92,7 @@ class DartIsolate : public UIDartState {
   ///             isolate and start over.
   ///
   enum class Phase {
+    // NOLINTBEGIN(readability-identifier-naming)
     //--------------------------------------------------------------------------
     /// The initial phase of all Dart isolates. This is an internal phase and
     /// callers can never get a reference to a Dart isolate in this phase.
@@ -132,6 +134,7 @@ class DartIsolate : public UIDartState {
     /// reference to a Dart isolate in this phase.
     ///
     Shutdown,
+    // NOLINTEND(readability-identifier-naming)
   };
 
   //----------------------------------------------------------------------------
@@ -410,6 +413,7 @@ class DartIsolate : public UIDartState {
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
   std::string domain_network_policy_;
+  const bool is_spawning_in_group_;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
@@ -423,7 +427,8 @@ class DartIsolate : public UIDartState {
 
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
-              const UIDartState::Context& context);
+              const UIDartState::Context& context,
+              bool is_spawning_in_group = false);
 
   //----------------------------------------------------------------------------
   /// @brief      Initializes the given (current) isolate.

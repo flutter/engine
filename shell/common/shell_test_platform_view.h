@@ -36,7 +36,7 @@ class ShellTestPlatformView : public PlatformView {
 
  protected:
   ShellTestPlatformView(PlatformView::Delegate& delegate,
-                        TaskRunners task_runners)
+                        const TaskRunners& task_runners)
       : PlatformView(delegate, task_runners) {}
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformView);
@@ -53,7 +53,7 @@ class ShellTestPlatformViewBuilder {
         ShellTestPlatformView::BackendType::kDefaultBackend;
   };
 
-  ShellTestPlatformViewBuilder(Config config);
+  explicit ShellTestPlatformViewBuilder(Config config);
   ~ShellTestPlatformViewBuilder() = default;
 
   // Override operator () to make this class assignable to std::function.
@@ -66,4 +66,4 @@ class ShellTestPlatformViewBuilder {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_COMMON_SHELL_TEST_PLATFORM_VIEW_GL_H_
+#endif  // FLUTTER_SHELL_COMMON_SHELL_TEST_PLATFORM_VIEW_H_

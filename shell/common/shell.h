@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_COMMON_SHELL_H_
-#define SHELL_COMMON_SHELL_H_
+#ifndef FLUTTER_SHELL_COMMON_SHELL_H_
+#define FLUTTER_SHELL_COMMON_SHELL_H_
 
 #include <functional>
 #include <mutex>
@@ -45,6 +45,7 @@ namespace flutter {
 
 /// Error exit codes for the Dart isolate.
 enum class DartErrorCode {
+  // NOLINTBEGIN(readability-identifier-naming)
   /// No error has occurred.
   NoError = 0,
   /// The Dart error code for an API error.
@@ -53,6 +54,7 @@ enum class DartErrorCode {
   CompilationError = 254,
   /// The Dart error code for an unknown error.
   UnknownError = 255
+  // NOLINTEND(readability-identifier-naming)
 };
 
 /// Values for |Shell::SetGpuAvailability|.
@@ -813,4 +815,4 @@ class Shell final : public PlatformView::Delegate,
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SHELL_H_
+#endif  // FLUTTER_SHELL_COMMON_SHELL_H_

@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_H_
+#define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_H_
 
 #include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archivable.h"
 
 namespace impeller {
@@ -21,7 +20,7 @@ class ArchiveDatabase;
 
 class Archive {
  public:
-  Archive(const std::string& path);
+  explicit Archive(const std::string& path);
 
   ~Archive();
 
@@ -45,7 +44,7 @@ class Archive {
 
   template <class T,
             class = std::enable_if_t<std::is_base_of<Archivable, T>::value>>
-  [[nodiscard]] size_t Read(UnarchiveStep stepper) {
+  [[nodiscard]] size_t Read(const UnarchiveStep& stepper) {
     const ArchiveDef& def = T::kArchiveDefinition;
     return UnarchiveInstances(def, stepper);
   }
@@ -74,3 +73,5 @@ class Archive {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_H_

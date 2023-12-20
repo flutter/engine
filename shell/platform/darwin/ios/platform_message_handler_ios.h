@@ -20,7 +20,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
  public:
   static NSObject<FlutterTaskQueue>* MakeBackgroundTaskQueue();
 
-  PlatformMessageHandlerIos(fml::RefPtr<fml::TaskRunner> platform_task_runner);
+  explicit PlatformMessageHandlerIos(fml::RefPtr<fml::TaskRunner> platform_task_runner);
 
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
@@ -49,4 +49,4 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
 
 }  // namespace flutter
 
-#endif
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_MESSAGE_HANDLER_IOS_H_

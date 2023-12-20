@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_DISPLAY_LIST_DL_PLAYGROUND_H_
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
-#include "flutter/fml/macros.h"
 #include "impeller/playground/playground_test.h"
 #include "third_party/skia/include/core/SkFont.h"
 
@@ -38,3 +38,5 @@ class DlPlayground : public PlaygroundTest {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_DISPLAY_LIST_DL_PLAYGROUND_H_

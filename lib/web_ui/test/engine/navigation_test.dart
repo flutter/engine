@@ -3,15 +3,17 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine/window.dart';
+import 'package:ui/ui.dart' as ui;
 
 const engine.MethodCodec codec = engine.JSONMethodCodec();
 
-void emptyCallback(ByteData date) {}
+engine.EngineFlutterWindow get implicitView =>
+    engine.EnginePlatformDispatcher.instance.implicitView!;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -20,19 +22,23 @@ void main() {
 void testMain() {
   engine.TestUrlStrategy? strategy;
 
+  setUpAll(() {
+    ensureImplicitViewInitialized();
+  });
+
   setUp(() async {
     strategy = engine.TestUrlStrategy();
-    await engine.window.debugInitializeHistory(strategy, useSingle: true);
+    await implicitView.debugInitializeHistory(strategy, useSingle: true);
   });
 
   tearDown(() async {
     strategy = null;
-    await engine.window.resetHistory();
+    await implicitView.resetHistory();
   });
 
   test('Tracks pushed, replaced and popped routes', () async {
     final Completer<void> completer = Completer<void>();
-    engine.window.sendPlatformMessage(
+    ui.PlatformDispatcher.instance.sendPlatformMessage(
       'flutter/navigation',
       codec.encodeMethodCall(const engine.MethodCall(
         'routeUpdated',

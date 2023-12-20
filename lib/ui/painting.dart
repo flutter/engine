@@ -1090,10 +1090,7 @@ enum Clip {
 class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  Paint() {
-    // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
-    _enableDithering();
-  }
+  Paint();
 
   // Paint objects are encoded in two buffers:
   //
@@ -1126,7 +1123,6 @@ class Paint {
   static const int _kMaskFilterBlurStyleIndex = 10;
   static const int _kMaskFilterSigmaIndex = 11;
   static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1141,9 +1137,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-  static const int _kDitherOffset = _kDitherIndex << 2;
+
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
+  static const int _kDataByteCount = 52; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1478,11 +1474,6 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
-  // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
-  void _enableDithering() {
-    _data.setInt32(_kDitherOffset, 1, _kFakeHostEndian);
-  }
-
   @override
   String toString() {
     if (const bool.fromEnvironment('dart.vm.product')) {
@@ -1510,7 +1501,7 @@ class Paint {
       }
       semicolon = '; ';
     }
-    if (isAntiAlias != true) {
+    if (!isAntiAlias) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
@@ -1977,6 +1968,11 @@ base class _Image extends NativeFieldWrapperClass1 {
 
   @override
   String toString() => '[$width\u00D7$height]';
+}
+
+@pragma('vm:entry-point')
+Image _wrapImage(_Image image) {
+  return Image._(image, image.width, image.height);
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -6868,9 +6864,7 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
       targetHeight = height;
     } else if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (width / height)).round();
-      targetHeight = targetHeight;
     } else if (targetHeight == null && targetWidth != null) {
-      targetWidth = targetWidth;
       targetHeight = targetWidth ~/ (width / height);
     }
     assert(targetWidth != null);

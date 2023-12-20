@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -27,8 +28,7 @@ class SolidColorContents final : public ColorSourceContents {
 
   ~SolidColorContents() override;
 
-  static std::unique_ptr<SolidColorContents> Make(const Path& path,
-                                                  Color color);
+  static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
 
   void SetColor(Color color);
 
@@ -64,3 +64,5 @@ class SolidColorContents final : public ColorSourceContents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_

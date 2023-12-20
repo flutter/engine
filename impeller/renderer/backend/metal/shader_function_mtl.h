@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_
 
 #include <Metal/Metal.h>
 
@@ -21,13 +22,20 @@ class ShaderFunctionMTL final
 
   id<MTLFunction> GetMTLFunction() const;
 
+  using CompileCallback = std::function<void(id<MTLFunction>)>;
+
+  void GetMTLFunctionSpecialized(const std::vector<Scalar>& constants,
+                                 const CompileCallback& callback) const;
+
  private:
   friend class ShaderLibraryMTL;
 
   id<MTLFunction> function_ = nullptr;
+  id<MTLLibrary> library_ = nullptr;
 
   ShaderFunctionMTL(UniqueID parent_library_id,
                     id<MTLFunction> function,
+                    id<MTLLibrary> library,
                     std::string name,
                     ShaderStage stage);
 
@@ -37,3 +45,5 @@ class ShaderFunctionMTL final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_

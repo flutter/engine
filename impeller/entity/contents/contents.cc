@@ -19,11 +19,9 @@ namespace impeller {
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  opts.sample_count = pass.GetSampleCount();
+  opts.color_attachment_pixel_format = pass.GetRenderTargetPixelFormat();
+  opts.has_stencil_attachment = pass.HasStencilAttachment();
   return opts;
 }
 
@@ -82,14 +80,14 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   }
 
   auto texture = renderer.MakeSubpass(
-      label, ISize::Ceil(coverage->size),
+      label, ISize::Ceil(coverage->GetSize()),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-coverage->origin)) *
-            entity.GetTransformation());
+        sub_entity.SetTransform(
+            Matrix::MakeTranslation(Vector3(-coverage->GetOrigin())) *
+            entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
       msaa_enabled);
@@ -100,7 +98,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
 
   auto snapshot = Snapshot{
       .texture = texture,
-      .transform = Matrix::MakeTranslation(coverage->origin),
+      .transform = Matrix::MakeTranslation(coverage->GetOrigin()),
   };
   if (sampler_descriptor.has_value()) {
     snapshot.sampler_descriptor = sampler_descriptor.value();
@@ -133,11 +131,10 @@ bool Contents::ApplyColorFilter(
 }
 
 bool Contents::ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const {
+                            const std::optional<Rect> clip_coverage) const {
   if (!clip_coverage.has_value()) {
     return false;
   }
-
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return false;

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
+#define FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
 
 #include <memory>
 
@@ -63,10 +64,6 @@ class Capabilities {
   /// @brief  Whether the context backend supports configuring `ComputePass`
   ///         command subgroups.
   virtual bool SupportsComputeSubgroups() const = 0;
-
-  /// @brief  Whether the context backend supports binding the on-screen surface
-  ///         texture for shader reading.
-  virtual bool SupportsReadFromOnscreenTexture() const = 0;
 
   /// @brief  Whether the context backend supports binding the current
   ///         `RenderPass` attachments. This is supported if the backend can
@@ -136,8 +133,6 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetSupportsComputeSubgroups(bool value);
 
-  CapabilitiesBuilder& SetSupportsReadFromOnscreenTexture(bool value);
-
   CapabilitiesBuilder& SetSupportsReadFromResolve(bool value);
 
   CapabilitiesBuilder& SetDefaultColorFormat(PixelFormat value);
@@ -160,7 +155,6 @@ class CapabilitiesBuilder {
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
-  bool supports_read_from_onscreen_texture_ = false;
   bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
@@ -174,3 +168,5 @@ class CapabilitiesBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_

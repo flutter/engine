@@ -26,25 +26,8 @@ constexpr ColorMatrix kColorInversion = {
 };
 // clang-format on
 
-std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
-                                                         bool cover) const {
-  std::unique_ptr<Geometry> geometry;
-  switch (style) {
-    case Style::kFill:
-      geometry = cover ? Geometry::MakeCover() : Geometry::MakeFillPath(path);
-      break;
-    case Style::kStroke:
-      geometry =
-          cover ? Geometry::MakeCover()
-                : Geometry::MakeStrokePath(path, stroke_width, stroke_miter,
-                                           stroke_cap, stroke_join);
-      break;
-  }
-  return CreateContentsForGeometry(std::move(geometry));
-}
-
 std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
-    std::shared_ptr<Geometry> geometry) const {
+    const std::shared_ptr<Geometry>& geometry) const {
   auto contents = color_source.GetContents(*this);
 
   // Attempt to apply the color filter on the CPU first.
@@ -57,7 +40,7 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
     needs_color_filter = false;
   }
 
-  contents->SetGeometry(std::move(geometry));
+  contents->SetGeometry(geometry);
   if (mask_blur_descriptor.has_value()) {
     // If there's a mask blur and we need to apply the color filter on the GPU,
     // we need to be careful to only apply the color filter to the source
@@ -166,7 +149,7 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
 
   auto expanded_local_bounds = blurred_mask->GetCoverage({});
   if (!expanded_local_bounds.has_value()) {
-    return nullptr;
+    expanded_local_bounds = Rect();
   }
   color_source_contents->SetGeometry(
       Geometry::MakeRect(*expanded_local_bounds));

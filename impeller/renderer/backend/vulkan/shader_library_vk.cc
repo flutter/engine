@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 
+#include <cstdint>
+
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -38,12 +40,6 @@ static std::string VKShaderNameToShaderKeyName(const std::string& name,
       break;
     case ShaderStage::kFragment:
       stream << "_fragment_";
-      break;
-    case ShaderStage::kTessellationControl:
-      stream << "_tessellation_control_";
-      break;
-    case ShaderStage::kTessellationEvaluation:
-      stream << "_tessellation_evaluation_";
       break;
     case ShaderStage::kCompute:
       stream << "_compute_";

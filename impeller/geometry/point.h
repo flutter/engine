@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_POINT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_POINT_H_
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <type_traits>
@@ -308,6 +310,7 @@ using IPoint = TPoint<int64_t>;
 using IPoint32 = TPoint<int32_t>;
 using UintPoint32 = TPoint<uint32_t>;
 using Vector2 = Point;
+using Quad = std::array<Point, 4>;
 
 }  // namespace impeller
 
@@ -321,3 +324,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_POINT_H_

@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_SPIRV_SKSL_H_
+#define FLUTTER_IMPELLER_COMPILER_SPIRV_SKSL_H_
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 #include <variant>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "spirv_glsl.hpp"
 
 namespace impeller {
@@ -78,3 +79,5 @@ class CompilerSkSL : public spirv_cross::CompilerGLSL {
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_SPIRV_SKSL_H_

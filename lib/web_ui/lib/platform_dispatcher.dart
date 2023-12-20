@@ -80,7 +80,7 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void render(Scene scene, [FlutterView view]);
+  Future<void> render(Scene scene, [FlutterView view]);
 
   AccessibilityFeatures get accessibilityFeatures;
 
@@ -286,6 +286,25 @@ abstract class ViewPadding {
   String toString() {
     return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+abstract class ViewConstraints {
+  const factory ViewConstraints({
+    double minWidth,
+    double maxWidth,
+    double minHeight,
+    double maxHeight,
+  }) = engine.ViewConstraints;
+
+  factory ViewConstraints.tight(Size size) = engine.ViewConstraints.tight;
+
+  double get minWidth;
+  double get maxWidth;
+  double get minHeight;
+  double get maxHeight;
+  bool isSatisfiedBy(Size size);
+  bool get isTight;
+  ViewConstraints operator/(double factor);
 }
 
 @Deprecated(
@@ -526,4 +545,7 @@ class SemanticsActionEvent {
       arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
     );
   }
+
+  @override
+  String toString() => 'SemanticsActionEvent($type, view: $viewId, node: $nodeId)';
 }

@@ -154,7 +154,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   DEBUG_COMMAND_INFO(cmd, "RuntimeEffectContents");
   cmd.pipeline = pipeline;
   cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
 
   //--------------------------------------------------------------------------
   /// Vertex stage uniforms.
@@ -171,7 +171,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
   size_t buffer_offset = 0;
-  for (auto uniform : runtime_stage_->GetUniforms()) {
+  for (const auto& uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
     std::shared_ptr<ShaderMetadata> metadata =
@@ -225,7 +225,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   size_t sampler_index = 0;
-  for (auto uniform : runtime_stage_->GetUniforms()) {
+  for (const auto& uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
     ShaderMetadata metadata;
@@ -241,7 +241,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         SampledImageSlot image_slot;
         image_slot.name = uniform.name.c_str();
         image_slot.texture_index = uniform.location - minimum_sampler_index;
-        image_slot.sampler_index = uniform.location - minimum_sampler_index;
         cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
                          input.texture, sampler);
 

@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_CONTEXT_H_
+#define FLUTTER_IMPELLER_RENDERER_CONTEXT_H_
 
 #include <memory>
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
@@ -20,7 +22,6 @@ class ShaderLibrary;
 class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
-class Allocator;
 
 //------------------------------------------------------------------------------
 /// @brief      To do anything rendering related with Impeller, you need a
@@ -195,7 +196,7 @@ class Context {
   /// Threadsafe.
   ///
   /// `task` will be executed on the platform thread.
-  virtual void StoreTaskForGPU(std::function<void()> task) {
+  virtual void StoreTaskForGPU(const std::function<void()>& task) {
     FML_CHECK(false && "not supported in this context");
   }
 
@@ -211,3 +212,5 @@ class Context {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_CONTEXT_H_

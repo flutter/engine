@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BUFFER_BINDINGS_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BUFFER_BINDINGS_GLES_H_
 
 #include <unordered_map>
 #include <vector>
@@ -70,9 +71,10 @@ class BufferBindingsGLES {
                          Allocator& transients_allocator,
                          const BufferResource& buffer);
 
-  bool BindTextures(const ProcTableGLES& gl,
-                    const Bindings& bindings,
-                    ShaderStage stage);
+  std::optional<size_t> BindTextures(const ProcTableGLES& gl,
+                                     const Bindings& bindings,
+                                     ShaderStage stage,
+                                     size_t unit_start_index = 0);
 
   BufferBindingsGLES(const BufferBindingsGLES&) = delete;
 
@@ -80,3 +82,5 @@ class BufferBindingsGLES {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BUFFER_BINDINGS_GLES_H_

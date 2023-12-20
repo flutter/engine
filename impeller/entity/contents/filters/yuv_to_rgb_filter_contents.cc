@@ -10,6 +10,7 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -92,12 +93,11 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     });
 
     auto& host_buffer = pass.GetTransientsBuffer();
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-    cmd.BindVertices(vtx_buffer);
+    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation() * y_input_snapshot->transform *
+                     entity.GetTransform() * y_input_snapshot->transform *
                      Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         y_input_snapshot->texture->GetYCoordScale();
@@ -125,7 +125,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);

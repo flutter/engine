@@ -15,21 +15,7 @@ impeller_shaders("entity_shaders") {
 
   shaders = [
     "shaders/blending/advanced_blend.vert",
-    "shaders/blending/advanced_blend_color.frag",
-    "shaders/blending/advanced_blend_colorburn.frag",
-    "shaders/blending/advanced_blend_colordodge.frag",
-    "shaders/blending/advanced_blend_darken.frag",
-    "shaders/blending/advanced_blend_difference.frag",
-    "shaders/blending/advanced_blend_exclusion.frag",
-    "shaders/blending/advanced_blend_hardlight.frag",
-    "shaders/blending/advanced_blend_hue.frag",
-    "shaders/blending/advanced_blend_lighten.frag",
-    "shaders/blending/advanced_blend_luminosity.frag",
-    "shaders/blending/advanced_blend_multiply.frag",
-    "shaders/blending/advanced_blend_overlay.frag",
-    "shaders/blending/advanced_blend_saturation.frag",
-    "shaders/blending/advanced_blend_screen.frag",
-    "shaders/blending/advanced_blend_softlight.frag",
+    "shaders/blending/advanced_blend.frag",
     "shaders/blending/blend.frag",
     "shaders/blending/blend.vert",
     "shaders/border_mask_blur.frag",
@@ -65,6 +51,7 @@ impeller_shaders("entity_shaders") {
     "shaders/texture_fill.vert",
     "shaders/texture_fill_external.frag",
     "shaders/tiled_texture_fill.frag",
+    "shaders/tiled_texture_fill_external.frag",
     "shaders/vertices.frag",
     "shaders/yuv_to_rgb_filter.frag",
     "shaders/yuv_to_rgb_filter.vert",
@@ -115,22 +102,8 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
   }
 
   shaders = [
-    "shaders/blending/ios/framebuffer_blend.vert",
-    "shaders/blending/ios/framebuffer_blend_color.frag",
-    "shaders/blending/ios/framebuffer_blend_colorburn.frag",
-    "shaders/blending/ios/framebuffer_blend_colordodge.frag",
-    "shaders/blending/ios/framebuffer_blend_darken.frag",
-    "shaders/blending/ios/framebuffer_blend_difference.frag",
-    "shaders/blending/ios/framebuffer_blend_exclusion.frag",
-    "shaders/blending/ios/framebuffer_blend_hardlight.frag",
-    "shaders/blending/ios/framebuffer_blend_hue.frag",
-    "shaders/blending/ios/framebuffer_blend_lighten.frag",
-    "shaders/blending/ios/framebuffer_blend_luminosity.frag",
-    "shaders/blending/ios/framebuffer_blend_multiply.frag",
-    "shaders/blending/ios/framebuffer_blend_overlay.frag",
-    "shaders/blending/ios/framebuffer_blend_saturation.frag",
-    "shaders/blending/ios/framebuffer_blend_screen.frag",
-    "shaders/blending/ios/framebuffer_blend_softlight.frag",
+    "shaders/blending/framebuffer_blend.vert",
+    "shaders/blending/framebuffer_blend.frag",
   ]
 }
 
@@ -162,6 +135,8 @@ impeller_component("entity") {
     "contents/filters/directional_gaussian_blur_filter_contents.h",
     "contents/filters/filter_contents.cc",
     "contents/filters/filter_contents.h",
+    "contents/filters/gaussian_blur_filter_contents.cc",
+    "contents/filters/gaussian_blur_filter_contents.h",
     "contents/filters/inputs/contents_filter_input.cc",
     "contents/filters/inputs/contents_filter_input.h",
     "contents/filters/inputs/filter_contents_filter_input.cc",
@@ -216,16 +191,24 @@ impeller_component("entity") {
     "entity_pass_delegate.h",
     "entity_pass_target.cc",
     "entity_pass_target.h",
+    "geometry/circle_geometry.cc",
+    "geometry/circle_geometry.h",
     "geometry/cover_geometry.cc",
     "geometry/cover_geometry.h",
+    "geometry/ellipse_geometry.cc",
+    "geometry/ellipse_geometry.h",
     "geometry/fill_path_geometry.cc",
     "geometry/fill_path_geometry.h",
     "geometry/geometry.cc",
     "geometry/geometry.h",
+    "geometry/line_geometry.cc",
+    "geometry/line_geometry.h",
     "geometry/point_field_geometry.cc",
     "geometry/point_field_geometry.h",
     "geometry/rect_geometry.cc",
     "geometry/rect_geometry.h",
+    "geometry/round_rect_geometry.cc",
+    "geometry/round_rect_geometry.h",
     "geometry/stroke_path_geometry.cc",
     "geometry/stroke_path_geometry.h",
     "geometry/vertices_geometry.cc",
@@ -264,32 +247,41 @@ impeller_component("entity") {
   deps = [ "//flutter/fml" ]
 }
 
+impeller_component("entity_test_helpers") {
+  testonly = true
+
+  sources = [
+    "contents/test/contents_test_helpers.cc",
+    "contents/test/contents_test_helpers.h",
+  ]
+
+  deps = [ ":entity" ]
+}
+
 impeller_component("entity_unittests") {
   testonly = true
 
   sources = [
+    "contents/checkerboard_contents_unittests.cc",
+    "contents/filters/directional_gaussian_blur_filter_contents_unittests.cc",
+    "contents/filters/gaussian_blur_filter_contents_unittests.cc",
     "contents/filters/inputs/filter_input_unittests.cc",
+    "contents/tiled_texture_contents_unittests.cc",
+    "contents/vertices_contents_unittests.cc",
+    "entity_pass_target_unittests.cc",
     "entity_playground.cc",
     "entity_playground.h",
     "entity_unittests.cc",
     "geometry/geometry_unittests.cc",
+    "render_target_cache_unittests.cc",
   ]
 
   deps = [
     ":entity",
+    ":entity_test_helpers",
     "../geometry:geometry_asserts",
     "../playground:playground_test",
+    "//flutter/display_list/testing:display_list_testing",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
-  ]
-}
-
-impeller_component("render_target_cache_unittests") {
-  testonly = true
-
-  sources = [ "render_target_cache_unittests.cc" ]
-
-  deps = [
-    ":entity",
-    "//flutter/testing:testing_lib",
   ]
 }

@@ -2,17 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_RECT_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_RECT_GEOMETRY_H_
 
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
 
-class RectGeometry : public Geometry {
+class RectGeometry final : public Geometry {
  public:
   explicit RectGeometry(Rect rect);
 
-  ~RectGeometry();
+  ~RectGeometry() = default;
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
@@ -24,7 +25,7 @@ class RectGeometry : public Geometry {
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
-                                   RenderPass& pass) override;
+                                   RenderPass& pass) const override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -37,7 +38,7 @@ class RectGeometry : public Geometry {
                                      Matrix effect_transform,
                                      const ContentContext& renderer,
                                      const Entity& entity,
-                                     RenderPass& pass) override;
+                                     RenderPass& pass) const override;
 
   Rect rect_;
 
@@ -46,4 +47,8 @@ class RectGeometry : public Geometry {
   RectGeometry& operator=(const RectGeometry&) = delete;
 };
 
+static_assert(std::is_trivially_destructible<RectGeometry>::value);
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_RECT_GEOMETRY_H_

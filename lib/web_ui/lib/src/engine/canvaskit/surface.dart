@@ -114,23 +114,31 @@ class Surface {
     pictures.forEach(skCanvas.drawPicture);
     _surface!.flush();
 
-    DomImageBitmap bitmap;
-    if (Surface.offscreenCanvasSupported) {
-      bitmap = (await createImageBitmap(_offscreenCanvas!, (
+    if (browserSupportsCreateImageBitmap) {
+      JSObject bitmapSource;
+      if (Surface.offscreenCanvasSupported) {
+        bitmapSource = _offscreenCanvas! as JSObject;
+      } else {
+        bitmapSource = _canvasElement! as JSObject;
+      }
+      final DomImageBitmap bitmap = await createImageBitmap(bitmapSource, (
         x: 0,
         y: _pixelHeight - frameSize.height.toInt(),
         width: frameSize.width.toInt(),
         height: frameSize.height.toInt(),
-      )).toDart)! as DomImageBitmap;
+      ));
+      canvas.render(bitmap);
     } else {
-      bitmap = (await createImageBitmap(_canvasElement!, (
-        x: 0,
-        y: _pixelHeight - frameSize.height.toInt(),
-        width: frameSize.width.toInt(),
-        height: frameSize.height.toInt()
-      )).toDart)! as DomImageBitmap;
+      // If the browser doesn't support `createImageBitmap` (e.g. Safari 14)
+      // then render using `drawImage` instead.
+      DomCanvasImageSource imageSource;
+      if (Surface.offscreenCanvasSupported) {
+        imageSource = _offscreenCanvas! as DomCanvasImageSource;
+      } else {
+        imageSource = _canvasElement! as DomCanvasImageSource;
+      }
+      canvas.renderWithNoBitmapSupport(imageSource, _pixelHeight, frameSize);
     }
-    canvas.render(bitmap);
   }
 
   /// Acquire a frame of the given [size] containing a drawable canvas.

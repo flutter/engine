@@ -10,7 +10,6 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path_builder.h"
 
 namespace impeller {
 
@@ -103,7 +102,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   std::vector<Rect> all_coverages;
   auto had_subpass = entity_pass->IterateUntilSubpass(
       [&all_coverages, &all_can_accept](Entity& entity) {
-        auto contents = entity.GetContents();
+        const auto& contents = entity.GetContents();
         if (!entity.CanInheritOpacity()) {
           all_can_accept = false;
           return false;

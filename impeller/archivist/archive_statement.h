@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_
+#define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_
 
 #include <memory>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 
 namespace impeller {
@@ -96,3 +96,5 @@ class ArchiveStatement {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_

@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_COLOR_FILTER_H_
-#define FLUTTER_LIB_UI_COLOR_FILTER_H_
+#ifndef FLUTTER_LIB_UI_PAINTING_COLOR_FILTER_H_
+#define FLUTTER_LIB_UI_PAINTING_COLOR_FILTER_H_
 
 #include "flutter/display_list/effects/dl_color_filter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/tonic/typed_data/typed_list.h"
-
-using tonic::DartPersistentValue;
 
 namespace flutter {
 
@@ -38,4 +36,4 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_LIB_UI_COLOR_FILTER_H_
+#endif  // FLUTTER_LIB_UI_PAINTING_COLOR_FILTER_H_

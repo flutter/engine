@@ -42,7 +42,7 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   if (geometry == nullptr) {
     return std::nullopt;
   }
-  return geometry->GetCoverage(entity.GetTransformation());
+  return geometry->GetCoverage(entity.GetTransform());
 };
 
 bool SolidColorContents::Render(const ContentContext& renderer,
@@ -67,7 +67,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   options.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetSolidFillPipeline(options);
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
 
   VS::FrameInfo frame_info;
   frame_info.mvp = capture.AddMatrix("Transform", geometry_result.transform);
@@ -86,10 +86,10 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   return true;
 }
 
-std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
+std::unique_ptr<SolidColorContents> SolidColorContents::Make(Path path,
                                                              Color color) {
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
   contents->SetColor(color);
   return contents;
 }
@@ -98,7 +98,7 @@ std::optional<Color> SolidColorContents::AsBackgroundColor(
     const Entity& entity,
     ISize target_size) const {
   Rect target_rect = Rect::MakeSize(target_size);
-  return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
+  return GetGeometry()->CoversArea(entity.GetTransform(), target_rect)
              ? GetColor()
              : std::optional<Color>();
 }

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TESTING_DISPLAY_LIST_TESTING_H_
-#define TESTING_DISPLAY_LIST_TESTING_H_
+#ifndef FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
+#define FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
 
 #include <ostream>
 
@@ -58,7 +58,6 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
       : os_(os), cur_indent_(cur_indent), indent_(indent) {}
 
   void setAntiAlias(bool aa) override;
-  void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
   void setStrokeWidth(SkScalar width) override;
@@ -177,4 +176,4 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // TESTING_DISPLAY_LIST_TESTING_H_
+#endif  // FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_

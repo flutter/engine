@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_COMPOSITOR_H_
-#define FLUTTER_COMPOSITOR_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERCOMPOSITOR_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERCOMPOSITOR_H_
 
 #include <functional>
 #include <list>
@@ -20,6 +20,8 @@ namespace flutter {
 // FlutterCompositor creates and manages the backing stores used for
 // rendering Flutter content and presents Flutter content and Platform views.
 // Platform views are not yet supported.
+//
+// TODO(cbracken): refactor for testability. https://github.com/flutter/flutter/issues/137648
 class FlutterCompositor {
  public:
   // Create a FlutterCompositor with a view provider.
@@ -77,4 +79,4 @@ class FlutterCompositor {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_COMPOSITOR_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERCOMPOSITOR_H_

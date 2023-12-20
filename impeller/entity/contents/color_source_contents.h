@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_COLOR_SOURCE_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_COLOR_SOURCE_CONTENTS_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
@@ -49,7 +50,7 @@ class ColorSourceContents : public Contents {
   //----------------------------------------------------------------------------
   /// @brief  Set the effect transform for this color source.
   ///
-  ///         The effect transform is a transformation matrix that is applied to
+  ///         The effect transform is a transform matrix that is applied to
   ///         the shaded color output and does not impact geometry in any way.
   ///
   ///         For example: With repeat tiling, any gradient or
@@ -113,3 +114,5 @@ class ColorSourceContents : public Contents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_COLOR_SOURCE_CONTENTS_H_

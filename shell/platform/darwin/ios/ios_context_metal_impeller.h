@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_IMPELER_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_IMPELER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_IMPELLER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_IMPELLER_H_
 
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h"
@@ -20,7 +20,8 @@ namespace flutter {
 
 class IOSContextMetalImpeller final : public IOSContext {
  public:
-  IOSContextMetalImpeller(std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
+  explicit IOSContextMetalImpeller(
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch);
 
   ~IOSContextMetalImpeller();
 
@@ -55,4 +56,4 @@ class IOSContextMetalImpeller final : public IOSContext {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_IMPELER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_IMPELLER_H_

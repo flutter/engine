@@ -17,7 +17,7 @@
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
 
-#undef SHELL_COMMON_SWITCHES_H_
+#undef FLUTTER_SHELL_COMMON_SWITCHES_H_
 
 struct SwitchDesc {
   flutter::Switch sw;
@@ -455,17 +455,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   }
 
   {
-    std::string disable_image_reader_platform_views_value;
-    if (command_line.GetOptionValue(
-            FlagForSwitch(Switch::DisableImageReaderPlatformViews),
-            &disable_image_reader_platform_views_value)) {
-      settings.disable_image_reader_platform_views =
-          disable_image_reader_platform_views_value.empty() ||
-          "true" == disable_image_reader_platform_views_value;
-    }
-  }
-
-  {
     std::string impeller_backend_value;
     if (command_line.GetOptionValue(FlagForSwitch(Switch::ImpellerBackend),
                                     &impeller_backend_value)) {
@@ -491,7 +480,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                   &all_dart_flags)) {
     // Assume that individual flags are comma separated.
     std::vector<std::string> flags = ParseCommaDelimited(all_dart_flags);
-    for (auto flag : flags) {
+    for (const auto& flag : flags) {
       if (!IsAllowedDartVMFlag(flag)) {
         FML_LOG(FATAL) << "Encountered disallowed Dart VM flag: " << flag;
       }

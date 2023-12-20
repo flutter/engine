@@ -321,6 +321,14 @@ class EngineAutofillForm {
   }
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
+    // Since we're disabling pointer events on the form to fix Safari autofill,
+    // we need to explicitly set pointer events on the active input element in
+    // order to calculate the correct pointer event offsets.
+    // See: https://github.com/flutter/flutter/issues/136006
+    if(textEditing.strategy is SafariDesktopTextEditingStrategy) {
+      mainTextEditingElement.style.pointerEvents = 'all';
+    }
+
     formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
     defaultTextEditingRoot.append(formElement);
   }
@@ -1498,18 +1506,18 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   /// see: https://bugs.chromium.org/p/chromium/issues/detail?id=119216#c11.
   void preventDefaultForMouseEvents() {
     subscriptions.add(
-        DomSubscription(activeDomElement, 'mousedown', (_) {
-      _.preventDefault();
+        DomSubscription(activeDomElement, 'mousedown', (DomEvent event) {
+      event.preventDefault();
     }));
 
     subscriptions.add(
-        DomSubscription(activeDomElement, 'mouseup', (_) {
-      _.preventDefault();
+        DomSubscription(activeDomElement, 'mouseup', (DomEvent event) {
+      event.preventDefault();
     }));
 
     subscriptions.add(
-        DomSubscription(activeDomElement, 'mousemove', (_) {
-      _.preventDefault();
+        DomSubscription(activeDomElement, 'mousemove', (DomEvent event) {
+      event.preventDefault();
     }));
   }
 }
@@ -2300,7 +2308,7 @@ class HybridTextEditing {
   /// Supplies the DOM element used for editing.
   late final DefaultTextEditingStrategy strategy =
     debugTextEditingStrategyOverride ??
-    (EngineSemanticsOwner.instance.semanticsEnabled
+    (EngineSemantics.instance.semanticsEnabled
       ? SemanticsTextEditingStrategy.ensureInitialized(this)
       : createDefaultTextEditingStrategy(this));
 

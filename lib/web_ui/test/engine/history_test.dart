@@ -7,15 +7,14 @@ import 'dart:async';
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show window;
-import 'package:ui/src/engine/dom.dart' show DomEvent, createDomPopStateEvent;
-import 'package:ui/src/engine/navigation/history.dart';
-import 'package:ui/src/engine/services.dart';
-import 'package:ui/src/engine/test_embedding.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui_web/src/ui_web.dart';
 
 import '../common/matchers.dart';
 import '../common/spy.dart';
+
+EngineFlutterWindow get implicitView =>
+    EnginePlatformDispatcher.instance.implicitView!;
 
 Map<String, dynamic> _wrapOriginState(dynamic state) {
   return <String, dynamic>{'origin': true, 'state': state};
@@ -28,7 +27,6 @@ Map<String, dynamic> _tagStateWithSerialCount(dynamic state, int serialCount) {
   };
 }
 
-const Map<String, bool> originState = <String, bool>{'origin': true};
 const Map<String, bool> flutterState = <String, bool>{'flutter': true};
 
 const MethodCodec codec = JSONMethodCodec();
@@ -38,6 +36,10 @@ void main() {
 }
 
 void testMain() {
+  setUpAll(() {
+    ensureImplicitViewInitialized();
+  });
+
   test('createHistoryForExistingState', () {
     TestUrlStrategy strategy;
     BrowserHistory history;
@@ -91,14 +93,14 @@ void testMain() {
 
     tearDown(() async {
       spy.tearDown();
-      await window.resetHistory();
+      await implicitView.resetHistory();
     });
 
     test('basic setup works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry('initial state', null, '/initial'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: true);
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
 
       // There should be two entries: origin and flutter.
       expect(strategy.history, hasLength(2));
@@ -127,7 +129,7 @@ void testMain() {
       );
       expect(strategy.listeners, isEmpty);
 
-      await window.debugInitializeHistory(strategy, useSingle: true);
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
 
 
       // There should be one `popstate` listener and two history entries.
@@ -139,7 +141,7 @@ void testMain() {
       expect(strategy.history[1].url, '/initial');
 
       FakeAsync().run((FakeAsync fakeAsync) {
-        window.browserHistory.dispose();
+        implicitView.browserHistory.dispose();
         // The `TestUrlStrategy` implementation uses microtasks to schedule the
         // removal of event listeners.
         fakeAsync.flushMicrotasks();
@@ -156,7 +158,7 @@ void testMain() {
 
       // An extra call to dispose should be safe.
       FakeAsync().run((FakeAsync fakeAsync) {
-        expect(() => window.browserHistory.dispose(), returnsNormally);
+        expect(() => implicitView.browserHistory.dispose(), returnsNormally);
         fakeAsync.flushMicrotasks();
       });
 
@@ -169,22 +171,22 @@ void testMain() {
       expect(strategy.history[1].url, '/initial');
 
       // Can still teardown after being disposed.
-      await window.browserHistory.tearDown();
+      await implicitView.browserHistory.tearDown();
       expect(strategy.history, hasLength(2));
       expect(strategy.currentEntry.state, unwrappedOriginState);
       expect(strategy.currentEntry.url, '/initial');
     });
 
     test('disposes gracefully when url strategy is null', () async {
-      await window.debugInitializeHistory(null, useSingle: true);
-      expect(() => window.browserHistory.dispose(), returnsNormally);
+      await implicitView.debugInitializeHistory(null, useSingle: true);
+      expect(() => implicitView.browserHistory.dispose(), returnsNormally);
     });
 
     test('browser back button pops routes correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry(null, null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: true);
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
 
       // Initially, we should be on the flutter entry.
       expect(strategy.history, hasLength(2));
@@ -219,7 +221,7 @@ void testMain() {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry(null, null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: true);
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
 
       await routeUpdated('/page1');
       await routeUpdated('/page2');
@@ -285,7 +287,7 @@ void testMain() {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry(null, null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: true);
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
 
       await strategy.simulateUserTypingUrl('/page3');
       // This delay is necessary to wait for [BrowserHistory] because it
@@ -326,7 +328,7 @@ void testMain() {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry(null, null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: true);
+      await implicitView.debugInitializeHistory(strategy, useSingle: true);
 
       await strategy.simulateUserTypingUrl('/unknown');
       // This delay is necessary to wait for [BrowserHistory] because it
@@ -356,14 +358,14 @@ void testMain() {
 
     tearDown(() async {
       spy.tearDown();
-      await window.resetHistory();
+      await implicitView.resetHistory();
     });
 
     test('basic setup works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry('initial state', null, '/initial'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: false);
+      await implicitView.debugInitializeHistory(strategy, useSingle: false);
 
       // There should be only one entry.
       expect(strategy.history, hasLength(1));
@@ -383,7 +385,7 @@ void testMain() {
       );
       expect(strategy.listeners, isEmpty);
 
-      await window.debugInitializeHistory(strategy, useSingle: false);
+      await implicitView.debugInitializeHistory(strategy, useSingle: false);
 
 
       // There should be one `popstate` listener and one history entry.
@@ -393,7 +395,7 @@ void testMain() {
       expect(strategy.history.single.url, '/initial');
 
       FakeAsync().run((FakeAsync fakeAsync) {
-        window.browserHistory.dispose();
+        implicitView.browserHistory.dispose();
         // The `TestUrlStrategy` implementation uses microtasks to schedule the
         // removal of event listeners.
         fakeAsync.flushMicrotasks();
@@ -408,7 +410,7 @@ void testMain() {
 
       // An extra call to dispose should be safe.
       FakeAsync().run((FakeAsync fakeAsync) {
-        expect(() => window.browserHistory.dispose(), returnsNormally);
+        expect(() => implicitView.browserHistory.dispose(), returnsNormally);
         fakeAsync.flushMicrotasks();
       });
 
@@ -419,22 +421,22 @@ void testMain() {
       expect(strategy.history.single.url, '/initial');
 
       // Can still teardown after being disposed.
-      await window.browserHistory.tearDown();
+      await implicitView.browserHistory.tearDown();
       expect(strategy.history, hasLength(1));
       expect(strategy.history.single.state, untaggedState);
       expect(strategy.history.single.url, '/initial');
     });
 
     test('disposes gracefully when url strategy is null', () async {
-      await window.debugInitializeHistory(null, useSingle: false);
-      expect(() => window.browserHistory.dispose(), returnsNormally);
+      await implicitView.debugInitializeHistory(null, useSingle: false);
+      expect(() => implicitView.browserHistory.dispose(), returnsNormally);
     });
 
     test('browser back button push route information correctly', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry('initial state', null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: false);
+      await implicitView.debugInitializeHistory(strategy, useSingle: false);
 
       // Initially, we should be on the flutter entry.
       expect(strategy.history, hasLength(1));
@@ -473,7 +475,7 @@ void testMain() {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry('initial state', null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: false);
+      await implicitView.debugInitializeHistory(strategy, useSingle: false);
 
       await routeInformationUpdated('/page1', 'page1 state');
       await routeInformationUpdated('/page2', 'page2 state');
@@ -522,7 +524,7 @@ void testMain() {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry('initial state', null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: false);
+      await implicitView.debugInitializeHistory(strategy, useSingle: false);
 
       await strategy.simulateUserTypingUrl('/page3');
       // This delay is necessary to wait for [BrowserHistory] because it
@@ -565,7 +567,7 @@ void testMain() {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry('initial state', null, '/home'),
       );
-      await window.debugInitializeHistory(strategy, useSingle: false);
+      await implicitView.debugInitializeHistory(strategy, useSingle: false);
 
       await routeInformationUpdated('/page1', 'page1 state');
       await routeInformationUpdated('/page2', 'page2 state');
@@ -743,7 +745,7 @@ void testMain() {
 
 Future<void> routeUpdated(String routeName) {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  implicitView.sendPlatformMessage(
     'flutter/navigation',
     codec.encodeMethodCall(MethodCall(
       'routeUpdated',
@@ -756,7 +758,7 @@ Future<void> routeUpdated(String routeName) {
 
 Future<void> routeInformationUpdated(String location, dynamic state) {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  implicitView.sendPlatformMessage(
     'flutter/navigation',
     codec.encodeMethodCall(MethodCall(
       'routeInformationUpdated',
@@ -769,7 +771,7 @@ Future<void> routeInformationUpdated(String location, dynamic state) {
 
 Future<void> systemNavigatorPop() {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  implicitView.sendPlatformMessage(
     'flutter/platform',
     codec.encodeMethodCall(const MethodCall('SystemNavigator.pop')),
     (_) => completer.complete(),
