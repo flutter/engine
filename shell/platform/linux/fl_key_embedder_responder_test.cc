@@ -152,8 +152,9 @@ GPtrArray* g_call_records;
 static void record_calls(const FlutterKeyEvent* event,
                          FlutterKeyEventCallback callback,
                          void* callback_user_data,
-                         void* creation_user_data) {
-  GPtrArray* records_array = reinterpret_cast<GPtrArray*>(creation_user_data);
+                         void* send_key_event_user_data) {
+  GPtrArray* records_array =
+      reinterpret_cast<GPtrArray*>(send_key_event_user_data);
   if (records_array != nullptr) {
     g_ptr_array_add(records_array, fl_key_embedder_call_record_new(
                                        event, callback, callback_user_data));

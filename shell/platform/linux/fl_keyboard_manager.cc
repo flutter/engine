@@ -600,8 +600,9 @@ FlKeyboardManager* fl_keyboard_manager_new(
       self->responder_list,
       FL_KEY_RESPONDER(fl_key_embedder_responder_new(
           [](const FlutterKeyEvent* event, FlutterKeyEventCallback callback,
-             void* callback_user_data, void* creation_user_data) {
-            FlKeyboardManager* self = FL_KEYBOARD_MANAGER(creation_user_data);
+             void* callback_user_data, void* send_key_event_user_data) {
+            FlKeyboardManager* self =
+                FL_KEYBOARD_MANAGER(send_key_event_user_data);
             g_return_if_fail(self->view_delegate != nullptr);
             fl_keyboard_view_delegate_send_key_event(
                 self->view_delegate, event, callback, callback_user_data);
