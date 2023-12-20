@@ -37,6 +37,6 @@ class ThreadLocalUniquePtr {
   FML_DISALLOW_COPY_AND_ASSIGN(ThreadLocalUniquePtr);
 };
 
-#endif  // FML_THREAD_LOCAL_PTHREADS
-
 }  // namespace fml
+
+#endif  // FLUTTER_FML_THREAD_LOCAL_H_
