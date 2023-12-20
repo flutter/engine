@@ -4639,22 +4639,40 @@ TEST_F(ShellTest, RuntimeStageBackendWithImpeller) {
   ASSERT_TRUE(shell);
 
   fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&latch](auto args) {
-                      auto backend =
-                          UIDartState::Current()->GetRuntimeStageBackend();
+
+  std::optional<impeller::Context::BackendType> impeller_backend;
+  fml::TaskRunner::RunNowOrPostTask(
+      shell->GetTaskRunners().GetPlatformTaskRunner(),
+      [platform_view = shell->GetPlatformView(), &latch, &impeller_backend]() {
+        auto impeller_context = platform_view->GetImpellerContext();
     // TODO(dnfield): Enable GL and Vulkan after
     // https://github.com/flutter/flutter/issues/140419
-#ifdef SHELL_ENABLE_GL
-    // EXPECT_EQ(backend, impeller::RuntimeStageBackend::kOpenGLES);
-#endif  // SHELL_ENABLE_GL
-#ifdef SHELL_ENABLE_VULKAN
-    // EXPECT_EQ(backend, impeller::RuntimeStageBackend::kVulkan);
-#endif  // SHELL_ENABLE_VULKAN
-#ifdef SHELL_ENABLE_METAL
-                      EXPECT_EQ(backend, impeller::RuntimeStageBackend::kMetal);
-#endif  // SHELL_ENABLE_METAL
-                      latch.Signal();
-                    }));
+#if SHELL_ENABLE_METAL
+        EXPECT_TRUE(impeller_context);
+        impeller_backend = impeller_context->GetBackendType();
+#endif
+        latch.Signal();
+      });
+  latch.Wait();
+
+  AddNativeCallback(
+      "NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+        auto backend = UIDartState::Current()->GetRuntimeStageBackend();
+        if (impeller_backend.has_value()) {
+          switch (impeller_backend.value()) {
+            case impeller::Context::BackendType::kMetal:
+              EXPECT_EQ(backend, impeller::RuntimeStageBackend::kMetal);
+              break;
+            case impeller::Context::BackendType::kOpenGLES:
+              EXPECT_EQ(backend, impeller::RuntimeStageBackend::kOpenGLES);
+              break;
+            case impeller::Context::BackendType::kVulkan:
+              EXPECT_EQ(backend, impeller::RuntimeStageBackend::kVulkan);
+              break;
+          }
+        }
+        latch.Signal();
+      }));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("mainNotifyNative");
