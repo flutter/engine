@@ -199,7 +199,7 @@ void FlutterWindow::OnWindowResized() {
   DwmFlush();
 }
 
-void FlutterWindow::OnDpiScale(unsigned int dpi){};
+void FlutterWindow::OnDpiScale(unsigned int dpi) {};
 
 // When DesktopWindow notifies that a WM_Size message has come in
 // lets FlutterEngine know about the new size.
