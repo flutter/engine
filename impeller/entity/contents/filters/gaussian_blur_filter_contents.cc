@@ -146,7 +146,12 @@ std::shared_ptr<Texture> MakeBlurSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
+    Entity::TileMode tile_mode,
     const GaussianBlurFragmentShader::BlurInfo& blur_info) {
+  if (blur_info.blur_sigma < kEhCloseEnough) {
+    return input_texture;
+  }
+
   // TODO(gaaclarke): This blurs the whole image, but because we know the clip
   //                  region we could focus on just blurring that.
   ISize subpass_size = input_texture->GetSize();
@@ -161,7 +166,15 @@ std::shared_ptr<Texture> MakeBlurSubpass(
         Command cmd;
         ContentContextOptions options = OptionsFromPass(pass);
         options.primitive_type = PrimitiveType::kTriangleStrip;
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+
+        if (tile_mode == Entity::TileMode::kDecal &&
+            !renderer.GetDeviceCapabilities()
+                 .SupportsDecalSamplerAddressMode()) {
+          cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+        } else {
+          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+        }
+
         BindVertices<GaussianBlurVertexShader>(cmd, host_buffer,
                                                {
                                                    {Point(0, 0), Point(0, 0)},
@@ -193,9 +206,10 @@ std::shared_ptr<Texture> MakeBlurSubpass(
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(
-    Scalar sigma,
+    Scalar sigma_x,
+    Scalar sigma_y,
     Entity::TileMode tile_mode)
-    : sigma_(sigma), tile_mode_(tile_mode) {}
+    : sigma_x_(sigma_x), sigma_y_(sigma_y), tile_mode_(tile_mode) {}
 
 // This value was extracted from Skia, see:
 //  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/ganesh/GrBlurUtils.cpp#L2561-L2576
@@ -210,10 +224,11 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
     const Rect& output_limit) const {
-  Scalar scaled_sigma = ScaleSigma(sigma_);
-  Scalar blur_radius = CalculateBlurRadius(scaled_sigma);
+  Vector2 scaled_sigma = {ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)};
+  Vector2 blur_radius = {CalculateBlurRadius(scaled_sigma.x),
+                         CalculateBlurRadius(scaled_sigma.y)};
   Vector3 blur_radii =
-      effect_transform.Basis() * Vector3{blur_radius, blur_radius, 0.0};
+      effect_transform.Basis() * Vector3{blur_radius.x, blur_radius.y, 0.0};
   return output_limit.Expand(Point(blur_radii.x, blur_radii.y));
 }
 
@@ -230,11 +245,12 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
     return {};
   }
 
-  Scalar scaled_sigma = ScaleSigma(sigma_);
-  Scalar blur_radius = CalculateBlurRadius(scaled_sigma);
+  Vector2 scaled_sigma = {ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)};
+  Vector2 blur_radius = {CalculateBlurRadius(scaled_sigma.x),
+                         CalculateBlurRadius(scaled_sigma.y)};
   Vector3 blur_radii =
       (inputs[0]->GetTransform(entity).Basis() * effect_transform.Basis() *
-       Vector3{blur_radius, blur_radius, 0.0})
+       Vector3{blur_radius.x, blur_radius.y, 0.0})
           .Abs();
   return input_coverage.value().Expand(Point(blur_radii.x, blur_radii.y));
 }
@@ -250,9 +266,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  Scalar scaled_sigma = ScaleSigma(sigma_);
-  Scalar blur_radius = CalculateBlurRadius(scaled_sigma);
-  Vector2 padding(ceil(blur_radius), ceil(blur_radius));
+  Vector2 scaled_sigma = {ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)};
+  Vector2 blur_radius = {CalculateBlurRadius(scaled_sigma.x),
+                         CalculateBlurRadius(scaled_sigma.y)};
+  Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
 
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
@@ -272,12 +289,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  if (scaled_sigma < kEhCloseEnough) {
+  if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
                                 entity.GetClipDepth());  // No blur to render.
   }
 
-  Scalar desired_scalar = CalculateScale(scaled_sigma);
+  Scalar desired_scalar =
+      std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
@@ -300,24 +318,26 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Vector2 pass1_pixel_size = 1.0 / Vector2(pass1_out_texture->GetSize());
 
-  std::shared_ptr<Texture> pass2_out_texture = MakeBlurSubpass(
-      renderer, pass1_out_texture, input_snapshot->sampler_descriptor,
-      GaussianBlurFragmentShader::BlurInfo{
-          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-          .blur_sigma = scaled_sigma * effective_scalar.y,
-          .blur_radius = blur_radius * effective_scalar.y,
-          .step_size = 1.0,
-      });
+  std::shared_ptr<Texture> pass2_out_texture =
+      MakeBlurSubpass(renderer, pass1_out_texture,
+                      input_snapshot->sampler_descriptor, tile_mode_,
+                      GaussianBlurFragmentShader::BlurInfo{
+                          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
+                          .blur_sigma = scaled_sigma.y * effective_scalar.y,
+                          .blur_radius = blur_radius.y * effective_scalar.y,
+                          .step_size = 1.0,
+                      });
 
   // TODO(gaaclarke): Make this pass reuse the texture from pass1.
-  std::shared_ptr<Texture> pass3_out_texture = MakeBlurSubpass(
-      renderer, pass2_out_texture, input_snapshot->sampler_descriptor,
-      GaussianBlurFragmentShader::BlurInfo{
-          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-          .blur_sigma = scaled_sigma * effective_scalar.x,
-          .blur_radius = blur_radius * effective_scalar.x,
-          .step_size = 1.0,
-      });
+  std::shared_ptr<Texture> pass3_out_texture =
+      MakeBlurSubpass(renderer, pass2_out_texture,
+                      input_snapshot->sampler_descriptor, tile_mode_,
+                      GaussianBlurFragmentShader::BlurInfo{
+                          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
+                          .blur_sigma = scaled_sigma.x * effective_scalar.x,
+                          .blur_radius = blur_radius.x * effective_scalar.x,
+                          .step_size = 1.0,
+                      });
 
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);

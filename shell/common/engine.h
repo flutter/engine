@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_COMMON_ENGINE_H_
-#define SHELL_COMMON_ENGINE_H_
+#ifndef FLUTTER_SHELL_COMMON_ENGINE_H_
+#define FLUTTER_SHELL_COMMON_ENGINE_H_
 
 #include <memory>
 #include <string>
@@ -961,8 +961,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(int64_t view_id,
-              std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|
@@ -1039,4 +1038,4 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_ENGINE_H_
+#endif  // FLUTTER_SHELL_COMMON_ENGINE_H_
