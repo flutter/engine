@@ -240,7 +240,7 @@ void testMain() {
       expect(view2.isDisposed, isFalse);
 
       bool onMetricsChangedCalled = false;
-      dispatcher.onMetricsChanged = () { 
+      dispatcher.onMetricsChanged = () {
         onMetricsChangedCalled = true;
       };
 
@@ -248,7 +248,9 @@ void testMain() {
 
       dispatcher.viewManager.disposeAndUnregisterView(view2.viewId);
 
-      expect(onMetricsChangedCalled, isTrue);
+      expect(onMetricsChangedCalled, isTrue, reason: 'onMetricsChanged should have been called.');
+
+      dispatcher.dispose();
     });
   });
 }

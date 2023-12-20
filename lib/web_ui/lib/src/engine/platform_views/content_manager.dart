@@ -64,15 +64,18 @@ class PlatformViewManager {
     return _contents.containsKey(viewId);
   }
 
-  /// Returns the cached contents of [viewId], to inject them into the DOM.
+  /// Returns the cached contents of [viewId], to be injected into the DOM.
   ///
   /// This is only used by the active `Renderer` object when a platform view needs
   /// to be injected in the DOM, through `FlutterView.DomManager.injectPlatformView`.
   ///
+  /// This may return null, if [renderContent] was not called before this. The
+  /// framework seems to allow/need this for some tests, so it is allowed here
+  /// as well.
+  ///
   /// App programmers should not access this directly, and instead use [getViewById].
-  DomElement getSlottedContent(int viewId) {
-    assert(knowsViewId(viewId), 'No platform view has been rendered with id: $viewId');
-    return _contents[viewId]!;
+  DomElement? getSlottedContent(int viewId) {
+    return _contents[viewId];
   }
 
   /// Returns the HTML element created by a registered factory for [viewId].
