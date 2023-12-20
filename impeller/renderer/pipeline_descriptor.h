@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_
+#define FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_
 
 #include <map>
 #include <memory>
@@ -19,6 +20,11 @@ class ShaderFunction;
 class VertexDescriptor;
 template <typename T>
 class Pipeline;
+
+enum class UseSubpassInput {
+  kYes,
+  kNo,
+};
 
 class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
  public:
@@ -124,9 +130,20 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
-  void SetSpecializationConstants(std::vector<int32_t> values);
+  void SetSpecializationConstants(std::vector<Scalar> values);
 
-  const std::vector<int32_t>& GetSpecializationConstants() const;
+  const std::vector<Scalar>& GetSpecializationConstants() const;
+
+  void SetUseSubpassInput(UseSubpassInput value) { use_subpass_input_ = value; }
+
+  bool UsesSubpassInput() const {
+    switch (use_subpass_input_) {
+      case UseSubpassInput::kYes:
+        return true;
+      case UseSubpassInput::kNo:
+        return false;
+    }
+  }
 
  private:
   std::string label_;
@@ -146,7 +163,10 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
-  std::vector<int32_t> specialization_constants_;
+  UseSubpassInput use_subpass_input_ = UseSubpassInput::kNo;
+  std::vector<Scalar> specialization_constants_;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_

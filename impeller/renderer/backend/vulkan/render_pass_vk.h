@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_RENDER_PASS_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_RENDER_PASS_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -43,7 +44,8 @@ class RenderPassVK final : public RenderPass {
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
-      const std::shared_ptr<CommandBufferVK>& command_buffer) const;
+      const std::shared_ptr<CommandBufferVK>& command_buffer,
+      bool has_subpass_dependency) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,
@@ -55,3 +57,5 @@ class RenderPassVK final : public RenderPass {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_RENDER_PASS_VK_H_

@@ -313,11 +313,11 @@ struct RenderPassData {
     /// Setup the viewport.
     ///
     const auto& viewport = command.viewport.value_or(pass_data.viewport);
-    gl.Viewport(viewport.rect.origin.x,  // x
-                target_size.height - viewport.rect.origin.y -
-                    viewport.rect.size.height,  // y
-                viewport.rect.size.width,       // width
-                viewport.rect.size.height       // height
+    gl.Viewport(viewport.rect.GetX(),  // x
+                target_size.height - viewport.rect.GetY() -
+                    viewport.rect.GetHeight(),  // y
+                viewport.rect.GetWidth(),       // width
+                viewport.rect.GetHeight()       // height
     );
     if (pass_data.depth_attachment) {
       // TODO(bdero): Desktop GL for Apple requires glDepthRange. glDepthRangef
@@ -335,10 +335,10 @@ struct RenderPassData {
       const auto& scissor = command.scissor.value();
       gl.Enable(GL_SCISSOR_TEST);
       gl.Scissor(
-          scissor.origin.x,                                             // x
-          target_size.height - scissor.origin.y - scissor.size.height,  // y
-          scissor.size.width,                                           // width
-          scissor.size.height  // height
+          scissor.GetX(),                                             // x
+          target_size.height - scissor.GetY() - scissor.GetHeight(),  // y
+          scissor.GetWidth(),                                         // width
+          scissor.GetHeight()                                         // height
       );
     } else {
       gl.Disable(GL_SCISSOR_TEST);
@@ -372,7 +372,7 @@ struct RenderPassData {
         break;
     }
 
-    if (command.index_type == IndexType::kUnknown) {
+    if (command.vertex_buffer.index_type == IndexType::kUnknown) {
       return false;
     }
 
@@ -381,7 +381,7 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Bind vertex and index buffers.
     ///
-    auto vertex_buffer_view = command.GetVertexBuffer();
+    auto& vertex_buffer_view = command.vertex_buffer.vertex_buffer;
 
     if (!vertex_buffer_view) {
       return false;
@@ -441,11 +441,12 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    if (command.index_type == IndexType::kNone) {
-      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+    if (command.vertex_buffer.index_type == IndexType::kNone) {
+      gl.DrawArrays(mode, command.base_vertex,
+                    command.vertex_buffer.vertex_count);
     } else {
       // Bind the index buffer if necessary.
-      auto index_buffer_view = command.index_buffer;
+      auto index_buffer_view = command.vertex_buffer.index_buffer;
       auto index_buffer =
           index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
@@ -453,9 +454,9 @@ struct RenderPassData {
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
         return false;
       }
-      gl.DrawElements(mode,                             // mode
-                      command.vertex_count,             // count
-                      ToIndexType(command.index_type),  // type
+      gl.DrawElements(mode,                                           // mode
+                      command.vertex_buffer.vertex_count,             // count
+                      ToIndexType(command.vertex_buffer.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
                           index_buffer_view.range.offset))  // indices
       );

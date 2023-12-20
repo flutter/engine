@@ -13,6 +13,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
+import '../../common/rendering.dart';
 import '../../common/test_initialization.dart';
 import 'semantics_tester.dart';
 
@@ -32,6 +33,7 @@ void main() {
 
 Future<void> testMain() async {
   await bootstrapAndRunApp();
+  setUpRenderingForTests();
   runSemanticsTests();
 }
 
@@ -799,7 +801,12 @@ void _testContainer() {
         owner().semanticsHost.querySelector('flt-semantics-container')!;
 
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
-    expect(parentElement.style.transformOrigin, '0px 0px 0px');
+    if (isSafari) {
+      // macOS 13 returns different values than macOS 12.
+      expect(parentElement.style.transformOrigin, anyOf(contains('0px 0px 0px'), contains('0px 0px')));
+    } else {
+      expect(parentElement.style.transformOrigin, '0px 0px 0px');
+    }
     expect(container.style.top, '-10px');
     expect(container.style.left, '-10px');
     semantics().semanticsEnabled = false;
@@ -2492,7 +2499,7 @@ void _testPlatformView() {
       width: 20,
       height: 30,
     );
-    ui.PlatformDispatcher.instance.render(sceneBuilder.build());
+    await renderScene(sceneBuilder.build());
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
@@ -3051,6 +3058,7 @@ void updateNode(
   double elevation = 0.0,
   double thickness = 0.0,
   ui.Rect rect = ui.Rect.zero,
+  String identifier = '',
   String label = '',
   List<ui.StringAttribute> labelAttributes = const <ui.StringAttribute>[],
   String hint = '',
@@ -3091,6 +3099,7 @@ void updateNode(
     elevation: elevation,
     thickness: thickness,
     rect: rect,
+    identifier: identifier,
     label: label,
     labelAttributes: labelAttributes,
     hint: hint,
@@ -3124,17 +3133,6 @@ Future<void> createPlatformView(int id, String viewType) {
         'viewType': viewType,
       },
     )),
-    (dynamic _) => completer.complete(),
-  );
-  return completer.future;
-}
-
-/// Disposes of the platform view with the given [id].
-Future<void> disposePlatformView(int id) {
-  final Completer<void> completer = Completer<void>();
-  ui.PlatformDispatcher.instance.sendPlatformMessage(
-    'flutter/platform_views',
-    codec.encodeMethodCall(MethodCall('dispose', id)),
     (dynamic _) => completer.complete(),
   );
   return completer.future;
