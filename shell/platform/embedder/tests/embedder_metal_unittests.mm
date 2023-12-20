@@ -31,8 +31,6 @@
 namespace flutter {
 namespace testing {
 
-constexpr int64_t kImplicitViewId = 0ll;
-
 using EmbedderTest = testing::EmbedderTest;
 
 TEST_F(EmbedderTest, CanRenderGradientWithMetal) {

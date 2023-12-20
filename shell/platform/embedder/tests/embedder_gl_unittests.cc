@@ -43,8 +43,6 @@
 namespace flutter {
 namespace testing {
 
-static constexpr int64_t kImplicitViewId = 0;
-
 using EmbedderTest = testing::EmbedderTest;
 
 TEST_F(EmbedderTest, CanGetVulkanEmbedderContext) {

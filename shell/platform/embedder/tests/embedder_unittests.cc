@@ -52,8 +52,6 @@ static uint64_t NanosFromEpoch(int millis_from_now) {
 namespace flutter {
 namespace testing {
 
-static constexpr int64_t kImplicitViewId = 0ll;
-
 using EmbedderTest = testing::EmbedderTest;
 
 TEST(EmbedderTestNoFixture, MustNotRunWithInvalidArgs) {
