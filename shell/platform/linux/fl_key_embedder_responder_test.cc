@@ -156,7 +156,7 @@ static void record_calls(const FlutterKeyEvent* event,
   GPtrArray* records_array = reinterpret_cast<GPtrArray*>(creation_user_data);
   if (records_array != nullptr) {
     g_ptr_array_add(records_array, fl_key_embedder_call_record_new(
-                                       event, callback, user_data));
+                                       event, callback, callback_user_data));
   }
 }
 
