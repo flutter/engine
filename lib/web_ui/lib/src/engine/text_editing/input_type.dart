@@ -14,7 +14,7 @@ import '../dom.dart';
 abstract class EngineInputType {
   const EngineInputType();
 
-  static EngineInputType fromName(String name, {bool isDecimal = false, bool forceMultiline = false}) {
+  static EngineInputType fromName(String name, {bool isDecimal = false, bool isMultiline= false}) {
     switch (name) {
       case 'TextInputType.number':
         return isDecimal ? decimal : number;
@@ -27,7 +27,7 @@ abstract class EngineInputType {
       case 'TextInputType.multiline':
         return multiline;
       case 'TextInputType.none':
-        return forceMultiline ? multilineNone : none;
+        return isMultiline ? multilineNone : none;
       case 'TextInputType.text':
       default:
         return text;
@@ -103,14 +103,14 @@ class NoTextInputType extends EngineInputType {
 /// Use this for inputting multiple lines with a customized keyboard.
 ///
 /// When Flutter uses a custom virtual keyboard, it sends [TextInputType.none]
-/// with a [forceMultiline] flag to block the system virtual keyboard.
+/// with a [isMultiline] flag to block the system virtual keyboard.
 ///
 /// For [MultilineNoTextInputType] (mapped to [TextInputType.none] with
-/// [forceMultiline] = true), it creates a <textarea> element with the
+/// [isMultiline] = true), it creates a <textarea> element with the
 /// inputmode="none" attribute.
 ///
 /// For [NoTextInputType] (mapped to [TextInputType.none] with
-/// [forceMultiline] = false), it creates an <input> element with the
+/// [isMultiline] = false), it creates an <input> element with the
 /// inputmode="none" attribute.
 class MultilineNoTextInputType extends EngineInputType {
   const MultilineNoTextInputType();

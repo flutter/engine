@@ -961,7 +961,7 @@ class InputConfiguration {
       : inputType = EngineInputType.fromName(
           flutterInputConfiguration.readJson('inputType').readString('name'),
           isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
-          forceMultiline: flutterInputConfiguration.readJson('inputType').tryBool('forceMultiline') ?? false,
+          isMultiline: flutterInputConfiguration.readJson('inputType').tryBool('isMultiline') ?? false,
         ),
         inputAction =
             flutterInputConfiguration.tryString('inputAction') ?? 'TextInputAction.done',
