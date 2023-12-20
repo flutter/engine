@@ -266,7 +266,7 @@ FlKeyEmbedderResponder* fl_key_embedder_responder_new(
   FlKeyEmbedderResponder* self = FL_KEY_EMBEDDER_RESPONDER(
       g_object_new(FL_TYPE_EMBEDDER_RESPONDER_USER_DATA, nullptr));
 
-  self->send_key_event = std::move(send_key_event);
+  self->send_key_event = send_key_event;
   self->send_key_event_user_data = send_key_event_user_data;
 
   self->pressing_records = g_hash_table_new(g_direct_hash, g_direct_equal);
