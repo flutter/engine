@@ -180,7 +180,7 @@ bool CompositorOpenGL::ClearSurface() {
   }
 
   gl_->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
   return engine_->view()->SwapBuffers();
 }
