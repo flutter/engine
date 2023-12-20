@@ -222,7 +222,8 @@ class DomManager {
     // to a PlatformViewStrategy class for each web-renderer backend?
     final DomElement? pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
     if (pv == null) {
-      domWindow.console.debug('Failed to inject Platform View Id: $platformViewId. Call render first!');
+      domWindow.console.debug('Failed to inject Platform View Id: $platformViewId. '
+        'Render seems to be happening before a `flutter/platform_views:create` platform message!');
       return;
     }
     // If pv is already a descendant of platformViewsHost -> noop
