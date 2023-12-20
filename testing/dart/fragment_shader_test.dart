@@ -45,6 +45,11 @@ void main() async {
     expect(uniformData['location'] is int, true);
   });
 
+  if (impellerEnabled) {
+    // https://github.com/flutter/flutter/issues/122823
+    return;
+  }
+
   test('FragmentShader setSampler throws with out-of-bounds index', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
