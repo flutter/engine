@@ -285,9 +285,6 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   double dpi = controller->window_wrapper->pixels_per_screen_coordinate *
                controller->monitor_screen_coordinates_per_inch;
 
-  // TODO(dkwingsmt): GLFW doesn't support multi-view for now. Use the real
-  // view ID when it does.
-  int64_t view_id = flutter::kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
   event.struct_size = sizeof(event);
   event.width = width;
@@ -300,7 +297,9 @@ static void SendWindowMetrics(FlutterDesktopWindowControllerState* controller,
   } else {
     event.pixel_ratio = controller->window_wrapper->pixel_ratio_override;
   }
-  event.view_id = view_id;
+  // The GLFW embedder doesn't support multiple views. We assume all pointer
+  // events come from the only view, the implicit view.
+  event.view_id = flutter::kFlutterImplicitViewId;
   FlutterEngineSendWindowMetricsEvent(controller->engine->flutter_engine,
                                       &event);
 }

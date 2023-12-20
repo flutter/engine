@@ -2121,12 +2121,10 @@ TEST_P(EmbedderTestMultiBackend,
     ASSERT_TRUE(engine.is_valid());
 
     FlutterWindowMetricsEvent event = {};
-    memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
     event.struct_size = sizeof(event);
     event.width = 800;
     event.height = 600;
     event.pixel_ratio = 1.0;
-    event.view_id = kImplicitViewId;
     ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
               kSuccess);
   });
