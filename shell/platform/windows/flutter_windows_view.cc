@@ -311,7 +311,6 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
   // Use the real view ID when it does.
   int64_t view_id = flutter::kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;

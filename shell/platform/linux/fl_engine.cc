@@ -771,7 +771,6 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   // the real view ID when it does.
   int64_t view_id = flutter::kFlutterImplicitViewId;
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(FlutterWindowMetricsEvent);
   event.width = width;
   event.height = height;

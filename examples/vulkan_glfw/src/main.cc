@@ -32,6 +32,7 @@ static const size_t kInitialWindowHeight = 600;
 // `VK_PRESENT_MODE_MAILBOX_KHR` for continual swap without horizontal tearing,
 // or `VK_PRESENT_MODE_IMMEDIATE_KHR` for no vsync.
 static const VkPresentModeKHR kPreferredPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+static constexpr FlutterViewId kImplicitViewId = 0;
 
 static_assert(FLUTTER_ENGINE_VERSION == 1,
               "This Flutter Embedder was authored against the stable Flutter "
@@ -86,6 +87,9 @@ void GLFWcursorPositionCallbackAtPhase(GLFWwindow* window,
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
+  // This example only supports a single window, therefore we assume the event
+  // occurred in the only view, the implicit view.
+  event.view_id = kImplicitViewId;
   FlutterEngineSendPointerEvent(g_state.engine, &event, 1);
 }
 
@@ -125,16 +129,14 @@ void GLFWKeyCallback(GLFWwindow* window,
 void GLFWframebufferSizeCallback(GLFWwindow* window, int width, int height) {
   g_state.resize_pending = true;
 
-  // TODO(dkwingsmt): GLFW doesn't support multi-view for now. Use the real
-  // view ID when it does.
-  int64_t view_id = kImplicitViewId;
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width;
   event.height = height;
   event.pixel_ratio = g_pixelRatio;
-  event.view_id = view_id;
+  // This example only supports a single window, therefore we assume the event
+  // occurred in the only view, the implicit view.
+  event.view_id = kImplicitViewId;
   FlutterEngineSendWindowMetricsEvent(g_state.engine, &event);
 }
 

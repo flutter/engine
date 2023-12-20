@@ -50,12 +50,10 @@ TEST_F(EmbedderTest, CanRenderGradientWithMetal) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
   // TODO (https://github.com/flutter/flutter/issues/73590): re-enable once
@@ -121,12 +119,10 @@ TEST_F(EmbedderTest, ExternalTextureMetal) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = texture_size.width();
   event.height = texture_size.height();
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("external_texture_metal.png", rendered_scene));
@@ -233,12 +229,10 @@ TEST_F(EmbedderTest, MetalCompositorMustBeAbleToRenderPlatformViews) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -260,12 +254,10 @@ TEST_F(EmbedderTest, CanRenderSceneWithoutCustomCompositorMetal) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
 
   ASSERT_TRUE(ImageMatchesFixture("scene_without_custom_compositor.png", rendered_scene));
@@ -310,12 +302,10 @@ TEST_F(EmbedderTest, TextureDestructionCallbackCalledWithoutCustomCompositorMeta
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -507,13 +497,11 @@ TEST_F(EmbedderTest, CompositorMustBeAbleToRenderKnownSceneMetal) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   // Flutter still thinks it is 800 x 600. Only the root surface is rotated.
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
@@ -568,12 +556,10 @@ TEST_F(EmbedderTest, CreateInvalidBackingstoreMetalTexture) {
 
   // Send a window metrics events so frames may be scheduled.
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = 800;
   event.height = 600;
   event.pixel_ratio = 1.0;
-  event.view_id = kImplicitViewId;
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event), kSuccess);
   ASSERT_TRUE(engine.is_valid());
   latch.Wait();

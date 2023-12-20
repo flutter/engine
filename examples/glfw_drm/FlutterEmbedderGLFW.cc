@@ -100,7 +100,6 @@ static void GLFWKeyCallback(GLFWwindow* window,
 
 void GLFWwindowSizeCallback(GLFWwindow* window, int width, int height) {
   FlutterWindowMetricsEvent event = {};
-  memset(&event, 0, sizeof(FlutterWindowMetricsEvent));
   event.struct_size = sizeof(event);
   event.width = width * g_pixelRatio;
   event.height = height * g_pixelRatio;
