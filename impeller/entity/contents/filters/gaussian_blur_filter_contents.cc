@@ -284,10 +284,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   //
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
-  Vector2 downsampled_size = source_rect_padded.size * downsample_scalar;
+  Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
-  Vector2 effective_scalar = Vector2(subpass_size) / source_rect_padded.size;
+  Vector2 effective_scalar =
+      Vector2(subpass_size) / source_rect_padded.GetSize();
 
   Quad uvs = CalculateUVs(inputs[0], entity, source_rect_padded,
                           input_snapshot->texture->GetSize());
