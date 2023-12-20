@@ -39,7 +39,7 @@ class Focusable extends RoleManager {
   /// focus explicitly.
   ///
   /// This method of taking focus is different from the regular method of using
-  /// the [SemanticsObject.hasFocus] flag, as in this case the framework is not
+  /// the [SemanticsObject.hasFocus] flag, as in this case the framework did not
   /// explicitly request focus. Instead, the DOM element is being focus directly
   /// programmatically, simulating the screen reader choosing a default element
   /// to focus on.
