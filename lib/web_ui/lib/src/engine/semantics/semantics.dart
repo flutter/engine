@@ -1772,13 +1772,18 @@ class SemanticsObject {
   }
 
   /// Recursively visits the tree rooted at `this` node in depth-first fashion
-  /// in render order.
+  /// in the order nodes were rendered into the DOM.
+  ///
+  /// Useful for debugging only.
   ///
   /// Calls the [callback] for `this` node, then for all of its descendants.
-  void visitDepthFirstInRenderOrder(void Function(SemanticsObject) callback) {
+  ///
+  /// Unlike [visitDepthFirstInTraversalOrder] this method can traverse
+  /// partially updated, incomplete, or inconsistent tree.
+  void _debugVisitRenderedSemanticNodesDepthFirst(void Function(SemanticsObject) callback) {
     callback(this);
     _currentChildrenInRenderOrder?.forEach((SemanticsObject child) {
-      child.visitDepthFirstInRenderOrder(callback);
+      child._debugVisitRenderedSemanticNodesDepthFirst(callback);
     });
   }
 
@@ -2265,7 +2270,7 @@ class EngineSemanticsOwner {
       // A detached node may or may not have some of its descendants reattached
       // elsewhere. Walk the descendant tree and find all descendants that were
       // reattached to a parent. Those descendants need to be removed.
-      detachmentRoot.visitDepthFirstInRenderOrder((SemanticsObject node) {
+      detachmentRoot.visitDepthFirstInTraversalOrder((SemanticsObject node) {
         final SemanticsObject? parent = _attachments[node.id];
         if (parent == null) {
           // Was not reparented and is removed permanently from the tree.
@@ -2274,8 +2279,8 @@ class EngineSemanticsOwner {
           assert(node._parent == parent);
           assert(node.element.parentNode == parent._childContainerElement);
         }
+        return true;
       });
-
     }
 
     for (final SemanticsObject removal in removals) {
@@ -2331,7 +2336,7 @@ class EngineSemanticsOwner {
 
     final SemanticsObject? root = _semanticsTree[0];
     if (root != null) {
-      root.visitDepthFirstInRenderOrder((SemanticsObject child) {
+      root._debugVisitRenderedSemanticNodesDepthFirst((SemanticsObject child) {
         liveIds[child.id] = child._childrenInTraversalOrder?.toList() ?? const <int>[];
       });
     }
