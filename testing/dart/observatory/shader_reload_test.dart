@@ -13,6 +13,10 @@ import '../impeller_enabled.dart';
 
 void main() {
   test('simple iplr shader can be re-initialized', () async {
+    if (impellerEnabled) {
+      // Needs https://github.com/flutter/flutter/issues/129659
+      return;
+    }
     vms.VmService? vmService;
     FragmentShader? shader;
     try {
@@ -48,7 +52,7 @@ void main() {
       await vmService?.dispose();
       shader?.dispose();
     }
-  }, skip: impellerEnabled); // Needs https://github.com/flutter/flutter/issues/129659
+  });
 }
 
 void _use(Shader shader) {
