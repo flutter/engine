@@ -19,16 +19,6 @@ using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
 
 namespace {
 
-std::optional<Rect> ExpandCoverageHint(const std::optional<Rect>& coverage_hint,
-                                       const Matrix& source_to_local_transform,
-                                       const Vector2& padding) {
-  if (!coverage_hint.has_value()) {
-    return std::nullopt;
-  }
-  Vector2 transformed_padding = (source_to_local_transform * padding).Abs();
-  return coverage_hint->Expand(transformed_padding);
-}
-
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
   SamplerDescriptor sampler_desc;
@@ -253,12 +243,16 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 blur_radius = {CalculateBlurRadius(scaled_sigma.x),
                          CalculateBlurRadius(scaled_sigma.y)};
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
+  Vector2 local_padding =
+      (entity.GetTransform().Basis() * effect_transform.Basis() * padding).Abs();
 
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
   // transparent gutter.
-  std::optional<Rect> expanded_coverage_hint = ExpandCoverageHint(
-      coverage_hint, entity.GetTransform() * effect_transform, padding);
+  std::optional<Rect> expanded_coverage_hint;
+  if (coverage_hint.has_value()) {
+    expanded_coverage_hint = coverage_hint->Expand(local_padding);
+  }
 
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
@@ -266,7 +260,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
-  std::optional<Rect> input_snapshot_coverage = input_snapshot->GetCoverage();
 
   if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
     return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
@@ -280,22 +273,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
   Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
-  Rect source_rect_padded = source_rect;
-  Matrix padding_snapshot_adjustment;
-  if (!coverage_hint.has_value() ||
-      (input_snapshot_coverage.has_value() &&
-       !input_snapshot_coverage->Contains(coverage_hint.value()))) {
-    // This means that the snapshot does not contain all the data it needs to
-    // render, so we add extra padding for the blur halo to render.
-    // TODO(gaaclarke): This adds a gutter for the blur halo that is uniform,
-    //                  if we could only add padding where necessary that would
-    //                  be more efficient.
-    source_rect_padded = source_rect_padded.Expand(padding);
-    padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
-  }
+  Rect source_rect_padded = source_rect.Expand(padding);
+  Matrix padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
+  // TODO(gaaclarke): The padding could be removed if we know it's not needed or
+  //   resized to account for the expanded_clip_coverage. There doesn't appear
+  //   to be the math to make those calculations though. The following
+  //   optimization works, but causes a shimmer as a result of
+  //   https://github.com/flutter/flutter/issues/140193 so it isn't applied.
+  //
+  //   !input_snapshot->GetCoverage()->Expand(-local_padding)
+  //     .Contains(coverage_hint.value()))
   Vector2 downsampled_size = source_rect_padded.size * downsample_scalar;
-  // TODO(gaaclarke): I don't think we are correctly handling this fractional
-  //                  amount we are throwing away.
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
   Vector2 effective_scalar = Vector2(subpass_size) / source_rect_padded.size;
