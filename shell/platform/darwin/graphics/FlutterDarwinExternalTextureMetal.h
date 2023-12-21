@@ -29,9 +29,9 @@
 @interface FlutterDarwinExternalTextureMetal : NSObject
 
 - (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
-                        textureID:(int64_t)textureID
-                          texture:(nonnull NSObject<FlutterTexture>*)texture
-                   enableImpeller:(BOOL)enableImpeller;
+                                 textureID:(int64_t)textureID
+                                   texture:(nonnull NSObject<FlutterTexture>*)texture
+                            enableImpeller:(BOOL)enableImpeller;
 
 - (void)paintContext:(flutter::Texture::PaintContext&)context
               bounds:(const SkRect&)bounds

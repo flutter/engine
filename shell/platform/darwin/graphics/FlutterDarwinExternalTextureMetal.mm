@@ -35,9 +35,9 @@ FLUTTER_ASSERT_ARC
                    enableImpeller:(BOOL)enableImpeller {
   if (self = [super init]) {
     CVReturn cvReturn = CVMetalTextureCacheCreate(kCFAllocatorDefault,  // allocator
-                                                  nil,      // cache attributes (nil default)
+                                                  nil,     // cache attributes (nil default)
                                                   device,  // metal device
-                                                  nil,      // texture attributes (nil default)
+                                                  nil,     // texture attributes (nil default)
                                                   &_textureCache  // [out] cache
     );
     if (cvReturn != kCVReturnSuccess) {
