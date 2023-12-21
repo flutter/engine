@@ -4597,6 +4597,7 @@ TEST_F(ShellTest, RuntimeStageBackendDefaultsToSkSLWithoutImpeller) {
   DestroyShell(std::move(shell), task_runners);
 }
 
+#if IMPELLER_SUPPORTS_RENDERING
 TEST_F(ShellTest, RuntimeStageBackendWithImpeller) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
@@ -4650,6 +4651,7 @@ TEST_F(ShellTest, RuntimeStageBackendWithImpeller) {
 
   DestroyShell(std::move(shell), task_runners);
 }
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 }  // namespace testing
 }  // namespace flutter
