@@ -8,37 +8,37 @@ type WasmCompileTarget = "dart2wasm";
 export type CompileTarget = JSCompileTarget | WasmCompileTarget;
 
 export type WebRenderer =
-    "html" |
-    "canvaskit" |
-    "skwasm";
+  "html" |
+  "canvaskit" |
+  "skwasm";
 
 interface ApplicationBuildBase {
-    renderer: WebRenderer;
+  renderer: WebRenderer;
 }
 
 export interface JSApplicationBuild extends ApplicationBuildBase {
-    compileTarget: JSCompileTarget;
-    mainJsPath: string;
+  compileTarget: JSCompileTarget;
+  mainJsPath: string;
 }
 
 export interface WasmApplicationBuild extends ApplicationBuildBase {
-    compileTarget: WasmCompileTarget;
-    mainWasmPath: string;
-    jsSupportRuntimePath: string;
+  compileTarget: WasmCompileTarget;
+  mainWasmPath: string;
+  jsSupportRuntimePath: string;
 }
 
 export type ApplicationBuild = JSApplicationBuild | WasmApplicationBuild;
 
 export interface BuildConfig {
-    serviceWorkerVersion: string;
-    builds: ApplicationBuild[];
+  serviceWorkerVersion: string;
+  builds: ApplicationBuild[];
 }
 
 export interface BrowserEnvironment {
-    hasImageCodecs: boolean;
-    hasChromiumBreakIterators: boolean; 
-    supportsWasmGC: boolean;
-    crossOriginIsolated: boolean;
+  hasImageCodecs: boolean;
+  hasChromiumBreakIterators: boolean;
+  supportsWasmGC: boolean;
+  crossOriginIsolated: boolean;
 }
 
 type CanvasKitVariant =
@@ -47,25 +47,25 @@ type CanvasKitVariant =
   "chromium";
 
 export interface FlutterConfiguration {
-    assetBase: string?;
-    canvasKitBaseUrl: string?;
-    canvasKitVariant: CanvasKitVariant?;
-    renderer: WebRenderer?;
-    hostElement: HtmlElement?;
+  assetBase: string?;
+  canvasKitBaseUrl: string?;
+  canvasKitVariant: CanvasKitVariant?;
+  renderer: WebRenderer?;
+  hostElement: HtmlElement?;
 }
 
 export interface ServiceWorkerSettings {
-    serviceWorkerVersion: string;
-    serviceWorkerUrl: string?;
-    timeoutMillis: number?;
+  serviceWorkerVersion: string;
+  serviceWorkerUrl: string?;
+  timeoutMillis: number?;
 }
 
 export interface AppRunner {
-    runApp: () => void;
+  runApp: () => void;
 }
 
 export interface EngineInitializer {
-    initializeEngine: () => Promise<AppRunner>;
+  initializeEngine: () => Promise<AppRunner>;
 }
 
 export type OnEntrypointLoadedCallback =
