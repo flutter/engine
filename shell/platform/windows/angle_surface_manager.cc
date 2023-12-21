@@ -270,6 +270,9 @@ void AngleSurfaceManager::ResizeSurface(WindowsRenderTarget* render_target,
     surface_width_ = width;
     surface_height_ = height;
 
+    // TODO: Destroying the surface and re-creating it is expensive.
+    // Ideally this would use ANGLE's automatic surface sizing instead.
+    // See: https://github.com/flutter/flutter/issues/79427
     ClearContext();
     DestroySurface();
     if (!CreateSurface(render_target, width, height)) {
