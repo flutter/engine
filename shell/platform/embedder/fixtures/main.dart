@@ -1330,6 +1330,16 @@ void pointer_data_packet_view_id() {
 }
 
 @pragma('vm:entry-point')
+void window_metrics_event_view_id() {
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    signalNativeMessage('ViewID: ${event.viewId}');
+  };
+
+  signalNativeTest();
+}
+
+
+@pragma('vm:entry-point')
 Future<void> channel_listener_response() async {
   channelBuffers.setListener('test/listen',
       (ByteData? data, PlatformMessageResponseCallback callback) {

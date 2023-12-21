@@ -2668,7 +2668,7 @@ TEST_F(EmbedderTest, CanSendPointer) {
 
 /// Send a pointer event to Dart and wait until the Dart code echos with the
 /// view ID.
-TEST_F(EmbedderTest, CanSendPointerWithViewId) {
+TEST_F(EmbedderTest, CanSendPointerEventWithViewId) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
@@ -2703,6 +2703,47 @@ TEST_F(EmbedderTest, CanSendPointerWithViewId) {
 
   FlutterEngineResult result =
       FlutterEngineSendPointerEvent(engine.get(), &pointer_event, 1);
+  ASSERT_EQ(result, kSuccess);
+
+  message_latch.Wait();
+}
+
+/// Send a window metrics event to Dart and wait until the Dart code echos with the
+/// view ID.
+TEST_F(EmbedderTest, CanSendWindowMetricsEventWithViewId) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("window_metrics_event_view_id");
+
+  fml::AutoResetWaitableEvent ready_latch, count_latch, message_latch;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready_latch](Dart_NativeArguments args) { ready_latch.Signal(); }));
+  context.AddNativeCallback(
+      "SignalNativeMessage",
+      CREATE_NATIVE_ENTRY([&message_latch](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        ASSERT_EQ("ViewID: 2", message);
+        message_latch.Signal();
+      }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  ready_latch.Wait();
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(FlutterWindowMetricsEvent);
+  event.width = 200;
+  event.height = 300;
+  event.pixel_ratio = 1.5;
+  event.view_id = 2;
+
+  FlutterEngineResult result =
+      FlutterEngineSendWindowMetricsEvent(engine.get(), &event);
   ASSERT_EQ(result, kSuccess);
 
   message_latch.Wait();
