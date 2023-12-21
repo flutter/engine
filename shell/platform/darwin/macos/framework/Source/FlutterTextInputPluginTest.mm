@@ -147,7 +147,6 @@
     @"selectionBase" : @(5),
     @"selectionExtent" : @(5),
     @"selectionAffinity" : @"TextAffinity.upstream",
-    @"selectionIsDirectional" : @(NO),
     @"composingBase" : @(4),
     @"composingExtent" : @(10),
     @"text" : @"Textmarked",
@@ -213,7 +212,6 @@
     @"selectionBase" : @(2),
     @"selectionExtent" : @(2),
     @"selectionAffinity" : @"TextAffinity.upstream",
-    @"selectionIsDirectional" : @(NO),
     @"composingBase" : @(1),
     @"composingExtent" : @(7),
     @"text" : @"1marked4",
@@ -1622,9 +1620,6 @@
     @"selectionBase" : @(4),
     @"selectionExtent" : @(4),
     @"selectionAffinity" : @"TextAffinity.upstream",
-    @"selectionIsDirectional" : @(NO),
-    @"composingBase" : @(-1),
-    @"composingExtent" : @(-1),
     @"text" : @"Text",
   };
 
@@ -1659,9 +1654,6 @@
     @"selectionBase" : @(5),
     @"selectionExtent" : @(5),
     @"selectionAffinity" : @"TextAffinity.upstream",
-    @"selectionIsDirectional" : @(NO),
-    @"composingBase" : @(-1),
-    @"composingExtent" : @(-1),
     @"text" : @"Text\n",
   };
 
