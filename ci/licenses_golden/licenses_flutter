@@ -5792,6 +5792,7 @@ ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/browser_environment.js + ../.
 ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/canvaskit_loader.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/entrypoint_loader.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/flutter.js + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/instantiate_wasm.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/loader.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/service_worker_loader.js + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/flutter_js/src/skwasm_loader.js + ../../../flutter/LICENSE
@@ -8613,6 +8614,7 @@ FILE: ../../../flutter/lib/web_ui/flutter_js/src/browser_environment.js
 FILE: ../../../flutter/lib/web_ui/flutter_js/src/canvaskit_loader.js
 FILE: ../../../flutter/lib/web_ui/flutter_js/src/entrypoint_loader.js
 FILE: ../../../flutter/lib/web_ui/flutter_js/src/flutter.js
+FILE: ../../../flutter/lib/web_ui/flutter_js/src/instantiate_wasm.js
 FILE: ../../../flutter/lib/web_ui/flutter_js/src/loader.js
 FILE: ../../../flutter/lib/web_ui/flutter_js/src/service_worker_loader.js
 FILE: ../../../flutter/lib/web_ui/flutter_js/src/skwasm_loader.js
