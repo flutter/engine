@@ -8,6 +8,7 @@ flutter_js_source_list = [
   "src/canvaskit_loader.js",
   "src/entrypoint_loader.js",
   "src/flutter.js",
+  "src/instantiate_wasm.js",
   "src/loader.js",
   "src/service_worker_loader.js",
   "src/skwasm_loader.js",
