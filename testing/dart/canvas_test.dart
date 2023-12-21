@@ -568,35 +568,69 @@ void main() async {
         ..color = color
         ..strokeWidth = 5.0;
 
+      final Rect tallThin = Rect.fromLTRB(
+        min(rect.left, rect.right) - 10,
+        rect.top,
+        min(rect.left, rect.right) - 10,
+        rect.bottom,
+      );
+      final Rect wideThin = Rect.fromLTRB(
+        rect.left,
+        min(rect.top, rect.bottom) - 10,
+        rect.right,
+        min(rect.top, rect.bottom) - 10,
+      );
+
       canvas.save();
       canvas.translate(x, y);
 
       paint.style = PaintingStyle.fill;
       canvas.drawRect(rect, paint);
+      canvas.drawRect(tallThin, paint);
+      canvas.drawRect(wideThin, paint);
 
       canvas.save();
       canvas.translate(0, 100);
       paint.style = PaintingStyle.stroke;
       canvas.drawRect(rect, paint);
+      canvas.drawRect(tallThin, paint);
+      canvas.drawRect(wideThin, paint);
       canvas.restore();
-
 
       canvas.save();
       canvas.translate(100, 0);
       paint.style = PaintingStyle.fill;
       canvas.drawOval(rect, paint);
+      canvas.drawOval(tallThin, paint);
+      canvas.drawOval(wideThin, paint);
       canvas.restore();
 
       canvas.save();
       canvas.translate(100, 100);
       paint.style = PaintingStyle.stroke;
       canvas.drawOval(rect, paint);
+      canvas.drawOval(tallThin, paint);
+      canvas.drawOval(wideThin, paint);
       canvas.restore();
 
       canvas.save();
       canvas.translate(50, 50);
+
+      canvas.save();
       canvas.clipRect(rect);
       canvas.drawPaint(paint);
+      canvas.restore();
+
+      canvas.save();
+      canvas.clipRect(tallThin);
+      canvas.drawPaint(paint);
+      canvas.restore();
+
+      canvas.save();
+      canvas.clipRect(wideThin);
+      canvas.drawPaint(paint);
+      canvas.restore();
+
       canvas.restore();
 
       canvas.restore();

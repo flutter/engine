@@ -5857,6 +5857,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
     rect = _sorted(rect);
+    // Even if rect is still empty - which implies it has a zero dimension -
+    // we still need to perform the clipRect operation as it will effectively
+    // nullify any further rendering until the next restore call.
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
@@ -5930,7 +5933,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     rect = _sorted(rect);
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
@@ -5959,7 +5964,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
     rect = _sorted(rect);
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
