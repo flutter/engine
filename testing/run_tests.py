@@ -39,7 +39,7 @@ FONTS_DIR = os.path.join(
     BUILDROOT_DIR, 'flutter', 'third_party', 'txt', 'third_party', 'fonts'
 )
 ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
-FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
+FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
 
@@ -611,6 +611,8 @@ class FlutterTesterOptions():
 
     if self.enable_impeller:
       command_args += ['--enable-impeller']
+    else:
+      command_args += ['--no-enable-impeller']
 
     if self.multithreaded:
       command_args.insert(0, '--force-multithreading')
