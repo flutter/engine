@@ -523,19 +523,20 @@ static char markerKey;
     return nil;
   }
 
-  NSDictionary* const dictionary = @{
+  NSString* const textAffinity = [self textAffinityString];
+
+  int composingBase = _activeModel->composing() ? _activeModel->composing_range().base() : -1;
+  int composingExtent = _activeModel->composing() ? _activeModel->composing_range().extent() : -1;
+
+  return @{
     kSelectionBaseKey : @(_activeModel->selection().base()),
     kSelectionExtentKey : @(_activeModel->selection().extent()),
-    kSelectionAffinityKey : [self textAffinityString],
+    kSelectionAffinityKey : textAffinity,
+    kSelectionIsDirectionalKey : @NO,
+    kComposingBaseKey : @(composingBase),
+    kComposingExtentKey : @(composingExtent),
     kTextKey : [NSString stringWithUTF8String:_activeModel->GetText().c_str()] ?: [NSNull null],
   };
-  if (!_activeModel->composing()) {
-    return dictionary;
-  }
-  NSMutableDictionary* mutableDictionary = [dictionary mutableCopy];
-  mutableDictionary[kComposingBaseKey] = @(_activeModel->composing_range().base());
-  mutableDictionary[kComposingExtentKey] = @(_activeModel->composing_range().extent());
-  return mutableDictionary;
 }
 
 - (void)updateEditState {

@@ -99,8 +99,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 0);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 0);
-  EXPECT_EQ(editingState[@"composingBase"], nullptr);
-  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
+  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
+  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
   return true;
 }
 
@@ -147,6 +147,7 @@
     @"selectionBase" : @(5),
     @"selectionExtent" : @(5),
     @"selectionAffinity" : @"TextAffinity.upstream",
+    @"selectionIsDirectional" : @(NO),
     @"composingBase" : @(4),
     @"composingExtent" : @(10),
     @"text" : @"Textmarked",
@@ -212,6 +213,7 @@
     @"selectionBase" : @(2),
     @"selectionExtent" : @(2),
     @"selectionAffinity" : @"TextAffinity.upstream",
+    @"selectionIsDirectional" : @(NO),
     @"composingBase" : @(1),
     @"composingExtent" : @(7),
     @"text" : @"1marked4",
@@ -289,8 +291,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 2);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 2);
-  EXPECT_EQ(editingState[@"composingBase"], nullptr);
-  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
+  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
+  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
   return true;
 }
 
@@ -878,8 +880,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 0);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 0);
-  EXPECT_EQ(editingState[@"composingBase"], nullptr);
-  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
+  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
+  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
   return true;
 }
 
@@ -1563,8 +1565,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 4);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 4);
-  EXPECT_EQ(editingState[@"composingBase"], nullptr);
-  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
+  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
+  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
 
   [plugin doCommandBySelector:@selector(insertNewline:)];
 
@@ -1575,8 +1577,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 5);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 5);
-  EXPECT_EQ(editingState[@"composingBase"], nullptr);
-  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
+  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
+  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
 
   return true;
 }
@@ -1620,6 +1622,9 @@
     @"selectionBase" : @(4),
     @"selectionExtent" : @(4),
     @"selectionAffinity" : @"TextAffinity.upstream",
+    @"selectionIsDirectional" : @(NO),
+    @"composingBase" : @(-1),
+    @"composingExtent" : @(-1),
     @"text" : @"Text",
   };
 
@@ -1654,6 +1659,9 @@
     @"selectionBase" : @(5),
     @"selectionExtent" : @(5),
     @"selectionAffinity" : @"TextAffinity.upstream",
+    @"selectionIsDirectional" : @(NO),
+    @"composingBase" : @(-1),
+    @"composingExtent" : @(-1),
     @"text" : @"Text\n",
   };
 
