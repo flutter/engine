@@ -777,7 +777,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
     // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
     // order to perform golden tests in Flutter framework because on the HTML
-    // renderer, golden tests render to DOM and then take a browser screenshot.
+    // renderer, golden tests render to DOM and then take a browser screenshot,
+    // https://github.com/flutter/flutter/issues/137073.
     if (shouldRender || renderer.rendererTag == 'html') {
       await renderer.renderScene(scene, viewToRender);
     }
