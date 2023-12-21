@@ -92,10 +92,10 @@ FLUTTER_ASSERT_ARC
 - (FlutterDarwinExternalTextureMetal*)
     createExternalTextureWithIdentifier:(int64_t)textureID
                                 texture:(NSObject<FlutterTexture>*)texture {
-  return [[FlutterDarwinExternalTextureMetal alloc] initWithTextureCache:_textureCache
-                                                               textureID:textureID
-                                                                 texture:texture
-                                                          enableImpeller:NO];
+  return [[FlutterDarwinExternalTextureMetal alloc] initWithMTLDevice:_device
+                                                            textureID:textureID
+                                                              texture:texture
+                                                       enableImpeller:NO];
 }
 
 @end

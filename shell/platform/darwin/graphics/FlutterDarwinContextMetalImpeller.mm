@@ -76,10 +76,10 @@ static std::shared_ptr<impeller::ContextMTL> CreateImpellerContext(
 - (FlutterDarwinExternalTextureMetal*)
     createExternalTextureWithIdentifier:(int64_t)textureID
                                 texture:(NSObject<FlutterTexture>*)texture {
-  return [[FlutterDarwinExternalTextureMetal alloc] initWithTextureCache:_textureCache
-                                                               textureID:textureID
-                                                                 texture:texture
-                                                          enableImpeller:YES];
+    return [[FlutterDarwinExternalTextureMetal alloc] initWithMTLDevice:_context->GetMTLDevice()
+                                                              textureID:textureID
+                                                                texture:texture
+                                                         enableImpeller:YES];
 }
 
 @end

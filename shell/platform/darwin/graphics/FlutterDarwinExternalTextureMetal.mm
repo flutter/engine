@@ -29,13 +29,21 @@ FLUTTER_ASSERT_ARC
   BOOL _enableImpeller;
 }
 
-- (instancetype)initWithTextureCache:(nonnull CVMetalTextureCacheRef)textureCache
-                           textureID:(int64_t)textureID
-                             texture:(NSObject<FlutterTexture>*)texture
-                      enableImpeller:(BOOL)enableImpeller {
+- (instancetype)initWithMTLDevice:(id<MTLDevice>)device
+                        textureID:(int64_t)textureID
+                          texture:(NSObject<FlutterTexture>*)texture
+                   enableImpeller:(BOOL)enableImpeller {
   if (self = [super init]) {
-    _textureCache = textureCache;
-    CFRetain(_textureCache);
+    CVReturn cvReturn = CVMetalTextureCacheCreate(kCFAllocatorDefault,  // allocator
+                                                  nil,      // cache attributes (nil default)
+                                                  device,  // metal device
+                                                  nil,      // texture attributes (nil default)
+                                                  &_textureCache  // [out] cache
+    );
+    if (cvReturn != kCVReturnSuccess) {
+      FML_DLOG(ERROR) << "Could not create Metal texture cache.";
+      return nil;
+    }
     _textureID = textureID;
     _externalTexture = texture;
     _enableImpeller = enableImpeller;
