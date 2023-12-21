@@ -152,8 +152,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
       {OnChangeCallback? onChange, OnActionCallback? onAction}) {
     isEnabled = true;
     inputConfiguration = inputConfig;
-    onChange = onChange;
-    onAction = onAction;
     applyConfiguration(inputConfig);
   }
 
@@ -224,6 +222,16 @@ class TextField extends PrimaryRoleManager {
       'The textField does not have an active editable element',
     );
     return editableElement!;
+  }
+
+  @override
+  bool focusAsRouteDefault() {
+    final DomHTMLElement? editableElement = this.editableElement;
+    if (editableElement == null) {
+      return false;
+    }
+    editableElement.focus();
+    return true;
   }
 
   /// Timer that times when to set the location of the input text.
