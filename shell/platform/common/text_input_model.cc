@@ -70,7 +70,7 @@ void TextInputModel::BeginComposing() {
 }
 
 void TextInputModel::UpdateComposingText(const std::u16string& text,
-                                         TextRange selection) {
+                                         const TextRange& selection) {
   // Preserve selection if we get a no-op update to the composing region.
   if (text.length() == 0 && composing_range_.collapsed()) {
     return;

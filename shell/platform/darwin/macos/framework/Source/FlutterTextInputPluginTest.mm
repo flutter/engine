@@ -99,8 +99,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 0);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 0);
-  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
-  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
+  EXPECT_EQ(editingState[@"composingBase"], nullptr);
+  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
   return true;
 }
 
@@ -291,8 +291,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 2);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 2);
-  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
-  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
+  EXPECT_EQ(editingState[@"composingBase"], nullptr);
+  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
   return true;
 }
 
@@ -880,8 +880,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 0);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 0);
-  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
-  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
+  EXPECT_EQ(editingState[@"composingBase"], nullptr);
+  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
   return true;
 }
 
@@ -1565,8 +1565,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 4);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 4);
-  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
-  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
+  EXPECT_EQ(editingState[@"composingBase"], nullptr);
+  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
 
   [plugin doCommandBySelector:@selector(insertNewline:)];
 
@@ -1577,8 +1577,8 @@
   EXPECT_FALSE([editingState[@"selectionIsDirectional"] boolValue]);
   EXPECT_EQ([editingState[@"selectionBase"] intValue], 5);
   EXPECT_EQ([editingState[@"selectionExtent"] intValue], 5);
-  EXPECT_EQ([editingState[@"composingBase"] intValue], -1);
-  EXPECT_EQ([editingState[@"composingExtent"] intValue], -1);
+  EXPECT_EQ(editingState[@"composingBase"], nullptr);
+  EXPECT_EQ(editingState[@"composingExtent"], nullptr);
 
   return true;
 }
