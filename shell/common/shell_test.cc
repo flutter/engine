@@ -237,13 +237,13 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
         // causing flaky assertion errors.
 
         // TODO(dkwingsmt): The rendering system only supports single view for
-        // now. Remove the following checks and add view ID to
+        // now. Remove the following two `FML_DCHECK`s and add view ID to
         // runtime_delegate->Render after the rendering system supports multiple
         // views.
-        FML_DCHECK(frame_content.size() == 1);
-        FML_DCHECK(frame_content.begin()->first == kImplicitViewId);
+        FML_DCHECK(frame_content.size() <= 1);
 
         for (auto& [view_id, view_content] : frame_content) {
+          FML_DCHECK(view_id == kImplicitViewId);
           SkMatrix identity;
           identity.setIdentity();
           auto root_layer = std::make_shared<TransformLayer>(identity);
@@ -256,8 +256,7 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
           if (view_content.builder) {
             view_content.builder(root_layer);
           }
-          runtime_delegate->Render(std::move(layer_tree),
-                                   device_pixel_ratio);
+          runtime_delegate->Render(std::move(layer_tree), device_pixel_ratio);
         }
         engine->animator_->EndFrame();
         latch.Signal();
