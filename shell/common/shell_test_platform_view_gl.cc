@@ -12,7 +12,7 @@
 #include "impeller/entity/gles/entity_shaders_gles.h"
 
 #if IMPELLER_ENABLE_3D
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"
+#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogncheck
 #endif
 
 namespace flutter {
