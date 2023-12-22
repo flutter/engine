@@ -4,11 +4,18 @@
 import 'dart:js_interop';
 import 'package:ui/src/engine.dart';
 
-/// The proxy instance for the internal `viewManager` of this app.
-final FlutterViewManagerProxy viewsProxy = FlutterViewManagerProxy();
+/// Exposes web-only functionality for this app's `FlutterView`s objects.
+final FlutterViewManagerProxy views = FlutterViewManagerProxy(
+  viewManager: EnginePlatformDispatcher.instance.viewManager,
+);
 
-/// Proxy class for the internal [FlutterViewManager].
+/// This class exposes web-only attributes for the registered views in a multi-view app.
 class FlutterViewManagerProxy {
+  FlutterViewManagerProxy({
+      required FlutterViewManager viewManager,
+    }) : _viewManager = viewManager;
+  // The proxied viewManager instance.
+  final FlutterViewManager _viewManager;
   /// Returns the `initialData` configuration value passed from JS when `viewId` was added.
   ///
   /// Developers can access the initial data from Dart in two ways:
@@ -16,7 +23,7 @@ class FlutterViewManagerProxy {
   ///    passing to your views, to retain type safety on Dart (preferred).
   ///  * Calling [NullableUndefineableJSAnyExtension.dartify] and accessing the
   ///    returned object as if it were a [Map] (not recommended).
-  JSAny? getInitialData(int viewId) {
-    return EnginePlatformDispatcher.instance.viewManager.getOptions(viewId)?.initialData;
+  Object? getInitialData(int viewId) {
+    return _viewManager.getOptions(viewId)?.initialData;
   }
 }
