@@ -1736,6 +1736,9 @@ typedef struct {
   /// Extra information for the backing store that the embedder may
   /// use during presentation.
   FlutterBackingStorePresentInfo* backing_store_present_info;
+
+  // Time at which this frame is scheduled to be presented. 0 if not known.
+  uint64_t presentation_time;
 } FlutterLayer;
 
 typedef bool (*FlutterBackingStoreCreateCallback)(
