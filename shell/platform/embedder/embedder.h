@@ -1816,22 +1816,6 @@ typedef struct {
   FlutterViewPresentCallback present_view_callback;
 } FlutterCompositor;
 
-/// The parameter of |FlutterAddViewCallback|.
-typedef struct {
-  /// The size of this struct.
-  /// Must be sizeof(FlutterAddViewResult).
-  size_t struct_size;
-
-  /// The |FlutterAddViewInfo.user_data|.
-  void* user_data;
-
-  /// True if the view was legal to add and is available now.
-  bool success;
-} FlutterAddViewResult;
-
-/// The signature for |FlutterAddViewInfo.callback|.
-typedef void (*FlutterAddViewCallback)(const FlutterAddViewResult* result);
-
 /// The parameter of |FlutterEngineAddView|.
 typedef struct {
   /// The size of this struct.
@@ -1857,35 +1841,7 @@ typedef struct {
   /// meaning it will not be rendered to until a
   /// |FlutterEngineSendWindowMetricsEvent| provides a non-zero size.
   FlutterWindowMetricsEvent* view_metrics;
-
-  /// Called once the engine has attempted to add the view.
-  ///
-  /// This field is required.
-  ///
-  /// The embedder/app must not use the view until the callback is invoked with
-  /// a successful status.
-  ///
-  /// This callback is invoked on an internal engine managed thread. Embedders
-  /// must re-thread if necessary.
-  FlutterAddViewCallback callback;
 } FlutterAddViewInfo;
-
-/// The parameter of |FlutterAddViewCallback|.
-typedef struct {
-  /// The size of this struct.
-  /// Must be sizeof(FlutterRemoveViewResult).
-  size_t struct_size;
-
-  /// The |FlutterRemoveViewInfo.user_data|.
-  void* user_data;
-
-  /// True if the view was legal to remove and is no longer available.
-  bool success;
-} FlutterRemoveViewResult;
-
-/// The signature for |FlutterRemoveViewInfo.callback|.
-typedef void (*FlutterRemoveViewCallback)(
-    const FlutterRemoveViewResult* result);
 
 /// The parameter of |FlutterEngineRemoveView|.
 typedef struct {
@@ -1900,20 +1856,6 @@ typedef struct {
 
   /// The identifier for the view to remove.
   FlutterViewId view_id;
-
-  /// Called once the engine has attempted to remove the view.
-  ///
-  /// This callback is required.
-  ///
-  /// The embedder must not destroy the underlying surface until the callback is
-  /// invoked with a successful status.
-  ///
-  /// This callback is invoked on an internal engine managed thread. Embedders
-  /// must re-thread if necessary.
-  ///
-  /// The |FlutterRemoveViewResult| argument will be deallocated once the
-  /// callback returns.
-  FlutterRemoveViewCallback callback;
 } FlutterRemoveViewInfo;
 
 typedef struct {

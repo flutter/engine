@@ -134,9 +134,6 @@ class Shell final : public PlatformView::Delegate,
       impeller::RuntimeStageBackend runtime_stage_type)>
       EngineCreateCallback;
 
-  using AddViewCallback = std::function<void(bool success)>;
-  using RemoveViewCallback = std::function<void(bool success)>;
-
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
   ///             callbacks to create the various shell subcomponents will be
@@ -320,9 +317,7 @@ class Shell final : public PlatformView::Delegate,
   /// @param[in]  view_id           The view ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id,
-               const ViewportMetrics& viewport_metrics,
-               AddViewCallback callback);
+  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
 
   /// @brief  Deallocates resources for a non-implicit view.
   ///
@@ -336,7 +331,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @param[in]  view_id     The view ID of the view to be removed.
   ///
-  void RemoveView(int64_t view_id, RemoveViewCallback callback);
+  void RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data

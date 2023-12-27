@@ -2202,15 +2202,7 @@ FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   flutter::EmbedderEngine* embedder_engine =
       reinterpret_cast<flutter::EmbedderEngine*>(engine);
-  embedder_engine->GetShell().AddView(
-      info->view_id, metrics,
-      [callback = info->callback, user_data = info->user_data](bool success) {
-        FlutterAddViewResult result = {};
-        result.struct_size = sizeof(FlutterAddViewResult);
-        result.user_data = user_data;
-        result.success = success;
-        callback(&result);
-      });
+  embedder_engine->GetShell().AddView(info->view_id, metrics);
 
   return kSuccess;
 }
@@ -2224,15 +2216,7 @@ FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   flutter::EmbedderEngine* embedder_engine =
       reinterpret_cast<flutter::EmbedderEngine*>(engine);
-  embedder_engine->GetShell().RemoveView(
-      info->view_id,
-      [callback = info->callback, user_data = info->user_data](bool success) {
-        FlutterRemoveViewResult result = {};
-        result.struct_size = sizeof(FlutterAddViewResult);
-        result.user_data = user_data;
-        result.success = success;
-        callback(&result);
-      });
+  embedder_engine->GetShell().RemoveView(info->view_id);
 
   return kSuccess;
 }
