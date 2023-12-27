@@ -2070,7 +2070,9 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   return true;
 }
 
-void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
+void Shell::AddView(int64_t view_id,
+                    const ViewportMetrics& viewport_metrics,
+                    AddViewCallback callback) {
   TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -2078,17 +2080,20 @@ void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
       << "Unexpected request to add the implicit view #"
       << kFlutterImplicitViewId << ". This view should never be added.";
 
-  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
-                                             viewport_metrics,                //
-                                             view_id                          //
-  ] {
-    if (engine) {
-      engine->AddView(view_id, viewport_metrics);
-    }
-  });
+  task_runners_.GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(),  //
+                         viewport_metrics,                //
+                         view_id,                         //
+                         callback = std::move(callback)]() mutable {
+        bool result = false;
+        if (engine) {
+          result = engine->AddView(view_id, viewport_metrics);
+        }
+        callback(result);
+      }));
 }
 
-void Shell::RemoveView(int64_t view_id) {
+void Shell::RemoveView(int64_t view_id, RemoveViewCallback callback) {
   TRACE_EVENT0("flutter", "Shell::RemoveView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -2098,13 +2103,14 @@ void Shell::RemoveView(int64_t view_id) {
 
   expected_frame_sizes_.erase(view_id);
   task_runners_.GetUITaskRunner()->PostTask(
-      [&task_runners = task_runners_,           //
-       engine = engine_->GetWeakPtr(),          //
-       rasterizer = rasterizer_->GetWeakPtr(),  //
-       view_id                                  //
-  ] {
+      fml::MakeCopyable([&task_runners = task_runners_,           //
+                         engine = engine_->GetWeakPtr(),          //
+                         rasterizer = rasterizer_->GetWeakPtr(),  //
+                         view_id,                                 //
+                         callback = std::move(callback)]() mutable {
+        bool result = false;
         if (engine) {
-          engine->RemoveView(view_id);
+          result = engine->RemoveView(view_id);
         }
         // Don't wait for the raster task here, which only cleans up memory and
         // does not affect functionality. Make sure it is done after Dart
@@ -2115,7 +2121,7 @@ void Shell::RemoveView(int64_t view_id) {
             rasterizer->CollectView(view_id);
           }
         });
-      });
+      }));
 }
 
 Rasterizer::Screenshot Shell::Screenshot(
