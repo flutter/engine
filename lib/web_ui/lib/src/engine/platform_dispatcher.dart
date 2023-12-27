@@ -78,6 +78,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
     _setAppLifecycleState(ui.AppLifecycleState.resumed);
+    viewManager.onViewDisposed.listen((_) {
+      // Send a metrics changed event to the framework when a view is disposed.
+      // View creation/resize is handled by the `_didResize` handler in the
+      // EngineFlutterView itself.
+      invokeOnMetricsChanged();
+    });
   }
 
   /// The [EnginePlatformDispatcher] singleton.
@@ -623,18 +629,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 _handleWebTestEnd2EndMessage(jsonCodec, data)));
         return;
 
-      case 'flutter/platform_views':
+      case PlatformViewMessageHandler.channelName:
+        // `arguments` can be a Map<String, Object> for `create`,
+        // but an `int` for `dispose`, hence why `dynamic` everywhere.
         final MethodCall(:String method, :dynamic arguments) =
             standardCodec.decodeMethodCall(data);
-        final int? flutterViewId = tryViewId(arguments);
-        if (flutterViewId == null) {
-          implicitView!.platformViewMessageHandler
-              .handleLegacyPlatformViewCall(method, arguments, callback!);
-          return;
-        }
-        arguments as Map<dynamic, dynamic>;
-        viewManager[flutterViewId]!
-            .platformViewMessageHandler
+        PlatformViewMessageHandler.instance
             .handlePlatformViewCall(method, arguments, callback!);
         return;
 
@@ -775,7 +775,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // view hasn't been rendered already in this scope.
     final bool shouldRender =
         _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
-    if (shouldRender) {
+    // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
+    // order to perform golden tests in Flutter framework because on the HTML
+    // renderer, golden tests render to DOM and then take a browser screenshot,
+    // https://github.com/flutter/flutter/issues/137073.
+    if (shouldRender || renderer.rendererTag == 'html') {
       await renderer.renderScene(scene, viewToRender);
     }
   }
