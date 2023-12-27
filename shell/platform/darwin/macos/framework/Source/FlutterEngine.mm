@@ -784,6 +784,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                ) { return true; };
 
   _compositor.present_view_callback = [](FlutterPresentViewInfo* info) {
+    // TODO(dkwingsmt): This callback only supports single-view, therefore it
+    // only operates on the implicit view. To support multi-view, we need a new
+    // callback that also receives a view ID.
     return reinterpret_cast<flutter::FlutterCompositor*>(info->user_data)
         ->Present(info->view_id, info->layers, info->layers_count);
   };

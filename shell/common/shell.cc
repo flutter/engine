@@ -2103,7 +2103,8 @@ void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
 
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
                                              viewport_metrics,                //
-                                             view_id]() {
+                                             view_id                          //
+  ]() {
     if (engine) {
       engine->AddView(view_id, viewport_metrics);
     }
@@ -2123,7 +2124,8 @@ void Shell::RemoveView(int64_t view_id) {
       [&task_runners = task_runners_,           //
        engine = engine_->GetWeakPtr(),          //
        rasterizer = rasterizer_->GetWeakPtr(),  //
-       view_id] {
+       view_id                                  //
+  ] {
         if (engine) {
           engine->RemoveView(view_id);
         }
