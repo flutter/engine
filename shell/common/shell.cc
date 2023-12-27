@@ -2104,7 +2104,7 @@ void Shell::AddView(int64_t view_id, const ViewportMetrics& viewport_metrics) {
   task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr(),  //
                                              viewport_metrics,                //
                                              view_id                          //
-  ]() {
+  ] {
     if (engine) {
       engine->AddView(view_id, viewport_metrics);
     }
