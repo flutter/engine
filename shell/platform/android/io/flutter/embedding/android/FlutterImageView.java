@@ -15,6 +15,9 @@ import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.Image.Plane;
 import android.media.ImageReader;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.Surface;
 import android.view.View;
@@ -40,13 +43,18 @@ import java.util.Locale;
  * onDraw}.
  */
 @TargetApi(19)
-public class FlutterImageView extends View implements RenderSurface {
+public class FlutterImageView extends View
+    implements RenderSurface, ImageReader.OnImageAvailableListener {
   private static final String TAG = "FlutterImageView";
+  private static final Handler sUiHandler = new Handler(Looper.getMainLooper());
 
   @NonNull private ImageReader imageReader;
-  @Nullable private Image currentImage;
+  @NonNull private final Object bitmapLock = new Object();
+  // Read/write protected by |bitmapLock|
   @Nullable private Bitmap currentBitmap;
+  private boolean isBitmapAvailableForRendering;
   @Nullable private FlutterRenderer flutterRenderer;
+  @Nullable private static Handler sBackgroundHandler;
 
   public ImageReader getImageReader() {
     return imageReader;
@@ -93,6 +101,12 @@ public class FlutterImageView extends View implements RenderSurface {
 
   private void init() {
     setAlpha(0.0f);
+    if (sBackgroundHandler == null) {
+      final HandlerThread handlerThread = new HandlerThread("OnImageAvailableHandler");
+      handlerThread.start();
+      sBackgroundHandler = new Handler(handlerThread.getLooper());
+    }
+    imageReader.setOnImageAvailableListener(this, sBackgroundHandler);
   }
 
   private static void logW(String format, Object... args) {
@@ -111,6 +125,7 @@ public class FlutterImageView extends View implements RenderSurface {
       logW("ImageReader height must be greater than 0, but given height=%d, set height=1", height);
       height = 1;
     }
+
     if (android.os.Build.VERSION.SDK_INT >= 29) {
       return ImageReader.newInstance(
           width,
@@ -168,10 +183,8 @@ public class FlutterImageView extends View implements RenderSurface {
     // attached to the renderer again.
     acquireLatestImage();
     // Clear drawings.
-    currentBitmap = null;
+    setCurrentBitmap(null);
 
-    // Close and clear the current image if any.
-    closeCurrentImage();
     invalidate();
     isAttachedToFlutterRenderer = false;
     if (kind == SurfaceKind.background) {
@@ -199,20 +212,11 @@ public class FlutterImageView extends View implements RenderSurface {
     if (!isAttachedToFlutterRenderer) {
       return false;
     }
-    // 1. `acquireLatestImage()` may return null if no new image is available.
-    // 2. There's no guarantee that `onDraw()` is called after `invalidate()`.
-    // For example, the device may not produce new frames if it's in sleep mode
-    // or some special Android devices so the calls to `invalidate()` queued up
-    // until the device produces a new frame.
-    // 3. While the engine will also stop producing frames, there is a race condition.
-    final Image newImage = imageReader.acquireLatestImage();
-    if (newImage != null) {
-      // Only close current image after acquiring valid new image
-      closeCurrentImage();
-      currentImage = newImage;
+
+    if (isBitmapAvailableForRendering) {
       invalidate();
     }
-    return newImage != null;
+    return currentBitmap != null;
   }
 
   /** Creates a new image reader with the provided size. */
@@ -224,12 +228,11 @@ public class FlutterImageView extends View implements RenderSurface {
       return;
     }
 
-    // Close resources.
-    closeCurrentImage();
     // Close the current image reader, then create a new one with the new size.
     // Image readers cannot be resized once created.
     closeImageReader();
     imageReader = createImageReader(width, height);
+    imageReader.setOnImageAvailableListener(this, sBackgroundHandler);
   }
 
   /**
@@ -242,52 +245,74 @@ public class FlutterImageView extends View implements RenderSurface {
     imageReader.close();
   }
 
+  private void setCurrentBitmap(Bitmap bitmap) {
+    synchronized (bitmapLock) {
+      currentBitmap = bitmap;
+      isBitmapAvailableForRendering = bitmap != null;
+    }
+  }
+
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
-    if (currentImage != null) {
-      updateCurrentBitmap();
-    }
-    if (currentBitmap != null) {
-      canvas.drawBitmap(currentBitmap, 0, 0, null);
-    }
-  }
-
-  private void closeCurrentImage() {
-    // Close and clear the current image if any.
-    if (currentImage != null) {
-      currentImage.close();
-      currentImage = null;
+    synchronized (bitmapLock) {
+      if (currentBitmap != null) {
+        canvas.drawBitmap(currentBitmap, 0, 0, null);
+        isBitmapAvailableForRendering = false;
+      }
     }
   }
 
-  @TargetApi(29)
-  private void updateCurrentBitmap() {
+  // This method is run on the |sBackgroundHandler|.
+  @Override
+  public void onImageAvailable(ImageReader reader) {
+    // 1. `acquireLatestImage` will discard any images in the queue up to the most recent
+    // one.
+    // 2. `acquireLatestImage()` may return null if no new image is available.
+    // 3. There's no guarantee that `onDraw()` is called after `invalidate()`.
+    // For example, the device may not produce new frames if it's in sleep mode
+    // or some special Android devices so the calls to `invalidate()` queued up
+    // until the device produces a new frame.
+    // 4. While the engine will also stop producing frames, there is a race condition.
+    try (final Image image = reader.acquireLatestImage()) {
+      if (image == null) {
+        return;
+      }
+
+      Bitmap bitmap = convertImageToBitmap(image);
+      if (bitmap != null) {
+        setCurrentBitmap(bitmap);
+        sUiHandler.postAtFrontOfQueue(() -> invalidate());
+      }
+    }
+  }
+
+  @VisibleForTesting
+  /*package*/ Bitmap convertImageToBitmap(@NonNull Image image) {
+    Bitmap bitmap = null;
     if (android.os.Build.VERSION.SDK_INT >= 29) {
-      final HardwareBuffer buffer = currentImage.getHardwareBuffer();
-      currentBitmap = Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
+      final HardwareBuffer buffer = image.getHardwareBuffer();
+      bitmap = Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
       buffer.close();
     } else {
-      final Plane[] imagePlanes = currentImage.getPlanes();
+      final Plane[] imagePlanes = image.getPlanes();
       if (imagePlanes.length != 1) {
-        return;
+        return null;
       }
 
       final Plane imagePlane = imagePlanes[0];
       final int desiredWidth = imagePlane.getRowStride() / imagePlane.getPixelStride();
-      final int desiredHeight = currentImage.getHeight();
+      final int desiredHeight = image.getHeight();
 
-      if (currentBitmap == null
-          || currentBitmap.getWidth() != desiredWidth
-          || currentBitmap.getHeight() != desiredHeight) {
-        currentBitmap =
-            Bitmap.createBitmap(
-                desiredWidth, desiredHeight, android.graphics.Bitmap.Config.ARGB_8888);
-      }
+      bitmap =
+          Bitmap.createBitmap(
+              desiredWidth, desiredHeight, android.graphics.Bitmap.Config.ARGB_8888);
       ByteBuffer buffer = imagePlane.getBuffer();
       buffer.rewind();
-      currentBitmap.copyPixelsFromBuffer(buffer);
+      bitmap.copyPixelsFromBuffer(buffer);
     }
+
+    return bitmap;
   }
 
   @Override
