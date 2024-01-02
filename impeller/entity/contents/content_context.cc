@@ -432,7 +432,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
 
 fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
-    const RenderTarget subpass_target,
+    const RenderTarget& subpass_target,
     const SubpassCallback& subpass_callback) const {
   std::shared_ptr<Context> context = GetContext();
 

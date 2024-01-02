@@ -320,7 +320,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                           .blur_radius = blur_radius.y * effective_scalar.y,
                           .step_size = 1.0,
                       },
-                      /*destination_texture=*/std::nullopt);
+                      /*destination_target=*/std::nullopt);
 
   if (!pass2_out.ok()) {
     return std::nullopt;
@@ -346,6 +346,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   if (!pass3_out.ok()) {
     return std::nullopt;
   }
+
+  // The ping-pong approach requires that each render pass output has the same
+  // size.
+  FML_DCHECK((pass1_out.value().GetRenderTargetSize() ==
+              pass2_out.value().GetRenderTargetSize()) &&
+             (pass2_out.value().GetRenderTargetSize() ==
+              pass3_out.value().GetRenderTargetSize()));
 
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
