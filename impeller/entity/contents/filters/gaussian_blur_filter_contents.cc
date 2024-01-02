@@ -335,6 +335,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     std::optional<Rect> uvs = MakeReferenceUVs(input_snapshot_coverage.value(),
                                                expanded_coverage_hint.value())
                                   .Intersection(Rect::MakeSize(Size(1, 1)));
+    FML_DCHECK(uvs.has_value());
     if (uvs.has_value()) {
       blur_uvs[0] = uvs->GetLeftTop();
       blur_uvs[1] = uvs->GetRightTop();
