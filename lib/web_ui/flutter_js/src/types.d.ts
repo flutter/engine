@@ -31,6 +31,7 @@ export type ApplicationBuild = JSApplicationBuild | WasmApplicationBuild;
 
 export interface BuildConfig {
   serviceWorkerVersion: string;
+  engineRevision: string;
   builds: ApplicationBuild[];
 }
 

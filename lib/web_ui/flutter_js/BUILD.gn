@@ -9,7 +9,6 @@ import("sources.gni")
 group("flutter_js") {
   public_deps = [
     ":flutter_js_bundle",
-    ":flutter_js_engine_version",
     ":flutter_js_sources",
   ]
 }
@@ -18,17 +17,6 @@ copy("flutter_js_sources") {
   sources = flutter_js_source_list
   outputs =
       [ "$root_out_dir/flutter_web_sdk/flutter_js/{{source_target_relative}}" ]
-}
-
-generated_file("flutter_js_engine_version") {
-  outputs = [ "$root_out_dir/flutter_web_sdk/flutter_js/src/revision.js" ]
-  contents = [
-    "// Copyright 2013 The Flutter Authors. All rights reserved.",
-    "// Use of this source code is governed by a BSD-style license that can be",
-    "// found in the LICENSE file.",
-    "",
-    "export const engineRevision = \"$engine_version\";",
-  ]
 }
 
 esbuild("flutter_js_bundle") {
@@ -40,7 +28,6 @@ esbuild("flutter_js_bundle") {
   sourcemap = true
 
   public_deps = [
-    ":flutter_js_engine_version",
     ":flutter_js_sources",
   ]
 }
