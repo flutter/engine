@@ -28,7 +28,7 @@ UPSTREAM_PREFIX = 'upstream_'
 failed_deps = []  # deps which fail to be cloned or git-merge based
 
 
-def parse_deps_file(deps_flat_file):
+def parse_deps_file(deps_flat_file, output_file):
   """
   Takes input of fully qualified dependencies,
   for each dep find the common ancestor commit SHA
@@ -55,11 +55,6 @@ def parse_deps_file(deps_flat_file):
 
   results = data['results']
 
-  headers = {
-      'Content-Type': 'application/json',
-  }
-  osv_url = 'https://api.osv.dev/v1/querybatch'
-
   if not os.path.exists(DEP_CLONE_DIR):
     os.mkdir(DEP_CLONE_DIR)  #clone deps with upstream into temporary dir
 
@@ -69,16 +64,12 @@ def parse_deps_file(deps_flat_file):
     for package in packages:
       mirror_url = package['package']['name']
       commit = package['package']['commit']
-      common_commit = get_common_ancestor_commit([mirror_url, commit], deps_list)
-      if isinstance(common_commit, str):
-        queries.append({'commit': common_commit})
-      else:
-        failed_deps.append(mirror_url)
+      ancestor_result = get_common_ancestor([mirror_url, commit], deps_list)
+      if ancestor_result:
+        common_commit, upstream = ancestor_result
+        package['package']['commit'] = common_commit
+        package['package']['name'] = upstream
 
-  print(
-      'Dependencies that could not be parsed for ancestor commits: ' +
-      ', '.join(failed_deps)
-  )
   try:
     # clean up cloned upstream dependency directory
     shutil.rmtree(
@@ -89,32 +80,14 @@ def parse_deps_file(deps_flat_file):
         'Error cleaning up clone directory: %s : %s' %
         (DEP_CLONE_DIR, clone_dir_error.strerror)
     )
-  # Query OSV API using common ancestor commit for each dep
-  # return any vulnerabilities found.
-  data = json.dumps({'queries': queries}).encode('utf-8')
-  req = request.Request(osv_url, data, headers=headers)
-  with request.urlopen(req) as resp:
-    res_body = resp.read()
-    results_json = json.loads(res_body.decode('utf-8'))
-    if resp.status != 200:
-      print('Request error')
-    elif results_json['results'] == [{}]:
-      print('Found no vulnerabilities')
-    else:
-      results = results_json['results']
-      filtered_results = list(filter(lambda vuln: vuln != {}, results))
-      if len(filtered_results) > 0:
-        print(
-            'Found vulnerability on {vuln_count} dependenc(y/ies), adding to report'
-            .format(vuln_count=str(len(filtered_results)))
-        )
-        print(*filtered_results)
-        return filtered_results
-      print('Found no vulnerabilities')
-  return {}
+
+  # write common ancestor commit data to new file to be
+  # used in next github action step with osv-scanner
+  with open(output_file, 'w') as file:
+    json.dump(data, file)
 
 
-def get_common_ancestor_commit(dep, deps_list):
+def get_common_ancestor(dep, deps_list):
   """
   Given an input of a mirrored dep,
   compare to the mapping of deps to their upstream
@@ -133,7 +106,7 @@ def get_common_ancestor_commit(dep, deps_list):
   dep_name = dep[0].split('/')[-1].split('.')[0]
   if UPSTREAM_PREFIX + dep_name not in deps_list:
     print('did not find dep: ' + dep_name)
-    return {}
+    return None
   try:
     # get the upstream URL from the mapping in DEPS file
     upstream = deps_list.get(UPSTREAM_PREFIX + dep_name)
@@ -186,7 +159,7 @@ def get_common_ancestor_commit(dep, deps_list):
     ancestor_commit = byte_str_decode(ancestor_commit)
     ancestor_commit = ancestor_commit.strip()
     print('Ancestor commit: ' + ancestor_commit)
-    return ancestor_commit
+    return ancestor_commit, upstream
   except subprocess.CalledProcessError as error:
     print(
         "Subprocess command '{0}' failed with exit code: {1}.".format(
@@ -195,7 +168,7 @@ def get_common_ancestor_commit(dep, deps_list):
     )
     if error.output:
       print("Subprocess error output: '{0}'".format(error.output))
-  return {}
+  return None
 
 
 def parse_args(args):
@@ -224,7 +197,7 @@ def parse_args(args):
 
 def main(argv):
   args = parse_args(argv)
-  parse_deps_file(args.flat_deps)
+  parse_deps_file(args.flat_deps, args.output)
   return 0
 
 
