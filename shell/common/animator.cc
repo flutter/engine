@@ -148,6 +148,7 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
   if (frame_timings_recorder_ == nullptr) {
     return;
   }
+
   has_rendered_ = true;
 
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
