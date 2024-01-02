@@ -31,8 +31,6 @@ static const std::map<std::string, TargetPlatform> kKnownPlatforms = {
 static const std::map<std::string, SourceType> kKnownSourceTypes = {
     {"vert", SourceType::kVertexShader},
     {"frag", SourceType::kFragmentShader},
-    {"tesc", SourceType::kTessellationControlShader},
-    {"tese", SourceType::kTessellationEvaluationShader},
     {"comp", SourceType::kComputeShader},
 };
 
@@ -55,13 +53,17 @@ void Switches::PrintHelp(std::ostream& stream) {
   }
   stream << "}" << std::endl;
   stream << "--sl=<sl_output_file>" << std::endl;
-  stream << "--spirv=<spirv_output_file>" << std::endl;
+  stream << "--spirv=<spirv_output_file> (ignored for --shader-bundle)"
+         << std::endl;
   stream << "[optional] --source-language=glsl|hlsl (default: glsl)"
          << std::endl;
   stream << "[optional] --entry-point=<entry_point_name> (default: main; "
             "ignored for glsl)"
          << std::endl;
   stream << "[optional] --iplr (causes --sl file to be emitted in iplr format)"
+         << std::endl;
+  stream << "[optional] --shader-bundle=<bundle_spec> (causes --sl file to be "
+            "emitted in Flutter GPU's shader bundle format)"
          << std::endl;
   stream << "[optional] --reflection-json=<reflection_json_file>" << std::endl;
   stream << "[optional] --reflection-header=<reflection_header_file>"
@@ -121,6 +123,8 @@ Switches::Switches(const fml::CommandLine& command_line)
       input_type(SourceTypeFromCommandLine(command_line)),
       sl_file_name(command_line.GetOptionValueWithDefault("sl", "")),
       iplr(command_line.HasOption("iplr")),
+      shader_bundle(
+          command_line.GetOptionValueWithDefault("shader-bundle", "")),
       spirv_file_name(command_line.GetOptionValueWithDefault("spirv", "")),
       reflection_json_name(
           command_line.GetOptionValueWithDefault("reflection-json", "")),
@@ -140,15 +144,10 @@ Switches::Switches(const fml::CommandLine& command_line)
       use_half_textures(command_line.HasOption("use-half-textures")),
       require_framebuffer_fetch(
           command_line.HasOption("require-framebuffer-fetch")) {
-  auto language =
-      command_line.GetOptionValueWithDefault("source-language", "glsl");
-  std::transform(language.begin(), language.end(), language.begin(),
-                 [](char x) { return std::tolower(x); });
-  if (language == "glsl") {
-    source_language = SourceLanguage::kGLSL;
-  } else if (language == "hlsl") {
-    source_language = SourceLanguage::kHLSL;
-  }
+  auto language = ToLowerCase(
+      command_line.GetOptionValueWithDefault("source-language", "glsl"));
+
+  source_language = ToSourceLanguage(language);
 
   if (!working_directory || !working_directory->is_valid()) {
     return;
@@ -194,6 +193,12 @@ Switches::Switches(const fml::CommandLine& command_line)
 }
 
 bool Switches::AreValid(std::ostream& explain) const {
+  // When producing a shader bundle, all flags related to single shader inputs
+  // and outputs such as `--input` and `--spirv-file-name` are ignored. Instead,
+  // input files are read from the shader bundle spec and a single flatbuffer
+  // containing all compiled shaders and reflection state is output to `--sl`.
+  const bool shader_bundle_mode = !shader_bundle.empty();
+
   bool valid = true;
   if (target_platform == TargetPlatform::kUnknown) {
     explain << "The target platform (only one) was not specified." << std::endl;
@@ -212,7 +217,7 @@ bool Switches::AreValid(std::ostream& explain) const {
     valid = false;
   }
 
-  if (source_file_name.empty()) {
+  if (source_file_name.empty() && !shader_bundle_mode) {
     explain << "Input file name was empty." << std::endl;
     valid = false;
   }
@@ -222,10 +227,18 @@ bool Switches::AreValid(std::ostream& explain) const {
     valid = false;
   }
 
-  if (spirv_file_name.empty()) {
+  if (spirv_file_name.empty() && !shader_bundle_mode) {
     explain << "Spirv file name was empty." << std::endl;
     valid = false;
   }
+
+  if (iplr && shader_bundle_mode) {
+    explain << "--iplr and --shader-bundle flag cannot be specified at the "
+               "same time"
+            << std::endl;
+    valid = false;
+  }
+
   return valid;
 }
 

@@ -120,10 +120,9 @@ struct {{camel_case(shader_name)}}{{camel_case(shader_stage)}}Shader {
 
   static constexpr auto kResource{{camel_case(sampled_image.name)}} = SampledImageSlot { // {{sampled_image.name}}
     "{{sampled_image.name}}",      // name
-    {{sampled_image.ext_res_0}}u,  // texture
-    {{sampled_image.ext_res_1}}u,  // sampler
-    {{sampled_image.binding}}u,    // binding
+    {{sampled_image.ext_res_0}}u,  // ext_res_0
     {{sampled_image.set}}u,        // set
+    {{sampled_image.binding}}u,    // binding
   };
   static ShaderMetadata kMetadata{{camel_case(sampled_image.name)}};
 {% endfor %}
@@ -173,7 +172,14 @@ std::move({{ arg.argument_name }}){% if not loop.is_last %}, {% endif %}
   // ===========================================================================
   // Metadata for Vulkan =======================================================
   // ===========================================================================
-  static constexpr std::array<DescriptorSetLayout,{{length(buffers)+length(sampled_images)}}> kDescriptorSetLayouts{
+  static constexpr std::array<DescriptorSetLayout,{{length(buffers)+length(sampled_images)+length(subpass_inputs)}}> kDescriptorSetLayouts{
+{% for subpass_input in subpass_inputs %}
+    DescriptorSetLayout{
+      {{subpass_input.binding}}, // binding = {{subpass_input.binding}}
+      {{subpass_input.descriptor_type}}, // descriptor_type = {{subpass_input.descriptor_type}}
+      {{to_shader_stage(shader_stage)}}, // shader_stage = {{to_shader_stage(shader_stage)}}
+    },
+{% endfor %}
 {% for buffer in buffers %}
     DescriptorSetLayout{
       {{buffer.binding}}, // binding = {{buffer.binding}}

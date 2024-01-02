@@ -202,6 +202,7 @@ if (enable_unittests) {
     fixtures = [
       "fixtures/shelltest_screenshot.png",
       "fixtures/hello_loop_2.gif",
+      "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
     ]
   }
 
@@ -245,7 +246,6 @@ if (enable_unittests) {
     public_deps = [
       "//flutter/common/graphics",
       "//flutter/flow",
-      "//flutter/fml/dart",
       "//flutter/runtime",
       "//flutter/shell/common",
       "//flutter/testing",
@@ -261,6 +261,10 @@ if (enable_unittests) {
       "//flutter/testing:fixture_test",
       "//flutter/third_party/rapidjson",
     ]
+
+    if (impeller_supports_rendering) {
+      deps += [ "//flutter/impeller" ]
+    }
 
     public_configs = [
       ":shell_test_fixture_sources_config",
@@ -323,6 +327,7 @@ if (enable_unittests) {
       ":shell_unittests_fixtures",
       "//flutter/assets",
       "//flutter/common/graphics",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/shell/common:base64",
       "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
@@ -343,14 +348,14 @@ if (enable_unittests) {
       # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot
       # run on fuchsia or when GL is not enabled.
       sources += [ "shell_io_manager_unittests.cc" ]
-      deps += [ "//third_party/swiftshader" ]
+      deps += [ "//flutter/third_party/swiftshader" ]
     }
 
     if (shell_enable_gl) {
       deps += [
+        "//flutter/third_party/swiftshader",
         "//third_party/angle:libEGL_static",
         "//third_party/angle:libGLESv2_static",
-        "//third_party/swiftshader",
       ]
     }
   }

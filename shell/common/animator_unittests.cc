@@ -23,8 +23,6 @@
 namespace flutter {
 namespace testing {
 
-constexpr int64_t kImplicitViewId = 0;
-
 class FakeAnimatorDelegate : public Animator::Delegate {
  public:
   MOCK_METHOD(void,
@@ -104,7 +102,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
   platform_task.wait();
   on_target_time_latch.Wait();
   const auto vsync_waiter_target_time =
-      ConstantFiringVsyncWaiter::frame_target_time;
+      ConstantFiringVsyncWaiter::kFrameTargetTime;
   ASSERT_EQ(vsync_waiter_target_time.ToEpochDelta().ToMicroseconds(),
             target_time);
 
@@ -168,7 +166,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
         EXPECT_CALL(delegate, OnAnimatorBeginFrame).WillOnce([&] {
           auto layer_tree = std::make_unique<LayerTree>(
               LayerTree::Config(), SkISize::Make(600, 800));
-          animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
+          animator->Render(std::move(layer_tree), 1.0);
           render_latch.Signal();
         });
         // Request a frame that builds a layer tree and renders a frame.
@@ -236,6 +234,11 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
   });
 
   fml::AutoResetWaitableEvent begin_frame_latch;
+  EXPECT_CALL(delegate, OnAnimatorBeginFrame)
+      .WillRepeatedly(
+          [&](fml::TimePoint frame_target_time, uint64_t frame_number) {
+            begin_frame_latch.Signal();
+          });
   // It must always be called when the method 'Animator::Render' is called,
   // regardless of whether the pipeline is empty or not.
   EXPECT_CALL(delegate, OnAnimatorUpdateLatestFrameTargetTime).Times(2);
@@ -249,7 +252,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
       EXPECT_CALL(delegate, OnAnimatorBeginFrame).WillOnce([&] {
         auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
                                                       SkISize::Make(600, 800));
-        animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
+        animator->Render(std::move(layer_tree), 1.0);
         begin_frame_latch.Signal();
       });
       animator->RequestFrame();

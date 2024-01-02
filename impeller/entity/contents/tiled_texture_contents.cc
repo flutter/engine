@@ -174,7 +174,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
                      : renderer.GetTexturePipeline(options);
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
   if (is_external_texture) {
@@ -247,11 +247,11 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     if (!coverage.has_value()) {
       return std::nullopt;
     }
-    auto scale = Vector2(coverage->size / Size(texture_->GetSize()));
+    auto scale = Vector2(coverage->GetSize() / Size(texture_->GetSize()));
 
     return Snapshot{
         .texture = texture_,
-        .transform = Matrix::MakeTranslation(coverage->origin) *
+        .transform = Matrix::MakeTranslation(coverage->GetOrigin()) *
                      Matrix::MakeScale(scale),
         .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
         .opacity = GetOpacityFactor(),

@@ -39,7 +39,7 @@ FONTS_DIR = os.path.join(
     BUILDROOT_DIR, 'flutter', 'third_party', 'txt', 'third_party', 'fonts'
 )
 ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
-FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
+FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
 
@@ -435,6 +435,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     unittests += [
         # The accessibility library only supports Mac and Windows.
         make_test('accessibility_unittests'),
+        make_test('availability_version_check_unittests'),
         make_test('framework_common_unittests'),
         make_test('spring_animation_unittests'),
         make_test('gpu_surface_metal_unittests'),
@@ -580,6 +581,10 @@ def run_engine_benchmarks(build_dir, executable_filter):
       build_dir, 'geometry_benchmarks', executable_filter, icu_flags
   )
 
+  run_engine_executable(
+      build_dir, 'canvas_benchmarks', executable_filter, icu_flags
+  )
+
   if is_linux():
     run_engine_executable(
         build_dir, 'txt_benchmarks', executable_filter, icu_flags
@@ -606,6 +611,8 @@ class FlutterTesterOptions():
 
     if self.enable_impeller:
       command_args += ['--enable-impeller']
+    else:
+      command_args += ['--no-enable-impeller']
 
     if self.multithreaded:
       command_args.insert(0, '--force-multithreading')

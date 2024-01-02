@@ -10,18 +10,21 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
+import 'browser_detection.dart';
 import 'display.dart';
 import 'dom.dart';
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
 import 'platform_dispatcher.dart';
-import 'platform_views/message_handler.dart';
-import 'semantics/accessibility.dart';
+import 'pointer_binding.dart';
+import 'semantics.dart';
 import 'services.dart';
+import 'text_editing/text_editing.dart';
 import 'util.dart';
 import 'view_embedder/dom_manager.dart';
 import 'view_embedder/embedding_strategy/embedding_strategy.dart';
+import 'view_embedder/style_manager.dart';
 
 typedef _HandleMessageCallBack = Future<bool> Function();
 
@@ -30,6 +33,8 @@ const bool debugPrintPlatformMessages = false;
 
 /// The view ID for the implicit flutter view provided by the platform.
 const int kImplicitViewId = 0;
+
+int _nextViewId = kImplicitViewId + 1;
 
 /// Represents all views in the Flutter Web Engine.
 ///
@@ -41,7 +46,6 @@ base class EngineFlutterView implements ui.FlutterView {
   /// The [hostElement] parameter specifies the container in the DOM into which
   /// the Flutter view will be rendered.
   factory EngineFlutterView(
-    int viewId,
     EnginePlatformDispatcher platformDispatcher,
     DomElement hostElement,
   ) = _EngineFlutterViewImpl;
@@ -54,12 +58,19 @@ base class EngineFlutterView implements ui.FlutterView {
     // by the public `EngineFlutterView` constructor).
     DomElement? hostElement,
   )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
-        _dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
-    platformDispatcher.registerView(this);
+        dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
-    embeddingStrategy.attachGlassPane(dom.rootElement);
+    embeddingStrategy.attachViewRoot(dom.rootElement);
+    pointerBinding = PointerBinding(this);
+    _resizeSubscription = onResize.listen(_didResize);
+    registerHotRestartListener(dispose);
   }
+
+  static EngineFlutterWindow implicit(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) => EngineFlutterWindow._(platformDispatcher, hostElement);
 
   @override
   final int viewId;
@@ -70,13 +81,42 @@ base class EngineFlutterView implements ui.FlutterView {
   /// Abstracts all the DOM manipulations required to embed a Flutter view in a user-supplied `hostElement`.
   final EmbeddingStrategy embeddingStrategy;
 
+  late final StreamSubscription<ui.Size?> _resizeSubscription;
+
   final ViewConfiguration _viewConfiguration = const ViewConfiguration();
 
-  @override
-  void render(ui.Scene scene) => platformDispatcher.render(scene, this);
+  /// Whether this [EngineFlutterView] has been disposed or not.
+  bool isDisposed = false;
+
+  /// Disposes of the [EngineFlutterView] instance and undoes all of its DOM
+  /// tree and any event listeners.
+  @mustCallSuper
+  void dispose() {
+    if (isDisposed) {
+      return;
+    }
+    isDisposed = true;
+    _resizeSubscription.cancel();
+    dimensionsProvider.close();
+    pointerBinding.dispose();
+    dom.rootElement.remove();
+    // TODO(harryterkelsen): What should we do about this in multi-view?
+    renderer.clearFragmentProgramCache();
+    semantics.reset();
+  }
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void render(ui.Scene scene, {ui.Size? size}) {
+    assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
+    // TODO(goderbauer): Respect the provided size when "physicalConstraints" are not always tight. See TODO on "physicalConstraints".
+    platformDispatcher.render(scene, this);
+  }
+
+  @override
+  void updateSemantics(ui.SemanticsUpdate update) {
+    assert(!isDisposed, 'Trying to update semantics on a disposed EngineFlutterView.');
+    semantics.updateSemantics(update);
+  }
 
   // TODO(yjbanov): How should this look like for multi-view?
   //                https://github.com/flutter/flutter/issues/137445
@@ -87,18 +127,19 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom = DomManager(devicePixelRatio: devicePixelRatio);
+  late final DomManager dom = DomManager(viewId: viewId, devicePixelRatio: devicePixelRatio);
 
-  late final PlatformViewMessageHandler platformViewMessageHandler =
-      PlatformViewMessageHandler(platformViewsContainer: dom.platformViewsHost);
+  late final PointerBinding pointerBinding;
+
+  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
+  @override
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
+
+  late final EngineSemanticsOwner semantics = EngineSemanticsOwner(dom.semanticsHost);
 
   @override
   ui.Size get physicalSize {
-    if (_physicalSize == null) {
-      computePhysicalSize();
-    }
-    assert(_physicalSize != null);
-    return _physicalSize!;
+    return _physicalSize ??= _computePhysicalSize();
   }
 
   /// Lazily populated and cleared at the end of the frame.
@@ -106,29 +147,24 @@ base class EngineFlutterView implements ui.FlutterView {
 
   ui.Size? debugPhysicalSizeOverride;
 
-  /// Computes the physical size of the screen from [domWindow].
+  /// Computes the physical size of the view.
   ///
   /// This function is expensive. It triggers browser layout if there are
   /// pending DOM writes.
-  void computePhysicalSize() {
-    bool override = false;
+  ui.Size _computePhysicalSize() {
+    ui.Size? physicalSizeOverride;
 
     assert(() {
-      if (debugPhysicalSizeOverride != null) {
-        _physicalSize = debugPhysicalSizeOverride;
-        override = true;
-      }
+      physicalSizeOverride = debugPhysicalSizeOverride;
       return true;
     }());
 
-    if (!override) {
-      _physicalSize = _dimensionsProvider.computePhysicalSize();
-    }
+    return physicalSizeOverride ?? dimensionsProvider.computePhysicalSize();
   }
 
   /// Forces the view to recompute its physical size. Useful for tests.
   void debugForceResize() {
-    computePhysicalSize();
+    _physicalSize = _computePhysicalSize();
   }
 
   @override
@@ -156,40 +192,97 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   double get devicePixelRatio => display.devicePixelRatio;
 
-  final DimensionsProvider _dimensionsProvider;
+  @visibleForTesting
+  final DimensionsProvider dimensionsProvider;
 
-  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
+  Stream<ui.Size?> get onResize => dimensionsProvider.onResize;
+
+  /// Called immediately after the view has been resized.
+  ///
+  /// When there is a text editing going on in mobile devices, do not change
+  /// the physicalSize, change the [window.viewInsets]. See:
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/viewInsets.html
+  /// https://api.flutter.dev/flutter/dart-ui/FlutterView/physicalSize.html
+  ///
+  /// Note: always check for rotations for a mobile device. Update the physical
+  /// size if the change is caused by a rotation.
+  void _didResize(ui.Size? newSize) {
+    StyleManager.scaleSemanticsHost(dom.semanticsHost, devicePixelRatio);
+    final ui.Size newPhysicalSize = _computePhysicalSize();
+    final bool isEditingOnMobile =
+        isMobile && !_isRotation(newPhysicalSize) && textEditing.isEditing;
+    if (isEditingOnMobile) {
+      _computeOnScreenKeyboardInsets(true);
+    } else {
+      _physicalSize = newPhysicalSize;
+      // When physical size changes this value has to be recalculated.
+      _computeOnScreenKeyboardInsets(false);
+    }
+    platformDispatcher.invokeOnMetricsChanged();
+  }
+
+  /// Uses the previous physical size and current innerHeight/innerWidth
+  /// values to decide if a device is rotating.
+  ///
+  /// During a rotation the height and width values will (almost) swap place.
+  /// Values can slightly differ due to space occupied by the browser header.
+  /// For example the following values are collected for Pixel 3 rotation:
+  ///
+  /// height: 658 width: 393
+  /// new height: 313 new width: 738
+  ///
+  /// The following values are from a changed caused by virtual keyboard.
+  ///
+  /// height: 658 width: 393
+  /// height: 368 width: 393
+  bool _isRotation(ui.Size newPhysicalSize) {
+    // This method compares the new dimensions with the previous ones.
+    // Return false if the previous dimensions are not set.
+    if (_physicalSize != null) {
+      // First confirm both height and width are effected.
+      if (_physicalSize!.height != newPhysicalSize.height && _physicalSize!.width != newPhysicalSize.width) {
+        // If prior to rotation height is bigger than width it should be the
+        // opposite after the rotation and vice versa.
+        if ((_physicalSize!.height > _physicalSize!.width && newPhysicalSize.height < newPhysicalSize.width) ||
+            (_physicalSize!.width > _physicalSize!.height && newPhysicalSize.width < newPhysicalSize.height)) {
+          // Rotation detected
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  void _computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
+    _viewInsets = dimensionsProvider.computeKeyboardInsets(
+      _physicalSize!.height,
+      isEditingOnMobile,
+    );
+  }
 }
 
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
-    registerHotRestartListener(() {
-      // TODO(harryterkelsen): What should we do about this in multi-view?
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
-  }
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement hostElement,
+  ) : super._(_nextViewId++, platformDispatcher, hostElement);
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 final class EngineFlutterWindow extends EngineFlutterView implements ui.SingletonFlutterWindow {
-  EngineFlutterWindow(
-    super.viewId,
-    super.platformDispatcher,
-    super.hostElement,
-  ) : super._() {
+  EngineFlutterWindow._(
+    EnginePlatformDispatcher platformDispatcher,
+    DomElement? hostElement,
+  ) : super._(kImplicitViewId, platformDispatcher, hostElement) {
     if (ui_web.isCustomUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(ui_web.urlStrategy);
     }
-    registerHotRestartListener(() {
-      _browserHistory?.dispose();
-      renderer.clearFragmentProgramCache();
-      _dimensionsProvider.close();
-    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _browserHistory?.dispose();
   }
 
   @override
@@ -507,46 +600,6 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     display.debugOverrideDevicePixelRatio(value);
   }
 
-  void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
-      _physicalSize!.height,
-      isEditingOnMobile,
-    );
-  }
-
-  /// Uses the previous physical size and current innerHeight/innerWidth
-  /// values to decide if a device is rotating.
-  ///
-  /// During a rotation the height and width values will (almost) swap place.
-  /// Values can slightly differ due to space occupied by the browser header.
-  /// For example the following values are collected for Pixel 3 rotation:
-  ///
-  /// height: 658 width: 393
-  /// new height: 313 new width: 738
-  ///
-  /// The following values are from a changed caused by virtual keyboard.
-  ///
-  /// height: 658 width: 393
-  /// height: 368 width: 393
-  bool isRotation() {
-    // This method compares the new dimensions with the previous ones.
-    // Return false if the previous dimensions are not set.
-    if (_physicalSize != null) {
-      final ui.Size current = _dimensionsProvider.computePhysicalSize();
-      // First confirm both height and width are effected.
-      if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
-        // If prior to rotation height is bigger than width it should be the
-        // opposite after the rotation and vice versa.
-        if ((_physicalSize!.height > _physicalSize!.width && current.height < current.width) ||
-            (_physicalSize!.width > _physicalSize!.height && current.width < current.height)) {
-          // Rotation detected
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   // TODO(mdebbar): Deprecate this and remove it.
   // https://github.com/flutter/flutter/issues/127395
   ui.Size? get webOnlyDebugPhysicalSizeOverride {
@@ -598,11 +651,14 @@ EngineFlutterWindow? _window;
 EngineFlutterWindow ensureImplicitViewInitialized({
   DomElement? hostElement,
 }) {
-  return _window ??= EngineFlutterWindow(
-    kImplicitViewId,
-    EnginePlatformDispatcher.instance,
-    hostElement,
-  );
+  if (_window == null) {
+    _window = EngineFlutterView.implicit(
+      EnginePlatformDispatcher.instance,
+      hostElement,
+    );
+    EnginePlatformDispatcher.instance.viewManager.registerView(_window!);
+  }
+  return _window!;
 }
 
 /// The Web implementation of [ui.ViewPadding].
@@ -622,4 +678,85 @@ class ViewPadding implements ui.ViewPadding {
   final double right;
   @override
   final double bottom;
+}
+
+class ViewConstraints implements ui.ViewConstraints {
+  const ViewConstraints({
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  });
+
+  ViewConstraints.tight(ui.Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  @override
+  final double minWidth;
+  @override
+  final double maxWidth;
+  @override
+  final double minHeight;
+  @override
+  final double maxHeight;
+
+  @override
+  bool isSatisfiedBy(ui.Size size) {
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+
+  @override
+  bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+
+  @override
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is ViewConstraints
+        && other.minWidth == minWidth
+        && other.maxWidth == maxWidth
+        && other.minHeight == minHeight
+        && other.maxHeight == maxHeight;
+  }
+
+  @override
+  int get hashCode => Object.hash(minWidth, maxWidth, minHeight, maxHeight);
+
+  @override
+  String toString() {
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'ViewConstraints(biggest)';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity &&
+        minHeight == 0 && maxHeight == double.infinity) {
+      return 'ViewConstraints(unconstrained)';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'ViewConstraints($width, $height)';
+  }
 }

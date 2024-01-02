@@ -152,8 +152,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
       {OnChangeCallback? onChange, OnActionCallback? onAction}) {
     isEnabled = true;
     inputConfiguration = inputConfig;
-    onChange = onChange;
-    onAction = onAction;
     applyConfiguration(inputConfig);
   }
 
@@ -226,6 +224,16 @@ class TextField extends PrimaryRoleManager {
     return editableElement!;
   }
 
+  @override
+  bool focusAsRouteDefault() {
+    final DomHTMLElement? editableElement = this.editableElement;
+    if (editableElement == null) {
+      return false;
+    }
+    editableElement.focus();
+    return true;
+  }
+
   /// Timer that times when to set the location of the input text.
   ///
   /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
@@ -296,7 +304,7 @@ class TextField extends PrimaryRoleManager {
     _initializeEditableElement();
     activeEditableElement.addEventListener('focus',
         createDomEventListener((DomEvent event) {
-          if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
+          if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
             return;
           }
 
@@ -305,7 +313,7 @@ class TextField extends PrimaryRoleManager {
         }));
     activeEditableElement.addEventListener('blur',
         createDomEventListener((DomEvent event) {
-          if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
+          if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
             return;
           }
 

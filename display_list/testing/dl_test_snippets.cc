@@ -5,6 +5,9 @@
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_receiver.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
 
 namespace flutter {
 namespace testing {
@@ -640,22 +643,22 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kPoints, TestPointCount,
-                           TestPoints);
+                           kTestPoints);
             }},
            {1, 8 + (TestPointCount - 1) * 8, 1, 8 + (TestPointCount - 1) * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kPoints, TestPointCount - 1,
-                           TestPoints);
+                           kTestPoints);
             }},
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kLines, TestPointCount,
-                           TestPoints);
+                           kTestPoints);
             }},
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kPolygon, TestPointCount,
-                           TestPoints);
+                           kTestPoints);
             }},
        }},
       {"DrawVertices",
@@ -978,7 +981,7 @@ SkFont CreateTestFontOfSize(SkScalar scalar) {
   static constexpr const char* kTestFontFixture = "Roboto-Regular.ttf";
   auto mapping = flutter::testing::OpenFixtureAsSkData(kTestFontFixture);
   FML_CHECK(mapping);
-  return SkFont{SkTypeface::MakeFromData(mapping), scalar};
+  return SkFont{txt::GetDefaultFontManager()->makeFromData(mapping), scalar};
 }
 
 sk_sp<SkTextBlob> GetTestTextBlob(int index) {

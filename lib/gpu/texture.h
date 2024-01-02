@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_GPU_TEXTURE_H_
+#define FLUTTER_LIB_GPU_TEXTURE_H_
 
 #include "flutter/lib/gpu/context.h"
 #include "flutter/lib/gpu/export.h"
@@ -21,6 +22,8 @@ class Texture : public RefCountedDartWrappable<Texture> {
   explicit Texture(std::shared_ptr<impeller::Texture> texture);
 
   ~Texture() override;
+
+  std::shared_ptr<impeller::Texture> GetTexture();
 
   void SetCoordinateSystem(impeller::TextureCoordinateSystem coordinate_system);
 
@@ -77,3 +80,5 @@ extern Dart_Handle InternalFlutterGpu_Texture_AsImage(
     flutter::gpu::Texture* wrapper);
 
 }  // extern "C"
+
+#endif  // FLUTTER_LIB_GPU_TEXTURE_H_

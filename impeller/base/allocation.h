@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_BASE_ALLOCATION_H_
+#define FLUTTER_IMPELLER_BASE_ALLOCATION_H_
 
 #include <cstdint>
 #include <limits>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
 namespace impeller {
@@ -55,3 +55,5 @@ std::shared_ptr<fml::Mapping> CreateMappingWithString(
 std::shared_ptr<fml::Mapping> CreateMappingWithString(std::string string);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_BASE_ALLOCATION_H_

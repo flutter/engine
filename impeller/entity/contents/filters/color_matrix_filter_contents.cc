@@ -14,6 +14,7 @@
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -73,8 +74,7 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
         {Point(1, 1)},
     });
     auto& host_buffer = pass.GetTransientsBuffer();
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-    cmd.BindVertices(vtx_buffer);
+    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *

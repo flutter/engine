@@ -37,8 +37,9 @@ void testMain() {
       ));
 
       sb.addPicture(ui.Offset.zero, picture);
-      final LayerTree layerTree = sb.build().layerTree;
-      CanvasKitRenderer.instance.rasterizer.draw(layerTree);
+      final LayerScene scene = sb.build();
+      final LayerTree layerTree = scene.layerTree;
+      await renderScene(scene);
       final ClipRectEngineLayer clipRect =
           layerTree.rootLayer.debugLayers.single as ClipRectEngineLayer;
       expect(clipRect.paintBounds, const ui.Rect.fromLTRB(15, 15, 30, 30));
@@ -92,8 +93,9 @@ void testMain() {
       );
       sb.addPicture(ui.Offset.zero, picture);
 
-      final LayerTree layerTree = sb.build().layerTree;
-      CanvasKitRenderer.instance.rasterizer.draw(layerTree);
+      final LayerScene scene = sb.build();
+      final LayerTree layerTree = scene.layerTree;
+      await renderScene(scene);
 
       final ImageFilterEngineLayer imageFilterLayer =
           layerTree.rootLayer.debugLayers.single as ImageFilterEngineLayer;

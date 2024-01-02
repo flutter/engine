@@ -44,9 +44,21 @@ class CanvasKitRenderer implements Renderer {
   DomElement? _sceneHost;
   DomElement? get sceneHost => _sceneHost;
 
-  late Rasterizer rasterizer = Rasterizer();
+  /// This is an SkSurface backed by an OffScreenCanvas. This single Surface is
+  /// used to render to many RenderCanvases to produce the rendered scene.
+  final Surface offscreenSurface = Surface();
 
-  set resourceCacheMaxBytes(int bytes) => rasterizer.setSkiaResourceCacheMaxBytes(bytes);
+  set resourceCacheMaxBytes(int bytes) =>
+      offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
+
+  /// A surface used specifically for `Picture.toImage` when software rendering
+  /// is supported.
+  final Surface pictureToImageSurface = Surface();
+
+  // Listens for view creation events from the view manager.
+  StreamSubscription<int>? _onViewCreatedListener;
+  // Listens for view disposal events from the view manager.
+  StreamSubscription<int>? _onViewDisposedListener;
 
   @override
   Future<void> initialize() async {
@@ -57,6 +69,20 @@ class CanvasKitRenderer implements Renderer {
         canvasKit = await downloadCanvasKit();
         windowFlutterCanvasKit = canvasKit;
       }
+      // Views may have been registered before this renderer was initialized.
+      // Create rasterizers for them and then start listening for new view
+      // creation/disposal events.
+      final FlutterViewManager viewManager =
+          EnginePlatformDispatcher.instance.viewManager;
+      if (_onViewCreatedListener == null) {
+        for (final EngineFlutterView view in viewManager.views) {
+          _onViewCreated(view.viewId);
+        }
+      }
+      _onViewCreatedListener ??=
+          viewManager.onViewCreated.listen(_onViewCreated);
+      _onViewDisposedListener ??=
+          viewManager.onViewDisposed.listen(_onViewDisposed);
       _instance = this;
     }();
     return _initialized;
@@ -64,13 +90,7 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    // CanvasKit uses a static scene element that never gets replaced, so it's
-    // added eagerly during initialization here and never touched, unless the
-    // system is reset due to hot restart or in a test.
-    _sceneHost = createDomElement('flt-scene');
-    // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
-    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.setScene(_sceneHost!);
+    // No work required.
   }
 
   @override
@@ -191,9 +211,18 @@ class CanvasKitRenderer implements Renderer {
   }) => CkImageFilter.matrix(matrix: matrix4, filterQuality: filterQuality);
 
   @override
-  ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner}) {
-  // TODO(ferhat): add implementation
-    throw UnimplementedError('ImageFilter.compose not implemented for CanvasKit.');
+  ui.ImageFilter composeImageFilters(
+      {required ui.ImageFilter outer, required ui.ImageFilter inner}) {
+    if (outer is EngineColorFilter) {
+      final CkColorFilter colorFilter = createCkColorFilter(outer)!;
+      outer = CkColorFilterImageFilter(colorFilter: colorFilter);
+    }
+    if (inner is EngineColorFilter) {
+      final CkColorFilter colorFilter = createCkColorFilter(inner)!;
+      inner = CkColorFilterImageFilter(colorFilter: colorFilter);
+    }
+    return CkImageFilter.compose(
+          outer: outer as CkImageFilter, inner: inner as CkImageFilter);
   }
 
   @override
@@ -373,7 +402,7 @@ class CanvasKitRenderer implements Renderer {
     CkParagraphBuilder(style);
 
   @override
-  void renderScene(ui.Scene scene) {
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
@@ -384,8 +413,44 @@ class CanvasKitRenderer implements Renderer {
     frameTimingsOnBuildFinish();
     frameTimingsOnRasterStart();
 
-    rasterizer.draw((scene as LayerScene).layerTree);
+    assert(_rasterizers.containsKey(view.viewId),
+        "Unable to render to a view which hasn't been registered");
+    final Rasterizer rasterizer = _rasterizers[view.viewId]!;
+
+    await rasterizer.draw((scene as LayerScene).layerTree);
     frameTimingsOnRasterFinish();
+  }
+
+  // Map from view id to the associated Rasterizer for that view.
+  final Map<int, Rasterizer> _rasterizers = <int, Rasterizer>{};
+
+  void _onViewCreated(int viewId) {
+    final EngineFlutterView view =
+        EnginePlatformDispatcher.instance.viewManager[viewId]!;
+    _rasterizers[view.viewId] = Rasterizer(view);
+  }
+
+  void _onViewDisposed(int viewId) {
+    // The view has already been disposed.
+    if (!_rasterizers.containsKey(viewId)) {
+      return;
+    }
+    final Rasterizer rasterizer = _rasterizers.remove(viewId)!;
+    rasterizer.dispose();
+  }
+
+  Rasterizer? debugGetRasterizerForView(EngineFlutterView view) {
+    return _rasterizers[view.viewId];
+  }
+
+  /// Disposes this renderer.
+  void dispose() {
+    _onViewCreatedListener?.cancel();
+    _onViewDisposedListener?.cancel();
+    for (final Rasterizer rasterizer in _rasterizers.values) {
+      rasterizer.dispose();
+    }
+    _rasterizers.clear();
   }
 
   @override

@@ -2,49 +2,50 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_
+#define FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_
 
 #include <cstdint>
 
 #include "impeller/aiks/canvas.h"
 
-#define FLT_CANVAS_RECORDER_OP_ARG(name) CanvasRecorderOp::name, &Canvas::name
+#define FLT_CANVAS_RECORDER_OP_ARG(name) \
+  CanvasRecorderOp::k##name, &Canvas::name
 
 namespace impeller {
-
 /// TODO(tbd): These are very similar to `flutter::DisplayListOpType`. When
 /// golden tests can be written at a higher level, migrate these to
 /// flutter::DisplayListOpType.
 enum CanvasRecorderOp : uint16_t {
-  New,
-  Save,
-  SaveLayer,
-  Restore,
-  RestoreToCount,
-  ResetTransform,
-  Transform,
-  Concat,
-  PreConcat,
-  Translate,
-  Scale2,
-  Scale3,
-  Skew,
-  Rotate,
-  DrawPath,
-  DrawPaint,
-  DrawRect,
-  DrawRRect,
-  DrawCircle,
-  DrawPoints,
-  DrawImage,
-  DrawImageRect,
-  ClipPath,
-  ClipRect,
-  ClipRRect,
-  DrawPicture,
-  DrawTextFrame,
-  DrawVertices,
-  DrawAtlas,
+  kNew,
+  kSave,
+  kSaveLayer,
+  kRestore,
+  kRestoreToCount,
+  kResetTransform,
+  kTransform,
+  kConcat,
+  kPreConcat,
+  kTranslate,
+  kScale2,
+  kScale3,
+  kSkew,
+  kRotate,
+  kDrawPath,
+  kDrawPaint,
+  kDrawRect,
+  kDrawRRect,
+  kDrawCircle,
+  kDrawPoints,
+  kDrawImage,
+  kDrawImageRect,
+  kClipPath,
+  kClipRect,
+  kClipRRect,
+  kDrawPicture,
+  kDrawTextFrame,
+  kDrawVertices,
+  kDrawAtlas,
 };
 
 // Canvas recorder should only be used when IMPELLER_TRACE_CANVAS is defined
@@ -58,14 +59,14 @@ enum CanvasRecorderOp : uint16_t {
 template <typename Serializer>
 class CanvasRecorder {
  public:
-  CanvasRecorder() : canvas_() { serializer_.Write(CanvasRecorderOp::New); }
+  CanvasRecorder() : canvas_() { serializer_.Write(CanvasRecorderOp::kNew); }
 
   explicit CanvasRecorder(Rect cull_rect) : canvas_(cull_rect) {
-    serializer_.Write(CanvasRecorderOp::New);
+    serializer_.Write(CanvasRecorderOp::kNew);
   }
 
   explicit CanvasRecorder(IRect cull_rect) : canvas_(cull_rect) {
-    serializer_.Write(CanvasRecorderOp::New);
+    serializer_.Write(CanvasRecorderOp::kNew);
   }
 
   ~CanvasRecorder() {}
@@ -91,12 +92,23 @@ class CanvasRecorder {
     return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
   }
 
+  template <typename FuncType, typename... Args>
+  auto ExecuteAndSkipArgSerialize(CanvasRecorderOp op,
+                                  FuncType canvasMethod,
+                                  Args&&... args)
+      -> decltype((std::declval<Canvas>().*
+                   canvasMethod)(std::forward<Args>(args)...)) {
+    serializer_.Write(op);
+    return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
+  }
+
   //////////////////////////////////////////////////////////////////////////////
-  // Canvas Static Polymorphism ////////////////////////////////////////////////
+  // Canvas Static Polymorphism
+  // ////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////
 
   void Save() {
-    return ExecuteAndSerialize(CanvasRecorderOp::Save, &Canvas::Save);
+    return ExecuteAndSerialize(CanvasRecorderOp::kSave, &Canvas::Save);
   }
 
   void SaveLayer(
@@ -150,13 +162,13 @@ class CanvasRecorder {
 
   void Scale(const Vector2& scale) {
     return ExecuteAndSerialize(
-        CanvasRecorderOp::Scale2,
+        CanvasRecorderOp::kScale2,
         static_cast<void (Canvas::*)(const Vector2&)>(&Canvas::Scale), scale);
   }
 
   void Scale(const Vector3& scale) {
     return ExecuteAndSerialize(
-        CanvasRecorderOp::Scale3,
+        CanvasRecorderOp::kScale3,
         static_cast<void (Canvas::*)(const Vector3&)>(&Canvas::Scale), scale);
   }
 
@@ -168,9 +180,11 @@ class CanvasRecorder {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Rotate), radians);
   }
 
-  void DrawPath(const Path& path, const Paint& paint) {
-    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPath), path,
-                               paint);
+  void DrawPath(Path path, const Paint& paint) {
+    serializer_.Write(path);
+    serializer_.Write(paint);
+    return ExecuteAndSkipArgSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPath),
+                                      std::move(path), paint);
   }
 
   void DrawPaint(const Paint& paint) {
@@ -182,7 +196,9 @@ class CanvasRecorder {
                                paint);
   }
 
-  void DrawRRect(Rect rect, Point corner_radii, const Paint& paint) {
+  void DrawRRect(const Rect& rect,
+                 const Size& corner_radii,
+                 const Paint& paint) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawRRect), rect,
                                corner_radii, paint);
   }
@@ -218,10 +234,12 @@ class CanvasRecorder {
   }
 
   void ClipPath(
-      const Path& path,
+      Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
-    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipPath), path,
-                               clip_op);
+    serializer_.Write(path);
+    serializer_.Write(clip_op);
+    return ExecuteAndSkipArgSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipPath),
+                                      std::move(path), clip_op);
   }
 
   void ClipRect(
@@ -233,7 +251,7 @@ class CanvasRecorder {
 
   void ClipRRect(
       const Rect& rect,
-      Point corner_radii,
+      const Size& corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipRRect), rect,
                                corner_radii, clip_op);
@@ -286,3 +304,5 @@ class CanvasRecorder {
 #endif
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_

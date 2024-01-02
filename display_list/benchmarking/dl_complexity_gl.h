@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_GL_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_GL_H_
+#ifndef FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_GL_H_
+#define FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_GL_H_
 
 #include "flutter/display_list/benchmarking/dl_complexity_helper.h"
 
@@ -33,9 +33,7 @@ class DisplayListGLComplexityCalculator
   class GLHelper : public ComplexityCalculatorHelper {
    public:
     explicit GLHelper(unsigned int ceiling)
-        : ComplexityCalculatorHelper(ceiling),
-          save_layer_count_(0),
-          draw_text_blob_count_(0) {}
+        : ComplexityCalculatorHelper(ceiling) {}
 
     void saveLayer(const SkRect* bounds,
                    const SaveLayerOptions options,
@@ -88,8 +86,8 @@ class DisplayListGLComplexityCalculator
     unsigned int BatchedComplexity() override;
 
    private:
-    unsigned int save_layer_count_;
-    unsigned int draw_text_blob_count_;
+    unsigned int save_layer_count_ = 0;
+    unsigned int draw_text_blob_count_ = 0;
   };
 
   DisplayListGLComplexityCalculator()
@@ -101,4 +99,4 @@ class DisplayListGLComplexityCalculator
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_GL_H_
+#endif  // FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_GL_H_

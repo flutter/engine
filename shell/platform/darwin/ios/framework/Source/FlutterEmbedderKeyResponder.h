@@ -2,24 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTER_EMBEDDER_KEY_RESPONDER_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTER_EMBEDDER_KEY_RESPONDER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTEREMBEDDERKEYRESPONDER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTEREMBEDDERKEYRESPONDER_H_
 
 #import <Foundation/NSObject.h>
 #import <UIKit/UIKit.h>
+
 #include "fml/memory/weak_ptr.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-namespace {
-typedef void* _VoidPtr;
-}
-
 typedef void (^FlutterSendKeyEvent)(const FlutterKeyEvent& /* event */,
                                     _Nullable FlutterKeyEventCallback /* callback */,
-                                    _Nullable _VoidPtr /* user_data */);
+                                    void* _Nullable /* user_data */);
 
 /**
  * A primary responder of |FlutterKeyboardManager| that handles events by
@@ -38,4 +35,4 @@ typedef void (^FlutterSendKeyEvent)(const FlutterKeyEvent& /* event */,
 
 @end
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTER_EMBEDDER_KEY_RESPONDER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTEREMBEDDERKEYRESPONDER_H_

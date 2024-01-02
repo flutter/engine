@@ -149,7 +149,9 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // Whether software rendering is used.
   private boolean usesSoftwareRendering = false;
 
-  private static boolean enableHardwareBufferRenderingTarget = true;
+  private static boolean enableImageRenderTarget = true;
+
+  private static boolean enableSurfaceProducerRenderTarget = true;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
@@ -675,6 +677,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
 
+    if (!usingVirtualDiplay && trackedEvent != null) {
+      // We have the original event, deliver it as it will pass the verifiable
+      // input check.
+      return trackedEvent;
+    }
+    // We are in virtual display mode or don't have a reference to the original MotionEvent.
+    // In this case we manually recreate a MotionEvent to be delivered. This MotionEvent
+    // will fail the verifiable input check.
+
     // Pointer coordinates in the tracked events are global to FlutterView
     // framework converts them to be local to a widget, given that
     // motion events operate on local coords, we need to replace these in the tracked
@@ -685,24 +696,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     PointerCoords[] pointerCoords =
         parsePointerCoordsList(touch.rawPointerCoords, density)
             .toArray(new PointerCoords[touch.pointerCount]);
-
-    if (!usingVirtualDiplay && trackedEvent != null) {
-      return MotionEvent.obtain(
-          trackedEvent.getDownTime(),
-          trackedEvent.getEventTime(),
-          touch.action,
-          touch.pointerCount,
-          pointerProperties,
-          pointerCoords,
-          trackedEvent.getMetaState(),
-          trackedEvent.getButtonState(),
-          trackedEvent.getXPrecision(),
-          trackedEvent.getYPrecision(),
-          trackedEvent.getDeviceId(),
-          trackedEvent.getEdgeFlags(),
-          trackedEvent.getSource(),
-          trackedEvent.getFlags());
-    }
 
     // TODO (kaushikiska) : warn that we are potentially using an untracked
     // event in the platform views.
@@ -975,7 +968,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private static PlatformViewRenderTarget makePlatformViewRenderTarget(
       TextureRegistry textureRegistry) {
-    if (enableHardwareBufferRenderingTarget && Build.VERSION.SDK_INT >= 33) {
+    if (enableSurfaceProducerRenderTarget && Build.VERSION.SDK_INT >= 33) {
+      final TextureRegistry.SurfaceProducer textureEntry = textureRegistry.createSurfaceProducer();
+      Log.i(TAG, "PlatformView is using SurfaceProducer backend");
+      return new SurfaceProducerPlatformViewRenderTarget(textureEntry);
+    }
+    if (enableImageRenderTarget && Build.VERSION.SDK_INT >= 33) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
       Log.i(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);

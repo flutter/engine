@@ -17,6 +17,7 @@ import '../dom.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../vector_math.dart';
+import '../window.dart';
 import 'checkable.dart';
 import 'dialog.dart';
 import 'focusable.dart';
@@ -211,6 +212,7 @@ class SemanticsNodeUpdate {
     required this.scrollExtentMax,
     required this.scrollExtentMin,
     required this.rect,
+    required this.identifier,
     required this.label,
     required this.labelAttributes,
     required this.hint,
@@ -272,6 +274,9 @@ class SemanticsNodeUpdate {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final ui.Rect rect;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final String identifier;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final String label;
@@ -514,9 +519,13 @@ abstract class PrimaryRoleManager {
 
   void removeEventListener(String type, DomEventListener? listener, [bool? useCapture]) => element.removeEventListener(type, listener, useCapture);
 
+  /// Convenience getter for the [Focusable] role manager, if any.
+  Focusable? get focusable => _focusable;
+  Focusable? _focusable;
+
   /// Adds generic focus management features.
   void addFocusManagement() {
-    addSecondaryRole(Focusable(semanticsObject, this));
+    addSecondaryRole(_focusable = Focusable(semanticsObject, this));
   }
 
   /// Adds generic live region features.
@@ -589,6 +598,22 @@ abstract class PrimaryRoleManager {
     removeAttribute('role');
     _isDisposed = true;
   }
+
+  /// Transfers the accessibility focus to the [element] managed by this role
+  /// manager as a result of this node taking focus by default.
+  ///
+  /// For example, when a dialog pops up it is expected that one of its child
+  /// nodes takes accessibility focus.
+  ///
+  /// Transferring accessibility focus is different from transferring input
+  /// focus. Not all elements that can take accessibility focus can also take
+  /// input focus. For example, a plain text node cannot take input focus, but
+  /// it can take accessibility focus.
+  ///
+  /// Returns `true` if the role manager took the focus. Returns `false` if
+  /// this role manager did not take the focus. The return value can be used to
+  /// decide whether to stop searching for a node that should take focus.
+  bool focusAsRouteDefault();
 }
 
 /// A role used when a more specific role couldn't be assigned to the node.
@@ -633,6 +658,38 @@ final class GenericRole extends PrimaryRoleManager {
     } else {
       setAriaRole('text');
     }
+  }
+
+  @override
+  bool focusAsRouteDefault() {
+    // Case 1: current node has input focus. Let the input focus system decide
+    // default focusability.
+    if (semanticsObject.isFocusable) {
+      final Focusable? focusable = this.focusable;
+      if (focusable != null) {
+        return focusable.focusAsRouteDefault();
+      }
+    }
+
+    // Case 2: current node is not focusable, but just a container of other
+    // nodes or lacks a label. Do not focus on it and let the search continue.
+    if (semanticsObject.hasChildren || !semanticsObject.hasLabel) {
+      return false;
+    }
+
+    // Case 3: current node is visual/informational. Move just the
+    // accessibility focus.
+
+    // Plain text nodes should not be focusable via keyboard or mouse. They are
+    // only focusable for the purposes of focusing the screen reader. To achieve
+    // this the -1 value is used.
+    //
+    // See also:
+    //
+    // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex
+    element.tabIndex = -1;
+    element.focus();
+    return true;
   }
 }
 
@@ -1714,14 +1771,62 @@ class SemanticsObject {
     }
   }
 
-  /// Recursively visits the tree rooted at `this` node in depth-first fashion.
+  /// Recursively visits the tree rooted at `this` node in depth-first fashion
+  /// in the order nodes were rendered into the DOM.
+  ///
+  /// Useful for debugging only.
   ///
   /// Calls the [callback] for `this` node, then for all of its descendants.
-  void visitDepthFirst(void Function(SemanticsObject) callback) {
+  ///
+  /// Unlike [visitDepthFirstInTraversalOrder] this method can traverse
+  /// partially updated, incomplete, or inconsistent tree.
+  void _debugVisitRenderedSemanticNodesDepthFirst(void Function(SemanticsObject) callback) {
     callback(this);
     _currentChildrenInRenderOrder?.forEach((SemanticsObject child) {
-      child.visitDepthFirst(callback);
+      child._debugVisitRenderedSemanticNodesDepthFirst(callback);
     });
+  }
+
+  /// Recursively visits the tree rooted at `this` node in depth-first fashion
+  /// in traversal order.
+  ///
+  /// Calls the [callback] for `this` node, then for all of its descendants. If
+  /// the callback returns true, continues visiting descendants. Otherwise,
+  /// stops immediately after visiting the node that caused the callback to
+  /// return false.
+  void visitDepthFirstInTraversalOrder(bool Function(SemanticsObject) callback) {
+    _visitDepthFirstInTraversalOrder(callback);
+  }
+
+  bool _visitDepthFirstInTraversalOrder(bool Function(SemanticsObject) callback) {
+    final bool shouldContinueVisiting = callback(this);
+
+    if (!shouldContinueVisiting) {
+      return false;
+    }
+
+    final Int32List? childrenInTraversalOrder = _childrenInTraversalOrder;
+
+    if (childrenInTraversalOrder == null) {
+      return true;
+    }
+
+    for (final int childId in childrenInTraversalOrder) {
+      final SemanticsObject? child = owner._semanticsTree[childId];
+
+      assert(
+        child != null,
+        'visitDepthFirstInTraversalOrder must only be called after the node '
+        'tree has been established. However, child #$childId does not have its '
+        'SemanticsNode created at the time this method was called.',
+      );
+
+      if (!child!._visitDepthFirstInTraversalOrder(callback)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   @override
@@ -1736,6 +1841,17 @@ class SemanticsObject {
       return true;
     }());
     return result;
+  }
+
+  bool _isDisposed = false;
+
+  void dispose() {
+    assert(!_isDisposed);
+    _isDisposed = true;
+    element.remove();
+    _parent = null;
+    primaryRole?.dispose();
+    primaryRole = null;
   }
 }
 
@@ -1792,20 +1908,19 @@ enum SemanticsUpdatePhase {
   postUpdate,
 }
 
-/// The top-level service that manages everything semantics-related.
-class EngineSemanticsOwner {
-  EngineSemanticsOwner._() {
-    registerHotRestartListener(() {
-      _rootSemanticsElement?.remove();
-    });
-  }
+/// The semantics system of the Web Engine.
+///
+/// Maintains global properties and behaviors of semantics in the engine, such
+/// as whether semantics is currently enabled or disabled.
+class EngineSemantics {
+  EngineSemantics._();
 
   /// The singleton instance that manages semantics.
-  static EngineSemanticsOwner get instance {
-    return _instance ??= EngineSemanticsOwner._();
+  static EngineSemantics get instance {
+    return _instance ??= EngineSemantics._();
   }
 
-  static EngineSemanticsOwner? _instance;
+  static EngineSemantics? _instance;
 
   /// Disables semantics and uninitializes the singleton [instance].
   ///
@@ -1819,125 +1934,6 @@ class EngineSemanticsOwner {
     _instance!.semanticsEnabled = false;
     _instance = null;
   }
-
-  /// The current update phase of this semantics owner.
-  SemanticsUpdatePhase get phase => _phase;
-  SemanticsUpdatePhase _phase = SemanticsUpdatePhase.idle;
-
-  final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
-
-  /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
-  /// this frame.
-  Map<int, SemanticsObject> _attachments = <int, SemanticsObject>{};
-
-  /// Declares that the [child] must be attached to the [parent].
-  ///
-  /// Attachments take precedence over detachments (see [_detachObject]). This
-  /// allows the same node to be detached from one parent in the tree and
-  /// reattached to another parent.
-  void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
-    child._parent = parent;
-    _attachments[child.id] = parent;
-  }
-
-  /// List of objects that were detached this frame.
-  ///
-  /// The objects in this list will be detached permanently unless they are
-  /// reattached via the [_attachObject] method.
-  List<SemanticsObject> _detachments = <SemanticsObject>[];
-
-  /// Declares that the [SemanticsObject] with the given [id] was detached from
-  /// its current parent object.
-  ///
-  /// The object will be detached permanently unless it is reattached via the
-  /// [_attachObject] method.
-  void _detachObject(int id) {
-    final SemanticsObject? object = _semanticsTree[id];
-    assert(object != null);
-    if (object != null) {
-      _detachments.add(object);
-    }
-  }
-
-  /// Callbacks called after all objects in the tree have their properties
-  /// populated and their sizes and locations computed.
-  ///
-  /// This list is reset to empty after all callbacks are called.
-  List<ui.VoidCallback> _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
-
-  /// Schedules a one-time callback to be called after all objects in the tree
-  /// have their properties populated and their sizes and locations computed.
-  void addOneTimePostUpdateCallback(ui.VoidCallback callback) {
-    _oneTimePostUpdateCallbacks.add(callback);
-  }
-
-  /// Reconciles [_attachments] and [_detachments], and after that calls all
-  /// the one-time callbacks scheduled via the [addOneTimePostUpdateCallback]
-  /// method.
-  void _finalizeTree() {
-    for (final SemanticsObject detachmentRoot in _detachments) {
-      // A detached node may or may not have some of its descendants reattached
-      // elsewhere. Walk the descendant tree and find all descendants that were
-      // reattached to a parent. Those descendants need to be removed.
-      final List<SemanticsObject> removals = <SemanticsObject>[];
-      detachmentRoot.visitDepthFirst((SemanticsObject node) {
-        final SemanticsObject? parent = _attachments[node.id];
-        if (parent == null) {
-          // Was not reparented and is removed permanently from the tree.
-          removals.add(node);
-        } else {
-          assert(node._parent == parent);
-          assert(node.element.parentNode == parent._childContainerElement);
-        }
-      });
-
-      for (final SemanticsObject removal in removals) {
-        _semanticsTree.remove(removal.id);
-        removal._parent = null;
-        removal.element.remove();
-      }
-    }
-    _detachments = <SemanticsObject>[];
-    _attachments = <int, SemanticsObject>{};
-
-    _phase = SemanticsUpdatePhase.postUpdate;
-    try {
-      if (_oneTimePostUpdateCallbacks.isNotEmpty) {
-        for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
-          callback();
-        }
-        _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
-      }
-    } finally {
-      _phase = SemanticsUpdatePhase.idle;
-    }
-  }
-
-  /// Returns the entire semantics tree for testing.
-  ///
-  /// Works only in debug mode.
-  Map<int, SemanticsObject>? get debugSemanticsTree {
-    Map<int, SemanticsObject>? result;
-    assert(() {
-      result = _semanticsTree;
-      return true;
-    }());
-    return result;
-  }
-
-  /// The top-level DOM element of the semantics DOM element tree.
-  DomElement? _rootSemanticsElement;
-  TimestampFunction _now = () => DateTime.now();
-
-  void debugOverrideTimestampFunction(TimestampFunction value) {
-    _now = value;
-  }
-
-  void debugResetTimestampFunction() {
-    _now = () => DateTime.now();
-  }
-
-  final SemanticsHelper semanticsHelper = SemanticsHelper();
 
   /// Whether the user has requested that [updateSemantics] be called when the
   /// semantic contents of window changes.
@@ -1972,18 +1968,53 @@ class EngineSemanticsOwner {
         _gestureMode = GestureMode.pointerEvents;
         _notifyGestureModeListeners();
       }
-      final List<int> keys = _semanticsTree.keys.toList();
-      final int len = keys.length;
-      for (int i = 0; i < len; i++) {
-        _detachObject(keys[i]);
+      for (final EngineFlutterView view in EnginePlatformDispatcher.instance.views) {
+        view.semantics.reset();
       }
-      _finalizeTree();
-      _rootSemanticsElement?.remove();
-      _rootSemanticsElement = null;
       _gestureModeClock?.datetime = null;
     }
     EnginePlatformDispatcher.instance.updateSemanticsEnabled(_semanticsEnabled);
   }
+
+  /// Prepares the semantics system for a semantic tree update.
+  ///
+  /// This method must be called prior to updating the semantics inside any
+  /// individual view.
+  ///
+  /// Automatically enables semantics in a production setting. In Flutter test
+  /// environment keeps engine semantics turned off due to tests frequently
+  /// sending inconsistent semantics updates.
+  ///
+  /// The caller is expected to check if [semanticsEnabled] is true prior to
+  /// actually updating the semantic DOM.
+  void didReceiveSemanticsUpdate() {
+    if (!_semanticsEnabled) {
+      if (ui_web.debugEmulateFlutterTesterEnvironment) {
+        // Running Flutter widget tests in a fake environment. Don't enable
+        // engine semantics. Test semantics trees violate invariants in ways
+        // production implementation isn't built to handle. For example, tests
+        // routinely reset semantics node IDs, which is messing up the update
+        // process.
+        return;
+      } else {
+        // Running a real app. Auto-enable engine semantics.
+        semanticsHelper.dispose(); // placeholder no longer needed
+        semanticsEnabled = true;
+      }
+    }
+  }
+
+  TimestampFunction _now = () => DateTime.now();
+
+  void debugOverrideTimestampFunction(TimestampFunction value) {
+    _now = value;
+  }
+
+  void debugResetTimestampFunction() {
+    _now = () => DateTime.now();
+  }
+
+  final SemanticsHelper semanticsHelper = SemanticsHelper();
 
   /// Controls how pointer events and browser-detected gestures are treated by
   /// the Web Engine.
@@ -2095,14 +2126,14 @@ class EngineSemanticsOwner {
   /// Callbacks are called synchronously. HTML DOM updates made in a callback
   /// take effect in the current animation frame and/or the current message loop
   /// event.
-  final List<GestureModeCallback?> _gestureModeListeners = <GestureModeCallback?>[];
+  final List<GestureModeCallback> _gestureModeListeners = <GestureModeCallback>[];
 
   /// Calls the [callback] every time the current [GestureMode] changes.
   ///
   /// The callback is called synchronously. HTML DOM updates made in the
   /// callback take effect in the current animation frame and/or the current
   /// message loop event.
-  void addGestureModeListener(GestureModeCallback? callback) {
+  void addGestureModeListener(GestureModeCallback callback) {
     _gestureModeListeners.add(callback);
   }
 
@@ -2110,14 +2141,14 @@ class EngineSemanticsOwner {
   ///
   /// The passed [callback] must be the exact same object as the one passed to
   /// [addGestureModeListener].
-  void removeGestureModeListener(GestureModeCallback? callback) {
+  void removeGestureModeListener(GestureModeCallback callback) {
     assert(_gestureModeListeners.contains(callback));
     _gestureModeListeners.remove(callback);
   }
 
   void _notifyGestureModeListeners() {
     for (int i = 0; i < _gestureModeListeners.length; i++) {
-      _gestureModeListeners[i]!(_gestureMode);
+      _gestureModeListeners[i](_gestureMode);
     }
   }
 
@@ -2149,6 +2180,142 @@ class EngineSemanticsOwner {
 
     return false;
   }
+}
+
+/// The top-level service that manages everything semantics-related.
+class EngineSemanticsOwner {
+  EngineSemanticsOwner(this.semanticsHost) {
+    registerHotRestartListener(() {
+      _rootSemanticsElement?.remove();
+    });
+  }
+
+  /// The permanent element in the view's DOM structure that hosts the semantics
+  /// tree.
+  ///
+  /// The only child of this element is the [rootSemanticsElement]. Unlike the
+  /// root element, this element is never replaced. It is always part of the
+  /// DOM structure of the respective [FlutterView].
+  // TODO(yjbanov): rename to hostElement
+  final DomElement semanticsHost;
+
+  /// The DOM element corresponding to the root semantics node in the semantics
+  /// tree.
+  ///
+  /// This element is the direct child of the [semanticsHost] and it is
+  /// replaceable.
+  // TODO(yjbanov): rename to rootElement
+  DomElement? get rootSemanticsElement => _rootSemanticsElement;
+  DomElement? _rootSemanticsElement;
+
+  /// The current update phase of this semantics owner.
+  SemanticsUpdatePhase get phase => _phase;
+  SemanticsUpdatePhase _phase = SemanticsUpdatePhase.idle;
+
+  final Map<int, SemanticsObject> _semanticsTree = <int, SemanticsObject>{};
+
+  /// Map [SemanticsObject.id] to parent [SemanticsObject] it was attached to
+  /// this frame.
+  Map<int, SemanticsObject> _attachments = <int, SemanticsObject>{};
+
+  /// Declares that the [child] must be attached to the [parent].
+  ///
+  /// Attachments take precedence over detachments (see [_detachObject]). This
+  /// allows the same node to be detached from one parent in the tree and
+  /// reattached to another parent.
+  void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
+    child._parent = parent;
+    _attachments[child.id] = parent;
+  }
+
+  /// List of objects that were detached this frame.
+  ///
+  /// The objects in this list will be detached permanently unless they are
+  /// reattached via the [_attachObject] method.
+  List<SemanticsObject> _detachments = <SemanticsObject>[];
+
+  /// Declares that the [SemanticsObject] with the given [id] was detached from
+  /// its current parent object.
+  ///
+  /// The object will be detached permanently unless it is reattached via the
+  /// [_attachObject] method.
+  void _detachObject(int id) {
+    final SemanticsObject? object = _semanticsTree[id];
+    assert(object != null);
+    if (object != null) {
+      _detachments.add(object);
+    }
+  }
+
+  /// Callbacks called after all objects in the tree have their properties
+  /// populated and their sizes and locations computed.
+  ///
+  /// This list is reset to empty after all callbacks are called.
+  List<ui.VoidCallback> _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
+
+  /// Schedules a one-time callback to be called after all objects in the tree
+  /// have their properties populated and their sizes and locations computed.
+  void addOneTimePostUpdateCallback(ui.VoidCallback callback) {
+    _oneTimePostUpdateCallbacks.add(callback);
+  }
+
+  /// Reconciles [_attachments] and [_detachments], and after that calls all
+  /// the one-time callbacks scheduled via the [addOneTimePostUpdateCallback]
+  /// method.
+  void _finalizeTree() {
+    // Collect all nodes that need to be permanently removed, i.e. nodes that
+    // were detached from their parent, but not reattached to another parent.
+    final Set<SemanticsObject> removals = <SemanticsObject>{};
+    for (final SemanticsObject detachmentRoot in _detachments) {
+      // A detached node may or may not have some of its descendants reattached
+      // elsewhere. Walk the descendant tree and find all descendants that were
+      // reattached to a parent. Those descendants need to be removed.
+      detachmentRoot.visitDepthFirstInTraversalOrder((SemanticsObject node) {
+        final SemanticsObject? parent = _attachments[node.id];
+        if (parent == null) {
+          // Was not reparented and is removed permanently from the tree.
+          removals.add(node);
+        } else {
+          assert(node._parent == parent);
+          assert(node.element.parentNode == parent._childContainerElement);
+        }
+        return true;
+      });
+    }
+
+    for (final SemanticsObject removal in removals) {
+      _semanticsTree.remove(removal.id);
+      removal.dispose();
+    }
+
+    _detachments = <SemanticsObject>[];
+    _attachments = <int, SemanticsObject>{};
+
+    _phase = SemanticsUpdatePhase.postUpdate;
+    try {
+      if (_oneTimePostUpdateCallbacks.isNotEmpty) {
+        for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
+          callback();
+        }
+        _oneTimePostUpdateCallbacks = <ui.VoidCallback>[];
+      }
+    } finally {
+      _phase = SemanticsUpdatePhase.idle;
+    }
+    _hasNodeRequestingFocus = false;
+  }
+
+  /// Returns the entire semantics tree for testing.
+  ///
+  /// Works only in debug mode.
+  Map<int, SemanticsObject>? get debugSemanticsTree {
+    Map<int, SemanticsObject>? result;
+    assert(() {
+      result = _semanticsTree;
+      return true;
+    }());
+    return result;
+  }
 
   /// Looks up a [SemanticsObject] in the semantics tree by ID, or creates a new
   /// instance if it does not exist.
@@ -2161,22 +2328,44 @@ class EngineSemanticsOwner {
     return object;
   }
 
+  // Checks the consistency of the semantics node tree against the {ID: node}
+  // map. The two must be in total agreement. Every node in the map must be
+  // somewhere in the tree.
+  (bool, String) _computeNodeMapConsistencyMessage() {
+    final Map<int, List<int>> liveIds = <int, List<int>>{};
+
+    final SemanticsObject? root = _semanticsTree[0];
+    if (root != null) {
+      root._debugVisitRenderedSemanticNodesDepthFirst((SemanticsObject child) {
+        liveIds[child.id] = child._childrenInTraversalOrder?.toList() ?? const <int>[];
+      });
+    }
+
+    final bool isConsistent = _semanticsTree.keys.every(liveIds.keys.contains);
+    final String heading = 'The semantics node map is ${isConsistent ? 'consistent' : 'inconsistent'}';
+    final StringBuffer message = StringBuffer('$heading:\n');
+    message.writeln('  Nodes in tree:');
+    for (final MapEntry<int, List<int>> entry in liveIds.entries) {
+      message.writeln('    ${entry.key}: ${entry.value}');
+    }
+    message.writeln('  Nodes in map: [${_semanticsTree.keys.join(', ')}]');
+
+    return (isConsistent, message.toString());
+  }
+
   /// Updates the semantics tree from data in the [uiUpdate].
   void updateSemantics(ui.SemanticsUpdate uiUpdate) {
-    if (!_semanticsEnabled) {
-      if (ui_web.debugEmulateFlutterTesterEnvironment) {
-        // Running Flutter widget tests in a fake environment. Don't enable
-        // engine semantics. Test semantics trees violate invariants in ways
-        // production implementation isn't built to handle. For example, tests
-        // routinely reset semantics node IDs, which is messing up the update
-        // process.
-        return;
-      } else {
-        // Running a real app. Auto-enable engine semantics.
-        semanticsHelper.dispose(); // placeholder no longer needed
-        semanticsEnabled = true;
-      }
+    EngineSemantics.instance.didReceiveSemanticsUpdate();
+
+    if (!EngineSemantics.instance.semanticsEnabled) {
+      return;
     }
+
+    (bool, String)? preUpdateNodeMapConsistency;
+    assert(() {
+      preUpdateNodeMapConsistency = _computeNodeMapConsistencyMessage();
+      return true;
+    }());
 
     _phase = SemanticsUpdatePhase.updating;
     final SemanticsUpdate update = uiUpdate as SemanticsUpdate;
@@ -2198,33 +2387,31 @@ class EngineSemanticsOwner {
       object._dirtyFields = 0;
     }
 
+    final SemanticsObject root = _semanticsTree[0]!;
     if (_rootSemanticsElement == null) {
-      final SemanticsObject root = _semanticsTree[0]!;
       _rootSemanticsElement = root.element;
-      // TODO(mdebbar): There could be multiple views with multiple semantics hosts.
-      //                https://github.com/flutter/flutter/issues/137344
-      final DomElement semanticsHost = EnginePlatformDispatcher.instance.implicitView!.dom.semanticsHost;
       semanticsHost.append(root.element);
     }
 
     _finalizeTree();
 
-    assert(_semanticsTree.containsKey(0)); // must contain root node
     assert(() {
       // Validate that the node map only contains live elements, i.e. descendants
       // of the root node. If a node is not reachable from the root, it should
       // have been removed from the map.
-      final List<int> liveIds = <int>[];
-      final SemanticsObject root = _semanticsTree[0]!;
-      root.visitDepthFirst((SemanticsObject child) {
-        liveIds.add(child.id);
-      });
-      assert(
-        _semanticsTree.keys.every(liveIds.contains),
-        'The semantics node map is inconsistent:\n'
-        '  Nodes in tree: [${liveIds.join(', ')}]\n'
-        '  Nodes in map : [${_semanticsTree.keys.join(', ')}]'
-      );
+      final (bool isConsistent, String description) = _computeNodeMapConsistencyMessage();
+      if (!isConsistent) {
+        // Use StateError because AssertionError escapes line breaks, but this
+        // error message is very detailed and it needs line breaks for
+        // legibility.
+        throw StateError('''
+Semantics node map was inconsistent after update:
+
+BEFORE: ${preUpdateNodeMapConsistency?.$2}
+
+AFTER: $description
+''');
+      }
 
       // Validate that each node in the final tree is self-consistent.
       _semanticsTree.forEach((int? id, SemanticsObject object) {
@@ -2269,6 +2456,50 @@ class EngineSemanticsOwner {
 
       return true;
     }());
+  }
+
+  /// Removes the semantics tree for this view from the page and collects all
+  /// resources.
+  ///
+  /// The object remains usable after this operation, but because the previous
+  /// semantics tree is completely removed, partial udpates will not succeed as
+  /// they rely on the prior state of the tree. There is no distinction between
+  /// a full update and partial update, so the failure may be cryptic.
+  void reset() {
+    final List<int> keys = _semanticsTree.keys.toList();
+    final int len = keys.length;
+    for (int i = 0; i < len; i++) {
+      _detachObject(keys[i]);
+    }
+    _finalizeTree();
+    _rootSemanticsElement?.remove();
+    _rootSemanticsElement = null;
+    _semanticsTree.clear();
+    _attachments.clear();
+    _detachments.clear();
+    _phase = SemanticsUpdatePhase.idle;
+    _oneTimePostUpdateCallbacks.clear();
+  }
+
+  /// True, if any semantics node requested focus explicitly during the latest
+  /// semantics update.
+  ///
+  /// The default value is `false`, and it is reset back to `false` after the
+  /// semantics update at the end of [updateSemantics].
+  ///
+  /// Since focus can only be taken by no more than one element, the engine
+  /// should not request focus for multiple elements. This flag helps resolve
+  /// that.
+  bool get hasNodeRequestingFocus => _hasNodeRequestingFocus;
+  bool _hasNodeRequestingFocus = false;
+
+  /// Declares that a semantics node will explicitly request focus.
+  ///
+  /// This prevents others, [Dialog] in particular, from requesting autofocus,
+  /// as focus can only be taken by one element. Explicit focus has higher
+  /// precedence than autofocus.
+  void willRequestFocus() {
+    _hasNodeRequestingFocus = true;
   }
 }
 

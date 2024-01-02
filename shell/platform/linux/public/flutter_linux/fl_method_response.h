@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_RESPONSE_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_RESPONSE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_RESPONSE_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_RESPONSE_H_
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
@@ -30,9 +30,11 @@ G_BEGIN_DECLS
 #define FL_METHOD_RESPONSE_ERROR fl_method_response_error_quark()
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_METHOD_RESPONSE_ERROR_FAILED,
   FL_METHOD_RESPONSE_ERROR_REMOTE_ERROR,
   FL_METHOD_RESPONSE_ERROR_NOT_IMPLEMENTED,
+  // NOLINTEND(readability-identifier-naming)
 } FlMethodResponseError;
 
 GQuark fl_method_response_error_quark(void) G_GNUC_CONST;
@@ -214,4 +216,4 @@ FlMethodNotImplementedResponse* fl_method_not_implemented_response_new();
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_RESPONSE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_RESPONSE_H_
