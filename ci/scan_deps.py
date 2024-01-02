@@ -23,59 +23,9 @@ SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 DEP_CLONE_DIR = CHECKOUT_ROOT + '/clone-test'
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
-HELP_STR = 'To find complete information on this vulnerability, navigate to '
-OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
-SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
 
 failed_deps = []  # deps which fail to be cloned or git-merge based
-
-sarif_log = {
-    '$schema':
-        'https://json.schemastore.org/sarif-2.1.0.json', 'version':
-            '2.1.0',
-    'runs': [{
-        'tool': {
-            'driver': {
-                'name': 'OSV Scan', 'informationUri': 'https://osv.dev/',
-                'semanticVersion': '1.0.0', 'rules': []
-            }
-        }, 'results': []
-    }]
-}
-
-
-def sarif_result():
-  """
-  Returns the template for a result entry in the Sarif log,
-  which is populated with CVE findings from OSV API
-  """
-  return {
-      'ruleId':
-          'N/A', 'message': {'text': 'OSV Scan Finding'}, 'locations': [{
-              'physicalLocation': {
-                  'artifactLocation': {'uri': 'DEPS'},
-                  'region': {'startLine': 1, 'startColumn': 1, 'endColumn': 1}
-              }
-          }]
-  }
-
-
-def sarif_rule():
-  """
-  Returns the template for a rule entry in the Sarif log,
-  which is populated with CVE findings from OSV API
-  """
-  return {
-      'id': 'OSV Scan', 'name': 'OSV Scan Finding',
-      'shortDescription': {'text': 'Insert OSV id'}, 'fullDescription': {
-          'text': 'Vulnerability found by scanning against the OSV API'
-      }, 'help': {
-          'text':
-              'More details in the OSV DB at: https://osv.dev/vulnerability/'
-      }, 'defaultConfiguration': {'level': 'error'},
-      'properties': {'tags': ['supply-chain', 'dependency']}
-  }
 
 
 def parse_deps_file(deps_flat_file):
@@ -101,7 +51,9 @@ def parse_deps_file(deps_flat_file):
     deps_list = local_scope.get('vars')
   queries = []  # list of queries to submit in bulk request to OSV API
   with open(deps_flat_file, 'r') as file:
-    lines = file.readlines()
+    data = json.load(file)
+
+  results = data['results']
 
   headers = {
       'Content-Type': 'application/json',
@@ -112,16 +64,16 @@ def parse_deps_file(deps_flat_file):
     os.mkdir(DEP_CLONE_DIR)  #clone deps with upstream into temporary dir
 
   # Extract commit hash, save in dictionary
-  for line in lines:
-    dep = line.strip().split(
-        '@'
-    )  # separate fully qualified dep into name + pinned hash
-
-    common_commit = get_common_ancestor_commit(dep, deps_list)
-    if isinstance(common_commit, str):
-      queries.append({'commit': common_commit})
-    else:
-      failed_deps.append(dep[0])
+  for result in results:
+    packages = result['packages']
+    for package in packages:
+      mirror_url = package['package']['name']
+      commit = package['package']['commit']
+      common_commit = get_common_ancestor_commit([mirror_url, commit], deps_list)
+      if isinstance(common_commit, str):
+        queries.append({'commit': common_commit})
+      else:
+        failed_deps.append(mirror_url)
 
   print(
       'Dependencies that could not be parsed for ancestor commits: ' +
@@ -246,64 +198,25 @@ def get_common_ancestor_commit(dep, deps_list):
   return {}
 
 
-def write_sarif(responses, manifest_file):
-  """
-  Creates a full SARIF report based on the OSV API response which
-  may contain several vulnerabilities
-
-  Combines a rule with a result in order to construct the report
-  """
-  data = sarif_log
-  for response in responses:
-    for vuln in response['vulns']:
-      new_rule = create_rule_entry(vuln)
-      data['runs'][0]['tool']['driver']['rules'].append(new_rule)
-      data['runs'][0]['results'].append(create_result_entry(vuln))
-  with open(manifest_file, 'w') as out:
-    json.dump(data, out)
-
-
-def create_rule_entry(vuln):
-  """
-  Creates a Sarif rule entry from an OSV finding.
-  Vuln object follows OSV Schema and is required to have 'id' and 'modified'
-  """
-  rule = sarif_rule()
-  rule['id'] = vuln['id']
-  rule['shortDescription']['text'] = vuln['id']
-  rule['help']['text'] += vuln['id']
-  return rule
-
-
-def create_result_entry(vuln):
-  """
-  Creates a Sarif res entry from an OSV entry.
-  Rule finding linked to the associated rule metadata via ruleId
-  """
-  result = sarif_result()
-  result['ruleId'] = vuln['id']
-  return result
-
-
 def parse_args(args):
   args = args[1:]
   parser = argparse.ArgumentParser(
-      description='A script to scan a flattened DEPS file using OSV API.'
+      description='A script to scan an osv-scanner compatible deps file for common ancestor commit SHAs'
   )
 
   parser.add_argument(
       '--flat-deps',
       '-d',
       type=str,
-      help='Input flattened DEPS file.',
-      default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt')
+      help='Input osv-scanner compatible deps file.',
+      default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-deps.json')
   )
   parser.add_argument(
       '--output',
       '-o',
       type=str,
-      help='Output SARIF log of vulnerabilities found in OSV database.',
-      default=os.path.join(CHECKOUT_ROOT, 'osvReport.sarif')
+      help='Output osv-scanner compatible deps file.',
+      default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-ancestor-deps.json')
   )
 
   return parser.parse_args(args)
@@ -311,8 +224,7 @@ def parse_args(args):
 
 def main(argv):
   args = parse_args(argv)
-  osv_scans = parse_deps_file(args.flat_deps)
-  write_sarif(osv_scans, args.output)
+  parse_deps_file(args.flat_deps)
   return 0
 
 

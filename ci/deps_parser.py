@@ -110,7 +110,7 @@ def write_manifest(deps, manifest_file):
 def parse_args(args):
   args = args[1:]
   parser = argparse.ArgumentParser(
-      description='A script to flatten a gclient DEPS file.'
+      description='A script to extract DEPS into osv-scanner lockfile compatible format.'
   )
 
   parser.add_argument(
@@ -125,7 +125,7 @@ def parse_args(args):
       '-o',
       type=str,
       help='Output flattened deps file.',
-      default=os.path.join(CHECKOUT_ROOT, 'deps_flatten.txt')
+      default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-deps.json')
   )
 
   return parser.parse_args(args)

@@ -31,11 +31,13 @@ jobs:
       - name: "extract, flatten, and convert to osv-scanner deps"
         run: python ci/deps_parser.py -o osv-scanner-deps.json
       # TODO: This does not use the get_common_ancestor_commit method in scan_flattened_deps.py yet
+      - name: "evaluate git history for common ancestors"
+        run: python ci/scan_flattened_deps.py -d osv-scanner-deps.json -o osv-scanner-ancestor-deps.json
       - name: "upload osv-scanner deps"
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
         with:
           name: converted-OSV-Scanner-deps
-          path: osv-scanner-deps.json
+          path: osv-scanner-ancestor-deps.json
           retention-days: 2
   vuln-scan:
     name: Vulnerability scanning
