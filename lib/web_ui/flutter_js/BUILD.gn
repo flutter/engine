@@ -27,7 +27,5 @@ esbuild("flutter_js_bundle") {
   minify = true
   sourcemap = true
 
-  public_deps = [
-    ":flutter_js_sources",
-  ]
+  public_deps = [ ":flutter_js_sources" ]
 }
