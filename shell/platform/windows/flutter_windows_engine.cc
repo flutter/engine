@@ -14,6 +14,7 @@
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
@@ -22,7 +23,6 @@
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/third_party/accessibility/ax/ax_node.h"
-#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -221,28 +221,33 @@ FlutterWindowsEngine::FlutterWindowsEngine(
                                                       task_runner_.get());
 
   // Makeshift PV channel before a separate plugin is there.
-  platform_view_channel_ = std::make_unique<MethodChannel<EncodableValue>>(messenger_wrapper_.get(), "flutter/platform_views", &StandardMethodCodec::GetInstance());
-  platform_view_channel_->SetMethodCallHandler([this](const MethodCall<EncodableValue>& call, std::unique_ptr<MethodResult<EncodableValue>> result) {
-    const std::string& name = call.method_name();
-    if (name == "create") {
-      FML_LOG(ERROR) << "Receiving creation method";
-      const auto& args = std::get<EncodableMap>(*call.arguments());
-      FML_LOG(ERROR) << "Got args of size: " << args.size();
-      for (auto it : args) {
-        FML_LOG(ERROR) << "Has key: " << std::get<std::string>(it.first);
-      }
-      auto id = std::get<int32_t>(args.find(EncodableValue("id"))->second);
-      FML_LOG(ERROR) << "Found ID for platform view: " << id;
-      auto type = std::get<std::string>(args.find(EncodableValue("viewType"))->second);
-      FML_LOG(ERROR) << "Found view type for platform view: " << type;
-      PlatformViewCreationParams creation_args{view_->GetPlatformWindow(), id, type.data()};
-      CreatePlatformView(creation_args);
-      result->Success();
-    }
-    else {
-      result->NotImplemented();
-    }
-  });
+  platform_view_channel_ = std::make_unique<MethodChannel<EncodableValue>>(
+      messenger_wrapper_.get(), "flutter/platform_views",
+      &StandardMethodCodec::GetInstance());
+  platform_view_channel_->SetMethodCallHandler(
+      [this](const MethodCall<EncodableValue>& call,
+             std::unique_ptr<MethodResult<EncodableValue>> result) {
+        const std::string& name = call.method_name();
+        if (name == "create") {
+          FML_LOG(ERROR) << "Receiving creation method";
+          const auto& args = std::get<EncodableMap>(*call.arguments());
+          FML_LOG(ERROR) << "Got args of size: " << args.size();
+          for (auto it : args) {
+            FML_LOG(ERROR) << "Has key: " << std::get<std::string>(it.first);
+          }
+          auto id = std::get<int32_t>(args.find(EncodableValue("id"))->second);
+          FML_LOG(ERROR) << "Found ID for platform view: " << id;
+          auto type = std::get<std::string>(
+              args.find(EncodableValue("viewType"))->second);
+          FML_LOG(ERROR) << "Found view type for platform view: " << type;
+          PlatformViewCreationParams creation_args{view_->GetPlatformWindow(),
+                                                   id, type.data()};
+          CreatePlatformView(creation_args);
+          result->Success();
+        } else {
+          result->NotImplemented();
+        }
+      });
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
@@ -458,15 +463,17 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
           return false;
         }
         const auto& backing_store = layer->backing_store->software;
-        const uint32_t *src_data = (const uint32_t*)backing_store.allocation;
+        const uint32_t* src_data = (const uint32_t*)backing_store.allocation;
 
         // Manually blend alpha:
-        for (int y_src = 0; y_src < size.height && y_src + offset.y < height; y_src++) {
+        for (int y_src = 0; y_src < size.height && y_src + offset.y < height;
+             y_src++) {
           int y_dst = y_src + offset.y;
           if (y_dst < 0) {
             continue;
           }
-          for (int x_src = 0; x_src < size.width && x_src + offset.x < width; x_src++) {
+          for (int x_src = 0; x_src < size.width && x_src + offset.x < width;
+               x_src++) {
             int x_dst = x_src + offset.x;
             if (x_dst < 0) {
               continue;
@@ -476,12 +483,12 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
             uint32_t src = src_data[i_src];
             uint32_t dst = allocation[i_dst];
 
-            int r_src =  src & 0xff;
+            int r_src = src & 0xff;
             int g_src = (src >> 8) & 0xff;
             int b_src = (src >> 16) & 0xff;
             int a_src = (src >> 24);
 
-            int r_dst =  dst & 0xff;
+            int r_dst = dst & 0xff;
             int g_dst = (dst >> 8) & 0xff;
             int b_dst = (dst >> 16) & 0xff;
 
@@ -489,17 +496,17 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
             int g = (g_dst * 255 + (g_src - g_dst) * a_src) / 255;
             int b = (b_dst * 255 + (b_src - b_dst) * a_src) / 255;
 
-            allocation[i_dst] = r | (g << 8) | (b <<16) | (0xff << 24);
+            allocation[i_dst] = r | (g << 8) | (b << 16) | (0xff << 24);
           }
         }
-      }
-      else if (layer->type == kFlutterLayerContentTypePlatformView) {
+      } else if (layer->type == kFlutterLayerContentTypePlatformView) {
         const auto platform_view = layer->platform_view;
         auto id = platform_view->identifier;
         const auto itr = host->platform_views_.find(platform_view->identifier);
         if (itr != host->platform_views_.end()) {
           HWND view = itr->second;
-          SetWindowPos(view, HWND_TOPMOST, offset.x, offset.y, size.width, size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
+          SetWindowPos(view, HWND_TOPMOST, offset.x, offset.y, size.width,
+                       size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
           UpdateWindow(view);
         } else {
           FML_LOG(ERROR) << "No platform view registered with id " << id;
@@ -507,7 +514,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       }
     }
 
-    return host->view()->PresentSoftwareBitmap((void*)allocation.data(), width * 4, height);
+    return host->view()->PresentSoftwareBitmap((void*)allocation.data(),
+                                               width * 4, height);
   };
   args.compositor = &compositor;
 
@@ -949,12 +957,15 @@ void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
 }
 
 // Platform view methods:
-void FlutterWindowsEngine::RegisterPlatformViewType(const std::string& type, Win32PlatformViewFactory factory) {
+void FlutterWindowsEngine::RegisterPlatformViewType(
+    const std::string& type,
+    Win32PlatformViewFactory factory) {
   platform_view_types_.insert({type, factory});
 }
 
 void FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams args) {
-  FML_LOG(ERROR) << "Creating a platform view of type \"" << args.view_type << "\"";
+  FML_LOG(ERROR) << "Creating a platform view of type \"" << args.view_type
+                 << "\"";
   const auto itr = platform_view_types_.find(std::string(args.view_type));
   if (itr == platform_view_types_.end()) {
     FML_LOG(ERROR) << "View type not registered";

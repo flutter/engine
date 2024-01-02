@@ -278,7 +278,8 @@ class FlutterWindowsEngine {
   }
 
   // These should end up in their own platform view plugin at some point.
-  void RegisterPlatformViewType(const std::string& type, Win32PlatformViewFactory factory);
+  void RegisterPlatformViewType(const std::string& type,
+                                Win32PlatformViewFactory factory);
 
   void CreatePlatformView(PlatformViewCreationParams args);
 

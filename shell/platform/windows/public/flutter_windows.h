@@ -210,7 +210,10 @@ typedef struct {
 } PlatformViewCreationParams;
 typedef HWND (*Win32PlatformViewFactory)(const PlatformViewCreationParams*);
 
-FLUTTER_EXPORT void FlutterDesktopEngineRegisterPlatformView(FlutterDesktopEngineRef, const char* view_type, Win32PlatformViewFactory factory);
+FLUTTER_EXPORT void FlutterDesktopEngineRegisterPlatformView(
+    FlutterDesktopEngineRef,
+    const char* view_type,
+    Win32PlatformViewFactory factory);
 
 // ========== View ==========
 

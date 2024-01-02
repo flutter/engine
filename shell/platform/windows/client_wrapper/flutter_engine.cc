@@ -113,9 +113,11 @@ std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
   return std::nullopt;
 }
 
-void FlutterEngine::RegisterPlatformViewType(const std::string& view_type, Win32PlatformViewFactory factory) {
+void FlutterEngine::RegisterPlatformViewType(const std::string& view_type,
+                                             Win32PlatformViewFactory factory) {
   if (engine_) {
-    FlutterDesktopEngineRegisterPlatformView(engine_, view_type.data(), factory);
+    FlutterDesktopEngineRegisterPlatformView(engine_, view_type.data(),
+                                             factory);
   }
 }
 

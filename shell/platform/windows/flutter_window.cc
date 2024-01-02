@@ -340,14 +340,14 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
   bmi.bmiHeader.biSizeImage = row_bytes * height;
 
   // Source BITMAP
-  //HBITMAP srcbm = CreateCompatibleBitmap(src, row_bytes / 4, height);
   void* bits;
   HBITMAP srcbm = CreateDIBSection(src, &bmi, DIB_RGB_COLORS, &bits, NULL, 0);
   SelectObject(src, srcbm);
   memcpy(bits, allocation, row_bytes * height);
 
   // Write to source
-  SetDIBitsToDevice(src, 0, 0, row_bytes / 4, height, 0, 0, 0, height, allocation, &bmi, DIB_RGB_COLORS);
+  SetDIBitsToDevice(src, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
+                    allocation, &bmi, DIB_RGB_COLORS);
 
   BLENDFUNCTION bf;
   bf.AlphaFormat = AC_SRC_ALPHA;
@@ -355,8 +355,8 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
   bf.BlendOp = AC_SRC_OVER;
   bf.SourceConstantAlpha = 0xff;
 
-  
-  int ret = AlphaBlend(dc, 0, 0, row_bytes / 4, height, src, 0, 0, row_bytes / 4, height, bf);
+  int ret = AlphaBlend(dc, 0, 0, row_bytes / 4, height, src, 0, 0,
+                       row_bytes / 4, height, bf);
   ::ReleaseDC(GetWindowHandle(), dc);
   DeleteObject(srcbm);
   DeleteDC(src);
@@ -477,8 +477,8 @@ void FlutterWindow::InitializeChild(const char* title,
 
   auto* result = CreateWindowEx(
       0, window_class.lpszClassName, converted_title.c_str(),
-      WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, CW_DEFAULT, CW_DEFAULT, width, height,
-      HWND_MESSAGE, nullptr, window_class.hInstance, this);
+      WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN, CW_DEFAULT, CW_DEFAULT, width,
+      height, HWND_MESSAGE, nullptr, window_class.hInstance, this);
 
   if (result == nullptr) {
     auto error = GetLastError();

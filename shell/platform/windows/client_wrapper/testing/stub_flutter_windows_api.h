@@ -69,7 +69,8 @@ class StubFlutterWindowsApi {
   virtual void EngineSetNextFrameCallback(VoidCallback callback,
                                           void* user_data) {}
 
-  virtual void EngineRegisterPlatformView(const char* view_type, Win32PlatformViewFactory factory) {}
+  virtual void EngineRegisterPlatformView(const char* view_type,
+                                          Win32PlatformViewFactory factory) {}
 
   // Called for FlutterDesktopEngineReloadSystemFonts.
   virtual void EngineReloadSystemFonts() {}
