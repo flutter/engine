@@ -31,7 +31,7 @@ enum class PlaygroundBackend {
   kVulkan,
 };
 
-inline RuntimeStageBackend PlaygroundBackendToRuntimeStageBackend(
+constexpr inline RuntimeStageBackend PlaygroundBackendToRuntimeStageBackend(
     PlaygroundBackend backend) {
   switch (backend) {
     case PlaygroundBackend::kMetal:
@@ -41,6 +41,7 @@ inline RuntimeStageBackend PlaygroundBackendToRuntimeStageBackend(
     case PlaygroundBackend::kVulkan:
       return RuntimeStageBackend::kVulkan;
   }
+  FML_UNREACHABLE();
 }
 
 std::string PlaygroundBackendToString(PlaygroundBackend backend);

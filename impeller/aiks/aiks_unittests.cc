@@ -2943,7 +2943,7 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
 
 // Regression test for https://github.com/flutter/flutter/issues/126701 .
 TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
-  if (GetParam() == PlaygroundBackend::kVulkan) {
+  if (!BackendSupportsFragmentProgram()) {
     GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
 
@@ -2951,7 +2951,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
 
   auto runtime_stage =
-      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetParam())];
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
@@ -2980,7 +2980,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 }
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
+  if (!BackendSupportsFragmentProgram()) {
     GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
 
