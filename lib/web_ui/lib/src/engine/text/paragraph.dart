@@ -691,52 +691,6 @@ class EngineTextStyle implements ui.TextStyle {
     );
   }
 
-  // EngineTextStyle copyWith({
-  //   ui.Color? color,
-  //   ui.TextDecoration? decoration,
-  //   ui.Color? decorationColor,
-  //   ui.TextDecorationStyle? decorationStyle,
-  //   double? decorationThickness,
-  //   ui.FontWeight? fontWeight,
-  //   ui.FontStyle? fontStyle,
-  //   ui.TextBaseline? textBaseline,
-  //   String? fontFamily,
-  //   List<String>? fontFamilyFallback,
-  //   double? fontSize,
-  //   double? letterSpacing,
-  //   double? wordSpacing,
-  //   double? height,
-  //   ui.Locale? locale,
-  //   ui.Paint? background,
-  //   ui.Paint? foreground,
-  //   List<ui.Shadow>? shadows,
-  //   List<ui.FontFeature>? fontFeatures,
-  //   List<ui.FontVariation>? fontVariations,
-  // }) {
-  //   return EngineTextStyle(
-  //     color: color ?? this.color,
-  //     decoration: decoration ?? this.decoration,
-  //     decorationColor: decorationColor ?? this.decorationColor,
-  //     decorationStyle: decorationStyle ?? this.decorationStyle,
-  //     decorationThickness: decorationThickness ?? this.decorationThickness,
-  //     fontWeight: fontWeight ?? this.fontWeight,
-  //     fontStyle: fontStyle ?? this.fontStyle,
-  //     textBaseline: textBaseline ?? this.textBaseline,
-  //     fontFamily: fontFamily ?? this.fontFamily,
-  //     fontFamilyFallback: fontFamilyFallback ?? this.fontFamilyFallback,
-  //     fontSize: fontSize ?? this.fontSize,
-  //     letterSpacing: letterSpacing ?? this.letterSpacing,
-  //     wordSpacing: wordSpacing ?? this.wordSpacing,
-  //     height: height ?? this.height,
-  //     locale: locale ?? this.locale,
-  //     background: background ?? this.background,
-  //     foreground: foreground ?? this.foreground,
-  //     shadows: shadows ?? this.shadows,
-  //     fontFeatures: fontFeatures ?? this.fontFeatures,
-  //     fontVariations: fontVariations ?? this.fontVariations,
-  //   );
-  // }
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
