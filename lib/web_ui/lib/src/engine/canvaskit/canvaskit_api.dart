@@ -44,7 +44,7 @@ external set windowFlutterCanvasKit(CanvasKit? value);
 external CanvasKit? get windowFlutterCanvasKit;
 
 @JS('window.flutterCanvasKitLoaded')
-external JSPromise? get windowFlutterCanvasKitLoaded;
+external JSPromise<JSAny>? get windowFlutterCanvasKitLoaded;
 
 @JS()
 @anonymous
