@@ -12,7 +12,7 @@ XCode has a number of built in profiling tools that can easily be used with loca
 
 3. Select the thread to investigate, in this case you want io.flutter.raster. IMPORTANT: also select the trace root.
 
-![Alt text](assets/ios_profiling/ios_time_profiler_example.png)
+![Alt text](assets/ios_profiling/ios_profiler_select_thread.png)
 
 4. Either via keyboard short cut or edit menu, "Deep Copy" the trace.
 
