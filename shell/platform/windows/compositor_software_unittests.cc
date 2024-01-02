@@ -30,6 +30,7 @@ class MockFlutterWindowsView : public FlutterWindowsView {
               PresentSoftwareBitmap,
               (const void* allocation, size_t row_bytes, size_t height),
               (override));
+  MOCK_METHOD(bool, ClearSoftwareBitmap, (), (override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
@@ -55,7 +56,7 @@ class CompositorSoftwareTest : public WindowsTest {
 
     auto window = std::make_unique<MockWindowBindingHandler>();
     EXPECT_CALL(*window.get(), SetView).Times(1);
-    EXPECT_CALL(*window.get(), GetRenderTarget).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(*window.get(), GetWindowHandle).WillRepeatedly(Return(nullptr));
 
     engine_ = builder.Build();
     view_ = std::make_unique<MockFlutterWindowsView>(std::move(window));
@@ -103,6 +104,15 @@ TEST_F(CompositorSoftwareTest, Present) {
   EXPECT_TRUE(compositor.Present(&layer_ptr, 1));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
+}
+
+TEST_F(CompositorSoftwareTest, PresentEmpty) {
+  UseEngineWithView();
+
+  auto compositor = CompositorSoftware{engine()};
+
+  EXPECT_CALL(*view(), ClearSoftwareBitmap).WillOnce(Return(true));
+  EXPECT_TRUE(compositor.Present(nullptr, 0));
 }
 
 TEST_F(CompositorSoftwareTest, HeadlessPresentIgnored) {

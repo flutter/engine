@@ -11,6 +11,8 @@ namespace flutter {
 
 namespace {
 
+constexpr uint32_t kWindowFrameBufferId = 0;
+
 // The metadata for an OpenGL framebuffer backing store.
 struct FramebufferBackingStore {
   uint32_t framebuffer_id;
@@ -91,32 +93,48 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
 
 bool CompositorOpenGL::Present(const FlutterLayer** layers,
                                size_t layers_count) {
+  if (!engine_->view()) {
+    return false;
+  }
+
+  // Clear the view if there are no layers to present.
+  if (layers_count == 0) {
+    // Normally the compositor is initialized when the first backing store is
+    // created. However, on an empty frame no backing stores are created and
+    // the present needs to initialize the compositor.
+    if (!is_initialized_ && !Initialize()) {
+      return false;
+    }
+
+    return ClearSurface();
+  }
+
   // TODO: Support compositing layers and platform views.
   // See: https://github.com/flutter/flutter/issues/31713
   FML_DCHECK(is_initialized_);
   FML_DCHECK(layers_count == 1);
+  FML_DCHECK(layers[0]->offset.x == 0 && layers[0]->offset.y == 0);
   FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
   FML_DCHECK(layers[0]->backing_store->type == kFlutterBackingStoreTypeOpenGL);
   FML_DCHECK(layers[0]->backing_store->open_gl.type ==
              kFlutterOpenGLTargetTypeFramebuffer);
 
-  if (!engine_->view()) {
-    return false;
-  }
-
   auto width = layers[0]->size.width;
   auto height = layers[0]->size.height;
 
-  // Acquiring the view's framebuffer ID resizes its surface if necessary.
-  auto destination_id = engine_->view()->GetFrameBufferId(width, height);
-  auto source_id = layers[0]->backing_store->open_gl.framebuffer.name;
+  // Check if this frame can be presented. This resizes the surface if a resize
+  // is pending and |width| and |height| match the target size.
+  if (!engine_->view()->OnFrameGenerated(width, height)) {
+    return false;
+  }
 
   if (!engine_->surface_manager()->MakeCurrent()) {
     return false;
   }
 
+  auto source_id = layers[0]->backing_store->open_gl.framebuffer.name;
   gl_->BindFramebuffer(GL_READ_FRAMEBUFFER, source_id);
-  gl_->BindFramebuffer(GL_DRAW_FRAMEBUFFER, destination_id);
+  gl_->BindFramebuffer(GL_DRAW_FRAMEBUFFER, kWindowFrameBufferId);
 
   gl_->BlitFramebuffer(0,                    // srcX0
                        0,                    // srcY0
@@ -149,6 +167,22 @@ bool CompositorOpenGL::Initialize() {
   format_ = GetSupportedTextureFormat(gl_->GetDescription());
   is_initialized_ = true;
   return true;
+}
+
+bool CompositorOpenGL::ClearSurface() {
+  FML_DCHECK(is_initialized_);
+
+  // Resize the surface if needed.
+  engine_->view()->OnEmptyFrameGenerated();
+
+  if (!engine_->surface_manager()->MakeCurrent()) {
+    return false;
+  }
+
+  gl_->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+  return engine_->view()->SwapBuffers();
 }
 
 }  // namespace flutter

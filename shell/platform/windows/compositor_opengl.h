@@ -51,6 +51,9 @@ class CompositorOpenGL : public Compositor {
 
   // Initialize the compositor. This must run on the raster thread.
   bool Initialize();
+
+  // Clear the view's surface and removes any previously presented layers.
+  bool ClearSurface();
 };
 
 }  // namespace flutter

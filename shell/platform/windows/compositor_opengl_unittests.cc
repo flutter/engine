@@ -104,7 +104,7 @@ class CompositorOpenGLTest : public WindowsTest {
 
     auto window = std::make_unique<MockWindowBindingHandler>();
     EXPECT_CALL(*window.get(), SetView).Times(1);
-    EXPECT_CALL(*window.get(), GetRenderTarget).WillRepeatedly(Return(nullptr));
+    EXPECT_CALL(*window.get(), GetWindowHandle).WillRepeatedly(Return(nullptr));
 
     view_ = std::make_unique<MockFlutterWindowsView>(std::move(window));
 
@@ -167,6 +167,20 @@ TEST_F(CompositorOpenGLTest, Present) {
   EXPECT_TRUE(compositor.Present(&layer_ptr, 1));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
+}
+
+TEST_F(CompositorOpenGLTest, PresentEmpty) {
+  UseEngineWithView();
+
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
+
+  // The context will be bound twice: first to initialize the compositor, second
+  // to clear the surface.
+  EXPECT_CALL(*surface_manager(), MakeCurrent)
+      .Times(2)
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*view(), SwapBuffers).WillOnce(Return(true));
+  EXPECT_TRUE(compositor.Present(nullptr, 0));
 }
 
 TEST_F(CompositorOpenGLTest, HeadlessPresentIgnored) {

@@ -39,16 +39,22 @@ bool CompositorSoftware::CollectBackingStore(const FlutterBackingStore* store) {
 
 bool CompositorSoftware::Present(const FlutterLayer** layers,
                                  size_t layers_count) {
-  // TODO: Support compositing layers and platform views.
-  // See: https://github.com/flutter/flutter/issues/31713
-  FML_DCHECK(layers_count == 1);
-  FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
-  FML_DCHECK(layers[0]->backing_store->type ==
-             kFlutterBackingStoreTypeSoftware);
-
   if (!engine_->view()) {
     return false;
   }
+
+  // Clear the view if there are no layers to present.
+  if (layers_count == 0) {
+    return engine_->view()->ClearSoftwareBitmap();
+  }
+
+  // TODO: Support compositing layers and platform views.
+  // See: https://github.com/flutter/flutter/issues/31713
+  FML_DCHECK(layers_count == 1);
+  FML_DCHECK(layers[0]->offset.x == 0 && layers[0]->offset.y == 0);
+  FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
+  FML_DCHECK(layers[0]->backing_store->type ==
+             kFlutterBackingStoreTypeSoftware);
 
   const auto& backing_store = layers[0]->backing_store->software;
 

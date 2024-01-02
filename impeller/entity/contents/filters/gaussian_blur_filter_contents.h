@@ -16,9 +16,12 @@ namespace impeller {
 /// Note: This will replace `DirectionalGaussianBlurFilterContents`.
 class GaussianBlurFilterContents final : public FilterContents {
  public:
-  explicit GaussianBlurFilterContents(Scalar sigma, Entity::TileMode tile_mode);
+  explicit GaussianBlurFilterContents(Scalar sigma_x,
+                                      Scalar sigma_y,
+                                      Entity::TileMode tile_mode);
 
-  Scalar GetSigma() const { return sigma_; }
+  Scalar GetSigmaX() const { return sigma_x_; }
+  Scalar GetSigmaY() const { return sigma_y_; }
 
   // |FilterContents|
   std::optional<Rect> GetFilterSourceCoverage(
@@ -38,10 +41,12 @@ class GaussianBlurFilterContents final : public FilterContents {
   /// Calculate the UV coordinates for rendering the filter_input.
   /// @param filter_input The FilterInput that should be rendered.
   /// @param entity The associated entity for the filter_input.
-  /// @param texture_size The size of the texture_size the uvs will be used for.
+  /// @param source_rect The rect in source coordinates to convert to uvs.
+  /// @param texture_size The rect to convert in source coordinates.
   static Quad CalculateUVs(const std::shared_ptr<FilterInput>& filter_input,
                            const Entity& entity,
-                           const ISize& pass_size);
+                           const Rect& source_rect,
+                           const ISize& texture_size);
 
   /// Calculate the scale factor for the downsample pass given a sigma value.
   ///
@@ -67,7 +72,8 @@ class GaussianBlurFilterContents final : public FilterContents {
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const override;
 
-  const Scalar sigma_ = 0.0;
+  const Scalar sigma_x_ = 0.0;
+  const Scalar sigma_y_ = 0.0;
   const Entity::TileMode tile_mode_;
 };
 

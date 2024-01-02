@@ -212,9 +212,9 @@ static std::optional<Entity> AdvancedBlend(
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp =
-        Matrix::MakeOrthographic(size) *
-        Matrix::MakeTranslation(coverage.origin - subpass_coverage.origin);
+    frame_info.mvp = Matrix::MakeOrthographic(size) *
+                     Matrix::MakeTranslation(coverage.GetOrigin() -
+                                             subpass_coverage.GetOrigin());
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -223,16 +223,16 @@ static std::optional<Entity> AdvancedBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass(
-      "Advanced Blend Filter", ISize(subpass_coverage.size), callback);
-  if (!out_texture) {
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      "Advanced Blend Filter", ISize(subpass_coverage.GetSize()), callback);
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{
-          .texture = out_texture,
-          .transform = Matrix::MakeTranslation(subpass_coverage.origin),
+          .texture = render_target.value().GetRenderTargetTexture(),
+          .transform = Matrix::MakeTranslation(subpass_coverage.GetOrigin()),
           // Since we absorbed the transform of the inputs and used the
           // respective snapshot sampling modes when blending, pass on
           // the default NN clamp sampler.
@@ -274,8 +274,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     }
     auto dst_uvs = maybe_dst_uvs.value();
 
-    auto size = coverage.size;
-    auto origin = coverage.origin;
+    auto size = coverage.GetSize();
+    auto origin = coverage.GetOrigin();
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
         {origin, dst_uvs[0], dst_uvs[0]},
@@ -444,8 +444,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     }
     auto dst_uvs = maybe_dst_uvs.value();
 
-    auto size = coverage.size;
-    auto origin = coverage.origin;
+    auto size = coverage.GetSize();
+    auto origin = coverage.GetOrigin();
     auto color = foreground_color.Premultiply();
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
@@ -587,7 +587,7 @@ static std::optional<Entity> PipelineBlend(
 
       VS::FrameInfo frame_info;
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                       Matrix::MakeTranslation(-subpass_coverage.origin) *
+                       Matrix::MakeTranslation(-subpass_coverage.GetOrigin()) *
                        input->transform;
       frame_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
@@ -646,17 +646,17 @@ static std::optional<Entity> PipelineBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass(
-      "Pipeline Blend Filter", ISize(subpass_coverage.size), callback);
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      "Pipeline Blend Filter", ISize(subpass_coverage.GetSize()), callback);
 
-  if (!out_texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{
-          .texture = out_texture,
-          .transform = Matrix::MakeTranslation(subpass_coverage.origin),
+          .texture = render_target.value().GetRenderTargetTexture(),
+          .transform = Matrix::MakeTranslation(subpass_coverage.GetOrigin()),
           // Since we absorbed the transform of the inputs and used the
           // respective snapshot sampling modes when blending, pass on
           // the default NN clamp sampler.
