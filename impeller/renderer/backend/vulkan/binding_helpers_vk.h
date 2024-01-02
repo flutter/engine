@@ -19,7 +19,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands,
-    const TextureVK& input_attachment);
+    const std::shared_ptr<Texture>& color_attachment0);
 
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,

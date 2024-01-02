@@ -219,7 +219,8 @@ SwapchainImplVK::SwapchainImplVK(
   // Swapchain images are primarily used as color attachments (via resolve) or
   // blit targets.
   swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
-                              vk::ImageUsageFlagBits::eTransferDst;
+                              vk::ImageUsageFlagBits::eTransferDst |
+                              vk::ImageUsageFlagBits::eInputAttachment;
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
   // If we set the clipped value to true, Vulkan expects we will never read back

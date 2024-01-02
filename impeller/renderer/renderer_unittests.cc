@@ -22,6 +22,13 @@
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
+#include "impeller/fixtures/sepia.frag.h"
+#include "impeller/fixtures/sepia.vert.h"
+#include "impeller/fixtures/swizzle.frag.h"
+#include "impeller/fixtures/test_texture.frag.h"
+#include "impeller/fixtures/test_texture.vert.h"
+#include "impeller/fixtures/texture.frag.h"
+#include "impeller/fixtures/texture.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
@@ -1312,6 +1319,216 @@ TEST_P(RendererTest, CanLookupRenderTargetProperties) {
             render_target.GetStencilAttachment().has_value());
   EXPECT_EQ(render_pass->GetRenderTargetSize(),
             render_target.GetRenderTargetSize());
+}
+
+template <class VertexShader, class FragmentShader>
+std::shared_ptr<Pipeline<PipelineDescriptor>> CreateDefaultPipeline(
+    const std::shared_ptr<Context>& context) {
+  using TexturePipelineBuilder = PipelineBuilder<VertexShader, FragmentShader>;
+  auto pipeline_desc =
+      TexturePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  if (!pipeline_desc.has_value()) {
+    return nullptr;
+  }
+  pipeline_desc->SetSampleCount(SampleCount::kCount4);
+  pipeline_desc->SetStencilAttachmentDescriptors(std::nullopt);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  if (!pipeline || !pipeline->IsValid()) {
+    return nullptr;
+  }
+  return pipeline;
+}
+
+TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
+  // Define shader types
+  using TextureVS = TextureVertexShader;
+  using TextureFS = TextureFragmentShader;
+
+  using SepiaVS = SepiaVertexShader;
+  using SepiaFS = SepiaFragmentShader;
+
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  // Create pipelines.
+  auto texture_pipeline = CreateDefaultPipeline<TextureVS, TextureFS>(context);
+  auto sepia_pipeline = CreateDefaultPipeline<SepiaVS, SepiaFS>(context);
+
+  ASSERT_TRUE(texture_pipeline);
+  ASSERT_TRUE(sepia_pipeline);
+
+  // Vertex buffer builders.
+  VertexBufferBuilder<TextureVS::PerVertexData> texture_vtx_builder;
+  texture_vtx_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+
+  VertexBufferBuilder<SepiaVS::PerVertexData> sepia_vtx_builder;
+  sepia_vtx_builder.AddVertices({
+      {{100, 100, 0.0}},  // 1
+      {{800, 100, 0.0}},  // 2
+      {{800, 800, 0.0}},  // 3
+      {{100, 100, 0.0}},  // 1
+      {{800, 800, 0.0}},  // 3
+      {{100, 800, 0.0}},  // 4
+  });
+
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+    // Draw the texture.
+    {
+      Command texture_cmd;
+      texture_cmd.pipeline = texture_pipeline;
+      texture_cmd.BindVertices(texture_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      TextureVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      TextureVS::BindUniformBuffer(texture_cmd,
+                                   buffer->EmplaceUniform(uniforms));
+      TextureFS::BindTextureContents(texture_cmd, boston, sampler);
+      if (!pass.AddCommand(std::move(texture_cmd))) {
+        return false;
+      }
+    }
+
+    // Draw the sepia toner.
+    {
+      Command sepia_cmd;
+      sepia_cmd.pipeline = sepia_pipeline;
+      sepia_cmd.BindVertices(sepia_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      SepiaVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      SepiaVS::BindUniformBuffer(sepia_cmd, buffer->EmplaceUniform(uniforms));
+      if (!pass.AddCommand(std::move(sepia_cmd))) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
+  // Define shader types
+  using TextureVS = TextureVertexShader;
+  using TextureFS = TextureFragmentShader;
+
+  using SwizzleVS = SepiaVertexShader;
+  using SwizzleFS = SwizzleFragmentShader;
+
+  using SepiaVS = SepiaVertexShader;
+  using SepiaFS = SepiaFragmentShader;
+
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  // Create pipelines.
+  auto texture_pipeline = CreateDefaultPipeline<TextureVS, TextureFS>(context);
+  auto swizzle_pipeline = CreateDefaultPipeline<SwizzleVS, SwizzleFS>(context);
+  auto sepia_pipeline = CreateDefaultPipeline<SepiaVS, SepiaFS>(context);
+
+  ASSERT_TRUE(texture_pipeline);
+  ASSERT_TRUE(swizzle_pipeline);
+  ASSERT_TRUE(sepia_pipeline);
+
+  // Vertex buffer builders.
+  VertexBufferBuilder<TextureVS::PerVertexData> texture_vtx_builder;
+  texture_vtx_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+
+  VertexBufferBuilder<SepiaVS::PerVertexData> sepia_vtx_builder;
+  sepia_vtx_builder.AddVertices({
+      {{100, 100, 0.0}},  // 1
+      {{800, 100, 0.0}},  // 2
+      {{800, 800, 0.0}},  // 3
+      {{100, 100, 0.0}},  // 1
+      {{800, 800, 0.0}},  // 3
+      {{100, 800, 0.0}},  // 4
+  });
+
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+    // Draw the texture.
+    {
+      Command texture_cmd;
+      texture_cmd.pipeline = texture_pipeline;
+      texture_cmd.BindVertices(texture_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      TextureVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      TextureVS::BindUniformBuffer(texture_cmd,
+                                   buffer->EmplaceUniform(uniforms));
+      TextureFS::BindTextureContents(texture_cmd, boston, sampler);
+      if (!pass.AddCommand(std::move(texture_cmd))) {
+        return false;
+      }
+    }
+
+    // Draw the sepia toner.
+    {
+      Command sepia_cmd;
+      sepia_cmd.pipeline = sepia_pipeline;
+      sepia_cmd.BindVertices(sepia_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      SepiaVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      SepiaVS::BindUniformBuffer(sepia_cmd, buffer->EmplaceUniform(uniforms));
+      if (!pass.AddCommand(std::move(sepia_cmd))) {
+        return false;
+      }
+    }
+
+    // Draw the swizzle.
+    {
+      Command swizzle_cmd;
+      swizzle_cmd.pipeline = swizzle_pipeline;
+      swizzle_cmd.BindVertices(sepia_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      SwizzleVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      SwizzleVS::BindUniformBuffer(swizzle_cmd,
+                                   buffer->EmplaceUniform(uniforms));
+      if (!pass.AddCommand(std::move(swizzle_cmd))) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+  OpenPlaygroundHere(callback);
 }
 
 }  // namespace testing

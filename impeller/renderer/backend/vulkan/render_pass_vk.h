@@ -45,7 +45,7 @@ class RenderPassVK final : public RenderPass {
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
       const std::shared_ptr<CommandBufferVK>& command_buffer,
-      bool has_subpass_dependency) const;
+      size_t subpass_count) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,

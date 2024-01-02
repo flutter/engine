@@ -562,4 +562,9 @@ std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
   return gpu_tracer_;
 }
 
+std::shared_ptr<DescriptorPoolRecyclerVK> ContextVK::GetDescriptorPoolRecycler()
+    const {
+  return descriptor_pool_recycler_;
+}
+
 }  // namespace impeller

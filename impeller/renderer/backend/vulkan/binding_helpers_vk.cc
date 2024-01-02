@@ -18,13 +18,40 @@
 
 namespace impeller {
 
-// Warning: if any of the constant values or layouts are changed in the
-// framebuffer fetch shader, then this input binding may need to be
-// manually changed.
-static constexpr size_t kMagicSubpassInputBinding = 64;
+static bool BindInputAttachments(
+    const PipelineDescriptor& desc,
+    vk::DescriptorSet& vk_desc_set,
+    const std::shared_ptr<Texture>& color_attachment0,
+    std::vector<vk::DescriptorImageInfo>& images,
+    std::vector<vk::WriteDescriptorSet>& writes) {
+  if (!desc.GetVertexDescriptor()->UsesInputAttacments()) {
+    return true;
+  }
+
+  // This routine is a bit of a lark at the moment since there is an assumption
+  // that there can only be one input attachment at a pre-determined binding. No
+  // matter the actual index specification in the shader.
+
+  vk::DescriptorImageInfo image_info;
+  image_info.imageLayout = vk::ImageLayout::eGeneral;
+  // Loads from input attachments in a subpass are direct pixel loads of values
+  // from previous subpasses. As such, there can be no sampling.
+  image_info.sampler = VK_NULL_HANDLE;
+  image_info.imageView = TextureVK::Cast(*color_attachment0).GetImageView();
+  images.push_back(image_info);
+
+  vk::WriteDescriptorSet write_set;
+  write_set.dstSet = vk_desc_set;
+  write_set.dstBinding = 64u;
+  write_set.descriptorCount = 1u;
+  write_set.descriptorType = vk::DescriptorType::eInputAttachment;
+  write_set.pImageInfo = &images.back();
+  writes.push_back(write_set);
+
+  return true;
+}
 
 static bool BindImages(const Bindings& bindings,
-                       Allocator& allocator,
                        const std::shared_ptr<CommandEncoderVK>& encoder,
                        vk::DescriptorSet& vk_desc_set,
                        std::vector<vk::DescriptorImageInfo>& images,
@@ -53,7 +80,6 @@ static bool BindImages(const Bindings& bindings,
     write_set.descriptorCount = 1u;
     write_set.descriptorType = vk::DescriptorType::eCombinedImageSampler;
     write_set.pImageInfo = &images.back();
-
     writes.push_back(write_set);
   }
 
@@ -124,7 +150,7 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
     const std::vector<Command>& commands,
-    const TextureVK& input_attachment) {
+    const std::shared_ptr<Texture>& color_attachment0) {
   if (commands.empty()) {
     return std::vector<vk::DescriptorSet>{};
   }
@@ -132,9 +158,10 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
   // Step 1: Determine the total number of buffer and sampler descriptor
   // sets required. Collect this information along with the layout information
   // to allocate a correctly sized descriptor pool.
-  size_t buffer_count = 0;
-  size_t samplers_count = 0;
-  size_t subpass_count = 0;
+  size_t buffer_count = 0u;
+  size_t samplers_count = 0u;
+  size_t input_attachements_count = 0u;
+
   std::vector<vk::DescriptorSetLayout> layouts;
   layouts.reserve(commands.size());
 
@@ -142,14 +169,17 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     buffer_count += command.vertex_bindings.buffers.size();
     buffer_count += command.fragment_bindings.buffers.size();
     samplers_count += command.fragment_bindings.sampled_images.size();
-    subpass_count +=
-        command.pipeline->GetDescriptor().UsesSubpassInput() ? 1 : 0;
+    input_attachements_count += command.pipeline->GetDescriptor()
+                                        .GetVertexDescriptor()
+                                        ->UsesInputAttacments()
+                                    ? 1u
+                                    : 0u;
 
     layouts.emplace_back(
         PipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
   }
   auto descriptor_result = encoder->AllocateDescriptorSets(
-      buffer_count, samplers_count, subpass_count, layouts);
+      buffer_count, samplers_count, input_attachements_count, layouts);
   if (!descriptor_result.ok()) {
     return descriptor_result.status();
   }
@@ -158,14 +188,14 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     return fml::Status();
   }
 
-  // Step 2: Update the descriptors for all image and buffer descriptors used
-  // in the render pass.
+  // Step 2: Update the descriptors for all image, buffer, and input-attachment
+  // descriptors used in the render pass.
   std::vector<vk::DescriptorImageInfo> images;
   std::vector<vk::DescriptorBufferInfo> buffers;
   std::vector<vk::WriteDescriptorSet> writes;
-  images.reserve(samplers_count + subpass_count);
+  images.reserve(samplers_count + input_attachements_count);
   buffers.reserve(buffer_count);
-  writes.reserve(samplers_count + buffer_count + subpass_count);
+  writes.reserve(samplers_count + buffer_count + input_attachements_count);
 
   auto& allocator = *context.GetResourceAllocator();
   auto desc_index = 0u;
@@ -177,28 +207,15 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
                      descriptor_sets[desc_index], desc_set, buffers, writes) ||
         !BindBuffers(command.fragment_bindings, allocator, encoder,
                      descriptor_sets[desc_index], desc_set, buffers, writes) ||
-        !BindImages(command.fragment_bindings, allocator, encoder,
-                    descriptor_sets[desc_index], images, writes)) {
+        !BindImages(command.fragment_bindings, encoder,
+                    descriptor_sets[desc_index], images, writes) ||
+        !BindInputAttachments(command.pipeline->GetDescriptor(),
+                              descriptor_sets[desc_index], color_attachment0,
+                              images, writes)) {
       return fml::Status(fml::StatusCode::kUnknown,
                          "Failed to bind texture or buffer.");
     }
 
-    if (command.pipeline->GetDescriptor().UsesSubpassInput()) {
-      vk::DescriptorImageInfo image_info;
-      image_info.imageLayout = vk::ImageLayout::eGeneral;
-      image_info.sampler = VK_NULL_HANDLE;
-      image_info.imageView = input_attachment.GetImageView();
-      images.push_back(image_info);
-
-      vk::WriteDescriptorSet write_set;
-      write_set.dstSet = descriptor_sets[desc_index];
-      write_set.dstBinding = kMagicSubpassInputBinding;
-      write_set.descriptorCount = 1u;
-      write_set.descriptorType = vk::DescriptorType::eInputAttachment;
-      write_set.pImageInfo = &images.back();
-
-      writes.push_back(write_set);
-    }
     desc_index += 1;
   }
 
@@ -228,8 +245,8 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     layouts.emplace_back(
         ComputePipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
   }
-  auto descriptor_result =
-      encoder->AllocateDescriptorSets(buffer_count, samplers_count, 0, layouts);
+  auto descriptor_result = encoder->AllocateDescriptorSets(
+      buffer_count, samplers_count, 0u, layouts);
   if (!descriptor_result.ok()) {
     return descriptor_result.status();
   }
@@ -253,8 +270,8 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
 
     if (!BindBuffers(command.bindings, allocator, encoder,
                      descriptor_sets[desc_index], desc_set, buffers, writes) ||
-        !BindImages(command.bindings, allocator, encoder,
-                    descriptor_sets[desc_index], images, writes)) {
+        !BindImages(command.bindings, encoder, descriptor_sets[desc_index],
+                    images, writes)) {
       return fml::Status(fml::StatusCode::kUnknown,
                          "Failed to bind texture or buffer.");
     }

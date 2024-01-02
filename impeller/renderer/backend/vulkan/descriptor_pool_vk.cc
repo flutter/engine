@@ -14,7 +14,7 @@
 
 namespace impeller {
 
-// Holds the command pool in a background thread, recyling it when not in use.
+// Holds the command pool in a background thread, recycling it when not in use.
 class BackgroundDescriptorPoolVK final {
  public:
   BackgroundDescriptorPoolVK(BackgroundDescriptorPoolVK&&) = default;
@@ -83,14 +83,14 @@ fml::StatusOr<std::vector<vk::DescriptorSet>>
 DescriptorPoolVK::AllocateDescriptorSets(
     uint32_t buffer_count,
     uint32_t sampler_count,
-    uint32_t subpass_count,
+    uint32_t input_attachments_count,
     const std::vector<vk::DescriptorSetLayout>& layouts) {
   std::shared_ptr<const ContextVK> strong_context = context_.lock();
   if (!strong_context) {
     return fml::Status(fml::StatusCode::kUnknown, "No device");
   }
   auto minimum_capacity =
-      std::max(std::max(sampler_count, buffer_count), subpass_count);
+      std::max({sampler_count, buffer_count, input_attachments_count});
   auto [new_pool, capacity] =
       strong_context->GetDescriptorPoolRecycler()->Get(minimum_capacity);
   if (!new_pool) {

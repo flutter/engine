@@ -66,7 +66,7 @@ TEST(DescriptorPoolRecyclerVKTest, ReclaimMakesDescriptorPoolAvailable) {
   {
     // Fetch a pool (which will be created).
     auto pool = DescriptorPoolVK(context);
-    pool.AllocateDescriptorSets(1024, 1024, 1024, {});
+    pool.AllocateDescriptorSets(1024, 1024, 1024u, {});
   }
 
   // There is a chance that the first death rattle item below is destroyed in
