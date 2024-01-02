@@ -14,7 +14,7 @@ XCode has a number of built in profiling tools that can easily be used with loca
 
 ![Alt text](assets/ios_profiling/ios_profiler_select_thread.png)
 
-4. Either via keyboard short cut or edit menu, "Deep Copy" the trace.
+4. Copy the trace with the keyboard shortcut (⇧⌘C) or the menu ("Edit" -> "Deep Copy").
 
 ![Alt text](assets/ios_profiling/deep_copy.png)
 
