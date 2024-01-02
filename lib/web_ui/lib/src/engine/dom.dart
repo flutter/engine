@@ -3599,8 +3599,6 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =
     _finalizationRegistryConstructor != null;
-<<<<<<< HEAD
-=======
 
 @JS('window.OffscreenCanvas')
 external JSAny? get _offscreenCanvasConstructor;
@@ -3613,4 +3611,3 @@ extension JSArrayExtension on JSArray {
   external void push(JSAny value);
   external JSNumber get length;
 }
->>>>>>> 6c164f0295 (Reland "Use a single OffscreenCanvas for rendering in CanvasKit (#45744)" (#47241))
