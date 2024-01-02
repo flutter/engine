@@ -2427,7 +2427,8 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
 }
 
 TEST_P(EntityTest, PointFieldCanUseCompute) {
-  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()), GetContext()->GetBackendType() == Context::BackendType::kMetal);
+  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()),
+            GetContext()->GetBackendType() == Context::BackendType::kMetal);
 }
 
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
