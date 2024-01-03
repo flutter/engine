@@ -14,6 +14,7 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/renderer/command_buffer.h"
@@ -21,7 +22,6 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 namespace impeller {
 
@@ -156,87 +156,88 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   /// Render to texture.
   ///
 
-  ContentContext::SubpassCallback subpass_callback = [&](const ContentContext&
-                                                             renderer,
-                                                         RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+  ContentContext::SubpassCallback subpass_callback =
+      [&](const ContentContext& renderer, RenderPass& pass) {
+        auto& host_buffer = pass.GetTransientsBuffer();
 
-    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-    vtx_builder.AddVertices({
-        {Point(0, 0), input_uvs[0]},
-        {Point(1, 0), input_uvs[1]},
-        {Point(0, 1), input_uvs[2]},
-        {Point(1, 1), input_uvs[3]},
-    });
+        VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+        vtx_builder.AddVertices({
+            {Point(0, 0), input_uvs[0]},
+            {Point(1, 0), input_uvs[1]},
+            {Point(0, 1), input_uvs[2]},
+            {Point(1, 1), input_uvs[3]},
+        });
 
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-    frame_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
+        VS::FrameInfo frame_info;
+        frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+        frame_info.texture_sampler_y_coord_scale =
+            input_snapshot->texture->GetYCoordScale();
 
-    auto r = Radius{transformed_blur_radius_length};
-    FS::BlurInfo frag_info = GenerateBlurInfo(
-        {.blur_uv_offset =
-             pass_transform.Invert()
-                 .TransformDirection(Vector2(1, 0))
-                 .Normalize() /
-             Point(input_snapshot->GetCoverage().value().GetSize()),
-         .blur_sigma = Sigma{r}.sigma,
-         .blur_radius = static_cast<int>(std::round(r.radius)),
-         .step_size = 2});
+        auto r = Radius{transformed_blur_radius_length};
+        FS::BlurInfo frag_info = GenerateBlurInfo(
+            {.blur_uv_offset =
+                 pass_transform.Invert()
+                     .TransformDirection(Vector2(1, 0))
+                     .Normalize() /
+                 Point(input_snapshot->GetCoverage().value().GetSize()),
+             .blur_sigma = Sigma{r}.sigma,
+             .blur_radius = static_cast<int>(std::round(r.radius)),
+             .step_size = 2});
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
-                                    transformed_blur_radius_length));
-    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
+        Command cmd;
+        DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
+                                        transformed_blur_radius_length));
+        cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
-    auto options = OptionsFromPass(pass);
-    options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.blend_mode = BlendMode::kSource;
-    auto input_descriptor = input_snapshot->sampler_descriptor;
-    switch (tile_mode_) {
-      case Entity::TileMode::kDecal:
-        if (renderer.GetDeviceCapabilities()
-                .SupportsDecalSamplerAddressMode()) {
-          input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
-          input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+        auto options = OptionsFromPass(pass);
+        options.primitive_type = PrimitiveType::kTriangleStrip;
+        options.blend_mode = BlendMode::kSource;
+        auto input_descriptor = input_snapshot->sampler_descriptor;
+        switch (tile_mode_) {
+          case Entity::TileMode::kDecal:
+            if (renderer.GetDeviceCapabilities()
+                    .SupportsDecalSamplerAddressMode()) {
+              input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+              input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+            }
+            break;
+          case Entity::TileMode::kClamp:
+            input_descriptor.width_address_mode =
+                SamplerAddressMode::kClampToEdge;
+            input_descriptor.height_address_mode =
+                SamplerAddressMode::kClampToEdge;
+            break;
+          case Entity::TileMode::kMirror:
+            input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+            input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+            break;
+          case Entity::TileMode::kRepeat:
+            input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+            input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+            break;
         }
-        break;
-      case Entity::TileMode::kClamp:
-        input_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
-        input_descriptor.height_address_mode = SamplerAddressMode::kClampToEdge;
-        break;
-      case Entity::TileMode::kMirror:
-        input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
-        input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
-        break;
-      case Entity::TileMode::kRepeat:
-        input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
-        input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
-        break;
-    }
-    input_descriptor.mag_filter = MinMagFilter::kLinear;
-    input_descriptor.min_filter = MinMagFilter::kLinear;
+        input_descriptor.mag_filter = MinMagFilter::kLinear;
+        input_descriptor.min_filter = MinMagFilter::kLinear;
 
-    bool has_decal_specialization =
-        tile_mode_ == Entity::TileMode::kDecal &&
-        !renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
+        bool has_decal_specialization =
+            tile_mode_ == Entity::TileMode::kDecal &&
+            !renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
 
-    if (has_decal_specialization) {
-      cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
-    } else {
-      cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-    }
+        if (has_decal_specialization) {
+          cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+        } else {
+          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+        }
 
-    FS::BindTextureSampler(
-        cmd, input_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            input_descriptor));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+        FS::BindTextureSampler(
+            cmd, input_snapshot->texture,
+            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                input_descriptor));
+        VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+        FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    return pass.AddCommand(std::move(cmd));
-  };
+        return pass.AddCommand(std::move(cmd));
+      };
 
   Vector2 scale;
   auto scale_curve = [](Scalar radius) {
