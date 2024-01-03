@@ -376,6 +376,8 @@ def to_gn_args(args):
   # Skia GN args.
   gn_args['skia_enable_flutter_defines'
          ] = True  # Enable Flutter API guards in Skia.
+  gn_args['skia_resolve_filters_before_restore'
+         ] = True  # Temporary staging flag that requires unit test updates.
   gn_args['skia_use_dng_sdk'] = False  # RAW image handling.
   gn_args['skia_use_sfntly'] = False  # PDF handling dependency.
   gn_args['skia_enable_pdf'] = False  # PDF handling.
@@ -740,6 +742,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['target_os'] = 'wasm'
   gn_args['target_cpu'] = 'wasm'
   gn_args['wasm_use_dwarf'] = args.wasm_use_dwarf
+  gn_args['skia_resolve_filters_before_restore'] = True  # Temporary staging
   gn_args['skia_use_angle'] = False
   gn_args['skia_use_dng_sdk'] = False
   gn_args['skia_use_expat'] = False
