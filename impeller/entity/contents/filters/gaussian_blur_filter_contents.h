@@ -6,9 +6,20 @@
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_GAUSSIAN_BLUR_FILTER_CONTENTS_H_
 
 #include <optional>
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 
 namespace impeller {
+
+struct BlurParameters {
+  Point blur_uv_offset;
+  Scalar blur_sigma;
+  Scalar blur_radius;
+  Scalar step_size;
+};
+
+GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
+    BlurParameters parameters);
 
 /// Performs a bidirectional Gaussian blur.
 ///

@@ -20,16 +20,14 @@
 
 uniform f16sampler2D texture_sampler;
 
-uniform BlurInfo {
-  f16vec2 blur_uv_offset;
+struct BlurSample {
+  f16vec2 uv_offset;
+  float16_t coefficient;
+};
 
-  // The blur sigma and radius have a linear relationship which is defined
-  // host-side, but both are useful controls here. Sigma (pixels per standard
-  // deviation) is used to define the gaussian function itself, whereas the
-  // radius is used to limit how much of the function is integrated.
-  float blur_sigma;
-  float16_t blur_radius;
-  float16_t step_size;
+uniform BlurInfo {
+  int sample_count;
+  BlurSample samples[24];
 }
 blur_info;
 
@@ -49,24 +47,12 @@ void main() {
   f16vec4 total_color = f16vec4(0.0hf);
   float16_t gaussian_integral = 0.0hf;
 
-  // Step by 2.0 as a performance optimization, relying on bilinear filtering in
-  // the sampler to blend the texels. Typically the space between pixels is
-  // calculated so their blended amounts match the gaussian coefficients. This
-  // just uses 0.5 as an optimization until the gaussian coefficients are
-  // calculated and passed in from the cpu.
-  for (float16_t i = -blur_info.blur_radius; i <= blur_info.blur_radius;
-       i += blur_info.step_size) {
-    // Use the 32 bit Gaussian function because the 16 bit variation results in
-    // quality loss/visible banding. Also, 16 bit variation internally breaks
-    // down at a moderately high (but still reasonable) blur sigma of >255 when
-    // computing sigma^2 due to the exponent only having 5 bits.
-    float16_t gaussian = float16_t(IPGaussian(float(i), blur_info.blur_sigma));
-    gaussian_integral += gaussian;
+  for (int i = 0; i < blur_info.sample_count; ++i) {
+    float16_t coefficient = blur_info.samples[i].coefficient;
+    gaussian_integral += coefficient;
     total_color +=
-        gaussian * Sample(texture_sampler,  // sampler
-                          v_texture_coords + blur_info.blur_uv_offset *
-                                                 i  // texture coordinates
-                   );
+        coefficient * Sample(texture_sampler,
+                             v_texture_coords + blur_info.samples[i].uv_offset);
   }
 
   frag_color = total_color / gaussian_integral;

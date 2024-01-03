@@ -21,6 +21,7 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 namespace impeller {
 
@@ -173,16 +174,16 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
-    FS::BlurInfo frag_info;
     auto r = Radius{transformed_blur_radius_length};
-    frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = std::round(r.radius);
-    frag_info.step_size = 2.0;
-
-    // The blur direction is in input UV space.
-    frag_info.blur_uv_offset =
-        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize() /
-        Point(input_snapshot->GetCoverage().value().GetSize());
+    FS::BlurInfo frag_info = GenerateBlurInfo(
+        {.blur_uv_offset =
+             pass_transform.Invert()
+                 .TransformDirection(Vector2(1, 0))
+                 .Normalize() /
+             Point(input_snapshot->GetCoverage().value().GetSize()),
+         .blur_sigma = Sigma{r}.sigma,
+         .blur_radius = std::round(r.radius),
+         .step_size = 2.0});
 
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",

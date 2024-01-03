@@ -120,7 +120,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
     const RenderTarget& input_pass,
     const SamplerDescriptor& sampler_descriptor,
     Entity::TileMode tile_mode,
-    const GaussianBlurFragmentShader::BlurInfo& blur_info,
+    const BlurParameters& blur_info,
     std::optional<RenderTarget> destination_target,
     const Quad& blur_uvs) {
   if (blur_info.blur_sigma < kEhCloseEnough) {
@@ -170,7 +170,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
         GaussianBlurVertexShader::BindFrameInfo(
             cmd, host_buffer.EmplaceUniform(frame_info));
         GaussianBlurFragmentShader::BindBlurInfo(
-            cmd, host_buffer.EmplaceUniform(blur_info));
+            cmd, host_buffer.EmplaceUniform(GenerateBlurInfo(blur_info)));
         pass.AddCommand(std::move(cmd));
 
         return true;
@@ -346,7 +346,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   fml::StatusOr<RenderTarget> pass2_out =
       MakeBlurSubpass(renderer, /*input_pass=*/pass1_out.value(),
                       input_snapshot->sampler_descriptor, tile_mode_,
-                      GaussianBlurFragmentShader::BlurInfo{
+                      BlurParameters{
                           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
                           .blur_sigma = scaled_sigma.y * effective_scalar.y,
                           .blur_radius = blur_radius.y * effective_scalar.y,
@@ -367,7 +367,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   fml::StatusOr<RenderTarget> pass3_out =
       MakeBlurSubpass(renderer, /*input_pass=*/pass2_out.value(),
                       input_snapshot->sampler_descriptor, tile_mode_,
-                      GaussianBlurFragmentShader::BlurInfo{
+                      BlurParameters{
                           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
                           .blur_sigma = scaled_sigma.x * effective_scalar.x,
                           .blur_radius = blur_radius.x * effective_scalar.x,
@@ -427,6 +427,19 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
   constexpr Scalar c = 1.f;
   Scalar scalar = c + b * clamped + a * clamped * clamped;
   return clamped * scalar;
+}
+
+GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
+    BlurParameters parameters) {
+  GaussianBlurPipeline::FragmentShader::BlurInfo result{
+      .sample_count = 1,
+      .samples = {{
+          .uv_offset = Point(),
+          .coefficient = 1.0f,
+      }},
+  };
+
+  return result;
 }
 
 }  // namespace impeller
