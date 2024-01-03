@@ -14,8 +14,8 @@ namespace impeller {
 struct BlurParameters {
   Point blur_uv_offset;
   Scalar blur_sigma;
-  Scalar blur_radius;
-  Scalar step_size;
+  int blur_radius;
+  int step_size;
 };
 
 GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(

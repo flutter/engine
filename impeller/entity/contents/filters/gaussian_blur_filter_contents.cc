@@ -343,16 +343,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     }
   }
 
-  fml::StatusOr<RenderTarget> pass2_out =
-      MakeBlurSubpass(renderer, /*input_pass=*/pass1_out.value(),
-                      input_snapshot->sampler_descriptor, tile_mode_,
-                      BlurParameters{
-                          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-                          .blur_sigma = scaled_sigma.y * effective_scalar.y,
-                          .blur_radius = blur_radius.y * effective_scalar.y,
-                          .step_size = 1.0,
-                      },
-                      /*destination_target=*/std::nullopt, blur_uvs);
+  fml::StatusOr<RenderTarget> pass2_out = MakeBlurSubpass(
+      renderer, /*input_pass=*/pass1_out.value(),
+      input_snapshot->sampler_descriptor, tile_mode_,
+      BlurParameters{
+          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
+          .blur_sigma = scaled_sigma.y * effective_scalar.y,
+          .blur_radius =
+              static_cast<int>(std::round(blur_radius.y * effective_scalar.y)),
+          .step_size = 1,
+      },
+      /*destination_target=*/std::nullopt, blur_uvs);
 
   if (!pass2_out.ok()) {
     return std::nullopt;
@@ -364,16 +365,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                ? std::optional<RenderTarget>(pass1_out.value())
                                : std::optional<RenderTarget>(std::nullopt);
 
-  fml::StatusOr<RenderTarget> pass3_out =
-      MakeBlurSubpass(renderer, /*input_pass=*/pass2_out.value(),
-                      input_snapshot->sampler_descriptor, tile_mode_,
-                      BlurParameters{
-                          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-                          .blur_sigma = scaled_sigma.x * effective_scalar.x,
-                          .blur_radius = blur_radius.x * effective_scalar.x,
-                          .step_size = 1.0,
-                      },
-                      pass3_destination, blur_uvs);
+  fml::StatusOr<RenderTarget> pass3_out = MakeBlurSubpass(
+      renderer, /*input_pass=*/pass2_out.value(),
+      input_snapshot->sampler_descriptor, tile_mode_,
+      BlurParameters{
+          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
+          .blur_sigma = scaled_sigma.x * effective_scalar.x,
+          .blur_radius =
+              static_cast<int>(std::round(blur_radius.x * effective_scalar.x)),
+          .step_size = 1,
+      },
+      pass3_destination, blur_uvs);
 
   if (!pass3_out.ok()) {
     return std::nullopt;
@@ -432,12 +434,19 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
 GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
     BlurParameters parameters) {
   GaussianBlurPipeline::FragmentShader::BlurInfo result{
-      .sample_count = 1,
-      .samples = {{
-          .uv_offset = Point(),
-          .coefficient = 1.0f,
-      }},
-  };
+      .sample_count =
+          ((2 * parameters.blur_radius) / parameters.step_size) + 1};
+  FML_CHECK(result.sample_count < 24);
+
+  for (int i = 0; i < result.sample_count; i += parameters.step_size) {
+    int x = i - parameters.blur_radius;
+    result.samples[i] = {
+        .uv_offset = parameters.blur_uv_offset * x,
+        .coefficient = expf(-0.5f * (x * x) /
+                            (parameters.blur_sigma * parameters.blur_sigma)) /
+                       (sqrtf(2.0f * M_PI) * parameters.blur_sigma),
+    };
+  }
 
   return result;
 }

@@ -182,8 +182,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
                  .Normalize() /
              Point(input_snapshot->GetCoverage().value().GetSize()),
          .blur_sigma = Sigma{r}.sigma,
-         .blur_radius = std::round(r.radius),
-         .step_size = 2.0});
+         .blur_radius = static_cast<int>(std::round(r.radius)),
+         .step_size = 2});
 
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
