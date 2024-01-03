@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 
+#include "fml/backtrace.h"
 #include "impeller/core/runtime_types.h"
 #include "inja/inja.hpp"
 

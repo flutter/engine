@@ -69,13 +69,16 @@ static bool OutputIPLR(
   }
 
   for (const auto& platform : switches.PlatformsToCompile()) {
+    if (platform == TargetPlatform::kSkSL) {
+      // Already handled above.
+      continue;
+    }
     SourceOptions options = switches.CreateSourceOptions(platform);
 
     // Invoke the compiler and generate reflection data for a single shader.
 
     Reflector::Options reflector_options =
         CreateReflectorOptions(options, switches);
-    FML_LOG(ERROR) << "WHAT?!?";
     Compiler compiler(source_file_mapping, options, reflector_options);
     if (!compiler.IsValid()) {
       std::cerr << "Compilation failed." << std::endl;
@@ -271,7 +274,6 @@ bool Main(const fml::CommandLine& command_line) {
   Reflector::Options reflector_options =
       CreateReflectorOptions(options, switches);
 
-  FML_LOG(ERROR) << "Here!!";
   Compiler compiler(source_file_mapping, options, reflector_options);
   if (!compiler.IsValid()) {
     std::cerr << "Compilation failed." << std::endl;
