@@ -28,9 +28,8 @@ jobs:
           python-version: '3.7.7' # install the python version needed
       - name: "extract, flatten, and convert to osv-scanner deps"
         run: python ci/deps_parser.py -o osv-scanner-deps.json
-      # TODO: This does not use the get_common_ancestor_commit method in scan_flattened_deps.py yet
       - name: "evaluate git history for common ancestors"
-        run: python ci/scan_flattened_deps.py -d osv-scanner-deps.json -o osv-scanner-ancestor-deps.json
+        run: python ci/scan_deps.py -d osv-scanner-deps.json -o osv-scanner-ancestor-deps.json
       - name: "upload osv-scanner deps"
         uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392
         with:

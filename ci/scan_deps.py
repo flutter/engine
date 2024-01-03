@@ -4,11 +4,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 #
-# Usage: scan_flattened_deps.py --flat-deps <flat DEPS file> --output <vulnerability report>
+# Usage: scan_deps.py --deps <DEPS lockfile> --output <parsed lockfile>
 #
-# This script parses the flattened, fully qualified dependencies,
-# and uses the OSV API to check for known vulnerabilities
-# for the given hash of the dependency
+# This script parses the DEPS provided in lockfile format for osv-scanner
+# so that the common ancestor commits from the mirrored and upstream
+# for each dependency are provided in the lockfile
 
 import argparse
 import json
@@ -177,7 +177,7 @@ def parse_args(args):
   )
 
   parser.add_argument(
-      '--flat-deps',
+      '--deps',
       '-d',
       type=str,
       help='Input osv-scanner compatible deps file.',
@@ -196,7 +196,7 @@ def parse_args(args):
 
 def main(argv):
   args = parse_args(argv)
-  parse_deps_file(args.flat_deps, args.output)
+  parse_deps_file(args.deps, args.output)
   return 0
 
 
