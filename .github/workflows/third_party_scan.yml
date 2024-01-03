@@ -43,7 +43,7 @@ jobs:
       # Download the artifact uploaded in extract-deps step
       download-artifact: converted-OSV-Scanner-deps
       scan-args: |-
-        --lockfile=osv-scanner:osv-scanner-deps.json
+        --lockfile=osv-scanner:osv-scanner-ancestor-deps.json
     # makes sure the osv-formatted vulns are uploaded
     needs:
       extract-deps
