@@ -60,6 +60,10 @@ void TextContents::SetOffset(Vector2 offset) {
   offset_ = offset;
 }
 
+void TextContents::SetForceTextColor(bool value) {
+  force_text_color_ = value;
+}
+
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   return frame_->GetBounds().TransformBounds(entity.GetTransform());
 }
@@ -116,6 +120,14 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.text_color = ToVector(color.Premultiply());
 
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+
+  if (type == GlyphAtlas::Type::kColorBitmap) {
+    using FSS = GlyphAtlasColorPipeline::FragmentShader;
+    FSS::FragInfo frag_info;
+    frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
+    FSS::BindFragInfo(cmd,
+                      pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+  }
 
   SamplerDescriptor sampler_desc;
   if (frame_info.is_translation_scale) {
@@ -183,13 +195,8 @@ bool TextContents::Render(const ContentContext& renderer,
               continue;
             }
             const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
-            vtx.atlas_glyph_bounds = Vector4(
-                atlas_glyph_bounds.origin.x, atlas_glyph_bounds.origin.y,
-                atlas_glyph_bounds.size.width, atlas_glyph_bounds.size.height);
-            vtx.glyph_bounds = Vector4(glyph_position.glyph.bounds.origin.x,
-                                       glyph_position.glyph.bounds.origin.y,
-                                       glyph_position.glyph.bounds.size.width,
-                                       glyph_position.glyph.bounds.size.height);
+            vtx.atlas_glyph_bounds = Vector4(atlas_glyph_bounds.GetXYWH());
+            vtx.glyph_bounds = Vector4(glyph_position.glyph.bounds.GetXYWH());
             vtx.glyph_position = glyph_position.position;
 
             for (const Point& point : unit_points) {

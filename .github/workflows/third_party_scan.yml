@@ -25,7 +25,7 @@ jobs:
         with:
           persist-credentials: false
       - name: "setup python"
-        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
         with:
           python-version: '3.7.7' # install the python version needed
       - name: "extract, flatten, and convert to osv-scanner deps"
@@ -34,7 +34,7 @@ jobs:
       - name: "evaluate git history for common ancestors"
         run: python ci/scan_flattened_deps.py -d osv-scanner-deps.json -o osv-scanner-ancestor-deps.json
       - name: "upload osv-scanner deps"
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
+        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392
         with:
           name: converted-OSV-Scanner-deps
           path: osv-scanner-ancestor-deps.json

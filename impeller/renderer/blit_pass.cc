@@ -8,6 +8,7 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/renderer/blit_command.h"
 
@@ -50,6 +51,16 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
         "(%d) for blits.",
         static_cast<int>(source->GetTextureDescriptor().sample_count),
         static_cast<int>(destination->GetTextureDescriptor().sample_count));
+    return false;
+  }
+  if (source->GetTextureDescriptor().format !=
+      destination->GetTextureDescriptor().format) {
+    VALIDATION_LOG << SPrintF(
+        "The source pixel format (%s) must match the destination pixel format "
+        "(%s) "
+        "for blits.",
+        PixelFormatToString(source->GetTextureDescriptor().format),
+        PixelFormatToString(destination->GetTextureDescriptor().format));
     return false;
   }
 
@@ -96,7 +107,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
   auto bytes_per_pixel =
       BytesPerPixelForPixelFormat(source->GetTextureDescriptor().format);
-  auto bytes_per_image = source_region->size.Area() * bytes_per_pixel;
+  auto bytes_per_image = source_region->Area() * bytes_per_pixel;
   if (destination_offset + bytes_per_image >
       destination->GetDeviceBufferDescriptor().size) {
     VALIDATION_LOG

@@ -8,12 +8,12 @@
 
 namespace impeller {
 
-StrokePathGeometry::StrokePathGeometry(const Path& path,
+StrokePathGeometry::StrokePathGeometry(Path path,
                                        Scalar stroke_width,
                                        Scalar miter_limit,
                                        Cap stroke_cap,
                                        Join stroke_join)
-    : path_(path),
+    : path_(std::move(path)),
       stroke_width_(stroke_width),
       miter_limit_(miter_limit),
       stroke_cap_(stroke_cap),
@@ -489,7 +489,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
       entity.GetTransform().GetMaxBasisLength());
   auto vertex_builder = ComputeUVGeometryCPU(
-      stroke_builder, {0, 0}, texture_coverage.size, effect_transform);
+      stroke_builder, {0, 0}, texture_coverage.GetSize(), effect_transform);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,

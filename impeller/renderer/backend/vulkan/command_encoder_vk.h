@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_ENCODER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_ENCODER_VK_H_
 
 #include <cstdint>
 #include <functional>
 #include <optional>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
@@ -85,6 +85,7 @@ class CommandEncoderVK {
   fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateDescriptorSets(
       uint32_t buffer_count,
       uint32_t sampler_count,
+      uint32_t subpass_count,
       const std::vector<vk::DescriptorSetLayout>& layouts);
 
  private:
@@ -104,3 +105,5 @@ class CommandEncoderVK {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_ENCODER_VK_H_

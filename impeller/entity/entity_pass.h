@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
+#define FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
 
 #include <cstdint>
 #include <functional>
@@ -72,6 +73,7 @@ class EntityPass {
 
   std::unique_ptr<EntityPass> Clone() const;
 
+  /// @brief Add an entity to the current entity pass.
   void AddEntity(Entity entity);
 
   void SetElements(std::vector<Element> elements);
@@ -134,7 +136,13 @@ class EntityPass {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  Color GetClearColor(ISize size = ISize::Infinite()) const;
+  /// @brief Return the premultiplied clear color of the pass entities, if any.
+  std::optional<Color> GetClearColor(ISize size = ISize::Infinite()) const;
+
+  /// @brief Return the premultiplied clear color of the pass entities.
+  ///
+  /// If the entity pass has no clear color, this will return transparent black.
+  Color GetClearColorOrDefault(ISize size = ISize::Infinite()) const;
 
   void SetBackdropFilter(BackdropFilterProc proc);
 
@@ -183,7 +191,7 @@ class EntityPass {
     ///         error while resolving the Entity.
     Status status = kFailure;
 
-    static EntityResult Success(const Entity& e) { return {e, kSuccess}; }
+    static EntityResult Success(Entity e) { return {std::move(e), kSuccess}; }
     static EntityResult Failure() { return {{}, kFailure}; }
     static EntityResult Skip() { return {{}, kSkip}; }
   };
@@ -334,3 +342,5 @@ class EntityPassClipRecorder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_

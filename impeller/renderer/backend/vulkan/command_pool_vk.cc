@@ -8,7 +8,6 @@
 #include <optional>
 #include <utility>
 
-#include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
@@ -213,8 +212,6 @@ std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
 }
 
 void CommandPoolRecyclerVK::Reclaim(vk::UniqueCommandPool&& pool) {
-  TRACE_EVENT0("impeller", "ReclaimCommandPool");
-
   // Reset the pool on a background thread.
   auto strong_context = context_.lock();
   if (!strong_context) {

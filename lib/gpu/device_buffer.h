@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_GPU_DEVICE_BUFFER_H_
+#define FLUTTER_LIB_GPU_DEVICE_BUFFER_H_
 
 #include "flutter/lib/gpu/context.h"
 #include "flutter/lib/gpu/export.h"
@@ -21,6 +22,8 @@ class DeviceBuffer : public RefCountedDartWrappable<DeviceBuffer> {
   explicit DeviceBuffer(std::shared_ptr<impeller::DeviceBuffer> device_buffer);
 
   ~DeviceBuffer() override;
+
+  std::shared_ptr<impeller::DeviceBuffer> GetBuffer();
 
   bool Overwrite(const tonic::DartByteData& source_bytes,
                  size_t destination_offset_in_bytes);
@@ -60,3 +63,5 @@ extern bool InternalFlutterGpu_DeviceBuffer_Overwrite(
     int destination_offset_in_bytes);
 
 }  // extern "C"
+
+#endif  // FLUTTER_LIB_GPU_DEVICE_BUFFER_H_

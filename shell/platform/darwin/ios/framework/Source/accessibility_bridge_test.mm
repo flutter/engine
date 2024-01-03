@@ -14,9 +14,10 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-FLUTTER_ASSERT_NOT_ARC
+FLUTTER_ASSERT_ARC
+
 @class MockPlatformView;
-static MockPlatformView* gMockPlatformView = nil;
+__weak static MockPlatformView* gMockPlatformView = nil;
 
 @interface MockPlatformView : UIView
 @end
@@ -32,7 +33,6 @@ static MockPlatformView* gMockPlatformView = nil;
 
 - (void)dealloc {
   gMockPlatformView = nil;
-  [super dealloc];
 }
 
 @end
@@ -50,12 +50,6 @@ static MockPlatformView* gMockPlatformView = nil;
   return self;
 }
 
-- (void)dealloc {
-  [_view release];
-  _view = nil;
-  [super dealloc];
-}
-
 @end
 
 @interface MockFlutterPlatformFactory : NSObject <FlutterPlatformViewFactory>
@@ -65,7 +59,7 @@ static MockPlatformView* gMockPlatformView = nil;
 - (NSObject<FlutterPlatformView>*)createWithFrame:(CGRect)frame
                                    viewIdentifier:(int64_t)viewId
                                         arguments:(id _Nullable)args {
-  return [[[MockFlutterPlatformView alloc] init] autorelease];
+  return [[MockFlutterPlatformView alloc] init];
 }
 
 @end
@@ -298,7 +292,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     std::string label = "some label";
     flutterPlatformViewsController->SetFlutterView(mockFlutterView);
 
-    MockFlutterPlatformFactory* factory = [[[MockFlutterPlatformFactory alloc] init] autorelease];
+    MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
     flutterPlatformViewsController->RegisterViewFactory(
         factory, @"MockFlutterPlatformView",
         FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -354,7 +348,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
         /*worker_task_runner=*/nil,
         /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
 
-    MockFlutterPlatformFactory* factory = [[[MockFlutterPlatformFactory alloc] init] autorelease];
+    MockFlutterPlatformFactory* factory = [[MockFlutterPlatformFactory alloc] init];
     flutterPlatformViewsController->RegisterViewFactory(
         factory, @"MockFlutterPlatformView",
         FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
@@ -378,7 +372,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertNil(gMockPlatformView);
   XCTAssertNil(flutterViewController.viewIfLoaded);
   [flutterViewController deregisterNotifications];
-  [flutterViewController release];
 }
 
 - (void)testReplacedSemanticsDoesNotCleanupChildren {
@@ -649,7 +642,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -768,7 +761,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -854,7 +847,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -931,7 +924,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1066,7 +1059,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1165,7 +1158,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1253,7 +1246,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1347,7 +1340,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1369,6 +1362,61 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertEqual([accessibility_notifications count], 1ul);
   XCTAssertEqual([accessibility_notifications[0][@"notification"] unsignedIntValue],
                  UIAccessibilityLayoutChangedNotification);
+}
+
+- (void)testAccessibilityObjectDidBecomeFocused {
+  flutter::MockDelegate mock_delegate;
+  auto thread = std::make_unique<fml::Thread>("AccessibilityBridgeTest");
+  auto thread_task_runner = thread->GetTaskRunner();
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  id messenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  id engine = OCMClassMock([FlutterEngine class]);
+  id flutterViewController = OCMClassMock([FlutterViewController class]);
+
+  OCMStub([flutterViewController engine]).andReturn(engine);
+  OCMStub([engine binaryMessenger]).andReturn(messenger);
+  FlutterBinaryMessengerConnection connection = 123;
+  OCMStub([messenger setMessageHandlerOnChannel:@"flutter/accessibility"
+                           binaryMessageHandler:[OCMArg any]])
+      .andReturn(connection);
+
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/mock_delegate.settings_.enable_impeller
+          ? flutter::IOSRenderingAPI::kMetal
+          : flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/nil,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_sync_switch=*/std::make_shared<fml::SyncSwitch>());
+  fml::AutoResetWaitableEvent latch;
+  thread_task_runner->PostTask([&] {
+    auto weakFactory =
+        std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(flutterViewController);
+    platform_view->SetOwnerViewController(weakFactory->GetWeakNSObject());
+    auto bridge =
+        std::make_unique<flutter::AccessibilityBridge>(/*view=*/nil,
+                                                       /*platform_view=*/platform_view.get(),
+                                                       /*platform_views_controller=*/nil);
+    XCTAssertTrue(bridge.get());
+    OCMVerify([messenger setMessageHandlerOnChannel:@"flutter/accessibility"
+                               binaryMessageHandler:[OCMArg isNotNil]]);
+
+    bridge->AccessibilityObjectDidBecomeFocused(123);
+
+    NSDictionary<NSString*, id>* annotatedEvent = @{@"type" : @"didGainFocus", @"nodeId" : @123};
+    NSData* encodedMessage = [[FlutterStandardMessageCodec sharedInstance] encode:annotatedEvent];
+
+    OCMVerify([messenger sendOnChannel:@"flutter/accessibility" message:encodedMessage]);
+    latch.Signal();
+  });
+  latch.Wait();
+
+  [engine stopMocking];
 }
 
 - (void)testAnnouncesRouteChangesWhenNoNamesRoute {
@@ -1393,7 +1441,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1465,7 +1513,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1536,7 +1584,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1613,7 +1661,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1692,7 +1740,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1767,7 +1815,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1845,7 +1893,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   std::string label = "some label";
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1903,7 +1951,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -1967,7 +2015,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   OCMStub([mockFlutterViewController view]).andReturn(mockFlutterView);
 
   NSMutableArray<NSDictionary<NSString*, id>*>* accessibility_notifications =
-      [[[NSMutableArray alloc] init] autorelease];
+      [[NSMutableArray alloc] init];
   auto ios_delegate = std::make_unique<flutter::MockIosDelegate>();
   ios_delegate->on_PostAccessibilityNotification_ =
       [accessibility_notifications](UIAccessibilityNotifications notification, id argument) {
@@ -2085,8 +2133,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   FlutterSemanticsScrollView* flutterSemanticsScrollView;
   @autoreleasepool {
     FlutterScrollableSemanticsObject* semanticsObject =
-        [[[FlutterScrollableSemanticsObject alloc] initWithBridge:bridge->GetWeakPtr()
-                                                              uid:1234] autorelease];
+        [[FlutterScrollableSemanticsObject alloc] initWithBridge:bridge->GetWeakPtr() uid:1234];
 
     flutterSemanticsScrollView = semanticsObject.nativeAccessibility;
   }

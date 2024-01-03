@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_
+#define FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_
 
 #include "gmock/gmock.h"
 #include "impeller/core/allocator.h"
@@ -19,7 +20,8 @@ namespace testing {
 
 class MockDeviceBuffer : public DeviceBuffer {
  public:
-  MockDeviceBuffer(const DeviceBufferDescriptor& desc) : DeviceBuffer(desc) {}
+  explicit MockDeviceBuffer(const DeviceBufferDescriptor& desc)
+      : DeviceBuffer(desc) {}
 
   MOCK_METHOD(bool, SetLabel, (const std::string& label), (override));
 
@@ -103,8 +105,8 @@ class MockRenderPass : public RenderPass {
 
 class MockCommandBuffer : public CommandBuffer {
  public:
-  MockCommandBuffer(std::weak_ptr<const Context> context)
-      : CommandBuffer(context) {}
+  explicit MockCommandBuffer(std::weak_ptr<const Context> context)
+      : CommandBuffer(std::move(context)) {}
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(void, SetLabel, (const std::string& label), (const, override));
   MOCK_METHOD(std::shared_ptr<BlitPass>, OnCreateBlitPass, (), (override));
@@ -166,7 +168,7 @@ class MockImpellerContext : public Context {
 
 class MockTexture : public Texture {
  public:
-  MockTexture(const TextureDescriptor& desc) : Texture(desc) {}
+  explicit MockTexture(const TextureDescriptor& desc) : Texture(desc) {}
   MOCK_METHOD(void, SetLabel, (std::string_view label), (override));
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(ISize, GetSize, (), (const, override));
@@ -214,3 +216,5 @@ class MockSampler : public Sampler {
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_

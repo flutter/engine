@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENT_CONTEXT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENT_CONTEXT_H_
 
 #include <initializer_list>
 #include <memory>
@@ -10,14 +11,14 @@
 #include <unordered_map>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
+#include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -278,11 +279,25 @@ struct ContentContextOptions {
   bool is_for_rrect_blur_clear = false;
 
   struct Hash {
-    constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      return fml::HashCombine(
-          o.sample_count, o.blend_mode, o.stencil_compare, o.stencil_operation,
-          o.primitive_type, o.color_attachment_pixel_format,
-          o.has_stencil_attachment, o.wireframe, o.is_for_rrect_blur_clear);
+    constexpr uint64_t operator()(const ContentContextOptions& o) const {
+      static_assert(sizeof(o.sample_count) == 1);
+      static_assert(sizeof(o.blend_mode) == 1);
+      static_assert(sizeof(o.sample_count) == 1);
+      static_assert(sizeof(o.stencil_compare) == 1);
+      static_assert(sizeof(o.stencil_operation) == 1);
+      static_assert(sizeof(o.primitive_type) == 1);
+      static_assert(sizeof(o.color_attachment_pixel_format) == 1);
+
+      return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
+             (o.wireframe ? 1llu : 0llu) << 1 |
+             (o.has_stencil_attachment ? 1llu : 0llu) << 2 |
+             // enums
+             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
+             static_cast<uint64_t>(o.primitive_type) << 24 |
+             static_cast<uint64_t>(o.stencil_operation) << 32 |
+             static_cast<uint64_t>(o.stencil_compare) << 40 |
+             static_cast<uint64_t>(o.blend_mode) << 48 |
+             static_cast<uint64_t>(o.sample_count) << 56;
     }
   };
 
@@ -678,10 +693,17 @@ class ContentContext {
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(const std::string& label,
-                                       ISize texture_size,
-                                       const SubpassCallback& subpass_callback,
-                                       bool msaa_enabled = true) const;
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      ISize texture_size,
+      const SubpassCallback& subpass_callback,
+      bool msaa_enabled = true) const;
+
+  /// Makes a subpass that will render to `subpass_target`.
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      const RenderTarget& subpass_target,
+      const SubpassCallback& subpass_callback) const;
 
   std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
@@ -713,13 +735,15 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<int32_t>& constants = {}) {
+                       const std::initializer_list<Scalar>& constants = {},
+                       UseSubpassInput subpass_input = UseSubpassInput::kNo) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
+      desc->SetUseSubpassInput(subpass_input);
       options.ApplyToPipelineDescriptor(*desc);
       SetDefault(options, std::make_unique<PipelineT>(context, desc));
     }
@@ -906,3 +930,5 @@ class ContentContext {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENT_CONTEXT_H_

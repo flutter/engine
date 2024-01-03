@@ -33,6 +33,7 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/surface.h"
@@ -71,10 +72,6 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
       {{800, 800, 0.0}, {1.0, 1.0}},  // 3
       {{100, 800, 0.0}, {0.0, 1.0}},  // 4
   });
-  auto vertex_buffer =
-      vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
-  ASSERT_TRUE(vertex_buffer);
-
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
@@ -95,7 +92,8 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     DEBUG_COMMAND_INFO(cmd, "Box");
     cmd.pipeline = pipeline;
 
-    cmd.BindVertices(vertex_buffer);
+    cmd.BindVertices(
+        vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator()));
 
     VS::UniformBuffer uniforms;
     uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -1255,6 +1253,40 @@ TEST_P(RendererTest, StencilMask) {
     return true;
   };
   OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanPreAllocateCommands) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  render_pass->ReserveCommands(100u);
+
+  EXPECT_EQ(render_pass->GetCommands().capacity(), 100u);
+}
+
+TEST_P(RendererTest, CanLookupRenderTargetProperties) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  auto render_target =
+      RenderTarget::CreateOffscreen(*context, *render_target_cache, {100, 100});
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+
+  EXPECT_EQ(render_pass->GetSampleCount(), render_target.GetSampleCount());
+  EXPECT_EQ(render_pass->GetRenderTargetPixelFormat(),
+            render_target.GetRenderTargetPixelFormat());
+  EXPECT_EQ(render_pass->HasStencilAttachment(),
+            render_target.GetStencilAttachment().has_value());
+  EXPECT_EQ(render_pass->GetRenderTargetSize(),
+            render_target.GetRenderTargetSize());
 }
 
 }  // namespace testing

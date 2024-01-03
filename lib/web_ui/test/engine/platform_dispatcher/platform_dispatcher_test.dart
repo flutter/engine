@@ -200,6 +200,58 @@ void testMain() {
       expect(ui.PlatformDispatcher.instance.textScaleFactor,
           findBrowserTextScaleFactor());
     });
+
+    test('disposes all its views', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view3 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2)
+        ..registerView(view3);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+      expect(view3.isDisposed, isFalse);
+
+      dispatcher.dispose();
+      expect(view1.isDisposed, isTrue);
+      expect(view2.isDisposed, isTrue);
+      expect(view3.isDisposed, isTrue);
+    });
+
+    test('connects view disposal to metrics changed event', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      expect(onMetricsChangedCalled, isFalse);
+
+      dispatcher.viewManager.disposeAndUnregisterView(view2.viewId);
+
+      expect(onMetricsChangedCalled, isTrue, reason: 'onMetricsChanged should have been called.');
+
+      dispatcher.dispose();
+    });
   });
 }
 

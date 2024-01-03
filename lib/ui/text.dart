@@ -1191,6 +1191,57 @@ class FontVariation {
   String toString() => "FontVariation('$axis', $value)";
 }
 
+/// The measurements of a character (or a sequence of visually connected
+/// characters) within a paragraph.
+///
+/// See also:
+///
+///  * [Paragraph.getGlyphInfoAt], which finds the [GlyphInfo] associated with
+///    a code unit in the text.
+///  * [Paragraph.getClosestGlyphInfoForOffset], which finds the [GlyphInfo] of
+///    the glyph(s) onscreen that's closest to the given [Offset].
+final class GlyphInfo {
+  /// Creates a [GlyphInfo] with the specified values.
+  GlyphInfo(this.graphemeClusterLayoutBounds, this.graphemeClusterCodeUnitRange, this.writingDirection);
+
+  GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR)
+    : graphemeClusterLayoutBounds = Rect.fromLTRB(left, top, right, bottom),
+      graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
+      writingDirection = isLTR ? TextDirection.ltr : TextDirection.rtl;
+
+  /// The layout bounding rect of the associated character, in the paragraph's
+  /// coordinates.
+  ///
+  /// This is **not** a tight bounding box that encloses the character's outline.
+  /// The vertical extent reported is derived from the font metrics (instead of
+  /// glyph metrics), and the horizontal extent is the horizontal advance of the
+  /// character.
+  final Rect graphemeClusterLayoutBounds;
+
+  /// The UTF-16 range of the associated character in the text.
+  final TextRange graphemeClusterCodeUnitRange;
+
+  /// The writing direction within the [GlyphInfo].
+  final TextDirection writingDirection;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is GlyphInfo
+        && graphemeClusterLayoutBounds == other.graphemeClusterLayoutBounds
+        && graphemeClusterCodeUnitRange == other.graphemeClusterCodeUnitRange
+        && writingDirection == other.writingDirection;
+  }
+
+  @override
+  int get hashCode => Object.hash(graphemeClusterLayoutBounds, graphemeClusterCodeUnitRange, writingDirection);
+
+  @override
+  String toString() => 'Glyph($graphemeClusterLayoutBounds, textRange: $graphemeClusterCodeUnitRange, direction: $writingDirection)';
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -2969,7 +3020,30 @@ abstract class Paragraph {
   List<TextBox> getBoxesForPlaceholders();
 
   /// Returns the text position closest to the given offset.
+  ///
+  /// This method always returns a [TextPosition] for any given [offset], even
+  /// when the [offset] is not close to any text, or when the paragraph is empty.
+  /// This is useful for determining the text to select when the user drags the
+  /// text selection handle.
+  ///
+  /// See also:
+  ///
+  ///  * [getClosestGlyphInfoForOffset], which returns more information about
+  ///    the closest character to an [Offset].
   TextPosition getPositionForOffset(Offset offset);
+
+  /// Returns the [GlyphInfo] of the glyph closest to the given `offset` in the
+  /// paragraph coordinate system, or null if if the text is empty, or is
+  /// entirely clipped or ellipsized away.
+  ///
+  /// This method first finds the line closest to `offset.dy`, and then returns
+  /// the [GlyphInfo] of the closest glyph(s) within that line.
+  GlyphInfo? getClosestGlyphInfoForOffset(Offset offset);
+
+  /// Returns the [GlyphInfo] located at the given UTF-16 `codeUnitOffset` in
+  /// the paragraph, or null if the given `codeUnitOffset` is out of the visible
+  /// lines or is ellipsized.
+  GlyphInfo? getGlyphInfoAt(int codeUnitOffset);
 
   /// Returns the [TextRange] of the word at the given [TextPosition].
   ///
@@ -3134,6 +3208,16 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
 
   @Native<Handle Function(Pointer<Void>, Double, Double)>(symbol: 'Paragraph::getPositionForOffset')
   external List<int> _getPositionForOffset(double dx, double dy);
+
+  @override
+  GlyphInfo? getGlyphInfoAt(int codeUnitOffset) => _getGlyphInfoAt(codeUnitOffset, GlyphInfo._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getGlyphInfoAt')
+  external GlyphInfo? _getGlyphInfoAt(int codeUnitOffset, Function constructor);
+
+  @override
+  GlyphInfo? getClosestGlyphInfoForOffset(Offset offset) => _getClosestGlyphInfoForOffset(offset.dx, offset.dy, GlyphInfo._);
+  @Native<Handle Function(Pointer<Void>, Double, Double, Handle)>(symbol: 'Paragraph::getClosestGlyphInfo')
+  external GlyphInfo? _getClosestGlyphInfoForOffset(double dx, double dy, Function constructor);
 
   @override
   TextRange getWordBoundary(TextPosition position) {

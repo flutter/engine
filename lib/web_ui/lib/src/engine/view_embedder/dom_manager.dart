@@ -6,6 +6,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../configuration.dart';
 import '../dom.dart';
+import '../platform_views/content_manager.dart';
 import '../safe_browser_api.dart';
 import '../semantics/semantics.dart';
 import 'style_manager.dart';
@@ -43,7 +44,7 @@ import 'style_manager.dart';
 ///   +- <style>
 ///
 class DomManager {
-  factory DomManager({required double devicePixelRatio}) {
+  factory DomManager({required int viewId, required double devicePixelRatio}) {
     final DomElement rootElement = domDocument.createElement(DomManager.flutterViewTagName);
     final DomElement platformViewsHost = domDocument.createElement(DomManager.glassPaneTagName);
     final DomShadowRoot renderingHost = _attachShadowRoot(platformViewsHost);
@@ -52,10 +53,20 @@ class DomManager {
     final DomElement semanticsHost = domDocument.createElement(DomManager.semanticsHostTagName);
     final DomElement announcementsHost = createDomElement(DomManager.announcementsHostTagName);
 
-    // Root element children.
+    // This `flt-view-id` attribute does not serve a function in the engine's
+    // operation, but it's useful for debugging, test automation, and DOM
+    // interop use-cases. It allows one to use CSS selectors to find views by
+    // their identifiers.
+    //
+    // Example:
+    //
+    //     document.querySelector('flutter-view[flt-view-id="$viewId"]')
+    rootElement.setAttribute('flt-view-id', viewId);
 
+    // Root element children.
     rootElement.appendChild(platformViewsHost);
     rootElement.appendChild(textEditingHost);
+
     // The semantic host goes last because hit-test order-wise it must be
     // first. If semantics goes under the scene host, platform views will
     // obscure semantic elements.
@@ -70,10 +81,7 @@ class DomManager {
 
     // Rendering host (shadow root) children.
 
-    // TODO(yjbanov): In a multi-view world, we may want to have a separate
-    //                semantics owner for each view.
-    //                https://github.com/flutter/flutter/issues/137445
-    final DomElement accessibilityPlaceholder = EngineSemanticsOwner
+    final DomElement accessibilityPlaceholder = EngineSemantics
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
@@ -196,6 +204,33 @@ class DomManager {
       _lastSceneElement = sceneElement;
       sceneHost.append(sceneElement);
     }
+  }
+
+  /// Injects a platform view with [platformViewId] into [platformViewsHost].
+  ///
+  /// If the platform view is already injected, this method does *nothing*.
+  ///
+  /// The `platformViewsHost` can only be different if `platformViewId` is moving
+  /// from one [FlutterView] to another. In that case, the browser will move the
+  /// slot contents from the old `platformViewsHost` to the new one, but that
+  /// will cause the platformView to reset its state (an iframe will re-render,
+  /// text selections will be lost, video playback interrupted, etc...)
+  ///
+  /// Try not to move platform views across views!
+  void injectPlatformView(int platformViewId) {
+    // For now, we don't need anything fancier. If needed, this can be converted
+    // to a PlatformViewStrategy class for each web-renderer backend?
+    final DomElement? pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
+    if (pv == null) {
+      domWindow.console.debug('Failed to inject Platform View Id: $platformViewId. '
+        'Render seems to be happening before a `flutter/platform_views:create` platform message!');
+      return;
+    }
+    // If pv is already a descendant of platformViewsHost -> noop
+    if (pv.parent == platformViewsHost) {
+      return;
+    }
+    platformViewsHost.append(pv);
   }
 }
 

@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_
+#define FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gmock/gmock-function-mocker.h"
@@ -18,8 +20,8 @@ namespace testing {
 
 class CommandBufferMock : public CommandBuffer {
  public:
-  CommandBufferMock(std::weak_ptr<const Context> context)
-      : CommandBuffer(context) {}
+  explicit CommandBufferMock(std::weak_ptr<const Context> context)
+      : CommandBuffer(std::move(context)) {}
 
   MOCK_METHOD(bool, IsValid, (), (const, override));
 
@@ -32,7 +34,7 @@ class CommandBufferMock : public CommandBuffer {
 
   static std::shared_ptr<RenderPass> ForwardOnCreateRenderPass(
       CommandBuffer* command_buffer,
-      RenderTarget render_target) {
+      const RenderTarget& render_target) {
     return command_buffer->OnCreateRenderPass(render_target);
   }
 
@@ -48,7 +50,7 @@ class CommandBufferMock : public CommandBuffer {
               (override));
   static bool ForwardOnSubmitCommands(CommandBuffer* command_buffer,
                                       CompletionCallback callback) {
-    return command_buffer->OnSubmitCommands(callback);
+    return command_buffer->OnSubmitCommands(std::move(callback));
   }
 
   MOCK_METHOD(void, OnWaitUntilScheduled, (), (override));
@@ -114,3 +116,5 @@ class ContextMock : public Context {
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_

@@ -125,6 +125,7 @@ class ParagraphLine {
     required this.widthWithTrailingSpaces,
     required this.fragments,
     required this.textDirection,
+    required this.paragraph,
     this.displayText,
   }) : assert(trailingNewlines <= endIndex - startIndex),
        lineMetrics = EngineLineMetrics(
@@ -151,6 +152,17 @@ class ParagraphLine {
   /// the text and doesn't stop at the overflow cutoff.
   final int endIndex;
 
+  /// The largest visible index (exclusive) in this line.
+  ///
+  /// When the line contains an overflow, or is ellipsized at the end, this is
+  /// the largest index that remains visible in this line. If the entire line is
+  /// ellipsized, this returns [startIndex];
+  late final int visibleEndIndex = switch (fragments) {
+    [] => startIndex,
+    [...final List<LayoutFragment> rest, EllipsisFragment()]
+    || final List<LayoutFragment> rest => rest.last.end,
+  };
+
   /// The number of new line characters at the end of the line.
   final int trailingNewlines;
 
@@ -173,6 +185,10 @@ class ParagraphLine {
   final double widthWithTrailingSpaces;
 
   /// The fragments that make up this line.
+  ///
+  /// The fragments in the [List] are sorted by their logical order in within the
+  /// line. In other words, a [LayoutFragment] in the [List] will have larger
+  /// start and end indices than all [LayoutFragment]s that appear before it.
   final List<LayoutFragment> fragments;
 
   /// The text direction of this line, which is the same as the paragraph's.
@@ -180,6 +196,9 @@ class ParagraphLine {
 
   /// The text to be rendered on the screen representing this line.
   final String? displayText;
+
+  /// The [CanvasParagraph] this line is part of.
+  final CanvasParagraph paragraph;
 
   /// The number of space characters in the line excluding trailing spaces.
   int get nonTrailingSpaces => spaceCount - trailingSpaces;
@@ -206,6 +225,165 @@ class ParagraphLine {
       buffer.write(fragment.getText(paragraph));
     }
     return buffer.toString();
+  }
+
+  // This is the fallback graphme breaker that is only used if Intl.Segmenter()
+  // is not supported so _fromDomSegmenter can't be called. This implementation
+  // breaks the text into UTF-16 codepoints instead of graphme clusters.
+  List<int> _fallbackGraphemeStartIterable(String lineText) {
+    final List<int> graphemeStarts = <int>[];
+    bool precededByHighSurrogate = false;
+    for (int i = 0; i < lineText.length; i++) {
+      final int maskedCodeUnit = lineText.codeUnitAt(i) & 0xFC00;
+      // Only skip `i` if it points to a low surrogate in a valid surrogate pair.
+      if (maskedCodeUnit != 0xDC00 || !precededByHighSurrogate) {
+        graphemeStarts.add(startIndex + i);
+      }
+      precededByHighSurrogate = maskedCodeUnit == 0xD800;
+    }
+    return graphemeStarts;
+  }
+
+  // This will be called at most once to lazily populate _graphemeStarts.
+  List<int> _fromDomSegmenter(String fragmentText) {
+    final DomSegmenter domSegmenter = createIntlSegmenter(granularity: 'grapheme');
+    final List<int> graphemeStarts = <int>[];
+    final Iterator<DomSegment> segments = domSegmenter.segment(fragmentText).iterator();
+    while (segments.moveNext()) {
+      graphemeStarts.add(segments.current.index + startIndex);
+    }
+    assert(graphemeStarts.isEmpty || graphemeStarts.first == startIndex);
+    return graphemeStarts;
+  }
+
+  List<int> _breakTextIntoGraphemes(String text) {
+    final List<int> graphemeStarts = domIntl.Segmenter == null ? _fallbackGraphemeStartIterable(text) : _fromDomSegmenter(text);
+    // Add the end index of the fragment to the list if the text is not empty.
+    if (graphemeStarts.isNotEmpty) {
+      graphemeStarts.add(visibleEndIndex);
+    }
+    return graphemeStarts;
+  }
+
+  /// This List contains an ascending sequence of UTF16 offsets that points to
+  /// grapheme starts within the line. Each UTF16 offset is relative to the
+  /// start of the paragraph, instead of the start of the line.
+  ///
+  /// For example, `graphemeStarts[n]` gives the UTF16 offset of the `n`-th
+  /// grapheme in the line.
+  late final List<int> graphemeStarts = visibleEndIndex == startIndex
+    ? const <int>[]
+    : _breakTextIntoGraphemes(paragraph.plainText.substring(startIndex, visibleEndIndex));
+
+  /// Translate a UTF16 code unit in the paragaph (`offset`), to a grapheme
+  /// offset with in the current line.
+  ///
+  /// The `start` and `end` parameters are both grapheme offsets within the
+  /// current line. They are used to limit the search range (so the return value
+  /// that corresponds to the code unit `offset` must be with in [start, end)).
+  int graphemeStartIndexBefore(int offset, int start, int end) {
+    int low = start;
+    int high = end;
+    assert(0 <= low);
+    assert(low < high);
+
+    final List<int> lineGraphemeBreaks = graphemeStarts;
+    assert(offset >= lineGraphemeBreaks[start]);
+    assert(offset < lineGraphemeBreaks.last, '$offset, $lineGraphemeBreaks');
+    assert(end == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[end]);
+    while (low + 2 <= high) {
+      // high >= low + 2, so low + 1 <= mid <= high - 1
+      final int mid = (low + high) ~/ 2;
+      switch (lineGraphemeBreaks[mid] - offset) {
+        case > 0: high = mid;
+        case < 0: low = mid;
+        case == 0: return mid;
+      }
+    }
+
+    assert(lineGraphemeBreaks[low] <= offset);
+    assert(high == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[high]);
+    return low;
+  }
+
+  /// Returns the UTF-16 range of the character that encloses the code unit at
+  /// the given offset.
+  ui.TextRange? getCharacterRangeAt(int codeUnitOffset) {
+    assert(codeUnitOffset >= this.startIndex);
+    if (codeUnitOffset >= visibleEndIndex || graphemeStarts.isEmpty) {
+      return null;
+    }
+
+    final int startIndex = graphemeStartIndexBefore(codeUnitOffset, 0, graphemeStarts.length);
+    assert(startIndex < graphemeStarts.length - 1);
+    return ui.TextRange(start: graphemeStarts[startIndex], end: graphemeStarts[startIndex + 1]);
+  }
+
+  LayoutFragment? closestFragmentTo(LayoutFragment targetFragment, bool searchLeft) {
+    ({LayoutFragment fragment, double distance})? closestFragment;
+    for (final LayoutFragment fragment in fragments) {
+      assert(fragment is! EllipsisFragment);
+      if (fragment.start >= visibleEndIndex) {
+        break;
+      }
+      if (fragment.graphemeStartIndexRange == null) {
+        continue;
+      }
+      final double distance = searchLeft
+        ? targetFragment.left - fragment.right
+        : fragment.left - targetFragment.right;
+      final double? minDistance = closestFragment?.distance;
+      switch (distance) {
+        case > 0.0 when minDistance == null || minDistance > distance:
+          closestFragment = (fragment: fragment, distance: distance);
+        case == 0.0: return fragment;
+        case _: continue;
+      }
+    }
+    return closestFragment?.fragment;
+  }
+
+  /// Finds the closest [LayoutFragment] to the given horizontal offset `dx` in
+  /// this line, that is not an [EllipsisFragment] and contains at least one
+  /// grapheme start.
+  LayoutFragment? closestFragmentAtOffset(double dx) {
+    if (graphemeStarts.isEmpty) {
+      return null;
+    }
+    assert(graphemeStarts.length >= 2);
+    int graphemeIndex = 0;
+    ({LayoutFragment fragment, double distance})? closestFragment;
+    for (final LayoutFragment fragment in fragments) {
+      assert(fragment is! EllipsisFragment);
+      if (fragment.start >= visibleEndIndex) {
+        break;
+      }
+      if (fragment.length == 0) {
+        continue;
+      }
+      while (fragment.start > graphemeStarts[graphemeIndex]) {
+        graphemeIndex += 1;
+      }
+      final int firstGraphemeStartInFragment = graphemeStarts[graphemeIndex];
+      if (firstGraphemeStartInFragment >= fragment.end) {
+        continue;
+      }
+      final double distance;
+      if (dx < fragment.left) {
+        distance = fragment.left - dx;
+      } else if (dx > fragment.right) {
+        distance = dx - fragment.right;
+      } else {
+        return fragment;
+      }
+      assert(distance > 0);
+
+      final double? minDistance = closestFragment?.distance;
+      if (minDistance == null || minDistance > distance) {
+        closestFragment = (fragment: fragment, distance: distance);
+      }
+    }
+    return closestFragment?.fragment;
   }
 
   @override
@@ -390,6 +568,7 @@ class EngineTextStyle implements ui.TextStyle {
     required double? letterSpacing,
     required double? wordSpacing,
     required double? height,
+    required ui.TextLeadingDistribution? leadingDistribution,
     required ui.Locale? locale,
     required ui.Paint? background,
     required ui.Paint? foreground,
@@ -417,6 +596,7 @@ class EngineTextStyle implements ui.TextStyle {
     this.letterSpacing,
     this.wordSpacing,
     this.height,
+    this.leadingDistribution,
     this.locale,
     this.background,
     this.foreground,
@@ -462,6 +642,7 @@ class EngineTextStyle implements ui.TextStyle {
   final double? letterSpacing;
   final double? wordSpacing;
   final double? height;
+  final ui.TextLeadingDistribution? leadingDistribution;
   final ui.Locale? locale;
   final ui.Paint? background;
   final ui.Paint? foreground;
@@ -510,101 +691,68 @@ class EngineTextStyle implements ui.TextStyle {
     );
   }
 
-  EngineTextStyle copyWith({
-    ui.Color? color,
-    ui.TextDecoration? decoration,
-    ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-    ui.FontWeight? fontWeight,
-    ui.FontStyle? fontStyle,
-    ui.TextBaseline? textBaseline,
-    String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    ui.Locale? locale,
-    ui.Paint? background,
-    ui.Paint? foreground,
-    List<ui.Shadow>? shadows,
-    List<ui.FontFeature>? fontFeatures,
-    List<ui.FontVariation>? fontVariations,
-  }) {
-    return EngineTextStyle(
-      color: color ?? this.color,
-      decoration: decoration ?? this.decoration,
-      decorationColor: decorationColor ?? this.decorationColor,
-      decorationStyle: decorationStyle ?? this.decorationStyle,
-      decorationThickness: decorationThickness ?? this.decorationThickness,
-      fontWeight: fontWeight ?? this.fontWeight,
-      fontStyle: fontStyle ?? this.fontStyle,
-      textBaseline: textBaseline ?? this.textBaseline,
-      fontFamily: fontFamily ?? this.fontFamily,
-      fontFamilyFallback: fontFamilyFallback ?? this.fontFamilyFallback,
-      fontSize: fontSize ?? this.fontSize,
-      letterSpacing: letterSpacing ?? this.letterSpacing,
-      wordSpacing: wordSpacing ?? this.wordSpacing,
-      height: height ?? this.height,
-      locale: locale ?? this.locale,
-      background: background ?? this.background,
-      foreground: foreground ?? this.foreground,
-      shadows: shadows ?? this.shadows,
-      fontFeatures: fontFeatures ?? this.fontFeatures,
-      fontVariations: fontVariations ?? this.fontVariations,
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is EngineTextStyle &&
-        other.color == color &&
-        other.decoration == decoration &&
-        other.decorationColor == decorationColor &&
-        other.decorationStyle == decorationStyle &&
-        other.fontWeight == fontWeight &&
-        other.fontStyle == fontStyle &&
-        other.textBaseline == textBaseline &&
-        other.fontFamily == fontFamily &&
-        other.fontSize == fontSize &&
-        other.letterSpacing == letterSpacing &&
-        other.wordSpacing == wordSpacing &&
-        other.height == height &&
-        other.locale == locale &&
-        other.background == background &&
-        other.foreground == foreground &&
-        listEquals<ui.Shadow>(other.shadows, shadows) &&
-        listEquals<String>(other.fontFamilyFallback, fontFamilyFallback);
+    return other is EngineTextStyle
+        && other.color == color
+        && other.decoration == decoration
+        && other.decorationColor == decorationColor
+        && other.decorationStyle == decorationStyle
+        && other.fontWeight == fontWeight
+        && other.fontStyle == fontStyle
+        && other.textBaseline == textBaseline
+        && other.leadingDistribution == leadingDistribution
+        && other.fontFamily == fontFamily
+        && other.fontSize == fontSize
+        && other.letterSpacing == letterSpacing
+        && other.wordSpacing == wordSpacing
+        && other.height == height
+        && other.decorationThickness == decorationThickness
+        && other.locale == locale
+        && other.background == background
+        && other.foreground == foreground
+        && listEquals<ui.Shadow>(other.shadows, shadows)
+        && listEquals<String>(other.fontFamilyFallback, fontFamilyFallback)
+        && listEquals<ui.FontFeature>(other.fontFeatures, fontFeatures)
+        && listEquals<ui.FontVariation>(other.fontVariations, fontVariations);
   }
 
   @override
-  int get hashCode => Object.hash(
-        color,
-        decoration,
-        decorationColor,
-        decorationStyle,
-        decorationThickness,
-        fontWeight,
-        fontStyle,
-        textBaseline,
-        fontFamily,
-        fontFamilyFallback,
-        fontSize,
-        letterSpacing,
-        wordSpacing,
-        height,
-        locale,
-        background,
-        foreground,
-        shadows,
-      );
+  int get hashCode {
+    final List<ui.Shadow>? shadows = this.shadows;
+    final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+    final List<ui.FontVariation>? fontVariations = this.fontVariations;
+    final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+    return Object.hash(
+      color,
+      decoration,
+      decorationColor,
+      decorationStyle,
+      fontWeight,
+      fontStyle,
+      textBaseline,
+      leadingDistribution,
+      fontFamily,
+      fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback),
+      fontSize,
+      letterSpacing,
+      wordSpacing,
+      height,
+      locale,
+      background,
+      foreground,
+      shadows == null ? null : Object.hashAll(shadows),
+      decorationThickness,
+      // Object.hash goes up to 20 arguments, but we have 21
+      Object.hash(
+        fontFeatures == null ? null : Object.hashAll(fontFeatures),
+        fontVariations == null ? null : Object.hashAll(fontVariations),
+      )
+    );
+  }
 
   @override
   String toString() {

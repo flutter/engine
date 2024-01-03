@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
+#define FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
 
 #include <cmath>
 #include <string>
@@ -251,6 +252,9 @@ struct Vector4 {
 
   constexpr Vector4(const Point& p) : x(p.x), y(p.y) {}
 
+  constexpr Vector4(std::array<Scalar, 4> values)
+      : x(values[0]), y(values[1]), z(values[2]), w(values[3]) {}
+
   Vector4 Normalize() const {
     const Scalar inverse = 1.0f / sqrt(x * x + y * y + z * z + w * w);
     return Vector4(x * inverse, y * inverse, z * inverse, w * inverse);
@@ -329,3 +333,5 @@ inline std::ostream& operator<<(std::ostream& out, const impeller::Vector4& p) {
 // NOLINTEND(google-explicit-constructor)
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_VECTOR_H_
