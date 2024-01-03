@@ -23,10 +23,10 @@ RuntimeStageData::RuntimeStageData() = default;
 
 RuntimeStageData::~RuntimeStageData() = default;
 
-void RuntimeStageData::AddShader(RuntimeStageBackend backend,
-                                 const std::shared_ptr<Shader>& data) {
-  FML_DCHECK(data_.find(backend) == data_.end());
-  data_[backend] = data;
+void RuntimeStageData::AddShader(const std::shared_ptr<Shader>& data) {
+  FML_DCHECK(data);
+  FML_DCHECK(data_.find(data->backend) == data_.end());
+  data_[data->backend] = data;
 }
 
 static std::optional<fb::Stage> ToStage(spv::ExecutionModel stage) {
