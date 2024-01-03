@@ -14,7 +14,7 @@ jobs:
   extract-deps:
     name: Extract Dependencies
     runs-on: ubuntu-20.04
-    # if: ${{  github.repository == 'flutter/engine' && (github.event_name == 'push' || github.event.label.name == 'vulnerability scan') }}
+    if: ${{ (github.repository == 'flutter/engine' && github.event_name == 'push') || github.event.label.name == 'vulnerability scan' }}
     permissions:
       # Needed to upload the SARIF results to code-scanning dashboard.
       security-events: write

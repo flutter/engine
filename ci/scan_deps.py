@@ -16,7 +16,6 @@ import os
 import shutil
 import subprocess
 import sys
-from urllib import request
 from compatibility_helper import byte_str_decode
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
@@ -49,7 +48,7 @@ def parse_deps_file(deps_flat_file, output_file):
 
     # Extract the deps and filter.
     deps_list = local_scope.get('vars')
-  queries = []  # list of queries to submit in bulk request to OSV API
+
   with open(deps_flat_file, 'r') as file:
     data = json.load(file)
 
@@ -174,7 +173,7 @@ def get_common_ancestor(dep, deps_list):
 def parse_args(args):
   args = args[1:]
   parser = argparse.ArgumentParser(
-      description='A script to scan an osv-scanner compatible deps file for common ancestor commit SHAs'
+      description='A script to find common ancestor commit SHAs'
   )
 
   parser.add_argument(
