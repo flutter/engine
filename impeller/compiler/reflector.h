@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_REFLECTOR_H_
+#define FLUTTER_IMPELLER_COMPILER_REFLECTOR_H_
 
 #include <cstdint>
 #include <memory>
@@ -71,7 +72,7 @@ class Reflector {
 
   std::shared_ptr<fml::Mapping> GetReflectionCC() const;
 
-  std::shared_ptr<RuntimeStageData> GetRuntimeStageData() const;
+  std::shared_ptr<RuntimeStageData::Shader> GetRuntimeStageShaderData() const;
 
  private:
   struct StructDefinition {
@@ -95,12 +96,11 @@ class Reflector {
   const Options options_;
   const std::shared_ptr<const spirv_cross::ParsedIR> ir_;
   const std::shared_ptr<fml::Mapping> shader_data_;
-  const std::shared_ptr<fml::Mapping> sksl_data_;
   const CompilerBackend compiler_;
   std::unique_ptr<const nlohmann::json> template_arguments_;
   std::shared_ptr<fml::Mapping> reflection_header_;
   std::shared_ptr<fml::Mapping> reflection_cc_;
-  std::shared_ptr<RuntimeStageData> runtime_stage_data_;
+  std::shared_ptr<RuntimeStageData::Shader> runtime_stage_shader_;
   bool is_valid_ = false;
 
   std::optional<nlohmann::json> GenerateTemplateArguments() const;
@@ -109,7 +109,7 @@ class Reflector {
 
   std::shared_ptr<fml::Mapping> GenerateReflectionCC() const;
 
-  std::shared_ptr<RuntimeStageData> GenerateRuntimeStageData() const;
+  std::shared_ptr<RuntimeStageData::Shader> GenerateRuntimeStageData() const;
 
   std::shared_ptr<fml::Mapping> InflateTemplate(std::string_view tmpl) const;
 
@@ -177,3 +177,5 @@ class Reflector {
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_REFLECTOR_H_

@@ -33,20 +33,22 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_Metal",
     "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_"
     "Vulkan",
-    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
-    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
-    "impeller_Play_AiksTest_ColorWheel_Metal",
-    "impeller_Play_AiksTest_ColorWheel_Vulkan",
-    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Metal",
-    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Vulkan",
-    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Metal",
-    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Vulkan",
     "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
     "Metal",
     "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
     "Vulkan",
+    "impeller_Play_AiksTest_GaussianBlurRotatedAndClippedInteractive_Metal",
+    "impeller_Play_AiksTest_GaussianBlurRotatedAndClippedInteractive_Vulkan",
+    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Metal",
+    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Vulkan",
+    "impeller_Play_AiksTest_ColorWheel_Metal",
+    "impeller_Play_AiksTest_ColorWheel_Vulkan",
     "impeller_Play_AiksTest_SceneColorSource_Metal",
     "impeller_Play_AiksTest_SceneColorSource_Vulkan",
+    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Metal",
+    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Vulkan",
+    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
+    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
     // TextRotated is flakey and we can't seem to get it to stabilize on Skia
     // Gold.
     "impeller_Play_AiksTest_TextRotated_Metal",
@@ -165,17 +167,14 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
   return result;
 }
 
-std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-  auto fixture = flutter::testing::OpenFixtureAsMapping(asset_name);
+  const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(asset_name);
   if (!fixture || fixture->GetSize() == 0) {
-    return nullptr;
+    return {};
   }
-  auto stage = std::make_unique<RuntimeStage>(std::move(fixture));
-  if (!stage->IsValid()) {
-    return nullptr;
-  }
-  return stage;
+  return RuntimeStage::DecodeRuntimeStages(fixture);
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
@@ -196,6 +195,11 @@ ISize GoldenPlaygroundTest::GetWindowSize() const {
 
 void GoldenPlaygroundTest::GoldenPlaygroundTest::SetWindowSize(ISize size) {
   pimpl_->window_size = size;
+}
+
+fml::Status GoldenPlaygroundTest::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return pimpl_->screenshotter->GetPlayground().SetCapabilities(capabilities);
 }
 
 }  // namespace impeller

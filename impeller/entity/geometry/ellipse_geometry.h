@@ -2,16 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_ELLIPSE_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_ELLIPSE_GEOMETRY_H_
 
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
 
+// Geometry class that can generate vertices (with or without texture
+// coordinates) for filled ellipses. Generating vertices for a stroked
+// ellipse would require a lot more work since the line width must be
+// applied perpendicular to the distorted ellipse shape.
 class EllipseGeometry final : public Geometry {
  public:
-  explicit EllipseGeometry(Point center, Scalar radius);
-  explicit EllipseGeometry(Point center, Scalar radius, Scalar stroke_width);
+  explicit EllipseGeometry(Rect bounds);
 
   ~EllipseGeometry() = default;
 
@@ -22,24 +26,6 @@ class EllipseGeometry final : public Geometry {
   bool IsAxisAlignedRect() const override;
 
  private:
-  // Computes the 4 corners of a rectangle that defines the line and
-  // possibly extended endpoints which will be rendered under the given
-  // transform, and returns true if such a rectangle is defined.
-  //
-  // The coordinates will be generated in the original coordinate system
-  // of the line end points and the transform will only be used to determine
-  // the minimum line width.
-  //
-  // For kButt and kSquare end caps the ends should always be exteded as
-  // per that decoration, but for kRound caps the ends might be extended
-  // if the goal is to get a conservative bounds and might not be extended
-  // if the calling code is planning to draw the round caps on the ends.
-  //
-  // @return true if the transform and width were not degenerate
-  bool ComputeCorners(Point corners[4],
-                      const Matrix& transform,
-                      bool extend_endpoints) const;
-
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
@@ -58,9 +44,7 @@ class EllipseGeometry final : public Geometry {
                                      const Entity& entity,
                                      RenderPass& pass) const override;
 
-  Point center_;
-  Scalar radius_;
-  Scalar stroke_width_;
+  Rect bounds_;
 
   EllipseGeometry(const EllipseGeometry&) = delete;
 
@@ -68,3 +52,5 @@ class EllipseGeometry final : public Geometry {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_ELLIPSE_GEOMETRY_H_

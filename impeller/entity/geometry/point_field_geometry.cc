@@ -4,7 +4,6 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
-#include "flutter/impeller/tessellator/circle_tessellator.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 
@@ -52,8 +51,9 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
   if (!vtx_builder.has_value()) {
     return {};
   }
-  auto uv_vtx_builder = ComputeUVGeometryCPU(
-      vtx_builder.value(), {0, 0}, texture_coverage.size, effect_transform);
+  auto uv_vtx_builder =
+      ComputeUVGeometryCPU(vtx_builder.value(), {0, 0},
+                           texture_coverage.GetSize(), effect_transform);
 
   auto& host_buffer = pass.GetTransientsBuffer();
   return {
@@ -72,7 +72,8 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   if (radius_ < 0.0) {
     return std::nullopt;
   }
-  auto determinant = entity.GetTransform().GetDeterminant();
+  auto transform = entity.GetTransform();
+  auto determinant = transform.GetDeterminant();
   if (determinant == 0) {
     return std::nullopt;
   }
@@ -83,21 +84,17 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
   VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
 
   if (round_) {
-    std::shared_ptr<Tessellator> tessellator = renderer.GetTessellator();
-    CircleTessellator circle_tessellator(tessellator, entity.GetTransform(),
-                                         radius_);
-
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
+    auto generator =
+        renderer.GetTessellator()->FilledCircle(transform, {}, radius);
+    FML_DCHECK(generator.GetTriangleType() == PrimitiveType::kTriangleStrip);
     std::vector<Point> circle_vertices;
-    circle_vertices.reserve(circle_tessellator.GetCircleVertexCount());
-    circle_tessellator.GenerateCircleTriangleStrip(
-        [&circle_vertices](const Point& p) {  //
-          circle_vertices.push_back(p);
-        },
-        {}, radius);
-    FML_DCHECK(circle_vertices.size() ==
-               circle_tessellator.GetCircleVertexCount());
+    circle_vertices.reserve(generator.GetVertexCount());
+    generator.GenerateVertices([&circle_vertices](const Point& p) {  //
+      circle_vertices.push_back(p);
+    });
+    FML_DCHECK(circle_vertices.size() == generator.GetVertexCount());
 
     vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
     for (auto& center : points_) {
@@ -217,7 +214,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     frame_info.count = total;
     frame_info.effect_transform = effect_transform.value();
     frame_info.texture_origin = {0, 0};
-    frame_info.texture_size = Vector2(texture_coverage.value().size);
+    frame_info.texture_size = Vector2(texture_coverage.value().GetSize());
 
     UV::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
     UV::BindGeometryData(cmd, geometry_buffer);

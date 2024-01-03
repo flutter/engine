@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_angle_surface_manager.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
@@ -131,7 +132,7 @@ TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
       }));
 
   // Set the AngleSurfaceManager to !nullptr to test ANGLE rendering.
-  modifier.SetSurfaceManager(reinterpret_cast<AngleSurfaceManager*>(1));
+  modifier.SetSurfaceManager(std::make_unique<MockAngleSurfaceManager>());
 
   engine->Run();
 
@@ -625,7 +626,7 @@ class MockFlutterWindowsView : public FlutterWindowsView {
               NotifyWinEventWrapper,
               (ui::AXPlatformNodeWin*, ax::mojom::Event),
               (override));
-  MOCK_METHOD(PlatformWindow, GetPlatformWindow, (), (const, override));
+  MOCK_METHOD(HWND, GetWindowHandle, (), (const, override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
@@ -1016,7 +1017,7 @@ TEST_F(FlutterWindowsEngineTest, InnerWindowHidden) {
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  ON_CALL(view, GetPlatformWindow).WillByDefault([=]() { return inner; });
+  ON_CALL(view, GetWindowHandle).WillByDefault([=]() { return inner; });
   view.SetEngine(engine.get());
 
   EngineModifier modifier(engine.get());

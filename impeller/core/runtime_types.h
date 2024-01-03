@@ -2,13 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_
+#define FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_
 
 #include <cstddef>
 #include <optional>
 #include <string>
 
 namespace impeller {
+
+enum class RuntimeStageBackend {
+  kSkSL,
+  kMetal,
+  kOpenGLES,
+  kVulkan,
+};
 
 enum RuntimeUniformType {
   kBoolean,
@@ -50,3 +58,5 @@ struct RuntimeUniformDescription {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_
