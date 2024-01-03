@@ -19,13 +19,6 @@ enum FontStyle {
   italic,
 }
 
-String? _proxySystemFont(String? fontFamily, FontWeight? fontWeight) {
-  if (fontFamily != null && fontFamily == 'CupertinoSystemText' || fontFamily == 'CupertinoSystemDisplay') {
-    return fontFamily! + (fontWeight!= null ? fontWeight.toString().substring(11) :'');
-  }
-  return fontFamily;
-}
-
 /// The thickness of the glyphs used to draw the text.
 ///
 /// Fonts are typically weighted on a 9-point scale, which, for historical

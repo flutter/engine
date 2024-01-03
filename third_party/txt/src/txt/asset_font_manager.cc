@@ -54,24 +54,11 @@ sk_sp<SkFontStyleSet> AssetFontManager::onMatchFamily(
 sk_sp<SkTypeface> AssetFontManager::onMatchFamilyStyle(
     const char familyName[],
     const SkFontStyle& style) const {
-  // #if FML_OS_MACOSX || FML_OS_IOS
-  // if (strcmp(familyName, "CupertinoSystemText") == 0 || strcmp(familyName,
-  // "CupertinoSystemDisplay") == 0) { sk_sp<SkFontStyleSet> font_style_set =
-  //   font_provider_->MatchFamily(std::string(familyName) + "w" +
-  //   std::to_string(style.weight()));
-  const std::string local_font_name = std::string(familyName) + "w200";
   sk_sp<SkFontStyleSet> font_style_set =
-      font_provider_->MatchFamily(std::string(local_font_name));
+      font_provider_->MatchFamily(std::string(familyName));
   if (font_style_set == nullptr)
     return nullptr;
   return font_style_set->matchStyle(style);
-  // }
-  // #endif
-  // sk_sp<SkFontStyleSet> font_style_set =
-  //     font_provider_->MatchFamily(std::string(familyName));
-  // if (font_style_set == nullptr)
-  //   return nullptr;
-  // return font_style_set->matchStyle(style);
 }
 
 sk_sp<SkTypeface> AssetFontManager::onMatchFamilyStyleCharacter(
