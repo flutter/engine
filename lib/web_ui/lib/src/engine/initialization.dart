@@ -229,7 +229,6 @@ Future<void> initializeEngineUi() async {
 
   if (!configuration.multiViewEnabled) {
     ensureImplicitViewInitialized(hostElement: configuration.hostElement);
-    ensureFlutterViewEmbedderInitialized();
   }
   _initializationState = DebugEngineInitializationState.initialized;
 }

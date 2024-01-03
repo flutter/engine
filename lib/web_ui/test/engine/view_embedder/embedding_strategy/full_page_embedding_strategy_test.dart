@@ -37,15 +37,8 @@ void doTests() {
 
       expect(userMeta, isNotNull);
 
-      strategy.initialize(
-        hostElementAttributes: <String, String>{
-          'key-for-testing': 'value-for-testing',
-        },
-      );
+      strategy.initialize();
 
-      expect(target.getAttribute('key-for-testing'), 'value-for-testing',
-          reason:
-              'Should add attributes as key=value into target element.');
       expect(target.getAttribute('flt-embedding'), 'full-page',
           reason:
               'Should identify itself as a specific key=value into the target element.');
@@ -101,33 +94,6 @@ void doTests() {
           reason: 'Should cover the whole viewport.');
       expect(styleAfter.left, '0px',
           reason: 'Should cover the whole viewport.');
-    });
-  });
-
-  group('attachResourcesHost', () {
-    late DomElement glassPane;
-    setUp(() {
-      glassPane = createDomElement('some-tag-for-tests');
-      strategy = FullPageEmbeddingStrategy();
-      strategy.initialize();
-      strategy.attachViewRoot(glassPane);
-    });
-
-    test(
-        'Should attach resources host into target (body), `nextTo` other element',
-        () async {
-      final DomElement resources = createDomElement('resources-host-element');
-
-      expect(resources.isConnected, isFalse);
-
-      strategy.attachResourcesHost(resources, nextTo: glassPane);
-
-      expect(resources.isConnected, isTrue,
-          reason: 'Should inject resources host somewhere in the document.');
-      expect(resources.parent, domDocument.body,
-          reason: 'Should inject resources host into the <body>');
-      expect(resources.nextSibling, glassPane,
-          reason: 'Should be injected `nextTo` the passed element.');
     });
   });
 }

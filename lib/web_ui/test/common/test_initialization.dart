@@ -20,7 +20,7 @@ void setUpUnitTests({
   late final FakeAssetScope debugFontsScope;
   setUpAll(() async {
     // The implicit view is needed for `debugEmulateFlutterTesterEnvironment`,
-    // `flutterViewEmbedder`, and `debugPhysicalSizeOverride`.
+    // and `debugPhysicalSizeOverride`.
     engine.ensureImplicitViewInitialized();
 
     if (emulateTesterEnvironment) {
@@ -33,9 +33,6 @@ void setUpUnitTests({
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     if (setUpTestViewDimensions) {
-      // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
-      engine.ensureFlutterViewEmbedderInitialized();
-
       // The following parameters are hard-coded in Flutter's test embedder. Since
       // we don't have an embedder yet this is the lowest-most layer we can put
       // this stuff in.

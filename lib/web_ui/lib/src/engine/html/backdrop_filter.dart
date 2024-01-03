@@ -7,7 +7,7 @@ import 'package:ui/ui.dart' as ui;
 import '../browser_detection.dart';
 import '../color_filter.dart';
 import '../dom.dart';
-import '../embedder.dart';
+import '../platform_dispatcher.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'shaders/shader.dart';
@@ -66,7 +66,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
-    flutterViewEmbedder.removeResource(_svgFilter);
+    EnginePlatformDispatcher.instance.implicitView!.resources.removeResource(_svgFilter);
     _svgFilter = null;
     _childContainer = null;
     _filterElement = null;
@@ -80,7 +80,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     } else {
       backendFilter = filter as EngineImageFilter;
     }
-    flutterViewEmbedder.removeResource(_svgFilter);
+    EnginePlatformDispatcher.instance.implicitView!.resources.removeResource(_svgFilter);
     _svgFilter = null;
     if (_previousTransform != transform) {
       _invertedTransform = Matrix4.inverted(transform!);

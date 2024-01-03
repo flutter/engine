@@ -10,7 +10,7 @@ import 'package:ui/ui.dart' as ui;
 import '../../browser_detection.dart';
 import '../../color_filter.dart';
 import '../../dom.dart';
-import '../../embedder.dart';
+import '../../platform_dispatcher.dart';
 import '../../safe_browser_api.dart';
 import '../../util.dart';
 import '../../validators.dart';
@@ -18,6 +18,7 @@ import '../../vector_math.dart';
 import '../color_filter.dart';
 import '../path/path_utils.dart';
 import '../render_vertices.dart';
+import '../resource_manager.dart';
 import 'normalized_gradient.dart';
 import 'shader_builder.dart';
 import 'vertex_shaders.dart';
@@ -804,7 +805,7 @@ abstract class EngineHtmlColorFilter implements EngineImageFilter {
   @override
   String get transformAttribute => '';
 
-  /// Make an [SvgFilter] and add it as a globabl resource using [flutterViewEmbedder]
+  /// Make an [SvgFilter] and add it as a globabl resource using [ResourceManager]
   /// The [DomElement] from the made [SvgFilter] is returned so it can be managed
   /// by the surface calling it.
   DomElement? makeSvgFilter(DomElement? filterElement);
@@ -860,7 +861,7 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
     }
 
     final SvgFilter svgFilter = svgFilterFromBlendMode(color, blendMode);
-    flutterViewEmbedder.addResource(svgFilter.element);
+    EnginePlatformDispatcher.instance.implicitView!.resources.addResource(svgFilter.element);
     filterId = svgFilter.id;
 
     if (blendMode == ui.BlendMode.saturation ||
@@ -880,7 +881,7 @@ class MatrixHtmlColorFilter extends EngineHtmlColorFilter {
   @override
   DomElement? makeSvgFilter(DomNode? filterElement) {
     final SvgFilter svgFilter = svgFilterFromColorMatrix(matrix);
-    flutterViewEmbedder.addResource(svgFilter.element);
+    EnginePlatformDispatcher.instance.implicitView!.resources.addResource(svgFilter.element);
     filterId = svgFilter.id;
     return svgFilter.element;
   }
