@@ -118,6 +118,9 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
+    // Ensure platform view with `viewId` is injected into the `rasterizer.view`.
+    rasterizer.view.dom.injectPlatformView(viewId);
+
     final int overlayIndex = _context.visibleViewCount;
     _compositionOrder.add(viewId);
     // Keep track of the number of visible platform views.
@@ -142,10 +145,10 @@ class HtmlViewEmbedder {
     return recorderToUseForRendering?.recordingCanvas;
   }
 
-  void _compositeWithParams(int viewId, EmbeddedViewParams params) {
+  void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
     // If we haven't seen this viewId yet, cache it for clips/transforms.
-    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(viewId, () {
-      return ViewClipChain(view: createPlatformViewSlot(viewId));
+    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(platformViewId, () {
+      return ViewClipChain(view: createPlatformViewSlot(platformViewId));
     });
 
     final DomElement slot = clipChain.slot;
@@ -175,7 +178,7 @@ class HtmlViewEmbedder {
     }
 
     // Apply mutators to the slot
-    _applyMutators(params, slot, viewId);
+    _applyMutators(params, slot, platformViewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -361,7 +364,7 @@ class HtmlViewEmbedder {
     sceneHost.append(_svgPathDefs!);
   }
 
-  void submitFrame() {
+  Future<void> submitFrame() async {
     final ViewListDiffResult? diffResult =
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
@@ -385,7 +388,7 @@ class HtmlViewEmbedder {
             _context.pictureRecorders[pictureRecorderIndex].endRecording());
         pictureRecorderIndex++;
       }
-      rasterizer.rasterizeToCanvas(overlay, pictures);
+      await rasterizer.rasterizeToCanvas(overlay, pictures);
     }
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
@@ -657,8 +660,8 @@ class HtmlViewEmbedder {
     element.remove();
   }
 
-  /// Clears the state of this view embedder. Used in tests.
-  void debugClear() {
+  /// Disposes the state of this view embedder.
+  void dispose() {
     final Set<int> allViews = PlatformViewManager.instance.debugClear();
     disposeViews(allViews);
     _context = EmbedderFrameContext();

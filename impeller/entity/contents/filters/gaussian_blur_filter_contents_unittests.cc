@@ -62,12 +62,15 @@ class GaussianBlurFilterContentsTest : public EntityPlayground {
 INSTANTIATE_PLAYGROUND_SUITE(GaussianBlurFilterContentsTest);
 
 TEST(GaussianBlurFilterContentsTest, Create) {
-  GaussianBlurFilterContents contents(/*sigma=*/0.0, Entity::TileMode::kDecal);
-  ASSERT_EQ(contents.GetSigma(), 0.0);
+  GaussianBlurFilterContents contents(/*sigma_x=*/0.0, /*sigma_y=*/0.0,
+                                      Entity::TileMode::kDecal);
+  EXPECT_EQ(contents.GetSigmaX(), 0.0);
+  EXPECT_EQ(contents.GetSigmaY(), 0.0);
 }
 
 TEST(GaussianBlurFilterContentsTest, CoverageEmpty) {
-  GaussianBlurFilterContents contents(/*sigma=*/0.0, Entity::TileMode::kDecal);
+  GaussianBlurFilterContents contents(/*sigma_x=*/0.0, /*sigma_y=*/0.0,
+                                      Entity::TileMode::kDecal);
   FilterInput::Vector inputs = {};
   Entity entity;
   std::optional<Rect> coverage =
@@ -76,7 +79,8 @@ TEST(GaussianBlurFilterContentsTest, CoverageEmpty) {
 }
 
 TEST(GaussianBlurFilterContentsTest, CoverageSimple) {
-  GaussianBlurFilterContents contents(/*sigma=*/0.0, Entity::TileMode::kDecal);
+  GaussianBlurFilterContents contents(/*sigma_x=*/0.0, /*sigma_y=*/0.0,
+                                      Entity::TileMode::kDecal);
   FilterInput::Vector inputs = {
       FilterInput::Make(Rect::MakeLTRB(10, 10, 110, 110))};
   Entity entity;
@@ -87,7 +91,8 @@ TEST(GaussianBlurFilterContentsTest, CoverageSimple) {
 
 TEST(GaussianBlurFilterContentsTest, CoverageWithSigma) {
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
-  GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1,
+  GaussianBlurFilterContents contents(/*sigma_x=*/sigma_radius_1,
+                                      /*sigma_y=*/sigma_radius_1,
                                       Entity::TileMode::kDecal);
   FilterInput::Vector inputs = {
       FilterInput::Make(Rect::MakeLTRB(100, 100, 200, 200))};
@@ -107,7 +112,8 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithTexture) {
       .size = ISize(100, 100),
   };
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
-  GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1,
+  GaussianBlurFilterContents contents(/*sigma_X=*/sigma_radius_1,
+                                      /*sigma_y=*/sigma_radius_1,
                                       Entity::TileMode::kDecal);
   std::shared_ptr<Texture> texture =
       GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
@@ -130,7 +136,8 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithEffectTransform) {
       .size = ISize(100, 100),
   };
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
-  GaussianBlurFilterContents contents(/*sigma=*/sigma_radius_1,
+  GaussianBlurFilterContents contents(/*sigma_x=*/sigma_radius_1,
+                                      /*sigma_y=*/sigma_radius_1,
                                       Entity::TileMode::kDecal);
   std::shared_ptr<Texture> texture =
       GetContentContext()->GetContext()->GetResourceAllocator()->CreateTexture(
@@ -150,7 +157,7 @@ TEST_P(GaussianBlurFilterContentsTest, CoverageWithEffectTransform) {
 TEST(GaussianBlurFilterContentsTest, FilterSourceCoverage) {
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(
-      sigma_radius_1, Entity::TileMode::kDecal);
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
   std::optional<Rect> coverage = contents->GetFilterSourceCoverage(
       /*effect_transform=*/Matrix::MakeScale({2.0, 2.0, 1.0}),
       /*output_limit=*/Rect::MakeLTRB(100, 100, 200, 200));
@@ -175,7 +182,7 @@ TEST_P(GaussianBlurFilterContentsTest, RenderCoverageMatchesGetCoverage) {
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(
-      sigma_radius_1, Entity::TileMode::kDecal);
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
   contents->SetInputs({FilterInput::Make(texture)});
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
@@ -208,7 +215,7 @@ TEST_P(GaussianBlurFilterContentsTest,
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(
-      sigma_radius_1, Entity::TileMode::kDecal);
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
   contents->SetInputs({FilterInput::Make(texture)});
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
@@ -243,7 +250,7 @@ TEST_P(GaussianBlurFilterContentsTest,
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(
-      sigma_radius_1, Entity::TileMode::kDecal);
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
   contents->SetInputs({FilterInput::Make(texture)});
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
@@ -278,8 +285,8 @@ TEST_P(GaussianBlurFilterContentsTest, CalculateUVsSimple) {
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   auto filter_input = FilterInput::Make(texture);
   Entity entity;
-  Quad uvs = GaussianBlurFilterContents::CalculateUVs(filter_input, entity,
-                                                      ISize(100, 100));
+  Quad uvs = GaussianBlurFilterContents::CalculateUVs(
+      filter_input, entity, Rect::MakeSize(ISize(100, 100)), ISize(100, 100));
   std::optional<Rect> uvs_bounds = Rect::MakePointBounds(uvs);
   EXPECT_TRUE(uvs_bounds.has_value());
   if (uvs_bounds.has_value()) {
@@ -303,7 +310,7 @@ TEST_P(GaussianBlurFilterContentsTest, TextureContentsWithDestinationRect) {
 
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(
-      sigma_radius_1, Entity::TileMode::kDecal);
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
   contents->SetInputs({FilterInput::Make(texture_contents)});
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 
@@ -342,7 +349,7 @@ TEST_P(GaussianBlurFilterContentsTest,
 
   Scalar sigma_radius_1 = CalculateSigmaForBlurRadius(1.0);
   auto contents = std::make_unique<GaussianBlurFilterContents>(
-      sigma_radius_1, Entity::TileMode::kDecal);
+      sigma_radius_1, sigma_radius_1, Entity::TileMode::kDecal);
   contents->SetInputs({FilterInput::Make(texture_contents)});
   std::shared_ptr<ContentContext> renderer = GetContentContext();
 

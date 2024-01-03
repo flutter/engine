@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -16,8 +15,6 @@ const MethodCodec codec = JSONMethodCodec();
 
 EngineFlutterWindow get implicitView =>
     EnginePlatformDispatcher.instance.implicitView!;
-
-void emptyCallback(ByteData date) {}
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
