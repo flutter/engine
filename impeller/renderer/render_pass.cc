@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/render_pass.h"
+#include "impeller/core/host_buffer.h"
 
 namespace impeller {
 
@@ -17,14 +18,15 @@ RenderPass::RenderPass(std::weak_ptr<const Context> context,
       transients_buffer_() {
   auto strong_context = context_.lock();
   FML_DCHECK(strong_context);
-  transients_buffer_ = strong_context->GetHostBufferPool().Grab();
+  transients_buffer_ =
+      HostBuffer::Create(strong_context->GetResourceAllocator());
 }
 
 RenderPass::~RenderPass() {
-  auto strong_context = context_.lock();
-  if (strong_context) {
-    strong_context->GetHostBufferPool().Recycle(transients_buffer_);
-  }
+  // auto strong_context = context_.lock();
+  // if (strong_context) {
+  //   strong_context->GetHostBufferPool().Recycle(transients_buffer_);
+  // }
 }
 
 SampleCount RenderPass::GetSampleCount() const {

@@ -6,20 +6,24 @@
 #define FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_
 
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <string>
 #include <type_traits>
 
-#include "impeller/base/allocation.h"
 #include "impeller/core/buffer.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/platform.h"
 
 namespace impeller {
 
+// TODO: make this called something else, have a single buffer for all
+// render/compute/blit passes, add flush call that no-ops if necessary.
+// This currently assumes that the memory is coherent.
 class HostBuffer final : public Buffer {
  public:
-  static std::shared_ptr<HostBuffer> Create();
+  static std::shared_ptr<HostBuffer> Create(
+      const std::shared_ptr<Allocator>& allocator);
 
   // |Buffer|
   virtual ~HostBuffer();
@@ -124,26 +128,23 @@ class HostBuffer final : public Buffer {
   size_t GetLength() const;
 
  private:
-  struct HostBufferState : public Buffer, public Allocation {
-    std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
-        Allocator& allocator) const override;
+  struct HostBufferState {
+    [[nodiscard]] std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+    Emplace(const void* buffer, size_t length);
 
-    [[nodiscard]] std::pair<uint8_t*, Range> Emplace(const void* buffer,
-                                                     size_t length);
+    std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+    Emplace(size_t length, size_t align, const EmplaceProc& cb);
 
-    std::pair<uint8_t*, Range> Emplace(size_t length,
-                                       size_t align,
-                                       const EmplaceProc& cb);
-
-    std::pair<uint8_t*, Range> Emplace(const void* buffer,
-                                       size_t length,
-                                       size_t align);
+    std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+    Emplace(const void* buffer, size_t length, size_t align);
 
     void Reset();
 
-    mutable std::shared_ptr<DeviceBuffer> device_buffer;
-    mutable size_t device_buffer_generation = 0u;
-    size_t generation = 1u;
+    size_t GetLength() const { return offset; }
+
+    std::shared_ptr<Allocator> allocator;
+    mutable std::vector<std::shared_ptr<DeviceBuffer>> device_buffers;
+    mutable size_t offset = 0u;
     std::string label;
   };
 
@@ -155,7 +156,7 @@ class HostBuffer final : public Buffer {
 
   [[nodiscard]] BufferView Emplace(const void* buffer, size_t length);
 
-  HostBuffer();
+  explicit HostBuffer(const std::shared_ptr<Allocator>& allocator);
 
   HostBuffer(const HostBuffer&) = delete;
 

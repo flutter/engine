@@ -12,7 +12,9 @@
 namespace impeller {
 
 ComputePass::ComputePass(std::weak_ptr<const Context> context)
-    : context_(std::move(context)), transients_buffer_(HostBuffer::Create()) {}
+    : context_(std::move(context)),
+      transients_buffer_(
+          HostBuffer::Create(context_.lock()->GetResourceAllocator())) {}
 
 ComputePass::~ComputePass() = default;
 

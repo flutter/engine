@@ -6,20 +6,30 @@
 
 #include <algorithm>
 #include <cstring>
-
-#include "flutter/fml/logging.h"
+#include <tuple>
 
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/formats.h"
 
 namespace impeller {
 
-std::shared_ptr<HostBuffer> HostBuffer::Create() {
-  return std::shared_ptr<HostBuffer>(new HostBuffer());
+constexpr size_t kAllocatorBlockSize = 1024000;  // 1024 Kb.
+
+std::shared_ptr<HostBuffer> HostBuffer::Create(
+    const std::shared_ptr<Allocator>& allocator) {
+  return std::shared_ptr<HostBuffer>(new HostBuffer(allocator));
 }
 
-HostBuffer::HostBuffer() = default;
+HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator) {
+  state_->allocator = allocator;
+  DeviceBufferDescriptor desc;
+  desc.size = kAllocatorBlockSize;
+  desc.storage_mode = StorageMode::kHostVisible;
+  state_->device_buffers.push_back(allocator->CreateBuffer(desc));
+}
 
 HostBuffer::~HostBuffer() = default;
 
@@ -30,34 +40,34 @@ void HostBuffer::SetLabel(std::string label) {
 BufferView HostBuffer::Emplace(const void* buffer,
                                size_t length,
                                size_t align) {
-  auto [device_buffer, range] = state_->Emplace(buffer, length, align);
+  auto [data, range, device_buffer] = state_->Emplace(buffer, length, align);
   if (!device_buffer) {
     return {};
   }
-  return BufferView{state_, device_buffer, range};
+  return BufferView{device_buffer, data, range};
 }
 
 BufferView HostBuffer::Emplace(const void* buffer, size_t length) {
-  auto [device_buffer, range] = state_->Emplace(buffer, length);
+  auto [data, range, device_buffer] = state_->Emplace(buffer, length);
   if (!device_buffer) {
     return {};
   }
-  return BufferView{state_, device_buffer, range};
+  return BufferView{device_buffer, data, range};
 }
 
 BufferView HostBuffer::Emplace(size_t length,
                                size_t align,
                                const EmplaceProc& cb) {
-  auto [buffer, range] = state_->Emplace(length, align, cb);
-  if (!buffer) {
+  auto [data, range, device_buffer] = state_->Emplace(length, align, cb);
+  if (!device_buffer) {
     return {};
   }
-  return BufferView{state_, buffer, range};
+  return BufferView{device_buffer, data, range};
 }
 
 std::shared_ptr<const DeviceBuffer> HostBuffer::GetDeviceBuffer(
     Allocator& allocator) const {
-  return state_->GetDeviceBuffer(allocator);
+  return nullptr;
 }
 
 void HostBuffer::Reset() {
@@ -65,69 +75,67 @@ void HostBuffer::Reset() {
 }
 
 size_t HostBuffer::GetSize() const {
-  return state_->GetReservedLength();
+  return 1024;
 }
 
 size_t HostBuffer::GetLength() const {
   return state_->GetLength();
 }
 
-std::pair<uint8_t*, Range> HostBuffer::HostBufferState::Emplace(
-    size_t length,
-    size_t align,
-    const EmplaceProc& cb) {
+std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+HostBuffer::HostBufferState::Emplace(size_t length,
+                                     size_t align,
+                                     const EmplaceProc& cb) {
   if (!cb) {
     return {};
   }
   auto old_length = GetLength();
-  if (!Truncate(old_length + length)) {
-    return {};
+  if (old_length + length > kAllocatorBlockSize) {
+    // Allocate new block.
+    DeviceBufferDescriptor desc;
+    desc.size = std::max(kAllocatorBlockSize, length);
+    desc.storage_mode = StorageMode::kHostVisible;
+    device_buffers.push_back(allocator->CreateBuffer(desc));
   }
-  generation++;
-  cb(GetBuffer() + old_length);
 
-  return std::make_pair(GetBuffer(), Range{old_length, length});
+  cb(device_buffers.back()->OnGetContents() + old_length);
+
+  offset += length;
+  return std::make_tuple(device_buffers.back()->OnGetContents(),
+                         Range{old_length, length}, device_buffers.back());
 }
 
-std::shared_ptr<const DeviceBuffer>
-HostBuffer::HostBufferState::GetDeviceBuffer(Allocator& allocator) const {
-  if (generation == device_buffer_generation) {
-    return device_buffer;
-  }
-  auto new_buffer = allocator.CreateBufferWithCopy(GetBuffer(), GetLength());
-  if (!new_buffer) {
-    return nullptr;
-  }
-  new_buffer->SetLabel(label);
-  device_buffer_generation = generation;
-  device_buffer = std::move(new_buffer);
-  return device_buffer;
-}
-
-std::pair<uint8_t*, Range> HostBuffer::HostBufferState::Emplace(
-    const void* buffer,
-    size_t length) {
+std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+HostBuffer::HostBufferState::Emplace(const void* buffer, size_t length) {
   auto old_length = GetLength();
-  if (!Truncate(old_length + length)) {
-    return {};
+  if (old_length + length > kAllocatorBlockSize) {
+    // Allocate new block.
+    DeviceBufferDescriptor desc;
+    desc.size = std::max(kAllocatorBlockSize, length);
+    desc.storage_mode = StorageMode::kHostVisible;
+    device_buffers.push_back(allocator->CreateBuffer(desc));
   }
-  generation++;
+
   if (buffer) {
-    ::memmove(GetBuffer() + old_length, buffer, length);
+    ::memmove(device_buffers.back()->OnGetContents() + old_length, buffer,
+              length);
   }
-  return std::make_pair(GetBuffer(), Range{old_length, length});
+  offset += length;
+  return std::make_tuple(device_buffers.back()->OnGetContents(),
+                         Range{old_length, length}, device_buffers.back());
 }
 
-std::pair<uint8_t*, Range> HostBuffer::HostBufferState::Emplace(
-    const void* buffer,
-    size_t length,
-    size_t align) {
+std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+HostBuffer::HostBufferState::Emplace(const void* buffer,
+                                     size_t length,
+                                     size_t align) {
   if (align == 0 || (GetLength() % align) == 0) {
     return Emplace(buffer, length);
   }
 
   {
-    auto [buffer, range] = Emplace(nullptr, align - (GetLength() % align));
+    auto [buffer, range, device_buffer] =
+        Emplace(nullptr, align - (GetLength() % align));
     if (!buffer) {
       return {};
     }
@@ -137,10 +145,8 @@ std::pair<uint8_t*, Range> HostBuffer::HostBufferState::Emplace(
 }
 
 void HostBuffer::HostBufferState::Reset() {
-  generation += 1;
-  device_buffer = nullptr;
-  bool did_truncate = Truncate(0);
-  FML_CHECK(did_truncate);
+  offset = 0u;
+  device_buffers.clear();
 }
 
 }  // namespace impeller

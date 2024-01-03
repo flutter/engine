@@ -156,11 +156,11 @@ void ContextVK::Setup(Settings settings) {
   // 1. The user has explicitly enabled it.
   // 2. We are in a combination of debug mode, and running on Android.
   // (It's possible 2 is overly conservative and we can simplify this)
-  auto enable_validation = settings.enable_validation;
+  auto enable_validation = false;
 
-#if defined(FML_OS_ANDROID) && !defined(NDEBUG)
-  enable_validation = true;
-#endif
+  // #if defined(FML_OS_ANDROID) && !defined(NDEBUG)
+  //   enable_validation = true;
+  // #endif
 
   auto caps =
       std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
