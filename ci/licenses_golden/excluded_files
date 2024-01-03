@@ -1736,6 +1736,7 @@
 ../../../third_party/angle/.git
 ../../../third_party/angle/.gitattributes
 ../../../third_party/angle/.gitignore
+../../../third_party/angle/.gitmodules
 ../../../third_party/angle/.gn
 ../../../third_party/angle/.style.yapf
 ../../../third_party/angle/.vpython
@@ -1771,6 +1772,7 @@
 ../../../third_party/angle/infra
 ../../../third_party/angle/samples
 ../../../third_party/angle/scripts
+../../../third_party/angle/src/android_system_settings/README.md
 ../../../third_party/angle/src/commit_id.py
 ../../../third_party/angle/src/common/BinaryStream_unittest.cpp
 ../../../third_party/angle/src/common/CircularBuffer_unittest.cpp
@@ -1783,7 +1785,7 @@
 ../../../third_party/angle/src/common/WorkerThread_unittest.cpp
 ../../../third_party/angle/src/common/aligned_memory_unittest.cpp
 ../../../third_party/angle/src/common/angleutils_unittest.cpp
-../../../third_party/angle/src/common/base/README.angle
+../../../third_party/angle/src/common/base/README.chromium
 ../../../third_party/angle/src/common/base/anglebase/numerics/OWNERS
 ../../../third_party/angle/src/common/bitset_utils_unittest.cpp
 ../../../third_party/angle/src/common/fuchsia_egl/OWNERS
@@ -1810,9 +1812,11 @@
 ../../../third_party/angle/src/feature_support_util/feature_support_util_unittest.cpp
 ../../../third_party/angle/src/gpu_info_util/SystemInfo_unittest.cpp
 ../../../third_party/angle/src/image_util/AstcDecompressor_unittest.cpp
+../../../third_party/angle/src/image_util/LoadToNative_unittest.cpp
 ../../../third_party/angle/src/libANGLE/BlendStateExt_unittest.cpp
 ../../../third_party/angle/src/libANGLE/BlobCache_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Config_unittest.cpp
+../../../third_party/angle/src/libANGLE/ContextMutex_unittest.cpp
 ../../../third_party/angle/src/libANGLE/Fence_unittest.cpp
 ../../../third_party/angle/src/libANGLE/GlobalMutex_unittest.cpp
 ../../../third_party/angle/src/libANGLE/HandleAllocator_unittest.cpp
@@ -1853,7 +1857,9 @@
 ../../../third_party/angle/src/libANGLE/renderer/gl/generate_gl_dispatch_table.py
 ../../../third_party/angle/src/libANGLE/renderer/metal/doc
 ../../../third_party/angle/src/libANGLE/renderer/metal/gen_mtl_format_table.py
+../../../third_party/angle/src/libANGLE/renderer/metal/shaders/embed_in_header.py
 ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/gen_mtl_internal_shaders.py
+../../../third_party/angle/src/libANGLE/renderer/metal/shaders/metal_wrapper.py
 ../../../third_party/angle/src/libANGLE/renderer/serial_utils_unittest.cpp
 ../../../third_party/angle/src/libANGLE/renderer/vulkan/OWNERS
 ../../../third_party/angle/src/libANGLE/renderer/vulkan/README.md
@@ -1874,6 +1880,7 @@
 ../../../third_party/angle/src/third_party/ceval/package.json
 ../../../third_party/angle/src/third_party/libXNVCtrl/README.chromium
 ../../../third_party/angle/src/third_party/volk
+../../../third_party/angle/testing
 ../../../third_party/angle/third_party
 ../../../third_party/angle/tools
 ../../../third_party/angle/util
