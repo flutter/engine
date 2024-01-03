@@ -4,7 +4,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 #
-# Usage: deps_parser.py --deps <DEPS file> --output <flattened deps>
+# Usage: deps_parser.py --deps <DEPS file> --output <lockfile>
 #
 # This script parses the DEPS file, extracts the fully qualified dependencies
 # and writes the to a file. This file will be later used to validate the dependencies
@@ -124,7 +124,7 @@ def parse_args(args):
       '--output',
       '-o',
       type=str,
-      help='Output flattened deps file.',
+      help='Output deps file.',
       default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-deps.json')
   )
 
