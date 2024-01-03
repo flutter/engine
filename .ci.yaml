@@ -13,17 +13,6 @@ enabled_branches:
 platform_properties:
   linux:
     properties:
-      build_host: "false"
-      build_fuchsia: "false"
-      build_android_debug: "false"
-      build_android_aot: "false"
-      build_android_vulkan: "false"
-      build_ios: "false"
-      build_android_jit_release: "false"
-      gcs_goldens_bucket: ""
-      ios_debug: "false"
-      ios_profile: "false"
-      ios_release: "false"
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
@@ -35,17 +24,6 @@ platform_properties:
       cores: "8"
   mac:
     properties:
-      build_host: "false"
-      build_fuchsia: "false"
-      build_android_debug: "false"
-      build_android_aot: "false"
-      build_android_vulkan: "false"
-      build_ios: "false"
-      build_android_jit_release: "false"
-      gcs_goldens_bucket: ""
-      ios_debug: "false"
-      ios_profile: "false"
-      ios_release: "false"
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
@@ -54,28 +32,14 @@ platform_properties:
       device_type: none
       cpu: x86
       os: Mac-12|Mac-13
-      # TODO(vashworth): Remove specific toolchain_ver once https://github.com/flutter/flutter/issues/138109 is resolved.
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c",
-          "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
-          "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
+          "sdk_version": "14e300c"
         }
     dimensions:
       mac_model: "Macmini8,1|Macmini9,1"
   windows:
     properties:
-      build_host: "false"
-      build_fuchsia: "false"
-      build_android_debug: "false"
-      build_android_aot: "false"
-      build_android_vulkan: "false"
-      build_ios: "false"
-      build_android_jit_release: "false"
-      gcs_goldens_bucket: ""
-      ios_debug: "false"
-      ios_profile: "false"
-      ios_release: "false"
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
@@ -94,6 +58,7 @@ targets:
     timeout: 60
     runIf:
       - .ci.yaml
+      - DEPS
       - lib/ui/**
       - shell/platform/android/**
 
@@ -232,28 +197,9 @@ targets:
 
   - name: Linux linux_clang_tidy
     recipe: engine_v2/engine_v2
-    presubmit: false
     timeout: 120
     properties:
       config_name: linux_clang_tidy
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - tools/clang_tidy/**
-      - ci/builders/**
-      - ci/clang_tidy.sh
-      - "**.h"
-      - "**.c"
-      - "**.cc"
-      - "**.fbs"
-      - "**.frag"
-      - "**.vert"
-
-  - name: Linux linux_clang_tidy_presubmit
-    recipe: engine_v2/engine_v2
-    timeout: 120
-    properties:
-      config_name: linux_clang_tidy_presubmit
     runIf:
       - DEPS
       - .ci.yaml
@@ -377,7 +323,7 @@ targets:
 
   - name: Linux mac_android_aot_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -387,7 +333,6 @@ targets:
 
   - name: Mac mac_clang_tidy
     recipe: engine_v2/engine_v2
-    presubmit: false
     timeout: 120
     properties:
       config_name: mac_clang_tidy
@@ -406,29 +351,9 @@ targets:
       - "**.m"
       - "**.mm"
 
-  - name: Mac mac_clang_tidy_presubmit
-    recipe: engine_v2/engine_v2
-    timeout: 120
-    properties:
-      config_name: mac_clang_tidy_presubmit
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - tools/clang_tidy/**
-      - ci/builders/**
-      - ci/clang_tidy.sh
-      - "**.h"
-      - "**.c"
-      - "**.cc"
-      - "**.fbs"
-      - "**.frag"
-      - "**.vert"
-      - "**.m"
-      - "**.mm"
-
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -438,12 +363,9 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
-      # TODO(vashworth): Remove specific toolchain_ver once https://github.com/flutter/flutter/issues/138109 is resolved.
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c",
-          "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
-          "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
+          "sdk_version": "14e300c"
         }
     drone_dimensions:
       - os=Mac-12|Mac-13
@@ -457,17 +379,14 @@ targets:
 
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
-      # TODO(vashworth): Remove specific toolchain_ver once https://github.com/flutter/flutter/issues/138109 is resolved.
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c",
-          "toolchain_ver_arm": "JiMOaZvCH66lnGWMJdLScE-7lkUnKaw3COdWwqXmjWEC",
-          "toolchain_ver_intel": "Zp2HmSx7_-pu-yHqYqzoEpo0JRwNZGGwSj5V1SnLFmoC"
+          "sdk_version": "14e300c"
         }
     drone_dimensions:
       - os=Mac-12|Mac-13

@@ -9,6 +9,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/playground/playground.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -23,19 +24,28 @@ namespace testing {
 using RuntimeStageTest = RuntimeStagePlayground;
 INSTANTIATE_PLAYGROUND_SUITE(RuntimeStageTest);
 
-TEST(RuntimeStageTest, CanReadValidBlob) {
-  auto fixture =
+TEST_P(RuntimeStageTest, CanReadValidBlob) {
+  if (!BackendSupportsFragmentProgram()) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
+  const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
   ASSERT_GT(fixture->GetSize(), 0u);
-  RuntimeStage stage(std::move(fixture));
-  ASSERT_TRUE(stage.IsValid());
-  ASSERT_EQ(stage.GetShaderStage(), RuntimeShaderStage::kFragment);
+  auto stages = RuntimeStage::DecodeRuntimeStages(fixture);
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(stage->IsValid());
+  ASSERT_EQ(stage->GetShaderStage(), RuntimeShaderStage::kFragment);
 }
 
-TEST(RuntimeStageTest, CanRejectInvalidBlob) {
+TEST_P(RuntimeStageTest, CanRejectInvalidBlob) {
+  if (!BackendSupportsFragmentProgram()) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
   ScopedValidationDisable disable_validation;
-  auto fixture =
+  const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
   auto junk_allocation = std::make_shared<Allocation>();
@@ -43,20 +53,27 @@ TEST(RuntimeStageTest, CanRejectInvalidBlob) {
   // Not meant to be secure. Just reject obviously bad blobs using magic
   // numbers.
   ::memset(junk_allocation->GetBuffer(), 127, junk_allocation->GetLength());
-  RuntimeStage stage(CreateMappingFromAllocation(junk_allocation));
-  ASSERT_FALSE(stage.IsValid());
+  auto stages = RuntimeStage::DecodeRuntimeStages(
+      CreateMappingFromAllocation(junk_allocation));
+  ASSERT_FALSE(stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())]);
 }
 
-TEST(RuntimeStageTest, CanReadUniforms) {
-  auto fixture =
+TEST_P(RuntimeStageTest, CanReadUniforms) {
+  if (!BackendSupportsFragmentProgram()) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
+  }
+
+  const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
   ASSERT_GT(fixture->GetSize(), 0u);
-  RuntimeStage stage(std::move(fixture));
-  ASSERT_TRUE(stage.IsValid());
-  ASSERT_EQ(stage.GetUniforms().size(), 17u);
+  auto stages = RuntimeStage::DecodeRuntimeStages(fixture);
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+
+  ASSERT_TRUE(stage->IsValid());
+  ASSERT_EQ(stage->GetUniforms().size(), 17u);
   {
-    auto uni = stage.GetUniform("u_color");
+    auto uni = stage->GetUniform("u_color");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 4u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -64,7 +81,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_alpha");
+    auto uni = stage->GetUniform("u_alpha");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 1u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -72,7 +89,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_sparkle_color");
+    auto uni = stage->GetUniform("u_sparkle_color");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 4u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -80,7 +97,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_sparkle_alpha");
+    auto uni = stage->GetUniform("u_sparkle_alpha");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 1u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -88,7 +105,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_blur");
+    auto uni = stage->GetUniform("u_blur");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 1u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -96,7 +113,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_radius_scale");
+    auto uni = stage->GetUniform("u_radius_scale");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 1u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -104,7 +121,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_max_radius");
+    auto uni = stage->GetUniform("u_max_radius");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 1u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -112,7 +129,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_resolution_scale");
+    auto uni = stage->GetUniform("u_resolution_scale");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -120,7 +137,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_noise_scale");
+    auto uni = stage->GetUniform("u_noise_scale");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -128,7 +145,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_noise_phase");
+    auto uni = stage->GetUniform("u_noise_phase");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 1u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -137,7 +154,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
   }
 
   {
-    auto uni = stage.GetUniform("u_circle1");
+    auto uni = stage->GetUniform("u_circle1");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -145,7 +162,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_circle2");
+    auto uni = stage->GetUniform("u_circle2");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -153,7 +170,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_circle3");
+    auto uni = stage->GetUniform("u_circle3");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -161,7 +178,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_rotation1");
+    auto uni = stage->GetUniform("u_rotation1");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -169,7 +186,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_rotation2");
+    auto uni = stage->GetUniform("u_rotation2");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -177,7 +194,7 @@ TEST(RuntimeStageTest, CanReadUniforms) {
     ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
-    auto uni = stage.GetUniform("u_rotation3");
+    auto uni = stage->GetUniform("u_rotation3");
     ASSERT_NE(uni, nullptr);
     ASSERT_EQ(uni->dimensions.rows, 2u);
     ASSERT_EQ(uni->dimensions.cols, 1u);
@@ -187,47 +204,52 @@ TEST(RuntimeStageTest, CanReadUniforms) {
 }
 
 TEST_P(RuntimeStageTest, CanRegisterStage) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("Skipped: https://github.com/flutter/flutter/issues/105538");
+  if (!BackendSupportsFragmentProgram()) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
-  auto fixture =
+
+  const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
   ASSERT_GT(fixture->GetSize(), 0u);
-  RuntimeStage stage(std::move(fixture));
-  ASSERT_TRUE(stage.IsValid());
+  auto stages = RuntimeStage::DecodeRuntimeStages(fixture);
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(stage->IsValid());
   std::promise<bool> registration;
   auto future = registration.get_future();
   auto library = GetContext()->GetShaderLibrary();
   library->RegisterFunction(
-      stage.GetEntrypoint(),                  //
-      ToShaderStage(stage.GetShaderStage()),  //
-      stage.GetCodeMapping(),                 //
+      stage->GetEntrypoint(),                  //
+      ToShaderStage(stage->GetShaderStage()),  //
+      stage->GetCodeMapping(),                 //
       fml::MakeCopyable([reg = std::move(registration)](bool result) mutable {
         reg.set_value(result);
       }));
   ASSERT_TRUE(future.get());
   {
     auto function =
-        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+        library->GetFunction(stage->GetEntrypoint(), ShaderStage::kFragment);
     ASSERT_NE(function, nullptr);
   }
 
   // Check if unregistering works.
 
-  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+  library->UnregisterFunction(stage->GetEntrypoint(), ShaderStage::kFragment);
   {
     auto function =
-        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+        library->GetFunction(stage->GetEntrypoint(), ShaderStage::kFragment);
     ASSERT_EQ(function, nullptr);
   }
 }
 
 TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("Skipped: https://github.com/flutter/flutter/issues/105538");
+  if (!BackendSupportsFragmentProgram()) {
+    GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
-  auto stage = OpenAssetAsRuntimeStage("ink_sparkle.frag.iplr");
+  auto stages = OpenAssetAsRuntimeStage("ink_sparkle.frag.iplr");
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+
+  ASSERT_TRUE(stage);
   ASSERT_NE(stage, nullptr);
   ASSERT_TRUE(RegisterStage(*stage));
   auto library = GetContext()->GetShaderLibrary();
@@ -254,6 +276,21 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   desc.SetStencilPixelFormat(stencil_fmt);
   auto pipeline = GetContext()->GetPipelineLibrary()->GetPipeline(desc).Get();
   ASSERT_NE(pipeline, nullptr);
+}
+
+TEST_P(RuntimeStageTest, ContainsExpectedShaderTypes) {
+  auto stages = OpenAssetAsRuntimeStage("ink_sparkle.frag.iplr");
+  // Right now, SkSL gets implicitly bundled regardless of what the build rule
+  // for this test requested. After
+  // https://github.com/flutter/flutter/issues/138919, this may require a build
+  // rule change or a new test.
+  EXPECT_TRUE(stages[RuntimeStageBackend::kSkSL]);
+
+  EXPECT_TRUE(stages[RuntimeStageBackend::kOpenGLES]);
+  EXPECT_TRUE(stages[RuntimeStageBackend::kMetal]);
+  // TODO(dnfield): Flip this when
+  // https://github.com/flutter/flutter/issues/122823 is fixed.
+  EXPECT_FALSE(stages[RuntimeStageBackend::kVulkan]);
 }
 
 }  // namespace testing

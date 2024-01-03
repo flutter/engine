@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_
 
 #include <memory>
 
@@ -36,11 +37,16 @@ class PlaygroundTest : public Playground,
   std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const override;
 
-  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
-      const char* asset_name) const;
+  RuntimeStage::Map OpenAssetAsRuntimeStage(const char* asset_name) const;
 
   // |Playground|
   std::string GetWindowTitle() const override;
+
+  // TODO(dnfield): Delete this once
+  // https://github.com/flutter/flutter/issues/122823 is fixed.
+  bool BackendSupportsFragmentProgram() const {
+    return GetBackend() != PlaygroundBackend::kVulkan;
+  }
 
  private:
   // |Playground|
@@ -68,3 +74,5 @@ class PlaygroundTest : public Playground,
       });
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_TEST_H_

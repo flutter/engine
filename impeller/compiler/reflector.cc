@@ -11,7 +11,6 @@
 #include <set>
 #include <sstream>
 
-#include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
@@ -19,6 +18,7 @@
 #include "impeller/compiler/types.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
@@ -83,7 +83,7 @@ static std::string ExecutionModelToString(spv::ExecutionModel model) {
   }
 }
 
-static std::string StringToShaderStage(std::string str) {
+static std::string StringToShaderStage(const std::string& str) {
   if (str == "vertex") {
     return "ShaderStage::kVertex";
   }
@@ -100,13 +100,13 @@ static std::string StringToShaderStage(std::string str) {
 }
 
 Reflector::Reflector(Options options,
-                     std::shared_ptr<const spirv_cross::ParsedIR> ir,
-                     std::shared_ptr<fml::Mapping> shader_data,
-                     CompilerBackend compiler)
+                     const std::shared_ptr<const spirv_cross::ParsedIR>& ir,
+                     const std::shared_ptr<fml::Mapping>& shader_data,
+                     const CompilerBackend& compiler)
     : options_(std::move(options)),
-      ir_(std::move(ir)),
-      shader_data_(std::move(shader_data)),
-      compiler_(std::move(compiler)) {
+      ir_(ir),
+      shader_data_(shader_data),
+      compiler_(compiler) {
   if (!ir_ || !compiler_) {
     return;
   }
@@ -129,10 +129,7 @@ Reflector::Reflector(Options options,
     return;
   }
 
-  runtime_stage_data_ = GenerateRuntimeStageData();
-  if (!runtime_stage_data_) {
-    return;
-  }
+  runtime_stage_shader_ = GenerateRuntimeStageData();
 
   is_valid_ = true;
 }
@@ -164,8 +161,9 @@ std::shared_ptr<fml::Mapping> Reflector::GetReflectionCC() const {
   return reflection_cc_;
 }
 
-std::shared_ptr<RuntimeStageData> Reflector::GetRuntimeStageData() const {
-  return runtime_stage_data_;
+std::shared_ptr<RuntimeStageData::Shader> Reflector::GetRuntimeStageShaderData()
+    const {
+  return runtime_stage_shader_;
 }
 
 std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
@@ -319,21 +317,45 @@ std::shared_ptr<fml::Mapping> Reflector::GenerateReflectionCC() const {
   return InflateTemplate(kReflectionCCTemplate);
 }
 
-std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
+static std::optional<RuntimeStageBackend> GetRuntimeStageBackend(
+    TargetPlatform target_platform) {
+  switch (target_platform) {
+    case TargetPlatform::kUnknown:
+    case TargetPlatform::kMetalDesktop:
+    case TargetPlatform::kMetalIOS:
+    case TargetPlatform::kOpenGLES:
+    case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kVulkan:
+      return std::nullopt;
+    case TargetPlatform::kRuntimeStageMetal:
+      return RuntimeStageBackend::kMetal;
+    case TargetPlatform::kRuntimeStageGLES:
+      return RuntimeStageBackend::kOpenGLES;
+    case TargetPlatform::kRuntimeStageVulkan:
+      return RuntimeStageBackend::kVulkan;
+    case TargetPlatform::kSkSL:
+      return RuntimeStageBackend::kSkSL;
+  }
+  FML_UNREACHABLE();
+}
+
+std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
+    const {
+  auto backend = GetRuntimeStageBackend(options_.target_platform);
+  if (!backend.has_value()) {
+    return nullptr;
+  }
+
   const auto& entrypoints = compiler_->get_entry_points_and_stages();
   if (entrypoints.size() != 1u) {
     VALIDATION_LOG << "Single entrypoint not found.";
     return nullptr;
   }
-  auto data = std::make_shared<RuntimeStageData>(
-      options_.entry_point_name,            //
-      entrypoints.front().execution_model,  //
-      options_.target_platform              //
-  );
-  data->SetShaderData(shader_data_);
-  if (sksl_data_) {
-    data->SetSkSLData(sksl_data_);
-  }
+  auto data = std::make_unique<RuntimeStageData::Shader>();
+  data->entrypoint = options_.entry_point_name;
+  data->stage = entrypoints.front().execution_model;
+  data->shader = shader_data_;
+  data->backend = backend.value();
 
   // Sort the IR so that the uniforms are in declaration order.
   std::vector<spirv_cross::ID> uniforms =
@@ -351,8 +373,37 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
     uniform_description.columns = spir_type.columns;
     uniform_description.bit_width = spir_type.width;
     uniform_description.array_elements = GetArrayElements(spir_type);
-    data->AddUniformDescription(std::move(uniform_description));
+    data->uniforms.emplace_back(std::move(uniform_description));
   }
+
+  // We only need to worry about storing vertex attributes.
+  if (entrypoints.front().execution_model == spv::ExecutionModelVertex) {
+    const auto inputs = compiler_->get_shader_resources().stage_inputs;
+    auto input_offsets = ComputeOffsets(inputs);
+    for (const auto& input : inputs) {
+      auto location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      std::optional<size_t> offset = input_offsets[location];
+
+      const auto type = compiler_->get_type(input.type_id);
+
+      InputDescription input_description;
+      input_description.name = input.name;
+      input_description.location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      input_description.set = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationDescriptorSet);
+      input_description.binding = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationBinding);
+      input_description.type = type.basetype;
+      input_description.bit_width = type.width;
+      input_description.vec_size = type.vecsize;
+      input_description.columns = type.columns;
+      input_description.offset = offset.value_or(0u);
+      data->inputs.emplace_back(std::move(input_description));
+    }
+  }
+
   return data;
 }
 
@@ -387,7 +438,7 @@ std::shared_ptr<fml::Mapping> Reflector::InflateTemplate(
   env.set_lstrip_blocks(true);
 
   env.add_callback("camel_case", 1u, [](inja::Arguments& args) {
-    return ConvertToCamelCase(args.at(0u)->get<std::string>());
+    return ToCamelCase(args.at(0u)->get<std::string>());
   });
 
   env.add_callback("to_shader_stage", 1u, [](inja::Arguments& args) {
@@ -1128,7 +1179,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& uniform_buffer : resources.uniform_buffers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(uniform_buffer.name);
+    proto.name = ToCamelCase(uniform_buffer.name);
     {
       std::stringstream stream;
       stream << "Bind uniform buffer for resource named " << uniform_buffer.name
@@ -1147,7 +1198,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& storage_buffer : resources.storage_buffers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(storage_buffer.name);
+    proto.name = ToCamelCase(storage_buffer.name);
     {
       std::stringstream stream;
       stream << "Bind storage buffer for resource named " << storage_buffer.name
@@ -1166,7 +1217,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& sampled_image : resources.sampled_images) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(sampled_image.name);
+    proto.name = ToCamelCase(sampled_image.name);
     {
       std::stringstream stream;
       stream << "Bind combined image sampler for resource named "
@@ -1189,7 +1240,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& separate_image : resources.separate_images) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(separate_image.name);
+    proto.name = ToCamelCase(separate_image.name);
     {
       std::stringstream stream;
       stream << "Bind separate image for resource named " << separate_image.name
@@ -1208,7 +1259,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
   for (const auto& separate_sampler : resources.separate_samplers) {
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
-    proto.name = ConvertToCamelCase(separate_sampler.name);
+    proto.name = ToCamelCase(separate_sampler.name);
     {
       std::stringstream stream;
       stream << "Bind separate sampler for resource named "
