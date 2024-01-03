@@ -324,11 +324,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
   if (expanded_coverage_hint.has_value() &&
       input_snapshot_coverage.has_value() &&
-      // TODO(tbd): Remove this condition. There is some flaw in coverage
-      //            stopping us from using this today. I attempted to use source
-      //            coordinates to calculate the uvs, but that didn't work
-      //            either
-      //            (https://github.com/flutter/engine/pull/49299#issuecomment-1865311438).
+      // TODO(https://github.com/flutter/flutter/issues/140890): Remove this
+      //   condition. There is some flaw in coverage stopping us from using this
+      //   today. I attempted to use source coordinates to calculate the uvs,
+      //   but that didn't work either.
       input_snapshot.has_value() &&
       input_snapshot.value().transform.IsTranslationScaleOnly()) {
     // Only process the uvs where the blur is happening, not the whole texture.
