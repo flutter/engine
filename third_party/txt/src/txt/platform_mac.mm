@@ -101,8 +101,7 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
             MatchSystemUIFont(font_weight, kSFProDisplayBreakPoint)));
     if (large_system_font_weighted) {
       dynamic_font_manager.font_provider().RegisterTypeface(
-          large_system_font_weighted,
-          kSFProDisplayName);
+          large_system_font_weighted, kSFProDisplayName);
     }
   }
 }
