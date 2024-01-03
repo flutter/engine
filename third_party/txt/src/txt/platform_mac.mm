@@ -20,8 +20,6 @@
 
 // Apple system font larger than size 29 returns SFProDisplay typeface.
 static const CGFloat kSFProDisplayBreakPoint = 29;
-// Apple system font smaller than size 16 returns SFProText typeface.
-static const CGFloat kSFProTextBreakPoint = 16;
 // Font name represents the "SF Pro Display" system font on Apple platforms.
 static const std::string kSFProDisplayName = "CupertinoSystemDisplay";
 // Font name represents the "SF Pro Text" system font on Apple platforms.
@@ -96,13 +94,6 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   //
   // See https://www.wwdcnotes.com/notes/wwdc20/10175/ for Apple's document on
   // this topic.
-  sk_sp<SkTypeface> large_system_font = SkMakeTypefaceFromCTFont(
-      (CTFontRef)CFAutorelease(CTFontCreateUIFontForLanguage(
-          kCTFontUIFontSystem, kSFProDisplayBreakPoint, NULL)));
-  if (large_system_font) {
-    dynamic_font_manager.font_provider().RegisterTypeface(large_system_font,
-                                                          kSFProDisplayName);
-  }
   for (int i = 0; i < 9; i++) {
     const int font_weight = i * 100;
     sk_sp<SkTypeface> large_system_font_weighted =
@@ -111,25 +102,7 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
     if (large_system_font_weighted) {
       dynamic_font_manager.font_provider().RegisterTypeface(
           large_system_font_weighted,
-          kSFProDisplayName + "w" + std::to_string(font_weight + 100));
-    }
-  }
-  sk_sp<SkTypeface> regular_system_font = SkMakeTypefaceFromCTFont(
-      (CTFontRef)CFAutorelease(CTFontCreateUIFontForLanguage(
-          kCTFontUIFontSystem, kSFProTextBreakPoint, NULL)));
-  if (regular_system_font) {
-    dynamic_font_manager.font_provider().RegisterTypeface(regular_system_font,
-                                                          kSFProTextName);
-  }
-  for (int i = 0; i < 9; i++) {
-    const int font_weight = i * 100;
-    sk_sp<SkTypeface> large_system_font_weighted =
-        SkMakeTypefaceFromCTFont((CTFontRef)CFAutorelease(
-            MatchSystemUIFont(font_weight, kSFProTextBreakPoint)));
-    if (large_system_font_weighted) {
-      dynamic_font_manager.font_provider().RegisterTypeface(
-          large_system_font_weighted,
-          kSFProTextName + "w" + std::to_string(font_weight + 100));
+          kSFProDisplayName);
     }
   }
 }

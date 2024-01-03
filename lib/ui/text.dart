@@ -1749,7 +1749,7 @@ class TextStyle {
          fontVariations,
        ),
        _leadingDistribution = leadingDistribution,
-       _fontFamily = _proxySystemFont(fontFamily, fontWeight) ?? '',
+       _fontFamily = fontFamily ?? '',
        _fontFamilyFallback = fontFamilyFallback,
        _fontSize = fontSize,
        _letterSpacing = letterSpacing,
