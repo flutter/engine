@@ -174,7 +174,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
             input_snapshot->texture->GetYCoordScale();
 
         auto r = Radius{transformed_blur_radius_length};
-        FS::BlurInfo frag_info = GenerateBlurInfo(
+        FS::KernelSamples frag_info = GenerateBlurInfo(
             {.blur_uv_offset =
                  pass_transform.Invert()
                      .TransformDirection(Vector2(1, 0))
@@ -234,7 +234,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
             renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                 input_descriptor));
         VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-        FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+        FS::BindKernelSamples(cmd, host_buffer.EmplaceUniform(frag_info));
 
         return pass.AddCommand(std::move(cmd));
       };

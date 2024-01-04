@@ -18,7 +18,7 @@ struct BlurParameters {
   int step_size;
 };
 
-GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
+GaussianBlurPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     BlurParameters parameters);
 
 /// Performs a bidirectional Gaussian blur.

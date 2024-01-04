@@ -2,17 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// 1D (directional) gaussian blur.
-//
-// Paths for future optimization:
-//   * Remove the uv bounds multiplier in SampleColor by adding optional
-//     support for SamplerAddressMode::ClampToBorder in the texture sampler.
-//   * Render both blur passes into a smaller texture than the source image
-//     (~1/radius size).
-//   * If doing the small texture render optimization, cache misses can be
-//     reduced in the first pass by sampling the source textures with a mip
-//     level of log2(min_radius).
-
 #include <impeller/constants.glsl>
 #include <impeller/gaussian.glsl>
 #include <impeller/texture.glsl>
@@ -20,14 +9,14 @@
 
 uniform f16sampler2D texture_sampler;
 
-struct BlurSample {
+struct KernelSample {
   f16vec2 uv_offset;
   float16_t coefficient;
 };
 
-uniform BlurInfo {
+uniform KernelSamples {
   int sample_count;
-  BlurSample samples[24];
+  KernelSample samples[24];
 }
 blur_info;
 

@@ -169,7 +169,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
                 linear_sampler_descriptor));
         GaussianBlurVertexShader::BindFrameInfo(
             cmd, host_buffer.EmplaceUniform(frame_info));
-        GaussianBlurFragmentShader::BindBlurInfo(
+        GaussianBlurFragmentShader::BindKernelSamples(
             cmd, host_buffer.EmplaceUniform(GenerateBlurInfo(blur_info)));
         pass.AddCommand(std::move(cmd));
 
@@ -431,9 +431,9 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
   return clamped * scalar;
 }
 
-GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
+GaussianBlurPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     BlurParameters parameters) {
-  GaussianBlurPipeline::FragmentShader::BlurInfo result{
+  GaussianBlurPipeline::FragmentShader::KernelSamples result{
       .sample_count =
           ((2 * parameters.blur_radius) / parameters.step_size) + 1};
   FML_CHECK(result.sample_count < 24);
