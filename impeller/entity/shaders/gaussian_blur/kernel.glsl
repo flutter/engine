@@ -10,8 +10,8 @@
 uniform f16sampler2D texture_sampler;
 
 struct KernelSample {
-  f16vec2 uv_offset;
-  float16_t coefficient;
+  vec2 uv_offset;
+  float coefficient;
 };
 
 uniform KernelSamples {
@@ -36,7 +36,7 @@ void main() {
   f16vec4 total_color = f16vec4(0.0hf);
 
   for (int i = 0; i < blur_info.sample_count; ++i) {
-    float16_t coefficient = blur_info.samples[i].coefficient;
+    float16_t coefficient = float16_t(blur_info.samples[i].coefficient);
     total_color +=
         coefficient * Sample(texture_sampler,
                              v_texture_coords + blur_info.samples[i].uv_offset);
