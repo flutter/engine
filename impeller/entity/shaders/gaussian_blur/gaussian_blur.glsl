@@ -45,15 +45,13 @@ out f16vec4 frag_color;
 
 void main() {
   f16vec4 total_color = f16vec4(0.0hf);
-  float16_t gaussian_integral = 0.0hf;
 
   for (int i = 0; i < blur_info.sample_count; ++i) {
     float16_t coefficient = blur_info.samples[i].coefficient;
-    gaussian_integral += coefficient;
     total_color +=
         coefficient * Sample(texture_sampler,
                              v_texture_coords + blur_info.samples[i].uv_offset);
   }
 
-  frag_color = total_color / gaussian_integral;
+  frag_color = total_color;
 }

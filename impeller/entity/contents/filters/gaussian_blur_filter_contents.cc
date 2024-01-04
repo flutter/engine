@@ -438,6 +438,7 @@ GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
           ((2 * parameters.blur_radius) / parameters.step_size) + 1};
   FML_CHECK(result.sample_count < 24);
 
+  Scalar tally = 0.0f;
   for (int i = 0; i < result.sample_count; i += parameters.step_size) {
     int x = i - parameters.blur_radius;
     result.samples[i] = {
@@ -446,6 +447,12 @@ GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
                             (parameters.blur_sigma * parameters.blur_sigma)) /
                        (sqrtf(2.0f * M_PI) * parameters.blur_sigma),
     };
+    tally += result.samples[i].coefficient;
+  }
+
+  // Make sure everything adds up to 1.
+  for (auto& sample : result.samples) {
+    sample.coefficient /= tally;
   }
 
   return result;
