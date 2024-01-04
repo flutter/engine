@@ -439,8 +439,8 @@ GaussianBlurPipeline::FragmentShader::BlurInfo GenerateBlurInfo(
   FML_CHECK(result.sample_count < 24);
 
   Scalar tally = 0.0f;
-  for (int i = 0; i < result.sample_count; i += parameters.step_size) {
-    int x = i - parameters.blur_radius;
+  for (int i = 0; i < result.sample_count; ++i) {
+    int x = (i * parameters.step_size) - parameters.blur_radius;
     result.samples[i] = {
         .uv_offset = parameters.blur_uv_offset * x,
         .coefficient = expf(-0.5f * (x * x) /
