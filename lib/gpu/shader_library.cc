@@ -216,12 +216,15 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
             members.push_back(impeller::ShaderStructMemberMetadata{
                 .type = FromUniformType(struct_member->type()),
                 .name = struct_member->name()->c_str(),
-                .offset = struct_member->offset_in_bytes(),
-                .size = struct_member->element_size_in_bytes(),
-                .byte_length = struct_member->total_size_in_bytes(),
-                .array_elements = struct_member->array_elements() != 0
-                                      ? std::optional<size_t>(std::nullopt)
-                                      : struct_member->array_elements(),
+                .offset = static_cast<size_t>(struct_member->offset_in_bytes()),
+                .size =
+                    static_cast<size_t>(struct_member->element_size_in_bytes()),
+                .byte_length =
+                    static_cast<size_t>(struct_member->total_size_in_bytes()),
+                .array_elements =
+                    struct_member->array_elements() != 0
+                        ? std::optional<size_t>(std::nullopt)
+                        : static_cast<size_t>(struct_member->array_elements()),
             });
           }
         }
@@ -230,16 +233,16 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
             .slot =
                 impeller::ShaderUniformSlot{
                     .name = uniform->name()->c_str(),
-                    .ext_res_0 = uniform->ext_res_0(),
-                    .set = uniform->set(),
-                    .binding = uniform->binding(),
+                    .ext_res_0 = static_cast<size_t>(uniform->ext_res_0()),
+                    .set = static_cast<size_t>(uniform->set()),
+                    .binding = static_cast<size_t>(uniform->binding()),
                 },
             .metadata =
                 impeller::ShaderMetadata{
                     .name = uniform->name()->c_str(),
                     .members = members,
                 },
-            .size_in_bytes = uniform->size_in_bytes(),
+            .size_in_bytes = static_cast<size_t>(uniform->size_in_bytes()),
         };
       }
     }
@@ -250,9 +253,9 @@ fml::RefPtr<ShaderLibrary> ShaderLibrary::MakeFromFlatbuffer(
       for (const auto& uniform : *backend_shader->uniform_textures()) {
         uniform_textures[uniform->name()->str()] = impeller::SampledImageSlot{
             .name = uniform->name()->c_str(),
-            .texture_index = uniform->ext_res_0(),
-            .set = uniform->set(),
-            .binding = uniform->binding(),
+            .texture_index = static_cast<size_t>(uniform->ext_res_0()),
+            .set = static_cast<size_t>(uniform->set()),
+            .binding = static_cast<size_t>(uniform->binding()),
         };
       }
     }
