@@ -65,7 +65,7 @@ static bool OutputIPLR(
     if (!sksl_shader) {
       return false;
     }
-    stages.AddShader(sksl_shader);
+    // stages.AddShader(sksl_shader);
   }
 
   for (const auto& platform : switches.PlatformsToCompile()) {

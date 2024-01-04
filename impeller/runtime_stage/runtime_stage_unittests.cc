@@ -25,10 +25,6 @@ using RuntimeStageTest = RuntimeStagePlayground;
 INSTANTIATE_PLAYGROUND_SUITE(RuntimeStageTest);
 
 TEST_P(RuntimeStageTest, CanReadValidBlob) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
@@ -40,10 +36,6 @@ TEST_P(RuntimeStageTest, CanReadValidBlob) {
 }
 
 TEST_P(RuntimeStageTest, CanRejectInvalidBlob) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   ScopedValidationDisable disable_validation;
   const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
@@ -59,10 +51,6 @@ TEST_P(RuntimeStageTest, CanRejectInvalidBlob) {
 }
 
 TEST_P(RuntimeStageTest, CanReadUniforms) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
@@ -75,139 +63,135 @@ TEST_P(RuntimeStageTest, CanReadUniforms) {
   {
     auto uni = stage->GetUniform("u_color");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 4u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 0u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 4u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 0u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_alpha");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 1u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 1u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 1u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 1u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_sparkle_color");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 4u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 2u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 4u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 2u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_sparkle_alpha");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 1u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 3u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 1u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 3u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_blur");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 1u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 4u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 1u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 4u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_radius_scale");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 1u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 6u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 1u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 6u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_max_radius");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 1u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 7u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 1u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 7u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_resolution_scale");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 8u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 8u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_noise_scale");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 9u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 9u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_noise_phase");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 1u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 10u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 1u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 10u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
 
   {
     auto uni = stage->GetUniform("u_circle1");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 11u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 11u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_circle2");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 12u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 12u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_circle3");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 13u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 13u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_rotation1");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 14u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 14u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_rotation2");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 15u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 15u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
   {
     auto uni = stage->GetUniform("u_rotation3");
     ASSERT_NE(uni, nullptr);
-    ASSERT_EQ(uni->dimensions.rows, 2u);
-    ASSERT_EQ(uni->dimensions.cols, 1u);
-    ASSERT_EQ(uni->location, 16u);
-    ASSERT_EQ(uni->type, RuntimeUniformType::kFloat);
+    EXPECT_EQ(uni->dimensions.rows, 2u);
+    EXPECT_EQ(uni->dimensions.cols, 1u);
+    EXPECT_EQ(uni->location, 16u);
+    EXPECT_EQ(uni->type, RuntimeUniformType::kFloat);
   }
 }
 
 TEST_P(RuntimeStageTest, CanRegisterStage) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
   ASSERT_TRUE(fixture);
@@ -243,9 +227,6 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
 }
 
 TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
   auto stages = OpenAssetAsRuntimeStage("ink_sparkle.frag.iplr");
   auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
 
@@ -263,6 +244,7 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
+  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
 
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   ColorAttachmentDescriptor color0;

@@ -353,6 +353,7 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
   }
   auto data = std::make_unique<RuntimeStageData::Shader>();
   data->entrypoint = options_.entry_point_name;
+  FML_LOG(ERROR) << "writing entrypoint as " << options_.entry_point_name;
   data->stage = entrypoints.front().execution_model;
   data->shader = shader_data_;
   data->backend = backend.value();
@@ -360,7 +361,6 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
   // Sort the IR so that the uniforms are in declaration order.
   std::vector<spirv_cross::ID> uniforms =
       SortUniforms(ir_.get(), compiler_.GetCompiler());
-
   for (auto& sorted_id : uniforms) {
     auto var = ir_->ids[sorted_id].get<spirv_cross::SPIRVariable>();
     const auto spir_type = compiler_->get_type(var.basetype);
@@ -374,6 +374,35 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     uniform_description.bit_width = spir_type.width;
     uniform_description.array_elements = GetArrayElements(spir_type);
     data->uniforms.emplace_back(std::move(uniform_description));
+  }
+
+  const auto ubos = compiler_->get_shader_resources().uniform_buffers;
+  if (data->backend == RuntimeStageBackend::kVulkan && !ubos.empty()) {
+    if (ubos.size() != 1 &&
+        ubos[0].name != "_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock") {
+      VALIDATION_LOG << "Expected a single UBO resource named "
+                        "'_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock' "
+                        "for Vulkan runtime stage backend.";
+      return nullptr;
+    }
+
+    const auto& ubo = ubos[0];
+
+    const auto& struct_type = compiler_->get_type(ubo.type_id);
+    FML_CHECK(struct_type.basetype == spirv_cross::SPIRType::BaseType::Struct);
+    for (size_t i = 0; i < struct_type.member_types.size(); i += 1) {
+      const auto spir_type = compiler_->get_type(struct_type.member_types[i]);
+      UniformDescription uniform_description;
+      uniform_description.name =
+          compiler_->get_member_name(ubo.base_type_id, i);
+      uniform_description.location = i;
+      uniform_description.type = spir_type.basetype;
+      uniform_description.rows = spir_type.vecsize;
+      uniform_description.columns = spir_type.columns;
+      uniform_description.bit_width = spir_type.width;
+      uniform_description.array_elements = GetArrayElements(spir_type);
+      data->uniforms.emplace_back(std::move(uniform_description));
+    }
   }
 
   // We only need to worry about storing vertex attributes.
@@ -425,6 +454,8 @@ static std::string ToString(CompilerBackend::Type type) {
       return "Metal Shading Language";
     case CompilerBackend::Type::kGLSL:
       return "OpenGL Shading Language";
+    case CompilerBackend::Type::kGLSLVulkan:
+      return "OpenGL Shading Language (Relaxed Vulkan Semantics)";
     case CompilerBackend::Type::kSkSL:
       return "SkSL Shading Language";
   }
