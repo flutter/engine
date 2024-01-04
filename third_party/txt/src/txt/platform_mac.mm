@@ -83,11 +83,10 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   // than 17. The "familyName" property returned from CoreText stays the same
   // despite the typeface is different.
   //
-  // Below code manually loads and registers the larger font. The existing
-  // fallback correctly loads the smaller font. The code also iterates through
-  // the possible font weights from 100 - 900 to correctly load all of them, as
-  // a CTFont object for the large system font does not include all of the font
-  // weights by default.
+  // Below code manually loads and registers the larger font. The existing fallback
+  // correctly loads the smaller font. The code also iterates through the possible
+  // font weights from 100 - 900 to correctly load all of them, as a CTFont object
+  // for the large system font does not include all of the font weights by default.
   //
   // Darwin system fonts from 17 to 28 also have dynamic spacing based on sizes.
   // These two fonts do not match the spacings when sizes are from 17 to 28.
@@ -95,30 +94,23 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   //
   // See https://www.wwdcnotes.com/notes/wwdc20/10175/ for Apple's document on
   // this topic.
-  for (int i = 0; i < 8; i++) {
-    const int font_weight = i * 100;
+  auto register_weighted_font = [&dynamic_font_manager](const int weight) {
     sk_sp<SkTypeface> large_system_font_weighted =
         SkMakeTypefaceFromCTFont((CTFontRef)CFAutorelease(
-            MatchSystemUIFont(font_weight, kSFProDisplayBreakPoint)));
+            MatchSystemUIFont(weight, kSFProDisplayBreakPoint)));
     if (large_system_font_weighted) {
       dynamic_font_manager.font_provider().RegisterTypeface(
           large_system_font_weighted, kSFProDisplayName);
     }
+  };
+  for (int i = 0; i < 8; i++) {
+    const int font_weight = i * 100;
+    register_weighted_font(font_weight);
   }
   // The value 780 returns a font weight of 800.
-  sk_sp<SkTypeface> large_system_font_weighted_800 = SkMakeTypefaceFromCTFont((
-      CTFontRef)CFAutorelease(MatchSystemUIFont(780, kSFProDisplayBreakPoint)));
-  if (large_system_font_weighted_800) {
-    dynamic_font_manager.font_provider().RegisterTypeface(
-        large_system_font_weighted_800, kSFProDisplayName);
-  }
+  register_weighted_font(780);
   // The value of 810 returns a font weight of 900.
-  sk_sp<SkTypeface> large_system_font_weighted_900 = SkMakeTypefaceFromCTFont((
-      CTFontRef)CFAutorelease(MatchSystemUIFont(810, kSFProDisplayBreakPoint)));
-  if (large_system_font_weighted_900) {
-    dynamic_font_manager.font_provider().RegisterTypeface(
-        large_system_font_weighted_900, kSFProDisplayName);
-  }
+  register_weighted_font(810);
 }
 
 }  // namespace txt

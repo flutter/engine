@@ -28,7 +28,7 @@ TEST_F(PlatformMacTests, RegisterSystemFonts) {
   ASSERT_EQ(dynamic_font_manager.font_provider()
                 .MatchFamily("CupertinoSystemDisplay")
                 ->count(),
-            9);
+            10);
 }
 
 }  // namespace testing
