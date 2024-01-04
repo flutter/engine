@@ -552,9 +552,8 @@ EXPORTED Dart_Handle LookupEntryPoint(const char* uri, const char* name) {
 
 EXPORTED void Spawn(const char* entrypoint, const char* route) {
   auto shell = g_shell->get();
-  fml::AutoResetWaitableEvent latch;
   auto isolate = Dart_CurrentIsolate();
-  auto spawn_task = [shell, &latch, entrypoint = std::string(entrypoint),
+  auto spawn_task = [shell, entrypoint = std::string(entrypoint),
                      route = std::string(route)]() {
     auto configuration = RunConfiguration::InferFromSettings(
         shell->GetSettings(), /*io_worker=*/nullptr,
@@ -600,16 +599,14 @@ EXPORTED void Spawn(const char* entrypoint, const char* route) {
                     [spawned_shell]() { delete spawned_shell; });
               });
         });
-    latch.Signal();
   };
   Dart_ExitIsolate();
-  // The global shell pointer is kept alive by the RunTester routine above.
-  // This in turn keeps the isolate group alive. The UI task runner is blocked
-  // until the isolate spawns, which guarantees the global shell pointer won't
-  // be deleted.
+  // The global shell pointer is never deleted, short of application exit.
+  // This UI task runner cannot be latched because it will block spawning a new
+  // shell in the case where flutter_tester is running multithreaded.
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), spawn_task);
-  latch.Wait();
+
   Dart_EnterIsolate(isolate);
 }
 }
