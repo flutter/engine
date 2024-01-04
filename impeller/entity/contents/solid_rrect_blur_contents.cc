@@ -9,11 +9,8 @@
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -94,8 +91,6 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
     });
   }
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "RRect Shadow");
   ContentContextOptions opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangleStrip;
   Color color = color_;
@@ -103,16 +98,11 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
     opts.is_for_rrect_blur_clear = true;
     color = Color::White();
   }
-  cmd.pipeline = renderer.GetRRectBlurPipeline(opts);
-  cmd.stencil_reference = entity.GetClipDepth();
-
-  cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransform() *
                    Matrix::MakeTranslation(positive_rect.GetOrigin());
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
   frag_info.color = color;
@@ -121,9 +111,19 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   frag_info.corner_radius =
       std::min(corner_radius_, std::min(positive_rect.GetWidth() / 2.0f,
                                         positive_rect.GetHeight() / 2.0f));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
-  if (!pass.AddCommand(std::move(cmd))) {
+#ifdef IMPELLER_DEBUG
+  pass.SetCommandLabel("RRect Shadow");
+#endif  // IMPELLER_DEBUG
+  pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(
+      vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+  VS::BindFrameInfo(pass,
+                    pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  FS::BindFragInfo(pass, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+
+  if (!pass.Dispatch()) {
     return false;
   }
 
