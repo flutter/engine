@@ -67,6 +67,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
 #include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel_decal.frag.h"
+#include "impeller/entity/kernel_nodecal.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -137,6 +139,12 @@ using GaussianBlurDecalPipeline =
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurNoalphaNodecalFragmentShader>;
+using KernelDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader,
+                    KernelDecalFragmentShader>;
+using KernelPipeline =
+    RenderPipelineT<GaussianBlurVertexShader,
+                    KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =

@@ -14,8 +14,8 @@
 
 namespace impeller {
 
-using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
-using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
+using GaussianBlurVertexShader = KernelPipeline::VertexShader;
+using GaussianBlurFragmentShader = KernelPipeline::FragmentShader;
 
 namespace {
 
@@ -431,9 +431,9 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
   return clamped * scalar;
 }
 
-GaussianBlurPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
+KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     BlurParameters parameters) {
-  GaussianBlurPipeline::FragmentShader::KernelSamples result{
+  KernelPipeline::FragmentShader::KernelSamples result{
       .sample_count =
           ((2 * parameters.blur_radius) / parameters.step_size) + 1};
   FML_CHECK(result.sample_count < 24);

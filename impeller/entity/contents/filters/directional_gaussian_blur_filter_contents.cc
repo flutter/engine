@@ -77,8 +77,8 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     const Matrix& effect_transform,
     const Rect& coverage,
     const std::optional<Rect>& coverage_hint) const {
-  using VS = GaussianBlurPipeline::VertexShader;
-  using FS = GaussianBlurPipeline::FragmentShader;
+  using VS = KernelPipeline::VertexShader;
+  using FS = KernelPipeline::FragmentShader;
 
   //----------------------------------------------------------------------------
   /// Handle inputs.
