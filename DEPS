@@ -715,7 +715,7 @@ deps = {
   Var('flutter_git') + '/third_party/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
 
   'src/flutter/third_party/pkg/pointycastle':
-  Var('github_git') + '/PointyCastle/pointycastle' + '@' + '6ff86a9d0c81ad92a4a879acad84ed9b96536240', # 3.6.2
+  Var('flutter_git') + '/bcgit/pc-dart' + '@' + '59e06028bff338adc7d25ff9da4063a3b2e28b4c', # 3.7.2
 
   'src/third_party/gradle': {
     'packages': [
