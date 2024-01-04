@@ -24,7 +24,8 @@
                 "--unoptimized",
                 "--no-lto",
                 "--prebuilt-dart-sdk",
-                "--enable-impeller-3d"
+                "--enable-impeller-3d",
+                "--no-goma"
             ],
             "name": "host_debug_unopt",
             "ninja": {
@@ -82,7 +83,8 @@
                 "--runtime-mode",
                 "debug",
                 "--simulator",
-                "--no-lto"
+                "--no-lto",
+                "--no-goma"
             ],
             "name": "ios_debug_sim",
             "ninja": {
@@ -142,7 +144,8 @@
                "--prebuilt-dart-sdk",
                "--force-mac-arm64",
                "--mac-cpu",
-               "arm64"
+               "arm64",
+               "--no-goma"
             ],
             "name": "host_debug_unopt_arm64",
             "ninja": {
@@ -191,7 +194,8 @@
                 "--no-lto",
                 "--force-mac-arm64",
                 "--simulator-cpu",
-                "arm64"
+                "arm64",
+                "--no-goma"
             ],
             "name": "ios_debug_sim_arm64",
             "ninja": {
@@ -262,7 +266,8 @@
                 "--force-mac-arm64",
                 "--simulator-cpu",
                 "arm64",
-                "--darwin-extension-safe"
+                "--darwin-extension-safe",
+                "--no-goma"
             ],
             "name": "ios_debug_sim_arm64_extension_safe",
             "ninja": {
