@@ -8,12 +8,12 @@
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
@@ -85,6 +85,9 @@ class ContextVK final : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  // |Context|
+  const std::shared_ptr<HostBuffer> GetTransientsBuffer() const override;
 
   // |Context|
   void Shutdown() override;
@@ -198,6 +201,7 @@ class ContextVK final : public Context,
   std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
+  std::shared_ptr<HostBuffer> host_buffer_;
 
   bool sync_presentation_ = false;
   const uint64_t hash_;

@@ -13,6 +13,7 @@
 #include "flutter/fml/paths.h"
 #include "flutter/fml/synchronization/sync_switch.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
@@ -147,6 +148,7 @@ ContextMTL::ContextMTL(
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
+  host_buffer_ = HostBuffer::Create(resource_allocator_);
 #ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
 #endif  // IMPELLER_DEBUG
@@ -307,6 +309,11 @@ std::string ContextMTL::DescribeGpuModel() const {
 // |Context|
 bool ContextMTL::IsValid() const {
   return is_valid_;
+}
+
+// |Context|
+const std::shared_ptr<HostBuffer> ContextMTL::GetTransientsBuffer() const {
+  return host_buffer_;
 }
 
 // |Context|

@@ -17,9 +17,6 @@
 
 namespace impeller {
 
-// TODO: make this called something else, have a single buffer for all
-// render/compute/blit passes, add flush call that no-ops if necessary.
-// This currently assumes that the memory is coherent.
 class HostBuffer final : public Buffer {
  public:
   static std::shared_ptr<HostBuffer> Create(
@@ -118,15 +115,6 @@ class HostBuffer final : public Buffer {
   ///        reused.
   void Reset();
 
-  //----------------------------------------------------------------------------
-  /// @brief Returns the capacity of the HostBuffer in memory in bytes.
-  size_t GetSize() const;
-
-  //----------------------------------------------------------------------------
-  /// @brief Returns the size of the currently allocated HostBuffer memory in
-  ///        bytes.
-  size_t GetLength() const;
-
  private:
   struct HostBufferState {
     [[nodiscard]] std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
@@ -142,9 +130,16 @@ class HostBuffer final : public Buffer {
 
     size_t GetLength() const { return offset; }
 
+    void MaybeCreateNewBuffer();
+
+    std::shared_ptr<DeviceBuffer> GetCurrentBuffer() {
+      return device_buffers[current_buffer];
+    }
+
     std::shared_ptr<Allocator> allocator;
-    mutable std::vector<std::shared_ptr<DeviceBuffer>> device_buffers;
-    mutable size_t offset = 0u;
+    std::vector<std::shared_ptr<DeviceBuffer>> device_buffers;
+    size_t current_buffer = 0u;
+    size_t offset = 0u;
     std::string label;
   };
 

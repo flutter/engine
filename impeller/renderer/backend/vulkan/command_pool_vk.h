@@ -8,9 +8,8 @@
 #include <memory>
 #include <optional>
 #include <utility>
-#include "fml/macros.h"
+
 #include "impeller/base/thread.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 
 namespace impeller {

@@ -181,9 +181,7 @@ class Context {
   ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
-  //----------------------------------------------------------------------------
-  /// @brief Accessor for a pool of HostBuffers.
-  Pool<HostBuffer>& GetHostBufferPool() const { return host_buffer_pool_; }
+  virtual const std::shared_ptr<HostBuffer> GetTransientsBuffer() const = 0;
 
   CaptureContext capture;
 
@@ -204,8 +202,6 @@ class Context {
   Context();
 
  private:
-  mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
-
   Context(const Context&) = delete;
 
   Context& operator=(const Context&) = delete;

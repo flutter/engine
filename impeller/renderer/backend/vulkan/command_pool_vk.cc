@@ -9,8 +9,9 @@
 #include <utility>
 
 #include "fml/thread_local.h"
-#include "fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 #include "vulkan/vulkan_structs.hpp"
 

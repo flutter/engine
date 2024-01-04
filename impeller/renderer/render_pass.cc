@@ -49,10 +49,6 @@ ISize RenderPass::GetRenderTargetSize() const {
   return render_target_size_;
 }
 
-HostBuffer& RenderPass::GetTransientsBuffer() {
-  return *transients_buffer_;
-}
-
 void RenderPass::SetLabel(std::string label) {
   if (label.empty()) {
     return;

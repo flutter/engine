@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include "fml/concurrent_message_loop.h"
+#include "impeller/core/host_buffer.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -445,6 +446,7 @@ void ContextVK::Setup(Settings settings) {
   command_pool_recycler_ = std::move(command_pool_recycler);
   descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
+  host_buffer_ = HostBuffer::Create(allocator_);
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from
@@ -469,6 +471,10 @@ std::string ContextVK::DescribeGpuModel() const {
 
 bool ContextVK::IsValid() const {
   return is_valid_;
+}
+
+const std::shared_ptr<HostBuffer> ContextVK::GetTransientsBuffer() const {
+  return host_buffer_;
 }
 
 std::shared_ptr<Allocator> ContextVK::GetResourceAllocator() const {

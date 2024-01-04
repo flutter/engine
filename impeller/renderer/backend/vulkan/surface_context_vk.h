@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
 
@@ -48,6 +49,9 @@ class SurfaceContextVK : public Context,
 
   // |Context|
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
+
+  // |Context|
+  const std::shared_ptr<HostBuffer> GetTransientsBuffer() const override;
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;

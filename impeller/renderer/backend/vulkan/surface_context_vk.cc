@@ -48,6 +48,12 @@ std::shared_ptr<CommandBuffer> SurfaceContextVK::CreateCommandBuffer() const {
   return parent_->CreateCommandBuffer();
 }
 
+// |Context|
+const std::shared_ptr<HostBuffer> SurfaceContextVK::GetTransientsBuffer()
+    const {
+  return parent_->GetTransientsBuffer();
+}
+
 const std::shared_ptr<const Capabilities>& SurfaceContextVK::GetCapabilities()
     const {
   return parent_->GetCapabilities();

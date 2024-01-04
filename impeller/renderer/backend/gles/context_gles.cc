@@ -7,6 +7,7 @@
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 
@@ -65,6 +66,7 @@ ContextGLES::ContextGLES(
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES(
             device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
+  host_buffer_ = HostBuffer::Create(resource_allocator_);
   gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable(),
                                                 enable_gpu_tracing);
   is_valid_ = true;
@@ -130,6 +132,11 @@ std::shared_ptr<PipelineLibrary> ContextGLES::GetPipelineLibrary() const {
 std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
   return std::shared_ptr<CommandBufferGLES>(
       new CommandBufferGLES(weak_from_this(), reactor_));
+}
+
+// |Context|
+const std::shared_ptr<HostBuffer> ContextGLES::GetTransientsBuffer() const {
+  return host_buffer_;
 }
 
 // |Context|

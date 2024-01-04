@@ -7,11 +7,8 @@
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
-#include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/device_buffer.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/vma.h"
 

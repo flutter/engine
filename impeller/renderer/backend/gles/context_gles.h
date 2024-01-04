@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
@@ -52,6 +53,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
+  std::shared_ptr<HostBuffer> host_buffer_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
   // in order to satisfy the Context::GetCapabilities signature which returns
@@ -87,6 +89,9 @@ class ContextGLES final : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  // |Context|
+  const std::shared_ptr<HostBuffer> GetTransientsBuffer() const override;
 
   // |Context|
   void Shutdown() override;
