@@ -441,7 +441,7 @@ KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
   Scalar tally = 0.0f;
   for (int i = 0; i < result.sample_count; ++i) {
     int x = (i * parameters.step_size) - parameters.blur_radius;
-    result.samples[i] = {
+    result.samples[i] = KernelPipeline::FragmentShader::KernelSample{
         .uv_offset = parameters.blur_uv_offset * x,
         .coefficient = expf(-0.5f * (x * x) /
                             (parameters.blur_sigma * parameters.blur_sigma)) /
