@@ -247,6 +247,7 @@ impeller_component("entity") {
   }
 
   deps = [ "//flutter/fml" ]
+  defines = [ "_USE_MATH_DEFINES" ]
 }
 
 impeller_component("entity_test_helpers") {
