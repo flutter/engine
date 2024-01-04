@@ -297,7 +297,8 @@ std::vector<TargetPlatform> Switches::PlatformsToCompile() const {
 }
 
 TargetPlatform Switches::SelectDefaultTargetPlatform() const {
-  if (target_platform_ == TargetPlatform::kUnknown) {
+  if (target_platform_ == TargetPlatform::kUnknown &&
+      !runtime_stages_.empty()) {
     return runtime_stages_.front();
   }
   return target_platform_;

@@ -8,6 +8,7 @@
 #include <codecvt>
 #include <locale>
 #include <map>
+#include <optional>
 #include <string>
 
 #include "flutter/fml/macros.h"
