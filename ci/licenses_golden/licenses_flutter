@@ -3657,6 +3657,87 @@ SOFTWARE.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: json
+ORIGIN: ../../../flutter/third_party/json/LICENSE.MIT
+TYPE: LicenseType.mit
+FILE: ../../../flutter/third_party/json/include/nlohmann/adl_serializer.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/byte_container_with_subtype.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/abi_macros.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/conversions/from_json.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/conversions/to_chars.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/conversions/to_json.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/exceptions.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/hash.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/input/binary_reader.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/input/input_adapters.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/input/json_sax.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/input/lexer.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/input/parser.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/input/position_t.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/iterators/internal_iterator.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/iterators/iter_impl.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/iterators/iteration_proxy.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/iterators/iterator_traits.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/iterators/json_reverse_iterator.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/iterators/primitive_iterator.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/json_custom_base_class.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/json_pointer.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/json_ref.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/macro_scope.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/macro_unscope.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/call_std/begin.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/call_std/end.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/cpp_future.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/detected.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/identity_tag.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/is_sax.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/std_fs.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/type_traits.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/meta/void_t.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/output/binary_writer.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/output/output_adapters.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/output/serializer.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/string_concat.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/string_escape.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/detail/value_t.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/json.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/json_fwd.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/ordered_map.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/thirdparty/hedley/hedley.hpp
+FILE: ../../../flutter/third_party/json/include/nlohmann/thirdparty/hedley/hedley_undef.hpp
+FILE: ../../../flutter/third_party/json/nlohmann_json.natvis
+FILE: ../../../flutter/third_party/json/single_include/nlohmann/json.hpp
+FILE: ../../../flutter/third_party/json/single_include/nlohmann/json_fwd.hpp
+FILE: ../../../flutter/third_party/json/tools/amalgamate/config_json.json
+FILE: ../../../flutter/third_party/json/tools/amalgamate/config_json_fwd.json
+FILE: ../../../flutter/third_party/json/tools/generate_natvis/nlohmann_json.natvis.j2
+FILE: ../../../flutter/third_party/json/tools/macro_builder/main.cpp
+FILE: ../../../flutter/third_party/json/tools/serve_header/demo.png
+FILE: ../../../flutter/third_party/json/tools/serve_header/serve_header.yml.example
+FILE: ../../../flutter/third_party/json/wsjcpp.yml
+----------------------------------------------------------------------------------------------------
+Copyright (c) 2013-2022 Niels Lohmann
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: glfw
 ORIGIN: ../../../flutter/third_party/glfw/src/linux_joystick.h
 ORIGIN: ../../../flutter/third_party/glfw/src/wl_init.c
@@ -4933,6 +5014,8 @@ ORIGIN: ../../../flutter/impeller/compiler/reflector.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/impeller/compiler/reflector.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/runtime_stage_data.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/runtime_stage_data.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_bundle.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_bundle.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl + ../../../flutter/LICENSE
@@ -5475,6 +5558,7 @@ ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage.fbs + ../../../flu
 ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/runtime_stage/runtime_stage_types.fbs + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation_clip.cc + ../../../flutter/LICENSE
@@ -5529,6 +5613,7 @@ ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_main.cc + ../../
 ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_writer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/shader_archive/shader_archive_writer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/shader_bundle/shader_bundle.fbs + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/c/tessellator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/c/tessellator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart + ../../../flutter/LICENSE
@@ -6541,6 +6626,9 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySe
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManagerTest.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayerTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h + ../../../flutter/LICENSE
@@ -7738,6 +7826,8 @@ FILE: ../../../flutter/impeller/compiler/reflector.cc
 FILE: ../../../flutter/impeller/compiler/reflector.h
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
+FILE: ../../../flutter/impeller/compiler/shader_bundle.cc
+FILE: ../../../flutter/impeller/compiler/shader_bundle.h
 FILE: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
@@ -8281,6 +8371,7 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.fbs
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
+FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_types.fbs
 FILE: ../../../flutter/impeller/scene/animation/animation.cc
 FILE: ../../../flutter/impeller/scene/animation/animation.h
 FILE: ../../../flutter/impeller/scene/animation/animation_clip.cc
@@ -8335,6 +8426,7 @@ FILE: ../../../flutter/impeller/shader_archive/shader_archive_main.cc
 FILE: ../../../flutter/impeller/shader_archive/shader_archive_types.h
 FILE: ../../../flutter/impeller/shader_archive/shader_archive_writer.cc
 FILE: ../../../flutter/impeller/shader_archive/shader_archive_writer.h
+FILE: ../../../flutter/impeller/shader_bundle/shader_bundle.fbs
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
 FILE: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart
@@ -9181,6 +9273,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/Platfor
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SurfaceProducerPlatformViewRenderTarget.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/text/ProcessTextPlugin.java
@@ -9332,6 +9425,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlugin
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterPluginAppLifeCycleDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Info.plist
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/PrivacyInfo.xcprivacy
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegateTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterAppDelegate_Test.h
@@ -9364,6 +9458,9 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySeco
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManagerTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h
@@ -11771,4 +11868,4 @@ TO DO
 Please send bug reports, offers of help, etc. to jpeg-info@jpegclub.org.
 ====================================================================================================
 
-Total license count: 112
+Total license count: 113

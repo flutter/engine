@@ -12,20 +12,24 @@
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/compiler/include_dir.h"
+#include "impeller/compiler/source_options.h"
 #include "impeller/compiler/types.h"
 
 namespace impeller {
 namespace compiler {
 
-struct Switches {
-  TargetPlatform target_platform = TargetPlatform::kUnknown;
+class Switches {
+ public:
   std::shared_ptr<fml::UniqueFD> working_directory = nullptr;
   std::vector<IncludeDir> include_directories = {};
   std::string source_file_name = "";
   SourceType input_type = SourceType::kUnknown;
+  /// The raw shader file output by the compiler. For --iplr and
+  /// --shader-bundle modes, this is used as the filename for the output
+  /// flatbuffer output.
   std::string sl_file_name = "";
   bool iplr = false;
-  std::string iplr_bundle = "";
+  std::string shader_bundle = "";
   std::string spirv_file_name = "";
   std::string reflection_json_name = "";
   std::string reflection_header_name = "";
@@ -48,7 +52,22 @@ struct Switches {
 
   bool AreValid(std::ostream& explain) const;
 
+  /// A vector containing at least one valid platform.
+  std::vector<TargetPlatform> PlatformsToCompile() const;
+  TargetPlatform SelectDefaultTargetPlatform() const;
+
+  // Creates source options from these switches for the specified
+  // TargetPlatform. Uses SelectDefaultTargetPlatform if not specified.
+  SourceOptions CreateSourceOptions(
+      std::optional<TargetPlatform> target_platform = std::nullopt) const;
+
   static void PrintHelp(std::ostream& stream);
+
+ private:
+  // Use |SelectDefaultTargetPlatform|.
+  TargetPlatform target_platform_ = TargetPlatform::kUnknown;
+  // Use |PlatformsToCompile|.
+  std::vector<TargetPlatform> runtime_stages_ = {};
 };
 
 }  // namespace compiler

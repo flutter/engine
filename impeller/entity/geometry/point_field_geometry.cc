@@ -18,7 +18,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+  if (CanUseCompute(renderer)) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
   auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
@@ -42,7 +42,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+  if (CanUseCompute(renderer)) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
   }
@@ -51,8 +51,9 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
   if (!vtx_builder.has_value()) {
     return {};
   }
-  auto uv_vtx_builder = ComputeUVGeometryCPU(
-      vtx_builder.value(), {0, 0}, texture_coverage.size, effect_transform);
+  auto uv_vtx_builder =
+      ComputeUVGeometryCPU(vtx_builder.value(), {0, 0},
+                           texture_coverage.GetSize(), effect_transform);
 
   auto& host_buffer = pass.GetTransientsBuffer();
   return {
@@ -213,7 +214,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     frame_info.count = total;
     frame_info.effect_transform = effect_transform.value();
     frame_info.texture_origin = {0, 0};
-    frame_info.texture_size = Vector2(texture_coverage.value().size);
+    frame_info.texture_size = Vector2(texture_coverage.value().GetSize());
 
     UV::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
     UV::BindGeometryData(cmd, geometry_buffer);
@@ -272,6 +273,14 @@ size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
 // |Geometry|
 GeometryVertexType PointFieldGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
+}
+
+// Compute is disabled for Vulkan because the barriers are incorrect, see
+// also: https://github.com/flutter/flutter/issues/140798 .
+bool PointFieldGeometry::CanUseCompute(const ContentContext& renderer) {
+  return renderer.GetDeviceCapabilities().SupportsCompute() &&
+         renderer.GetContext()->GetBackendType() ==
+             Context::BackendType::kMetal;
 }
 
 // |Geometry|

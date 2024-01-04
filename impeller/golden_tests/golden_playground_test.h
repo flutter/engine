@@ -36,6 +36,12 @@ class GoldenPlaygroundTest
 
   PlaygroundBackend GetBackend() const;
 
+  // TODO(dnfield): Delete this once
+  // https://github.com/flutter/flutter/issues/122823 is fixed.
+  bool BackendSupportsFragmentProgram() const {
+    return GetBackend() != PlaygroundBackend::kVulkan;
+  }
+
   void SetTypographerContext(
       std::shared_ptr<TypographerContext> typographer_context);
 
@@ -47,8 +53,7 @@ class GoldenPlaygroundTest
       const char* fixture_name,
       bool enable_mipmapping = false) const;
 
-  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
-      const char* asset_name) const;
+  RuntimeStage::Map OpenAssetAsRuntimeStage(const char* asset_name) const;
 
   std::shared_ptr<Context> GetContext() const;
 

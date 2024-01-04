@@ -281,7 +281,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   }
   // A blur sigma that is close to zero should not result in any shadow.
   if (std::fabs(paint.mask_blur_descriptor->sigma.sigma) <= kEhCloseEnough) {
-    return true;
+    return false;
   }
 
   Paint new_paint = paint;
@@ -341,7 +341,7 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
 void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
   if (rect.IsSquare()) {
     // Circles have slightly less overhead and can do stroking
-    DrawCircle(rect.GetCenter(), rect.GetSize().width * 0.5f, paint);
+    DrawCircle(rect.GetCenter(), rect.GetWidth() * 0.5f, paint);
     return;
   }
 
@@ -471,10 +471,9 @@ void Canvas::ClipOval(const Rect& bounds, Entity::ClipOperation clip_op) {
 void Canvas::ClipRRect(const Rect& rect,
                        const Size& corner_radii,
                        Entity::ClipOperation clip_op) {
-  auto size = rect.GetSize();
   // Does the rounded rect have a flat part on the top/bottom or left/right?
-  bool flat_on_TB = corner_radii.width * 2 < size.width;
-  bool flat_on_LR = corner_radii.height * 2 < size.height;
+  bool flat_on_TB = corner_radii.width * 2 < rect.GetWidth();
+  bool flat_on_LR = corner_radii.height * 2 < rect.GetHeight();
   auto geometry = Geometry::MakeRoundRect(rect, corner_radii);
   auto& cull_rect = transform_stack_.back().cull_rect;
   if (clip_op == Entity::ClipOperation::kIntersect &&                      //
@@ -680,6 +679,14 @@ void Canvas::SaveLayer(const Paint& paint,
                        const std::shared_ptr<ImageFilter>& backdrop_filter) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
+
+  // The DisplayList bounds/rtree doesn't account for filters applied to parent
+  // layers, and so sub-DisplayLists are getting culled as if no filters are
+  // applied.
+  // See also: https://github.com/flutter/flutter/issues/139294
+  if (paint.image_filter) {
+    transform_stack_.back().cull_rect = std::nullopt;
+  }
 
   auto& new_layer_pass = GetCurrentPass();
   new_layer_pass.SetBoundsLimit(bounds);
