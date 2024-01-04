@@ -147,9 +147,9 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
         if (tile_mode == Entity::TileMode::kDecal &&
             !renderer.GetDeviceCapabilities()
                  .SupportsDecalSamplerAddressMode()) {
-          cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+          cmd.pipeline = renderer.GetKernelDecalPipeline(options);
         } else {
-          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+          cmd.pipeline = renderer.GetKernelPipeline(options);
         }
 
         BindVertices<GaussianBlurVertexShader>(cmd, host_buffer,
