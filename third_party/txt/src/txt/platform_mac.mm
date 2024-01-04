@@ -83,10 +83,11 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   // than 17. The "familyName" property returned from CoreText stays the same
   // despite the typeface is different.
   //
-  // Below code manually loads and registers the larger font. The existing fallback
-  // correctly loads the smaller font. The code also iterates through the possible
-  // font weights from 100 - 900 to correctly load all of them, as a CTFont object
-  // for the large system font does not include all of the font weights by default.
+  // Below code manually loads and registers the larger font. The existing
+  // fallback correctly loads the smaller font. The code also iterates through
+  // the possible font weights from 100 - 900 to correctly load all of them, as
+  // a CTFont object for the large system font does not include all of the font
+  // weights by default.
   //
   // Darwin system fonts from 17 to 28 also have dynamic spacing based on sizes.
   // These two fonts do not match the spacings when sizes are from 17 to 28.
