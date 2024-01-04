@@ -776,7 +776,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // view hasn't been rendered already in this scope.
     final bool shouldRender =
         _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
-    if (shouldRender) {
+    // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
+    // order to perform golden tests in Flutter framework because on the HTML
+    // renderer, golden tests render to DOM and then take a browser screenshot,
+    // https://github.com/flutter/flutter/issues/137073.
+    if (shouldRender || renderer.rendererTag == 'html') {
       await renderer.renderScene(scene, viewToRender);
     }
   }

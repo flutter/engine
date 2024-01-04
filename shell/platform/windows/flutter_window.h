@@ -50,8 +50,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
                        unsigned int width,
                        unsigned int height);
 
-  HWND GetWindowHandle();
-
   // |KeyboardManager::WindowDelegate|
   virtual BOOL Win32PeekMessage(LPMSG lpMsg,
                                 UINT wMsgFilterMin,
@@ -155,10 +153,7 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void SetView(WindowBindingHandlerDelegate* view) override;
 
   // |FlutterWindowBindingHandler|
-  virtual WindowsRenderTarget GetRenderTarget() override;
-
-  // |FlutterWindowBindingHandler|
-  virtual PlatformWindow GetPlatformWindow() override;
+  virtual HWND GetWindowHandle() override;
 
   // |FlutterWindowBindingHandler|
   virtual float GetDpiScale() override;
@@ -176,12 +171,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void SetFlutterCursor(HCURSOR cursor) override;
 
   // |FlutterWindowBindingHandler|
-  virtual void OnWindowResized() override;
-
-  // |FlutterWindowBindingHandler|
-  virtual bool OnBitmapSurfaceCleared() override;
-
-  // |FlutterWindowBindingHandler|
   virtual bool OnBitmapSurfaceUpdated(const void* allocation,
                                       size_t row_bytes,
                                       size_t height) override;
@@ -197,9 +186,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
 
   // |WindowBindingHandler|
   virtual ui::AXPlatformNodeWin* GetAlert() override;
-
-  // |WindowBindingHandler|
-  virtual bool NeedsVSync() const override;
 
   // Called to obtain a pointer to the fragment root delegate.
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate();

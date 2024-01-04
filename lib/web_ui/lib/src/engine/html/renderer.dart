@@ -31,7 +31,6 @@ class HtmlRenderer implements Renderer {
       // to make the unpacking happen while we are waiting for network requests.
       lineLookup;
     });
-    registerHotRestartListener(clearFragmentProgramCache);
 
     _instance = this;
   }
@@ -259,6 +258,7 @@ class HtmlRenderer implements Renderer {
     letterSpacing: letterSpacing,
     wordSpacing: wordSpacing,
     height: height,
+    leadingDistribution: leadingDistribution,
     locale: locale,
     background: background,
     foreground: foreground,

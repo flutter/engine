@@ -40,6 +40,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/point.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/playground/playground.h"
@@ -2132,13 +2133,14 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 }
 
 TEST_P(EntityTest, RuntimeEffect) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
+  if (!BackendSupportsFragmentProgram()) {
     GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
 
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
-  auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
@@ -2423,6 +2425,11 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
   ASSERT_EQ(*geometry->GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
   ASSERT_EQ(*geometry->GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
             Rect::MakeLTRB(35, 15, 135, 205));
+}
+
+TEST_P(EntityTest, PointFieldCanUseCompute) {
+  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()),
+            GetContext()->GetBackendType() == Context::BackendType::kMetal);
 }
 
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
