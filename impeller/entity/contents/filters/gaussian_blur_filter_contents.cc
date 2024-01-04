@@ -433,10 +433,9 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
 
 KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     BlurParameters parameters) {
-  KernelPipeline::FragmentShader::KernelSamples result{
-      .sample_count = ((2 * parameters.blur_radius) / parameters.step_size) + 1,
-      .samples = {},
-  };
+  KernelPipeline::FragmentShader::KernelSamples result;
+  result.sample_count =
+      ((2 * parameters.blur_radius) / parameters.step_size) + 1;
   FML_CHECK(result.sample_count < 24);
 
   Scalar tally = 0.0f;

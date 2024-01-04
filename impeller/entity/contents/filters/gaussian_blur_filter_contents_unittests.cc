@@ -392,9 +392,8 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
 
   // Coefficients should add up to 1.
   Scalar tally = 0;
-  for (const KernelPipeline::FragmentShader::KernelSample& sample :
-       samples.samples) {
-    tally += sample.coefficient;
+  for (int i = 0; i < samples.sample_count; ++i) {
+    tally += samples.samples[i].coefficient;
   }
   EXPECT_FLOAT_EQ(tally, 1.0f);
 
