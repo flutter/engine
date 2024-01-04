@@ -18,7 +18,7 @@ class PlatformIsolateManager {
   PlatformIsolateManager();
 
   bool IsShutdown() const { return is_shutdown_; }
-  void RegisterPlatformIsolate(Dart_Isolate isolate);
+  bool RegisterPlatformIsolate(Dart_Isolate isolate);
   void RemovePlatformIsolate(Dart_Isolate isolate);
   void ShutdownPlatformIsolates();
 

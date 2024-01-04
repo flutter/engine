@@ -344,7 +344,6 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
           char** error) {
         std::cout << "           PlatformIsolate data: " << (void*)isolate_data
                   << std::endl;
-        // TODO: Are those the right shutdown_callback and cleanup_callback?
         return Dart_CreateIsolateInGroup(
             /*group_member=*/parent_isolate,
             /*name=*/debug_name.c_str(),
@@ -356,8 +355,6 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                 DartIsolateCleanupCallback),
             /*child_isolate_data=*/isolate_data,
             /*error=*/error);
-        // TODO: Passing a non-null isolate_data causes platform isolate to
-        //     never exit.
       };
   DartErrorString error;
   Dart_Isolate new_isolate = CreateDartIsolateGroup(
@@ -369,7 +366,12 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     return false;
   }
 
-  platform_isolate_manager->RegisterPlatformIsolate(new_isolate);
+  if (!platform_isolate_manager->RegisterPlatformIsolate(new_isolate)) {
+    // The PlatformIsolateManager was shutdown while we were creating the
+    // isolate. This means that we're shutting down the engine. Do nothing. The
+    // ordinary engine shut down procedure will clean up the isolate.
+    return false;
+  }
 
   fml::RefPtr<fml::TaskRunner> platform_task_runner =
       task_runners.GetPlatformTaskRunner();
@@ -391,9 +393,11 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
 
     std::cout << "Dart_InvokeClosure" << std::endl;
-    Dart_InvokeClosure(entry_point, 1, &isolate_ready_port);
+    Dart_Handle result = Dart_InvokeClosure(entry_point, 1, &isolate_ready_port);
     std::cout << "Dart_InvokeClosure done" << std::endl;
-    // TODO: Handle error.
+    if (Dart_IsError(result)) {
+      // TODO: Handle error.
+    }
 
     Dart_DeletePersistentHandle(entry_point_handle);
     Dart_ExitScope();
@@ -422,8 +426,8 @@ DartIsolate::DartIsolate(const Settings& settings,
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
       is_platform_isolate_(is_platform_isolate),
-      domain_network_policy_(settings.domain_network_policy),
-      is_spawning_in_group_(is_spawning_in_group) {
+      is_spawning_in_group_(is_spawning_in_group),
+      domain_network_policy_(settings.domain_network_policy) {
   phase_ = Phase::Uninitialized;
 }
 
