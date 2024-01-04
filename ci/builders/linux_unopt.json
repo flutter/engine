@@ -91,6 +91,36 @@
             ],
             "gn": [
                 "--android",
+                "--embedder-for-target",
+                "--target-dir",
+                "android_embedder_debug_unopt",
+                "--unoptimized",
+                "--rbe",
+                "--no-goma"
+            ],
+            "name": "android_embedder_debug_unopt",
+            "ninja": {
+                "config": "android_embedder_debug_unopt",
+                "targets": [
+                    "flutter/impeller",
+                    "flutter/shell/platform/android:android_jar",
+                    "flutter/shell/platform/android:robolectric_tests"
+                ]
+            }
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                {
+                    "dependency": "arm_tools",
+                    "version": "last_updated:2023-02-03T15:32:01-0800"
+                }
+            ],
+            "gn": [
+                "--android",
                 "--unoptimized",
                 "--rbe",
                 "--no-goma"
