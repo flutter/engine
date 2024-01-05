@@ -14,6 +14,7 @@ import '../util.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'picture.dart';
+import 'rasterizer.dart';
 import 'render_canvas.dart';
 import 'util.dart';
 
@@ -47,10 +48,15 @@ class SurfaceFrame {
 /// The underlying representation is a [CkSurface], which can be reused by
 /// successive frames if they are the same size. Otherwise, a new [CkSurface] is
 /// created.
-class Surface {
-  Surface();
+class Surface extends OverlayCanvas {
+  Surface({bool useOffscreenCanvas = true})
+      : useOffscreenCanvas =
+            Surface.offscreenCanvasSupported && useOffscreenCanvas;
 
   CkSurface? _surface;
+
+  /// Whether or not to use an `OffscreenCanvas` to back this [Surface].
+  final bool useOffscreenCanvas;
 
   /// If true, forces a new WebGL context to be created, even if the window
   /// size is the same. This is used to restore the UI after the browser tab
@@ -90,6 +96,11 @@ class Surface {
   /// supported.
   DomCanvasElement? _canvasElement;
 
+  /// Note, if this getter is called, then this Surface is being used as an
+  /// overlay and must be backed by an onscreen <canvas> element.
+  @override
+  DomElement get htmlElement => _canvasElement!;
+
   int _pixelWidth = -1;
   int _pixelHeight = -1;
   int _sampleCount = -1;
@@ -107,16 +118,25 @@ class Surface {
     }
   }
 
+  /// The CanvasKit canvas associated with this surface.
+  CkCanvas getCanvas() {
+    return _surface!.getCanvas();
+  }
+
+  void flush() {
+    _surface!.flush();
+  }
+
   Future<void> rasterizeToCanvas(
       ui.Size frameSize, RenderCanvas canvas, List<CkPicture> pictures) async {
-    final CkCanvas skCanvas = _surface!.getCanvas();
+    final CkCanvas skCanvas = getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);
-    _surface!.flush();
+    flush();
 
     if (browserSupportsCreateImageBitmap) {
       JSObject bitmapSource;
-      if (Surface.offscreenCanvasSupported) {
+      if (useOffscreenCanvas) {
         bitmapSource = _offscreenCanvas! as JSObject;
       } else {
         bitmapSource = _canvasElement! as JSObject;
@@ -132,7 +152,7 @@ class Surface {
       // If the browser doesn't support `createImageBitmap` (e.g. Safari 14)
       // then render using `drawImage` instead.
       DomCanvasImageSource imageSource;
-      if (Surface.offscreenCanvasSupported) {
+      if (useOffscreenCanvas) {
         imageSource = _offscreenCanvas! as DomCanvasImageSource;
       } else {
         imageSource = _canvasElement! as DomCanvasImageSource;
@@ -210,7 +230,7 @@ class Surface {
         final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
-        if (Surface.offscreenCanvasSupported) {
+        if (useOffscreenCanvas) {
           _offscreenCanvas!.width = newSize.width;
           _offscreenCanvas!.height = newSize.height;
         } else {
@@ -301,7 +321,7 @@ class Surface {
     _pixelWidth = physicalSize.width.ceil();
     _pixelHeight = physicalSize.height.ceil();
     DomEventTarget htmlCanvas;
-    if (Surface.offscreenCanvasSupported) {
+    if (useOffscreenCanvas) {
       final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(
         _pixelWidth,
         _pixelHeight,
@@ -347,7 +367,7 @@ class Surface {
         antialias: _kUsingMSAA ? 1 : 0,
         majorVersion: webGLVersion.toDouble(),
       );
-      if (Surface.offscreenCanvasSupported) {
+      if (useOffscreenCanvas) {
         glContext = canvasKit.GetOffscreenWebGLContext(
           _offscreenCanvas!,
           options,
@@ -379,7 +399,7 @@ class Surface {
 
   void _initWebglParams() {
     WebGLContext gl;
-    if (Surface.offscreenCanvasSupported) {
+    if (useOffscreenCanvas) {
       gl = _offscreenCanvas!.getGlContext(webGLVersion);
     } else {
       gl = _canvasElement!.getGlContext(webGLVersion);
@@ -422,7 +442,7 @@ class Surface {
     }
 
     SkSurface surface;
-    if (Surface.offscreenCanvasSupported) {
+    if (useOffscreenCanvas) {
       surface = canvasKit.MakeOffscreenSWCanvasSurface(_offscreenCanvas!);
     } else {
       surface = canvasKit.MakeSWCanvasSurface(_canvasElement!);

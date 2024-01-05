@@ -6,25 +6,29 @@ import 'package:meta/meta.dart';
 import '../../engine.dart';
 
 /// Caches canvases used to overlay platform views.
-class RenderCanvasFactory {
-  RenderCanvasFactory() {
+class OverlayCanvasFactory<T extends OverlayCanvas> {
+  OverlayCanvasFactory({required this.createCanvas}) {
     assert(() {
       registerHotRestartListener(dispose);
       return true;
     }());
   }
 
+  /// A function which is passed in as a constructor parameter which is used to
+  /// create new overlay canvases.
+  final T Function() createCanvas;
+
   /// The base canvas to paint on. This is the default canvas which will be
   /// painted to. If there are no platform views, then this canvas will render
   /// the entire scene.
-  final RenderCanvas baseCanvas = RenderCanvas();
+  late final T baseCanvas = createCanvas();
 
   /// Canvases created by this factory which are currently in use.
-  final List<RenderCanvas> _liveCanvases = <RenderCanvas>[];
+  final List<T> _liveCanvases = <T>[];
 
   /// Canvases created by this factory which are no longer in use. These can be
   /// reused.
-  final List<RenderCanvas> _cache = <RenderCanvas>[];
+  final List<T> _cache = <T>[];
 
   /// The number of canvases which have been created by this factory.
   int get _canvasCount => _liveCanvases.length + _cache.length + 1;
@@ -40,13 +44,13 @@ class RenderCanvasFactory {
 
   /// Gets an overlay canvas from the cache or creates a new one if there are
   /// none in the cache.
-  RenderCanvas getCanvas() {
+  T getCanvas() {
     if (_cache.isNotEmpty) {
-      final RenderCanvas canvas = _cache.removeLast();
+      final T canvas = _cache.removeLast();
       _liveCanvases.add(canvas);
       return canvas;
     } else {
-      final RenderCanvas canvas = RenderCanvas();
+      final T canvas = createCanvas();
       _liveCanvases.add(canvas);
       return canvas;
     }
@@ -72,12 +76,12 @@ class RenderCanvasFactory {
   }
 
   // Removes [canvas] from the DOM.
-  void _removeFromDom(RenderCanvas canvas) {
+  void _removeFromDom(T canvas) {
     canvas.htmlElement.remove();
   }
 
   /// Signals that a canvas is no longer being used. It can be reused.
-  void releaseCanvas(RenderCanvas canvas) {
+  void releaseCanvas(T canvas) {
     assert(canvas != baseCanvas, 'Attempting to release the base canvas');
     assert(
         _liveCanvases.contains(canvas),
@@ -94,7 +98,7 @@ class RenderCanvasFactory {
   ///
   /// If a canvas is not live, then it must be in the cache and ready to be
   /// reused.
-  bool isLive(RenderCanvas canvas) {
+  bool isLive(T canvas) {
     if (canvas == baseCanvas || _liveCanvases.contains(canvas)) {
       return true;
     }
@@ -104,10 +108,10 @@ class RenderCanvasFactory {
 
   /// Dispose all canvases created by this factory.
   void dispose() {
-    for (final RenderCanvas canvas in _cache) {
+    for (final T canvas in _cache) {
       canvas.dispose();
     }
-    for (final RenderCanvas canvas in _liveCanvases) {
+    for (final T canvas in _liveCanvases) {
       canvas.dispose();
     }
     baseCanvas.dispose();
