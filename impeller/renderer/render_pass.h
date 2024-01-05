@@ -48,8 +48,7 @@ class RenderPass {
   }
 
   HostBuffer& GetTransientsBuffer() {
-    // Hack.
-    return *GetContext().lock()->GetTransientsBuffer();
+    return *transients_buffer_;
   }
 
   //----------------------------------------------------------------------------
