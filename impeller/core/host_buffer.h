@@ -130,7 +130,7 @@ class HostBuffer final : public Buffer {
 
     size_t GetLength() const { return offset; }
 
-    void MaybeCreateNewBuffer();
+    void MaybeCreateNewBuffer(size_t required_size);
 
     std::shared_ptr<DeviceBuffer> GetCurrentBuffer() {
       return device_buffers[current_buffer];

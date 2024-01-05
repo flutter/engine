@@ -142,20 +142,22 @@ std::shared_ptr<CommandEncoderVK> CommandEncoderFactoryVK::Create() {
   tracked_objects->GetGPUProbe().RecordCmdBufferStart(
       tracked_objects->GetCommandBuffer());
 
-  return std::make_shared<CommandEncoderVK>(context->GetDeviceHolder(),
-                                            tracked_objects, queue,
-                                            context->GetFenceWaiter());
+  return std::make_shared<CommandEncoderVK>(
+      context->GetDeviceHolder(), tracked_objects, queue,
+      context->GetFenceWaiter(), context->GetTransientsBuffer());
 }
 
 CommandEncoderVK::CommandEncoderVK(
     std::weak_ptr<const DeviceHolder> device_holder,
     std::shared_ptr<TrackedObjectsVK> tracked_objects,
     const std::shared_ptr<QueueVK>& queue,
-    std::shared_ptr<FenceWaiterVK> fence_waiter)
+    std::shared_ptr<FenceWaiterVK> fence_waiter,
+    std::shared_ptr<HostBuffer> host_buffer)
     : device_holder_(std::move(device_holder)),
       tracked_objects_(std::move(tracked_objects)),
       queue_(queue),
-      fence_waiter_(std::move(fence_waiter)) {}
+      fence_waiter_(std::move(fence_waiter)),
+      host_buffer_(std::move(host_buffer)) {}
 
 CommandEncoderVK::~CommandEncoderVK() = default;
 

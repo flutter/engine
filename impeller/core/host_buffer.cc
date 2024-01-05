@@ -73,10 +73,13 @@ void HostBuffer::Reset() {
   state_->Reset();
 }
 
-void HostBuffer::HostBufferState::MaybeCreateNewBuffer() {
+void HostBuffer::HostBufferState::MaybeCreateNewBuffer(size_t required_size) {
   if (current_buffer + 1 >= device_buffers.size()) {
+    if (required_size > kAllocatorBlockSize) {
+      FML_LOG(ERROR) << "Created oversized buffer: " << required_size;
+    }
     DeviceBufferDescriptor desc;
-    desc.size = kAllocatorBlockSize;
+    desc.size = std::max(kAllocatorBlockSize, required_size);
     desc.storage_mode = StorageMode::kHostVisible;
     device_buffers.push_back(allocator->CreateBuffer(desc));
   }
@@ -93,10 +96,11 @@ HostBuffer::HostBufferState::Emplace(size_t length,
   }
   auto old_length = GetLength();
   if (old_length + length > kAllocatorBlockSize) {
-    MaybeCreateNewBuffer();
+    MaybeCreateNewBuffer(length);
   }
 
   cb(GetCurrentBuffer()->OnGetContents() + old_length);
+  GetCurrentBuffer()->Flush(Range{old_length, length});
 
   offset += length;
   return std::make_tuple(GetCurrentBuffer()->OnGetContents(),
@@ -107,11 +111,12 @@ std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
 HostBuffer::HostBufferState::Emplace(const void* buffer, size_t length) {
   auto old_length = GetLength();
   if (old_length + length > kAllocatorBlockSize) {
-    MaybeCreateNewBuffer();
+    MaybeCreateNewBuffer(length);
   }
 
   if (buffer) {
     ::memmove(GetCurrentBuffer()->OnGetContents() + old_length, buffer, length);
+    GetCurrentBuffer()->Flush(Range{old_length, length});
   }
   offset += length;
   return std::make_tuple(GetCurrentBuffer()->OnGetContents(),
@@ -139,7 +144,12 @@ HostBuffer::HostBufferState::Emplace(const void* buffer,
 
 void HostBuffer::HostBufferState::Reset() {
   offset = 0u;
-  current_buffer++;
+  current_buffer = 0u;
+  device_buffers.clear();
+  DeviceBufferDescriptor desc;
+  desc.size = kAllocatorBlockSize;
+  desc.storage_mode = StorageMode::kHostVisible;
+  device_buffers.push_back(allocator->CreateBuffer(desc));
 }
 
 }  // namespace impeller

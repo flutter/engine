@@ -63,6 +63,13 @@ bool DeviceBufferVK::SetLabel(const std::string& label) {
                                                 label);
 }
 
+void DeviceBufferVK::Flush(std::optional<Range> range) const {
+  auto flush_range = range.value_or(Range{0, GetDeviceBufferDescriptor().size});
+  ::vmaFlushAllocation(resource_->buffer.get().allocator,
+                       resource_->buffer.get().allocation, flush_range.offset,
+                       flush_range.length);
+}
+
 bool DeviceBufferVK::SetLabel(const std::string& label, Range range) {
   // We do not have the ability to name ranges. Just name the whole thing.
   return SetLabel(label);

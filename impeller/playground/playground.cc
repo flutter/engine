@@ -317,6 +317,7 @@ bool Playground::OpenPlaygroundHere(
     if (!ShouldKeepRendering()) {
       break;
     }
+    renderer_->GetContext()->GetTransientsBuffer()->Reset();
   }
 
   ::glfwHideWindow(window);

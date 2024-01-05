@@ -45,6 +45,8 @@ class DeviceBuffer : public Buffer,
 
   virtual uint8_t* OnGetContents() const = 0;
 
+  virtual void Flush(std::optional<Range> range) const {}
+
  protected:
   const DeviceBufferDescriptor desc_;
 

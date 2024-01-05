@@ -304,6 +304,11 @@ bool EntityPass::Render(ContentContext& renderer,
       renderer.GetContext()->capture.GetDocument(kCaptureDocumentName);
 
   renderer.GetRenderTargetCache()->Start();
+  fml::ScopedCleanupClosure reset_state([&renderer]() {
+    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
+    renderer.GetRenderTargetCache()->End();
+    renderer.GetContext()->GetTransientsBuffer()->Reset();
+  });
 
   auto root_render_target = render_target;
 
@@ -316,11 +321,6 @@ bool EntityPass::Render(ContentContext& renderer,
   capture.AddRect("Coverage",
                   Rect::MakeSize(root_render_target.GetRenderTargetSize()),
                   {.readonly = true});
-
-  fml::ScopedCleanupClosure reset_state([&renderer]() {
-    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
-    renderer.GetRenderTargetCache()->End();
-  });
 
   IterateAllEntities([lazy_glyph_atlas =
                           renderer.GetLazyGlyphAtlas()](const Entity& entity) {

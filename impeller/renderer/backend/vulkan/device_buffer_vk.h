@@ -66,6 +66,9 @@ class DeviceBufferVK final : public DeviceBuffer,
   // |DeviceBuffer|
   bool SetLabel(const std::string& label, Range range) override;
 
+  // |DeviceBuffer|
+  void Flush(std::optional<Range> range) const override;
+
   DeviceBufferVK(const DeviceBufferVK&) = delete;
 
   DeviceBufferVK& operator=(const DeviceBufferVK&) = delete;
