@@ -20,6 +20,7 @@
 #include <windows.h>
 #endif
 
+#include <algorithm>
 #include <memory>
 #include "gtest/gtest.h"
 
@@ -89,15 +90,8 @@ TEST(Thread, ThreadNameCreatedWithConfig) {
 }
 
 static int clamp_priority(int priority, int policy) {
-  int min = sched_get_priority_min(policy);
-  int max = sched_get_priority_max(policy);
-  if (priority < min) {
-    return min;
-  } else if (priority > max) {
-    return max;
-  } else {
-    return priority;
-  }
+  return std::clamp(priority, sched_get_priority_min(policy),
+                    sched_get_priority_max(policy));
 }
 
 static void MockThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
