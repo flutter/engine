@@ -85,8 +85,33 @@ bool RenderPass::AddCommand(Command&& command) {
     // an error either.
     return true;
   }
+  auto buffer_offset = bound_buffers_.size();
+  auto texture_offset = bound_textures_.size();
+  auto buffer_length = command.bindings.buffer_offset;
+  auto texture_length = command.bindings.texture_offset;
+  for (auto i = 0u; i < command.bindings.texture_offset; i++) {
+    bound_textures_.push_back(std::move(command.bindings.bound_textures[i]));
+  }
+  for (auto i = 0u; i < command.bindings.buffer_offset; i++) {
+    bound_buffers_.push_back(std::move(command.bindings.bound_buffers[i]));
+  }
 
-  commands_.emplace_back(std::move(command));
+  commands_.emplace_back(BoundCommand{
+      .pipeline = std::move(command.pipeline),
+      .buffer_offset = buffer_offset,
+      .buffer_length = buffer_length,
+      .texture_offset = texture_offset,
+      .texture_length = texture_length,
+#ifdef IMPELLER_DEBUG
+      .label = std::move(command.label),
+#endif  // IMPELLER_DEBUG
+      .stencil_reference = command.stencil_reference,
+      .base_vertex = command.base_vertex,
+      .viewport = command.viewport,
+      .scissor = command.scissor,
+      .instance_count = command.instance_count,
+      .vertex_buffer = std::move(command.vertex_buffer),
+  });
   return true;
 }
 

@@ -44,7 +44,7 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const TextureAndSampler& data : bindings.sampled_images) {
+  for (const BoundTexture& data : bindings.bound_textures) {
     if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
       return false;
     }

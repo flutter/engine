@@ -22,6 +22,7 @@
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/render_pass.h"
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_handles.hpp"
 #include "vulkan/vulkan_to_string.hpp"
@@ -301,8 +302,9 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   return MakeSharedVK(std::move(framebuffer));
 }
 
-static bool UpdateBindingLayouts(const Bindings& bindings,
-                                 const vk::CommandBuffer& buffer) {
+static bool UpdateBindingLayouts(
+    const std::vector<BoundTexture>& bound_textures,
+    const vk::CommandBuffer& buffer) {
   // All previous writes via a render or blit pass must be done before another
   // shader attempts to read the resource.
   BarrierVK barrier;
@@ -316,7 +318,7 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
 
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-  for (const TextureAndSampler& data : bindings.sampled_images) {
+  for (const BoundTexture& data : bound_textures) {
     if (!TextureVK::Cast(*data.texture.resource).SetLayout(barrier)) {
       return false;
     }
@@ -324,23 +326,7 @@ static bool UpdateBindingLayouts(const Bindings& bindings,
   return true;
 }
 
-static bool UpdateBindingLayouts(const Command& command,
-                                 const vk::CommandBuffer& buffer) {
-  return UpdateBindingLayouts(command.vertex_bindings, buffer) &&
-         UpdateBindingLayouts(command.fragment_bindings, buffer);
-}
-
-static bool UpdateBindingLayouts(const std::vector<Command>& commands,
-                                 const vk::CommandBuffer& buffer) {
-  for (const Command& command : commands) {
-    if (!UpdateBindingLayouts(command, buffer)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static void SetViewportAndScissor(const Command& command,
+static void SetViewportAndScissor(const BoundCommand& command,
                                   const vk::CommandBuffer& cmd_buffer,
                                   PassBindingsCache& cmd_buffer_cache,
                                   const ISize& target_size) {
@@ -365,7 +351,7 @@ static void SetViewportAndScissor(const Command& command,
 }
 
 static bool EncodeCommand(const Context& context,
-                          const Command& command,
+                          const BoundCommand& command,
                           CommandEncoderVK& encoder,
                           PassBindingsCache& command_buffer_cache,
                           const ISize& target_size,
@@ -496,7 +482,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   auto cmd_buffer = encoder->GetCommandBuffer();
 
-  if (!UpdateBindingLayouts(commands_, cmd_buffer)) {
+  if (!UpdateBindingLayouts(bound_textures_, cmd_buffer)) {
     return false;
   }
 
@@ -540,7 +526,8 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   const auto& color_image_vk = TextureVK::Cast(
       *render_target_.GetColorAttachments().find(0u)->second.texture);
   auto desc_sets_result = AllocateAndBindDescriptorSets(
-      vk_context, encoder, commands_, color_image_vk);
+      vk_context, encoder, commands_, bound_buffers_, bound_textures_,
+      color_image_vk);
   if (!desc_sets_result.ok()) {
     return false;
   }

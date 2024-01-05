@@ -43,26 +43,14 @@ bool Command::DoBindResource(ShaderStage stage,
                              const T metadata,
                              BufferView view) {
   FML_DCHECK(slot.ext_res_0 != VertexDescriptor::kReservedVertexBufferIndex);
-  if (!view) {
+  if (!view || bindings.buffer_offset >= kMaxBindings) {
     return false;
   }
-
-  switch (stage) {
-    case ShaderStage::kVertex:
-      vertex_bindings.buffers.emplace_back(BufferAndUniformSlot{
-          .slot = slot, .view = BufferResource(metadata, std::move(view))});
-      return true;
-    case ShaderStage::kFragment:
-      fragment_bindings.buffers.emplace_back(BufferAndUniformSlot{
-          .slot = slot, .view = BufferResource(metadata, std::move(view))});
-      return true;
-    case ShaderStage::kCompute:
-      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
-    case ShaderStage::kUnknown:
-      return false;
-  }
-
-  return false;
+  bindings.bound_buffers[bindings.buffer_offset++] =
+      BoundBuffer{.stage = stage,
+                  .slot = slot,
+                  .view = BufferResource(metadata, std::move(view))};
+  return true;
 }
 
 bool Command::BindResource(ShaderStage stage,
@@ -70,35 +58,17 @@ bool Command::BindResource(ShaderStage stage,
                            const ShaderMetadata& metadata,
                            std::shared_ptr<const Texture> texture,
                            std::shared_ptr<const Sampler> sampler) {
-  if (!sampler || !sampler->IsValid()) {
+  if (!sampler || !sampler->IsValid() || !texture || !texture->IsValid() ||
+      bindings.texture_offset >= kMaxBindings) {
     return false;
   }
-  if (!texture || !texture->IsValid()) {
-    return false;
-  }
-
-  switch (stage) {
-    case ShaderStage::kVertex:
-      vertex_bindings.sampled_images.emplace_back(TextureAndSampler{
-          .slot = slot,
-          .texture = {&metadata, std::move(texture)},
-          .sampler = std::move(sampler),
-      });
-      return true;
-    case ShaderStage::kFragment:
-      fragment_bindings.sampled_images.emplace_back(TextureAndSampler{
-          .slot = slot,
-          .texture = {&metadata, std::move(texture)},
-          .sampler = std::move(sampler),
-      });
-      return true;
-    case ShaderStage::kCompute:
-      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
-    case ShaderStage::kUnknown:
-      return false;
-  }
-
-  return false;
+  bindings.bound_textures[bindings.texture_offset++] = BoundTexture{
+      .stage = stage,
+      .slot = slot,
+      .texture = {&metadata, std::move(texture)},
+      .sampler = std::move(sampler),
+  };
+  return true;
 }
 
 }  // namespace impeller

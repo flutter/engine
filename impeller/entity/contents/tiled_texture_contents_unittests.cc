@@ -9,6 +9,7 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/playground/playground_test.h"
+#include "impeller/renderer/render_pass.h"
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
 namespace impeller {
@@ -37,7 +38,7 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
   auto render_pass = buffer->CreateRenderPass(render_target);
 
   ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
-  const std::vector<Command>& commands = render_pass->GetCommands();
+  const std::vector<BoundCommand>& commands = render_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
   ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),

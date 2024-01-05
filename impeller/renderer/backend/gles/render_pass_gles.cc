@@ -11,13 +11,14 @@
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
+#include "impeller/renderer/command.h"
+#include "impeller/renderer/render_pass.h"
 
 namespace impeller {
 
@@ -148,7 +149,9 @@ struct RenderPassData {
     const RenderPassData& pass_data,
     const std::shared_ptr<Allocator>& transients_allocator,
     const ReactorGLES& reactor,
-    const std::vector<Command>& commands,
+    const std::vector<BoundCommand>& commands,
+    const std::vector<BoundBuffer>& bound_buffers,
+    const std::vector<BoundTexture>& bound_textures,
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
@@ -418,11 +421,14 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Bind uniform data.
     ///
-    if (!vertex_desc_gles->BindUniformData(gl,                        //
-                                           *transients_allocator,     //
-                                           command.vertex_bindings,   //
-                                           command.fragment_bindings  //
-                                           )) {
+    if (!vertex_desc_gles->BindUniformData(
+            gl,                     //
+            *transients_allocator,  //
+            bound_buffers,          //
+            command.buffer_offset, command.buffer_length, bound_textures,
+            command.texture_offset,
+            command.texture_length  //
+            )) {
       return false;
     }
 
@@ -581,8 +587,9 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
                                  allocator = context.GetResourceAllocator(),
                                  render_pass = std::move(shared_this),
                                  tracer](const auto& reactor) {
-    auto result = EncodeCommandsInReactor(*pass_data, allocator, reactor,
-                                          render_pass->commands_, tracer);
+    auto result = EncodeCommandsInReactor(
+        *pass_data, allocator, reactor, render_pass->commands_,
+        render_pass->bound_buffers_, render_pass->bound_textures_, tracer);
     FML_CHECK(result) << "Must be able to encode GL commands without error.";
   });
 }

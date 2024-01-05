@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -38,8 +37,12 @@ class BufferBindingsGLES {
 
   bool BindUniformData(const ProcTableGLES& gl,
                        Allocator& transients_allocator,
-                       const Bindings& vertex_bindings,
-                       const Bindings& fragment_bindings);
+                       const std::vector<BoundBuffer>& bound_buffers,
+                       size_t buffer_offset,
+                       size_t buffer_length,
+                       const std::vector<BoundTexture>& bound_textures,
+                       size_t texture_offset,
+                       size_t texture_length);
 
   bool UnbindVertexAttributes(const ProcTableGLES& gl) const;
 
@@ -71,10 +74,13 @@ class BufferBindingsGLES {
                          Allocator& transients_allocator,
                          const BufferResource& buffer);
 
-  std::optional<size_t> BindTextures(const ProcTableGLES& gl,
-                                     const Bindings& bindings,
-                                     ShaderStage stage,
-                                     size_t unit_start_index = 0);
+  std::optional<size_t> BindTextures(
+      const ProcTableGLES& gl,
+      const std::vector<BoundTexture>& bound_textures,
+      size_t offset,
+      size_t length,
+      ShaderStage stage,
+      size_t unit_start_index = 0);
 
   BufferBindingsGLES(const BufferBindingsGLES&) = delete;
 

@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_COMMAND_H_
 
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -59,21 +58,27 @@ using BufferResource = Resource<BufferView>;
 using TextureResource = Resource<std::shared_ptr<const Texture>>;
 
 /// @brief combines the texture, sampler and sampler slot information.
-struct TextureAndSampler {
+struct BoundTexture {
+  ShaderStage stage;
   SampledImageSlot slot;
   TextureResource texture;
   std::shared_ptr<const Sampler> sampler;
 };
 
 /// @brief combines the buffer resource and its uniform slot information.
-struct BufferAndUniformSlot {
+struct BoundBuffer {
+  ShaderStage stage;
   ShaderUniformSlot slot;
   BufferResource view;
 };
 
+static const size_t kMaxBindings = 16;
+
 struct Bindings {
-  std::vector<TextureAndSampler> sampled_images;
-  std::vector<BufferAndUniformSlot> buffers;
+  std::array<BoundTexture, kMaxBindings> bound_textures;
+  size_t texture_offset = 0u;
+  std::array<BoundBuffer, kMaxBindings> bound_buffers;
+  size_t buffer_offset = 0u;
 };
 
 //------------------------------------------------------------------------------
@@ -96,15 +101,10 @@ struct Command : public ResourceBinder {
   ///
   std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
   //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the vertex pipeline
+  /// The buffer, texture, and sampler bindings used by the  pipeline
   /// stage.
   ///
-  Bindings vertex_bindings;
-  //----------------------------------------------------------------------------
-  /// The buffer, texture, and sampler bindings used by the fragment pipeline
-  /// stage.
-  ///
-  Bindings fragment_bindings;
+  Bindings bindings;
 
 #ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------

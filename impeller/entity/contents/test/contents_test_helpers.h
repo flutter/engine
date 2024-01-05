@@ -5,22 +5,26 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_CONTENTS_TEST_HELPERS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_CONTENTS_TEST_HELPERS_H_
 
-#include "impeller/renderer/command.h"
+#include "impeller/core/shader_types.h"
+#include "impeller/renderer/render_pass.h"
 
 namespace impeller {
 
 /// @brief Retrieve the [VertInfo] struct data from the provided [command].
 template <typename T>
-typename T::VertInfo* GetVertInfo(const Command& command) {
-  auto resource = std::find_if(command.vertex_bindings.buffers.begin(),
-                               command.vertex_bindings.buffers.end(),
-                               [](const BufferAndUniformSlot& data) {
-                                 return data.slot.ext_res_0 == 0u;
+typename T::VertInfo* GetVertInfo(
+    const BoundCommand& command,
+    const std::vector<BoundBuffer>& bound_buffers) {
+  const auto& end =
+      bound_buffers.begin() + command.buffer_offset + command.buffer_length;
+  auto resource = std::find_if(bound_buffers.begin() + command.buffer_offset,
+                               end, [](const BoundBuffer& data) {
+                                 return data.slot.ext_res_0 == 0u &&
+                                        data.stage == ShaderStage::kVertex;
                                });
-  if (resource == command.vertex_bindings.buffers.end()) {
+  if (resource == end) {
     return nullptr;
   }
-
   auto data =
       (resource->view.resource.contents + resource->view.resource.range.offset);
   return reinterpret_cast<typename T::VertInfo*>(data);
@@ -28,13 +32,17 @@ typename T::VertInfo* GetVertInfo(const Command& command) {
 
 /// @brief Retrieve the [FragInfo] struct data from the provided [command].
 template <typename T>
-typename T::FragInfo* GetFragInfo(const Command& command) {
-  auto resource = std::find_if(command.fragment_bindings.buffers.begin(),
-                               command.fragment_bindings.buffers.end(),
-                               [](const BufferAndUniformSlot& data) {
-                                 return data.slot.ext_res_0 == 0u;
+typename T::FragInfo* GetFragInfo(
+    const BoundCommand& command,
+    const std::vector<BoundBuffer>& bound_buffers) {
+  const auto& end =
+      bound_buffers.begin() + command.buffer_offset + command.buffer_length;
+  auto resource = std::find_if(bound_buffers.begin() + command.buffer_offset,
+                               end, [](const BoundBuffer& data) {
+                                 return data.slot.ext_res_0 == 0u &&
+                                        data.stage == ShaderStage::kFragment;
                                });
-  if (resource == command.fragment_bindings.buffers.end()) {
+  if (resource == end) {
     return nullptr;
   }
 

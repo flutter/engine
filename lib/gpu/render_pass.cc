@@ -13,6 +13,7 @@
 #include "impeller/core/shader_types.h"
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/sampler_library.h"
 #include "tonic/converter/dart_converter.h"
@@ -395,8 +396,7 @@ void InternalFlutterGpu_RenderPass_ClearBindings(
     flutter::gpu::RenderPass* wrapper) {
   auto& command = wrapper->GetCommand();
   command.vertex_buffer = {};
-  command.vertex_bindings = {};
-  command.fragment_bindings = {};
+  command.bindings = impeller::Bindings{};
 }
 
 void InternalFlutterGpu_RenderPass_SetColorBlendEnable(

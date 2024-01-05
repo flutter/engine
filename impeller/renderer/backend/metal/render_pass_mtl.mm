@@ -406,23 +406,23 @@ static bool Bind(PassBindingsCache& pass,
 bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                    id<MTLRenderCommandEncoder> encoder) const {
   PassBindingsCache pass_bindings(encoder);
-  auto bind_stage_resources = [&allocator, &pass_bindings](
-                                  const Bindings& bindings,
-                                  ShaderStage stage) -> bool {
-    for (const BufferAndUniformSlot& buffer : bindings.buffers) {
-      if (!Bind(pass_bindings, *allocator, stage, buffer.slot.ext_res_0,
-                buffer.view.resource)) {
-        return false;
-      }
-    }
-    for (const TextureAndSampler& data : bindings.sampled_images) {
-      if (!Bind(pass_bindings, stage, data.slot.texture_index, *data.sampler,
-                *data.texture.resource)) {
-        return false;
-      }
-    }
-    return true;
-  };
+  // auto bind_stage_resources = [&allocator, &pass_bindings](
+  //                                 const Bindings& bindings,
+  //                                 ShaderStage stage) -> bool {
+  //   for (const BoundBuffer& buffer : bindings.bound_buffers) {
+  //     if (!Bind(pass_bindings, *allocator, stage, buffer.slot.ext_res_0,
+  //               buffer.view.resource)) {
+  //       return false;
+  //     }
+  //   }
+  //   for (const BoundTexture& data : bindings.bound_textures) {
+  //     if (!Bind(pass_bindings, stage, data.slot.texture_index, *data.sampler,
+  //               *data.texture.resource)) {
+  //       return false;
+  //     }
+  //   }
+  //   return true;
+  // };
 
   const auto target_sample_count = render_target_.GetSampleCount();
 
@@ -472,12 +472,22 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       return false;
     }
 
-    if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {
-      return false;
+    for (auto i = command.buffer_offset;
+         i < command.buffer_offset + command.buffer_length; i++) {
+      const BoundBuffer& data = bound_buffers_[i];
+      if (!Bind(pass_bindings, *allocator, data.stage, data.slot.ext_res_0,
+                data.view.resource)) {
+        return false;
+      }
     }
-    if (!bind_stage_resources(command.fragment_bindings,
-                              ShaderStage::kFragment)) {
-      return false;
+
+    for (auto i = command.texture_offset;
+         i < command.texture_offset + command.texture_length; i++) {
+      const BoundTexture& data = bound_textures_[i];
+      if (!Bind(pass_bindings, data.stage, data.slot.texture_index,
+                *data.sampler, *data.texture.resource)) {
+        return false;
+      }
     }
 
     const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();

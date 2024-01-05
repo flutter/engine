@@ -12,13 +12,16 @@
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_command.h"
+#include "impeller/renderer/render_pass.h"
 
 namespace impeller {
 
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
-    const std::vector<Command>& commands,
+    const std::vector<BoundCommand>& commands,
+    const std::vector<BoundBuffer>& bound_buffers,
+    const std::vector<BoundTexture>& bound_textures,
     const TextureVK& input_attachment);
 
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(

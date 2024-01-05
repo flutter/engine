@@ -17,6 +17,27 @@ namespace impeller {
 class HostBuffer;
 class Allocator;
 
+/// @brief A Command object with the bindings recorded elsewhere.
+struct BoundCommand {
+  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
+
+  /// Offset and length into a per-render pass binding vector.
+  size_t buffer_offset;
+  size_t buffer_length;
+  size_t texture_offset;
+  size_t texture_length;
+
+#ifdef IMPELLER_DEBUG
+  std::string label;
+#endif  // IMPELLER_DEBUG
+  uint32_t stencil_reference = 0u;
+  uint64_t base_vertex = 0u;
+  std::optional<Viewport> viewport;
+  std::optional<IRect> scissor;
+  size_t instance_count = 1u;
+  VertexBuffer vertex_buffer;
+};
+
 //------------------------------------------------------------------------------
 /// @brief      Render passes encode render commands directed as one specific
 ///             render target into an underlying command buffer.
@@ -75,7 +96,25 @@ class RenderPass {
   ///
   /// @details    Visible for testing.
   ///
-  const std::vector<Command>& GetCommands() const { return commands_; }
+  const std::vector<BoundCommand>& GetCommands() const { return commands_; }
+
+  //----------------------------------------------------------------------------
+  /// @brief      Accessor for the current bound buffers.
+  ///
+  /// @details    Visible for testing.
+  ///
+  const std::vector<BoundBuffer>& GetBoundBuffers() const {
+    return bound_buffers_;
+  }
+
+  //----------------------------------------------------------------------------
+  /// @brief      Accessor for the current bound textures.
+  ///
+  /// @details    Visible for testing.
+  ///
+  const std::vector<BoundTexture>& GetBoundTextures() const {
+    return bound_textures_;
+  }
 
   //----------------------------------------------------------------------------
   /// @brief      The sample count of the attached render target.
@@ -102,7 +141,9 @@ class RenderPass {
   const ISize render_target_size_;
   const RenderTarget render_target_;
   std::shared_ptr<HostBuffer> transients_buffer_;
-  std::vector<Command> commands_;
+  std::vector<BoundCommand> commands_;
+  std::vector<BoundBuffer> bound_buffers_;
+  std::vector<BoundTexture> bound_textures_;
   const Matrix orthographic_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
