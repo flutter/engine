@@ -47,9 +47,7 @@ class RenderPass {
     commands_.reserve(command_count);
   }
 
-  HostBuffer& GetTransientsBuffer() {
-    return *transients_buffer_;
-  }
+  HostBuffer& GetTransientsBuffer() { return *transients_buffer_; }
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
