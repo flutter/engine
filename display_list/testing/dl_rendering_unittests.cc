@@ -3941,8 +3941,8 @@ TEST_F(DisplayListRendering, SaveLayerConsolidation) {
           CanvasCompareTester::compareToReference(
               nested_results.get(), combined_results.get(),
               "nested " + desc1 + " then " + desc2, &kTestBounds2,
-              DlColor::kTransparent(), /*fuzzyCompares=*/true,
-              /*tolerance=*/nullptr, combined_results->width(),
+              /*tolerance=*/nullptr, DlColor::kTransparent(),
+              /*fuzzyCompares=*/true, combined_results->width(),
               combined_results->height(), /*printMismatches=*/true);
         }
         if (always || rev_same) {
