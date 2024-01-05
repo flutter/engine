@@ -177,8 +177,7 @@ template("embedder_source_set") {
       ]
     }
 
-    # For the Android, avoid dynamic lookups of the engine library's symbols need to depend on the 'icudtl.dat.S',
-    # which comes from the change '0f32302bc17d39032393b6f287ad5055b89f9392' and '60968c892649301dadb15f4c2ce7329b04bf8827'.
+    # Depend on 'icudtl.dat.S' to avoid dynamic lookups of engine library symbols.
     if (is_android) {
       deps += [ "//flutter/shell/platform/android:icudtl_asm" ]
       sources += [ "$root_build_dir/gen/flutter/shell/platform/android/third_party/icu/flutter/icudtl.dat.S" ]
