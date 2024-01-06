@@ -150,16 +150,27 @@ static std::unique_ptr<fb::shaderbundle::ShaderT> GenerateShaderFB(
   result->name = shader_name;
   result->metal_ios = GenerateShaderBackendFB(
       TargetPlatform::kMetalIOS, options, shader_name, shader_config);
+  if (!result->metal_ios) {
+    return nullptr;
+  }
   result->metal_desktop = GenerateShaderBackendFB(
       TargetPlatform::kMetalDesktop, options, shader_name, shader_config);
+  if (!result->metal_desktop) {
+    return nullptr;
+  }
   result->opengl_es = GenerateShaderBackendFB(
       TargetPlatform::kOpenGLES, options, shader_name, shader_config);
+  if (!result->opengl_es) {
+    return nullptr;
+  }
   result->opengl_desktop = GenerateShaderBackendFB(
       TargetPlatform::kOpenGLDesktop, options, shader_name, shader_config);
+  if (!result->opengl_desktop) {
+    return nullptr;
+  }
   result->vulkan = GenerateShaderBackendFB(TargetPlatform::kVulkan, options,
                                            shader_name, shader_config);
-  if (!(result->metal_ios && result->metal_desktop && result->opengl_es &&
-        result->opengl_desktop && result->vulkan)) {
+  if (!result->vulkan) {
     return nullptr;
   }
   return result;

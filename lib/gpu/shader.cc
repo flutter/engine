@@ -26,7 +26,7 @@ Shader::UniformBinding::GetMemberMetadata(const std::string& name) const {
   if (result == metadata.members.end()) {
     return nullptr;
   }
-  return result.base();
+  return &(*result);
 }
 
 IMPLEMENT_WRAPPERTYPEINFO(flutter_gpu, Shader);
