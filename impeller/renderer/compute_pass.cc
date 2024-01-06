@@ -43,7 +43,28 @@ bool ComputePass::AddCommand(ComputeCommand command) {
     return false;
   }
 
-  commands_.emplace_back(std::move(command));
+  auto buffer_offset = bound_buffers_.size();
+  auto buffer_length = command.bindings.buffer_offset;
+  auto texture_offset = bound_textures_.size();
+  auto texture_length = command.bindings.texture_offset;
+
+  for (auto i = 0u; i < buffer_length; i++) {
+    bound_buffers_.push_back(std::move(command.bindings.bound_buffers[i]));
+  }
+  for (auto i = 0u; i < texture_length; i++) {
+    bound_textures_.push_back(std::move(command.bindings.bound_textures[i]));
+  }
+
+  commands_.emplace_back(BoundComputeCommand{
+      .pipeline = std::move(command.pipeline),
+      .buffer_offset = buffer_offset,
+      .buffer_length = buffer_length,
+      .texture_offset = texture_offset,
+      .texture_length = texture_length,
+#ifdef IMPELLER_DEBUG
+      .label = std::move(command.label)
+#endif  // IMPELLER_DEBUG
+  });
   return true;
 }
 

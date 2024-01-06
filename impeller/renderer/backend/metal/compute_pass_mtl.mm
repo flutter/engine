@@ -210,7 +210,7 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
   ComputePassBindingsCache pass_bindings(encoder);
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
-  for (const ComputeCommand& command : commands_) {
+  for (const BoundComputeCommand& command : commands_) {
 #ifdef IMPELLER_DEBUG
     fml::ScopedCleanupClosure auto_pop_debug_marker(pop_debug_marker);
     if (!command.label.empty()) {
@@ -224,14 +224,17 @@ bool ComputePassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
         ComputePipelineMTL::Cast(*command.pipeline)
             .GetMTLComputePipelineState());
 
-    for (const BoundBuffer& buffer : command.bindings.bound_buffers) {
+    for (auto i = command.buffer_offset;
+         i < command.buffer_offset + command.buffer_length; i++) {
+      const BoundBuffer& buffer = bound_buffers_[i];
       if (!Bind(pass_bindings, *allocator, buffer.slot.ext_res_0,
                 buffer.view.resource)) {
         return false;
       }
     }
-
-    for (const BoundTexture& data : command.bindings.bound_textures) {
+    for (auto i = command.texture_offset;
+         i < command.texture_offset + command.texture_length; i++) {
+      const BoundTexture& data = bound_textures_[i];
       if (!Bind(pass_bindings, data.slot.texture_index, *data.sampler,
                 *data.texture.resource)) {
         return false;

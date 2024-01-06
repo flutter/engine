@@ -13,7 +13,6 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/command.h"
-#include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/render_pass.h"
 #include "vulkan/vulkan_core.h"
 
@@ -216,22 +215,21 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
 fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
     const ContextVK& context,
     const std::shared_ptr<CommandEncoderVK>& encoder,
-    const std::vector<ComputeCommand>& commands) {
+    const std::vector<BoundComputeCommand>& commands,
+    const std::vector<BoundBuffer>& bound_buffers,
+    const std::vector<BoundTexture>& bound_textures) {
   if (commands.empty()) {
     return std::vector<vk::DescriptorSet>{};
   }
   // Step 1: Determine the total number of buffer and sampler descriptor
   // sets required. Collect this information along with the layout information
   // to allocate a correctly sized descriptor pool.
-  size_t buffer_count = 0;
-  size_t samplers_count = 0;
+  size_t buffer_count = bound_buffers.size();
+  size_t samplers_count = bound_textures.size();
   std::vector<vk::DescriptorSetLayout> layouts;
   layouts.reserve(commands.size());
 
   for (const auto& command : commands) {
-    buffer_count += command.bindings.bound_buffers.size();
-    samplers_count += command.bindings.bound_textures.size();
-
     layouts.emplace_back(
         ComputePipelineVK::Cast(*command.pipeline).GetDescriptorSetLayout());
   }
@@ -258,14 +256,15 @@ fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateAndBindDescriptorSets(
   for (const auto& command : commands) {
     auto desc_set = command.pipeline->GetDescriptor().GetDescriptorSetLayouts();
 
-    // if (!BindBuffers(command.bindings, allocator, encoder,
-    //                  descriptor_sets[desc_index], desc_set, buffers, writes)
-    //                  ||
-    //     !BindImages(command.bindings, allocator, encoder,
-    //                 descriptor_sets[desc_index], images, writes)) {
-    //   return fml::Status(fml::StatusCode::kUnknown,
-    //                      "Failed to bind texture or buffer.");
-    // }
+    if (!BindBuffers(bound_buffers, command.buffer_offset,
+                     command.buffer_length, allocator, encoder,
+                     descriptor_sets[desc_index], desc_set, buffers, writes) ||
+        !BindImages(bound_textures, command.texture_offset,
+                    command.texture_length, allocator, encoder,
+                    descriptor_sets[desc_index], images, writes)) {
+      return fml::Status(fml::StatusCode::kUnknown,
+                         "Failed to bind texture or buffer.");
+    }
     desc_index += 1;
   }
 

@@ -7,12 +7,25 @@
 
 #include <string>
 
+#include "impeller/renderer/command.h"
 #include "impeller/renderer/compute_command.h"
 
 namespace impeller {
 
 class HostBuffer;
 class Allocator;
+
+struct BoundComputeCommand {
+  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> pipeline;
+  /// Offset and length into a per-render pass binding vector.
+  size_t buffer_offset;
+  size_t buffer_length;
+  size_t texture_offset;
+  size_t texture_length;
+#ifdef IMPELLER_DEBUG
+  std::string label;
+#endif  // IMPELLER_DEBUG
+};
 
 //------------------------------------------------------------------------------
 /// @brief      Compute passes encode compute shader into the underlying command
@@ -57,7 +70,9 @@ class ComputePass {
 
  protected:
   const std::weak_ptr<const Context> context_;
-  std::vector<ComputeCommand> commands_;
+  std::vector<BoundComputeCommand> commands_;
+  std::vector<BoundBuffer> bound_buffers_;
+  std::vector<BoundTexture> bound_textures_;
 
   explicit ComputePass(std::weak_ptr<const Context> context);
 
