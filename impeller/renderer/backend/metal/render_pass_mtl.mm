@@ -406,24 +406,6 @@ static bool Bind(PassBindingsCache& pass,
 bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                    id<MTLRenderCommandEncoder> encoder) const {
   PassBindingsCache pass_bindings(encoder);
-  // auto bind_stage_resources = [&allocator, &pass_bindings](
-  //                                 const Bindings& bindings,
-  //                                 ShaderStage stage) -> bool {
-  //   for (const BoundBuffer& buffer : bindings.bound_buffers) {
-  //     if (!Bind(pass_bindings, *allocator, stage, buffer.slot.ext_res_0,
-  //               buffer.view.resource)) {
-  //       return false;
-  //     }
-  //   }
-  //   for (const BoundTexture& data : bindings.bound_textures) {
-  //     if (!Bind(pass_bindings, stage, data.slot.texture_index, *data.sampler,
-  //               *data.texture.resource)) {
-  //       return false;
-  //     }
-  //   }
-  //   return true;
-  // };
-
   const auto target_sample_count = render_target_.GetSampleCount();
 
   fml::closure pop_debug_marker = [encoder]() { [encoder popDebugGroup]; };
