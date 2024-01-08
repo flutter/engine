@@ -193,6 +193,9 @@ Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
   return result.Scale(1.0f / Vector2(reference.GetSize()));
 }
 
+Scalar CalculateLOD(Scalar scalar) {
+  return fabsf(log2f(1.f / scalar));
+}
 }  // namespace
 
 GaussianBlurFilterContents::GaussianBlurFilterContents(
@@ -297,6 +300,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Scalar desired_scalar =
       std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
+  Scalar lod = CalculateLOD(desired_scalar);
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
@@ -364,7 +368,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           .blur_radius =
               static_cast<int>(std::round(blur_radius.y * effective_scalar.y)),
           .step_size = 1,
-          .lod = -1,
+          .lod = lod,
       },
       /*destination_target=*/std::nullopt, blur_uvs);
 
@@ -387,6 +391,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           .blur_radius =
               static_cast<int>(std::round(blur_radius.x * effective_scalar.x)),
           .step_size = 1,
+          .lod = lod,
       },
       pass3_destination, blur_uvs);
 
