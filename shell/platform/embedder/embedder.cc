@@ -842,13 +842,13 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   framebuffer_info.fFormat = GL_BGRA8_EXT;
   framebuffer_info.fFBOID = 0;
 
-  auto backend_render_target = GrBackendRenderTargets::MakeGL(
-      config.size.width,   // width
-      config.size.height,  // height
-      1,                   // sample count
-      0,                   // stencil bits
-      framebuffer_info     // framebuffer info
-  );
+  auto backend_render_target =
+      GrBackendRenderTargets::MakeGL(config.size.width,   // width
+                                     config.size.height,  // height
+                                     1,                   // sample count
+                                     0,                   // stencil bits
+                                     framebuffer_info     // framebuffer info
+      );
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
