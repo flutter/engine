@@ -364,6 +364,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           .blur_radius =
               static_cast<int>(std::round(blur_radius.y * effective_scalar.y)),
           .step_size = 1,
+          .lod = -1,
       },
       /*destination_target=*/std::nullopt, blur_uvs);
 
@@ -446,6 +447,7 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
 KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     BlurParameters parameters) {
   KernelPipeline::FragmentShader::KernelSamples result;
+  result.lod = parameters.lod;
   result.sample_count =
       ((2 * parameters.blur_radius) / parameters.step_size) + 1;
   // 32 comes from kernel.glsl.

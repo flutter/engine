@@ -16,6 +16,7 @@ struct BlurParameters {
   Scalar blur_sigma;
   int blur_radius;
   int step_size;
+  Scalar lod;
 };
 
 KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(

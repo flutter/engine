@@ -17,14 +17,15 @@ struct KernelSample {
 uniform KernelSamples {
   int sample_count;
   KernelSample samples[32];
+  float lod;
 }
 blur_info;
 
-f16vec4 Sample(f16sampler2D tex, vec2 coords) {
+f16vec4 Sample(f16sampler2D tex, vec2 coords, float lod) {
 #if ENABLE_DECAL_SPECIALIZATION
   return IPHalfSampleDecal(tex, coords);
 #else
-  return texture(tex, coords);
+  return texture(tex, coords, lod);
 #endif
 }
 
@@ -39,7 +40,8 @@ void main() {
     float16_t coefficient = float16_t(blur_info.samples[i].coefficient);
     total_color +=
         coefficient * Sample(texture_sampler,
-                             v_texture_coords + blur_info.samples[i].uv_offset);
+                             v_texture_coords + blur_info.samples[i].uv_offset,
+                             blur_info.lod);
   }
 
   frag_color = total_color;
