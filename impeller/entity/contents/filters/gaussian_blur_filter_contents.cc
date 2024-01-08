@@ -284,6 +284,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 entity.GetClipDepth());  // No blur to render.
   }
 
+  if (!input_snapshot.value().texture->NeedsMipmapGeneration() &&
+      input_snapshot.value().texture->GetMipCount() <= 1) {
+    std::shared_ptr<CommandBuffer> mip_cmd_buffer =
+        renderer.GetContext()->CreateCommandBuffer();
+    std::shared_ptr<BlitPass> blit_pass = mip_cmd_buffer->CreateBlitPass();
+    blit_pass->GenerateMipmap(input_snapshot.value().texture);
+    blit_pass->EncodeCommands(renderer.GetContext()->GetResourceAllocator());
+    bool success = mip_cmd_buffer->SubmitCommands(/*callback=*/nullptr);
+    FML_CHECK(success);
+  }
+
   Scalar desired_scalar =
       std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
