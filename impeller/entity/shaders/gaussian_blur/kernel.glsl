@@ -25,7 +25,7 @@ f16vec4 Sample(f16sampler2D tex, vec2 coords, float lod) {
 #if ENABLE_DECAL_SPECIALIZATION
   return IPHalfSampleDecal(tex, coords);
 #else
-  return texture(tex, coords, lod);
+  return textureLod(tex, coords, lod);
 #endif
 }
 
