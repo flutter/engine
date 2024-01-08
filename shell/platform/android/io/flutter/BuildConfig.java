@@ -7,9 +7,13 @@
 package io.flutter;
 
 public final class BuildConfig {
-  private BuildConfig() {{}}
-  public final static boolean DEBUG = false;
-  public final static boolean PROFILE = false;
-  public final static boolean RELEASE = false;
-  public final static boolean JIT_RELEASE = false;
+  private BuildConfig() {
+    {
+    }
+  }
+
+  public static final boolean DEBUG = false;
+  public static final boolean PROFILE = false;
+  public static final boolean RELEASE = false;
+  public static final boolean JIT_RELEASE = false;
 }
