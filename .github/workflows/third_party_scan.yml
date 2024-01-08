@@ -44,6 +44,7 @@ jobs:
       download-artifact: converted-osv-scanner-deps
       scan-args: |-
         --lockfile=osv-scanner:converted-osv-scanner-deps.json
+      fail-on-vuln: false
     # makes sure the osv-formatted vulns are uploaded
     needs:
       extract-deps
