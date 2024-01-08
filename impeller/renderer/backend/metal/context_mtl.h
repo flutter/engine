@@ -83,9 +83,6 @@ class ContextMTL final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
-  // |Context|
-  const std::shared_ptr<HostBuffer> GetTransientsBuffer() const override;
-
   void SetCapabilities(const std::shared_ptr<const Capabilities>& capabilities);
 
   // |Context|

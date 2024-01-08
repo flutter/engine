@@ -4,17 +4,20 @@
 
 #include "flutter/testing/testing.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/entity/entity_playground.h"
 
 namespace impeller {
 namespace testing {
 
-TEST(HostBufferTest, CanEmplace) {
+using HostBufferTest = EntityPlayground;
+
+TEST_P(HostBufferTest, CanEmplace) {
   struct Length2 {
     uint8_t pad[2];
   };
   static_assert(sizeof(Length2) == 2u);
 
-  auto buffer = HostBuffer::Create(std::make_shared<Allocator>());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
 
   for (size_t i = 0; i < 12500; i++) {
     auto view = buffer->Emplace(Length2{});
@@ -23,7 +26,7 @@ TEST(HostBufferTest, CanEmplace) {
   }
 }
 
-TEST(HostBufferTest, CanEmplaceWithAlignment) {
+TEST_P(HostBufferTest, CanEmplaceWithAlignment) {
   struct Length2 {
     uint8_t pad[2];
   };
@@ -34,7 +37,7 @@ TEST(HostBufferTest, CanEmplaceWithAlignment) {
   static_assert(alignof(Align16) == 16);
   static_assert(sizeof(Align16) == 16);
 
-  auto buffer = HostBuffer::Create(std::make_shared<Allocator>());
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   ASSERT_TRUE(buffer);
 
   {

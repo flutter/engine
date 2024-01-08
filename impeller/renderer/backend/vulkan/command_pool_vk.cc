@@ -135,9 +135,10 @@ FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> tls_command_pool_map;
 // Map each context to a list of all thread-local command pools associated
 // with that context.
 static Mutex g_all_pools_map_mutex;
-static std::unordered_map<const ContextVK*,
-                          std::vector<std::weak_ptr<CommandPoolVK>>>
-    g_all_pools_map IPLR_GUARDED_BY(g_all_pools_map_mutex);
+static std::unordered_map<
+    const ContextVK*,
+    std::vector<std::weak_ptr<CommandPoolVK>>> g_all_pools_map
+    IPLR_GUARDED_BY(g_all_pools_map_mutex);
 
 // TODO(matanlurey): Return a status_or<> instead of nullptr when we have one.
 std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::Get() {

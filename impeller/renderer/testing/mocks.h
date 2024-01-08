@@ -160,11 +160,6 @@ class MockImpellerContext : public Context {
               (),
               (const, override));
 
-  MOCK_METHOD(const std::shared_ptr<HostBuffer>,
-              GetTransientsBuffer,
-              (),
-              (const, override));
-
   MOCK_METHOD(const std::shared_ptr<const Capabilities>&,
               GetCapabilities,
               (),

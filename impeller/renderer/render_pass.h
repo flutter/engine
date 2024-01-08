@@ -47,8 +47,6 @@ class RenderPass {
     commands_.reserve(command_count);
   }
 
-  HostBuffer& GetTransientsBuffer() { return *transients_buffer_; }
-
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
   ///             command buffer. No work is encoded into the command buffer at
@@ -99,7 +97,6 @@ class RenderPass {
   const bool has_stencil_attachment_;
   const ISize render_target_size_;
   const RenderTarget render_target_;
-  std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);

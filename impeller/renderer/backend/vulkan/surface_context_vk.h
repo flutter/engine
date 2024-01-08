@@ -51,9 +51,6 @@ class SurfaceContextVK : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  const std::shared_ptr<HostBuffer> GetTransientsBuffer() const override;
-
-  // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|

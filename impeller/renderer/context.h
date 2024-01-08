@@ -181,8 +181,6 @@ class Context {
   ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
-  virtual const std::shared_ptr<HostBuffer> GetTransientsBuffer() const = 0;
-
   CaptureContext capture;
 
   /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.

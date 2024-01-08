@@ -13,11 +13,7 @@ RenderPass::RenderPass(std::weak_ptr<const Context> context,
       pixel_format_(target.GetRenderTargetPixelFormat()),
       has_stencil_attachment_(target.GetStencilAttachment().has_value()),
       render_target_size_(target.GetRenderTargetSize()),
-      render_target_(target) {
-  auto strong_context = context_.lock();
-  FML_DCHECK(strong_context);
-  transients_buffer_ = strong_context->GetTransientsBuffer();
-}
+      render_target_(target) {}
 
 RenderPass::~RenderPass() {}
 

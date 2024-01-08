@@ -91,9 +91,6 @@ class ContextGLES final : public Context,
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
-  const std::shared_ptr<HostBuffer> GetTransientsBuffer() const override;
-
-  // |Context|
   void Shutdown() override;
 
   ContextGLES(const ContextGLES&) = delete;
