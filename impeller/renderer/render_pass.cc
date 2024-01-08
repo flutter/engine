@@ -13,7 +13,8 @@ RenderPass::RenderPass(std::weak_ptr<const Context> context,
       pixel_format_(target.GetRenderTargetPixelFormat()),
       has_stencil_attachment_(target.GetStencilAttachment().has_value()),
       render_target_size_(target.GetRenderTargetSize()),
-      render_target_(target) {}
+      render_target_(target),
+      orthographic_(Matrix::MakeOrthographic(render_target_size_)) {}
 
 RenderPass::~RenderPass() {}
 
@@ -35,6 +36,10 @@ const RenderTarget& RenderPass::GetRenderTarget() const {
 
 ISize RenderPass::GetRenderTargetSize() const {
   return render_target_size_;
+}
+
+const Matrix& RenderPass::GetOrthographicTransform() const {
+  return orthographic_;
 }
 
 void RenderPass::SetLabel(std::string label) {

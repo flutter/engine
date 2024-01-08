@@ -104,8 +104,7 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -158,8 +157,7 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

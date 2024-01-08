@@ -9,7 +9,6 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -96,8 +95,8 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform() * y_input_snapshot->transform *
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform() *
+                     y_input_snapshot->transform *
                      Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         y_input_snapshot->texture->GetYCoordScale();

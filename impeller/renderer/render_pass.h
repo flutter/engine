@@ -36,6 +36,8 @@ class RenderPass {
 
   ISize GetRenderTargetSize() const;
 
+  const Matrix& GetOrthographicTransform() const;
+
   virtual bool IsValid() const = 0;
 
   void SetLabel(std::string label);
@@ -98,6 +100,7 @@ class RenderPass {
   const ISize render_target_size_;
   const RenderTarget render_target_;
   std::vector<Command> commands_;
+  const Matrix orthographic_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
 

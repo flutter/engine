@@ -16,7 +16,6 @@
 #include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -142,7 +141,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+  frame_info.mvp = pass.GetOrthographicTransform() *
                    capture.AddMatrix("Transform", entity.GetTransform());
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = capture.AddScalar("Alpha", GetOpacity());

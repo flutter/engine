@@ -8,9 +8,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/point.h"
-#include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -68,8 +66,8 @@ std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
     cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform() * input_snapshot->transform *
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform() *
+                     input_snapshot->transform *
                      Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();

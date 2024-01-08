@@ -3,12 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/logging.h"
-#include "flutter/testing/testing.h"
-#include "impeller/base/strings.h"
+
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
-#include "impeller/core/sampler.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
@@ -24,20 +22,15 @@
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
-#include "impeller/fixtures/test_texture.frag.h"
-#include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/image/compressed_image.h"
-#include "impeller/image/decompressed_image.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
+#include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/sampler_library.h"
-#include "impeller/renderer/surface.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/tessellator/tessellator.h"
 #include "third_party/imgui/imgui.h"
@@ -99,8 +92,10 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
         vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator()));
 
     VS::UniformBuffer uniforms;
-    uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   Matrix::MakeScale(GetContentScale());
+    EXPECT_EQ(pass.GetOrthographicTransform(),
+              Matrix::MakeOrthographic(pass.GetRenderTargetSize()));
+    uniforms.mvp =
+        pass.GetOrthographicTransform() * Matrix::MakeScale(GetContentScale());
     VS::BindUniformBuffer(cmd, host_buffer->EmplaceUniform(uniforms));
 
     FS::FrameInfo frame_info;
@@ -271,7 +266,9 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     for (size_t i = 0; i < 1; i++) {
       for (size_t j = 0; j < 1; j++) {
         VS::UniformBuffer uniforms;
-        uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+        EXPECT_EQ(pass.GetOrthographicTransform(),
+                  Matrix::MakeOrthographic(pass.GetRenderTargetSize()));
+        uniforms.mvp = pass.GetOrthographicTransform() *
                        Matrix::MakeScale(GetContentScale()) *
                        Matrix::MakeTranslation({i * 50.0f, j * 50.0f, 0.0f});
         VS::BindUniformBuffer(cmd, host_buffer->EmplaceUniform(uniforms));
@@ -443,8 +440,10 @@ TEST_P(RendererTest, CanRenderInstanced) {
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   ASSERT_TRUE(OpenPlaygroundHere([&](RenderPass& pass) -> bool {
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     Matrix::MakeScale(GetContentScale());
+    EXPECT_EQ(pass.GetOrthographicTransform(),
+              Matrix::MakeOrthographic(pass.GetRenderTargetSize()));
+    frame_info.mvp =
+        pass.GetOrthographicTransform() * Matrix::MakeScale(GetContentScale());
     VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
     VS::BindInstanceInfo(cmd, host_buffer->EmplaceStorageBuffer(instances));
     cmd.BindVertices(builder.CreateVertexBuffer(*host_buffer));
@@ -545,7 +544,9 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
         cmd.BindVertices(vertex_buffer);
 
         VS::FrameInfo frame_info;
-        frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+        EXPECT_EQ(pass->GetOrthographicTransform(),
+                  Matrix::MakeOrthographic(pass->GetRenderTargetSize()));
+        frame_info.mvp = pass->GetOrthographicTransform() *
                          Matrix::MakeScale(GetContentScale());
         VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
 
@@ -670,7 +671,9 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         cmd.BindVertices(vertex_buffer);
 
         VS::FrameInfo frame_info;
-        frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+        EXPECT_EQ(pass->GetOrthographicTransform(),
+                  Matrix::MakeOrthographic(pass->GetRenderTargetSize()));
+        frame_info.mvp = pass->GetOrthographicTransform() *
                          Matrix::MakeScale(GetContentScale());
         VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
 
@@ -791,7 +794,9 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
         cmd.BindVertices(vertex_buffer);
 
         VS::FrameInfo frame_info;
-        frame_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+        EXPECT_EQ(pass->GetOrthographicTransform(),
+                  Matrix::MakeOrthographic(pass->GetRenderTargetSize()));
+        frame_info.mvp = pass->GetOrthographicTransform() *
                          Matrix::MakeScale(GetContentScale());
         VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
 
@@ -863,7 +868,8 @@ TEST_P(RendererTest, TheImpeller) {
     cmd.BindVertices(builder.CreateVertexBuffer(*host_buffer));
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(size);
+    EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
+    frame_info.mvp = pass.GetOrthographicTransform();
     VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
 
     FS::FragInfo fs_uniform;
@@ -911,8 +917,9 @@ TEST_P(RendererTest, ArrayUniforms) {
     cmd.BindVertices(builder.CreateVertexBuffer(*host_buffer));
 
     VS::FrameInfo frame_info;
+    EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
     frame_info.mvp =
-        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+        pass.GetOrthographicTransform() * Matrix::MakeScale(GetContentScale());
     VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
 
     auto time = GetSecondsElapsed();
@@ -968,8 +975,9 @@ TEST_P(RendererTest, InactiveUniforms) {
     cmd.BindVertices(builder.CreateVertexBuffer(*host_buffer));
 
     VS::FrameInfo frame_info;
+    EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
     frame_info.mvp =
-        Matrix::MakeOrthographic(size) * Matrix::MakeScale(GetContentScale());
+        pass.GetOrthographicTransform() * Matrix::MakeScale(GetContentScale());
     VS::BindFrameInfo(cmd, host_buffer->EmplaceUniform(frame_info));
 
     FS::FragInfo fs_uniform = {.unused_color = Color::Red(),
@@ -1230,7 +1238,9 @@ TEST_P(RendererTest, StencilMask) {
       cmd.BindVertices(vertex_buffer);
 
       VS::UniformBuffer uniforms;
-      uniforms.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+      EXPECT_EQ(pass->GetOrthographicTransform(),
+                Matrix::MakeOrthographic(pass->GetRenderTargetSize()));
+      uniforms.mvp = pass->GetOrthographicTransform() *
                      Matrix::MakeScale(GetContentScale());
       if (mirror) {
         uniforms.mvp = Matrix::MakeScale(Vector2(-1, 1)) * uniforms.mvp;

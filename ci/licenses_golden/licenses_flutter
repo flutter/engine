@@ -5016,6 +5016,8 @@ ORIGIN: ../../../flutter/impeller/compiler/runtime_stage_data.cc + ../../../flut
 ORIGIN: ../../../flutter/impeller/compiler/runtime_stage_data.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_bundle.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_bundle.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_bundle_data.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_bundle_data.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl + ../../../flutter/LICENSE
@@ -5231,6 +5233,9 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.gls
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/kernel.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/kernel_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/kernel_nodecal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/geometry/points.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/geometry/uv.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag + ../../../flutter/LICENSE
@@ -7411,6 +7416,8 @@ FILE: ../../../flutter/benchmarking/library.h
 FILE: ../../../flutter/common/constants.h
 FILE: ../../../flutter/common/exported_symbols.sym
 FILE: ../../../flutter/common/exported_symbols_mac.sym
+FILE: ../../../flutter/common/exported_test_symbols.sym
+FILE: ../../../flutter/common/exported_test_symbols_mac.sym
 FILE: ../../../flutter/common/graphics/gl_context_switch.cc
 FILE: ../../../flutter/common/graphics/gl_context_switch.h
 FILE: ../../../flutter/common/graphics/msaa_sample_count.h
@@ -7826,6 +7833,8 @@ FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
 FILE: ../../../flutter/impeller/compiler/shader_bundle.cc
 FILE: ../../../flutter/impeller/compiler/shader_bundle.h
+FILE: ../../../flutter/impeller/compiler/shader_bundle_data.cc
+FILE: ../../../flutter/impeller/compiler/shader_bundle_data.h
 FILE: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
@@ -8041,6 +8050,9 @@ FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/kernel.glsl
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/kernel_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/kernel_nodecal.frag
 FILE: ../../../flutter/impeller/entity/shaders/geometry/points.comp
 FILE: ../../../flutter/impeller/entity/shaders/geometry/uv.comp
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag

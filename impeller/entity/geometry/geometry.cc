@@ -49,8 +49,7 @@ GeometryResult Geometry::ComputePositionGeometry(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -86,8 +85,7 @@ GeometryResult Geometry::ComputePositionUVGeometry(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -139,8 +137,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

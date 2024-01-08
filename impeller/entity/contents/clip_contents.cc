@@ -99,9 +99,8 @@ bool ClipContents::Render(const ContentContext& renderer,
               .CreateVertexBuffer(renderer.GetTransientsBuffer());
       cmd.BindVertices(std::move(vertices));
 
-      info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-      VS::BindFrameInfo(cmd,
-                        renderer.GetTransientsBuffer().EmplaceUniform(info));
+      info.mvp = pass.GetOrthographicTransform();
+      VS::BindFrameInfo(cmd, renderer.GetTransientsBuffer().EmplaceUniform(info));
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
       cmd.pipeline = renderer.GetClipPipeline(options);
@@ -202,7 +201,7 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
       vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()));
 
   VS::FrameInfo info;
-  info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+  info.mvp = pass.GetOrthographicTransform();
   VS::BindFrameInfo(cmd, renderer.GetTransientsBuffer().EmplaceUniform(info));
 
   pass.AddCommand(std::move(cmd));
