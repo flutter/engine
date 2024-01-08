@@ -63,6 +63,10 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
 
   auto backend = UIDartState::Current()->GetRuntimeStageBackend();
   auto runtime_stage = runtime_stages[backend];
+  FML_LOG(ERROR) << "Runtime stage backend is " << static_cast<int>(backend)
+                 << " and got " << runtime_stage->GetUniforms().size()
+                 << " uniforms"
+                 << runtime_stage->GetCodeMapping()->GetMapping();
   if (!runtime_stage) {
     std::ostringstream stream;
     stream << "Asset '" << asset_name

@@ -12,9 +12,11 @@
 #include <sstream>
 
 #include "flutter/fml/logging.h"
+#include "fml/backtrace.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/compiler/code_gen_template.h"
+#include "impeller/compiler/runtime_stage_data.h"
 #include "impeller/compiler/types.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
@@ -22,53 +24,10 @@
 #include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
+#include "spirv_common.hpp"
 
 namespace impeller {
 namespace compiler {
-
-static std::string BaseTypeToString(spirv_cross::SPIRType::BaseType type) {
-  using Type = spirv_cross::SPIRType::BaseType;
-  switch (type) {
-    case Type::Void:
-      return "ShaderType::kVoid";
-    case Type::Boolean:
-      return "ShaderType::kBoolean";
-    case Type::SByte:
-      return "ShaderType::kSignedByte";
-    case Type::UByte:
-      return "ShaderType::kUnsignedByte";
-    case Type::Short:
-      return "ShaderType::kSignedShort";
-    case Type::UShort:
-      return "ShaderType::kUnsignedShort";
-    case Type::Int:
-      return "ShaderType::kSignedInt";
-    case Type::UInt:
-      return "ShaderType::kUnsignedInt";
-    case Type::Int64:
-      return "ShaderType::kSignedInt64";
-    case Type::UInt64:
-      return "ShaderType::kUnsignedInt64";
-    case Type::AtomicCounter:
-      return "ShaderType::kAtomicCounter";
-    case Type::Half:
-      return "ShaderType::kHalfFloat";
-    case Type::Float:
-      return "ShaderType::kFloat";
-    case Type::Double:
-      return "ShaderType::kDouble";
-    case Type::Struct:
-      return "ShaderType::kStruct";
-    case Type::Image:
-      return "ShaderType::kImage";
-    case Type::SampledImage:
-      return "ShaderType::kSampledImage";
-    case Type::Sampler:
-      return "ShaderType::kSampler";
-    default:
-      return "ShaderType::kUnknown";
-  }
-}
 
 static std::string ExecutionModelToString(spv::ExecutionModel model) {
   switch (model) {
@@ -353,7 +312,6 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
   }
   auto data = std::make_unique<RuntimeStageData::Shader>();
   data->entrypoint = options_.entry_point_name;
-  FML_LOG(ERROR) << "writing entrypoint as " << options_.entry_point_name;
   data->stage = entrypoints.front().execution_model;
   data->shader = shader_data_;
   data->backend = backend.value();
@@ -373,6 +331,11 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     uniform_description.columns = spir_type.columns;
     uniform_description.bit_width = spir_type.width;
     uniform_description.array_elements = GetArrayElements(spir_type);
+    FML_CHECK(data->backend != RuntimeStageBackend::kVulkan ||
+              spir_type.basetype ==
+                  spirv_cross::SPIRType::BaseType::SampledImage)
+        << "Vulkan runtime effect had unexpected uniforms outside of the "
+           "uniform buffer object.";
     data->uniforms.emplace_back(std::move(uniform_description));
   }
 
@@ -388,21 +351,41 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
 
     const auto& ubo = ubos[0];
 
-    const auto& struct_type = compiler_->get_type(ubo.type_id);
-    FML_CHECK(struct_type.basetype == spirv_cross::SPIRType::BaseType::Struct);
-    for (size_t i = 0; i < struct_type.member_types.size(); i += 1) {
-      const auto spir_type = compiler_->get_type(struct_type.member_types[i]);
-      UniformDescription uniform_description;
-      uniform_description.name =
-          compiler_->get_member_name(ubo.base_type_id, i);
-      uniform_description.location = i;
-      uniform_description.type = spir_type.basetype;
-      uniform_description.rows = spir_type.vecsize;
-      uniform_description.columns = spir_type.columns;
-      uniform_description.bit_width = spir_type.width;
-      uniform_description.array_elements = GetArrayElements(spir_type);
-      data->uniforms.emplace_back(std::move(uniform_description));
+    auto members = ReadStructMembers(ubo.type_id);
+    std::vector<size_t> padding_locations;
+    size_t struct_byte_length = 0;
+    size_t float_count = 0;
+    for (size_t i = 0; i < members.size(); i += 1) {
+      const auto& member = members[i];
+      struct_byte_length += member.byte_length;
+      std::vector<int> bytes;
+      switch (member.underlying_type) {
+        case StructMember::UnderlyingType::kPadding:
+          size_t padding_count =
+              (member.size + sizeof(float) - 1) / sizeof(float);
+          // while (padding_count > 0) {
+          //   padding_locations.push_back({i, member.size});
+          //   padding_count--;
+          // }
+          break;
+        case StructMember::UnderlyingType::kFloat:
+          float_count += member.byte_length / sizeof(float);
+          break;
+        case StructMember::UnderlyingType::kOther:
+          VALIDATION_LOG << "Non-floating-type struct member " << member.name
+                         << " is not supported.";
+          return nullptr;
+      }
     }
+    data->uniforms.emplace_back(UniformDescription{
+        .name = ubo.name,
+        .location = 64,  // Magic constant that must match the descriptor set
+                         // location for fragment programs.
+        .type = spirv_cross::SPIRType::Struct,
+        .padding_locations = std::move(padding_locations),
+        .struct_byte_length = struct_byte_length,
+        .struct_float_count = float_count,
+    });
   }
 
   // We only need to worry about storing vertex attributes.
@@ -551,7 +534,7 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
 
   const auto type = compiler_->get_type(type_id);
 
-  result["type_name"] = BaseTypeToString(type.basetype);
+  result["type_name"] = StructMember::BaseTypeToString(type.basetype);
   result["bit_width"] = type.width;
   result["vec_size"] = type.vecsize;
   result["columns"] = type.columns;
@@ -688,8 +671,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
     if (struct_member_offset > current_byte_offset) {
       const auto alignment_pad = struct_member_offset - current_byte_offset;
       result.emplace_back(StructMember{
-          TypeNameWithPaddingOfSize(alignment_pad),                 // type
-          BaseTypeToString(spirv_cross::SPIRType::BaseType::Void),  // basetype
+          TypeNameWithPaddingOfSize(alignment_pad),  // type
+          spirv_cross::SPIRType::BaseType::Void,     // basetype
           SPrintF("_PADDING_%s_",
                   GetMemberNameAtIndex(struct_type, i).c_str()),  // name
           current_byte_offset,                                    // offset
@@ -718,7 +701,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - size;
       result.emplace_back(StructMember{
           compiler_->get_name(member.self),      // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           size,                                  // size
@@ -741,7 +724,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(Matrix);
       result.emplace_back(StructMember{
           "Matrix",                              // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Matrix),                        // size
@@ -764,7 +747,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(UintPoint32);
       result.emplace_back(StructMember{
           "UintPoint32",                         // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(UintPoint32),                   // size
@@ -787,7 +770,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(IPoint32);
       result.emplace_back(StructMember{
           "IPoint32",                            // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(IPoint32),                      // size
@@ -809,7 +792,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(Point);
       result.emplace_back(StructMember{
           "Point",                               // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Point),                         // size
@@ -831,7 +814,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(Vector3);
       result.emplace_back(StructMember{
           "Vector3",                             // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Vector3),                       // size
@@ -853,7 +836,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(Vector4);
       result.emplace_back(StructMember{
           "Vector4",                             // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Vector4),                       // size
@@ -876,7 +859,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(HalfVector2);
       result.emplace_back(StructMember{
           "HalfVector2",                         // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(HalfVector2),                   // size
@@ -899,7 +882,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(HalfVector3);
       result.emplace_back(StructMember{
           "HalfVector3",                         // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(HalfVector3),                   // size
@@ -922,7 +905,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       uint32_t element_padding = stride - sizeof(HalfVector4);
       result.emplace_back(StructMember{
           "HalfVector4",                         // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(HalfVector4),                   // size
@@ -949,7 +932,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
         // Add the type directly.
         result.emplace_back(StructMember{
             maybe_known_type.value().name,         // type
-            BaseTypeToString(member.basetype),     // basetype
+            member.basetype,                       // basetype
             GetMemberNameAtIndex(struct_type, i),  // name
             struct_member_offset,                  // offset
             maybe_known_type.value().byte_size,    // size
@@ -973,7 +956,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       auto element_padding = stride - size;
       result.emplace_back(StructMember{
           TypeNameWithPaddingOfSize(size),       // type
-          BaseTypeToString(member.basetype),     // basetype
+          member.basetype,                       // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           size,                                  // size
@@ -993,15 +976,14 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       if (excess != 0) {
         const auto padding = max_member_alignment - excess;
         result.emplace_back(StructMember{
-            TypeNameWithPaddingOfSize(padding),  // type
-            BaseTypeToString(
-                spirv_cross::SPIRType::BaseType::Void),  // basetype
-            "_PADDING_",                                 // name
-            current_byte_offset,                         // offset
-            padding,                                     // size
-            padding,                                     // byte_length
-            std::nullopt,                                // array_elements
-            0,                                           // element_padding
+            TypeNameWithPaddingOfSize(padding),     // type
+            spirv_cross::SPIRType::BaseType::Void,  // basetype
+            "_PADDING_",                            // name
+            current_byte_offset,                    // offset
+            padding,                                // size
+            padding,                                // byte_length
+            std::nullopt,                           // array_elements
+            0,                                      // element_padding
         });
       }
     }
@@ -1057,7 +1039,7 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
 
 struct VertexType {
   std::string type_name;
-  std::string base_type_name;
+  spirv_cross::SPIRType::BaseType base_type;
   std::string variable_name;
   size_t byte_length = 0u;
 };
@@ -1067,8 +1049,8 @@ static VertexType VertexTypeFromInputResource(
     const spirv_cross::Resource* resource) {
   VertexType result;
   result.variable_name = resource->name;
-  const auto type = compiler.get_type(resource->type_id);
-  result.base_type_name = BaseTypeToString(type.basetype);
+  const auto& type = compiler.get_type(resource->type_id);
+  result.base_type = type.basetype;
   const auto total_size = type.columns * type.vecsize * type.width / 8u;
   result.byte_length = total_size;
 
@@ -1157,14 +1139,14 @@ Reflector::ReflectPerVertexStructDefinition(
         VertexTypeFromInputResource(*compiler_.GetCompiler(), resource);
 
     auto member = StructMember{
-        vertex_type.type_name,       // type
-        vertex_type.base_type_name,  // base type
-        vertex_type.variable_name,   // name
-        struc.byte_length,           // offset
-        vertex_type.byte_length,     // size
-        vertex_type.byte_length,     // byte_length
-        std::nullopt,                // array_elements
-        0,                           // element_padding
+        vertex_type.type_name,      // type
+        vertex_type.base_type,      // base type
+        vertex_type.variable_name,  // name
+        struc.byte_length,          // offset
+        vertex_type.byte_length,    // size
+        vertex_type.byte_length,    // byte_length
+        std::nullopt,               // array_elements
+        0,                          // element_padding
     };
     struc.byte_length += vertex_type.byte_length;
     struc.members.emplace_back(std::move(member));

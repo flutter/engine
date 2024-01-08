@@ -19,6 +19,7 @@ namespace impeller {
 namespace compiler {
 
 struct UniformDescription {
+  using PaddingLocations = std::vector<std::pair<size_t, size_t>>;
   std::string name;
   size_t location = 0u;
   spirv_cross::SPIRType::BaseType type = spirv_cross::SPIRType::BaseType::Float;
@@ -26,6 +27,9 @@ struct UniformDescription {
   size_t columns = 0u;
   size_t bit_width = 0u;
   std::optional<size_t> array_elements = std::nullopt;
+  PaddingLocations padding_locations = {};
+  size_t struct_byte_length = 0u;
+  size_t struct_float_count = 0u;
 };
 
 struct InputDescription {

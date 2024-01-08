@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace impeller {
 
@@ -19,19 +20,9 @@ enum class RuntimeStageBackend {
 };
 
 enum RuntimeUniformType {
-  kBoolean,
-  kSignedByte,
-  kUnsignedByte,
-  kSignedShort,
-  kUnsignedShort,
-  kSignedInt,
-  kUnsignedInt,
-  kSignedInt64,
-  kUnsignedInt64,
-  kHalfFloat,
   kFloat,
-  kDouble,
   kSampledImage,
+  kStruct,
 };
 
 enum class RuntimeShaderStage {
@@ -52,6 +43,9 @@ struct RuntimeUniformDescription {
   RuntimeUniformDimensions dimensions;
   size_t bit_width;
   std::optional<size_t> array_elements;
+  std::vector<std::pair<size_t, size_t>> struct_padding_locations = {};
+  size_t struct_byte_length = 0u;
+  size_t struct_float_count = 0u;
 
   /// @brief  Computes the total number of bytes that this uniform requires.
   size_t GetSize() const;

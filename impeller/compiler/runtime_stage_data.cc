@@ -61,32 +61,23 @@ static std::optional<fb::Stage> ToJsonStage(spv::ExecutionModel stage) {
 static std::optional<fb::UniformDataType> ToUniformType(
     spirv_cross::SPIRType::BaseType type) {
   switch (type) {
-    case spirv_cross::SPIRType::Boolean:
-      return fb::UniformDataType::kBoolean;
-    case spirv_cross::SPIRType::SByte:
-      return fb::UniformDataType::kSignedByte;
-    case spirv_cross::SPIRType::UByte:
-      return fb::UniformDataType::kUnsignedByte;
-    case spirv_cross::SPIRType::Short:
-      return fb::UniformDataType::kSignedShort;
-    case spirv_cross::SPIRType::UShort:
-      return fb::UniformDataType::kUnsignedShort;
-    case spirv_cross::SPIRType::Int:
-      return fb::UniformDataType::kSignedInt;
-    case spirv_cross::SPIRType::UInt:
-      return fb::UniformDataType::kUnsignedInt;
-    case spirv_cross::SPIRType::Int64:
-      return fb::UniformDataType::kSignedInt64;
-    case spirv_cross::SPIRType::UInt64:
-      return fb::UniformDataType::kUnsignedInt64;
-    case spirv_cross::SPIRType::Half:
-      return fb::UniformDataType::kHalfFloat;
     case spirv_cross::SPIRType::Float:
       return fb::UniformDataType::kFloat;
-    case spirv_cross::SPIRType::Double:
-      return fb::UniformDataType::kDouble;
     case spirv_cross::SPIRType::SampledImage:
       return fb::UniformDataType::kSampledImage;
+    case spirv_cross::SPIRType::Struct:
+      return fb::UniformDataType::kStruct;
+    case spirv_cross::SPIRType::Boolean:
+    case spirv_cross::SPIRType::SByte:
+    case spirv_cross::SPIRType::UByte:
+    case spirv_cross::SPIRType::Short:
+    case spirv_cross::SPIRType::UShort:
+    case spirv_cross::SPIRType::Int:
+    case spirv_cross::SPIRType::UInt:
+    case spirv_cross::SPIRType::Int64:
+    case spirv_cross::SPIRType::UInt64:
+    case spirv_cross::SPIRType::Half:
+    case spirv_cross::SPIRType::Double:
     case spirv_cross::SPIRType::AccelerationStructure:
     case spirv_cross::SPIRType::AtomicCounter:
     case spirv_cross::SPIRType::Char:
@@ -95,7 +86,6 @@ static std::optional<fb::UniformDataType> ToUniformType(
     case spirv_cross::SPIRType::Interpolant:
     case spirv_cross::SPIRType::RayQuery:
     case spirv_cross::SPIRType::Sampler:
-    case spirv_cross::SPIRType::Struct:
     case spirv_cross::SPIRType::Unknown:
     case spirv_cross::SPIRType::Void:
       return std::nullopt;
@@ -174,6 +164,8 @@ static std::optional<uint32_t> ToJsonType(
       return 11;  // fb::UniformDataType::kDouble;
     case spirv_cross::SPIRType::SampledImage:
       return 12;  // fb::UniformDataType::kSampledImage;
+    case spirv_cross::SPIRType::Struct:
+      return 13;
     case spirv_cross::SPIRType::AccelerationStructure:
     case spirv_cross::SPIRType::AtomicCounter:
     case spirv_cross::SPIRType::Char:
@@ -182,7 +174,6 @@ static std::optional<uint32_t> ToJsonType(
     case spirv_cross::SPIRType::Interpolant:
     case spirv_cross::SPIRType::RayQuery:
     case spirv_cross::SPIRType::Sampler:
-    case spirv_cross::SPIRType::Struct:
     case spirv_cross::SPIRType::Unknown:
     case spirv_cross::SPIRType::Void:
       return std::nullopt;
@@ -202,6 +193,7 @@ static const char* kUniformRowsKey = "rows";
 static const char* kUniformColumnsKey = "columns";
 static const char* kUniformBitWidthKey = "bit_width";
 static const char* kUniformArrayElementsKey = "array_elements";
+static const char* kUniformPaddingLocationsKey = "padding_locations";
 
 static std::string RuntimeStageBackendToString(RuntimeStageBackend backend) {
   switch (backend) {
@@ -273,13 +265,10 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
 
       uniform_object[kUniformTypeKey] = uniform_type.value();
       uniform_object[kUniformBitWidthKey] = uniform.bit_width;
+      uniform_object[kUniformArrayElementsKey] =
+          uniform.array_elements.value_or(0);
+      uniform_object[kUniformPaddingLocationsKey] = uniform.padding_locations;
 
-      if (uniform.array_elements.has_value()) {
-        uniform_object[kUniformArrayElementsKey] =
-            uniform.array_elements.value();
-      } else {
-        uniform_object[kUniformArrayElementsKey] = 0;
-      }
       uniforms.push_back(uniform_object);
     }
 
@@ -293,12 +282,25 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
       json_string->size(), [json_string](auto, auto) {});
 }
 
+static std::vector<std::unique_ptr<fb::LocationT>> PaddingLocationsToLocations(
+    const UniformDescription::PaddingLocations& locations) {
+  std::vector<std::unique_ptr<fb::LocationT>> result;
+  for (const auto& location : locations) {
+    result.push_back(std::make_unique<fb::LocationT>(fb::LocationT{
+        .offset = location.first,
+        .size = location.second,
+    }));
+  }
+  return result;
+}
+
 std::unique_ptr<fb::RuntimeStagesT> RuntimeStageData::CreateFlatbuffer() const {
   // The high level object API is used here for writing to the buffer. This is
   // just a convenience.
   auto runtime_stages = std::make_unique<fb::RuntimeStagesT>();
 
   for (const auto& kvp : data_) {
+    FML_DCHECK(kvp.first == kvp.second->backend);
     auto runtime_stage = std::make_unique<fb::RuntimeStageT>();
     runtime_stage->entrypoint = kvp.second->entrypoint;
     const auto stage = ToStage(kvp.second->stage);
@@ -333,10 +335,15 @@ std::unique_ptr<fb::RuntimeStagesT> RuntimeStageData::CreateFlatbuffer() const {
         return nullptr;
       }
       desc->type = uniform_type.value();
+      runtime_stage->struct_byte_length += uniform.struct_byte_length;
+      runtime_stage->float_count += uniform.struct_float_count;
       desc->bit_width = uniform.bit_width;
       if (uniform.array_elements.has_value()) {
         desc->array_elements = uniform.array_elements.value();
       }
+
+      desc->padding_locations =
+          PaddingLocationsToLocations(uniform.padding_locations);
 
       runtime_stage->uniforms.emplace_back(std::move(desc));
     }

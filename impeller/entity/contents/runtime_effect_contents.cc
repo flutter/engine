@@ -42,40 +42,29 @@ bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
   return false;
 }
 
-// static ShaderType GetShaderType(RuntimeUniformType type) {
-//   switch (type) {
-//     case kSampledImage:
-//       return ShaderType::kSampledImage;
-//     case kFloat:
-//       return ShaderType::kFloat;
-//     case kBoolean:
-//     case kSignedByte:
-//     case kUnsignedByte:
-//     case kSignedShort:
-//     case kUnsignedShort:
-//     case kSignedInt:
-//     case kUnsignedInt:
-//     case kSignedInt64:
-//     case kUnsignedInt64:
-//     case kHalfFloat:
-//     case kDouble:
-//       VALIDATION_LOG << "Unsupported uniform type.";
-//       return ShaderType::kVoid;
-//   }
-// }
+static ShaderType GetShaderType(RuntimeUniformType type) {
+  switch (type) {
+    case kSampledImage:
+      return ShaderType::kSampledImage;
+    case kFloat:
+      return ShaderType::kFloat;
+    case kStruct:
+      return ShaderType::kStruct;
+  }
+}
 
-// static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
-//     const RuntimeUniformDescription& uniform) {
-//   auto metadata = std::make_shared<ShaderMetadata>();
-//   metadata->name = uniform.name;
-//   metadata->members.emplace_back(ShaderStructMemberMetadata{
-//       .type = GetShaderType(uniform.type),
-//       .size = uniform.GetSize(),
-//       .byte_length = uniform.bit_width / 8,
-//   });
+static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
+    const RuntimeUniformDescription& uniform) {
+  auto metadata = std::make_shared<ShaderMetadata>();
+  metadata->name = uniform.name;
+  metadata->members.emplace_back(ShaderStructMemberMetadata{
+      .type = GetShaderType(uniform.type),
+      .size = uniform.GetSize(),
+      .byte_length = uniform.bit_width / 8,
+  });
 
-//   return metadata;
-// }
+  return metadata;
+}
 
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
@@ -204,111 +193,103 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Fragment stage uniforms.
   ///
 
-  // size_t minimum_sampler_index = 100000000;
-  // size_t buffer_index = 0;
-  // size_t buffer_offset = 0;
+  size_t minimum_sampler_index = 100000000;
+  size_t buffer_index = 0;
+  size_t buffer_offset = 0;
 
-  ShaderUniformSlot uniform_slot;
-  uniform_slot.name = "_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock";
-  uniform_slot.ext_res_0 = 0;
-  uniform_slot.binding = 64;
-  ShaderMetadata metadata;
-  metadata.name = uniform_slot.name;
-  auto uniform_count = runtime_stage_->GetUniforms().size();
-  metadata.members.emplace_back(ShaderStructMemberMetadata{
-      .type = ShaderType::kStruct,
-      .size = uniform_count * 4,
-      .byte_length = uniform_count * 4 / 8,
-  });
-
-  size_t alignment = std::max(4ul * 3ul, DefaultUniformAlignment());
-
-  size_t buffer_offset = 0u;
   for (const auto& uniform : runtime_stage_->GetUniforms()) {
-    FML_LOG(ERROR) << "Uniform " << uniform.name << " has value "
-                   << reinterpret_cast<float*>(uniform_data_->data() +
-                                               buffer_offset)[0]
-                   << " And size " << uniform.GetSize();
-    buffer_offset += uniform.GetSize();
+    FML_LOG(ERROR) << "Uniform is " << uniform.name;
+    std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+
+    switch (uniform.type) {
+      case kSampledImage: {
+        // Sampler uniforms are ordered in the IPLR according to their
+        // declaration and the uniform location reflects the correct offset to
+        // be mapped to - except that it may include all proceeding float
+        // uniforms. For example, a float sampler that comes after 4 float
+        // uniforms may have a location of 4. To convert to the actual offset we
+        // need to find the largest location assigned to a float uniform and
+        // then subtract this from all uniform locations. This is more or less
+        // the same operation we previously performed in the shader compiler.
+        minimum_sampler_index =
+            std::min(minimum_sampler_index, uniform.location);
+        break;
+      }
+      case kFloat: {
+        // FML_CHECK(renderer.GetContext()->GetBackendType() !=
+        //           Context::BackendType::kVulkan)
+        //     << "Uniform " << uniform.name
+        //     << " had unexpected type kFloat for Vulkan backend.";
+        size_t alignment =
+            std::max(uniform.bit_width / 8, DefaultUniformAlignment());
+        auto buffer_view = pass.GetTransientsBuffer().Emplace(
+            uniform_data_->data() + buffer_offset, uniform.GetSize(),
+            alignment);
+
+        ShaderUniformSlot uniform_slot;
+        uniform_slot.name = uniform.name.c_str();
+        uniform_slot.ext_res_0 = uniform.location;
+        cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
+                         buffer_view);
+        buffer_index++;
+        buffer_offset += uniform.GetSize();
+        break;
+      }
+      case kStruct: {
+        FML_DCHECK(renderer.GetContext()->GetBackendType() ==
+                   Context::BackendType::kVulkan);
+
+        ShaderUniformSlot uniform_slot;
+        uniform_slot.name = uniform.name.c_str();
+        uniform_slot.binding = uniform.location;
+
+        std::vector<float> uniform_buffer;
+        FML_LOG(ERROR) << "u: " << uniform.name << " .. " << uniform.GetSize();
+        // for (size_t i = 0; i < uniform.)
+
+        // size_t alignment = std::max(4ul * 4ul, DefaultUniformAlignment());
+
+        // std::array<float, 4> uniform_buffer{
+        //     reinterpret_cast<float*>(uniform_data_->data())[0],
+        //     0.f,
+        //     reinterpret_cast<float*>(uniform_data_->data())[1],
+        //     reinterpret_cast<float*>(uniform_data_->data())[2],
+        // };
+        // auto buffer_view = pass.GetTransientsBuffer().Emplace(
+        //     reinterpret_cast<const void*>(uniform_buffer.data()),
+        //     4 * sizeof(float), alignment);
+        // cmd.BindResource(ShaderStage::kFragment, uniform_slot,
+        // ShaderMetadata{},
+        //                  buffer_view);
+      }
+    }
   }
-  auto buffer_view = pass.GetTransientsBuffer().Emplace(
-      reinterpret_cast<const void*>(uniform_data_->data()), 3 * sizeof(float),
-      alignment);
-  cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata, buffer_view);
 
-  // for (const auto& uniform : runtime_stage_->GetUniforms()) {
-  //   std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+  size_t sampler_index = 0;
+  for (const auto& uniform : runtime_stage_->GetUniforms()) {
+    std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
 
-  //   switch (uniform.type) {
-  //     case kSampledImage: {
-  //       // Sampler uniforms are ordered in the IPLR according to their
-  //       // declaration and the uniform location reflects the correct offset
-  //       to
-  //       // be mapped to - except that it may include all proceeding float
-  //       // uniforms. For example, a float sampler that comes after 4 float
-  //       // uniforms may have a location of 4. To convert to the actual offset
-  //       we
-  //       // need to find the largest location assigned to a float uniform and
-  //       // then subtract this from all uniform locations. This is more or
-  //       less
-  //       // the same operation we previously performed in the shader compiler.
-  //       minimum_sampler_index =
-  //           std::min(minimum_sampler_index, uniform.location);
-  //       break;
-  //     }
-  //     case kFloat: {
-  //       size_t alignment =
-  //           std::max(uniform.bit_width / 8, DefaultUniformAlignment());
-  //       auto buffer_view = pass.GetTransientsBuffer().Emplace(
-  //           uniform_data_->data() + buffer_offset, uniform.GetSize(),
-  //           alignment);
+    switch (uniform.type) {
+      case kSampledImage: {
+        FML_DCHECK(sampler_index < texture_inputs_.size());
+        auto& input = texture_inputs_[sampler_index];
 
-  //       buffer_index++;
-  //       buffer_offset += uniform.GetSize();
-  //       break;
-  //     }
-  //     case kBoolean:
-  //     case kSignedByte:
-  //     case kUnsignedByte:
-  //     case kSignedShort:
-  //     case kUnsignedShort:
-  //     case kSignedInt:
-  //     case kUnsignedInt:
-  //     case kSignedInt64:
-  //     case kUnsignedInt64:
-  //     case kHalfFloat:
-  //     case kDouble:
-  //       VALIDATION_LOG << "Unsupported uniform type for " << uniform.name
-  //                      << ".";
-  //       return true;
-  //   }
-  // }
+        auto sampler =
+            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
 
-  // size_t sampler_index = 0;
-  // for (const auto& uniform : runtime_stage_->GetUniforms()) {
-  //   std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
+        SampledImageSlot image_slot;
+        image_slot.name = uniform.name.c_str();
+        image_slot.texture_index = uniform.location - minimum_sampler_index;
+        cmd.BindResource(ShaderStage::kFragment, image_slot, *metadata,
+                         input.texture, sampler);
 
-  //   switch (uniform.type) {
-  //     case kSampledImage: {
-  //       FML_DCHECK(sampler_index < texture_inputs_.size());
-  //       auto& input = texture_inputs_[sampler_index];
-
-  //       auto sampler =
-  //           context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
-
-  //       SampledImageSlot image_slot;
-  //       image_slot.name = uniform.name.c_str();
-  //       image_slot.texture_index = uniform.location - minimum_sampler_index;
-  //       cmd.BindResource(ShaderStage::kFragment, image_slot, *metadata,
-  //                        input.texture, sampler);
-
-  //       sampler_index++;
-  //       break;
-  //     }
-  //     default:
-  //       continue;
-  //   }
-  // }
+        sampler_index++;
+        break;
+      }
+      default:
+        continue;
+    }
+  }
 
   pass.AddCommand(std::move(cmd));
 
