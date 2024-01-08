@@ -155,8 +155,7 @@ class Command {
       <String>[clangTidyPath, ...args],
       workingDirectory: directory,
       name: 'clang-tidy on $filePath',
-      printOutput: true,
-      failOk: false,
+      printOutput: options.verbose,
     );
   }
 }

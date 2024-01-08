@@ -430,11 +430,9 @@ class ClangTidy {
         final Exception? exception = job.exception;
         if (exception != null) {
           _errSink.writeln(trimOutput(exception.toString()));
+        } else {
+          _errSink.writeln(trimOutput(job.result.stdout));
         }
-
-        _errSink.writeln(trimOutput(job.result.stdout));
-        _errSink.writeln(trimOutput(job.result.stderr));
-
       }
       result = 1;
     }
