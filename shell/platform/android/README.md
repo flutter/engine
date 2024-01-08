@@ -104,8 +104,39 @@ Some notable files include:
 It is non-trivial to get a working IDE setup for editing Java code in the
 Flutter engine. Some developers have had success [using VSCode as an IDE for the Android Embedding](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment#using-vscode-as-an-ide-for-the-android-embedding-java),
 but the following instructions are for if that doesn't work, or you want to use
-Android Studio.
+Android Studio:
 
-## Building
+1. Open `shell/platform/android` in Android Studio.
+1. Configure the following:
 
-## Testing
+   - [`Preferences | Build, Execution, Deployment | Gradle-Android Compiler`](jetbrains://AndroidStudio/settings?name=Build%2C+Execution%2C+Deployment--Gradle-Android+Compiler)
+
+     Command-line Options:
+
+     ```txt
+     -Pbuild_dir="/tmp/build_dir" -Pflutter_jar="$ENGINE/src/out/android_debug_unopt_arm64/flutter.jar"
+     ```
+
+   - [`Preferences | Build, Execution, Deployment | Build Tools | Gradle`](jetbrains://AndroidStudio/settings?name=Build%2C+Execution%2C+Deployment--Build+Tools--Gradle)
+
+     Distribution of `Local Installation` with:
+
+     ```txt
+     $ENGINE/src/third_party/gradle
+     ```
+
+     Gradle SDK using Android Studio (path depends on your machine):
+
+     ```txt
+     /Applications/Android Studio.app/Contents/jbr/Contents/Home
+     ```
+
+1. Sync Gradle.
+
+   ![Example](https://github.com/flutter/flutter/assets/168174/02fe0e6f-f0c4-47b2-8dae-9aa0b9520503)
+
+At this point you should be able to open Java files in Android Studio and get
+code completion in the `io/flutter` folder (additional, undocumented work is
+required for `test/io/flutter`). For example, `FlutterJNI.java`:
+
+![Example](https://github.com/flutter/flutter/assets/168174/387550d4-eab7-4097-9da3-7713a6ec4da7)
