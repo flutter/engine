@@ -418,10 +418,10 @@ class ClangTidy {
       }
       if (job.result.exitCode == 0) {
         if (options.enableCheckProfile) {
-          // stderr is lazily evaluated, so force it to be evaluated here.
-          final String stderr = job.result.stderr;
+          // output is lazily evaluated, so force it to be evaluated here.
+          final String resultOutput = job.result.output;
           _errSink.writeln('Results of --enable-check-profile for ${job.name}:');
-          _errSink.writeln(stderr);
+          _errSink.writeln(resultOutput);
         }
         continue;
       }
@@ -431,7 +431,7 @@ class ClangTidy {
         if (exception != null) {
           _errSink.writeln(trimOutput(exception.toString()));
         } else {
-          _errSink.writeln(trimOutput(job.result.stdout));
+          _errSink.writeln(trimOutput(job.result.output));
         }
       }
       result = 1;
