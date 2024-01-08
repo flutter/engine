@@ -100,7 +100,8 @@ bool ClipContents::Render(const ContentContext& renderer,
       cmd.BindVertices(std::move(vertices));
 
       info.mvp = pass.GetOrthographicTransform();
-      VS::BindFrameInfo(cmd, renderer.GetTransientsBuffer().EmplaceUniform(info));
+      VS::BindFrameInfo(cmd,
+                        renderer.GetTransientsBuffer().EmplaceUniform(info));
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
       cmd.pipeline = renderer.GetClipPipeline(options);
