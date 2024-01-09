@@ -47,11 +47,11 @@ class DeviceBuffer : public Buffer,
   /// Make any pending writes visible to the GPU.
   ///
   /// This method must be called if the device pointer provided by
-  /// [OnGetContents] is written to, and the host memory allocation is not host
-  /// coherent.
+  /// [OnGetContents] is written to without using [CopyHostBuffer]. On Devices
+  /// with coherent host memory, this method will not perform extra work.
   ///
   /// If the range is not provided, the entire buffer is flushed.
-  virtual void Flush(std::optional<Range> range = std::nullopt);
+  virtual void Flush(std::optional<Range> range = std::nullopt) const;
 
  protected:
   const DeviceBufferDescriptor desc_;
