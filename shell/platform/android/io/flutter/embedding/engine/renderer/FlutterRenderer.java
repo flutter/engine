@@ -234,27 +234,29 @@ public class FlutterRenderer implements TextureRegistry {
 
     SurfaceTextureRegistryEntry(long id, @NonNull SurfaceTexture surfaceTexture) {
       this.id = id;
-      Runnable onFrameConsumed = () -> {
-        if (frameConsumedListener != null) {
-          frameConsumedListener.onFrameConsumed();
-        }
-      };
+      Runnable onFrameConsumed =
+          () -> {
+            if (frameConsumedListener != null) {
+              frameConsumedListener.onFrameConsumed();
+            }
+          };
       this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture, onFrameConsumed);
 
       // Even though we make sure to unregister the callback before releasing, as of
       // Android O, SurfaceTexture has a data race when accessing the callback, so the
       // callback may still be called by a stale reference after released==true and
       // mNativeView==null.
-      SurfaceTexture.OnFrameAvailableListener onFrameListener = texture -> {
-        if (released || !flutterJNI.isAttached()) {
-          // Even though we make sure to unregister the callback before releasing, as of
-          // Android O, SurfaceTexture has a data race when accessing the callback, so the
-          // callback may still be called by a stale reference after released==true and
-          // mNativeView==null.
-          return;
-        }
-        markTextureFrameAvailable(id);
-      };
+      SurfaceTexture.OnFrameAvailableListener onFrameListener =
+          texture -> {
+            if (released || !flutterJNI.isAttached()) {
+              // Even though we make sure to unregister the callback before releasing, as of
+              // Android O, SurfaceTexture has a data race when accessing the callback, so the
+              // callback may still be called by a stale reference after released==true and
+              // mNativeView==null.
+              return;
+            }
+            markTextureFrameAvailable(id);
+          };
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // The callback relies on being executed on the UI thread (unsynchronised read
         // of
@@ -400,18 +402,18 @@ public class FlutterRenderer implements TextureRegistry {
 
     private final Handler onImageAvailableHandler = new Handler();
     private final ImageReader.OnImageAvailableListener onImageAvailableListener =
-            reader -> {
-              Image image = null;
-              try {
-                image = reader.acquireLatestImage();
-              } catch (IllegalStateException e) {
-                Log.e(TAG, "onImageAvailable acquireLatestImage failed: " + e);
-              }
-              if (image == null) {
-                return;
-              }
-              onImage(new PerImage(reader, image));
-            };
+        reader -> {
+          Image image = null;
+          try {
+            image = reader.acquireLatestImage();
+          } catch (IllegalStateException e) {
+            Log.e(TAG, "onImageAvailable acquireLatestImage failed: " + e);
+          }
+          if (image == null) {
+            return;
+          }
+          onImage(new PerImage(reader, image));
+        };
 
     ImageReaderSurfaceProducer(long id) {
       this.id = id;
