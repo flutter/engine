@@ -90,12 +90,25 @@ TEST_P(HostBufferTest, ResetIncrementsFrameCounter) {
   EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
 }
 
-TEST_P(HostBufferTest, EmplacingLargerThanBlockSizeCreatesOneOffBuffer) {
+TEST_P(HostBufferTest,
+       EmplacingLargerThanBlockSizeCreatesOneOffBufferCallback) {
   auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
 
   // Emplace an amount larger than the block size, to verify that the host
   // buffer does not create a buffer.
   auto buffer_view = buffer->Emplace(1024000 + 10, 0, [](uint8_t* data) {});
+
+  EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().total_buffer_count, 1u);
+}
+
+TEST_P(HostBufferTest, EmplacingLargerThanBlockSizeCreatesOneOffBuffer) {
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+
+  // Emplace an amount larger than the block size, to verify that the host
+  // buffer does not create a buffer.
+  auto buffer_view = buffer->Emplace(nullptr, 1024000 + 10, 0);
 
   EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
   EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);

@@ -79,14 +79,14 @@ void HostBuffer::Reset() {
 }
 
 void HostBuffer::HostBufferState::MaybeCreateNewBuffer(size_t required_size) {
-  if (current_buffer + 1 >= device_buffers.size()) {
+  current_buffer++;
+  if (current_buffer >= device_buffers[frame_index].size()) {
     FML_DCHECK(required_size <= kAllocatorBlockSize);
     DeviceBufferDescriptor desc;
     desc.size = kAllocatorBlockSize;
     desc.storage_mode = StorageMode::kHostVisible;
     device_buffers[frame_index].push_back(allocator->CreateBuffer(desc));
   }
-  current_buffer++;
   offset = 0;
 }
 
@@ -94,27 +94,28 @@ std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
 HostBuffer::HostBufferState::Emplace(size_t length,
                                      size_t align,
                                      const EmplaceProc& cb) {
+  if (!cb) {
+    return {};
+  }
+
   // If the requested allocation is bigger than the block size, create a one-off
   // device buffer and write to that.
   if (length > kAllocatorBlockSize) {
     DeviceBufferDescriptor desc;
-    desc.size = kAllocatorBlockSize;
+    desc.size = length;
     desc.storage_mode = StorageMode::kHostVisible;
     auto device_buffer = allocator->CreateBuffer(desc);
     if (!device_buffer) {
       return {};
     }
     if (cb) {
-      cb(GetCurrentBuffer()->OnGetContents());
-      GetCurrentBuffer()->Flush(Range{0, length});
+      cb(device_buffer->OnGetContents());
+      device_buffer->Flush(Range{0, length});
     }
     return std::make_tuple(device_buffer->OnGetContents(), Range{0, length},
                            device_buffer);
   }
 
-  if (!cb) {
-    return {};
-  }
   auto old_length = GetLength();
   if (old_length + length > kAllocatorBlockSize) {
     MaybeCreateNewBuffer(length);
@@ -135,7 +136,7 @@ HostBuffer::HostBufferState::Emplace(const void* buffer, size_t length) {
   // device buffer and write to that.
   if (length > kAllocatorBlockSize) {
     DeviceBufferDescriptor desc;
-    desc.size = kAllocatorBlockSize;
+    desc.size = length;
     desc.storage_mode = StorageMode::kHostVisible;
     auto device_buffer = allocator->CreateBuffer(desc);
     if (!device_buffer) {
