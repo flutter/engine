@@ -34,4 +34,3 @@ android {
 dependencies {
     implementation 'androidx.annotation:annotation-jvm:1.7.1'
 }
-
