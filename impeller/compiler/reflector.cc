@@ -16,7 +16,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/compiler/code_gen_template.h"
-#include "impeller/compiler/runtime_stage_data.h"
+#include "impeller/compiler/shader_bundle_data.h"
 #include "impeller/compiler/types.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
@@ -90,6 +90,11 @@ Reflector::Reflector(Options options,
 
   runtime_stage_shader_ = GenerateRuntimeStageData();
 
+  shader_bundle_data_ = GenerateShaderBundleData();
+  if (!shader_bundle_data_) {
+    return;
+  }
+
   is_valid_ = true;
 }
 
@@ -123,6 +128,10 @@ std::shared_ptr<fml::Mapping> Reflector::GetReflectionCC() const {
 std::shared_ptr<RuntimeStageData::Shader> Reflector::GetRuntimeStageShaderData()
     const {
   return runtime_stage_shader_;
+}
+
+std::shared_ptr<ShaderBundleData> Reflector::GetShaderBundleData() const {
+  return shader_bundle_data_;
 }
 
 std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
@@ -419,6 +428,103 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
   return data;
 }
 
+std::shared_ptr<ShaderBundleData> Reflector::GenerateShaderBundleData() const {
+  const auto& entrypoints = compiler_->get_entry_points_and_stages();
+  if (entrypoints.size() != 1u) {
+    VALIDATION_LOG << "Single entrypoint not found.";
+    return nullptr;
+  }
+  auto data = std::make_shared<ShaderBundleData>(
+      options_.entry_point_name,            //
+      entrypoints.front().execution_model,  //
+      options_.target_platform              //
+  );
+  data->SetShaderData(shader_data_);
+
+  const auto uniforms = compiler_->get_shader_resources().uniform_buffers;
+  for (const auto& uniform : uniforms) {
+    ShaderBundleData::ShaderUniformStruct uniform_struct;
+    uniform_struct.name = uniform.name;
+    uniform_struct.ext_res_0 = compiler_.GetExtendedMSLResourceBinding(
+        CompilerBackend::ExtendedResourceIndex::kPrimary, uniform.id);
+    uniform_struct.set = compiler_->get_decoration(
+        uniform.id, spv::Decoration::DecorationDescriptorSet);
+    uniform_struct.binding = compiler_->get_decoration(
+        uniform.id, spv::Decoration::DecorationBinding);
+
+    const auto type = compiler_->get_type(uniform.type_id);
+    if (type.basetype != spirv_cross::SPIRType::BaseType::Struct) {
+      std::cerr << "Error: Uniform \"" << uniform.name
+                << "\" is not a struct. All Flutter GPU shader uniforms must "
+                   "be structs."
+                << std::endl;
+      return nullptr;
+    }
+
+    size_t size_in_bytes = 0;
+    for (const auto& struct_member : ReadStructMembers(uniform.type_id)) {
+      size_in_bytes += struct_member.byte_length;
+      if (StringStartsWith(struct_member.name, "_PADDING_")) {
+        continue;
+      }
+      ShaderBundleData::ShaderUniformStructField uniform_struct_field;
+      uniform_struct_field.name = struct_member.name;
+      uniform_struct_field.type = struct_member.base_type;
+      uniform_struct_field.offset_in_bytes = struct_member.offset;
+      uniform_struct_field.element_size_in_bytes = struct_member.size;
+      uniform_struct_field.total_size_in_bytes = struct_member.byte_length;
+      uniform_struct_field.array_elements = struct_member.array_elements;
+      uniform_struct.fields.push_back(uniform_struct_field);
+    }
+    uniform_struct.size_in_bytes = size_in_bytes;
+
+    data->AddUniformStruct(uniform_struct);
+  }
+
+  const auto sampled_images = compiler_->get_shader_resources().sampled_images;
+  for (const auto& image : sampled_images) {
+    ShaderBundleData::ShaderUniformTexture uniform_texture;
+    uniform_texture.name = image.name;
+    uniform_texture.ext_res_0 = compiler_.GetExtendedMSLResourceBinding(
+        CompilerBackend::ExtendedResourceIndex::kPrimary, image.id);
+    uniform_texture.set = compiler_->get_decoration(
+        image.id, spv::Decoration::DecorationDescriptorSet);
+    uniform_texture.binding =
+        compiler_->get_decoration(image.id, spv::Decoration::DecorationBinding);
+    data->AddUniformTexture(uniform_texture);
+  }
+
+  // We only need to worry about storing vertex attributes.
+  if (entrypoints.front().execution_model == spv::ExecutionModelVertex) {
+    const auto inputs = compiler_->get_shader_resources().stage_inputs;
+    auto input_offsets = ComputeOffsets(inputs);
+    for (const auto& input : inputs) {
+      auto location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      std::optional<size_t> offset = input_offsets[location];
+
+      const auto type = compiler_->get_type(input.type_id);
+
+      InputDescription input_description;
+      input_description.name = input.name;
+      input_description.location = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationLocation);
+      input_description.set = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationDescriptorSet);
+      input_description.binding = compiler_->get_decoration(
+          input.id, spv::Decoration::DecorationBinding);
+      input_description.type = type.basetype;
+      input_description.bit_width = type.width;
+      input_description.vec_size = type.vecsize;
+      input_description.columns = type.columns;
+      input_description.offset = offset.value_or(0u);
+      data->AddInputDescription(std::move(input_description));
+    }
+  }
+
+  return data;
+}
+
 std::optional<uint32_t> Reflector::GetArrayElements(
     const spirv_cross::SPIRType& type) const {
   if (type.array.empty()) {
@@ -544,7 +650,7 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       auto member = nlohmann::json::object_t{};
       member["name"] = struct_member.name;
       member["type"] = struct_member.type;
-      member["base_type"] = struct_member.base_type;
+      member["base_type"] = BaseTypeToString(struct_member.base_type);
       member["offset"] = struct_member.offset;
       member["size"] = struct_member.size;
       member["byte_length"] = struct_member.byte_length;
@@ -1024,7 +1130,7 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
     auto& member = members.emplace_back(nlohmann::json::object_t{});
     member["name"] = struct_member.name;
     member["type"] = struct_member.type;
-    member["base_type"] = struct_member.base_type;
+    member["base_type"] = BaseTypeToString(struct_member.base_type);
     member["offset"] = struct_member.offset;
     member["byte_length"] = struct_member.byte_length;
     if (struct_member.array_elements.has_value()) {

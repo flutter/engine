@@ -15,6 +15,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/compiler/compiler_backend.h"
 #include "impeller/compiler/runtime_stage_data.h"
+#include "impeller/compiler/shader_bundle_data.h"
 #include "inja/inja.hpp"
 #include "spirv_common.hpp"
 #include "spirv_msl.hpp"
@@ -33,7 +34,7 @@ struct StructMember {
   };
 
   std::string type;
-  std::string base_type;
+  spirv_cross::SPIRType::BaseType base_type;
   std::string name;
   size_t offset = 0u;
   size_t size = 0u;
@@ -132,7 +133,7 @@ struct StructMember {
                size_t p_element_padding,
                UnderlyingType p_underlying_type = UnderlyingType::kOther)
       : type(std::move(p_type)),
-        base_type(BaseTypeToString(p_base_type)),
+        base_type(p_base_type),
         name(std::move(p_name)),
         offset(p_offset),
         size(p_size),
@@ -168,6 +169,8 @@ class Reflector {
 
   std::shared_ptr<RuntimeStageData::Shader> GetRuntimeStageShaderData() const;
 
+  std::shared_ptr<ShaderBundleData> GetShaderBundleData() const;
+
  private:
   struct StructDefinition {
     std::string name;
@@ -195,6 +198,7 @@ class Reflector {
   std::shared_ptr<fml::Mapping> reflection_header_;
   std::shared_ptr<fml::Mapping> reflection_cc_;
   std::shared_ptr<RuntimeStageData::Shader> runtime_stage_shader_;
+  std::shared_ptr<ShaderBundleData> shader_bundle_data_;
   bool is_valid_ = false;
 
   std::optional<nlohmann::json> GenerateTemplateArguments() const;
@@ -204,6 +208,8 @@ class Reflector {
   std::shared_ptr<fml::Mapping> GenerateReflectionCC() const;
 
   std::shared_ptr<RuntimeStageData::Shader> GenerateRuntimeStageData() const;
+
+  std::shared_ptr<ShaderBundleData> GenerateShaderBundleData() const;
 
   std::shared_ptr<fml::Mapping> InflateTemplate(std::string_view tmpl) const;
 
