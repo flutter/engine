@@ -73,7 +73,7 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     return;
   }
 
-  // InitGlobalVulkanInstance();
+  InitGlobalVulkanInstance();
 
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -100,8 +100,6 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     VALIDATION_LOG << "Could not create Vulkan context in the playground.";
     return;
   }
-
-  static std::shared_ptr<ContextVK> gLeakedContext = context_vk;
 
   // Without this, the playground will timeout waiting for the presentation.
   // It's better to have some Vulkan validation tests running on CI to catch
