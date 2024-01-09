@@ -270,7 +270,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a43582b52d361bc3da156a8e6eab6dd947ca339d',
+  'src': 'https://github.com/zanderso/buildroot.git' + '@' + 'ea251f065284b0248ee5889e121b55f47030a963',
 
   'src/flutter/third_party/rapidjson':
    Var('flutter_git') + '/third_party/rapidjson' + '@' + 'ef3564c5c8824989393b87df25355baf35ff544b',
@@ -941,11 +941,22 @@ deps = {
     'dep_type': 'cipd',
   },
 
+  'src/buildtools/windows-x64/reclient': {
+    'packages': [
+      {
+        'package': 'infra/rbe/client/${{platform}}',
+        'version': Var('reclient_version'),
+      }
+    ],
+    'condition': 'use_rbe and download_windows_deps',
+    'dep_type': 'cipd',
+  },
+
   'src/flutter/build/rbe': {
     'packages': [
       {
         'package': 'flutter_internal/rbe/reclient_cfgs',
-        'version': 'U42C0v8jI-_YREjd8rbDEt0evvqvLWJ_NTkaiJ_Clt8C',
+        'version': 'xiHKC0i4dfkzLqux5H1fh70BBg5CZz388UJZsehksucC',
       }
     ],
     'condition': 'use_rbe',
