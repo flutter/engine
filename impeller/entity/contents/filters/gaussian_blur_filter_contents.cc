@@ -287,8 +287,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 entity.GetClipDepth());  // No blur to render.
   }
 
-  if (!input_snapshot.value().texture->NeedsMipmapGeneration() &&
-      input_snapshot.value().texture->GetMipCount() <= 1) {
+  if (input_snapshot.value().texture->NeedsMipmapGeneration()) {
     std::shared_ptr<CommandBuffer> mip_cmd_buffer =
         renderer.GetContext()->CreateCommandBuffer();
     std::shared_ptr<BlitPass> blit_pass = mip_cmd_buffer->CreateBlitPass();

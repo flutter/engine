@@ -95,6 +95,7 @@ class RenderTarget final {
       const Context& context,
       RenderTargetAllocator& allocator,
       ISize size,
+      int mip_count,
       const std::string& label = "Offscreen MSAA",
       AttachmentConfigMSAA color_attachment_config =
           kDefaultColorAttachmentConfigMSAA,

@@ -266,6 +266,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     const Context& context,
     RenderTargetAllocator& allocator,
     ISize size,
+    int mip_count,
     const std::string& label,
     AttachmentConfigMSAA color_attachment_config,
     std::optional<AttachmentConfig> stencil_attachment_config) {
@@ -310,6 +311,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0_resolve_tex_desc.usage =
       static_cast<uint64_t>(TextureUsage::kRenderTarget) |
       static_cast<uint64_t>(TextureUsage::kShaderRead);
+  color0_resolve_tex_desc.mip_count = mip_count;
 
   auto color0_resolve_tex = allocator.CreateTexture(color0_resolve_tex_desc);
   if (!color0_resolve_tex) {

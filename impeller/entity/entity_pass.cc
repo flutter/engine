@@ -247,6 +247,7 @@ static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
 
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
+                                           int mip_count,
                                            const Color& clear_color) {
   auto context = renderer.GetContext();
 
@@ -258,18 +259,20 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
-        *context,                          // context
-        *renderer.GetRenderTargetCache(),  // allocator
-        size,                              // size
-        "EntityPass",                      // label
+        /*context=*/*context,
+        /*allocator=*/*renderer.GetRenderTargetCache(),
+        /*size=*/size,
+        /*mip_count=*/mip_count,
+        /*label=*/"EntityPass",
+        /*color_attachment_config=*/
         RenderTarget::AttachmentConfigMSAA{
             .storage_mode = StorageMode::kDeviceTransient,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},  // color_attachment_config
-        kDefaultStencilConfig             // stencil_attachment_config
-    );
+            .clear_color = clear_color},
+        /*stencil_attachment_config=*/
+        kDefaultStencilConfig);
   } else {
     target = RenderTarget::CreateOffscreen(
         *context,                          // context
@@ -339,7 +342,7 @@ bool EntityPass::Render(ContentContext& renderer,
   // there's no need to set up a stencil attachment on the root render target.
   if (reads_from_onscreen_backdrop) {
     auto offscreen_target = CreateRenderTarget(
-        renderer, root_render_target.GetRenderTargetSize(),
+        renderer, root_render_target.GetRenderTargetSize(), /*mip_count=*/4,
         GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
@@ -599,8 +602,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,                                        // renderer
-        subpass_size,                                    // size
+        renderer,      // renderer
+        subpass_size,  // size
+        /*mip_count=*/1,
         subpass->GetClearColorOrDefault(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
