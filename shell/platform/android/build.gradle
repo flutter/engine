@@ -20,12 +20,7 @@ repositories {
 apply plugin: "com.android.library"
 
 android {
-    compileSdk 31
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
+    compileSdk 34
 
     sourceSets {
         main {
