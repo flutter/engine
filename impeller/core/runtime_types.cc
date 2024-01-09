@@ -13,7 +13,7 @@ size_t RuntimeUniformDescription::GetSize() const {
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     size *= array_elements.value();
   }
-  size += struct_byte_length;
+  size += sizeof(float) * struct_layout.size();
   return size;
 }
 

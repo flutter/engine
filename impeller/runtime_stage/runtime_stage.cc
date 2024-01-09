@@ -39,6 +39,9 @@ static RuntimeShaderStage ToShaderStage(fb::Stage stage) {
   FML_UNREACHABLE();
 }
 
+const char* RuntimeStage::kVulkanUBOName =
+    "_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock";
+
 std::unique_ptr<RuntimeStage> RuntimeStage::RuntimeStageIfPresent(
     const fb::RuntimeStage* runtime_stage,
     const std::shared_ptr<fml::Mapping>& payload) {
@@ -91,6 +94,12 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
           static_cast<size_t>(i->rows()), static_cast<size_t>(i->columns())};
       desc.bit_width = i->bit_width();
       desc.array_elements = i->array_elements();
+      if (i->struct_layout()) {
+        for (const auto& byte_type : *i->struct_layout()) {
+          desc.struct_layout.push_back(static_cast<uint8_t>(byte_type));
+        }
+      }
+      desc.struct_float_count = i->struct_float_count();
       uniforms_.emplace_back(std::move(desc));
     }
   }

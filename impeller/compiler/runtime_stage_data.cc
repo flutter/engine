@@ -193,7 +193,6 @@ static const char* kUniformRowsKey = "rows";
 static const char* kUniformColumnsKey = "columns";
 static const char* kUniformBitWidthKey = "bit_width";
 static const char* kUniformArrayElementsKey = "array_elements";
-static const char* kUniformPaddingLocationsKey = "padding_locations";
 
 static std::string RuntimeStageBackendToString(RuntimeStageBackend backend) {
   switch (backend) {
@@ -267,7 +266,6 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
       uniform_object[kUniformBitWidthKey] = uniform.bit_width;
       uniform_object[kUniformArrayElementsKey] =
           uniform.array_elements.value_or(0);
-      uniform_object[kUniformPaddingLocationsKey] = uniform.padding_locations;
 
       uniforms.push_back(uniform_object);
     }
@@ -327,6 +325,11 @@ std::unique_ptr<fb::RuntimeStageT> RuntimeStageData::CreateStageFlatbuffer(
     if (uniform.array_elements.has_value()) {
       desc->array_elements = uniform.array_elements.value();
     }
+
+    for (const auto& byte_type : uniform.struct_layout) {
+      desc->struct_layout.push_back(static_cast<fb::StructByteType>(byte_type));
+    }
+    desc->struct_float_count = uniform.struct_float_count;
 
     runtime_stage->uniforms.emplace_back(std::move(desc));
   }

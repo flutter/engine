@@ -24,6 +24,7 @@
 #include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 #include "spirv_common.hpp"
 
 namespace impeller {
@@ -350,10 +351,11 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
 
   const auto ubos = compiler_->get_shader_resources().uniform_buffers;
   if (data->backend == RuntimeStageBackend::kVulkan && !ubos.empty()) {
-    if (ubos.size() != 1 &&
-        ubos[0].name != "_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock") {
+    if (ubos.size() != 1 && ubos[0].name != RuntimeStage::kVulkanUBOName) {
       VALIDATION_LOG << "Expected a single UBO resource named "
-                        "'_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock' "
+                        "'"
+                     << RuntimeStage::kVulkanUBOName
+                     << "' "
                         "for Vulkan runtime stage backend.";
       return nullptr;
     }
@@ -361,25 +363,31 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     const auto& ubo = ubos[0];
 
     auto members = ReadStructMembers(ubo.type_id);
-    std::vector<size_t> padding_locations;
-    size_t struct_byte_length = 0;
+    std::vector<uint8_t> struct_layout;
     size_t float_count = 0;
+
     for (size_t i = 0; i < members.size(); i += 1) {
       const auto& member = members[i];
-      struct_byte_length += member.byte_length;
       std::vector<int> bytes;
       switch (member.underlying_type) {
-        case StructMember::UnderlyingType::kPadding:
+        case StructMember::UnderlyingType::kPadding: {
           size_t padding_count =
               (member.size + sizeof(float) - 1) / sizeof(float);
-          // while (padding_count > 0) {
-          //   padding_locations.push_back({i, member.size});
-          //   padding_count--;
-          // }
+          while (padding_count > 0) {
+            struct_layout.push_back(0);
+            padding_count--;
+          }
           break;
-        case StructMember::UnderlyingType::kFloat:
-          float_count += member.byte_length / sizeof(float);
+        }
+        case StructMember::UnderlyingType::kFloat: {
+          size_t member_float_count = member.byte_length / sizeof(float);
+          float_count += member_float_count;
+          while (member_float_count > 0) {
+            struct_layout.push_back(1);
+            member_float_count--;
+          }
           break;
+        }
         case StructMember::UnderlyingType::kOther:
           VALIDATION_LOG << "Non-floating-type struct member " << member.name
                          << " is not supported.";
@@ -391,8 +399,7 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
         .location = 64,  // Magic constant that must match the descriptor set
                          // location for fragment programs.
         .type = spirv_cross::SPIRType::Struct,
-        .padding_locations = std::move(padding_locations),
-        .struct_byte_length = struct_byte_length,
+        .struct_layout = std::move(struct_layout),
         .struct_float_count = float_count,
     });
   }
@@ -650,7 +657,8 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       auto member = nlohmann::json::object_t{};
       member["name"] = struct_member.name;
       member["type"] = struct_member.type;
-      member["base_type"] = BaseTypeToString(struct_member.base_type);
+      member["base_type"] =
+          StructMember::BaseTypeToString(struct_member.base_type);
       member["offset"] = struct_member.offset;
       member["size"] = struct_member.size;
       member["byte_length"] = struct_member.byte_length;
@@ -1130,7 +1138,8 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
     auto& member = members.emplace_back(nlohmann::json::object_t{});
     member["name"] = struct_member.name;
     member["type"] = struct_member.type;
-    member["base_type"] = BaseTypeToString(struct_member.base_type);
+    member["base_type"] =
+        StructMember::BaseTypeToString(struct_member.base_type);
     member["offset"] = struct_member.offset;
     member["byte_length"] = struct_member.byte_length;
     if (struct_member.array_elements.has_value()) {

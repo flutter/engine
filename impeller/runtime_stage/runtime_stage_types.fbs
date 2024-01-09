@@ -19,6 +19,14 @@ enum UniformDataType:uint32 {
   kStruct,
 }
 
+// A struct is made up solely of 4 byte floats and 4-byte paddings between
+// them.
+// This enum describes whether a particular byte is a float or padding.
+enum StructByteType:uint8 {
+  kPadding = 0,
+  kFloat = 1,
+}
+
 table UniformDescription {
   name: string;
   location: uint64;
@@ -27,8 +35,8 @@ table UniformDescription {
   rows: uint64;
   columns: uint64;
   array_elements: uint64;
-  padding_locations: [uint64];
-  float_count: uint64;
+  struct_layout: [StructByteType];
+  struct_float_count: uint64;
 }
 
 // The subset of impeller::ShaderType that may be used for vertex attributes.

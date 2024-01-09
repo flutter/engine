@@ -197,7 +197,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   size_t buffer_offset = 0;
 
   for (const auto& uniform : runtime_stage_->GetUniforms()) {
-    FML_LOG(ERROR) << "Uniform is " << uniform.name;
     std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
 
     switch (uniform.type) {
@@ -215,10 +214,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         break;
       }
       case kFloat: {
-        // FML_CHECK(renderer.GetContext()->GetBackendType() !=
-        //           Context::BackendType::kVulkan)
-        //     << "Uniform " << uniform.name
-        //     << " had unexpected type kFloat for Vulkan backend.";
+        FML_DCHECK(renderer.GetContext()->GetBackendType() !=
+                   Context::BackendType::kVulkan)
+            << "Uniform " << uniform.name
+            << " had unexpected type kFloat for Vulkan backend.";
         size_t alignment =
             std::max(uniform.bit_width / 8, DefaultUniformAlignment());
         auto buffer_view = pass.GetTransientsBuffer().Emplace(
@@ -243,23 +242,27 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         uniform_slot.binding = uniform.location;
 
         std::vector<float> uniform_buffer;
-        FML_LOG(ERROR) << "u: " << uniform.name << " .. " << uniform.GetSize();
-        // for (size_t i = 0; i < uniform.)
+        uniform_buffer.reserve(uniform.struct_layout.size());
+        size_t uniform_byte_index = 0u;
+        for (const auto& byte_type : uniform.struct_layout) {
+          if (byte_type == 0) {
+            uniform_buffer.push_back(0.f);
+          } else if (byte_type == 1) {
+            uniform_buffer.push_back(reinterpret_cast<float*>(
+                uniform_data_->data())[uniform_byte_index++]);
+          } else {
+            FML_UNREACHABLE();
+          }
+        }
 
-        // size_t alignment = std::max(4ul * 4ul, DefaultUniformAlignment());
+        size_t alignment = std::max(sizeof(float) * uniform_buffer.size(),
+                                    DefaultUniformAlignment());
 
-        // std::array<float, 4> uniform_buffer{
-        //     reinterpret_cast<float*>(uniform_data_->data())[0],
-        //     0.f,
-        //     reinterpret_cast<float*>(uniform_data_->data())[1],
-        //     reinterpret_cast<float*>(uniform_data_->data())[2],
-        // };
-        // auto buffer_view = pass.GetTransientsBuffer().Emplace(
-        //     reinterpret_cast<const void*>(uniform_buffer.data()),
-        //     4 * sizeof(float), alignment);
-        // cmd.BindResource(ShaderStage::kFragment, uniform_slot,
-        // ShaderMetadata{},
-        //                  buffer_view);
+        auto buffer_view = pass.GetTransientsBuffer().Emplace(
+            reinterpret_cast<const void*>(uniform_buffer.data()), alignment,
+            alignment);
+        cmd.BindResource(ShaderStage::kFragment, uniform_slot, ShaderMetadata{},
+                         buffer_view);
       }
     }
   }

@@ -40,11 +40,10 @@ struct RuntimeUniformDescription {
   std::string name;
   size_t location = 0u;
   RuntimeUniformType type = RuntimeUniformType::kFloat;
-  RuntimeUniformDimensions dimensions;
-  size_t bit_width;
+  RuntimeUniformDimensions dimensions = {};
+  size_t bit_width = 0u;
   std::optional<size_t> array_elements;
-  std::vector<std::pair<size_t, size_t>> struct_padding_locations = {};
-  size_t struct_byte_length = 0u;
+  std::vector<uint8_t> struct_layout = {};
   size_t struct_float_count = 0u;
 
   /// @brief  Computes the total number of bytes that this uniform requires.
