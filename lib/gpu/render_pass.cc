@@ -236,7 +236,7 @@ static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
                              int vertex_count) {
   auto& vertex_buffer = wrapper->GetVertexBuffer();
   vertex_buffer.vertex_buffer = impeller::BufferView{
-      .buffer = buffer->GetBuffer(),
+      .buffer = nullptr,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
   // If the index type is set, then the `vertex_count` becomes the index
@@ -281,7 +281,7 @@ static void BindIndexBuffer(flutter::gpu::RenderPass* wrapper,
                             int index_count) {
   auto& vertex_buffer = wrapper->GetVertexBuffer();
   vertex_buffer.index_buffer = impeller::BufferView{
-      .buffer = buffer->GetBuffer(),
+      .buffer = nullptr,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
   vertex_buffer.index_type = flutter::gpu::ToImpellerIndexType(index_type);
@@ -331,7 +331,7 @@ static bool BindUniform(flutter::gpu::RenderPass* wrapper,
   return command.BindResource(
       shader->GetShaderStage(), uniform_struct->slot, uniform_struct->metadata,
       impeller::BufferView{
-          .buffer = buffer->GetBuffer(),
+          .buffer = nullptr,
           .range = impeller::Range(offset_in_bytes, length_in_bytes),
       });
 }

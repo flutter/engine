@@ -38,12 +38,14 @@ class DeviceBufferGLES final
 
   [[nodiscard]] bool BindAndUploadDataIfNecessary(BindingType type) const;
 
+  void Flush(std::optional<Range> range = std::nullopt) const override;
+
  private:
   ReactorGLES::Ref reactor_;
   HandleGLES handle_;
   mutable std::shared_ptr<Allocation> backing_store_;
-  mutable int32_t generation_ = 0;
-  mutable int32_t upload_generation_ = -1;
+  mutable uint32_t generation_ = 0;
+  mutable uint32_t upload_generation_ = 0;
 
   // |DeviceBuffer|
   uint8_t* OnGetContents() const override;

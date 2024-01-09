@@ -64,22 +64,15 @@ BufferView HostBuffer::Emplace(size_t length,
   return BufferView{std::move(device_buffer), data, range};
 }
 
-std::shared_ptr<const DeviceBuffer> HostBuffer::GetDeviceBuffer(
-    Allocator& allocator) const {
-  return nullptr;
-}
-
 void HostBuffer::Reset() {
   state_->Reset();
 }
 
 void HostBuffer::HostBufferState::MaybeCreateNewBuffer(size_t required_size) {
   if (current_buffer + 1 >= device_buffers.size()) {
-    if (required_size > kAllocatorBlockSize) {
-      FML_LOG(ERROR) << "Created oversized buffer: " << required_size;
-    }
+    FML_DCHECK(required_size <= kAllocatorBlockSize);
     DeviceBufferDescriptor desc;
-    desc.size = std::max(kAllocatorBlockSize, required_size);
+    desc.size = kAllocatorBlockSize;
     desc.storage_mode = StorageMode::kHostVisible;
     device_buffers.push_back(allocator->CreateBuffer(desc));
   }
@@ -91,6 +84,24 @@ std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
 HostBuffer::HostBufferState::Emplace(size_t length,
                                      size_t align,
                                      const EmplaceProc& cb) {
+  // If the requested allocation is bigger than the block size, create a one-off
+  // device buffer and write to that.
+  if (length > kAllocatorBlockSize) {
+    DeviceBufferDescriptor desc;
+    desc.size = kAllocatorBlockSize;
+    desc.storage_mode = StorageMode::kHostVisible;
+    auto device_buffer = allocator->CreateBuffer(desc);
+    if (!device_buffer) {
+      return {};
+    }
+    if (cb) {
+      cb(GetCurrentBuffer()->OnGetContents());
+      GetCurrentBuffer()->Flush(Range{0, length});
+    }
+    return std::make_tuple(device_buffer->OnGetContents(), Range{0, length},
+                           device_buffer);
+  }
+
   if (!cb) {
     return {};
   }
@@ -98,6 +109,7 @@ HostBuffer::HostBufferState::Emplace(size_t length,
   if (old_length + length > kAllocatorBlockSize) {
     MaybeCreateNewBuffer(length);
   }
+  old_length = GetLength();
 
   cb(GetCurrentBuffer()->OnGetContents() + old_length);
   GetCurrentBuffer()->Flush(Range{old_length, length});
@@ -109,10 +121,31 @@ HostBuffer::HostBufferState::Emplace(size_t length,
 
 std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
 HostBuffer::HostBufferState::Emplace(const void* buffer, size_t length) {
+  // If the requested allocation is bigger than the block size, create a one-off
+  // device buffer and write to that.
+  if (length > kAllocatorBlockSize) {
+    DeviceBufferDescriptor desc;
+    desc.size = kAllocatorBlockSize;
+    desc.storage_mode = StorageMode::kHostVisible;
+    auto device_buffer = allocator->CreateBuffer(desc);
+    if (!device_buffer) {
+      return {};
+    }
+    if (buffer) {
+      if (!device_buffer->CopyHostBuffer(static_cast<const uint8_t*>(buffer),
+                                         Range{0, length})) {
+        return {};
+      }
+    }
+    return std::make_tuple(device_buffer->OnGetContents(), Range{0, length},
+                           device_buffer);
+  }
+
   auto old_length = GetLength();
   if (old_length + length > kAllocatorBlockSize) {
     MaybeCreateNewBuffer(length);
   }
+  old_length = GetLength();
 
   if (buffer) {
     ::memmove(GetCurrentBuffer()->OnGetContents() + old_length, buffer, length);

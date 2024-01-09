@@ -6,6 +6,7 @@
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "vulkan/vulkan_core.h"
 
 namespace impeller {
 

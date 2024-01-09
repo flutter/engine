@@ -129,7 +129,6 @@ class ContextMTL final : public Context,
 #endif  // IMPELLER_DEBUG
   std::deque<std::function<void()>> tasks_awaiting_gpu_;
   std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
-  std::shared_ptr<HostBuffer> host_buffer_;
   bool is_valid_ = false;
 
   ContextMTL(

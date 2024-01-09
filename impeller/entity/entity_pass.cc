@@ -308,9 +308,6 @@ bool EntityPass::Render(ContentContext& renderer,
     renderer.GetLazyGlyphAtlas()->ResetTextFrames();
     renderer.GetRenderTargetCache()->End();
     renderer.GetTransientsBuffer().Reset();
-#if IMPELLER_ENABLE_3D
-    renderer.GetSceneContext()->GetTransientsBuffer().Reset();
-#endif  // IMPELLER_ENABLE_3D
   });
 
   auto root_render_target = render_target;

@@ -17,7 +17,11 @@
 
 namespace impeller {
 
-class HostBuffer final : public Buffer {
+/// The host buffer class manages one more 1024 Kb blocks of device buffer
+/// allocations.
+///
+/// These are reset per-frame.
+class HostBuffer {
  public:
   static std::shared_ptr<HostBuffer> Create(
       const std::shared_ptr<Allocator>& allocator);
@@ -144,10 +148,6 @@ class HostBuffer final : public Buffer {
   };
 
   std::shared_ptr<HostBufferState> state_ = std::make_shared<HostBufferState>();
-
-  // |Buffer|
-  std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
-      Allocator& allocator) const override;
 
   [[nodiscard]] BufferView Emplace(const void* buffer, size_t length);
 
