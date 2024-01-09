@@ -345,6 +345,13 @@ bool EntityPass::Render(ContentContext& renderer,
         renderer, root_render_target.GetRenderTargetSize(), /*mip_count=*/4,
         GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
+    offscreen_target.GetRenderTarget()
+        .GetRenderTargetTexture()
+        ->InvalidateMipmap();
+    FML_LOG(ERROR)
+        << "invalidating mips: "
+        << offscreen_target.GetRenderTarget().GetRenderTargetTexture();
+
     if (!OnRender(renderer,  // renderer
                   capture,   // capture
                   offscreen_target.GetRenderTarget()

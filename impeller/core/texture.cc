@@ -86,4 +86,8 @@ bool Texture::NeedsMipmapGeneration() const {
   return !mipmap_generated_ && desc_.mip_count > 1;
 }
 
+void Texture::InvalidateMipmap() {
+  mipmap_generated_ = false;
+}
+
 }  // namespace impeller

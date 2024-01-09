@@ -288,6 +288,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   if (input_snapshot.value().texture->NeedsMipmapGeneration()) {
+    FML_LOG(ERROR) << "should generate mipmap";
     std::shared_ptr<CommandBuffer> mip_cmd_buffer =
         renderer.GetContext()->CreateCommandBuffer();
     std::shared_ptr<BlitPass> blit_pass = mip_cmd_buffer->CreateBlitPass();

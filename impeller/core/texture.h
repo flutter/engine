@@ -47,6 +47,8 @@ class Texture {
 
   bool NeedsMipmapGeneration() const;
 
+  void InvalidateMipmap();
+
  protected:
   explicit Texture(TextureDescriptor desc);
 

@@ -139,6 +139,8 @@ bool TextureMTL::GenerateMipmap(id<MTLBlitCommandEncoder> encoder) {
     return false;
   }
 
+  FML_LOG(ERROR) << "mipmap generated";
+
   [encoder generateMipmapsForTexture:texture];
   mipmap_generated_ = true;
 
