@@ -127,7 +127,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   //--------------------------------------------------------------------------
-  /// Get or create runtime stage pipeline.
+  /// Set up the command. Defer setting up the pipeline until the descriptor set
+  /// layouts are known from the uniforms.
   ///
 
   const auto& caps = context->GetCapabilities();
@@ -135,48 +136,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
 
   using VS = RuntimeEffectVertexShader;
-  PipelineDescriptor desc;
-  desc.SetLabel("Runtime Stage");
-  desc.AddStageEntrypoint(
-      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
-  desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
-                                               ShaderStage::kFragment));
-  auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
-                                    VS::kInterleavedBufferLayout);
-  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
-  vertex_descriptor->RegisterDescriptorSetLayouts(
-      std::array<DescriptorSetLayout, 1>{DescriptorSetLayout{
-          64,
-          DescriptorType::kUniformBuffer,
-          ShaderStage::kFragment,
-      }});
-  desc.SetVertexDescriptor(std::move(vertex_descriptor));
-  desc.SetColorAttachmentDescriptor(
-      0u, {.format = color_attachment_format, .blending_enabled = true});
-
-  StencilAttachmentDescriptor stencil0;
-  stencil0.stencil_compare = CompareFunction::kEqual;
-  desc.SetStencilAttachmentDescriptors(stencil0);
-  desc.SetStencilPixelFormat(stencil_attachment_format);
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-  options.ApplyToPipelineDescriptor(desc);
-
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
-  if (!pipeline) {
-    VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
-    return false;
-  }
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "RuntimeEffectContents");
-  cmd.pipeline = pipeline;
   cmd.stencil_reference = entity.GetClipDepth();
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
 
@@ -195,6 +157,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
   size_t buffer_offset = 0;
+
+  std::vector<DescriptorSetLayout> descriptor_set_layouts;
 
   for (const auto& uniform : runtime_stage_->GetUniforms()) {
     std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
@@ -236,7 +200,11 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
       case kStruct: {
         FML_DCHECK(renderer.GetContext()->GetBackendType() ==
                    Context::BackendType::kVulkan);
-
+        descriptor_set_layouts.emplace_back(DescriptorSetLayout{
+            static_cast<uint32_t>(uniform.location),
+            DescriptorType::kUniformBuffer,
+            ShaderStage::kFragment,
+        });
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
         uniform_slot.binding = uniform.location;
@@ -281,6 +249,19 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
         SampledImageSlot image_slot;
         image_slot.name = uniform.name.c_str();
+
+        uint32_t sampler_binding_location = 0u;
+        if (!descriptor_set_layouts.empty()) {
+          sampler_binding_location = descriptor_set_layouts.back().binding + 1;
+        }
+
+        descriptor_set_layouts.emplace_back(DescriptorSetLayout{
+            sampler_binding_location,
+            DescriptorType::kSampledImage,
+            ShaderStage::kFragment,
+        });
+
+        image_slot.binding = sampler_binding_location;
         image_slot.texture_index = uniform.location - minimum_sampler_index;
         cmd.BindResource(ShaderStage::kFragment, image_slot, *metadata,
                          input.texture, sampler);
@@ -292,6 +273,43 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         continue;
     }
   }
+
+  /// Now that the descriptor set layouts are known, get the pipeline.
+  PipelineDescriptor desc;
+  desc.SetLabel("Runtime Stage");
+  desc.AddStageEntrypoint(
+      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
+  desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
+                                               ShaderStage::kFragment));
+  auto vertex_descriptor = std::make_shared<VertexDescriptor>();
+  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
+                                    VS::kInterleavedBufferLayout);
+  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+  vertex_descriptor->RegisterDescriptorSetLayouts(
+      descriptor_set_layouts.data(), descriptor_set_layouts.size());
+  desc.SetVertexDescriptor(std::move(vertex_descriptor));
+  desc.SetColorAttachmentDescriptor(
+      0u, {.format = color_attachment_format, .blending_enabled = true});
+
+  StencilAttachmentDescriptor stencil0;
+  stencil0.stencil_compare = CompareFunction::kEqual;
+  desc.SetStencilAttachmentDescriptors(stencil0);
+  desc.SetStencilPixelFormat(stencil_attachment_format);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+  options.ApplyToPipelineDescriptor(desc);
+
+  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+  if (!pipeline) {
+    VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
+    return false;
+  }
+  cmd.pipeline = pipeline;
 
   pass.AddCommand(std::move(cmd));
 
