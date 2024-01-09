@@ -12,6 +12,7 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
@@ -66,6 +67,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
 #include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel_decal.frag.h"
+#include "impeller/entity/kernel_nodecal.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -136,6 +139,10 @@ using GaussianBlurDecalPipeline =
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurNoalphaNodecalFragmentShader>;
+using KernelDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+using KernelPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -446,6 +453,16 @@ class ContentContext {
     return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_decal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_nodecal_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
@@ -692,10 +709,17 @@ class ContentContext {
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(const std::string& label,
-                                       ISize texture_size,
-                                       const SubpassCallback& subpass_callback,
-                                       bool msaa_enabled = true) const;
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      ISize texture_size,
+      const SubpassCallback& subpass_callback,
+      bool msaa_enabled = true) const;
+
+  /// Makes a subpass that will render to `subpass_target`.
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      const RenderTarget& subpass_target,
+      const SubpassCallback& subpass_callback) const;
 
   std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
@@ -805,6 +829,8 @@ class ContentContext {
       gaussian_blur_noalpha_decal_pipelines_;
   mutable Variants<GaussianBlurPipeline>
       gaussian_blur_noalpha_nodecal_pipelines_;
+  mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
+  mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>

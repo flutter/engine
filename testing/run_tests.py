@@ -611,6 +611,8 @@ class FlutterTesterOptions():
 
     if self.enable_impeller:
       command_args += ['--enable-impeller']
+    else:
+      command_args += ['--no-enable-impeller']
 
     if self.multithreaded:
       command_args.insert(0, '--force-multithreading')
@@ -1056,7 +1058,7 @@ def run_engine_tasks_in_parallel(tasks):
   if len(failures) > 0:
     logger.error('The following commands failed:')
     for task, exn in failures:
-      logger.error('%s\n', str(task))
+      logger.error('%s\n  %s\n\n', str(task), str(exn))
     return False
 
   return True

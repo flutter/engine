@@ -8,13 +8,10 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
-#include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -247,11 +244,11 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     if (!coverage.has_value()) {
       return std::nullopt;
     }
-    auto scale = Vector2(coverage->size / Size(texture_->GetSize()));
+    auto scale = Vector2(coverage->GetSize() / Size(texture_->GetSize()));
 
     return Snapshot{
         .texture = texture_,
-        .transform = Matrix::MakeTranslation(coverage->origin) *
+        .transform = Matrix::MakeTranslation(coverage->GetOrigin()) *
                      Matrix::MakeScale(scale),
         .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
         .opacity = GetOpacityFactor(),

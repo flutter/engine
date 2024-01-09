@@ -336,6 +336,8 @@ ContentContext::ContentContext(
                                                        options_trianglestrip);
   gaussian_blur_noalpha_nodecal_pipelines_.CreateDefault(*context_,
                                                          options_trianglestrip);
+  kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
@@ -405,13 +407,12 @@ bool ContentContext::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Texture> ContentContext::MakeSubpass(
+fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled) const {
-  auto context = GetContext();
-
+  std::shared_ptr<Context> context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
@@ -428,32 +429,41 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
         std::nullopt  // stencil_attachment_config
     );
   }
+  return MakeSubpass(label, subpass_target, subpass_callback);
+}
+
+fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
+    const std::string& label,
+    const RenderTarget& subpass_target,
+    const SubpassCallback& subpass_callback) const {
+  std::shared_ptr<Context> context = GetContext();
+
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
-    return nullptr;
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
   auto sub_command_buffer = context->CreateCommandBuffer();
   sub_command_buffer->SetLabel(SPrintF("%s CommandBuffer", label.c_str()));
   if (!sub_command_buffer) {
-    return nullptr;
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
   auto sub_renderpass = sub_command_buffer->CreateRenderPass(subpass_target);
   if (!sub_renderpass) {
-    return nullptr;
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
   sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.c_str()));
 
   if (!subpass_callback(*this, *sub_renderpass)) {
-    return nullptr;
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
   if (!sub_command_buffer->EncodeAndSubmit(sub_renderpass)) {
-    return nullptr;
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  return subpass_texture;
+  return subpass_target;
 }
 
 #if IMPELLER_ENABLE_3D

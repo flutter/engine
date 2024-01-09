@@ -8,7 +8,6 @@
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -93,15 +92,13 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     auto& host_buffer = pass.GetTransientsBuffer();
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    auto origin = coverage.GetOrigin();
+    auto size = coverage.GetSize();
     vtx_builder.AddVertices({
-        {coverage.origin, input_uvs[0]},
-        {{coverage.origin.x + coverage.size.width, coverage.origin.y},
-         input_uvs[1]},
-        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         input_uvs[2]},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         input_uvs[3]},
+        {origin, input_uvs[0]},
+        {{origin.x + size.width, origin.y}, input_uvs[1]},
+        {{origin.x, origin.y + size.height}, input_uvs[2]},
+        {{origin.x + size.width, origin.y + size.height}, input_uvs[3]},
     });
 
     Command cmd;
@@ -114,8 +111,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     cmd.stencil_reference = entity.GetClipDepth();
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 

@@ -124,6 +124,7 @@
 ../../../flutter/impeller/.gitignore
 ../../../flutter/impeller/README.md
 ../../../flutter/impeller/aiks/aiks_gradient_unittests.cc
+../../../flutter/impeller/aiks/aiks_path_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.h
 ../../../flutter/impeller/aiks/canvas_recorder_unittests.cc
@@ -1131,6 +1132,7 @@
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/bind/fuchsia.arm.platform/meta.json
+../../../fuchsia/sdk/linux/bind/fuchsia.devicetree/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.nxp.platform/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia.platform/meta.json
 ../../../fuchsia/sdk/linux/bind/fuchsia/meta.json
@@ -1179,6 +1181,8 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.driver.registrar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.element/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.factory.wlan/meta.json
@@ -1330,6 +1334,7 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
+../../../fuchsia/sdk/linux/packages/magma_conformance_tests/meta.json
 ../../../fuchsia/sdk/linux/packages/realm_builder_server/meta.json
 ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
@@ -1343,6 +1348,7 @@
 ../../../fuchsia/sdk/linux/pkg/async_patterns_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/async_patterns_testing_cpp/include/lib/async_patterns/testing
 ../../../fuchsia/sdk/linux/pkg/async_patterns_testing_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/backend_fuchsia_globals/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_component_cpp/meta.json
@@ -1413,6 +1419,7 @@
 ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/virtgralloc_headers/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
 ../../../fuchsia/sdk/linux/pkg/zx/meta.json
@@ -2516,6 +2523,10 @@
 ../../../third_party/dart/third_party/double-conversion/OWNERS
 ../../../third_party/dart/third_party/double-conversion/README.dart
 ../../../third_party/dart/third_party/double-conversion/README.md
+../../../third_party/dart/third_party/fallback_root_certificates/OWNERS
+../../../third_party/dart/third_party/fallback_root_certificates/README.google
+../../../third_party/dart/third_party/fallback_root_certificates/certdata.pem
+../../../third_party/dart/third_party/fallback_root_certificates/certdata.txt
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
@@ -3020,11 +3031,6 @@
 ../../../third_party/perfetto/ui/src/plugins/dev.perfetto.LargeScreensPerf/OWNERS
 ../../../third_party/perfetto/ui/src/test
 ../../../third_party/protobuf
-../../../third_party/root_certificates/.git
-../../../third_party/root_certificates/README.google
-../../../third_party/root_certificates/certdata.pem
-../../../third_party/root_certificates/certdata.txt
-../../../third_party/root_certificates/codereview.settings
 ../../../third_party/vulkan-deps/.git
 ../../../third_party/vulkan-deps/.gitattributes
 ../../../third_party/vulkan-deps/.gitignore

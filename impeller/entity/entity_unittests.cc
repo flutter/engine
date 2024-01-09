@@ -40,6 +40,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/point.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/playground/playground.h"
@@ -883,8 +884,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
           vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
       VS::FrameInfo frame_info;
-      frame_info.mvp =
-          Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
       frame_info.color = color.Premultiply();
       VS::BindFrameInfo(cmd,
                         pass.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -1008,6 +1008,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
     static Color input_color = Color::Black();
     static int selected_blur_type = 0;
     static int selected_pass_variation = 0;
+    static bool combined_sigma = false;
     static float blur_amount_coarse[2] = {0, 0};
     static float blur_amount_fine[2] = {10, 10};
     static int selected_blur_style = 0;
@@ -1039,8 +1040,16 @@ TEST_P(EntityTest, GaussianBlurFilter) {
                      pass_variation_names,
                      sizeof(pass_variation_names) / sizeof(char*));
       }
-      ImGui::SliderFloat2("Sigma (coarse)", blur_amount_coarse, 0, 1000);
-      ImGui::SliderFloat2("Sigma (fine)", blur_amount_fine, 0, 10);
+      ImGui::Checkbox("Combined sigma", &combined_sigma);
+      if (combined_sigma) {
+        ImGui::SliderFloat("Sigma (coarse)", blur_amount_coarse, 0, 1000);
+        ImGui::SliderFloat("Sigma (fine)", blur_amount_fine, 0, 10);
+        blur_amount_coarse[1] = blur_amount_coarse[0];
+        blur_amount_fine[1] = blur_amount_fine[0];
+      } else {
+        ImGui::SliderFloat2("Sigma (coarse)", blur_amount_coarse, 0, 1000);
+        ImGui::SliderFloat2("Sigma (fine)", blur_amount_fine, 0, 10);
+      }
       ImGui::Combo("Blur style", &selected_blur_style, blur_style_names,
                    sizeof(blur_style_names) / sizeof(char*));
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -1073,7 +1082,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       texture->SetOpacity(input_color.alpha);
 
       input = texture;
-      input_size = input_rect.size;
+      input_size = input_rect.GetSize();
     } else {
       auto fill = std::make_shared<SolidColorContents>();
       fill->SetColor(input_color);
@@ -1081,7 +1090,7 @@ TEST_P(EntityTest, GaussianBlurFilter) {
           Geometry::MakeFillPath(PathBuilder{}.AddRect(input_rect).TakePath()));
 
       input = fill;
-      input_size = input_rect.size;
+      input_size = input_rect.GetSize();
     }
 
     std::shared_ptr<FilterContents> blur;
@@ -1211,7 +1220,7 @@ TEST_P(EntityTest, MorphologyFilter) {
     texture->SetOpacity(input_color.alpha);
 
     input = texture;
-    input_size = input_rect.size;
+    input_size = input_rect.GetSize();
 
     auto contents = FilterContents::MakeMorphology(
         FilterInput::Make(input), Radius{radius[0]}, Radius{radius[1]},
@@ -2123,12 +2132,15 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 }
 
 TEST_P(EntityTest, RuntimeEffect) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
+  if (!BackendSupportsFragmentProgram()) {
     GTEST_SKIP_("This backend doesn't support runtime effects.");
   }
 
-  auto runtime_stage =
+  auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool first_frame = true;
@@ -2412,6 +2424,11 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
   ASSERT_EQ(*geometry->GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
   ASSERT_EQ(*geometry->GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
             Rect::MakeLTRB(35, 15, 135, 205));
+}
+
+TEST_P(EntityTest, PointFieldCanUseCompute) {
+  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()),
+            GetContext()->GetBackendType() == Context::BackendType::kMetal);
 }
 
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {

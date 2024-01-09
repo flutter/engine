@@ -285,8 +285,8 @@ TEST_P(GaussianBlurFilterContentsTest, CalculateUVsSimple) {
   std::shared_ptr<Texture> texture = MakeTexture(desc);
   auto filter_input = FilterInput::Make(texture);
   Entity entity;
-  Quad uvs = GaussianBlurFilterContents::CalculateUVs(filter_input, entity,
-                                                      ISize(100, 100));
+  Quad uvs = GaussianBlurFilterContents::CalculateUVs(
+      filter_input, entity, Rect::MakeSize(ISize(100, 100)), ISize(100, 100));
   std::optional<Rect> uvs_bounds = Rect::MakePointBounds(uvs);
   EXPECT_TRUE(uvs_bounds.has_value());
   if (uvs_bounds.has_value()) {
@@ -379,6 +379,31 @@ TEST(GaussianBlurFilterContentsTest, CalculateSigmaForBlurRadius) {
   Scalar derived_sigma = CalculateSigmaForBlurRadius(radius);
 
   EXPECT_NEAR(sigma, derived_sigma, 0.01f);
+}
+
+TEST(GaussianBlurFilterContentsTest, Coefficients) {
+  BlurParameters parameters = {.blur_uv_offset = Point(1, 0),
+                               .blur_sigma = 1,
+                               .blur_radius = 5,
+                               .step_size = 1};
+  KernelPipeline::FragmentShader::KernelSamples samples =
+      GenerateBlurInfo(parameters);
+  EXPECT_EQ(samples.sample_count, 9);
+
+  // Coefficients should add up to 1.
+  Scalar tally = 0;
+  for (int i = 0; i < samples.sample_count; ++i) {
+    tally += samples.samples[i].coefficient;
+  }
+  EXPECT_FLOAT_EQ(tally, 1.0f);
+
+  // Verify the shape of the curve.
+  for (int i = 0; i < 4; ++i) {
+    EXPECT_FLOAT_EQ(samples.samples[i].coefficient,
+                    samples.samples[8 - i].coefficient);
+    EXPECT_TRUE(samples.samples[i + 1].coefficient >
+                samples.samples[i].coefficient);
+  }
 }
 
 }  // namespace testing

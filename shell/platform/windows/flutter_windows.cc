@@ -82,8 +82,8 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
           width, height, engine_ptr->windows_proc_table());
 
   auto engine = std::unique_ptr<flutter::FlutterWindowsEngine>(engine_ptr);
-  auto view =
-      std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
+  auto view = std::make_unique<flutter::FlutterWindowsView>(
+      std::move(window_wrapper), engine_ptr->windows_proc_table());
   auto controller = std::make_unique<flutter::FlutterWindowsViewController>(
       std::move(engine), std::move(view));
 
@@ -211,7 +211,7 @@ void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
-  return ViewFromHandle(view)->GetPlatformWindow();
+  return ViewFromHandle(view)->GetWindowHandle();
 }
 
 IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {

@@ -16,7 +16,6 @@
 #include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -87,11 +86,11 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
   auto opacity = GetOpacity();
   if (source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
       (opacity >= 1 - kEhCloseEnough || defer_applying_opacity_)) {
-    auto scale = Vector2(bounds.size / Size(texture_->GetSize()));
+    auto scale = Vector2(bounds.GetSize() / Size(texture_->GetSize()));
     return Snapshot{
         .texture = texture_,
         .transform = entity.GetTransform() *
-                     Matrix::MakeTranslation(bounds.origin) *
+                     Matrix::MakeTranslation(bounds.GetOrigin()) *
                      Matrix::MakeScale(scale),
         .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
         .opacity = opacity};
@@ -114,7 +113,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   using FS = TextureFillFragmentShader;
   using FSExternal = TextureFillExternalFragmentShader;
 
-  if (destination_rect_.size.IsEmpty() || source_rect_.IsEmpty() ||
+  if (destination_rect_.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
     return true;  // Nothing to render.
   }
@@ -142,7 +141,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+  frame_info.mvp = pass.GetOrthographicTransform() *
                    capture.AddMatrix("Transform", entity.GetTransform());
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = capture.AddScalar("Alpha", GetOpacity());

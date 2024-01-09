@@ -32,7 +32,6 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 struct ImGui_ImplImpeller_Data {
   std::shared_ptr<impeller::Context> context;
@@ -150,16 +149,13 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
       draw_data->DisplaySize.x, draw_data->DisplaySize.y);
 
   auto viewport = impeller::Viewport{
-      .rect = impeller::Rect::MakeXYWH(
-          display_rect.origin.x * draw_data->FramebufferScale.x,
-          display_rect.origin.y * draw_data->FramebufferScale.y,
-          display_rect.size.width * draw_data->FramebufferScale.x,
-          display_rect.size.height * draw_data->FramebufferScale.y)};
+      .rect = display_rect.Scale(draw_data->FramebufferScale.x,
+                                 draw_data->FramebufferScale.y)};
 
   // Allocate vertex shader uniform buffer.
   VS::UniformBuffer uniforms;
-  uniforms.mvp = impeller::Matrix::MakeOrthographic(display_rect.size)
-                     .Translate(-display_rect.origin);
+  uniforms.mvp = impeller::Matrix::MakeOrthographic(display_rect.GetSize())
+                     .Translate(-display_rect.GetOrigin());
   auto vtx_uniforms =
       render_pass.GetTransientsBuffer().EmplaceUniform(uniforms);
 
