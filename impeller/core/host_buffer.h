@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_CORE_HOST_BUFFER_H_
 
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <memory>
 #include <string>
