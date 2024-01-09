@@ -10,6 +10,7 @@ namespace impeller {
 namespace testing {
 
 using HostBufferTest = EntityPlayground;
+INSTANTIATE_PLAYGROUND_SUITE(HostBufferTest);
 
 TEST_P(HostBufferTest, CanEmplace) {
   struct Length2 {
