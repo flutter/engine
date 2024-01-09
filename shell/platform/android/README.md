@@ -73,7 +73,7 @@ completion:
 
 > ![NOTE] > `--compile-commands-dir` must point to an Android build output:
 >
-> ```json
+> ```jsonc
 > {
 >   /* ... */
 >   "clangd.path": "buildtools/mac-arm64/clang/bin/clangd",
