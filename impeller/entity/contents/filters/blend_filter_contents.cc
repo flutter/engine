@@ -18,9 +18,7 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/snapshot.h"
 
 namespace impeller {
@@ -212,7 +210,7 @@ static std::optional<Entity> AdvancedBlend(
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp = Matrix::MakeOrthographic(size) *
+    frame_info.mvp = pass.GetOrthographicTransform() *
                      Matrix::MakeTranslation(coverage.GetOrigin() -
                                              subpass_coverage.GetOrigin());
 
@@ -223,15 +221,15 @@ static std::optional<Entity> AdvancedBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass(
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Advanced Blend Filter", ISize(subpass_coverage.GetSize()), callback);
-  if (!out_texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{
-          .texture = out_texture,
+          .texture = render_target.value().GetRenderTargetTexture(),
           .transform = Matrix::MakeTranslation(subpass_coverage.GetOrigin()),
           // Since we absorbed the transform of the inputs and used the
           // respective snapshot sampling modes when blending, pass on
@@ -371,8 +369,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -496,8 +493,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -586,7 +582,7 @@ static std::optional<Entity> PipelineBlend(
       cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
       VS::FrameInfo frame_info;
-      frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+      frame_info.mvp = pass.GetOrthographicTransform() *
                        Matrix::MakeTranslation(-subpass_coverage.GetOrigin()) *
                        input->transform;
       frame_info.texture_sampler_y_coord_scale =
@@ -646,16 +642,16 @@ static std::optional<Entity> PipelineBlend(
     return true;
   };
 
-  auto out_texture = renderer.MakeSubpass(
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Pipeline Blend Filter", ISize(subpass_coverage.GetSize()), callback);
 
-  if (!out_texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
   return Entity::FromSnapshot(
       Snapshot{
-          .texture = out_texture,
+          .texture = render_target.value().GetRenderTargetTexture(),
           .transform = Matrix::MakeTranslation(subpass_coverage.GetOrigin()),
           // Since we absorbed the transform of the inputs and used the
           // respective snapshot sampling modes when blending, pass on

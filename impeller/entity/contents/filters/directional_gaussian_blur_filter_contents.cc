@@ -6,10 +6,8 @@
 
 #include <cmath>
 #include <utility>
-#include <valarray>
 
 #include "impeller/base/strings.h"
-#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
@@ -19,7 +17,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -37,8 +34,8 @@ Sigma ScaleSigma(Sigma sigma) {
 DirectionalGaussianBlurFilterContents::DirectionalGaussianBlurFilterContents() =
     default;
 
-DirectionalGaussianBlurFilterContents::~
-DirectionalGaussianBlurFilterContents() = default;
+DirectionalGaussianBlurFilterContents::
+    ~DirectionalGaussianBlurFilterContents() = default;
 
 void DirectionalGaussianBlurFilterContents::SetSigma(Sigma sigma) {
   blur_sigma_ = sigma;
@@ -256,10 +253,10 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   Vector2 scaled_size = pass_texture_rect.GetSize() * scale;
   ISize floored_size = ISize(scaled_size.x, scaled_size.y);
 
-  auto out_texture = renderer.MakeSubpass("Directional Gaussian Blur Filter",
-                                          floored_size, subpass_callback);
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      "Directional Gaussian Blur Filter", floored_size, subpass_callback);
 
-  if (!out_texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
@@ -271,7 +268,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   return Entity::FromSnapshot(
       Snapshot{
-          .texture = out_texture,
+          .texture = render_target.value().GetRenderTargetTexture(),
           .transform =
               texture_rotate.Invert() *
               Matrix::MakeTranslation(pass_texture_rect.GetOrigin()) *

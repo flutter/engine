@@ -37,11 +37,16 @@ class PlaygroundTest : public Playground,
   std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const override;
 
-  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
-      const char* asset_name) const;
+  RuntimeStage::Map OpenAssetAsRuntimeStage(const char* asset_name) const;
 
   // |Playground|
   std::string GetWindowTitle() const override;
+
+  // TODO(dnfield): Delete this once
+  // https://github.com/flutter/flutter/issues/122823 is fixed.
+  bool BackendSupportsFragmentProgram() const {
+    return GetBackend() != PlaygroundBackend::kVulkan;
+  }
 
  private:
   // |Playground|

@@ -4,18 +4,19 @@
 
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
+#include <cmath>
+
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
-using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
-using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
+using GaussianBlurVertexShader = KernelPipeline::VertexShader;
+using GaussianBlurFragmentShader = KernelPipeline::FragmentShader;
 
 namespace {
 
@@ -65,7 +66,7 @@ void SetTileMode(SamplerDescriptor* descriptor,
 
 /// Makes a subpass that will render the scaled down input and add the
 /// transparent gutter required for the blur halo.
-std::shared_ptr<Texture> MakeDownsampleSubpass(
+fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const ContentContext& renderer,
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
@@ -110,20 +111,24 @@ std::shared_ptr<Texture> MakeDownsampleSubpass(
 
         return true;
       };
-  std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
       "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return out_texture;
+  return render_target;
 }
 
-std::shared_ptr<Texture> MakeBlurSubpass(
+fml::StatusOr<RenderTarget> MakeBlurSubpass(
     const ContentContext& renderer,
-    std::shared_ptr<Texture> input_texture,
+    const RenderTarget& input_pass,
     const SamplerDescriptor& sampler_descriptor,
     Entity::TileMode tile_mode,
-    const GaussianBlurFragmentShader::BlurInfo& blur_info) {
+    const BlurParameters& blur_info,
+    std::optional<RenderTarget> destination_target,
+    const Quad& blur_uvs) {
   if (blur_info.blur_sigma < kEhCloseEnough) {
-    return input_texture;
+    return input_pass;
   }
+
+  std::shared_ptr<Texture> input_texture = input_pass.GetRenderTargetTexture();
 
   // TODO(gaaclarke): This blurs the whole image, but because we know the clip
   //                  region we could focus on just blurring that.
@@ -143,17 +148,17 @@ std::shared_ptr<Texture> MakeBlurSubpass(
         if (tile_mode == Entity::TileMode::kDecal &&
             !renderer.GetDeviceCapabilities()
                  .SupportsDecalSamplerAddressMode()) {
-          cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+          cmd.pipeline = renderer.GetKernelDecalPipeline(options);
         } else {
-          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+          cmd.pipeline = renderer.GetKernelPipeline(options);
         }
 
         BindVertices<GaussianBlurVertexShader>(cmd, host_buffer,
                                                {
-                                                   {Point(0, 0), Point(0, 0)},
-                                                   {Point(1, 0), Point(1, 0)},
-                                                   {Point(0, 1), Point(0, 1)},
-                                                   {Point(1, 1), Point(1, 1)},
+                                                   {blur_uvs[0], blur_uvs[0]},
+                                                   {blur_uvs[1], blur_uvs[1]},
+                                                   {blur_uvs[2], blur_uvs[2]},
+                                                   {blur_uvs[3], blur_uvs[3]},
                                                });
 
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
@@ -165,15 +170,27 @@ std::shared_ptr<Texture> MakeBlurSubpass(
                 linear_sampler_descriptor));
         GaussianBlurVertexShader::BindFrameInfo(
             cmd, host_buffer.EmplaceUniform(frame_info));
-        GaussianBlurFragmentShader::BindBlurInfo(
-            cmd, host_buffer.EmplaceUniform(blur_info));
+        GaussianBlurFragmentShader::BindKernelSamples(
+            cmd, host_buffer.EmplaceUniform(GenerateBlurInfo(blur_info)));
         pass.AddCommand(std::move(cmd));
 
         return true;
       };
-  std::shared_ptr<Texture> out_texture = renderer.MakeSubpass(
-      "Gaussian Blur Filter", subpass_size, subpass_callback);
-  return out_texture;
+  if (destination_target.has_value()) {
+    return renderer.MakeSubpass("Gaussian Blur Filter",
+                                destination_target.value(), subpass_callback);
+  } else {
+    return renderer.MakeSubpass("Gaussian Blur Filter", subpass_size,
+                                subpass_callback);
+  }
+}
+
+/// Returns `rect` relative to `reference`, where Rect::MakeXYWH(0,0,1,1) will
+/// be returned when `rect` == `reference`.
+Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
+  Rect result = Rect::MakeOriginSize(rect.GetOrigin() - reference.GetOrigin(),
+                                     rect.GetSize());
+  return result.Scale(1.0f / Vector2(reference.GetSize()));
 }
 
 }  // namespace
@@ -293,38 +310,90 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Quad uvs = CalculateUVs(inputs[0], entity, source_rect_padded,
                           input_snapshot->texture->GetSize());
 
-  std::shared_ptr<Texture> pass1_out_texture = MakeDownsampleSubpass(
+  fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
       renderer, input_snapshot->texture, input_snapshot->sampler_descriptor,
       uvs, subpass_size, tile_mode_);
 
-  Vector2 pass1_pixel_size = 1.0 / Vector2(pass1_out_texture->GetSize());
+  if (!pass1_out.ok()) {
+    return std::nullopt;
+  }
 
-  std::shared_ptr<Texture> pass2_out_texture =
-      MakeBlurSubpass(renderer, pass1_out_texture,
-                      input_snapshot->sampler_descriptor, tile_mode_,
-                      GaussianBlurFragmentShader::BlurInfo{
-                          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-                          .blur_sigma = scaled_sigma.y * effective_scalar.y,
-                          .blur_radius = blur_radius.y * effective_scalar.y,
-                          .step_size = 1.0,
-                      });
+  Vector2 pass1_pixel_size =
+      1.0 / Vector2(pass1_out.value().GetRenderTargetTexture()->GetSize());
 
-  // TODO(gaaclarke): Make this pass reuse the texture from pass1.
-  std::shared_ptr<Texture> pass3_out_texture =
-      MakeBlurSubpass(renderer, pass2_out_texture,
-                      input_snapshot->sampler_descriptor, tile_mode_,
-                      GaussianBlurFragmentShader::BlurInfo{
-                          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-                          .blur_sigma = scaled_sigma.x * effective_scalar.x,
-                          .blur_radius = blur_radius.x * effective_scalar.x,
-                          .step_size = 1.0,
-                      });
+  std::optional<Rect> input_snapshot_coverage = input_snapshot->GetCoverage();
+  Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
+  if (expanded_coverage_hint.has_value() &&
+      input_snapshot_coverage.has_value() &&
+      // TODO(https://github.com/flutter/flutter/issues/140890): Remove this
+      //   condition. There is some flaw in coverage stopping us from using this
+      //   today. I attempted to use source coordinates to calculate the uvs,
+      //   but that didn't work either.
+      input_snapshot.has_value() &&
+      input_snapshot.value().transform.IsTranslationScaleOnly()) {
+    // Only process the uvs where the blur is happening, not the whole texture.
+    std::optional<Rect> uvs = MakeReferenceUVs(input_snapshot_coverage.value(),
+                                               expanded_coverage_hint.value())
+                                  .Intersection(Rect::MakeSize(Size(1, 1)));
+    FML_DCHECK(uvs.has_value());
+    if (uvs.has_value()) {
+      blur_uvs[0] = uvs->GetLeftTop();
+      blur_uvs[1] = uvs->GetRightTop();
+      blur_uvs[2] = uvs->GetLeftBottom();
+      blur_uvs[3] = uvs->GetRightBottom();
+    }
+  }
+
+  fml::StatusOr<RenderTarget> pass2_out = MakeBlurSubpass(
+      renderer, /*input_pass=*/pass1_out.value(),
+      input_snapshot->sampler_descriptor, tile_mode_,
+      BlurParameters{
+          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
+          .blur_sigma = scaled_sigma.y * effective_scalar.y,
+          .blur_radius =
+              static_cast<int>(std::round(blur_radius.y * effective_scalar.y)),
+          .step_size = 1,
+      },
+      /*destination_target=*/std::nullopt, blur_uvs);
+
+  if (!pass2_out.ok()) {
+    return std::nullopt;
+  }
+
+  // Only ping pong if the first pass actually created a render target.
+  auto pass3_destination = pass2_out.value().GetRenderTargetTexture() !=
+                                   pass1_out.value().GetRenderTargetTexture()
+                               ? std::optional<RenderTarget>(pass1_out.value())
+                               : std::optional<RenderTarget>(std::nullopt);
+
+  fml::StatusOr<RenderTarget> pass3_out = MakeBlurSubpass(
+      renderer, /*input_pass=*/pass2_out.value(),
+      input_snapshot->sampler_descriptor, tile_mode_,
+      BlurParameters{
+          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
+          .blur_sigma = scaled_sigma.x * effective_scalar.x,
+          .blur_radius =
+              static_cast<int>(std::round(blur_radius.x * effective_scalar.x)),
+          .step_size = 1,
+      },
+      pass3_destination, blur_uvs);
+
+  if (!pass3_out.ok()) {
+    return std::nullopt;
+  }
+
+  // The ping-pong approach requires that each render pass output has the same
+  // size.
+  FML_DCHECK((pass1_out.value().GetRenderTargetSize() ==
+              pass2_out.value().GetRenderTargetSize()) &&
+             (pass2_out.value().GetRenderTargetSize() ==
+              pass3_out.value().GetRenderTargetSize()));
 
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   return Entity::FromSnapshot(
-      Snapshot{.texture = pass3_out_texture,
+      Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
                .transform = input_snapshot->transform *
                             padding_snapshot_adjustment *
                             Matrix::MakeScale(1 / effective_scalar),
@@ -361,6 +430,41 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
   constexpr Scalar c = 1.f;
   Scalar scalar = c + b * clamped + a * clamped * clamped;
   return clamped * scalar;
+}
+
+KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
+    BlurParameters parameters) {
+  KernelPipeline::FragmentShader::KernelSamples result;
+  result.sample_count =
+      ((2 * parameters.blur_radius) / parameters.step_size) + 1;
+  FML_CHECK(result.sample_count < 24);
+
+  // Chop off the last samples if the radius >= 3 where they account for < 1.56%
+  // of the result.
+  int x_offset = 0;
+  if (parameters.blur_radius >= 3) {
+    result.sample_count -= 2;
+    x_offset = 1;
+  }
+
+  Scalar tally = 0.0f;
+  for (int i = 0; i < result.sample_count; ++i) {
+    int x = x_offset + (i * parameters.step_size) - parameters.blur_radius;
+    result.samples[i] = KernelPipeline::FragmentShader::KernelSample{
+        .uv_offset = parameters.blur_uv_offset * x,
+        .coefficient = expf(-0.5f * (x * x) /
+                            (parameters.blur_sigma * parameters.blur_sigma)) /
+                       (sqrtf(2.0f * M_PI) * parameters.blur_sigma),
+    };
+    tally += result.samples[i].coefficient;
+  }
+
+  // Make sure everything adds up to 1.
+  for (auto& sample : result.samples) {
+    sample.coefficient /= tally;
+  }
+
+  return result;
 }
 
 }  // namespace impeller

@@ -5,10 +5,10 @@
 #ifndef FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
 #define FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
 
+#include <map>
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
 #include "flutter/impeller/core/runtime_types.h"
@@ -18,10 +18,11 @@ namespace impeller {
 
 class RuntimeStage {
  public:
-  explicit RuntimeStage(std::shared_ptr<fml::Mapping> payload);
+  using Map = std::map<RuntimeStageBackend, std::shared_ptr<RuntimeStage>>;
+  static Map DecodeRuntimeStages(const std::shared_ptr<fml::Mapping>& payload);
 
-  explicit RuntimeStage(const fb::RuntimeStage* runtime_stage);
-
+  RuntimeStage(const fb::RuntimeStage* runtime_stage,
+               const std::shared_ptr<fml::Mapping>& payload);
   ~RuntimeStage();
   RuntimeStage(RuntimeStage&&);
   RuntimeStage& operator=(RuntimeStage&&);
@@ -38,25 +39,24 @@ class RuntimeStage {
 
   const std::shared_ptr<fml::Mapping>& GetCodeMapping() const;
 
-  const std::shared_ptr<fml::Mapping>& GetSkSLMapping() const;
-
   bool IsDirty() const;
 
   void SetClean();
 
  private:
-  RuntimeShaderStage stage_ = RuntimeShaderStage::kVertex;
   std::shared_ptr<fml::Mapping> payload_;
+  RuntimeShaderStage stage_ = RuntimeShaderStage::kVertex;
   std::string entrypoint_;
   std::shared_ptr<fml::Mapping> code_mapping_;
-  std::shared_ptr<fml::Mapping> sksl_mapping_;
   std::vector<RuntimeUniformDescription> uniforms_;
   bool is_valid_ = false;
   bool is_dirty_ = true;
 
-  void Setup(const fb::RuntimeStage* runtime_stage);
-
   RuntimeStage(const RuntimeStage&) = delete;
+
+  static std::unique_ptr<RuntimeStage> RuntimeStageIfPresent(
+      const fb::RuntimeStage* runtime_stage,
+      const std::shared_ptr<fml::Mapping>& payload);
 
   RuntimeStage& operator=(const RuntimeStage&) = delete;
 };
