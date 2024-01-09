@@ -81,12 +81,12 @@ std::optional<ShaderBundleConfig> ParseShaderBundleConfig(
   return bundle;
 }
 
-static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
-    SourceOptions& options,
-    const std::string& shader_name,
-    const ShaderConfig& shader_config) {
-  auto result = std::make_unique<fb::ShaderT>();
-  result->name = shader_name;
+static std::unique_ptr<fb::shaderbundle::BackendShaderT>
+GenerateShaderBackendFB(TargetPlatform target_platform,
+                        SourceOptions& options,
+                        const std::string& shader_name,
+                        const ShaderConfig& shader_config) {
+  auto result = std::make_unique<fb::shaderbundle::BackendShaderT>();
 
   std::shared_ptr<fml::FileMapping> source_file_mapping =
       fml::FileMapping::CreateReadOnly(shader_config.source_file_name);
@@ -97,6 +97,8 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
   }
 
   /// Override options.
+  options.target_platform = target_platform;
+  options.file_name = shader_name;  // This is just used for error messages.
   options.type = shader_config.type;
   options.source_language = shader_config.language;
   options.entry_point_name = EntryPointFunctionNameFromSourceName(
@@ -123,36 +125,15 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
     return nullptr;
   }
 
-  auto stage_data = reflector->GetRuntimeStageShaderData();
-  if (!stage_data) {
-    std::cerr << "Runtime stage information was nil for bundled shader \""
-              << shader_name << "\"." << std::endl;
+  auto bundle_data = reflector->GetShaderBundleData();
+  if (!bundle_data) {
+    std::cerr << "Bundled shader information was nil for \"" << shader_name
+              << "\"." << std::endl;
     return nullptr;
   }
-  RuntimeStageData stages;
-  switch (options.target_platform) {
-    case TargetPlatform::kUnknown:
-    case TargetPlatform::kMetalDesktop:
-    case TargetPlatform::kMetalIOS:
-    case TargetPlatform::kOpenGLES:
-    case TargetPlatform::kOpenGLDesktop:
-    case TargetPlatform::kVulkan:
-    case TargetPlatform::kSkSL:
-      std::cerr << "Invalid target platform "
-                << TargetPlatformToString(options.target_platform);
-      return nullptr;
-    case TargetPlatform::kRuntimeStageMetal:
-      stages.AddShader(RuntimeStageBackend::kMetal, stage_data);
-      break;
-    case TargetPlatform::kRuntimeStageGLES:
-      stages.AddShader(RuntimeStageBackend::kOpenGLES, stage_data);
-      break;
-    case TargetPlatform::kRuntimeStageVulkan:
-      stages.AddShader(RuntimeStageBackend::kVulkan, stage_data);
-      break;
-  }
-  result->shader = stages.CreateFlatbuffer();
-  if (!result->shader) {
+
+  result = bundle_data->CreateFlatbuffer();
+  if (!result) {
     std::cerr << "Failed to create flatbuffer for bundled shader \""
               << shader_name << "\"." << std::endl;
     return nullptr;
@@ -161,9 +142,43 @@ static std::unique_ptr<fb::ShaderT> GenerateShaderFB(
   return result;
 }
 
-std::optional<fb::ShaderBundleT> GenerateShaderBundleFlatbuffer(
+static std::unique_ptr<fb::shaderbundle::ShaderT> GenerateShaderFB(
+    SourceOptions options,
+    const std::string& shader_name,
+    const ShaderConfig& shader_config) {
+  auto result = std::make_unique<fb::shaderbundle::ShaderT>();
+  result->name = shader_name;
+  result->metal_ios = GenerateShaderBackendFB(
+      TargetPlatform::kMetalIOS, options, shader_name, shader_config);
+  if (!result->metal_ios) {
+    return nullptr;
+  }
+  result->metal_desktop = GenerateShaderBackendFB(
+      TargetPlatform::kMetalDesktop, options, shader_name, shader_config);
+  if (!result->metal_desktop) {
+    return nullptr;
+  }
+  result->opengl_es = GenerateShaderBackendFB(
+      TargetPlatform::kOpenGLES, options, shader_name, shader_config);
+  if (!result->opengl_es) {
+    return nullptr;
+  }
+  result->opengl_desktop = GenerateShaderBackendFB(
+      TargetPlatform::kOpenGLDesktop, options, shader_name, shader_config);
+  if (!result->opengl_desktop) {
+    return nullptr;
+  }
+  result->vulkan = GenerateShaderBackendFB(TargetPlatform::kVulkan, options,
+                                           shader_name, shader_config);
+  if (!result->vulkan) {
+    return nullptr;
+  }
+  return result;
+}
+
+std::optional<fb::shaderbundle::ShaderBundleT> GenerateShaderBundleFlatbuffer(
     const std::string& bundle_config_json,
-    SourceOptions& options) {
+    const SourceOptions& options) {
   // --------------------------------------------------------------------------
   /// 1. Parse the bundle configuration.
   ///
@@ -178,10 +193,10 @@ std::optional<fb::ShaderBundleT> GenerateShaderBundleFlatbuffer(
   /// 2. Build the deserialized shader bundle.
   ///
 
-  fb::ShaderBundleT shader_bundle;
+  fb::shaderbundle::ShaderBundleT shader_bundle;
 
   for (const auto& [shader_name, shader_config] : bundle_config.value()) {
-    std::unique_ptr<fb::ShaderT> shader =
+    std::unique_ptr<fb::shaderbundle::ShaderT> shader =
         GenerateShaderFB(options, shader_name, shader_config);
     if (!shader) {
       return std::nullopt;
@@ -192,13 +207,13 @@ std::optional<fb::ShaderBundleT> GenerateShaderBundleFlatbuffer(
   return shader_bundle;
 }
 
-bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
+bool GenerateShaderBundle(Switches& switches) {
   // --------------------------------------------------------------------------
   /// 1. Parse the shader bundle and generate the flatbuffer result.
   ///
 
-  auto shader_bundle =
-      GenerateShaderBundleFlatbuffer(switches.shader_bundle, options);
+  auto shader_bundle = GenerateShaderBundleFlatbuffer(
+      switches.shader_bundle, switches.CreateSourceOptions());
   if (!shader_bundle.has_value()) {
     // Specific error messages are already handled by
     // GenerateShaderBundleFlatbuffer.
@@ -210,9 +225,9 @@ bool GenerateShaderBundle(Switches& switches, SourceOptions& options) {
   ///
 
   auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
-  builder->Finish(
-      fb::ShaderBundle::Pack(*builder.get(), &shader_bundle.value()),
-      fb::ShaderBundleIdentifier());
+  builder->Finish(fb::shaderbundle::ShaderBundle::Pack(*builder.get(),
+                                                       &shader_bundle.value()),
+                  fb::shaderbundle::ShaderBundleIdentifier());
   auto mapping = std::make_shared<fml::NonOwnedMapping>(
       builder->GetBufferPointer(), builder->GetSize(),
       [builder](auto, auto) {});
