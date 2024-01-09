@@ -27,23 +27,23 @@ jobs:
         with:
           python-version: '3.7.7' # install the python version needed
       - name: "extract, flatten, and convert to osv-scanner deps"
-        run: python ci/deps_parser.py -o osv-scanner-deps.json
+        run: python ci/deps_parser.py
       - name: "evaluate git history for common ancestors"
-        run: python ci/scan_deps.py -d osv-scanner-deps.json -o converted-osv-scanner-deps.json
+        run: python ci/scan_deps.py
       - name: "upload osv-scanner deps"
         uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
         with:
-          name: converted-osv-scanner-deps
-          path: converted-osv-scanner-deps.json
+          name: converted-osv-lockfile
+          path: converted-osv-lockfile.json
           retention-days: 2
   vuln-scan:
     name: Vulnerability scanning
     uses: "google/osv-scanner/.github/workflows/osv-scanner-reusable.yml@main"
     with:
       # Download the artifact uploaded in extract-deps step
-      download-artifact: converted-osv-scanner-deps
+      download-artifact: converted-osv-lockfile
       scan-args: |-
-        --lockfile=osv-scanner:converted-osv-scanner-deps.json
+        --lockfile=osv-scanner:converted-osv-lockfile.json
       fail-on-vuln: false
     # makes sure the osv-formatted vulns are uploaded
     needs:

@@ -4,11 +4,11 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 #
-# Usage: scan_deps.py --deps <DEPS lockfile> --output <parsed lockfile>
+# Usage: scan_deps.py --osv-lockfile <lockfile> --output <parsed lockfile>
 #
-# This script parses the DEPS provided in lockfile format for osv-scanner
-# so that the common ancestor commits from the mirrored and upstream
-# for each dependency are provided in the lockfile
+# This script parses the dependencies provided in lockfile format for
+# osv-scanner so that the common ancestor commits from the mirrored and
+# upstream for each dependency are provided in the lockfile
 
 import argparse
 import json
@@ -27,7 +27,7 @@ UPSTREAM_PREFIX = 'upstream_'
 failed_deps = []  # deps which fail to be cloned or git-merge based
 
 
-def parse_deps_file(deps_flat_file, output_file):
+def parse_deps_file(lockfile, output_file):
   """
   Takes input of fully qualified dependencies,
   for each dep find the common ancestor commit SHA
@@ -49,7 +49,7 @@ def parse_deps_file(deps_flat_file, output_file):
     # Extract the deps and filter.
     deps_list = local_scope.get('vars')
 
-  with open(deps_flat_file, 'r') as file:
+  with open(lockfile, 'r') as file:
     data = json.load(file)
 
   results = data['results']
@@ -177,18 +177,18 @@ def parse_args(args):
   )
 
   parser.add_argument(
-      '--deps',
+      '--osv-lockfile',
       '-d',
       type=str,
-      help='Input osv-scanner compatible deps file.',
-      default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-deps.json')
+      help='Input osv-scanner compatible lockfile of dependencies to parse.',
+      default=os.path.join(CHECKOUT_ROOT, 'osv-lockfile.json')
   )
   parser.add_argument(
       '--output',
       '-o',
       type=str,
       help='Output osv-scanner compatible deps file.',
-      default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-ancestor-deps.json')
+      default=os.path.join(CHECKOUT_ROOT, 'converted-osv-lockfile.json')
   )
 
   return parser.parse_args(args)
@@ -196,7 +196,7 @@ def parse_args(args):
 
 def main(argv):
   args = parse_args(argv)
-  parse_deps_file(args.deps, args.output)
+  parse_deps_file(args.osv_lockfile, args.output)
   return 0
 
 

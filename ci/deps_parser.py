@@ -124,8 +124,8 @@ def parse_args(args):
       '--output',
       '-o',
       type=str,
-      help='Output deps file.',
-      default=os.path.join(CHECKOUT_ROOT, 'osv-scanner-deps.json')
+      help='Output lockfile.',
+      default=os.path.join(CHECKOUT_ROOT, 'osv-lockfile.json')
   )
 
   return parser.parse_args(args)
