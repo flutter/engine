@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/device_buffer.h"
@@ -43,8 +42,8 @@ class DeviceBufferGLES final
   ReactorGLES::Ref reactor_;
   HandleGLES handle_;
   mutable std::shared_ptr<Allocation> backing_store_;
-  mutable uint32_t generation_ = 0;
-  mutable uint32_t upload_generation_ = 0;
+  mutable int32_t generation_ = 0;
+  mutable int32_t upload_generation_ = -1;
 
   // |DeviceBuffer|
   uint8_t* OnGetContents() const override;

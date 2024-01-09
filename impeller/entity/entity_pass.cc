@@ -309,7 +309,7 @@ bool EntityPass::Render(ContentContext& renderer,
     renderer.GetRenderTargetCache()->End();
     renderer.GetTransientsBuffer().Reset();
 #if IMPELLER_ENABLE_3D
-    renderer.GetSceneContext().GetTransientsBuffer().Reset();
+    renderer.GetSceneContext()->GetTransientsBuffer().Reset();
 #endif  // IMPELLER_ENABLE_3D
   });
 
