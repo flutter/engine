@@ -27,7 +27,9 @@ HostBuffer::HostBuffer(const std::shared_ptr<Allocator>& allocator) {
   DeviceBufferDescriptor desc;
   desc.size = kAllocatorBlockSize;
   desc.storage_mode = StorageMode::kHostVisible;
-  state_->device_buffers.push_back(allocator->CreateBuffer(desc));
+  for (auto i = 0u; i < kHostBufferArenaSize; i++) {
+    state_->device_buffers[i].push_back(allocator->CreateBuffer(desc));
+  }
 }
 
 HostBuffer::~HostBuffer() = default;
@@ -64,6 +66,14 @@ BufferView HostBuffer::Emplace(size_t length,
   return BufferView{std::move(device_buffer), data, range};
 }
 
+HostBuffer::TestStateQuery HostBuffer::GetStateForTest() {
+  return HostBuffer::TestStateQuery{
+      .current_frame = state_->frame_index,
+      .current_buffer = state_->current_buffer,
+      .total_buffer_count = state_->device_buffers[state_->frame_index].size(),
+  };
+}
+
 void HostBuffer::Reset() {
   state_->Reset();
 }
@@ -74,7 +84,7 @@ void HostBuffer::HostBufferState::MaybeCreateNewBuffer(size_t required_size) {
     DeviceBufferDescriptor desc;
     desc.size = kAllocatorBlockSize;
     desc.storage_mode = StorageMode::kHostVisible;
-    device_buffers.push_back(allocator->CreateBuffer(desc));
+    device_buffers[frame_index].push_back(allocator->CreateBuffer(desc));
   }
   current_buffer++;
   offset = 0;
@@ -176,13 +186,15 @@ HostBuffer::HostBufferState::Emplace(const void* buffer,
 }
 
 void HostBuffer::HostBufferState::Reset() {
+  // When resetting the host buffer state at the end of the frame, check if
+  // there are any unused buffers and remove them.
+  while (device_buffers[frame_index].size() > current_buffer + 1) {
+    device_buffers[frame_index].pop_back();
+  }
+
   offset = 0u;
   current_buffer = 0u;
-  device_buffers.clear();
-  DeviceBufferDescriptor desc;
-  desc.size = kAllocatorBlockSize;
-  desc.storage_mode = StorageMode::kHostVisible;
-  device_buffers.push_back(allocator->CreateBuffer(desc));
+  frame_index = (frame_index + 1) % kHostBufferArenaSize;
 }
 
 }  // namespace impeller

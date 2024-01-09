@@ -17,6 +17,9 @@
 
 namespace impeller {
 
+/// Approximately the same size as the max frames in flight.
+static const constexpr size_t kHostBufferArenaSize = 3u;
+
 /// The host buffer class manages one more 1024 Kb blocks of device buffer
 /// allocations.
 ///
@@ -119,6 +122,16 @@ class HostBuffer {
   ///        reused.
   void Reset();
 
+  /// Test only internal state.
+  struct TestStateQuery {
+    size_t current_frame;
+    size_t current_buffer;
+    size_t total_buffer_count;
+  };
+
+  /// @brief Retrieve internal buffer state for test expectations.
+  TestStateQuery GetStateForTest();
+
  private:
   struct HostBufferState {
     [[nodiscard]] std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
@@ -137,13 +150,15 @@ class HostBuffer {
     void MaybeCreateNewBuffer(size_t required_size);
 
     std::shared_ptr<DeviceBuffer> GetCurrentBuffer() {
-      return device_buffers[current_buffer];
+      return device_buffers[frame_index][current_buffer];
     }
 
     std::shared_ptr<Allocator> allocator;
-    std::vector<std::shared_ptr<DeviceBuffer>> device_buffers;
+    std::array<std::vector<std::shared_ptr<DeviceBuffer>>, kHostBufferArenaSize>
+        device_buffers;
     size_t current_buffer = 0u;
     size_t offset = 0u;
+    size_t frame_index = 0u;
     std::string label;
   };
 

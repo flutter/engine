@@ -67,5 +67,71 @@ TEST_P(HostBufferTest, CanEmplaceWithAlignment) {
   }
 }
 
+TEST_P(HostBufferTest, HostBufferInitialState) {
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+
+  EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().total_buffer_count, 1u);
+}
+
+TEST_P(HostBufferTest, ResetIncrementsFrameCounter) {
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+
+  buffer->Reset();
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 1u);
+
+  buffer->Reset();
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 2u);
+
+  buffer->Reset();
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+}
+
+TEST_P(HostBufferTest, EmplacingLargerThanBlockSizeCreatesOneOffBuffer) {
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+
+  // Emplace an amount larger than the block size, to verify that the host
+  // buffer does not create a buffer.
+  auto buffer_view = buffer->Emplace(1024000 + 10, 0, [](uint8_t* data) {});
+
+  EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().total_buffer_count, 1u);
+}
+
+TEST_P(HostBufferTest, UnusedBuffersAreDiscardedWhenResetting) {
+  auto buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+
+  // Emplace two large allocations to force the allocation of a second buffer.
+  auto buffer_view_a = buffer->Emplace(1020000, 0, [](uint8_t* data) {});
+  auto buffer_view_b = buffer->Emplace(1020000, 0, [](uint8_t* data) {});
+
+  EXPECT_EQ(buffer->GetStateForTest().current_buffer, 1u);
+  EXPECT_EQ(buffer->GetStateForTest().total_buffer_count, 2u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+
+  // Reset until we get back to this frame.
+  for (auto i = 0; i < 3; i++) {
+    buffer->Reset();
+  }
+
+  EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().total_buffer_count, 2u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+
+  // Now when we reset, the buffer should get dropped.
+  // Reset until we get back to this frame.
+  for (auto i = 0; i < 3; i++) {
+    buffer->Reset();
+  }
+
+  EXPECT_EQ(buffer->GetStateForTest().current_buffer, 0u);
+  EXPECT_EQ(buffer->GetStateForTest().total_buffer_count, 1u);
+  EXPECT_EQ(buffer->GetStateForTest().current_frame, 0u);
+}
+
 }  // namespace  testing
 }  // namespace impeller
