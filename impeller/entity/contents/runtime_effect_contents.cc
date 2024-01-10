@@ -148,7 +148,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(cmd,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
   /// Fragment stage uniforms.
@@ -184,7 +185,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
             << " had unexpected type kFloat for Vulkan backend.";
         size_t alignment =
             std::max(uniform.bit_width / 8, DefaultUniformAlignment());
-        auto buffer_view = pass.GetTransientsBuffer().Emplace(
+        auto buffer_view = renderer.GetTransientsBuffer().Emplace(
             uniform_data_->data() + buffer_offset, uniform.GetSize(),
             alignment);
 
