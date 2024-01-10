@@ -26,7 +26,7 @@ namespace impeller {
 ///             threading and lifecycle restrictions.
 class DescriptorPoolVK {
  public:
-  explicit DescriptorPoolVK();
+  explicit DescriptorPoolVK(std::weak_ptr<const ContextVK> context);
 
   ~DescriptorPoolVK();
 

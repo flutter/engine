@@ -64,7 +64,8 @@ class BackgroundDescriptorPoolVK final {
   std::weak_ptr<DescriptorPoolRecyclerVK> recycler_;
 };
 
-DescriptorPoolVK::DescriptorPoolVK() {}
+DescriptorPoolVK::DescriptorPoolVK(std::weak_ptr<const ContextVK> context)
+    : context_(std::move(context)) {}
 
 DescriptorPoolVK::~DescriptorPoolVK() {
   if (pools_.empty()) {
@@ -87,6 +88,7 @@ DescriptorPoolVK::~DescriptorPoolVK() {
     UniqueResourceVKT<BackgroundDescriptorPoolVK> pool(
         context->GetResourceManager(), std::move(reset_pool_when_dropped));
   }
+  pools_.clear();
 }
 
 fml::StatusOr<vk::DescriptorSet> DescriptorPoolVK::AllocateDescriptorSets(

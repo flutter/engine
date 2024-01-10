@@ -49,7 +49,7 @@ TEST(DescriptorPoolRecyclerVKTest, ReclaimMakesDescriptorPoolAvailable) {
 
   {
     // Fetch a pool (which will be created).
-    auto pool = DescriptorPoolVK();
+    auto pool = DescriptorPoolVK(context);
     pool.AllocateDescriptorSets({}, *context);
   }
 
@@ -89,7 +89,7 @@ TEST(DescriptorPoolRecyclerVKTest, ReclaimDropsDescriptorPoolIfSizeIsExceeded) {
   {
     std::vector<std::unique_ptr<DescriptorPoolVK>> pools;
     for (auto i = 0u; i < 33; i++) {
-      auto pool = std::make_unique<DescriptorPoolVK>();
+      auto pool = std::make_unique<DescriptorPoolVK>(context);
       pool->AllocateDescriptorSets({}, *context);
       pools.push_back(std::move(pool));
     }
@@ -118,7 +118,7 @@ TEST(DescriptorPoolRecyclerVKTest, ReclaimDropsDescriptorPoolIfSizeIsExceeded) {
   {
     std::vector<std::unique_ptr<DescriptorPoolVK>> pools;
     for (auto i = 0u; i < 33; i++) {
-      auto pool = std::make_unique<DescriptorPoolVK>();
+      auto pool = std::make_unique<DescriptorPoolVK>(context);
       pool->AllocateDescriptorSets({}, *context);
       pools.push_back(std::move(pool));
     }

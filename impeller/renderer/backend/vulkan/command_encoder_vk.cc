@@ -19,7 +19,7 @@ class TrackedObjectsVK {
   explicit TrackedObjectsVK(const std::weak_ptr<const ContextVK>& context,
                             const std::shared_ptr<CommandPoolVK>& pool,
                             std::unique_ptr<GPUProbe> probe)
-      : desc_pool_(), probe_(std::move(probe)) {
+      : desc_pool_(context), probe_(std::move(probe)) {
     if (!pool) {
       return;
     }
