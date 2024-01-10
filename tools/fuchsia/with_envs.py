@@ -46,10 +46,7 @@ def Main():
     except:
       # Use terminate / SIGTERM to allow the subprocess exiting cleanly.
       proc.terminate()
-
-    # TODO(https://github.com/flutter/flutter/issues/140179): This script should
-    # not swallow the proc.returncode. It should be enabled after KVM is enabled
-    # on the test fleet.
+    return proc.returncode
 
 
 if __name__ == '__main__':
