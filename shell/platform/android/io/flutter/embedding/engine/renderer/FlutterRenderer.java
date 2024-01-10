@@ -51,13 +51,11 @@ public class FlutterRenderer implements TextureRegistry {
    * Whether to always use GL textures for {@link FlutterRenderer#createSurfaceProducer()}.
    *
    * <p>This is a debug-only API intended for local development. For example, when using a newer
-   * Android device (that normally would use {@link ImageReaderSurfaceProducer}, but wanting to
-   * test the OpenGLES/{@link SurfaceTextureSurfaceProducer} code branch.</p>
-   *
-   * This flag has undefined behavior if set to true while running in a Vulkan (Impeller) context.
+   * Android device (that normally would use {@link ImageReaderSurfaceProducer}, but wanting to test
+   * the OpenGLES/{@link SurfaceTextureSurfaceProducer} code branch. This flag has undefined
+   * behavior if set to true while running in a Vulkan (Impeller) context.
    */
-  @VisibleForTesting
-  public static boolean debugForceSurfaceProducerGlTextures = false;
+  @VisibleForTesting public static boolean debugForceSurfaceProducerGlTextures = false;
 
   private static final String TAG = "FlutterRenderer";
 
