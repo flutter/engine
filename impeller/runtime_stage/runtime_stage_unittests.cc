@@ -5,13 +5,13 @@
 #include <future>
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/fixtures/simple.vert.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/runtime_types.h"
 #include "impeller/core/shader_types.h"
+#include "impeller/entity/runtime_effect.vert.h"
 #include "impeller/playground/playground.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -267,7 +267,7 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   ASSERT_NE(stage, nullptr);
   ASSERT_TRUE(RegisterStage(*stage));
   auto library = GetContext()->GetShaderLibrary();
-  using VS = SimpleVertexShader;
+  using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage InkSparkle");
   desc.AddStageEntrypoint(
