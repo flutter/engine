@@ -111,9 +111,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
       std::min(corner_radius_, std::min(positive_rect.GetWidth() / 2.0f,
                                         positive_rect.GetHeight() / 2.0f));
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("RRect Shadow");
-#endif  // IMPELLER_DEBUG
   pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(
@@ -122,7 +120,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
   FS::BindFragInfo(pass, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 

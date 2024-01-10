@@ -72,7 +72,7 @@ class RenderPass : public ResourceBinder {
 
   //----------------------------------------------------------------------------
   /// The debugging label to use for the command.
-  void SetCommandLabel(const std::string& label);
+  void SetCommandLabel(std::string_view label);
 
   //----------------------------------------------------------------------------
   /// The reference value to use in stenciling operations. Stencil configuration
@@ -120,7 +120,7 @@ class RenderPass : public ResourceBinder {
   bool SetVertexBuffer(VertexBuffer buffer);
 
   /// Record the currently pending command.
-  bool Dispatch();
+  bool Draw();
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,

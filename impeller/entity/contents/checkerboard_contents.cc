@@ -37,9 +37,7 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
       {Point(1, 1)},
   });
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("Checkerboard");
-#endif  // IMPELLER_DEBUG
   pass.SetPipeline(renderer.GetCheckerboardPipeline(options));
   pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
@@ -48,7 +46,7 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
   frag_info.square_size = square_size_;
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.Dispatch();
+  return pass.Draw();
 }
 
 std::optional<Rect> CheckerboardContents::GetCoverage(

@@ -106,9 +106,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   }
   options.primitive_type = geometry_result.type;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("SweepGradientSSBOFill");
-#endif  // IMPELLER_DEBUG
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetPipeline(renderer.GetSweepGradientSSBOFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -117,7 +115,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 
@@ -171,9 +169,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("SweepGradientFill");
-#endif  // IMPELLER_DEBUG
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetPipeline(renderer.GetSweepGradientFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -185,7 +181,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
       pass, gradient_texture,
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 

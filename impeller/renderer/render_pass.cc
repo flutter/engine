@@ -108,9 +108,9 @@ void RenderPass::SetPipeline(
   pending_.pipeline = pipeline;
 }
 
-void RenderPass::SetCommandLabel(const std::string& label) {
+void RenderPass::SetCommandLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
-  pending_.label = label;
+  pending_.label = std::string(label);
 #endif  // IMPELLER_DEBUG
 }
 
@@ -138,7 +138,7 @@ bool RenderPass::SetVertexBuffer(VertexBuffer buffer) {
   return pending_.BindVertices(std::move(buffer));
 }
 
-bool RenderPass::Dispatch() {
+bool RenderPass::Draw() {
   auto result = AddCommand(std::move(pending_));
   pending_ = Command{};
   return result;

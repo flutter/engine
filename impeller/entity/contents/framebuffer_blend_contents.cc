@@ -70,10 +70,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   options.blend_mode = BlendMode::kSource;
   options.primitive_type = PrimitiveType::kTriangleStrip;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("Framebuffer Advanced Blend Filter");
-#endif  // IMPELLER_DEBUG
-
   pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
   pass.SetStencilReference(entity.GetClipDepth());
 
@@ -146,7 +143,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   frag_info.src_input_alpha = src_snapshot->opacity;
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.Dispatch();
+  return pass.Draw();
 }
 
 }  // namespace impeller

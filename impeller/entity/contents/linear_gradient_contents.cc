@@ -104,9 +104,7 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("LinearGradientFill");
-#endif  // IMPELLER_DEBUG
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetPipeline(renderer.GetLinearGradientFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -117,7 +115,7 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
   FS::BindFragInfo(pass, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 
@@ -163,9 +161,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   }
   options.primitive_type = geometry_result.type;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("LinearGradientSSBOFill");
-#endif  // IMPELLER_DEBUG
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetPipeline(renderer.GetLinearGradientSSBOFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -174,7 +170,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 

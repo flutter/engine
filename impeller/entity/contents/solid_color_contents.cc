@@ -62,9 +62,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   options.primitive_type = geometry_result.type;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("Solid Fill");
-#endif  // IMPELLER_DEBUG
   pass.SetPipeline(renderer.GetSolidFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
   pass.SetStencilReference(entity.GetClipDepth());
@@ -75,7 +73,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 

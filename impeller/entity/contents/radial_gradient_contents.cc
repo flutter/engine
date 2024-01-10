@@ -98,9 +98,7 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   }
   options.primitive_type = geometry_result.type;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("RadialGradientSSBOFill");
-#endif  // IMPELLER_DEBUG
   pass.SetPipeline(renderer.GetRadialGradientSSBOFillPipeline(options));
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -109,7 +107,7 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 
@@ -162,9 +160,7 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("RadialGradientFill");
-#endif  // IMPELLER_DEBUG
   pass.SetPipeline(renderer.GetRadialGradientFillPipeline(options));
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -175,7 +171,7 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 

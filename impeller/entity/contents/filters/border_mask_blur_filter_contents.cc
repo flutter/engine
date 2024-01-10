@@ -115,9 +115,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     frag_info.inner_blur_factor = inner_blur_factor;
     frag_info.outer_blur_factor = outer_blur_factor;
 
-#ifdef IMPELLER_DEBUG
     pass.SetCommandLabel("Border Mask Blur Filter");
-#endif  // IMPELLER_DEBUG
     pass.SetPipeline(renderer.GetBorderMaskBlurPipeline(options));
     pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
     pass.SetStencilReference(entity.GetClipDepth());
@@ -128,7 +126,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindTextureSampler(pass, input_snapshot->texture, sampler);
 
-    return pass.Dispatch();
+    return pass.Draw();
   };
 
   CoverageProc coverage_proc =

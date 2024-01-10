@@ -99,9 +99,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
   }
   options.primitive_type = geometry_result.type;
 
-#ifdef IMPELLER_DEBUG
   pass.SetCommandLabel("ConicalGradientSSBOFill");
-#endif  // IMPELLER_DEBUG
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetPipeline(renderer.GetConicalGradientSSBOFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
@@ -110,7 +108,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Dispatch()) {
+  if (!pass.Draw()) {
     return false;
   }
 
