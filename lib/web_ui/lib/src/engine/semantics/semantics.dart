@@ -9,7 +9,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../../engine.dart' show registerHotRestartListener;
+import '../../engine.dart'  show registerHotRestartListener;
 import '../alarm_clock.dart';
 import '../browser_detection.dart';
 import '../configuration.dart';
@@ -99,19 +99,18 @@ class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
   @override
   int get hashCode => _index.hashCode;
 
-  EngineAccessibilityFeatures copyWith(
-      {bool? accessibleNavigation,
+  EngineAccessibilityFeatures copyWith({
+      bool? accessibleNavigation,
       bool? invertColors,
       bool? disableAnimations,
       bool? boldText,
       bool? reduceMotion,
       bool? highContrast,
-      bool? onOffSwitchLabels}) {
-    final EngineAccessibilityFeaturesBuilder builder =
-        EngineAccessibilityFeaturesBuilder(0);
+      bool? onOffSwitchLabels})
+  {
+    final EngineAccessibilityFeaturesBuilder builder = EngineAccessibilityFeaturesBuilder(0);
 
-    builder.accessibleNavigation =
-        accessibleNavigation ?? this.accessibleNavigation;
+    builder.accessibleNavigation = accessibleNavigation ?? this.accessibleNavigation;
     builder.invertColors = invertColors ?? this.invertColors;
     builder.disableAnimations = disableAnimations ?? this.disableAnimations;
     builder.boldText = boldText ?? this.boldText;
@@ -128,58 +127,47 @@ class EngineAccessibilityFeaturesBuilder {
 
   int _index = 0;
 
-  bool get accessibleNavigation =>
-      EngineAccessibilityFeatures._kAccessibleNavigation & _index != 0;
-  bool get invertColors =>
-      EngineAccessibilityFeatures._kInvertColorsIndex & _index != 0;
-  bool get disableAnimations =>
-      EngineAccessibilityFeatures._kDisableAnimationsIndex & _index != 0;
-  bool get boldText =>
-      EngineAccessibilityFeatures._kBoldTextIndex & _index != 0;
-  bool get reduceMotion =>
-      EngineAccessibilityFeatures._kReduceMotionIndex & _index != 0;
-  bool get highContrast =>
-      EngineAccessibilityFeatures._kHighContrastIndex & _index != 0;
-  bool get onOffSwitchLabels =>
-      EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex & _index != 0;
+  bool get accessibleNavigation => EngineAccessibilityFeatures._kAccessibleNavigation & _index != 0;
+  bool get invertColors => EngineAccessibilityFeatures._kInvertColorsIndex & _index != 0;
+  bool get disableAnimations => EngineAccessibilityFeatures._kDisableAnimationsIndex & _index != 0;
+  bool get boldText => EngineAccessibilityFeatures._kBoldTextIndex & _index != 0;
+  bool get reduceMotion => EngineAccessibilityFeatures._kReduceMotionIndex & _index != 0;
+  bool get highContrast => EngineAccessibilityFeatures._kHighContrastIndex & _index != 0;
+  bool get onOffSwitchLabels => EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex & _index != 0;
 
   set accessibleNavigation(bool value) {
-    const int accessibleNavigation =
-        EngineAccessibilityFeatures._kAccessibleNavigation;
-    _index =
-        value ? _index | accessibleNavigation : _index & ~accessibleNavigation;
+    const int accessibleNavigation = EngineAccessibilityFeatures._kAccessibleNavigation;
+    _index = value? _index | accessibleNavigation : _index & ~accessibleNavigation;
   }
 
   set invertColors(bool value) {
     const int invertColors = EngineAccessibilityFeatures._kInvertColorsIndex;
-    _index = value ? _index | invertColors : _index & ~invertColors;
+    _index = value? _index | invertColors : _index & ~invertColors;
   }
 
   set disableAnimations(bool value) {
-    const int disableAnimations =
-        EngineAccessibilityFeatures._kDisableAnimationsIndex;
-    _index = value ? _index | disableAnimations : _index & ~disableAnimations;
+    const int disableAnimations = EngineAccessibilityFeatures._kDisableAnimationsIndex;
+    _index = value? _index | disableAnimations : _index & ~disableAnimations;
   }
 
   set boldText(bool value) {
     const int boldText = EngineAccessibilityFeatures._kBoldTextIndex;
-    _index = value ? _index | boldText : _index & ~boldText;
+    _index = value? _index | boldText : _index & ~boldText;
   }
 
   set reduceMotion(bool value) {
     const int reduceMotion = EngineAccessibilityFeatures._kReduceMotionIndex;
-    _index = value ? _index | reduceMotion : _index & ~reduceMotion;
+    _index = value? _index | reduceMotion : _index & ~reduceMotion;
   }
 
   set highContrast(bool value) {
     const int highContrast = EngineAccessibilityFeatures._kHighContrastIndex;
-    _index = value ? _index | highContrast : _index & ~highContrast;
+    _index = value? _index | highContrast : _index & ~highContrast;
   }
 
   set onOffSwitchLabels(bool value) {
-    const int onOffSwitchLabels =
-        EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex;
-    _index = value ? _index | onOffSwitchLabels : _index & ~onOffSwitchLabels;
+    const int onOffSwitchLabels = EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex;
+    _index = value? _index | onOffSwitchLabels : _index & ~onOffSwitchLabels;
   }
 
   /// Creates and returns an instance of EngineAccessibilityFeatures based on the value of _index
@@ -476,17 +464,12 @@ abstract class PrimaryRoleManager {
   ///
   /// This is only meant to be used in tests.
   @visibleForTesting
-  List<Role> get debugSecondaryRoles =>
-      _secondaryRoleManagers
-          ?.map((RoleManager manager) => manager.role)
-          .toList() ??
-      const <Role>[];
+  List<Role> get debugSecondaryRoles => _secondaryRoleManagers?.map((RoleManager manager) => manager.role).toList() ?? const <Role>[];
 
   @protected
   DomElement createElement() => domDocument.createElement('flt-semantics');
 
-  static DomElement _initElement(
-      DomElement element, SemanticsObject semanticsObject) {
+  static DomElement _initElement(DomElement element, SemanticsObject semanticsObject) {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
     element.style.position = 'absolute';
@@ -532,13 +515,9 @@ abstract class PrimaryRoleManager {
 
   void removeAttribute(String name) => element.removeAttribute(name);
 
-  void addEventListener(String type, DomEventListener? listener,
-          [bool? useCapture]) =>
-      element.addEventListener(type, listener, useCapture);
+  void addEventListener(String type, DomEventListener? listener, [bool? useCapture]) => element.addEventListener(type, listener, useCapture);
 
-  void removeEventListener(String type, DomEventListener? listener,
-          [bool? useCapture]) =>
-      element.removeEventListener(type, listener, useCapture);
+  void removeEventListener(String type, DomEventListener? listener, [bool? useCapture]) => element.removeEventListener(type, listener, useCapture);
 
   /// Convenience getter for the [Focusable] role manager, if any.
   Focusable? get focusable => _focusable;
@@ -576,9 +555,7 @@ abstract class PrimaryRoleManager {
   @protected
   void addSecondaryRole(RoleManager secondaryRoleManager) {
     assert(
-      _secondaryRoleManagers?.any((RoleManager manager) =>
-              manager.role == secondaryRoleManager.role) !=
-          true,
+      _secondaryRoleManagers?.any((RoleManager manager) => manager.role == secondaryRoleManager.role) != true,
       'Cannot add secondary role ${secondaryRoleManager.role}. This object already has this secondary role.',
     );
     _secondaryRoleManagers ??= <RoleManager>[];
@@ -641,8 +618,7 @@ abstract class PrimaryRoleManager {
 
 /// A role used when a more specific role couldn't be assigned to the node.
 final class GenericRole extends PrimaryRoleManager {
-  GenericRole(SemanticsObject semanticsObject)
-      : super.withBasics(PrimaryRole.generic, semanticsObject);
+  GenericRole(SemanticsObject semanticsObject) : super.withBasics(PrimaryRole.generic, semanticsObject);
 
   @override
   void update() {
@@ -964,8 +940,7 @@ class SemanticsObject {
   String? _increasedValue;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode]
-  List<ui.StringAttribute>? get increasedValueAttributes =>
-      _increasedValueAttributes;
+  List<ui.StringAttribute>? get increasedValueAttributes => _increasedValueAttributes;
   List<ui.StringAttribute>? _increasedValueAttributes;
 
   static const int _increasedValueIndex = 1 << 13;
@@ -982,8 +957,7 @@ class SemanticsObject {
   String? _decreasedValue;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode]
-  List<ui.StringAttribute>? get decreasedValueAttributes =>
-      _decreasedValueAttributes;
+  List<ui.StringAttribute>? get decreasedValueAttributes => _decreasedValueAttributes;
   List<ui.StringAttribute>? _decreasedValueAttributes;
 
   static const int _decreasedValueIndex = 1 << 14;
@@ -1152,7 +1126,6 @@ class SemanticsObject {
     assert(owner.phase == SemanticsUpdatePhase.postUpdate);
     return _parent;
   }
-
   SemanticsObject? _parent;
 
   /// Whether this node currently has a given [SemanticsFlag].
@@ -1190,18 +1163,16 @@ class SemanticsObject {
       hasAction(ui.SemanticsAction.scrollRight);
 
   /// Whether this object represents a scrollable area in any direction.
-  bool get isScrollContainer =>
-      isVerticalScrollContainer || isHorizontalScrollContainer;
+  bool get isScrollContainer => isVerticalScrollContainer || isHorizontalScrollContainer;
 
   /// Whether this object has a non-empty list of children.
   bool get hasChildren =>
-      _childrenInTraversalOrder != null &&
-      _childrenInTraversalOrder!.isNotEmpty;
+      _childrenInTraversalOrder != null && _childrenInTraversalOrder!.isNotEmpty;
 
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
-  /// Whether this object represents an editable text field.
+    /// Whether this object represents an editable text field.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
 
   /// Whether this object needs screen readers attention right away.
@@ -1211,7 +1182,9 @@ class SemanticsObject {
 
   /// Whether this object represents an image with no tappable functionality.
   bool get isVisualOnly =>
-      hasFlag(ui.SemanticsFlag.isImage) && !isTappable && !isButton;
+      hasFlag(ui.SemanticsFlag.isImage) &&
+      !isTappable &&
+      !isButton;
 
   /// Whether this node defines a scope for a route.
   ///
@@ -1418,7 +1391,8 @@ class SemanticsObject {
   ///   z-index CSS style attribute.
   void updateChildren() {
     // Trivial case: remove all children.
-    if (_childrenInHitTestOrder == null || _childrenInHitTestOrder!.isEmpty) {
+    if (_childrenInHitTestOrder == null ||
+        _childrenInHitTestOrder!.isEmpty) {
       if (_currentChildrenInRenderOrder == null ||
           _currentChildrenInRenderOrder!.isEmpty) {
         // A container element must not have been created when child list is empty.
@@ -1453,8 +1427,7 @@ class SemanticsObject {
     // is determined by the DOM order of elements.
     final List<SemanticsObject> childrenInRenderOrder = <SemanticsObject>[];
     for (int i = 0; i < childCount; i++) {
-      childrenInRenderOrder
-          .add(owner._semanticsTree[childrenInTraversalOrder[i]]!);
+      childrenInRenderOrder.add(owner._semanticsTree[childrenInTraversalOrder[i]]!);
     }
 
     // The z-index determines hit testing. Technically, it also affects paint
@@ -1467,8 +1440,7 @@ class SemanticsObject {
     final bool zIndexMatters = childCount > 1;
     if (zIndexMatters) {
       for (int i = 0; i < childCount; i++) {
-        final SemanticsObject child =
-            owner._semanticsTree[childrenInHitTestOrder[i]]!;
+        final SemanticsObject child = owner._semanticsTree[childrenInHitTestOrder[i]]!;
 
         // Invert the z-index because hit-test order is inverted with respect to
         // paint order.
@@ -1488,8 +1460,7 @@ class SemanticsObject {
     }
 
     // At this point it is guaranteed to have had a non-empty previous child list.
-    final List<SemanticsObject> previousChildrenInRenderOrder =
-        _currentChildrenInRenderOrder!;
+    final List<SemanticsObject> previousChildrenInRenderOrder = _currentChildrenInRenderOrder!;
     final int previousCount = previousChildrenInRenderOrder.length;
 
     // Both non-empty case.
@@ -1526,8 +1497,7 @@ class SemanticsObject {
     }
 
     // Trivial case: child lists are identical both in length and order => do nothing.
-    if (previousCount == childrenInRenderOrder.length &&
-        newIndex == childCount) {
+    if (previousCount == childrenInRenderOrder.length && newIndex == childCount) {
       return;
     }
 
@@ -1546,13 +1516,12 @@ class SemanticsObject {
 
     // The longest sub-sequence in the old list maximizes the number of children
     // that do not need to be moved.
-    final List<int?> longestSequence =
-        longestIncreasingSubsequence(intersectionIndicesOld);
+    final List<int?> longestSequence = longestIncreasingSubsequence(intersectionIndicesOld);
     final List<int> stationaryIds = <int>[];
     for (int i = 0; i < longestSequence.length; i += 1) {
-      stationaryIds.add(previousChildrenInRenderOrder[
-              intersectionIndicesOld[longestSequence[i]!]]
-          .id);
+      stationaryIds.add(
+        previousChildrenInRenderOrder[intersectionIndicesOld[longestSequence[i]!]].id
+      );
     }
 
     // Remove children that are no longer in the list.
@@ -1811,8 +1780,7 @@ class SemanticsObject {
   ///
   /// Unlike [visitDepthFirstInTraversalOrder] this method can traverse
   /// partially updated, incomplete, or inconsistent tree.
-  void _debugVisitRenderedSemanticNodesDepthFirst(
-      void Function(SemanticsObject) callback) {
+  void _debugVisitRenderedSemanticNodesDepthFirst(void Function(SemanticsObject) callback) {
     callback(this);
     _currentChildrenInRenderOrder?.forEach((SemanticsObject child) {
       child._debugVisitRenderedSemanticNodesDepthFirst(callback);
@@ -1826,13 +1794,11 @@ class SemanticsObject {
   /// the callback returns true, continues visiting descendants. Otherwise,
   /// stops immediately after visiting the node that caused the callback to
   /// return false.
-  void visitDepthFirstInTraversalOrder(
-      bool Function(SemanticsObject) callback) {
+  void visitDepthFirstInTraversalOrder(bool Function(SemanticsObject) callback) {
     _visitDepthFirstInTraversalOrder(callback);
   }
 
-  bool _visitDepthFirstInTraversalOrder(
-      bool Function(SemanticsObject) callback) {
+  bool _visitDepthFirstInTraversalOrder(bool Function(SemanticsObject) callback) {
     final bool shouldContinueVisiting = callback(this);
 
     if (!shouldContinueVisiting) {
@@ -1983,10 +1949,9 @@ class EngineSemantics {
     if (value == _semanticsEnabled) {
       return;
     }
-    final EngineAccessibilityFeatures original = EnginePlatformDispatcher
-        .instance
-        .configuration
-        .accessibilityFeatures as EngineAccessibilityFeatures;
+    final EngineAccessibilityFeatures original =
+        EnginePlatformDispatcher.instance.configuration.accessibilityFeatures
+        as EngineAccessibilityFeatures;
     final PlatformConfiguration newConfiguration =
         EnginePlatformDispatcher.instance.configuration.copyWith(
             accessibilityFeatures:
@@ -2003,8 +1968,7 @@ class EngineSemantics {
         _gestureMode = GestureMode.pointerEvents;
         _notifyGestureModeListeners();
       }
-      for (final EngineFlutterView view
-          in EnginePlatformDispatcher.instance.views) {
+      for (final EngineFlutterView view in EnginePlatformDispatcher.instance.views) {
         view.semantics.reset();
       }
       _gestureModeClock?.datetime = null;
@@ -2162,8 +2126,7 @@ class EngineSemantics {
   /// Callbacks are called synchronously. HTML DOM updates made in a callback
   /// take effect in the current animation frame and/or the current message loop
   /// event.
-  final List<GestureModeCallback> _gestureModeListeners =
-      <GestureModeCallback>[];
+  final List<GestureModeCallback> _gestureModeListeners = <GestureModeCallback>[];
 
   /// Calls the [callback] every time the current [GestureMode] changes.
   ///
@@ -2260,8 +2223,7 @@ class EngineSemanticsOwner {
   /// Attachments take precedence over detachments (see [_detachObject]). This
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
-  void _attachObject(
-      {required SemanticsObject parent, required SemanticsObject child}) {
+  void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -2332,7 +2294,6 @@ class EngineSemanticsOwner {
     _phase = SemanticsUpdatePhase.postUpdate;
     try {
       if (_oneTimePostUpdateCallbacks.isNotEmpty) {
-        print('CALLING ONETIME POSTUPDATE CALLBACKS!');
         for (final ui.VoidCallback callback in _oneTimePostUpdateCallbacks) {
           callback();
         }
@@ -2376,14 +2337,12 @@ class EngineSemanticsOwner {
     final SemanticsObject? root = _semanticsTree[0];
     if (root != null) {
       root._debugVisitRenderedSemanticNodesDepthFirst((SemanticsObject child) {
-        liveIds[child.id] =
-            child._childrenInTraversalOrder?.toList() ?? const <int>[];
+        liveIds[child.id] = child._childrenInTraversalOrder?.toList() ?? const <int>[];
       });
     }
 
     final bool isConsistent = _semanticsTree.keys.every(liveIds.keys.contains);
-    final String heading =
-        'The semantics node map is ${isConsistent ? 'consistent' : 'inconsistent'}';
+    final String heading = 'The semantics node map is ${isConsistent ? 'consistent' : 'inconsistent'}';
     final StringBuffer message = StringBuffer('$heading:\n');
     message.writeln('  Nodes in tree:');
     for (final MapEntry<int, List<int>> entry in liveIds.entries) {
@@ -2440,8 +2399,7 @@ class EngineSemanticsOwner {
       // Validate that the node map only contains live elements, i.e. descendants
       // of the root node. If a node is not reachable from the root, it should
       // have been removed from the map.
-      final (bool isConsistent, String description) =
-          _computeNodeMapConsistencyMessage();
+      final (bool isConsistent, String description) = _computeNodeMapConsistencyMessage();
       if (!isConsistent) {
         // Use StateError because AssertionError escapes line breaks, but this
         // error message is very detailed and it needs line breaks for

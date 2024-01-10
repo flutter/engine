@@ -1545,18 +1545,15 @@ void _testIncrementables() {
 
     pumpSemantics(isFocused: false);
     final DomElement element = owner().debugSemanticsTree![0]!.element.querySelector('input')!;
-    await Future<void>.delayed(Duration.zero);
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
-    await Future<void>.delayed(Duration.zero);
     expect(capturedActions, <CapturedAction>[
       (0, ui.SemanticsAction.didGainAccessibilityFocus, null),
     ]);
     capturedActions.clear();
 
     pumpSemantics(isFocused: false);
-    await Future<void>.delayed(Duration.zero);
     expect(
       reason: 'The engine never calls blur() explicitly.',
       capturedActions,
