@@ -71,7 +71,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   frame_info.mvp = capture.AddMatrix("Transform", geometry_result.transform);
   frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
   VS::BindFrameInfo(pass,
-                    pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   if (!pass.Draw()) {
     return false;

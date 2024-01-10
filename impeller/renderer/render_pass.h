@@ -52,8 +52,6 @@ class RenderPass : public ResourceBinder {
     commands_.reserve(command_count);
   }
 
-  HostBuffer& GetTransientsBuffer();
-
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
   ///             command buffer. No work is encoded into the command buffer at
@@ -179,7 +177,6 @@ class RenderPass : public ResourceBinder {
   const bool has_stencil_attachment_;
   const ISize render_target_size_;
   const RenderTarget render_target_;
-  std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
   const Matrix orthographic_;
 

@@ -112,8 +112,9 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
       pass, std::move(gradient_texture),
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
   VS::BindFrameInfo(pass,
-                    pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-  FS::BindFragInfo(pass, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
+  FS::BindFragInfo(pass,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.Draw()) {
     return false;
@@ -140,7 +141,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.decal_border_color = decal_border_color_;
   frag_info.alpha = GetOpacityFactor();
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
 
   frag_info.colors_length = colors.size();
@@ -165,10 +166,11 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetPipeline(renderer.GetLinearGradientSSBOFillPipeline(options));
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(pass, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+  FS::BindFragInfo(pass,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
   FS::BindColorData(pass, color_buffer);
   VS::BindFrameInfo(pass,
-                    pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   if (!pass.Draw()) {
     return false;

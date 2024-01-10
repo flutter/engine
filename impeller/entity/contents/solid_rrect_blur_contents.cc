@@ -115,10 +115,11 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(
-      vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+      vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()));
   VS::BindFrameInfo(pass,
-                    pass.GetTransientsBuffer().EmplaceUniform(frame_info));
-  FS::BindFragInfo(pass, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
+  FS::BindFragInfo(pass,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.Draw()) {
     return false;
