@@ -6,7 +6,6 @@
 #include "impeller/renderer/blit_pass.h"
 #include "impeller/renderer/command_buffer.h"
 
-
 namespace impeller {
 
 fml::Status AddMipmapGeneration(const std::shared_ptr<Context>& context,
