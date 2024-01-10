@@ -23,6 +23,7 @@ from test_runner import TestRunner
 # TODO(https://github.com/flutter/flutter/issues/140179): Execute all the tests
 # in
 # https://github.com/flutter/engine/blob/main/testing/fuchsia/test_suites.yaml
+# and avoid hardcoded paths.
 def _get_test_runner(
     runner_args: argparse.Namespace, test_args: List[str]
 ) -> TestRunner:
@@ -30,7 +31,7 @@ def _get_test_runner(
       runner_args.out_dir, [],
       'fuchsia-pkg://fuchsia.com/dart_runner_tests#meta/dart_runner_tests.cm',
       runner_args.target_id, 'codecoverage', '/tmp/log',
-      ['out/fuchsia_debug_x64/dart_runner_tests.far'], None
+      ['../out/fuchsia_debug_x64/dart_runner_tests.far'], None
   )
 
 
@@ -38,11 +39,11 @@ def _get_test_runner(
 # configurations.
 if __name__ == '__main__':
   try:
-    os.remove('out/fuchsia_debug_x64/dart_runner_tests.far')
+    os.remove('../out/fuchsia_debug_x64/dart_runner_tests.far')
   except FileNotFoundError:
     pass
   os.symlink(
-      'dart_runner_tests-0.far', 'out/fuchsia_debug_x64/dart_runner_tests.far'
+      'dart_runner_tests-0.far', '../out/fuchsia_debug_x64/dart_runner_tests.far'
   )
   sys.argv.append('--out-dir=out/fuchsia_debug_x64')
   # The 'flutter-test-type' is a place holder and has no specific meaning; the
