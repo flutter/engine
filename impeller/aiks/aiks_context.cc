@@ -4,6 +4,7 @@
 
 #include "impeller/aiks/aiks_context.h"
 
+#include "fml/closure.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -47,11 +48,13 @@ bool AiksContext::Render(const Picture& picture,
     return false;
   }
 
+  fml::ScopedCleanupClosure closure([&]() {
+    if (reset_host_buffer) {
+      content_context_->GetTransientsBuffer().Reset();
+    }
+  });
   if (picture.pass) {
     return picture.pass->Render(*content_context_, render_target);
-  }
-  if (reset_host_buffer) {
-    content_context_->GetTransientsBuffer().Reset();
   }
 
   return true;
