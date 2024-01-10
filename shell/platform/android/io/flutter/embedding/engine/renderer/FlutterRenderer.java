@@ -179,8 +179,8 @@ public class FlutterRenderer implements TextureRegistry {
         //
         // This function picks the "best" rendering surface based on the Android runtime, and
         // provides a consumer-agnostic SurfaceProducer (which in turn vends a Surface), and has
-        // plugins (i.e. end-users) use the Surface instead, letting us "hide" what the
-        // implementation is provided by.
+        // plugins (i.e. end-users) use the Surface instead, letting us "hide" the consumer-side
+        // of the implementation.
         //
         // tl;dr: If ImageTexture is available, we use it, otherwise we use a SurfaceTexture.
         // Coincidentally, if ImageTexture is available, we are also on an Android version that is

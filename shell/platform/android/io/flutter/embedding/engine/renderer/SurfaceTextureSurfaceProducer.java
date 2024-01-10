@@ -1,17 +1,18 @@
 package io.flutter.embedding.engine.renderer;
 
 import android.graphics.SurfaceTexture;
-import android.media.Image;
 import android.view.Surface;
 import androidx.annotation.NonNull;
 import io.flutter.view.TextureRegistry;
 
-// An incomplete implementation of TextureRegistry.SurfaceProducer.
-//
-// TODO(https://github.com/flutter/flutter/issues/139702).
+/**
+ * Uses a {@link android.graphics.SurfaceTexture} to populate the texture registry.
+ */
 final class SurfaceTextureSurfaceProducer
-    implements TextureRegistry.SurfaceProducer, TextureRegistry.ImageConsumer {
+    implements TextureRegistry.SurfaceProducer, TextureRegistry.GLTextureConsumer {
   private final long id;
+  private int requestBufferWidth;
+  private int requestedBufferHeight;
 
   @NonNull private final SurfaceTexture texture;
 
@@ -30,33 +31,31 @@ final class SurfaceTextureSurfaceProducer
     texture.release();
   }
 
+  @Override
   @NonNull
-  SurfaceTexture getSurfaceTexture() {
+  public SurfaceTexture getSurfaceTexture() {
     return texture;
   }
 
   @Override
   public void setSize(int width, int height) {
+    requestBufferWidth = width;
+    requestedBufferHeight = height;
     getSurfaceTexture().setDefaultBufferSize(width, height);
   }
 
   @Override
   public int getWidth() {
-    return 0;
+    return requestBufferWidth;
   }
 
   @Override
   public int getHeight() {
-    return 0;
+    return requestedBufferHeight;
   }
 
   @Override
   public Surface getSurface() {
     return new Surface(getSurfaceTexture());
-  }
-
-  @Override
-  public Image acquireLatestImage() {
-    return null;
   }
 }
