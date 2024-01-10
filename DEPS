@@ -13,7 +13,6 @@ vars = {
   'dart_git': 'https://dart.googlesource.com',
   'flutter_git': 'https://flutter.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
-  'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
@@ -942,7 +941,7 @@ deps = {
    },
 
   'src/third_party/impeller-cmake-example': {
-     'url': Var('github_git') + '/bdero/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
+     'url': Var('flutter_git') + '/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
      'condition': 'download_impeller_cmake_example',
   },
 
