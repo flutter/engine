@@ -36,7 +36,7 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
   @override
   final OverlayCanvasFactory<Surface> overlayFactory =
       OverlayCanvasFactory<Surface>(
-          createCanvas: () => Surface(useOffscreenCanvas: false));
+          createCanvas: () => Surface(isRenderCanvas: true));
 
   @override
   void dispose() {
@@ -45,14 +45,14 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
 
   @override
   void prepareToDraw() {
-    overlayFactory.baseCanvas.ensureSurface(currentFrameSize);
+    overlayFactory.baseCanvas.createOrUpdateSurface(currentFrameSize);
   }
 
   @override
   Future<void> rasterizeToCanvas(
       OverlayCanvas canvas, List<CkPicture> pictures) {
     final Surface surface = canvas as Surface;
-    surface.ensureSurface(currentFrameSize);
+    surface.createOrUpdateSurface(currentFrameSize);
     final CkCanvas skCanvas = surface.getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);

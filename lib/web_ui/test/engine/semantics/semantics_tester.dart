@@ -306,11 +306,15 @@ class SemanticsTester {
       value: value ?? '',
       valueAttributes: valueAttributes ?? const <ui.StringAttribute>[],
       increasedValue: increasedValue ?? '',
-      increasedValueAttributes: increasedValueAttributes ?? const <ui.StringAttribute>[],
+      increasedValueAttributes:
+          increasedValueAttributes ?? const <ui.StringAttribute>[],
       decreasedValue: decreasedValue ?? '',
-      decreasedValueAttributes: decreasedValueAttributes ?? const <ui.StringAttribute>[],
+      decreasedValueAttributes:
+          decreasedValueAttributes ?? const <ui.StringAttribute>[],
       tooltip: tooltip ?? '',
-      transform: transform != null ? toMatrix32(transform) : Matrix4.identity().storage,
+      transform: transform != null
+          ? toMatrix32(transform)
+          : Matrix4.identity().storage,
       elevation: elevation ?? 0,
       thickness: thickness ?? 0,
       childrenInTraversalOrder: childIds,
@@ -349,7 +353,9 @@ class SemanticsTester {
 void expectSemanticsTree(EngineSemanticsOwner owner, String semanticsHtml) {
   const List<String> ignoredStyleProperties = <String>['pointer-events'];
   expect(
-    canonicalizeHtml(owner.semanticsHost.querySelector('flt-semantics')!.outerHTML!, ignoredStyleProperties: ignoredStyleProperties),
+    canonicalizeHtml(
+        owner.semanticsHost.querySelector('flt-semantics')!.outerHTML!,
+        ignoredStyleProperties: ignoredStyleProperties),
     canonicalizeHtml(semanticsHtml),
   );
 }
@@ -359,8 +365,8 @@ DomElement findScrollable(EngineSemanticsOwner owner) {
   return owner.semanticsHost.querySelectorAll('flt-semantics').singleWhere(
     (DomElement? element) {
       return element!.style.overflow == 'hidden' ||
-        element.style.overflowY == 'scroll' ||
-        element.style.overflowX == 'scroll';
+          element.style.overflowY == 'scroll' ||
+          element.style.overflowX == 'scroll';
     },
   );
 }

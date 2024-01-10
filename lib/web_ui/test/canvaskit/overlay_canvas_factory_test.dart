@@ -13,11 +13,13 @@ void main() {
 }
 
 void testMain() {
-  group('$RenderCanvasFactory', () {
+  group('$OverlayCanvasFactory', () {
     setUpCanvasKitTest();
 
     test('getCanvas', () {
-      final RenderCanvasFactory factory = RenderCanvasFactory();
+      final OverlayCanvasFactory<RenderCanvas> factory =
+          OverlayCanvasFactory<RenderCanvas>(
+              createCanvas: () => RenderCanvas());
       expect(factory.baseCanvas, isNotNull);
 
       expect(factory.debugSurfaceCount, equals(1));
@@ -36,7 +38,9 @@ void testMain() {
     });
 
     test('releaseCanvas', () {
-      final RenderCanvasFactory factory = RenderCanvasFactory();
+      final OverlayCanvasFactory<RenderCanvas> factory =
+          OverlayCanvasFactory<RenderCanvas>(
+              createCanvas: () => RenderCanvas());
 
       // Create a new canvas and immediately release it.
       final RenderCanvas canvas = factory.getCanvas();
@@ -49,7 +53,9 @@ void testMain() {
     });
 
     test('isLive', () {
-      final RenderCanvasFactory factory = RenderCanvasFactory();
+      final OverlayCanvasFactory<RenderCanvas> factory =
+          OverlayCanvasFactory<RenderCanvas>(
+              createCanvas: () => RenderCanvas());
 
       expect(factory.isLive(factory.baseCanvas), isTrue);
 
@@ -61,26 +67,27 @@ void testMain() {
     });
 
     test('hot restart', () {
-      void expectDisposed(RenderCanvas canvas) {
-        expect(canvas.canvasElement.isConnected, isFalse);
+      void expectDisposed(OverlayCanvas canvas) {
+        expect(canvas.isConnected, isFalse);
       }
 
       final EngineFlutterView implicitView =
           EnginePlatformDispatcher.instance.implicitView!;
 
-      final RenderCanvasFactory originalFactory = CanvasKitRenderer.instance
-          .debugGetRasterizerForView(implicitView)!
-          .renderCanvasFactory;
+      final OverlayCanvasFactory<OverlayCanvas> originalFactory =
+          CanvasKitRenderer.instance
+              .debugGetRasterizerForView(implicitView)!
+              .overlayFactory;
 
       // Cause the surface and its canvas to be attached to the page
       implicitView.dom.sceneHost
           .prepend(originalFactory.baseCanvas.htmlElement);
-      expect(originalFactory.baseCanvas.canvasElement.isConnected, isTrue);
+      expect(originalFactory.baseCanvas.isConnected, isTrue);
 
       // Create a few overlay canvases
-      final List<RenderCanvas> overlays = <RenderCanvas>[];
+      final List<OverlayCanvas> overlays = <OverlayCanvas>[];
       for (int i = 0; i < 3; i++) {
-        final RenderCanvas canvas = originalFactory.getCanvas();
+        final OverlayCanvas canvas = originalFactory.getCanvas();
         implicitView.dom.sceneHost.prepend(canvas.htmlElement);
         overlays.add(canvas);
       }

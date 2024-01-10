@@ -21,7 +21,7 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
   /// The base canvas to paint on. This is the default canvas which will be
   /// painted to. If there are no platform views, then this canvas will render
   /// the entire scene.
-  late final T baseCanvas = createCanvas();
+  late final T baseCanvas = createCanvas()..initialize();
 
   /// Canvases created by this factory which are currently in use.
   final List<T> _liveCanvases = <T>[];
@@ -51,6 +51,7 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
       return canvas;
     } else {
       final T canvas = createCanvas();
+      canvas.initialize();
       _liveCanvases.add(canvas);
       return canvas;
     }

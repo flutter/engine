@@ -56,6 +56,6 @@ class OffscreenCanvasViewRasterizer extends ViewRasterizer {
 
   @override
   void prepareToDraw() {
-    rasterizer.offscreenSurface.ensureSurface(currentFrameSize);
+    rasterizer.offscreenSurface.createOrUpdateSurface(currentFrameSize);
   }
 }

@@ -134,6 +134,15 @@ class RenderCanvas extends OverlayCanvas {
     _updateLogicalHtmlCanvasSize();
   }
 
+  @override
+  bool get isConnected => canvasElement.isConnected!;
+
+  @override
+  void initialize() {
+    // No extra initialization needed.
+  }
+
+  @override
   void dispose() {
     htmlElement.remove();
   }

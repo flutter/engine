@@ -58,7 +58,8 @@ class Focusable extends RoleManager {
       if (!_focusManager.isManaging) {
         _focusManager.manage(semanticsObject.id, owner.element);
       }
-      _focusManager.changeFocus(semanticsObject.hasFocus && (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
+      _focusManager.changeFocus(semanticsObject.hasFocus &&
+          (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
     } else {
       _focusManager.stopManaging();
     }
@@ -175,6 +176,7 @@ class AccessibilityFocusManager {
 
   void _setFocusFromDom(bool acquireFocus) {
     final _FocusTarget? target = _target;
+    print('hit setFocus callback on ${target?.element}');
 
     if (target == null) {
       // DOM events can be asynchronous. By the time the event reaches here, the
@@ -185,8 +187,8 @@ class AccessibilityFocusManager {
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
       target.semanticsNodeId,
       acquireFocus
-        ? ui.SemanticsAction.didGainAccessibilityFocus
-        : ui.SemanticsAction.didLoseAccessibilityFocus,
+          ? ui.SemanticsAction.didGainAccessibilityFocus
+          : ui.SemanticsAction.didLoseAccessibilityFocus,
       null,
     );
   }
@@ -194,6 +196,7 @@ class AccessibilityFocusManager {
   /// Requests focus or blur on the DOM element.
   void changeFocus(bool value) {
     final _FocusTarget? target = _target;
+    print('calling changeFocus on $target!!!');
 
     if (target == null) {
       // If this branch is being executed, there's a bug somewhere already, but
@@ -203,9 +206,8 @@ class AccessibilityFocusManager {
       // Nothing is being managed right now.
       assert(() {
         printWarning(
-          'Cannot change focus to $value. No element is being managed by this '
-          'AccessibilityFocusManager.'
-        );
+            'Cannot change focus to $value. No element is being managed by this '
+            'AccessibilityFocusManager.');
         return true;
       }());
       return;
@@ -237,6 +239,8 @@ class AccessibilityFocusManager {
       return;
     }
 
+    print('ADDING POST UPDATE CALLBACK TO FOCUS THE ELEMENT!!!');
+
     // Delay the focus request until the final DOM structure is established
     // because the element may not yet be attached to the DOM, or it may be
     // reparented and lose focus again.
@@ -249,6 +253,7 @@ class AccessibilityFocusManager {
         return;
       }
 
+      print('CALLING FOCUS ON ${target.element}!!!!!');
       target.element.focus();
     });
   }

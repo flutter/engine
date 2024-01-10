@@ -101,6 +101,12 @@ abstract class ViewRasterizer {
 abstract class OverlayCanvas {
   DomElement get htmlElement;
 
+  /// Whether or not this overlay canvas is attached to the DOM.
+  bool get isConnected;
+
+  /// Initialize the overlay.
+  void initialize();
+
   /// Disposes this overlay.
   void dispose();
 }
