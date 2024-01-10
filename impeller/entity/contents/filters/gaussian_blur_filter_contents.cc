@@ -11,6 +11,7 @@
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/texture_mipmap.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -287,16 +288,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 entity.GetClipDepth());  // No blur to render.
   }
 
-  if (input_snapshot.value().texture->NeedsMipmapGeneration()) {
-    FML_LOG(ERROR) << "should generate mipmap";
-    std::shared_ptr<CommandBuffer> mip_cmd_buffer =
-        renderer.GetContext()->CreateCommandBuffer();
-    std::shared_ptr<BlitPass> blit_pass = mip_cmd_buffer->CreateBlitPass();
-    blit_pass->GenerateMipmap(input_snapshot.value().texture);
-    blit_pass->EncodeCommands(renderer.GetContext()->GetResourceAllocator());
-    bool success = mip_cmd_buffer->SubmitCommands(/*callback=*/nullptr);
-    FML_CHECK(success);
-  }
+  fml::Status mipmap_generation =
+      AddMipmapGeneration(renderer.GetContext(), input_snapshot->texture);
+  FML_CHECK(mipmap_generation.ok());
 
   Scalar desired_scalar =
       std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
