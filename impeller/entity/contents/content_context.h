@@ -729,9 +729,41 @@ class ContentContext {
     return render_target_cache_;
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name,
+      const ContentContextOptions& options,
+      const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
+          create_callback) const;
+
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+
+  struct RuntimeEffectPipelineKey {
+    std::string unique_entrypoint_name;
+    ContentContextOptions options;
+
+    struct Hash {
+      std::size_t operator()(const RuntimeEffectPipelineKey& key) const {
+        return fml::HashCombine(key.unique_entrypoint_name,
+                                ContentContextOptions::Hash{}(key.options));
+      }
+    };
+
+    struct Equal {
+      constexpr bool operator()(const RuntimeEffectPipelineKey& lhs,
+                                const RuntimeEffectPipelineKey& rhs) const {
+        return lhs.unique_entrypoint_name == rhs.unique_entrypoint_name &&
+               ContentContextOptions::Equal{}(lhs.options, rhs.options);
+      }
+    };
+  };
+
+  mutable std::unordered_map<RuntimeEffectPipelineKey,
+                             std::shared_ptr<Pipeline<PipelineDescriptor>>,
+                             RuntimeEffectPipelineKey::Hash,
+                             RuntimeEffectPipelineKey::Equal>
+      runtime_effect_pipelines_;
 
   template <class PipelineT>
   class Variants {

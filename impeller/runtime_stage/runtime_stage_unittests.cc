@@ -303,9 +303,7 @@ TEST_P(RuntimeStageTest, ContainsExpectedShaderTypes) {
 
   EXPECT_TRUE(stages[RuntimeStageBackend::kOpenGLES]);
   EXPECT_TRUE(stages[RuntimeStageBackend::kMetal]);
-  // TODO(dnfield): Flip this when
-  // https://github.com/flutter/flutter/issues/122823 is fixed.
-  EXPECT_FALSE(stages[RuntimeStageBackend::kVulkan]);
+  EXPECT_TRUE(stages[RuntimeStageBackend::kVulkan]);
 }
 
 }  // namespace testing

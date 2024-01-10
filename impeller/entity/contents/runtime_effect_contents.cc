@@ -275,26 +275,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   /// Now that the descriptor set layouts are known, get the pipeline.
-  PipelineDescriptor desc;
-  desc.SetLabel("Runtime Stage");
-  desc.AddStageEntrypoint(
-      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
-  desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
-                                               ShaderStage::kFragment));
-  auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
-                                    VS::kInterleavedBufferLayout);
-  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
-  vertex_descriptor->RegisterDescriptorSetLayouts(
-      descriptor_set_layouts.data(), descriptor_set_layouts.size());
-  desc.SetVertexDescriptor(std::move(vertex_descriptor));
-  desc.SetColorAttachmentDescriptor(
-      0u, {.format = color_attachment_format, .blending_enabled = true});
-
-  StencilAttachmentDescriptor stencil0;
-  stencil0.stencil_compare = CompareFunction::kEqual;
-  desc.SetStencilAttachmentDescriptors(stencil0);
-  desc.SetStencilPixelFormat(stencil_attachment_format);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -302,14 +282,42 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
   options.primitive_type = geometry_result.type;
-  options.ApplyToPipelineDescriptor(desc);
 
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
-  if (!pipeline) {
-    VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
-    return false;
-  }
-  cmd.pipeline = pipeline;
+  auto create_callback =
+      [&]() -> std::shared_ptr<Pipeline<PipelineDescriptor>> {
+    PipelineDescriptor desc;
+    desc.SetLabel("Runtime Stage");
+    desc.AddStageEntrypoint(
+        library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
+    desc.AddStageEntrypoint(library->GetFunction(
+        runtime_stage_->GetEntrypoint(), ShaderStage::kFragment));
+    auto vertex_descriptor = std::make_shared<VertexDescriptor>();
+    vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
+                                      VS::kInterleavedBufferLayout);
+    vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+    vertex_descriptor->RegisterDescriptorSetLayouts(
+        descriptor_set_layouts.data(), descriptor_set_layouts.size());
+    desc.SetVertexDescriptor(std::move(vertex_descriptor));
+    desc.SetColorAttachmentDescriptor(
+        0u, {.format = color_attachment_format, .blending_enabled = true});
+
+    StencilAttachmentDescriptor stencil0;
+    stencil0.stencil_compare = CompareFunction::kEqual;
+    desc.SetStencilAttachmentDescriptors(stencil0);
+    desc.SetStencilPixelFormat(stencil_attachment_format);
+
+    options.ApplyToPipelineDescriptor(desc);
+    auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+    if (!pipeline) {
+      VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
+      return nullptr;
+    }
+
+    return pipeline;
+  };
+
+  cmd.pipeline = renderer.GetCachedRuntimeEffectPipeline(
+      runtime_stage_->GetEntrypoint(), options, create_callback);
 
   pass.AddCommand(std::move(cmd));
 
