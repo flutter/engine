@@ -314,10 +314,6 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0_resolve_tex_desc.mip_count = mip_count;
 
   auto color0_resolve_tex = allocator.CreateTexture(color0_resolve_tex_desc);
-  if (mip_count > 1) {
-    FML_LOG(ERROR) << "created mip resolve texture: " << color0_resolve_tex
-                   << " " << mip_count;
-  }
   if (!color0_resolve_tex) {
     VALIDATION_LOG << "Could not create color texture.";
     return {};
