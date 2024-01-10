@@ -25,7 +25,6 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/texture_mipmap.h"
 
 #ifdef IMPELLER_DEBUG
 #include "impeller/entity/contents/checkerboard_contents.h"
@@ -558,12 +557,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // rendering the backdrop, so if there's an active pass, end it prior to
       // rendering the subpass.
       pass_context.EndPass();
-
-      fml::Status mip_status =
-          AddMipmapGeneration(renderer.GetContext(), pass_context.GetTexture());
-      if (!mip_status.ok()) {
-        return EntityPass::EntityResult::Failure();
-      }
     }
 
     if (clip_coverage_stack.empty()) {
@@ -659,12 +652,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // The subpass target's texture may have changed during OnRender.
     auto subpass_texture =
         subpass_target.GetRenderTarget().GetRenderTargetTexture();
-
-    fml::Status mip_status =
-        AddMipmapGeneration(renderer.GetContext(), subpass_texture);
-    if (!mip_status.ok()) {
-      return EntityPass::EntityResult::Failure();
-    }
 
     auto offscreen_texture_contents =
         subpass->delegate_->CreateContentsForSubpassTarget(
