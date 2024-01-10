@@ -539,12 +539,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& color_image_vk = TextureVK::Cast(
       *render_target_.GetColorAttachments().find(0u)->second.texture);
-  auto desc_sets_result = AllocateAndBindDescriptorSets(
-      vk_context, encoder, commands_, color_image_vk);
-  if (!desc_sets_result.ok()) {
-    return false;
-  }
-  auto desc_sets = desc_sets_result.value();
+  auto& allocator = *context.GetResourceAllocator();
 
   {
     TRACE_EVENT0("impeller", "EncodeRenderPassCommands");
@@ -553,13 +548,19 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
     fml::ScopedCleanupClosure end_render_pass(
         [cmd_buffer]() { cmd_buffer.endRenderPass(); });
 
-    auto desc_index = 0u;
     for (const auto& command : commands_) {
-      if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
-                         target_size, desc_sets[desc_index])) {
+      auto desc_set_result = AllocateAndBindDescriptorSets(
+          vk_context, encoder, allocator, command, color_image_vk,
+          image_workspace_, buffer_workspace_, write_workspace_);
+      if (!desc_set_result.ok()) {
         return false;
       }
-      desc_index += 1;
+      auto desc_set = desc_set_result.value();
+
+      if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
+                         target_size, desc_set)) {
+        return false;
+      }
     }
   }
 
