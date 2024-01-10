@@ -39,6 +39,10 @@ static RuntimeShaderStage ToShaderStage(fb::Stage stage) {
   FML_UNREACHABLE();
 }
 
+/// The generated name from GLSLang/shaderc for the UBO containing non-opaque
+/// uniforms specified in the user-written runtime effect shader.
+///
+/// Vulkan does not allow non-opaque uniforms outside of a UBO.
 const char* RuntimeStage::kVulkanUBOName =
     "_RESERVED_IDENTIFIER_FIXUP_gl_DefaultUniformBlock";
 

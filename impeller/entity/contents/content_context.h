@@ -729,6 +729,15 @@ class ContentContext {
     return render_target_cache_;
   }
 
+  /// RuntimeEffect pipelines must be obtained via this method to avoid
+  /// re-creating them every frame.
+  ///
+  /// The unique_entrypoint_name comes from RuntimeEffect::GetEntrypoint.
+  /// Impellerc generates a unique entrypoint name for runtime effect shaders
+  /// based on the input file name and shader stage.
+  ///
+  /// The create_callback is synchronously invoked exactly once if a cached
+  /// pipeline is not found.
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetCachedRuntimeEffectPipeline(
       const std::string& unique_entrypoint_name,
       const ContentContextOptions& options,
