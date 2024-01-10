@@ -134,36 +134,22 @@ class HostBuffer {
   TestStateQuery GetStateForTest();
 
  private:
-  struct HostBufferState {
-    [[nodiscard]] std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
-    Emplace(const void* buffer, size_t length);
+  [[nodiscard]] std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+  EmplaceInternal(const void* buffer, size_t length);
 
-    std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
-    Emplace(size_t length, size_t align, const EmplaceProc& cb);
+  std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+  EmplaceInternal(size_t length, size_t align, const EmplaceProc& cb);
 
-    std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
-    Emplace(const void* buffer, size_t length, size_t align);
+  std::tuple<uint8_t*, Range, std::shared_ptr<DeviceBuffer>>
+  EmplaceInternal(const void* buffer, size_t length, size_t align);
 
-    void Reset();
+  size_t GetLength() const { return offset_; }
 
-    size_t GetLength() const { return offset; }
+  void MaybeCreateNewBuffer(size_t required_size);
 
-    void MaybeCreateNewBuffer(size_t required_size);
-
-    std::shared_ptr<DeviceBuffer> GetCurrentBuffer() {
-      return device_buffers[frame_index][current_buffer];
-    }
-
-    std::shared_ptr<Allocator> allocator;
-    std::array<std::vector<std::shared_ptr<DeviceBuffer>>, kHostBufferArenaSize>
-        device_buffers;
-    size_t current_buffer = 0u;
-    size_t offset = 0u;
-    size_t frame_index = 0u;
-    std::string label;
-  };
-
-  std::shared_ptr<HostBufferState> state_ = std::make_shared<HostBufferState>();
+  std::shared_ptr<DeviceBuffer>& GetCurrentBuffer() {
+    return device_buffers_[frame_index_][current_buffer_];
+  }
 
   [[nodiscard]] BufferView Emplace(const void* buffer, size_t length);
 
@@ -172,6 +158,14 @@ class HostBuffer {
   HostBuffer(const HostBuffer&) = delete;
 
   HostBuffer& operator=(const HostBuffer&) = delete;
+
+  std::shared_ptr<Allocator> allocator_;
+  std::array<std::vector<std::shared_ptr<DeviceBuffer>>, kHostBufferArenaSize>
+      device_buffers_;
+  size_t current_buffer_ = 0u;
+  size_t offset_ = 0u;
+  size_t frame_index_ = 0u;
+  std::string label_;
 };
 
 }  // namespace impeller
