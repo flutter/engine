@@ -39,6 +39,8 @@ class RenderPass : public ResourceBinder {
 
   ISize GetRenderTargetSize() const;
 
+  const Matrix& GetOrthographicTransform() const;
+
   virtual bool IsValid() const = 0;
 
   void SetLabel(std::string label);
@@ -179,6 +181,7 @@ class RenderPass : public ResourceBinder {
   const RenderTarget render_target_;
   std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
+  const Matrix orthographic_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
 

@@ -1,4 +1,4 @@
-Signature: 9f043c63d6a88516550e984b5ddc2edc
+Signature: 5cd02440abc92091b5039eb69bdc77b7
 
 ====================================================================================================
 LIBRARY: etc1
@@ -6803,7 +6803,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLMemoryPool.h + ../../../f
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLPool.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLPool.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLSampleUsage.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLThreadContext.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLHLSLCodeGenerator.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLHLSLCodeGenerator.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVtoHLSL.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVtoHLSL.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h + ../../../flutter/third_party/skia/LICENSE
@@ -6936,7 +6937,8 @@ FILE: ../../../flutter/third_party/skia/src/sksl/SkSLMemoryPool.h
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLPool.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLPool.h
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLSampleUsage.cpp
-FILE: ../../../flutter/third_party/skia/src/sksl/SkSLThreadContext.cpp
+FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLHLSLCodeGenerator.cpp
+FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLHLSLCodeGenerator.h
 FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVtoHLSL.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/codegen/SkSLSPIRVtoHLSL.h
 FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLFunctionPrototype.h
@@ -7455,7 +7457,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLIntrinsicList.h + ../../.
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLMangler.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLOperator.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLOperator.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/sksl/SkSLThreadContext.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCanExitWithoutReturningValue.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckProgramStructure.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLGetLoopUnrollInfo.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -7670,7 +7671,6 @@ FILE: ../../../flutter/third_party/skia/src/sksl/SkSLIntrinsicList.h
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLMangler.h
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLOperator.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/SkSLOperator.h
-FILE: ../../../flutter/third_party/skia/src/sksl/SkSLThreadContext.h
 FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCanExitWithoutReturningValue.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckProgramStructure.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLGetLoopUnrollInfo.cpp
@@ -8754,6 +8754,7 @@ ORIGIN: ../../../flutter/third_party/skia/include/android/SkCanvasAndroid.h + ..
 ORIGIN: ../../../flutter/third_party/skia/include/android/SkHeifDecoder.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/android/SkImageAndroid.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/android/SkSurfaceAndroid.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/include/android/graphite/SurfaceAndroid.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/codec/SkAvifDecoder.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/codec/SkBmpDecoder.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/codec/SkGifDecoder.h + ../../../flutter/third_party/skia/LICENSE
@@ -8962,6 +8963,7 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/CoverageMaskRe
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/GraphiteVertexFiller.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/surface/Surface_AndroidFactories.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/vk/VulkanDescriptorSet.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -9043,6 +9045,7 @@ FILE: ../../../flutter/third_party/skia/include/android/SkCanvasAndroid.h
 FILE: ../../../flutter/third_party/skia/include/android/SkHeifDecoder.h
 FILE: ../../../flutter/third_party/skia/include/android/SkImageAndroid.h
 FILE: ../../../flutter/third_party/skia/include/android/SkSurfaceAndroid.h
+FILE: ../../../flutter/third_party/skia/include/android/graphite/SurfaceAndroid.h
 FILE: ../../../flutter/third_party/skia/include/codec/SkAvifDecoder.h
 FILE: ../../../flutter/third_party/skia/include/codec/SkBmpDecoder.h
 FILE: ../../../flutter/third_party/skia/include/codec/SkGifDecoder.h
@@ -9251,6 +9254,7 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/CoverageMaskRend
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/GraphiteVertexFiller.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/render/PerEdgeAAQuadRenderStep.h
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/surface/Surface_AndroidFactories.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/vk/VulkanDescriptorPool.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/vk/VulkanDescriptorSet.cpp
@@ -9461,4 +9465,41 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
-Total license count: 67
+====================================================================================================
+LIBRARY: skia
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp + ../../../flutter/third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp
+----------------------------------------------------------------------------------------------------
+Copyright 2024 Google LLC
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+Total license count: 68

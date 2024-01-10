@@ -100,8 +100,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   }
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform() *
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform() *
                    Matrix::MakeTranslation(positive_rect.GetOrigin());
 
   FS::FragInfo frag_info;

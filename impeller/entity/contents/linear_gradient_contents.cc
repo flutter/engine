@@ -10,7 +10,6 @@
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -152,8 +151,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
                           DefaultUniformAlignment());
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
   frame_info.matrix = GetInverseEffectTransform();
 
   auto geometry_result =
