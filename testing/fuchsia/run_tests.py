@@ -20,7 +20,8 @@ from run_executable_test import ExecutableTestRunner
 from test_runner import TestRunner
 
 
-# TODO(zijiehe): Execute all the tests in
+# TODO(https://github.com/flutter/flutter/issues/140179): Execute all the tests
+# in
 # https://github.com/flutter/engine/blob/main/testing/fuchsia/test_suites.yaml
 def _get_test_runner(
     runner_args: argparse.Namespace, test_args: List[str]
@@ -33,7 +34,8 @@ def _get_test_runner(
   )
 
 
-# TODO(zijiehe): Respect build configurations.
+# TODO(https://github.com/flutter/flutter/issues/140179): Respect build
+# configurations.
 if __name__ == '__main__':
   try:
     os.remove('out/fuchsia_debug_x64/dart_runner_tests.far')
