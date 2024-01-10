@@ -19,8 +19,8 @@ import run_test
 from run_executable_test import ExecutableTestRunner
 from test_runner import TestRunner
 
-
 # This file is expected to be executed from src/flutter/.
+
 
 # TODO(https://github.com/flutter/flutter/issues/140179): Execute all the tests
 # in
@@ -45,7 +45,8 @@ if __name__ == '__main__':
   except FileNotFoundError:
     pass
   os.symlink(
-      'dart_runner_tests-0.far', '../out/fuchsia_debug_x64/dart_runner_tests.far'
+      'dart_runner_tests-0.far',
+      '../out/fuchsia_debug_x64/dart_runner_tests.far'
   )
   sys.argv.append('--out-dir=out/fuchsia_debug_x64')
   # The 'flutter-test-type' is a place holder and has no specific meaning; the
