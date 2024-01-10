@@ -108,7 +108,8 @@ std::shared_ptr<Geometry> Geometry::MakeFromFlatbuffer(
   }
 
   VertexBuffer vertex_buffer = {
-      .vertex_buffer = {.buffer = buffer, .range = Range(0, vertices_bytes)},
+      .vertex_buffers =
+          BufferView{.buffer = buffer, .range = Range(0, vertices_bytes)},
       .index_buffer = {.buffer = buffer,
                        .range = Range(vertices_bytes, indices_bytes)},
       .vertex_count = mesh.indices()->count(),

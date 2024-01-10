@@ -5,13 +5,15 @@
 #ifndef FLUTTER_IMPELLER_CORE_VERTEX_BUFFER_H_
 #define FLUTTER_IMPELLER_CORE_VERTEX_BUFFER_H_
 
+#include <variant>
+
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 
 namespace impeller {
 
 struct VertexBuffer {
-  BufferView vertex_buffer;
+  std::variant<BufferView, std::vector<BufferView>> vertex_buffers;
 
   //----------------------------------------------------------------------------
   /// The index buffer binding used by the vertex shader stage.
@@ -29,8 +31,17 @@ struct VertexBuffer {
   IndexType index_type = IndexType::kUnknown;
 
   constexpr explicit operator bool() const {
-    return static_cast<bool>(vertex_buffer) &&
-           (index_type == IndexType::kNone || static_cast<bool>(index_buffer));
+    if (auto* view = std::get_if<BufferView>(&vertex_buffers)) {
+      if (!static_cast<bool>(*view)) {
+        return false;
+      }
+    } else if (auto* views =
+                   std::get_if<std::vector<BufferView>>(&vertex_buffers)) {
+      if (views->size() == 0) {
+        return false;
+      }
+    }
+    return index_type == IndexType::kNone || static_cast<bool>(index_buffer);
   }
 };
 

@@ -159,7 +159,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   {
     auto device_buffer = context->GetResourceAllocator()->CreateBufferWithCopy(
         reinterpret_cast<uint8_t*>(&cube), sizeof(cube));
-    vertex_buffer.vertex_buffer = {
+    vertex_buffer.vertex_buffers = BufferView{
         .buffer = device_buffer,
         .range = Range(offsetof(Cube, vertices), sizeof(Cube::vertices))};
     vertex_buffer.index_buffer = {

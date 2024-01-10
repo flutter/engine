@@ -207,7 +207,7 @@ bool TextContents::Render(const ContentContext& renderer,
       });
 
   cmd.BindVertices({
-      .vertex_buffer = buffer_view,
+      .vertex_buffers = {buffer_view},
       .index_buffer = {},
       .vertex_count = vertex_count,
       .index_type = IndexType::kNone,

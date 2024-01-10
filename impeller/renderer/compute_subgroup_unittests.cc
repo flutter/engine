@@ -156,7 +156,7 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
                      ->count;
 
     cmd.BindVertices(
-        VertexBuffer{.vertex_buffer = vertex_buffer->AsBufferView(),
+        VertexBuffer{.vertex_buffers = {vertex_buffer->AsBufferView()},
                      .vertex_count = count,
                      .index_type = IndexType::kNone});
 
@@ -358,7 +358,7 @@ TEST_P(ComputeSubgroupTest, LargePath) {
                      ->count;
 
     cmd.BindVertices(
-        VertexBuffer{.vertex_buffer = vertex_buffer->AsBufferView(),
+        VertexBuffer{.vertex_buffers = {vertex_buffer->AsBufferView()},
                      .vertex_count = count,
                      .index_type = IndexType::kNone});
 
@@ -441,7 +441,7 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
                      ->count;
 
     cmd.BindVertices(
-        VertexBuffer{.vertex_buffer = vertex_buffer->AsBufferView(),
+        VertexBuffer{.vertex_buffers = {vertex_buffer->AsBufferView()},
                      .vertex_count = count,
                      .index_type = IndexType::kNone});
 

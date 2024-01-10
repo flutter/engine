@@ -11,11 +11,13 @@
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/buffer_bindings_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
 #include "impeller/renderer/backend/gles/pipeline_gles.h"
+#include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/backend/gles/texture_gles.h"
 
 namespace impeller {
@@ -142,6 +144,37 @@ struct RenderPassData {
 
   std::string label;
 };
+
+static bool BindVertexBuffer(const ProcTableGLES& gl,
+                             BufferBindingsGLES* vertex_desc_gles,
+                             const BufferView& vertex_buffer_view,
+                             size_t buffer_index) {
+  if (!vertex_buffer_view) {
+    return false;
+  }
+
+  auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer();
+
+  if (!vertex_buffer) {
+    return false;
+  }
+
+  const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
+  if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
+          DeviceBufferGLES::BindingType::kArrayBuffer)) {
+    return false;
+  }
+
+  //--------------------------------------------------------------------------
+  /// Bind the vertex attributes associated with vertex buffer.
+  ///
+  if (!vertex_desc_gles->BindVertexAttributes(
+          gl, buffer_index, vertex_buffer_view.range.offset)) {
+    return false;
+  }
+
+  return true;
+}
 
 [[nodiscard]] bool EncodeCommandsInReactor(
     const RenderPassData& pass_data,
@@ -378,38 +411,26 @@ struct RenderPassData {
     auto vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
-    /// Bind vertex and index buffers.
+    /// Bind vertex buffers.
     ///
-    auto& vertex_buffer_view = command.vertex_buffer.vertex_buffer;
-
-    if (!vertex_buffer_view) {
-      return false;
-    }
-
-    auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer();
-
-    if (!vertex_buffer) {
-      return false;
-    }
-
-    const auto& vertex_buffer_gles = DeviceBufferGLES::Cast(*vertex_buffer);
-    if (!vertex_buffer_gles.BindAndUploadDataIfNecessary(
-            DeviceBufferGLES::BindingType::kArrayBuffer)) {
-      return false;
+    auto vertex_buffers = command.vertex_buffer.vertex_buffers;
+    if (auto* view = std::get_if<BufferView>(&vertex_buffers)) {
+      if (!BindVertexBuffer(gl, vertex_desc_gles, *view, 0)) {
+        return false;
+      }
+    } else if (auto* views =
+                   std::get_if<std::vector<BufferView>>(&vertex_buffers)) {
+      for (size_t i = 0; i < views->size(); i++) {
+        if (!BindVertexBuffer(gl, vertex_desc_gles, (*views)[i], 0)) {
+          return false;
+        }
+      }
     }
 
     //--------------------------------------------------------------------------
     /// Bind the pipeline program.
     ///
     if (!pipeline.BindProgram()) {
-      return false;
-    }
-
-    //--------------------------------------------------------------------------
-    /// Bind vertex attribs.
-    ///
-    if (!vertex_desc_gles->BindVertexAttributes(
-            gl, vertex_buffer_view.range.offset)) {
       return false;
     }
 

@@ -141,8 +141,8 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
+              .vertex_buffers = BufferView{.buffer = buffer,
+                                           .range = Range{0, total_vtx_bytes}},
               .index_buffer = {.buffer = buffer,
                                .range =
                                    Range{total_vtx_bytes, total_idx_bytes}},
@@ -199,8 +199,8 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
+              .vertex_buffers = BufferView{.buffer = buffer,
+                                           .range = Range{0, total_vtx_bytes}},
               .index_buffer = {.buffer = buffer,
                                .range =
                                    Range{total_vtx_bytes, total_idx_bytes}},
@@ -269,8 +269,8 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
+              .vertex_buffers = BufferView{.buffer = buffer,
+                                           .range = Range{0, total_vtx_bytes}},
               .index_buffer = {.buffer = buffer,
                                .range =
                                    Range{total_vtx_bytes, total_idx_bytes}},

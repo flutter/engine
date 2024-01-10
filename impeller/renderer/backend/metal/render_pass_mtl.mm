@@ -466,10 +466,21 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                      pipeline_desc.GetPolygonMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
 
-    if (!Bind(pass_bindings, *allocator, ShaderStage::kVertex,
-              VertexDescriptor::kReservedVertexBufferIndex,
-              command.vertex_buffer.vertex_buffer)) {
-      return false;
+    auto vertex_buffers = command.vertex_buffer.vertex_buffers;
+    if (auto* view = std::get_if<BufferView>(&vertex_buffers)) {
+      if (!Bind(pass_bindings, *allocator, ShaderStage::kVertex,
+                VertexDescriptor::kReservedVertexBufferIndex, *view)) {
+        return false;
+      }
+    } else if (auto* views =
+                   std::get_if<std::vector<BufferView>>(&vertex_buffers)) {
+      for (size_t i = 0; i < views->size(); i++) {
+        if (!Bind(pass_bindings, *allocator, ShaderStage::kVertex,
+                  VertexDescriptor::kReservedVertexBufferIndex - i,
+                  (*views)[i])) {
+          return false;
+        }
+      }
     }
 
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {

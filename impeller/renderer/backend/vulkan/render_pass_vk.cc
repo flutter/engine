@@ -364,6 +364,33 @@ static void SetViewportAndScissor(const Command& command,
   cmd_buffer_cache.SetScissor(cmd_buffer, 0, 1, &scissor);
 }
 
+static bool AppendVertexBuffer(
+    CommandEncoderVK& encoder,
+    std::vector<vk::Buffer>& vertex_buffers,
+    std::vector<vk::DeviceSize> vertex_buffer_offsets,
+    const BufferView& vertex_buffer_view) {
+  if (!vertex_buffer_view) {
+    return false;
+  }
+  auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer();
+
+  if (!vertex_buffer) {
+    VALIDATION_LOG << "Failed to acquire device buffer"
+                   << " for vertex buffer view";
+    return false;
+  }
+
+  if (!encoder.Track(vertex_buffer)) {
+    return false;
+  }
+
+  auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
+  vertex_buffers.push_back(vertex_buffer_handle);
+  vertex_buffer_offsets.push_back(vertex_buffer_view.range.offset);
+
+  return true;
+}
+
 static bool EncodeCommand(const Context& context,
                           const Command& command,
                           CommandEncoderVK& encoder,
@@ -403,30 +430,33 @@ static bool EncodeCommand(const Context& context,
       command.stencil_reference);
 
   // Configure vertex and index and buffers for binding.
-  auto& vertex_buffer_view = command.vertex_buffer.vertex_buffer;
-
-  if (!vertex_buffer_view) {
-    return false;
-  }
+  std::vector<vk::Buffer> vertex_buffers;
+  std::vector<vk::DeviceSize> vertex_buffer_offsets;
 
   auto& allocator = *context.GetResourceAllocator();
-  auto vertex_buffer = vertex_buffer_view.buffer->GetDeviceBuffer();
 
-  if (!vertex_buffer) {
-    VALIDATION_LOG << "Failed to acquire device buffer"
-                   << " for vertex buffer view";
-    return false;
-  }
-
-  if (!encoder.Track(vertex_buffer)) {
-    return false;
+  if (auto* view =
+          std::get_if<BufferView>(&command.vertex_buffer.vertex_buffers)) {
+    if (!AppendVertexBuffer(encoder, vertex_buffers, vertex_buffer_offsets,
+                            *view)) {
+      return false;
+    }
+  } else if (auto* views = std::get_if<std::vector<BufferView>>(
+                 &command.vertex_buffer.vertex_buffers)) {
+    const size_t binding_count = views->size();
+    vertex_buffers.reserve(binding_count);
+    vertex_buffer_offsets.reserve(binding_count);
+    for (size_t i = 0; i < views->size(); i++) {
+      if (!AppendVertexBuffer(encoder, vertex_buffers, vertex_buffer_offsets,
+                              (*views)[i])) {
+        return false;
+      }
+    }
   }
 
   // Bind the vertex buffer.
-  auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
-  vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
-  vk::DeviceSize vertex_buffer_offsets[] = {vertex_buffer_view.range.offset};
-  cmd_buffer.bindVertexBuffers(0u, 1u, vertex_buffers, vertex_buffer_offsets);
+  cmd_buffer.bindVertexBuffers(0u, vertex_buffers.size(), vertex_buffers.data(),
+                               vertex_buffer_offsets.data());
 
   if (command.vertex_buffer.index_type != IndexType::kNone) {
     // Bind the index buffer.

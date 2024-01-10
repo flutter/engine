@@ -83,7 +83,7 @@ class VertexBufferBuilder {
 
   VertexBuffer CreateVertexBuffer(HostBuffer& host_buffer) const {
     VertexBuffer buffer;
-    buffer.vertex_buffer = CreateVertexBufferView(host_buffer);
+    buffer.vertex_buffers = {CreateVertexBufferView(host_buffer)};
     buffer.index_buffer = CreateIndexBufferView(host_buffer);
     buffer.vertex_count = GetIndexCount();
     buffer.index_type = GetIndexType();
@@ -93,7 +93,7 @@ class VertexBufferBuilder {
   VertexBuffer CreateVertexBuffer(Allocator& device_allocator) const {
     VertexBuffer buffer;
     // This can be merged into a single allocation.
-    buffer.vertex_buffer = CreateVertexBufferView(device_allocator);
+    buffer.vertex_buffers = {CreateVertexBufferView(device_allocator)};
     buffer.index_buffer = CreateIndexBufferView(device_allocator);
     buffer.vertex_count = GetIndexCount();
     buffer.index_type = GetIndexType();

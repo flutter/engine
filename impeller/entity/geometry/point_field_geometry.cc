@@ -233,7 +233,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
   return {
       .type = PrimitiveType::kTriangle,
-      .vertex_buffer = {.vertex_buffer = output,
+      .vertex_buffer = {.vertex_buffers = {output},
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
