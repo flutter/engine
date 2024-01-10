@@ -47,6 +47,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * io.flutter.embedding.android.FlutterTextureView} are implementations of {@link RenderSurface}.
  */
 public class FlutterRenderer implements TextureRegistry {
+  /**
+   * Whether to always use GL textures for {@link FlutterRenderer#createSurfaceProducer()}.
+   *
+   * <p>This is a debug-only API intended for local development. For example, when using a newer
+   * Android device (that normally would use {@link ImageReaderSurfaceProducer}, but wanting to
+   * test the OpenGLES/{@link SurfaceTextureSurfaceProducer} code branch.</p>
+   *
+   * This flag has undefined behavior if set to true while running in a Vulkan (Impeller) context.
+   */
+  @VisibleForTesting
+  public static boolean debugForceSurfaceProducerGlTextures = false;
+
   private static final String TAG = "FlutterRenderer";
 
   @NonNull private final FlutterJNI flutterJNI;
@@ -180,7 +192,7 @@ public class FlutterRenderer implements TextureRegistry {
     // running Vulkan, so we don't have to worry about it not being supported.
     final long id = nextTextureId.getAndIncrement();
     final SurfaceProducer entry;
-    if (Build.VERSION.SDK_INT >= 29) {
+    if (!debugForceSurfaceProducerGlTextures && Build.VERSION.SDK_INT >= 29) {
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
       Log.v(TAG, "New ImageReaderSurfaceProducer ID: " + id);
