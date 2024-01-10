@@ -138,7 +138,9 @@ public class FlutterRenderer implements TextureRegistry {
         }
     }
 
-    /** Adds a listener that is invoked when a memory pressure warning was forward. */
+    /**
+     * Adds a listener that is invoked when a memory pressure warning was forward.
+     */
     @VisibleForTesting
     /* package */ void addOnTrimMemoryListener(@NonNull OnTrimMemoryListener listener) {
         // Purge dead listener to avoid accumulating.
@@ -404,7 +406,9 @@ public class FlutterRenderer implements TextureRegistry {
         private int requestedWidth = 0;
         private int requestedHeight = 0;
 
-        /** Internal class: state held per image produced by image readers. */
+        /**
+         * Internal class: state held per image produced by image readers.
+         */
         private class PerImage {
             public final ImageReader reader;
             public final Image image;
@@ -414,7 +418,9 @@ public class FlutterRenderer implements TextureRegistry {
                 this.image = image;
             }
 
-            /** Call close when you are done with an the image. */
+            /**
+             * Call close when you are done with an the image.
+             */
             public void close() {
                 this.image.close();
                 maybeCloseReader(reader);
@@ -566,7 +572,9 @@ public class FlutterRenderer implements TextureRegistry {
             }
         }
 
-        /** Invoked for each method that is available. */
+        /**
+         * Invoked for each method that is available.
+         */
         private void onImage(PerImage image) {
             if (released) {
                 return;
@@ -821,7 +829,7 @@ public class FlutterRenderer implements TextureRegistry {
      * <p>See {@link android.view.SurfaceHolder.Callback} and {@link
      * android.view.TextureView.SurfaceTextureListener}
      *
-     * @param surface The render surface.
+     * @param surface  The render surface.
      * @param onlySwap True if the current active surface should not be detached.
      */
     public void startRenderingToSurface(@NonNull Surface surface, boolean onlySwap) {
@@ -1010,7 +1018,9 @@ public class FlutterRenderer implements TextureRegistry {
      * device pixels, not logical pixels.
      */
     public static final class ViewportMetrics {
-        /** A value that indicates the setting has not been set. */
+        /**
+         * A value that indicates the setting has not been set.
+         */
         public static final int unsetValue = -1;
 
         public float devicePixelRatio = 1.0f;
@@ -1116,7 +1126,9 @@ public class FlutterRenderer implements TextureRegistry {
      * <p>For foldables, the state is the posture. For cutouts, this property is {@link #UNKNOWN}
      */
     public enum DisplayFeatureState {
-        /** The display feature is a cutout or this state is new and not yet known to Flutter. */
+        /**
+         * The display feature is a cutout or this state is new and not yet known to Flutter.
+         */
         UNKNOWN(0),
 
         /**
