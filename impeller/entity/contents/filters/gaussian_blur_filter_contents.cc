@@ -288,9 +288,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 entity.GetClipDepth());  // No blur to render.
   }
 
-  fml::Status mipmap_generation =
-      AddMipmapGeneration(renderer.GetContext(), input_snapshot->texture);
-  FML_CHECK(mipmap_generation.ok());
+  // In order to avoid shimmering in downsampling step, we should have mips.
+  if (input_snapshot->texture->GetMipCount() <= 1) {
+    FML_DLOG(ERROR) << "Applying gaussian blur without mipmap.";
+  }
+  FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
 
   Scalar desired_scalar =
       std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
