@@ -180,6 +180,12 @@ class Context {
   ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
+  void OnFrameComplete() {
+    for (const auto& cb : per_frame_task_) {
+      cb();
+    }
+  }
+
   CaptureContext capture;
 
   /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
@@ -195,8 +201,14 @@ class Context {
     FML_CHECK(false && "not supported in this context");
   }
 
+  void AddPerFrameCompleteTask(const std::function<void()>& task) {
+    per_frame_task_.emplace_back(task);
+  }
+
  protected:
   Context();
+
+  std::vector<std::function<void()>> per_frame_task_;
 
  private:
   Context(const Context&) = delete;
