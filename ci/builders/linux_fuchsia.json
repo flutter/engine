@@ -178,7 +178,7 @@
                     "language": "python3",
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
-                        "flutter/testing/fuchsia/run_tests.py"
+                        "testing/fuchsia/run_tests.py"
                     ]
                 }
             ]
