@@ -48,6 +48,7 @@ bool AiksContext::Render(const Picture& picture, RenderTarget& render_target) {
   if (picture.pass) {
     return picture.pass->Render(*content_context_, render_target);
   }
+  content_context_->GetTransientsBuffer().Reset();
 
   return true;
 }

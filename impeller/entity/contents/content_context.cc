@@ -189,9 +189,6 @@ ContentContext::ContentContext(
   if (!context_ || !context_->IsValid()) {
     return;
   }
-  // Register frame end callback to reset transient host buffer state.
-  context_->AddPerFrameCompleteTask(
-      [host_buffer = host_buffer_]() { host_buffer->Reset(); });
 
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
