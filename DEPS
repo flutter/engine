@@ -248,6 +248,11 @@ vars = {
   "upstream_yaml": "https://github.com/dart-lang/yaml.git",
   "upstream_yapf": "https://github.com/google/yapf.git",
   "upstream_zlib": "https://github.com/madler/zlib.git",
+
+  # The version / instance id of the cipd:chromium/fuchsia/test-scripts which
+  # will be used altogether with fuchsia-sdk to setup the build / test
+  # environment.
+  'fuchsia_test_scripts_version': 'xMcCltDynP2JMZNUekFtV24vCnjgz_J3SZIN-4FbUKQC',
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
@@ -992,7 +997,7 @@ deps = {
      'packages': [
        {
         'package': 'chromium/fuchsia/test-scripts',
-        'version': 'xMcCltDynP2JMZNUekFtV24vCnjgz_J3SZIN-4FbUKQC'
+        'version': Var('fuchsia_test_scripts_version'),
        }
      ],
      'dep_type': 'cipd',

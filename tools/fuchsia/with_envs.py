@@ -35,15 +35,9 @@ def Main():
       os.path.join(os.path.dirname(__file__), '../../../fuchsia/images/')
   )
 
-  sdk_dir = ''
-  if platform.system() == 'Linux':
-    sdk_dir = 'linux'
-  elif platform.system() == 'Darwin':
-    sdk_dir = 'mac'
-  else:
-    assert False, 'Unsupported OS'
+  assert platform.system() == 'Linux', 'Unsupported OS ' + platform.system()
   os.environ['FUCHSIA_SDK_ROOT'] = os.path.abspath(
-      os.path.join(os.path.dirname(__file__), '../../../fuchsia/sdk/', sdk_dir)
+      os.path.join(os.path.dirname(__file__), '../../../fuchsia/sdk/linux')
   )
 
   with subprocess.Popen(sys.argv[1:]) as proc:
