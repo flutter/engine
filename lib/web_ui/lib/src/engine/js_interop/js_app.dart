@@ -24,8 +24,6 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
     assert (_hostElement != null, '`hostElement` passed to addView cannot be null.');
     return _hostElement!;
   }
-
-  external JSAny? get initialData;
 }
 
 /// The public JS API of a running Flutter Web App.
