@@ -13,7 +13,6 @@ vars = {
   'dart_git': 'https://dart.googlesource.com',
   'flutter_git': 'https://flutter.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
-  'github_git': 'https://github.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
@@ -169,9 +168,9 @@ vars = {
   "upstream_fixnum": "https://github.com/dart-lang/fixnum.git",
   "upstream_flatbuffers": "https://github.com/google/flatbuffers.git",
   "upstream_freetype2": "https://gitlab.freedesktop.org/freetype/freetype.git",
-  "upstream_gcloud": "https://github.com/dart-lang/gcloud.git",
   "upstream_glfw": "https://github.com/glfw/glfw.git",
   "upstream_glob": "https://github.com/dart-lang/glob.git",
+  "upstream_googleapis": "https://github.com/google/googleapis.dart.git",
   "upstream_googletest": "https://github.com/google/googletest.git",
   "upstream_gtest-parallel": "https://github.com/google/gtest-parallel.git",
   "upstream_harfbuzz": "https://github.com/harfbuzz/harfbuzz.git",
@@ -674,8 +673,8 @@ deps = {
   'src/flutter/third_party/pkg/flutter_packages':
   Var('flutter_git') + '/mirrors/packages' + '@' + '25454e63851fe7933f04d025606e68c1eac4fe0f', # various
 
-  'src/flutter/third_party/pkg/gcloud':
-  Var('flutter_git') + '/third_party/gcloud.git' + '@' + 'a5276b85c4714378e84b1fb478b8feeeb686ac26', # 0.8.6-dev
+  'src/flutter/third_party/pkg/googleapis':
+  Var('flutter_git') + '/third_party/googleapis.dart.git' + '@' + '526011f56d98eab183cc6075ee1392e8303e43e2', # various
 
   'src/flutter/third_party/pkg/platform':
   Var('dart_git') + '/platform.dart' + '@' + '1ffad63428bbd1b3ecaa15926bacfb724023648c', # 3.1.0
@@ -938,7 +937,7 @@ deps = {
    },
 
   'src/third_party/impeller-cmake-example': {
-     'url': Var('github_git') + '/bdero/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
+     'url': Var('flutter_git') + '/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
      'condition': 'download_impeller_cmake_example',
   },
 
