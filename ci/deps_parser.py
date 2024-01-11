@@ -11,16 +11,16 @@
 # are pinned to a hash.
 
 import argparse
+import json
 import os
 import re
 import sys
-import json
 
 SCRIPT_DIR = os.path.dirname(sys.argv[0])
 CHECKOUT_ROOT = os.path.realpath(os.path.join(SCRIPT_DIR, '..'))
 
 CHROMIUM_README_FILE = 'third_party/accessibility/README.md'
-CHROMIUM_README_COMMIT_LINE = 4  # the fifth line will always contain the commit hash
+CHROMIUM_README_COMMIT_LINE = 4  # The fifth line will always contain the commit hash.
 CHROMIUM = 'https://chromium.googlesource.com/chromium/src'
 
 
@@ -38,7 +38,7 @@ class VarImpl:
     """Implements the Var syntax."""
     if var_name in self._local_scope.get('vars', {}):
       return self._local_scope['vars'][var_name]
-    # Inject default values for env variables
+    # Inject default values for env variables.
     if var_name in self._env_vars:
       return self._env_vars[var_name]
     raise Exception('Var is not defined: %s' % var_name)
@@ -87,7 +87,7 @@ def parse_readme():
   """
   file_path = os.path.join(CHECKOUT_ROOT, CHROMIUM_README_FILE)
   with open(file_path) as file:
-    # read the content of the file opened
+    # Read the content of the file opened.
     content = file.readlines()
     commit_line = content[CHROMIUM_README_COMMIT_LINE]
     commit = re.search(r'(?<=\[).*(?=\])', commit_line)
