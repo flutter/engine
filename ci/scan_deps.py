@@ -9,6 +9,9 @@
 # This script parses the dependencies provided in lockfile format for
 # osv-scanner so that the common ancestor commits from the mirrored and
 # upstream for each dependency are provided in the lockfile
+# It is expected that the osv-lockfile input is updated by this script
+# and then uploaded using GitHub actions to be used by the osv-scanner
+# reusable action.  
 
 import argparse
 import json
@@ -82,6 +85,7 @@ def parse_deps_file(lockfile, output_file):
 
   # Write common ancestor commit data to new file to be
   # used in next github action step with osv-scanner.
+  # The output_file name defaults to converted-osv-lockfile.json
   with open(output_file, 'w') as file:
     json.dump(data, file)
 
