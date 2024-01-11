@@ -169,6 +169,7 @@ vars = {
   "upstream_fixnum": "https://github.com/dart-lang/fixnum.git",
   "upstream_flatbuffers": "https://github.com/google/flatbuffers.git",
   "upstream_freetype2": "https://gitlab.freedesktop.org/freetype/freetype.git",
+  "upstream_gcloud": "https://github.com/dart-lang/gcloud.git",
   "upstream_glfw": "https://github.com/glfw/glfw.git",
   "upstream_glob": "https://github.com/dart-lang/glob.git",
   "upstream_googletest": "https://github.com/google/googletest.git",
@@ -672,6 +673,9 @@ deps = {
 
   'src/flutter/third_party/pkg/flutter_packages':
   Var('flutter_git') + '/mirrors/packages' + '@' + '25454e63851fe7933f04d025606e68c1eac4fe0f', # various
+
+  'src/flutter/third_party/pkg/gcloud':
+  Var('flutter_git') + '/third_party/gcloud.git' + '@' + 'a5276b85c4714378e84b1fb478b8feeeb686ac26', # 0.8.6-dev
 
   'src/flutter/third_party/pkg/platform':
   Var('dart_git') + '/platform.dart' + '@' + '1ffad63428bbd1b3ecaa15926bacfb724023648c', # 3.1.0
