@@ -140,6 +140,15 @@ f16vec4 IPHalfSampleDecal(f16sampler2D texture_sampler, vec2 coords) {
   return texture(texture_sampler, coords, kDefaultMipBiasHalf);
 }
 
+/// Sample a texture with decal tile mode at specified LOD.
+f16vec4 IPHalfSampleDecalLod(f16sampler2D texture_sampler, vec2 coords, float lod) {
+  if (any(lessThan(coords, vec2(0))) ||
+      any(greaterThanEqual(coords, vec2(1)))) {
+    return f16vec4(0.0);
+  }
+  return textureLod(texture_sampler, coords, lod);
+}
+
 /// Sample a texture, emulating a specific tile mode.
 ///
 /// This is useful for Impeller graphics backend that don't have native support
