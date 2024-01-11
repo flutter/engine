@@ -2132,10 +2132,6 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 }
 
 TEST_P(EntityTest, RuntimeEffect) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
   auto runtime_stage =
@@ -2144,6 +2140,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool first_frame = true;
+  Pipeline<PipelineDescriptor>* first_pipeline = nullptr;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     if (first_frame) {
       first_frame = false;
@@ -2170,7 +2167,13 @@ TEST_P(EntityTest, RuntimeEffect) {
 
     Entity entity;
     entity.SetContents(contents);
-    return contents->Render(context, entity, pass);
+    bool result = contents->Render(context, entity, pass);
+    if (!first_pipeline) {
+      first_pipeline = pass.GetCommands().back().pipeline.get();
+    } else {
+      EXPECT_EQ(pass.GetCommands().back().pipeline.get(), first_pipeline);
+    }
+    return result;
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -2519,9 +2522,9 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   if (test_allocator->GetDescriptors().size() == 6u) {
     EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
     EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(1000, 1000));
 
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
   } else if (test_allocator->GetDescriptors().size() == 9u) {

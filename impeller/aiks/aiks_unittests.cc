@@ -1905,7 +1905,8 @@ TEST_P(AiksTest,
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 3llu);
+  ASSERT_EQ(spy->render_passes_.size(),
+            GetBackend() == PlaygroundBackend::kOpenGLES ? 4llu : 3llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
@@ -2704,10 +2705,6 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
 
 // Regression test for https://github.com/flutter/flutter/issues/126701 .
 TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
 
@@ -2741,10 +2738,6 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 }
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
   auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
   ASSERT_TRUE(runtime_stage);
