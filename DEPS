@@ -1000,6 +1000,7 @@ deps = {
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
+     'condition': 'host_os == "linux"',
      'dep_type': 'cipd',
    },
 
