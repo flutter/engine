@@ -204,6 +204,24 @@ class Surface extends OverlayCanvas {
     _currentDevicePixelRatio = devicePixelRatio;
   }
 
+  /// The <canvas> element backing this surface may be larger than the screen.
+  /// The Surface will draw the frame to the bottom left of the <canvas>, but
+  /// the <canvas> is, by default, positioned so that the top left corner is in
+  /// the top left of the window. We need to shift the canvas down so that the
+  /// bottom left of the <canvas> is the the bottom left corner of the window.
+  void positionToShowFrame(ui.Size frameSize) {
+    assert(isRenderCanvas,
+        'Should not position Surface if not used as a render canvas');
+    final double devicePixelRatio =
+        EngineFlutterDisplay.instance.devicePixelRatio;
+    final double logicalHeight = _pixelHeight / devicePixelRatio;
+    final double logicalFrameHeight = frameSize.height / devicePixelRatio;
+
+    // Shift the canvas up so the bottom left is in the window.
+    _canvasElement!.style.transform =
+        'translate(0px, ${logicalFrameHeight - logicalHeight}px)';
+  }
+
   /// This is only valid after the first frame or if [ensureSurface] has been
   /// called
   bool get usingSoftwareBackend =>

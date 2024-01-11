@@ -61,6 +61,7 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
       OverlayCanvas canvas, List<CkPicture> pictures) {
     final Surface surface = canvas as Surface;
     surface.createOrUpdateSurface(currentFrameSize);
+    surface.positionToShowFrame(currentFrameSize);
     final CkCanvas skCanvas = surface.getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);
