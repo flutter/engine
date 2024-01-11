@@ -14,17 +14,30 @@ import 'package:ui/ui.dart' as ui;
 class MultiSurfaceRasterizer extends Rasterizer {
   @override
   MultiSurfaceViewRasterizer createViewRasterizer(EngineFlutterView view) {
-    return MultiSurfaceViewRasterizer(view, this);
+    return _viewRasterizers.putIfAbsent(
+        view, () => MultiSurfaceViewRasterizer(view, this));
   }
+
+  final Map<EngineFlutterView, MultiSurfaceViewRasterizer> _viewRasterizers =
+      <EngineFlutterView, MultiSurfaceViewRasterizer>{};
 
   @override
   void dispose() {
-    // TODO(harryterkelsen): implement dispose
+    for (final MultiSurfaceViewRasterizer viewRasterizer
+        in _viewRasterizers.values) {
+      viewRasterizer.dispose();
+    }
+    _viewRasterizers.clear();
   }
 
   @override
   void setResourceCacheMaxBytes(int bytes) {
-    // TODO(harryterkelsen): implement setResourceCacheMaxBytes
+    for (final MultiSurfaceViewRasterizer viewRasterizer
+        in _viewRasterizers.values) {
+      viewRasterizer.overlayFactory.forEachCanvas((Surface surface) {
+        surface.setSkiaResourceCacheMaxBytes(bytes);
+      });
+    }
   }
 }
 
@@ -37,11 +50,6 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
   final OverlayCanvasFactory<Surface> overlayFactory =
       OverlayCanvasFactory<Surface>(
           createCanvas: () => Surface(isRenderCanvas: true));
-
-  @override
-  void dispose() {
-    // TODO: implement dispose
-  }
 
   @override
   void prepareToDraw() {

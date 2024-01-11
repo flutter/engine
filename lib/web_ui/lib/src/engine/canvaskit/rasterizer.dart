@@ -95,7 +95,10 @@ abstract class ViewRasterizer {
   }
 
   /// Disposes this rasterizer.
-  void dispose();
+  void dispose() {
+    viewEmbedder.dispose();
+    overlayFactory.dispose();
+  }
 }
 
 abstract class OverlayCanvas {

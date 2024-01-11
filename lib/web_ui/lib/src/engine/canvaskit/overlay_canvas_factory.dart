@@ -74,6 +74,14 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
   /// the new surfaces.
   void removeSurfacesFromDom() {
     _cache.forEach(_removeFromDom);
+    _liveCanvases.forEach(_removeFromDom);
+  }
+
+  /// Calls [callback] on each canvas created by this factory.
+  void forEachCanvas(void Function(T canvas) callback) {
+    callback(baseCanvas);
+    _cache.forEach(callback);
+    _liveCanvases.forEach(callback);
   }
 
   // Removes [canvas] from the DOM.

@@ -14,17 +14,25 @@ class OffscreenCanvasRasterizer extends Rasterizer {
 
   @override
   OffscreenCanvasViewRasterizer createViewRasterizer(EngineFlutterView view) {
-    return OffscreenCanvasViewRasterizer(view, this);
+    return _viewRasterizers.putIfAbsent(
+        view, () => OffscreenCanvasViewRasterizer(view, this));
   }
+
+  final Map<EngineFlutterView, OffscreenCanvasViewRasterizer> _viewRasterizers =
+      <EngineFlutterView, OffscreenCanvasViewRasterizer>{};
 
   @override
   void setResourceCacheMaxBytes(int bytes) {
-    // TODO(harryterkelsen): Implement.
+    offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
   }
 
   @override
   void dispose() {
-    // TODO(harryterkelsen): Implement.
+    offscreenSurface.dispose();
+    for (final OffscreenCanvasViewRasterizer viewRasterizer
+        in _viewRasterizers.values) {
+      viewRasterizer.dispose();
+    }
   }
 }
 
@@ -46,12 +54,6 @@ class OffscreenCanvasViewRasterizer extends ViewRasterizer {
       canvas as RenderCanvas,
       pictures,
     );
-  }
-
-  @override
-  void dispose() {
-    viewEmbedder.dispose();
-    overlayFactory.dispose();
   }
 
   @override
