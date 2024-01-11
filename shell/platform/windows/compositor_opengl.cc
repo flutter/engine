@@ -133,6 +133,12 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
   }
 
   auto source_id = layers[0]->backing_store->open_gl.framebuffer.name;
+
+  // Disable the scissor test as it can affect blit operations.
+  // Prevents regressions like: https://github.com/flutter/flutter/issues/140828
+  // See OpenGL specification version 4.6, section 18.3.1.
+  gl_->Disable(GL_SCISSOR_TEST);
+
   gl_->BindFramebuffer(GL_READ_FRAMEBUFFER, source_id);
   gl_->BindFramebuffer(GL_DRAW_FRAMEBUFFER, kWindowFrameBufferId);
 
