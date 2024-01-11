@@ -24,7 +24,7 @@ DEP_CLONE_DIR = CHECKOUT_ROOT + '/clone-test'
 DEPS = os.path.join(CHECKOUT_ROOT, 'DEPS')
 UPSTREAM_PREFIX = 'upstream_'
 
-failed_deps = []  # deps which fail to be cloned or git-merge based
+failed_deps = []  # Deps which fail to be cloned or git-merge based.
 
 
 def parse_deps_file(lockfile, output_file):
@@ -39,7 +39,7 @@ def parse_deps_file(lockfile, output_file):
   deps_list = []
   with open(DEPS, 'r') as file:
     local_scope = {}
-    global_scope = {'Var': lambda x: x}  # dummy lambda
+    global_scope = {'Var': lambda x: x}  # Dummy lambda.
     # Read the content.
     deps_content = file.read()
 
@@ -55,9 +55,9 @@ def parse_deps_file(lockfile, output_file):
   results = data['results']
 
   if not os.path.exists(DEP_CLONE_DIR):
-    os.mkdir(DEP_CLONE_DIR)  #clone deps with upstream into temporary dir
+    os.mkdir(DEP_CLONE_DIR)  # Clone deps with upstream into temporary dir.
 
-  # Extract commit hash, save in dictionary
+  # Extract commit hash, save in dictionary.
   for result in results:
     packages = result['packages']
     for package in packages:
@@ -70,18 +70,18 @@ def parse_deps_file(lockfile, output_file):
         package['package']['name'] = upstream
 
   try:
-    # clean up cloned upstream dependency directory
+    # Clean up cloned upstream dependency directory.
     shutil.rmtree(
         DEP_CLONE_DIR
-    )  # use shutil.rmtree since dir could be non-empty
+    )  # Use shutil.rmtree since dir could be non-empty.
   except OSError as clone_dir_error:
     print(
         'Error cleaning up clone directory: %s : %s' %
         (DEP_CLONE_DIR, clone_dir_error.strerror)
     )
 
-  # write common ancestor commit data to new file to be
-  # used in next github action step with osv-scanner
+  # Write common ancestor commit data to new file to be
+  # used in next github action step with osv-scanner.
   with open(output_file, 'w') as file:
     json.dump(data, file)
 
@@ -99,22 +99,22 @@ def get_common_ancestor(dep, deps_list):
   commit SHA of the upstream branch and the pinned
   SHA value of the mirrored branch
   """
-  # dep[0] contains the mirror repo
-  # dep[1] contains the mirror's pinned SHA
-  # upstream is the origin repo
+  # dep[0] contains the mirror repo.
+  # dep[1] contains the mirror's pinned SHA.
+  # upstream is the origin repo.
   dep_name = dep[0].split('/')[-1].split('.')[0]
   if UPSTREAM_PREFIX + dep_name not in deps_list:
     print('did not find dep: ' + dep_name)
     return None
   try:
-    # get the upstream URL from the mapping in DEPS file
+    # Get the upstream URL from the mapping in DEPS file.
     upstream = deps_list.get(UPSTREAM_PREFIX + dep_name)
     temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
-    # clone dependency from mirror
+    # Clone dependency from mirror.
     subprocess.check_output(['git', 'clone', '--quiet', '--', dep[0], dep_name],
                             cwd=DEP_CLONE_DIR)
 
-    # create branch that will track the upstream dep
+    # Create branch that will track the upstream dep.
     print(
         'attempting to add upstream remote from: {upstream}'.format(
             upstream=upstream
@@ -124,7 +124,7 @@ def get_common_ancestor(dep, deps_list):
                             cwd=temp_dep_dir)
     subprocess.check_output(['git', 'fetch', '--quiet', 'upstream'],
                             cwd=temp_dep_dir)
-    # get name of the default branch for upstream (e.g. main/master/etc.)
+    # Get name of the default branch for upstream (e.g. main/master/etc.).
     default_branch = subprocess.check_output(
         'git remote show upstream ' + "| sed -n \'/HEAD branch/s/.*: //p\'",
         cwd=temp_dep_dir,
@@ -133,13 +133,13 @@ def get_common_ancestor(dep, deps_list):
     default_branch = byte_str_decode(default_branch)
     default_branch = default_branch.strip()
 
-    # make upstream branch track the upstream dep
+    # Make upstream branch track the upstream dep.
     subprocess.check_output([
         'git', 'checkout', '--force', '-b', 'upstream', '--track',
         'upstream/' + default_branch
     ],
                             cwd=temp_dep_dir)
-    # get the most recent commit from default branch of upstream
+    # Get the most recent commit from default branch of upstream.
     commit = subprocess.check_output(
         'git for-each-ref ' +
         "--format=\'%(objectname:short)\' refs/heads/upstream",
@@ -149,7 +149,7 @@ def get_common_ancestor(dep, deps_list):
     commit = byte_str_decode(commit)
     commit = commit.strip()
 
-    # perform merge-base on most recent default branch commit and pinned mirror commit
+    # Perform merge-base on most recent default branch commit and pinned mirror commit.
     ancestor_commit = subprocess.check_output(
         'git merge-base {commit} {depUrl}'.format(commit=commit, depUrl=dep[1]),
         cwd=temp_dep_dir,
