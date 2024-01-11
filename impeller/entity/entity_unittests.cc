@@ -881,13 +881,13 @@ TEST_P(EntityTest, BlendingModeOptions) {
       options.primitive_type = PrimitiveType::kTriangle;
       cmd.pipeline = context.GetSolidFillPipeline(options);
       cmd.BindVertices(
-          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+          vtx_builder.CreateVertexBuffer(context.GetTransientsBuffer()));
 
       VS::FrameInfo frame_info;
       frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
       frame_info.color = color.Premultiply();
-      VS::BindFrameInfo(cmd,
-                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+      VS::BindFrameInfo(
+          cmd, context.GetTransientsBuffer().EmplaceUniform(frame_info));
 
       return pass.AddCommand(std::move(cmd));
     };
@@ -2132,10 +2132,6 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 }
 
 TEST_P(EntityTest, RuntimeEffect) {
-  if (!BackendSupportsFragmentProgram()) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
   auto runtime_stage =
@@ -2144,6 +2140,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool first_frame = true;
+  Pipeline<PipelineDescriptor>* first_pipeline = nullptr;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     if (first_frame) {
       first_frame = false;
@@ -2170,7 +2167,13 @@ TEST_P(EntityTest, RuntimeEffect) {
 
     Entity entity;
     entity.SetContents(contents);
-    return contents->Render(context, entity, pass);
+    bool result = contents->Render(context, entity, pass);
+    if (!first_pipeline) {
+      first_pipeline = pass.GetCommands().back().pipeline.get();
+    } else {
+      EXPECT_EQ(pass.GetCommands().back().pipeline.get(), first_pipeline);
+    }
+    return result;
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
