@@ -1,8 +1,12 @@
 package io.flutter.embedding.engine.renderer;
 
 import android.graphics.SurfaceTexture;
+import android.os.Handler;
 import android.view.Surface;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 
 /** Uses a {@link android.graphics.SurfaceTexture} to populate the texture registry. */
@@ -11,12 +15,30 @@ final class SurfaceTextureSurfaceProducer
   private final long id;
   private int requestBufferWidth;
   private int requestedBufferHeight;
-
+  private boolean released;
+  @Nullable private Surface surface;
   @NonNull private final SurfaceTexture texture;
+  @NonNull private final Handler handler;
+  @NonNull private final FlutterJNI flutterJNI;
 
-  SurfaceTextureSurfaceProducer(long id) {
+  SurfaceTextureSurfaceProducer(long id, @NonNull Handler handler, @NonNull FlutterJNI flutterJNI) {
     this.id = id;
+    this.handler = handler;
+    this.flutterJNI = flutterJNI;
     this.texture = new SurfaceTexture(0);
+  }
+
+  @Override
+  protected void finalize() throws Throwable {
+    try {
+      if (released) {
+        return;
+      }
+      release();
+      handler.post(new FlutterRenderer.TextureFinalizerRunnable(id, flutterJNI));
+    } finally {
+      super.finalize();
+    }
   }
 
   @Override
@@ -27,6 +49,7 @@ final class SurfaceTextureSurfaceProducer
   @Override
   public void release() {
     texture.release();
+    released = true;
   }
 
   @Override
@@ -54,6 +77,9 @@ final class SurfaceTextureSurfaceProducer
 
   @Override
   public Surface getSurface() {
-    return new Surface(getSurfaceTexture());
+    if (surface == null) {
+      surface = new Surface(texture);
+    }
+    return surface;
   }
 }
