@@ -1267,7 +1267,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     )
 
   # Use this type to exclusively run impeller vulkan tests.
-  if 'impeller-vulkan' in types:
+  if 'impeller' in types:
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
