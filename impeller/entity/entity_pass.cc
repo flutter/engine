@@ -345,12 +345,6 @@ bool EntityPass::Render(ContentContext& renderer,
         renderer, root_render_target.GetRenderTargetSize(), /*mip_count=*/4,
         GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
-    // If the render target texture is recycled, make sure the mipmaps are
-    // regenerated.
-    offscreen_target.GetRenderTarget()
-        .GetRenderTargetTexture()
-        ->InvalidateMipmap();
-
     if (!OnRender(renderer,  // renderer
                   capture,   // capture
                   offscreen_target.GetRenderTarget()
