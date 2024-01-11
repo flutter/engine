@@ -11,7 +11,7 @@
 # upstream for each dependency are provided in the lockfile
 # It is expected that the osv-lockfile input is updated by this script
 # and then uploaded using GitHub actions to be used by the osv-scanner
-# reusable action.  
+# reusable action.
 
 import argparse
 import json
