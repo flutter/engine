@@ -89,7 +89,7 @@ class TextureContents final : public Contents {
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};
   Rect source_rect_;
-  bool strict_source_rect_ = false;
+  bool strict_source_rect_enabled_ = false;
   Scalar opacity_ = 1.0f;
   Scalar inherited_opacity_ = 1.0f;
   bool defer_applying_opacity_ = false;

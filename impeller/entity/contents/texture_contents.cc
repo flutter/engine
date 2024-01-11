@@ -166,7 +166,7 @@ bool TextureContents::Render(const ContentContext& renderer,
 #endif  // IMPELLER_ENABLE_OPENGLES
 
   if (!cmd.pipeline) {
-    if (strict_source_rect_) {
+    if (strict_source_rect_enabled_) {
       pass.SetPipeline(renderer.GetTextureStrictSrcPipeline(pipeline_options));
     } else {
       pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
@@ -181,7 +181,7 @@ bool TextureContents::Render(const ContentContext& renderer,
         pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor_));
-  } else if (strict_source_rect_) {
+  } else if (strict_source_rect_enabled_) {
     // For a strict source rect, shrink the texture coordinate range by half a
     // texel to ensure that linear filtering does not sample anything outside
     // the source rect bounds.
@@ -190,8 +190,7 @@ bool TextureContents::Render(const ContentContext& renderer,
 
     FSStrictSrc::FragInfo frag_info;
     frag_info.source_rect = Vector4(strict_texture_coords.GetLTRB());
-    FSStrictSrc::BindFragInfo(
-        cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+    FSStrictSrc::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
     FSStrictSrc::BindTextureSampler(
         cmd, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
@@ -214,11 +213,11 @@ const Rect& TextureContents::GetSourceRect() const {
 }
 
 void TextureContents::SetStrictSourceRect(bool strict) {
-  strict_source_rect_ = strict;
+  strict_source_rect_enabled_ = strict;
 }
 
 bool TextureContents::GetStrictSourceRect() const {
-  return strict_source_rect_;
+  return strict_source_rect_enabled_;
 }
 
 void TextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
