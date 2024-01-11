@@ -224,6 +224,7 @@ RenderTarget RenderTarget::CreateOffscreen(
     const Context& context,
     RenderTargetAllocator& allocator,
     ISize size,
+    int mip_count,
     const std::string& label,
     AttachmentConfig color_attachment_config,
     std::optional<AttachmentConfig> stencil_attachment_config) {
@@ -237,6 +238,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   color_tex0.storage_mode = color_attachment_config.storage_mode;
   color_tex0.format = pixel_format;
   color_tex0.size = size;
+  color_tex0.mip_count = mip_count;
   color_tex0.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                      static_cast<uint64_t>(TextureUsage::kShaderRead);
 

@@ -278,7 +278,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
         *context,                          // context
         *renderer.GetRenderTargetCache(),  // allocator
         size,                              // size
-        "EntityPass",                      // label
+        /*mip_count=*/mip_count,
+        "EntityPass",  // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,

@@ -425,7 +425,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config

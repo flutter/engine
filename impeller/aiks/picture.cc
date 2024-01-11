@@ -72,9 +72,10 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     );
   } else {
     target = RenderTarget::CreateOffscreen(
-        *impeller_context,                            // context
-        render_target_allocator,                      // allocator
-        size,                                         // size
+        *impeller_context,        // context
+        render_target_allocator,  // allocator
+        size,                     // size
+        /*mip_count=*/1,
         "Picture Snapshot",                           // label
         RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config
         std::nullopt  // stencil_attachment_config
