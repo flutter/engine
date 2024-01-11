@@ -1169,7 +1169,7 @@ hooks = [
   {
     'name': 'Download Fuchsia system images',
     'pattern': '.',
-    'condition': 'host_os == "linux"'
+    'condition': 'host_os == "linux"',
     'action': [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
