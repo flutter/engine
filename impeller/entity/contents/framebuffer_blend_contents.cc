@@ -143,7 +143,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   frag_info.src_input_alpha = src_snapshot->opacity;
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.Draw();
+  return pass.Draw().ok();
 }
 
 }  // namespace impeller

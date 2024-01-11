@@ -116,7 +116,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Draw()) {
+  if (!pass.Draw().ok()) {
     return false;
   }
 
@@ -183,7 +183,7 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
       pass, gradient_texture,
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
 
-  if (!pass.Draw()) {
+  if (!pass.Draw().ok()) {
     return false;
   }
 

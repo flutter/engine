@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "fml/status.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/resource_binder.h"
 #include "impeller/core/shader_types.h"
@@ -118,7 +119,7 @@ class RenderPass : public ResourceBinder {
   bool SetVertexBuffer(VertexBuffer buffer);
 
   /// Record the currently pending command.
-  bool Draw();
+  fml::Status Draw();
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,

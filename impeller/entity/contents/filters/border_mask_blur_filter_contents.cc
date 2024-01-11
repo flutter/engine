@@ -126,7 +126,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindTextureSampler(pass, input_snapshot->texture, sampler);
 
-    return pass.Draw();
+    return pass.Draw().ok();
   };
 
   CoverageProc coverage_proc =

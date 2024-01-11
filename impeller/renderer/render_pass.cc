@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/render_pass.h"
+#include "fml/status.h"
 
 namespace impeller {
 
@@ -123,10 +124,14 @@ bool RenderPass::SetVertexBuffer(VertexBuffer buffer) {
   return pending_.BindVertices(std::move(buffer));
 }
 
-bool RenderPass::Draw() {
+fml::Status RenderPass::Draw() {
   auto result = AddCommand(std::move(pending_));
   pending_ = Command{};
-  return result;
+  if (result) {
+    return fml::Status();
+  }
+  return fml::Status(fml::StatusCode::kInvalidArgument,
+                     "Failed to encode command");
 }
 
 // |ResourceBinder|

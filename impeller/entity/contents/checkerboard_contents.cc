@@ -46,7 +46,7 @@ bool CheckerboardContents::Render(const ContentContext& renderer,
   frag_info.square_size = square_size_;
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.Draw();
+  return pass.Draw().ok();
 }
 
 std::optional<Rect> CheckerboardContents::GetCoverage(

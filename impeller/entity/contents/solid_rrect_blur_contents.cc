@@ -121,7 +121,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   FS::BindFragInfo(pass,
                    renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
 
-  if (!pass.Draw()) {
+  if (!pass.Draw().ok()) {
     return false;
   }
 

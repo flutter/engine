@@ -109,7 +109,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.Draw()) {
+  if (!pass.Draw().ok()) {
     return false;
   }
 
