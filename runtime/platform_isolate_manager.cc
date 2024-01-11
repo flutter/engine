@@ -1,4 +1,4 @@
-// Copyright 2023 The Flutter Authors. All rights reserved.
+// Copyright 2024 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -6,26 +6,15 @@
 
 #include "flutter/runtime/dart_isolate.h"
 
-#include <iostream>
-
 namespace flutter {
 
-PlatformIsolateManager::PlatformIsolateManager() {
-  std::cout << "PlatformIsolateManager constructor: " << (void*)this
-            << std::endl;
-}
-
 bool PlatformIsolateManager::RegisterPlatformIsolate(Dart_Isolate isolate) {
-  std::cout << "PlatformIsolateManager::RegisterPlatformIsolate: "
-            << (void*)this << "\t" << (void*)isolate << std::endl;
   if (is_shutdown_) {
-    std::cout << "           ignored" << std::endl;
     return false;
   }
   std::scoped_lock lock(platform_isolates_lock_);
   if (is_shutdown_) {
     // It's possible shutdown occured while we were trying to aquire the lock.
-    std::cout << "           ignored" << std::endl;
     return false;
   }
   FML_DCHECK(platform_isolates_.count(isolate) == 0);
@@ -39,12 +28,9 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
   // isolate shutdown, or during ShutdownPlatformIsolates(). In either case
   // we're on the platform thread.
   // TODO: Assert that we're on the platform thread.
-  std::cout << "PlatformIsolateManager::RemovePlatformIsolate: " << (void*)this
-            << "\t" << (void*)isolate << std::endl;
   if (is_shutdown_) {
     // Removal during ShutdownPlatformIsolates. Ignore, to avoid modifying
     // platform_isolates_ during iteration.
-    std::cout << "           ignored" << std::endl;
     return;
   }
   std::scoped_lock lock(platform_isolates_lock_);
@@ -57,8 +43,6 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
 
 void PlatformIsolateManager::ShutdownPlatformIsolates() {
   // TODO: Assert that we're on the platform thread.
-  std::cout << "PlatformIsolateManager::ShutdownPlatformIsolates: "
-            << (void*)this << "\t" << std::endl;
   std::scoped_lock lock(platform_isolates_lock_);
   is_shutdown_ = true;
   for (Dart_Isolate isolate : platform_isolates_) {
@@ -66,6 +50,12 @@ void PlatformIsolateManager::ShutdownPlatformIsolates() {
     Dart_ShutdownIsolate();
   }
   platform_isolates_.clear();
+}
+
+
+bool PlatformIsolateManager::IsRegistered(Dart_Isolate isolate) {
+  std::scoped_lock lock(platform_isolates_lock_);
+  return platform_isolates_.count(isolate) != 0;
 }
 
 }  // namespace flutter

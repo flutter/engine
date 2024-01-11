@@ -284,7 +284,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
   return (*root_isolate_data)->GetWeakIsolatePtr();
 }
 
-bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
+Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
                                         const std::string& debug_name) {
   PlatformConfiguration* platform_config = platform_configuration();
@@ -293,7 +293,7 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
       platform_config->client()->GetPlatformIsolateManager();
   if (platform_isolate_manager->IsShutdown()) {
     // Not allowed to spawn new platform isolates.
-    return false;
+    return nullptr;
   }
 
   Dart_EnterScope();
@@ -357,37 +357,39 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
             /*error=*/error);
       };
   DartErrorString error;
-  Dart_Isolate new_isolate = CreateDartIsolateGroup(
+  Dart_Isolate platform_isolate = CreateDartIsolateGroup(
       std::move(isolate_group_data), std::move(isolate_data), nullptr,
       error.error(), isolate_maker);
 
+  Dart_EnterIsolate(parent_isolate);
+
   if (error) {
     FML_LOG(ERROR) << "CreatePlatformIsolate failed: " << error.str();
-    return false;
+    return nullptr;
   }
 
-  if (!platform_isolate_manager->RegisterPlatformIsolate(new_isolate)) {
+  if (!platform_isolate_manager->RegisterPlatformIsolate(platform_isolate)) {
     // The PlatformIsolateManager was shutdown while we were creating the
     // isolate. This means that we're shutting down the engine. Do nothing. The
     // ordinary engine shut down procedure will clean up the isolate.
-    return false;
+    return nullptr;
   }
 
   fml::RefPtr<fml::TaskRunner> platform_task_runner =
       task_runners.GetPlatformTaskRunner();
   std::cout << "platform_task_runner = " << (void*)platform_task_runner.get()
             << std::endl;
-  platform_task_runner->PostTask([entry_point_handle, new_isolate,
+  platform_task_runner->PostTask([entry_point_handle, platform_isolate,
                                   isolate_ready_port_id,
                                   platform_isolate_manager]() {
     std::cout << "Hello from the platform task runner" << std::endl;
     if (platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
-      // new_isolate has already been shut down. Do nothing.
+      // platform_isolate has already been shut down. Do nothing.
       std::cout << "platform_isolate_manager is shutdown" << std::endl;
       return;
     }
-    Dart_EnterIsolate(new_isolate);
+    Dart_EnterIsolate(platform_isolate);
     Dart_EnterScope();
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
@@ -397,16 +399,15 @@ bool DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     std::cout << "Dart_InvokeClosure done" << std::endl;
     if (Dart_IsError(result)) {
       // TODO: Handle error.
+      std::cout << "platform isolate threw an error" << std::endl;
     }
 
     Dart_DeletePersistentHandle(entry_point_handle);
     Dart_ExitScope();
-    Dart_ExitIsolate();  // Exit new_isolate.
+    Dart_ExitIsolate();  // Exit platform_isolate.
   });
 
-  Dart_EnterIsolate(parent_isolate);
-
-  return true;
+  return platform_isolate;
 }
 
 DartIsolate::DartIsolate(const Settings& settings,

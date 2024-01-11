@@ -171,7 +171,7 @@ class UIDartState : public tonic::DartState {
   /// The expected type for runtime stage shaders.
   impeller::RuntimeStageBackend GetRuntimeStageBackend() const;
 
-  virtual bool CreatePlatformIsolate(Dart_Handle entry_point,
+  virtual Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
                                      Dart_Port isolate_ready_port_id,
                                      const std::string& debug_name);
 

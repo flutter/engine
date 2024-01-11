@@ -188,3 +188,41 @@ void mainForPluginRegistrantTest() {
     passMessage('_PluginRegistrant.register() was not called');
   }
 }
+
+@pragma('vm:entry-point')
+SendPort createUnusedPort() {
+  return RawReceivePort().sendPort;
+}
+
+@pragma('vm:entry-point')
+SendPort createPortThatReplies() {
+  final port = RawReceivePort();
+  port.handler = (message) {
+    port.close();
+    (message as SendPort).send('Hello from root isolate!');
+  };
+  return port.sendPort;
+}
+
+@pragma('vm:entry-point')
+void mainForPlatformIsolates(SendPort isolateReadyPort) {
+  passMessage('Platform isolate is ready');
+}
+
+@pragma('vm:entry-point')
+void emptyMain() {}
+
+@pragma('vm:entry-point')
+void mainPlatformIsolateReplyPort(SendPort isolateReadyPort) {
+  final replyPort = RawReceivePort();
+  replyPort.handler = (message) {
+    replyPort.close();
+    passMessage('Platform isolate received: $message');
+  };
+  isolateReadyPort.send(replyPort.sendPort);
+}
+
+@pragma('vm:entry-point')
+void mainForPlatformIsolatesThrowError(SendPort isolateReadyPort) {
+  throw 'Error from platform isolate';
+}

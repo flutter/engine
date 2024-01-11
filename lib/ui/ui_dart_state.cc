@@ -264,11 +264,11 @@ int64_t UIDartState::GetRootIsolateToken() const {
   return IsRootIsolate() ? reinterpret_cast<int64_t>(this) : 0;
 }
 
-bool UIDartState::CreatePlatformIsolate(Dart_Handle entry_point,
+Dart_Isolate UIDartState::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
                                         const std::string& debug_name) {
   FML_UNREACHABLE();
-  return false;
+  return nullptr;
 }
 
 }  // namespace flutter

@@ -1,4 +1,4 @@
-// Copyright 2023 The Flutter Authors. All rights reserved.
+// Copyright 2024 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -15,12 +15,13 @@ namespace flutter {
 
 class PlatformIsolateManager {
  public:
-  PlatformIsolateManager();
-
   bool IsShutdown() const { return is_shutdown_; }
   bool RegisterPlatformIsolate(Dart_Isolate isolate);
   void RemovePlatformIsolate(Dart_Isolate isolate);
   void ShutdownPlatformIsolates();
+
+  // For testing only.
+  bool IsRegistered(Dart_Isolate isolate);
 
  private:
   std::mutex platform_isolates_lock_;
