@@ -18,7 +18,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+  if (CanUseCompute(renderer)) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
   auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
@@ -26,12 +26,11 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     return {};
   }
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -42,7 +41,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
+  if (CanUseCompute(renderer)) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
   }
@@ -55,12 +54,11 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
       ComputeUVGeometryCPU(vtx_builder.value(), {0, 0},
                            texture_coverage.GetSize(), effect_transform);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -154,7 +152,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
   auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
   auto compute_pass = cmd_buffer->CreateComputePass();
-  auto& host_buffer = compute_pass->GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   auto points_data =
       host_buffer.Emplace(points_.data(), points_.size() * sizeof(Point),
@@ -238,8 +236,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
       .vertex_buffer = {.vertex_buffer = output,
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -273,6 +270,14 @@ size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
 // |Geometry|
 GeometryVertexType PointFieldGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
+}
+
+// Compute is disabled for Vulkan because the barriers are incorrect, see
+// also: https://github.com/flutter/flutter/issues/140798 .
+bool PointFieldGeometry::CanUseCompute(const ContentContext& renderer) {
+  return renderer.GetDeviceCapabilities().SupportsCompute() &&
+         renderer.GetContext()->GetBackendType() ==
+             Context::BackendType::kMetal;
 }
 
 // |Geometry|

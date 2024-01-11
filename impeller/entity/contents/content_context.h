@@ -15,6 +15,7 @@
 #include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
@@ -67,6 +68,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
 #include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel_decal.frag.h"
+#include "impeller/entity/kernel_nodecal.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -137,6 +140,10 @@ using GaussianBlurDecalPipeline =
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurNoalphaNodecalFragmentShader>;
+using KernelDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+using KernelPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -447,6 +454,16 @@ class ContentContext {
     return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_decal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_nodecal_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
@@ -713,6 +730,12 @@ class ContentContext {
     return render_target_cache_;
   }
 
+  /// @brief Retrieve the currnent host buffer for transient storage.
+  ///
+  /// This is only safe to use from the raster threads. Other threads should
+  /// allocate their own device buffers.
+  HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
+
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
@@ -813,6 +836,8 @@ class ContentContext {
       gaussian_blur_noalpha_decal_pipelines_;
   mutable Variants<GaussianBlurPipeline>
       gaussian_blur_noalpha_nodecal_pipelines_;
+  mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
+  mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
@@ -922,6 +947,7 @@ class ContentContext {
   std::shared_ptr<scene::SceneContext> scene_context_;
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
+  std::shared_ptr<HostBuffer> host_buffer_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

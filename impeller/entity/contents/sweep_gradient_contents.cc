@@ -11,7 +11,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -85,7 +84,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.decal_border_color = decal_border_color_;
   frag_info.alpha = GetOpacityFactor();
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
 
   frag_info.colors_length = colors.size();
@@ -94,8 +93,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
                           DefaultUniformAlignment());
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
   frame_info.matrix = GetInverseEffectTransform();
 
   Command cmd;
@@ -113,9 +111,11 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   cmd.pipeline = renderer.GetSweepGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+  FS::BindFragInfo(cmd,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
   FS::BindColorData(cmd, color_buffer);
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(cmd,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
     return false;
@@ -173,8 +173,10 @@ bool SweepGradientContents::RenderTexture(const ContentContext& renderer,
   cmd.pipeline = renderer.GetSweepGradientFillPipeline(options);
 
   cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  FS::BindFragInfo(cmd,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
+  VS::BindFrameInfo(cmd,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;

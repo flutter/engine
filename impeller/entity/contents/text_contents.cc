@@ -6,7 +6,6 @@
 
 #include <cstring>
 #include <optional>
-#include <type_traits>
 #include <utility>
 
 #include "impeller/core/formats.h"
@@ -14,7 +13,6 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -109,7 +107,7 @@ bool TextContents::Render(const ContentContext& renderer,
 
   // Common vertex uniforms for all glyphs.
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+  frame_info.mvp = pass.GetOrthographicTransform();
   frame_info.atlas_size =
       Vector2{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
               static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
@@ -119,14 +117,15 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.entity_transform = entity.GetTransform();
   frame_info.text_color = ToVector(color.Premultiply());
 
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(cmd,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   if (type == GlyphAtlas::Type::kColorBitmap) {
     using FSS = GlyphAtlasColorPipeline::FragmentShader;
     FSS::FragInfo frag_info;
     frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
     FSS::BindFragInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frag_info));
+                      renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
   }
 
   SamplerDescriptor sampler_desc;
@@ -162,7 +161,7 @@ bool TextContents::Render(const ContentContext& renderer,
                                                 Point{0, 1}, Point{1, 0},
                                                 Point{0, 1}, Point{1, 1}};
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   size_t vertex_count = 0;
   for (const auto& run : frame_->GetRuns()) {
     vertex_count += run.GetGlyphPositions().size();

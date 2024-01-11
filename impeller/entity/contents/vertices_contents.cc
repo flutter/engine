@@ -10,7 +10,6 @@
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -122,7 +121,7 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "VerticesUV");
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto geometry = parent_.GetGeometry();
 
   auto coverage = src_contents->GetCoverage(Entity{});
@@ -176,7 +175,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
 
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "VerticesColors");
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto geometry = parent_.GetGeometry();
 
   auto geometry_result =

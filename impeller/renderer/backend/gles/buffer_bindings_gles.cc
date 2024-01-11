@@ -65,8 +65,10 @@ static std::string CreateUniformMemberKey(const std::string& struct_name,
   std::string result;
   result.reserve(struct_name.length() + member.length() + (is_array ? 4 : 1));
   result += struct_name;
-  result += '.';
-  result += member;
+  if (!member.empty()) {
+    result += '.';
+    result += member;
+  }
   if (is_array) {
     result += "[0]";
   }
@@ -230,8 +232,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
                                            Allocator& transients_allocator,
                                            const BufferResource& buffer) {
   const auto* metadata = buffer.GetMetadata();
-  auto device_buffer =
-      buffer.resource.buffer->GetDeviceBuffer(transients_allocator);
+  auto device_buffer = buffer.resource.buffer->GetDeviceBuffer();
   if (!device_buffer) {
     VALIDATION_LOG << "Device buffer not found.";
     return false;
@@ -312,6 +313,9 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
             );
             continue;
         }
+        VALIDATION_LOG << "Size " << member.size
+                       << " could not be mapped ShaderType::kFloat for key: "
+                       << member.name;
       case ShaderType::kBoolean:
       case ShaderType::kSignedByte:
       case ShaderType::kUnsignedByte:

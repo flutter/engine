@@ -8,13 +8,10 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
-#include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -131,7 +128,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
       Rect::MakeSize(texture_size), GetInverseEffectTransform(), renderer,

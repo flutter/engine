@@ -6,23 +6,17 @@
 #include <unordered_map>
 #include <utility>
 
-#include "flutter/fml/macros.h"
-
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -223,7 +217,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.Reserve(texture_coords_.size() * 6);
     const auto texture_size = texture_->GetSize();
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     for (size_t i = 0; i < texture_coords_.size(); i++) {
       auto sample_rect = texture_coords_[i];
@@ -277,8 +271,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -406,11 +399,10 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "AtlasTexture");
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
   frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frame_info.alpha = alpha_;
 
@@ -494,11 +486,10 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   Command cmd;
   DEBUG_COMMAND_INFO(cmd, "AtlasColors");
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
   FS::FragInfo frag_info;
   frag_info.alpha = alpha_;

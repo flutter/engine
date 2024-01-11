@@ -6,7 +6,6 @@
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -39,7 +38,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   using VS = FramebufferBlendScreenPipeline::VertexShader;
   using FS = FramebufferBlendScreenPipeline::FragmentShader;
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   auto src_snapshot = child_contents_->RenderToSnapshot(
       renderer,                                    // renderer
@@ -138,8 +137,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
       src_sampler_descriptor);
   FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
 
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   src_snapshot->transform;
+  frame_info.mvp = pass.GetOrthographicTransform() * src_snapshot->transform;
   frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 

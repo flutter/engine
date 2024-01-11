@@ -8,7 +8,6 @@
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -90,7 +89,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
                             outer_blur_factor = outer_blur_factor_, sigma](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     auto origin = coverage.GetOrigin();
@@ -112,8 +111,7 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     cmd.stencil_reference = entity.GetClipDepth();
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 

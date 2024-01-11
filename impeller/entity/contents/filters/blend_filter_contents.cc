@@ -18,9 +18,7 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/snapshot.h"
 
 namespace impeller {
@@ -148,7 +146,7 @@ static std::optional<Entity> AdvancedBlend(
 
   ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
                                                  RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     auto size = pass.GetRenderTargetSize();
     VertexBufferBuilder<typename VS::PerVertexData> vtx_builder;
@@ -212,7 +210,7 @@ static std::optional<Entity> AdvancedBlend(
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp = Matrix::MakeOrthographic(size) *
+    frame_info.mvp = pass.GetOrthographicTransform() *
                      Matrix::MakeTranslation(coverage.GetOrigin() -
                                              subpass_coverage.GetOrigin());
 
@@ -266,7 +264,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     using VS = BlendScreenPipeline::VertexShader;
     using FS = BlendScreenPipeline::FragmentShader;
 
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     auto maybe_dst_uvs = dst_snapshot->GetCoverageUVs(coverage);
     if (!maybe_dst_uvs.has_value()) {
@@ -371,8 +369,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -436,7 +433,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
     using VS = PorterDuffBlendPipeline::VertexShader;
     using FS = PorterDuffBlendPipeline::FragmentShader;
 
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     auto maybe_dst_uvs = dst_snapshot->GetCoverageUVs(coverage);
     if (!maybe_dst_uvs.has_value()) {
@@ -496,8 +493,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
 
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(cmd, uniform_view);
@@ -554,7 +550,7 @@ static std::optional<Entity> PipelineBlend(
 
   ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
                                                  RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     Command cmd;
     DEBUG_COMMAND_INFO(cmd, SPrintF("Pipeline Blend Filter (%s)",
@@ -586,7 +582,7 @@ static std::optional<Entity> PipelineBlend(
       cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
 
       VS::FrameInfo frame_info;
-      frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+      frame_info.mvp = pass.GetOrthographicTransform() *
                        Matrix::MakeTranslation(-subpass_coverage.GetOrigin()) *
                        input->transform;
       frame_info.texture_sampler_y_coord_scale =

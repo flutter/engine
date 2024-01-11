@@ -36,6 +36,8 @@ class RenderPass {
 
   ISize GetRenderTargetSize() const;
 
+  const Matrix& GetOrthographicTransform() const;
+
   virtual bool IsValid() const = 0;
 
   void SetLabel(std::string label);
@@ -46,8 +48,6 @@ class RenderPass {
   void ReserveCommands(size_t command_count) {
     commands_.reserve(command_count);
   }
-
-  HostBuffer& GetTransientsBuffer();
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
@@ -99,8 +99,8 @@ class RenderPass {
   const bool has_stencil_attachment_;
   const ISize render_target_size_;
   const RenderTarget render_target_;
-  std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
+  const Matrix orthographic_;
 
   RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
 

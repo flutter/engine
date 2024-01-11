@@ -184,10 +184,12 @@ ContentContext::ContentContext(
       render_target_cache_(render_target_allocator == nullptr
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
-                               : std::move(render_target_allocator)) {
+                               : std::move(render_target_allocator)),
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
+
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
       .color_attachment_pixel_format =
@@ -336,6 +338,8 @@ ContentContext::ContentContext(
                                                        options_trianglestrip);
   gaussian_blur_noalpha_nodecal_pipelines_.CreateDefault(*context_,
                                                          options_trianglestrip);
+  kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});

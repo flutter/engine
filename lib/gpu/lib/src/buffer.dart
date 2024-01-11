@@ -78,8 +78,8 @@ base class DeviceBuffer extends NativeFieldWrapperClass1 with Buffer {
   @override
   bool _bindAsUniform(RenderPass renderPass, UniformSlot slot,
       int offsetInBytes, int lengthInBytes) {
-    return renderPass._bindUniformDevice(slot.shaderStage.index, slot.slotId,
-        this, offsetInBytes, lengthInBytes);
+    return renderPass._bindUniformDevice(
+        slot.shader, slot.uniformName, this, offsetInBytes, lengthInBytes);
   }
 
   /// Wrap with native counterpart.
@@ -135,8 +135,8 @@ base class DeviceBuffer extends NativeFieldWrapperClass1 with Buffer {
 /// and automatically inserts padding between emplaced data if necessary.
 base class HostBuffer extends NativeFieldWrapperClass1 with Buffer {
   /// Creates a new HostBuffer.
-  HostBuffer() {
-    _initialize();
+  HostBuffer(GpuContext gpuContext) {
+    _initialize(gpuContext);
   }
 
   @override
@@ -156,14 +156,14 @@ base class HostBuffer extends NativeFieldWrapperClass1 with Buffer {
   @override
   bool _bindAsUniform(RenderPass renderPass, UniformSlot slot,
       int offsetInBytes, int lengthInBytes) {
-    return renderPass._bindUniformHost(slot.shaderStage.index, slot.slotId,
-        this, offsetInBytes, lengthInBytes);
+    return renderPass._bindUniformHost(
+        slot.shader, slot.uniformName, this, offsetInBytes, lengthInBytes);
   }
 
   /// Wrap with native counterpart.
-  @Native<Void Function(Handle)>(
+  @Native<Void Function(Handle, Handle)>(
       symbol: 'InternalFlutterGpu_HostBuffer_Initialize')
-  external void _initialize();
+  external void _initialize(GpuContext gpuContext);
 
   /// Append byte data to the end of the [HostBuffer] and produce a [BufferView]
   /// that references the new data in the buffer.
