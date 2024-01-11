@@ -16,8 +16,8 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = {host_buffer.Emplace(
-                  rect_.GetPoints().data(), 8 * sizeof(float), alignof(float))},
+              .vertex_buffers = host_buffer.Emplace(
+                  rect_.GetPoints().data(), 8 * sizeof(float), alignof(float)),
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },

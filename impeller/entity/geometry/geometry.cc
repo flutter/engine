@@ -34,23 +34,18 @@ GeometryResult Geometry::ComputePositionGeometry(
       .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
-              .vertex_buffers =
-                  {
-                      renderer.GetTransientsBuffer().Emplace(
-                          count * sizeof(VT), alignof(VT),
-                          [&generator](uint8_t* buffer) {
-                            auto vertices = reinterpret_cast<VT*>(buffer);
-                            generator.GenerateVertices(
-                                [&vertices](const Point& p) {
-                                  *vertices++ = {
-                                      .position = p,
-                                  };
-                                });
-                            FML_DCHECK(vertices ==
-                                       reinterpret_cast<VT*>(buffer) +
-                                           generator.GetVertexCount());
-                          }),
-                  },
+              .vertex_buffers = renderer.GetTransientsBuffer().Emplace(
+                  count * sizeof(VT), alignof(VT),
+                  [&generator](uint8_t* buffer) {
+                    auto vertices = reinterpret_cast<VT*>(buffer);
+                    generator.GenerateVertices([&vertices](const Point& p) {
+                      *vertices++ = {
+                          .position = p,
+                      };
+                    });
+                    FML_DCHECK(vertices == reinterpret_cast<VT*>(buffer) +
+                                               generator.GetVertexCount());
+                  }),
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
@@ -73,24 +68,20 @@ GeometryResult Geometry::ComputePositionUVGeometry(
       .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
-              .vertex_buffers =
-                  {
-                      renderer.GetTransientsBuffer().Emplace(
-                          count * sizeof(VT), alignof(VT),
-                          [&generator, &uv_transform](uint8_t* buffer) {
-                            auto vertices = reinterpret_cast<VT*>(buffer);
-                            generator.GenerateVertices(
-                                [&vertices, &uv_transform](const Point& p) {  //
-                                  *vertices++ = {
-                                      .position = p,
-                                      .texture_coords = uv_transform * p,
-                                  };
-                                });
-                            FML_DCHECK(vertices ==
-                                       reinterpret_cast<VT*>(buffer) +
-                                           generator.GetVertexCount());
-                          }),
-                  },
+              .vertex_buffers = renderer.GetTransientsBuffer().Emplace(
+                  count * sizeof(VT), alignof(VT),
+                  [&generator, &uv_transform](uint8_t* buffer) {
+                    auto vertices = reinterpret_cast<VT*>(buffer);
+                    generator.GenerateVertices(
+                        [&vertices, &uv_transform](const Point& p) {  //
+                          *vertices++ = {
+                              .position = p,
+                              .texture_coords = uv_transform * p,
+                          };
+                        });
+                    FML_DCHECK(vertices == reinterpret_cast<VT*>(buffer) +
+                                               generator.GetVertexCount());
+                  }),
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
@@ -141,8 +132,8 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = {host_buffer.Emplace(
-                  data.data(), 16 * sizeof(float), alignof(float))},
+              .vertex_buffers = host_buffer.Emplace(
+                  data.data(), 16 * sizeof(float), alignof(float)),
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },

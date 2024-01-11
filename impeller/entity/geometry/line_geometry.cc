@@ -100,7 +100,7 @@ GeometryResult LineGeometry::GetPositionBuffer(const ContentContext& renderer,
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = {vertex_buffer},
+              .vertex_buffers = vertex_buffer,
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
@@ -153,7 +153,7 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
-              .vertex_buffers = {vertex_buffer},
+              .vertex_buffers = vertex_buffer,
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },

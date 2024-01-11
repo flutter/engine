@@ -22,8 +22,8 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     auto points = renderer.GetTessellator()->TessellateConvex(
         path_, entity.GetTransform().GetMaxBasisLength());
 
-    vertex_buffer.vertex_buffers = {host_buffer.Emplace(
-        points.data(), points.size() * sizeof(Point), alignof(Point))};
+    vertex_buffer.vertex_buffers = host_buffer.Emplace(
+        points.data(), points.size() * sizeof(Point), alignof(Point));
     vertex_buffer.index_buffer = {}, vertex_buffer.vertex_count = points.size();
     vertex_buffer.index_type = IndexType::kNone;
 
@@ -40,8 +40,8 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
-        vertex_buffer.vertex_buffers = {host_buffer.Emplace(
-            vertices, vertices_count * sizeof(float) * 2, alignof(float))};
+        vertex_buffer.vertex_buffers = host_buffer.Emplace(
+            vertices, vertices_count * sizeof(float) * 2, alignof(float));
         if (indices != nullptr) {
           vertex_buffer.index_buffer = host_buffer.Emplace(
               indices, indices_count * sizeof(uint16_t), alignof(uint16_t));

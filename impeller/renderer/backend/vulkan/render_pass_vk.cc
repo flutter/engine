@@ -367,7 +367,7 @@ static void SetViewportAndScissor(const Command& command,
 static bool AppendVertexBuffer(
     CommandEncoderVK& encoder,
     std::vector<vk::Buffer>& vertex_buffers,
-    std::vector<vk::DeviceSize> vertex_buffer_offsets,
+    std::vector<vk::DeviceSize>& vertex_buffer_offsets,
     const BufferView& vertex_buffer_view) {
   if (!vertex_buffer_view) {
     return false;
@@ -454,7 +454,7 @@ static bool EncodeCommand(const Context& context,
     }
   }
 
-  // Bind the vertex buffer.
+  // Bind the vertex buffers.
   cmd_buffer.bindVertexBuffers(0u, vertex_buffers.size(), vertex_buffers.data(),
                                vertex_buffer_offsets.data());
 
