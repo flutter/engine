@@ -3716,5 +3716,32 @@ TEST_P(AiksTest, SubpassWithClearColorOptimization) {
   // will be filled with NaNs and may produce a magenta texture on macOS or iOS.
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
+
+TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
+  // This makes sure if mip maps are recycled across invocations of blurs the
+  // contents get updated each frame correctly. If they aren't updated the color
+  // inside the blur and outside the blur will be different.
+  //
+  // If there is some change to render target caching this could display a false
+  // positive in the future.
+  int32_t count = 0;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    Canvas canvas;
+    if (count++ == 0) {
+      canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+    } else {
+      canvas.DrawCircle({100, 100}, 50, {.color = Color::Chartreuse()});
+    }
+    canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), {20, 20});
+    canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                     ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kClamp));
+    canvas.Restore();
+    return canvas.EndRecordingAsPicture();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
 }  // namespace testing
 }  // namespace impeller
