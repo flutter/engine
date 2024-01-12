@@ -137,7 +137,9 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
 
 bool RenderPass::Draw() {
   impeller::Command result = ProvisionRasterCommand();
+#ifdef IMPELLER_DEBUG
   render_pass_->SetCommandLabel(result.label);
+#endif  // IMPELLER_DEBUG
   render_pass_->SetPipeline(result.pipeline);
   render_pass_->SetStencilReference(result.stencil_reference);
   render_pass_->SetBaseVertex(result.base_vertex);
