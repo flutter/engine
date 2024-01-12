@@ -167,11 +167,11 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      reinterpret_cast<const uint8_t*>(vertices_.data()), total_vtx_bytes,
+      reinterpret_cast<const uint8_t*>(vertex_data.data()), total_vtx_bytes,
       alignof(VS::PerVertexData));
 
   BufferView index_buffer = {};
-  if (index_count) {
+  if (index_count > 0) {
     index_buffer = renderer.GetTransientsBuffer().Emplace(
         indices_.data(), total_idx_bytes, alignof(uint16_t));
   }
@@ -226,11 +226,10 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      reinterpret_cast<const uint8_t*>(vertices_.data()), total_vtx_bytes,
-      alignof(VS::PerVertexData));
+      vertex_data.data(), total_vtx_bytes, alignof(VS::PerVertexData));
 
   BufferView index_buffer = {};
-  if (index_count) {
+  if (index_count > 0) {
     index_buffer = renderer.GetTransientsBuffer().Emplace(
         indices_.data(), total_idx_bytes, alignof(uint16_t));
   }
