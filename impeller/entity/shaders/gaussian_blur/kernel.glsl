@@ -22,7 +22,6 @@ blur_info;
 
 f16vec4 Sample(f16sampler2D tex, vec2 coords) {
 #if ENABLE_DECAL_SPECIALIZATION
-  // TODO(gaaclarke): Make a LOD variant here.
   return IPHalfSampleDecal(tex, coords);
 #else
   return texture(tex, coords);
