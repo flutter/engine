@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "fml/status.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
@@ -35,8 +36,8 @@ static bool BindImages(
         write_workspace,
     size_t& write_offset) {
   for (const TextureAndSampler& data : bindings.sampled_images) {
-    auto texture = data.texture.resource;
-    const auto& texture_vk = TextureVK::Cast(*texture);
+    const std::shared_ptr<const Texture>& texture = data.texture.resource;
+    const TextureVK& texture_vk = TextureVK::Cast(*texture);
     const SamplerVK& sampler = SamplerVK::Cast(*data.sampler);
 
     if (!encoder->Track(texture) ||
@@ -77,20 +78,14 @@ static bool BindBuffers(
         write_workspace,
     size_t& write_offset) {
   for (const BufferAndUniformSlot& data : bindings.buffers) {
-    const auto& buffer_view = data.view.resource.buffer;
-
-    auto device_buffer = buffer_view;
-    if (!device_buffer) {
-      VALIDATION_LOG << "Failed to get device buffer for vertex binding";
-      return false;
-    }
+    const std::shared_ptr<const DeviceBuffer>& device_buffer = data.view.resource.buffer;
 
     auto buffer = DeviceBufferVK::Cast(*device_buffer).GetBuffer();
     if (!buffer) {
       return false;
     }
 
-    if (!encoder->Track(std::move(device_buffer))) {
+    if (!encoder->Track(device_buffer)) {
       return false;
     }
 
@@ -144,7 +139,7 @@ fml::StatusOr<vk::DescriptorSet> AllocateAndBindDescriptorSets(
   if (!descriptor_result.ok()) {
     return descriptor_result.status();
   }
-  auto descriptor_set = descriptor_result.value();
+  vk::DescriptorSet descriptor_set = descriptor_result.value();
 
   size_t buffer_offset = 0u;
   size_t image_offset = 0u;

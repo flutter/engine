@@ -10,6 +10,7 @@
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
@@ -369,7 +370,8 @@ static bool EncodeCommand(const Context& context,
                           CommandEncoderVK& encoder,
                           PassBindingsCache& command_buffer_cache,
                           const ISize& target_size,
-                          const vk::DescriptorSet vk_desc_set) {
+                          const vk::DescriptorSet vk_desc_set,
+                          const vk::CommandBuffer& cmd_buffer) {
 #ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_marker(
       [&encoder]() { encoder.PopDebugGroup(); });
@@ -380,15 +382,15 @@ static bool EncodeCommand(const Context& context,
   }
 #endif  // IMPELLER_DEBUG
 
-  const auto& cmd_buffer = encoder.GetCommandBuffer();
-  const auto& pipeline_vk = PipelineVK::Cast(*command.pipeline);
+  const PipelineVK& pipeline_vk = PipelineVK::Cast(*command.pipeline);
 
-  encoder.GetCommandBuffer().bindDescriptorSets(
-      vk::PipelineBindPoint::eGraphics,  // bind point
-      pipeline_vk.GetPipelineLayout(),   // layout
-      0,                                 // first set
-      {vk::DescriptorSet{vk_desc_set}},  // sets
-      nullptr                            // offsets
+  cmd_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,  // bind point
+                                pipeline_vk.GetPipelineLayout(),   // layout
+                                0,                                 // first set
+                                1,                                 // set count
+                                &vk_desc_set,                      // sets
+                                0,       // offset count
+                                nullptr  // offsets
   );
 
   command_buffer_cache.BindPipeline(
@@ -403,39 +405,37 @@ static bool EncodeCommand(const Context& context,
       command.stencil_reference);
 
   // Configure vertex and index and buffers for binding.
-  auto& vertex_buffer_view = command.vertex_buffer.vertex_buffer;
-
-  if (!vertex_buffer_view) {
-    return false;
-  }
-
-  auto& allocator = *context.GetResourceAllocator();
-  auto vertex_buffer = vertex_buffer_view.buffer;
-
-  if (!vertex_buffer) {
+  if (!command.vertex_buffer.vertex_buffer) {
     VALIDATION_LOG << "Failed to acquire device buffer"
                    << " for vertex buffer view";
     return false;
   }
+
+  auto& allocator = *context.GetResourceAllocator();
+  const std::shared_ptr<const DeviceBuffer>& vertex_buffer =
+      command.vertex_buffer.vertex_buffer.buffer;
 
   if (!encoder.Track(vertex_buffer)) {
     return false;
   }
 
   // Bind the vertex buffer.
-  auto vertex_buffer_handle = DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
+  vk::Buffer vertex_buffer_handle =
+      DeviceBufferVK::Cast(*vertex_buffer).GetBuffer();
   vk::Buffer vertex_buffers[] = {vertex_buffer_handle};
-  vk::DeviceSize vertex_buffer_offsets[] = {vertex_buffer_view.range.offset};
+  vk::DeviceSize vertex_buffer_offsets[] = {
+      command.vertex_buffer.vertex_buffer.range.offset};
   cmd_buffer.bindVertexBuffers(0u, 1u, vertex_buffers, vertex_buffer_offsets);
 
   if (command.vertex_buffer.index_type != IndexType::kNone) {
     // Bind the index buffer.
-    auto index_buffer_view = command.vertex_buffer.index_buffer;
+    const BufferView& index_buffer_view = command.vertex_buffer.index_buffer;
     if (!index_buffer_view) {
       return false;
     }
 
-    auto index_buffer = index_buffer_view.buffer;
+    const std::shared_ptr<const DeviceBuffer>& index_buffer =
+        index_buffer_view.buffer;
     if (!index_buffer) {
       VALIDATION_LOG << "Failed to acquire device buffer"
                      << " for index buffer view";
@@ -446,7 +446,8 @@ static bool EncodeCommand(const Context& context,
       return false;
     }
 
-    auto index_buffer_handle = DeviceBufferVK::Cast(*index_buffer).GetBuffer();
+    vk::Buffer index_buffer_handle =
+        DeviceBufferVK::Cast(*index_buffer).GetBuffer();
     cmd_buffer.bindIndexBuffer(index_buffer_handle,
                                index_buffer_view.range.offset,
                                ToVKIndexType(command.vertex_buffer.index_type));
@@ -559,10 +560,8 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       if (!desc_set_result.ok()) {
         return false;
       }
-      vk::DescriptorSet desc_set = desc_set_result.value();
-
       if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
-                         target_size, desc_set)) {
+                         target_size, desc_set_result.value(), cmd_buffer)) {
         return false;
       }
     }
