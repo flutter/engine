@@ -1,4 +1,4 @@
-Signature: 1d819b119f20946fc56ba8fab01fb122
+Signature: e0f6a89c592765faeefb2c2547a0194a
 
 ====================================================================================================
 LIBRARY: etc1
@@ -389,6 +389,7 @@ FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/BackendTextureFromView.md
 FILE: ../../../flutter/third_party/skia/relnotes/PDF_jpeg.md
 FILE: ../../../flutter/third_party/skia/relnotes/Tick.md
+FILE: ../../../flutter/third_party/skia/relnotes/TopLevelShadowing.md
 FILE: ../../../flutter/third_party/skia/relnotes/font.md
 FILE: ../../../flutter/third_party/skia/relnotes/skfontarguments_type.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
