@@ -134,9 +134,8 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
 
     using VS = SolidFillPipeline::VertexShader;
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
-    cmd.stencil_reference = 0;
+    pass.SetCommandLabel("Draw Stroke");
+    pass.SetStencilReference(0);
 
     ContentContextOptions options;
     options.sample_count = pass.GetRenderTarget().GetSampleCount();
@@ -149,13 +148,13 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
 
-    cmd.pipeline = renderer.GetSolidFillPipeline(options);
+    pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
                      vertex_buffer_count->AsBufferView().contents)
                      ->count;
 
-    cmd.BindVertices(
+    pass.SetVertexBuffer(
         VertexBuffer{.vertex_buffer = vertex_buffer->AsBufferView(),
                      .vertex_count = count,
                      .index_type = IndexType::kNone});
@@ -165,13 +164,9 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
     frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
     VS::BindFrameInfo(
-        cmd, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
+        pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
-      return false;
-    }
-
-    return true;
+    return pass.Draw().ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -336,9 +331,8 @@ TEST_P(ComputeSubgroupTest, LargePath) {
 
     using VS = SolidFillPipeline::VertexShader;
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
-    cmd.stencil_reference = 0;
+    pass.SetCommandLabel("Draw Stroke");
+    pass.SetStencilReference(0);
 
     ContentContextOptions options;
     options.sample_count = pass.GetRenderTarget().GetSampleCount();
@@ -351,13 +345,13 @@ TEST_P(ComputeSubgroupTest, LargePath) {
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
 
-    cmd.pipeline = renderer.GetSolidFillPipeline(options);
+    pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
                      vertex_buffer_count->AsBufferView().contents)
                      ->count;
 
-    cmd.BindVertices(
+    pass.SetVertexBuffer(
         VertexBuffer{.vertex_buffer = vertex_buffer->AsBufferView(),
                      .vertex_count = count,
                      .index_type = IndexType::kNone});
@@ -367,13 +361,9 @@ TEST_P(ComputeSubgroupTest, LargePath) {
     frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
     VS::BindFrameInfo(
-        cmd, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
+        pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
-      return false;
-    }
-
-    return true;
+    return pass.Draw().ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -419,9 +409,8 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
 
     using VS = SolidFillPipeline::VertexShader;
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
-    cmd.stencil_reference = 0;
+    pass.SetCommandLabel("Draw Stroke");
+    pass.SetStencilReference(0);
 
     ContentContextOptions options;
     options.sample_count = pass.GetRenderTarget().GetSampleCount();
@@ -434,13 +423,13 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
 
-    cmd.pipeline = renderer.GetSolidFillPipeline(options);
+    pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
                      vertex_buffer_count->AsBufferView().contents)
                      ->count;
 
-    cmd.BindVertices(
+    pass.SetVertexBuffer(
         VertexBuffer{.vertex_buffer = vertex_buffer->AsBufferView(),
                      .vertex_count = count,
                      .index_type = IndexType::kNone});
@@ -450,13 +439,9 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
     frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
     VS::BindFrameInfo(
-        cmd, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
+        pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
-      return false;
-    }
-
-    return true;
+    return pass.Draw().ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 
