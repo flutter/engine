@@ -748,10 +748,7 @@ class ContentContext {
   /// Used by hot reload/hot restart to clear a cached pipeline from
   /// GetCachedRuntimeEffectPipeline.
   void ClearCachedRuntimeEffectPipeline(
-      const std::string& unique_entrypoint_name,
-      const ContentContextOptions& options) const {
-    runtime_effect_pipelines_.erase({unique_entrypoint_name, options});
-  }
+      const std::string& unique_entrypoint_name) const;
 
   /// @brief Retrieve the currnent host buffer for transient storage.
   ///

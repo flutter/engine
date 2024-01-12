@@ -94,8 +94,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   options.primitive_type = geometry_result.type;
 
   if (function && runtime_stage_->IsDirty()) {
-    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint(),
-                                              options);
+    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint());
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
