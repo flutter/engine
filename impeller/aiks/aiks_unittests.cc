@@ -3725,7 +3725,8 @@ TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
   // inside the blur and outside the blur will be different.
   //
   // If there is some change to render target caching this could display a false
-  // positive in the future.
+  // positive in the future.  Also, if the LOD that is rendered is 1 it could
+  // present a false positive.
   int32_t count = 0;
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     Canvas canvas;
