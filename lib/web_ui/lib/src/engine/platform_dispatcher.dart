@@ -1237,7 +1237,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Otherwise zones won't work properly.
   void invokeOnSemanticsAction(
       int nodeId, ui.SemanticsAction action, ByteData? args) {
-    print('invoking semantics action callback!');
     invoke1<ui.SemanticsActionEvent>(
       _onSemanticsActionEvent,
       _onSemanticsActionEventZone,
