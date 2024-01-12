@@ -136,7 +136,9 @@ void Canvas::Save() {
 namespace {
 class MipCountVisitor : public ImageFilterVisitor {
  public:
-  virtual void Visit(const BlurImageFilter& filter) { required_mip_count_ = 4; }
+  virtual void Visit(const BlurImageFilter& filter) {
+    required_mip_count_ = FilterContents::kBlurFilterRequiredMipCount;
+  }
   virtual void Visit(const LocalMatrixImageFilter& filter) {
     required_mip_count_ = 1;
   }
