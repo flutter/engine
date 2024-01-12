@@ -43,7 +43,7 @@ void TrackedObjectsVK::Track(std::shared_ptr<SharedObjectVK> object) {
   tracked_objects_.insert(std::move(object));
 }
 
-void TrackedObjectsVK::Track(std::shared_ptr<const Buffer> buffer) {
+void TrackedObjectsVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
   if (!buffer) {
     return;
   }
@@ -51,7 +51,7 @@ void TrackedObjectsVK::Track(std::shared_ptr<const Buffer> buffer) {
 }
 
 bool TrackedObjectsVK::IsTracking(
-    const std::shared_ptr<const Buffer>& buffer) const {
+    const std::shared_ptr<const DeviceBuffer>& buffer) const {
   if (!buffer) {
     return false;
   }

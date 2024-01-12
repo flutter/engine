@@ -167,7 +167,7 @@ bool CommandEncoderVK::Track(std::shared_ptr<SharedObjectVK> object) {
   return true;
 }
 
-bool CommandEncoderVK::Track(std::shared_ptr<const Buffer> buffer) {
+bool CommandEncoderVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
   if (!IsValid()) {
     return false;
   }
@@ -176,7 +176,7 @@ bool CommandEncoderVK::Track(std::shared_ptr<const Buffer> buffer) {
 }
 
 bool CommandEncoderVK::IsTracking(
-    const std::shared_ptr<const Buffer>& buffer) const {
+    const std::shared_ptr<const DeviceBuffer>& buffer) const {
   if (!IsValid()) {
     return false;
   }
