@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <utility>
 
-#include <utility>
 #include "impeller/core/buffer_view.h"
 
 namespace impeller {
@@ -152,23 +151,20 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
 
   auto index_count = indices_.size();
   auto vertex_count = vertices_.size();
-
-  std::vector<VS::PerVertexData> vertex_data(vertex_count);
-  {
-    for (auto i = 0u; i < vertex_count; i++) {
-      vertex_data[i] = {
-          .position = vertices_[i],
-          .color = colors_[i],
-      };
-    }
-  }
-
-  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
+  size_t total_vtx_bytes = vertex_count * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
+  size_t i = 0u;
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      reinterpret_cast<const uint8_t*>(vertex_data.data()), total_vtx_bytes,
-      alignof(VS::PerVertexData));
+      total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
+        VS::PerVertexData* vertex_data =
+            reinterpret_cast<VS::PerVertexData*>(data);
+        vertex_data[i] = {
+            .position = vertices_[i],
+            .color = colors_[i],
+        };
+        i++;
+      });
 
   BufferView index_buffer = {};
   if (index_count > 0) {
@@ -204,29 +200,28 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
   auto has_texture_coordinates = HasTextureCoordinates();
-  std::vector<VS::PerVertexData> vertex_data(vertex_count);
-  {
-    for (auto i = 0u; i < vertex_count; i++) {
-      auto vertex = vertices_[i];
-      auto texture_coord =
-          has_texture_coordinates ? texture_coordinates_[i] : vertices_[i];
-      auto uv = uv_transform * texture_coord;
-      // From experimentation we need to clamp these values to < 1.0 or else
-      // there can be flickering.
-      vertex_data[i] = {
-          .position = vertex,
-          .texture_coords =
-              Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
-                    std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
-      };
-    }
-  }
 
-  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
+  size_t total_vtx_bytes = vertices_.size() * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
-
+  size_t i = 0u;
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      vertex_data.data(), total_vtx_bytes, alignof(VS::PerVertexData));
+      total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
+        VS::PerVertexData* vertex_data =
+            reinterpret_cast<VS::PerVertexData*>(data);
+        auto vertex = vertices_[i];
+        auto texture_coord =
+            has_texture_coordinates ? texture_coordinates_[i] : vertices_[i];
+        auto uv = uv_transform * texture_coord;
+        // From experimentation we need to clamp these values to < 1.0 or else
+        // there can be flickering.
+        vertex_data[i] = {
+            .position = vertex,
+            .texture_coords =
+                Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
+                      std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
+        };
+        i++;
+      });
 
   BufferView index_buffer = {};
   if (index_count > 0) {
