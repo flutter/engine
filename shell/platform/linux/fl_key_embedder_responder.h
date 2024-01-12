@@ -18,13 +18,14 @@ constexpr int kMaxConvertedKeyData = 3;
 // The signature of a function that FlKeyEmbedderResponder calls on every key
 // event.
 //
-// The `send_key_event_user_data` is a pointer managed by the object that
-// creates FlKeyEmbedderResponder and opaque to FlKeyEmbedderResponder.
+// The `user_data` is opaque data managed by the object that creates
+// FlKeyEmbedderResponder, and is registered along with this callback
+// via `fl_key_embedder_responder_new`.
 //
-// The callback_user_data is a pointer created and managed by
-// FlKeyEmbedderResponder and opaque to the `EmbedderSendKeyEvent` function.
-// After the event is processed, the `callback` should be invoked with
-// `callback_user_data`.
+// The `callback_user_data` is opaque data managed by FlKeyEmbedderResponder.
+// Instances of the EmbedderSendKeyEvent callback are required to invoke
+// `callback` with the `callback_user_data` parameter after the `event` has been
+// processed.
 typedef void (*EmbedderSendKeyEvent)(const FlutterKeyEvent* event,
                                      FlutterKeyEventCallback callback,
                                      void* callback_user_data,
