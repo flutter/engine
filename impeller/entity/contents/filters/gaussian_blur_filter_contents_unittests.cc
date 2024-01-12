@@ -462,8 +462,7 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
   BlurParameters parameters = {.blur_uv_offset = Point(1, 0),
                                .blur_sigma = 1,
                                .blur_radius = 5,
-                               .step_size = 1,
-                               .lod = -1.f};
+                               .step_size = 1};
   KernelPipeline::FragmentShader::KernelSamples samples =
       GenerateBlurInfo(parameters);
   EXPECT_EQ(samples.sample_count, 9);
@@ -482,8 +481,6 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
     EXPECT_TRUE(samples.samples[i + 1].coefficient >
                 samples.samples[i].coefficient);
   }
-
-  EXPECT_FLOAT_EQ(samples.lod, -1.f);
 }
 
 }  // namespace testing
