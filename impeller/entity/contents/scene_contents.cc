@@ -50,6 +50,7 @@ bool SceneContents::Render(const ContentContext& renderer,
         *renderer.GetContext(),             // context
         *renderer.GetRenderTargetCache(),   // allocator
         ISize(coverage.value().GetSize()),  // size
+        /*mip_count=*/1,
         "SceneContents",                    // label
         RenderTarget::AttachmentConfigMSAA{
             .storage_mode = StorageMode::kDeviceTransient,
@@ -68,6 +69,7 @@ bool SceneContents::Render(const ContentContext& renderer,
         *renderer.GetContext(),             // context
         *renderer.GetRenderTargetCache(),   // allocator
         ISize(coverage.value().GetSize()),  // size
+        /*mip_count=*/1,
         "SceneContents",                    // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
