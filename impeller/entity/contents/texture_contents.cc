@@ -167,7 +167,7 @@ bool TextureContents::Render(const ContentContext& renderer,
     pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
   }
 #else
-  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+  pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
 #endif  // IMPELLER_ENABLE_OPENGLES
 
   pass.SetStencilReference(entity.GetClipDepth());
