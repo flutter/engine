@@ -50,7 +50,7 @@ class HtmlViewEmbedder {
   static const int maximumOverlays = 7;
 
   /// Canvases used to draw on top of platform views, keyed by platform view ID.
-  final Map<int, OverlayCanvas> _overlays = <int, OverlayCanvas>{};
+  final Map<int, DisplayCanvas> _overlays = <int, DisplayCanvas>{};
 
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
@@ -378,7 +378,7 @@ class HtmlViewEmbedder {
 
     int pictureRecorderIndex = 0;
     for (final OverlayGroup overlayGroup in _activeOverlayGroups) {
-      final OverlayCanvas overlay = _overlays[overlayGroup.last]!;
+      final DisplayCanvas overlay = _overlays[overlayGroup.last]!;
       final List<CkPicture> pictures = <CkPicture>[];
       for (int i = 0; i < overlayGroup.visibleCount; i++) {
         pictures.add(
@@ -438,17 +438,17 @@ class HtmlViewEmbedder {
         if (diffResult.addToBeginning) {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           sceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
-          final OverlayCanvas? overlay = _overlays[viewId];
+          final DisplayCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
             sceneHost.insertBefore(
-                overlay.htmlElement, elementToInsertBefore);
+                overlay.hostElement, elementToInsertBefore);
           }
         } else {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           sceneHost.append(platformViewRoot);
-          final OverlayCanvas? overlay = _overlays[viewId];
+          final DisplayCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
-            sceneHost.append(overlay.htmlElement);
+            sceneHost.append(overlay.hostElement);
           }
         }
       }
@@ -457,7 +457,7 @@ class HtmlViewEmbedder {
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int view = _compositionOrder[i];
         if (_overlays[view] != null) {
-          final DomElement overlayElement = _overlays[view]!.htmlElement;
+          final DomElement overlayElement = _overlays[view]!.hostElement;
           if (!overlayElement.isConnected!) {
             // This overlay wasn't added to the DOM.
             if (i == _compositionOrder.length - 1) {
@@ -489,10 +489,10 @@ class HtmlViewEmbedder {
         }
 
         final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-        final OverlayCanvas? overlay = _overlays[viewId];
+        final DisplayCanvas? overlay = _overlays[viewId];
         sceneHost.append(platformViewRoot);
         if (overlay != null) {
-          sceneHost.append(overlay.htmlElement);
+          sceneHost.append(overlay.hostElement);
         }
         _activeCompositionOrder.add(viewId);
         unusedViews.remove(viewId);
@@ -525,7 +525,7 @@ class HtmlViewEmbedder {
 
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
-      final OverlayCanvas overlay = _overlays[viewId]!;
+      final DisplayCanvas overlay = _overlays[viewId]!;
       rasterizer.releaseOverlay(overlay);
       _overlays.remove(viewId);
     }
@@ -636,7 +636,7 @@ class HtmlViewEmbedder {
     assert(!_overlays.containsKey(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    final OverlayCanvas overlay = rasterizer.getOverlay();
+    final DisplayCanvas overlay = rasterizer.getOverlay();
     _overlays[viewId] = overlay;
   }
 

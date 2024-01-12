@@ -32,7 +32,7 @@ abstract class ViewRasterizer {
   late final HtmlViewEmbedder viewEmbedder = HtmlViewEmbedder(sceneHost, this);
 
   /// A factory for creating overlays.
-  OverlayCanvasFactory<OverlayCanvas> get overlayFactory;
+  DisplayCanvasFactory<DisplayCanvas> get displayFactory;
 
   /// The scene host which this rasterizer should raster into.
   DomElement get sceneHost => view.dom.sceneHost;
@@ -57,9 +57,9 @@ abstract class ViewRasterizer {
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-    sceneHost.prepend(overlayFactory.baseCanvas.htmlElement);
+    sceneHost.prepend(displayFactory.baseCanvas.hostElement);
     await rasterizeToCanvas(
-        overlayFactory.baseCanvas, <CkPicture>[pictureRecorder.endRecording()]);
+        displayFactory.baseCanvas, <CkPicture>[pictureRecorder.endRecording()]);
 
     await viewEmbedder.submitFrame();
   }
@@ -72,37 +72,45 @@ abstract class ViewRasterizer {
 
   /// Rasterize the [pictures] to the given [canvas].
   Future<void> rasterizeToCanvas(
-      OverlayCanvas canvas, List<CkPicture> pictures);
+      DisplayCanvas canvas, List<CkPicture> pictures);
 
-  /// Get a [OverlayCanvas] to use as an overlay.
-  OverlayCanvas getOverlay() {
-    return overlayFactory.getCanvas();
+  /// Get a [DisplayCanvas] to use as an overlay.
+  DisplayCanvas getOverlay() {
+    return displayFactory.getCanvas();
   }
 
   /// Release the given [overlay] so it may be reused.
-  void releaseOverlay(OverlayCanvas overlay) {
-    overlayFactory.releaseCanvas(overlay);
+  void releaseOverlay(DisplayCanvas overlay) {
+    displayFactory.releaseCanvas(overlay);
   }
 
   /// Release all overlays.
   void releaseOverlays() {
-    overlayFactory.releaseCanvases();
+    displayFactory.releaseCanvases();
   }
 
   /// Remove all overlays that have been created from the DOM.
   void removeOverlaysFromDom() {
-    overlayFactory.removeSurfacesFromDom();
+    displayFactory.removeCanvasesFromDom();
   }
 
   /// Disposes this rasterizer.
   void dispose() {
     viewEmbedder.dispose();
-    overlayFactory.dispose();
+    displayFactory.dispose();
   }
 }
 
-abstract class OverlayCanvas {
-  DomElement get htmlElement;
+/// A [DisplayCanvas] is an abstraction for a canvas element which displays
+/// Skia-drawn pictures to the screen. They are also sometimes called "overlays"
+/// because they can be overlaid on top of platform views, which are HTML
+/// content that isn't rendered by Skia.
+///
+/// [DisplayCanvas]es are drawn into with [ViewRasterizer.rasterizeToCanvas].
+abstract class DisplayCanvas {
+  /// The DOM element which, when appended to the scene host, will display the
+  /// Skia-rendered content to the screen.
+  DomElement get hostElement;
 
   /// Whether or not this overlay canvas is attached to the DOM.
   bool get isConnected;

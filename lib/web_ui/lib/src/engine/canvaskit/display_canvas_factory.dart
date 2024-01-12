@@ -5,9 +5,9 @@ import 'package:meta/meta.dart';
 
 import '../../engine.dart';
 
-/// Caches canvases used to overlay platform views.
-class OverlayCanvasFactory<T extends OverlayCanvas> {
-  OverlayCanvasFactory({required this.createCanvas}) {
+/// Caches canvases used to display Skia-drawn content.
+class DisplayCanvasFactory<T extends DisplayCanvas> {
+  DisplayCanvasFactory({required this.createCanvas}) {
     assert(() {
       registerHotRestartListener(dispose);
       return true;
@@ -15,7 +15,7 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
   }
 
   /// A function which is passed in as a constructor parameter which is used to
-  /// create new overlay canvases.
+  /// create new display canvases.
   final T Function() createCanvas;
 
   /// The base canvas to paint on. This is the default canvas which will be
@@ -42,7 +42,7 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
   /// Useful in tests.
   int get debugCacheSize => _cache.length;
 
-  /// Gets an overlay canvas from the cache or creates a new one if there are
+  /// Gets a display canvas from the cache or creates a new one if there are
   /// none in the cache.
   T getCanvas() {
     if (_cache.isNotEmpty) {
@@ -68,11 +68,11 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
     _liveCanvases.clear();
   }
 
-  /// Removes all surfaces except the base surface from the DOM.
+  /// Removes all canvases except the base canvas from the DOM.
   ///
   /// This is called at the beginning of the frame to prepare for painting into
-  /// the new surfaces.
-  void removeSurfacesFromDom() {
+  /// the new canvases.
+  void removeCanvasesFromDom() {
     _cache.forEach(_removeFromDom);
     _liveCanvases.forEach(_removeFromDom);
   }
@@ -86,7 +86,7 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
 
   // Removes [canvas] from the DOM.
   void _removeFromDom(T canvas) {
-    canvas.htmlElement.remove();
+    canvas.hostElement.remove();
   }
 
   /// Signals that a canvas is no longer being used. It can be reused.
@@ -96,7 +96,7 @@ class OverlayCanvasFactory<T extends OverlayCanvas> {
         _liveCanvases.contains(canvas),
         'Attempting to release a Canvas which '
         'was not created by this factory');
-    canvas.htmlElement.remove();
+    canvas.hostElement.remove();
     _liveCanvases.remove(canvas);
     _cache.add(canvas);
   }

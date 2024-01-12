@@ -49,18 +49,18 @@ class SurfaceFrame {
 /// The underlying representation is a [CkSurface], which can be reused by
 /// successive frames if they are the same size. Otherwise, a new [CkSurface] is
 /// created.
-class Surface extends OverlayCanvas {
-  Surface({this.isRenderCanvas = false})
+class Surface extends DisplayCanvas {
+  Surface({this.isDisplayCanvas = false})
       : useOffscreenCanvas =
-            Surface.offscreenCanvasSupported && !isRenderCanvas;
+            Surface.offscreenCanvasSupported && !isDisplayCanvas;
 
   CkSurface? _surface;
 
   /// Whether or not to use an `OffscreenCanvas` to back this [Surface].
   final bool useOffscreenCanvas;
 
-  /// If `true`, this [Surface] is used for rendering.
-  final bool isRenderCanvas;
+  /// If `true`, this [Surface] is used as a [DisplayCanvas].
+  final bool isDisplayCanvas;
 
   /// If true, forces a new WebGL context to be created, even if the window
   /// size is the same. This is used to restore the UI after the browser tab
@@ -103,7 +103,7 @@ class Surface extends OverlayCanvas {
   /// Note, if this getter is called, then this Surface is being used as an
   /// overlay and must be backed by an onscreen <canvas> element.
   @override
-  final DomElement htmlElement = createDomElement('flt-canvas-container');
+  final DomElement hostElement = createDomElement('flt-canvas-container');
 
   int _pixelWidth = -1;
   int _pixelHeight = -1;
@@ -210,7 +210,7 @@ class Surface extends OverlayCanvas {
   /// the top left of the window. We need to shift the canvas down so that the
   /// bottom left of the <canvas> is the the bottom left corner of the window.
   void positionToShowFrame(ui.Size frameSize) {
-    assert(isRenderCanvas,
+    assert(isDisplayCanvas,
         'Should not position Surface if not used as a render canvas');
     final double devicePixelRatio =
         EngineFlutterDisplay.instance.devicePixelRatio;
@@ -263,7 +263,7 @@ class Surface extends OverlayCanvas {
           size.height == previousSurfaceSize.height) {
         final double devicePixelRatio =
             EngineFlutterDisplay.instance.devicePixelRatio;
-        if (isRenderCanvas && devicePixelRatio != _currentDevicePixelRatio) {
+        if (isDisplayCanvas && devicePixelRatio != _currentDevicePixelRatio) {
           _updateLogicalHtmlCanvasSize();
         }
         return _surface!;
@@ -288,7 +288,7 @@ class Surface extends OverlayCanvas {
         _currentCanvasPhysicalSize = newSize;
         _pixelWidth = newSize.width.ceil();
         _pixelHeight = newSize.height.ceil();
-        if (isRenderCanvas) {
+        if (isDisplayCanvas) {
           _updateLogicalHtmlCanvasSize();
         }
       }
@@ -387,10 +387,10 @@ class Surface extends OverlayCanvas {
       htmlCanvas = canvas;
       _canvasElement = canvas;
       _offscreenCanvas = null;
-      if (isRenderCanvas) {
+      if (isDisplayCanvas) {
         _canvasElement!.setAttribute('aria-hidden', 'true');
         _canvasElement!.style.position = 'absolute';
-        htmlElement.append(_canvasElement!);
+        hostElement.append(_canvasElement!);
         _updateLogicalHtmlCanvasSize();
       }
     }

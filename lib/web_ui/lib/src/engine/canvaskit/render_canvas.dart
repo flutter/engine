@@ -27,12 +27,12 @@ import 'rasterizer.dart';
 /// on the maximum amount of WebGL contexts which can be live at once. Using
 /// a single OffscreenCanvas and multiple RenderCanvases allows us to only
 /// create a single WebGL context.
-class RenderCanvas extends OverlayCanvas {
+class RenderCanvas extends DisplayCanvas {
   RenderCanvas() {
     canvasElement.setAttribute('aria-hidden', 'true');
     canvasElement.style.position = 'absolute';
     _updateLogicalHtmlCanvasSize();
-    htmlElement.append(canvasElement);
+    hostElement.append(canvasElement);
   }
 
   /// The root HTML element for this canvas.
@@ -45,7 +45,7 @@ class RenderCanvas extends OverlayCanvas {
   /// example, when the screen size changes, or when the WebGL context is lost
   /// due to the browser tab becoming dormant.
   @override
-  final DomElement htmlElement = createDomElement('flt-canvas-container');
+  final DomElement hostElement = createDomElement('flt-canvas-container');
 
   /// The underlying `<canvas>` element used to display the pixels.
   final DomCanvasElement canvasElement = createDomCanvasElement();
@@ -144,6 +144,6 @@ class RenderCanvas extends OverlayCanvas {
 
   @override
   void dispose() {
-    htmlElement.remove();
+    hostElement.remove();
   }
 }

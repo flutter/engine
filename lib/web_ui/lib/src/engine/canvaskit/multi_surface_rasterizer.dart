@@ -10,7 +10,7 @@ import 'package:ui/ui.dart' as ui;
 /// how many WebGL contexts can be live at one time as well as bugs in sharing
 /// GL resources between the contexts. However, using [createImageBitmap] is
 /// currently very slow on Firefox and Safari browsers, so directly rendering
-/// to several
+/// to several [Surface]s is how we can achieve 60 fps on these browsers.
 class MultiSurfaceRasterizer extends Rasterizer {
   @override
   MultiSurfaceViewRasterizer createViewRasterizer(EngineFlutterView view) {
@@ -34,7 +34,7 @@ class MultiSurfaceRasterizer extends Rasterizer {
   void setResourceCacheMaxBytes(int bytes) {
     for (final MultiSurfaceViewRasterizer viewRasterizer
         in _viewRasterizers.values) {
-      viewRasterizer.overlayFactory.forEachCanvas((Surface surface) {
+      viewRasterizer.displayFactory.forEachCanvas((Surface surface) {
         surface.setSkiaResourceCacheMaxBytes(bytes);
       });
     }
@@ -47,18 +47,18 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
   final MultiSurfaceRasterizer rasterizer;
 
   @override
-  final OverlayCanvasFactory<Surface> overlayFactory =
-      OverlayCanvasFactory<Surface>(
-          createCanvas: () => Surface(isRenderCanvas: true));
+  final DisplayCanvasFactory<Surface> displayFactory =
+      DisplayCanvasFactory<Surface>(
+          createCanvas: () => Surface(isDisplayCanvas: true));
 
   @override
   void prepareToDraw() {
-    overlayFactory.baseCanvas.createOrUpdateSurface(currentFrameSize);
+    displayFactory.baseCanvas.createOrUpdateSurface(currentFrameSize);
   }
 
   @override
   Future<void> rasterizeToCanvas(
-      OverlayCanvas canvas, List<CkPicture> pictures) {
+      DisplayCanvas canvas, List<CkPicture> pictures) {
     final Surface surface = canvas as Surface;
     surface.createOrUpdateSurface(currentFrameSize);
     surface.positionToShowFrame(currentFrameSize);
