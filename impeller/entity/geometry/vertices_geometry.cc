@@ -4,10 +4,11 @@
 
 #include "impeller/entity/geometry/vertices_geometry.h"
 
+#include <cstdint>
 #include <utility>
 
 #include <utility>
-#include "impeller/core/formats.h"
+#include "impeller/core/buffer_view.h"
 
 namespace impeller {
 
@@ -118,34 +119,22 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
   size_t total_vtx_bytes = vertex_count * sizeof(float) * 2;
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
+  auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
+      reinterpret_cast<const uint8_t*>(vertices_.data()), total_vtx_bytes,
+      alignof(float));
 
-  auto buffer =
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
-
-  if (!buffer->CopyHostBuffer(
-          reinterpret_cast<const uint8_t*>(vertices_.data()),
-          Range{0, total_vtx_bytes}, 0)) {
-    return {};
-  }
-  if (index_count > 0 &&
-      !buffer->CopyHostBuffer(
-          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(indices_.data())),
-          Range{0, total_idx_bytes}, total_vtx_bytes)) {
-    return {};
+  BufferView index_buffer = {};
+  if (index_count) {
+    index_buffer = renderer.GetTransientsBuffer().Emplace(
+        indices_.data(), total_idx_bytes, alignof(uint16_t));
   }
 
   return GeometryResult{
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
-              .index_buffer = {.buffer = buffer,
-                               .range =
-                                   Range{total_vtx_bytes, total_idx_bytes}},
+              .vertex_buffer = vertex_buffer,
+              .index_buffer = index_buffer,
               .vertex_count = index_count > 0 ? index_count : vertex_count,
               .index_type =
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
@@ -177,33 +166,22 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
   size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
+  auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
+      reinterpret_cast<const uint8_t*>(vertices_.data()), total_vtx_bytes,
+      alignof(VS::PerVertexData));
 
-  auto buffer =
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
-
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
-                              Range{0, total_vtx_bytes}, 0)) {
-    return {};
-  }
-  if (index_count > 0 &&
-      !buffer->CopyHostBuffer(
-          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(indices_.data())),
-          Range{0, total_idx_bytes}, total_vtx_bytes)) {
-    return {};
+  BufferView index_buffer = {};
+  if (index_count) {
+    index_buffer = renderer.GetTransientsBuffer().Emplace(
+        indices_.data(), total_idx_bytes, alignof(uint16_t));
   }
 
   return GeometryResult{
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
-              .index_buffer = {.buffer = buffer,
-                               .range =
-                                   Range{total_vtx_bytes, total_idx_bytes}},
+              .vertex_buffer = vertex_buffer,
+              .index_buffer = index_buffer,
               .vertex_count = index_count > 0 ? index_count : vertex_count,
               .index_type =
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
@@ -247,33 +225,22 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
   size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
+  auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
+      reinterpret_cast<const uint8_t*>(vertices_.data()), total_vtx_bytes,
+      alignof(VS::PerVertexData));
 
-  auto buffer =
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
-
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
-                              Range{0, total_vtx_bytes}, 0)) {
-    return {};
-  }
-  if (index_count > 0u &&
-      !buffer->CopyHostBuffer(
-          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(indices_.data())),
-          Range{0, total_idx_bytes}, total_vtx_bytes)) {
-    return {};
+  BufferView index_buffer = {};
+  if (index_count) {
+    index_buffer = renderer.GetTransientsBuffer().Emplace(
+        indices_.data(), total_idx_bytes, alignof(uint16_t));
   }
 
   return GeometryResult{
       .type = GetPrimitiveType(),
       .vertex_buffer =
           {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
-              .index_buffer = {.buffer = buffer,
-                               .range =
-                                   Range{total_vtx_bytes, total_idx_bytes}},
+              .vertex_buffer = vertex_buffer,
+              .index_buffer = index_buffer,
               .vertex_count = index_count > 0 ? index_count : vertex_count,
               .index_type =
                   index_count > 0 ? IndexType::k16bit : IndexType::kNone,
