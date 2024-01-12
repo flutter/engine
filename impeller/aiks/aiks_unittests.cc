@@ -3743,5 +3743,29 @@ TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
+
+TEST_P(AiksTest, GuassianBlurSetsMipCountOnPass) {
+  Canvas canvas;
+  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+  canvas.SaveLayer({}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  int32_t max_mip_count = 1;
+  picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      max_mip_count =
+          std::max(max_mip_count, subpass->get()->GetRequiredMipCount());
+    }
+    return true;
+  });
+
+  EXPECT_EQ(1, max_mip_count);
+}
+
 }  // namespace testing
 }  // namespace impeller
