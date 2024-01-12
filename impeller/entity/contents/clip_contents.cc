@@ -104,7 +104,6 @@ bool ClipContents::Render(const ContentContext& renderer,
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
       pass.SetPipeline(renderer.GetClipPipeline(options));
-      pass.SetStencilReference(entity.GetClipDepth());
       pass.Draw();
     }
 
