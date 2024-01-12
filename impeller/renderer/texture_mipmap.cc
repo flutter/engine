@@ -10,22 +10,20 @@ namespace impeller {
 
 fml::Status AddMipmapGeneration(const std::shared_ptr<Context>& context,
                                 const std::shared_ptr<Texture>& texture) {
-  if (texture->NeedsMipmapGeneration()) {
-    std::shared_ptr<CommandBuffer> mip_cmd_buffer =
-        context->CreateCommandBuffer();
-    std::shared_ptr<BlitPass> blit_pass = mip_cmd_buffer->CreateBlitPass();
-    bool success = blit_pass->GenerateMipmap(texture);
-    if (!success) {
-      return fml::Status(fml::StatusCode::kUnknown, "");
-    }
-    success = blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!success) {
-      return fml::Status(fml::StatusCode::kUnknown, "");
-    }
-    success = mip_cmd_buffer->SubmitCommands(/*callback=*/nullptr);
-    if (!success) {
-      return fml::Status(fml::StatusCode::kUnknown, "");
-    }
+  std::shared_ptr<CommandBuffer> mip_cmd_buffer =
+      context->CreateCommandBuffer();
+  std::shared_ptr<BlitPass> blit_pass = mip_cmd_buffer->CreateBlitPass();
+  bool success = blit_pass->GenerateMipmap(texture);
+  if (!success) {
+    return fml::Status(fml::StatusCode::kUnknown, "");
+  }
+  success = blit_pass->EncodeCommands(context->GetResourceAllocator());
+  if (!success) {
+    return fml::Status(fml::StatusCode::kUnknown, "");
+  }
+  success = mip_cmd_buffer->SubmitCommands(/*callback=*/nullptr);
+  if (!success) {
+    return fml::Status(fml::StatusCode::kUnknown, "");
   }
   return {};
 }

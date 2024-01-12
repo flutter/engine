@@ -68,7 +68,7 @@ bool InlinePassContext::EndPass() {
 
   std::shared_ptr<Texture> target_texture =
       GetPassTarget().GetRenderTarget().GetRenderTargetTexture();
-  if (target_texture->NeedsMipmapGeneration()) {
+  if (target_texture->GetMipCount() > 1) {
     fml::Status mip_status = AddMipmapGeneration(context_, target_texture);
     if (!mip_status.ok()) {
       return false;
