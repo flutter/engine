@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/ellipse_geometry.h"
@@ -21,6 +22,7 @@
 namespace impeller {
 
 GeometryResult Geometry::ComputePositionGeometry(
+    const ContentContext& renderer,
     const Tessellator::VertexGenerator& generator,
     const Entity& entity,
     RenderPass& pass) {
@@ -32,7 +34,7 @@ GeometryResult Geometry::ComputePositionGeometry(
       .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
-              .vertex_buffer = pass.GetTransientsBuffer().Emplace(
+              .vertex_buffer = renderer.GetTransientsBuffer().Emplace(
                   count * sizeof(VT), alignof(VT),
                   [&generator](uint8_t* buffer) {
                     auto vertices = reinterpret_cast<VT*>(buffer);
@@ -47,13 +49,13 @@ GeometryResult Geometry::ComputePositionGeometry(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
 
 GeometryResult Geometry::ComputePositionUVGeometry(
+    const ContentContext& renderer,
     const Tessellator::VertexGenerator& generator,
     const Matrix& uv_transform,
     const Entity& entity,
@@ -66,7 +68,7 @@ GeometryResult Geometry::ComputePositionUVGeometry(
       .type = generator.GetTriangleType(),
       .vertex_buffer =
           {
-              .vertex_buffer = pass.GetTransientsBuffer().Emplace(
+              .vertex_buffer = renderer.GetTransientsBuffer().Emplace(
                   count * sizeof(VT), alignof(VT),
                   [&generator, &uv_transform](uint8_t* buffer) {
                     auto vertices = reinterpret_cast<VT*>(buffer);
@@ -83,8 +85,7 @@ GeometryResult Geometry::ComputePositionUVGeometry(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -116,7 +117,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
                                         const ContentContext& renderer,
                                         const Entity& entity,
                                         RenderPass& pass) {
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
@@ -136,8 +137,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

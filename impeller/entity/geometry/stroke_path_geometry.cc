@@ -451,7 +451,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto vertex_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
@@ -460,8 +460,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = true,
   };
 }
@@ -483,7 +482,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto stroke_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
@@ -494,8 +493,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = true,
   };
 }

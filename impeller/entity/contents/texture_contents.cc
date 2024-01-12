@@ -16,7 +16,6 @@
 #include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -139,20 +138,21 @@ bool TextureContents::Render(const ContentContext& renderer,
       {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
   });
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+  frame_info.mvp = pass.GetOrthographicTransform() *
                    capture.AddMatrix("Transform", entity.GetTransform());
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = capture.AddScalar("Alpha", GetOpacity());
 
-  Command cmd;
+#ifdef IMPELLER_DEBUG
   if (label_.empty()) {
-    DEBUG_COMMAND_INFO(cmd, "Texture Fill");
+    pass.SetCommandLabel("Texture Fill");
   } else {
-    DEBUG_COMMAND_INFO(cmd, "Texture Fill: " + label_);
+    pass.SetCommandLabel("Texture Fill: " + label_);
   }
+#endif  // IMPELLER_DEBUG
 
   auto pipeline_options = OptionsFromPassAndEntity(pass, entity);
   if (!stencil_enabled_) {
@@ -162,31 +162,29 @@ bool TextureContents::Render(const ContentContext& renderer,
 
 #ifdef IMPELLER_ENABLE_OPENGLES
   if (is_external_texture) {
-    cmd.pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
+    pass.SetPipeline(renderer.GetTextureExternalPipeline(pipeline_options));
   } else {
-    cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+    pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
   }
 #else
-  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+  pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
   if (is_external_texture) {
     FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
-        cmd, texture_,
+        pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor_));
   } else {
     FS::BindTextureSampler(
-        cmd, texture_,
+        pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor_));
   }
-  pass.AddCommand(std::move(cmd));
-
-  return true;
+  return pass.Draw().ok();
 }
 
 void TextureContents::SetSourceRect(const Rect& source_rect) {

@@ -40,6 +40,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/point.h"
 #include "impeller/geometry/sigma.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/playground/playground.h"
@@ -873,23 +874,21 @@ TEST_P(EntityTest, BlendingModeOptions) {
         });
       }
 
-      Command cmd;
-      DEBUG_COMMAND_INFO(cmd, "Blended Rectangle");
+      pass.SetCommandLabel("Blended Rectangle");
       auto options = OptionsFromPass(pass);
       options.blend_mode = blend_mode;
       options.primitive_type = PrimitiveType::kTriangle;
-      cmd.pipeline = context.GetSolidFillPipeline(options);
-      cmd.BindVertices(
-          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+      pass.SetPipeline(context.GetSolidFillPipeline(options));
+      pass.SetVertexBuffer(
+          vtx_builder.CreateVertexBuffer(context.GetTransientsBuffer()));
 
       VS::FrameInfo frame_info;
-      frame_info.mvp =
-          Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+      frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
       frame_info.color = color.Premultiply();
-      VS::BindFrameInfo(cmd,
-                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+      VS::BindFrameInfo(
+          pass, context.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-      return pass.AddCommand(std::move(cmd));
+      return pass.Draw().ok();
     };
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
@@ -2132,15 +2131,15 @@ TEST_P(EntityTest, YUVToRGBFilter) {
 }
 
 TEST_P(EntityTest, RuntimeEffect) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
-  auto runtime_stage =
+  auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool first_frame = true;
+  Pipeline<PipelineDescriptor>* first_pipeline = nullptr;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     if (first_frame) {
       first_frame = false;
@@ -2167,7 +2166,13 @@ TEST_P(EntityTest, RuntimeEffect) {
 
     Entity entity;
     entity.SetContents(contents);
-    return contents->Render(context, entity, pass);
+    bool result = contents->Render(context, entity, pass);
+    if (!first_pipeline) {
+      first_pipeline = pass.GetCommands().back().pipeline.get();
+    } else {
+      EXPECT_EQ(pass.GetCommands().back().pipeline.get(), first_pipeline);
+    }
+    return result;
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -2423,6 +2428,11 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
             Rect::MakeLTRB(35, 15, 135, 205));
 }
 
+TEST_P(EntityTest, PointFieldCanUseCompute) {
+  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()),
+            GetContext()->GetBackendType() == Context::BackendType::kMetal);
+}
+
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
@@ -2511,9 +2521,9 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   if (test_allocator->GetDescriptors().size() == 6u) {
     EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
     EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(1000, 1000));
 
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
   } else if (test_allocator->GetDescriptors().size() == 9u) {
