@@ -78,7 +78,8 @@ static bool BindBuffers(
         write_workspace,
     size_t& write_offset) {
   for (const BufferAndUniformSlot& data : bindings.buffers) {
-    const std::shared_ptr<const DeviceBuffer>& device_buffer = data.view.resource.buffer;
+    const std::shared_ptr<const DeviceBuffer>& device_buffer =
+        data.view.resource.buffer;
 
     auto buffer = DeviceBufferVK::Cast(*device_buffer).GetBuffer();
     if (!buffer) {
