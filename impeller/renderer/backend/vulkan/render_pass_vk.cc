@@ -476,16 +476,18 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& vk_context = ContextVK::Cast(context);
 
-  auto command_buffer = command_buffer_.lock();
+  std::shared_ptr<CommandBufferVK> command_buffer = command_buffer_.lock();
   if (!command_buffer) {
     VALIDATION_LOG << "Command buffer died before commands could be encoded.";
     return false;
   }
-  auto encoder = command_buffer->GetEncoder();
+  const std::shared_ptr<CommandEncoderVK>& encoder =
+      command_buffer->GetEncoder();
   if (!encoder) {
     return false;
   }
 
+#ifdef IMPELLER_DEBUG
   fml::ScopedCleanupClosure pop_marker(
       [&encoder]() { encoder->PopDebugGroup(); });
   if (!debug_label_.empty()) {
@@ -493,8 +495,9 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   } else {
     pop_marker.Release();
   }
+#endif  // IMPELLER_DEBUG
 
-  auto cmd_buffer = encoder->GetCommandBuffer();
+  vk::CommandBuffer cmd_buffer = encoder->GetCommandBuffer();
 
   if (!UpdateBindingLayouts(commands_, cmd_buffer)) {
     return false;
@@ -509,7 +512,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  auto render_pass = CreateVKRenderPass(
+  SharedHandleVK<vk::RenderPass> render_pass = CreateVKRenderPass(
       vk_context, command_buffer,
       vk_context.GetCapabilities()->SupportsFramebufferFetch());
   if (!render_pass) {
@@ -537,9 +540,9 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
       static_cast<uint32_t>(target_size.height);
   pass_info.setClearValues(clear_values);
 
-  const auto& color_image_vk = TextureVK::Cast(
+  const TextureVK& color_image_vk = TextureVK::Cast(
       *render_target_.GetColorAttachments().find(0u)->second.texture);
-  auto& allocator = *context.GetResourceAllocator();
+  Allocator& allocator = *context.GetResourceAllocator();
 
   {
     TRACE_EVENT0("impeller", "EncodeRenderPassCommands");
@@ -549,13 +552,14 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
         [cmd_buffer]() { cmd_buffer.endRenderPass(); });
 
     for (const auto& command : commands_) {
-      auto desc_set_result = AllocateAndBindDescriptorSets(
-          vk_context, encoder, allocator, command, color_image_vk,
-          image_workspace_, buffer_workspace_, write_workspace_);
+      fml::StatusOr<vk::DescriptorSet> desc_set_result =
+          AllocateAndBindDescriptorSets(vk_context, encoder, allocator, command,
+                                        color_image_vk, image_workspace_,
+                                        buffer_workspace_, write_workspace_);
       if (!desc_set_result.ok()) {
         return false;
       }
-      auto desc_set = desc_set_result.value();
+      vk::DescriptorSet desc_set = desc_set_result.value();
 
       if (!EncodeCommand(context, command, *encoder, pass_bindings_cache_,
                          target_size, desc_set)) {
