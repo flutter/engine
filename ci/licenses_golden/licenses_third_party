@@ -1,4 +1,4 @@
-Signature: d382387c3cf8c7e14a768d5bb259d9b0
+Signature: eb56c109db54e78069184402ee9166cd
 
 ====================================================================================================
 LIBRARY: angle
@@ -250,7 +250,6 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values-zu/strings.xml
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values/dimens.xml
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values/drivers.xml
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values/global_settings.xml
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values/intents.xml
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values/preference_keys.xml
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/res/values/strings.xml
@@ -258,11 +257,11 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/AndroidManifest.xml
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/EmptyMainActivity.java
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/MainActivity.java
+ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/AngleRuleHelper.java
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/GlobalSettings.java
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/MainFragment.java
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/Receiver.java
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/SearchProvider.java
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/common/vulkan/vk_google_filtering_precision.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/angle/src/libANGLE/Overlay_font_autogen.cpp
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/perfetto/Android.bp
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../third_party/perfetto/BUILD
@@ -2342,7 +2341,6 @@ FILE: ../../../third_party/angle/src/android_system_settings/res/values-zh-rTW/s
 FILE: ../../../third_party/angle/src/android_system_settings/res/values-zu/strings.xml
 FILE: ../../../third_party/angle/src/android_system_settings/res/values/dimens.xml
 FILE: ../../../third_party/angle/src/android_system_settings/res/values/drivers.xml
-FILE: ../../../third_party/angle/src/android_system_settings/res/values/global_settings.xml
 FILE: ../../../third_party/angle/src/android_system_settings/res/values/intents.xml
 FILE: ../../../third_party/angle/src/android_system_settings/res/values/preference_keys.xml
 FILE: ../../../third_party/angle/src/android_system_settings/res/values/strings.xml
@@ -2350,11 +2348,11 @@ FILE: ../../../third_party/angle/src/android_system_settings/res/xml/main.xml
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/AndroidManifest.xml
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/EmptyMainActivity.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/MainActivity.java
+FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/AngleRuleHelper.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/GlobalSettings.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/MainFragment.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/Receiver.java
 FILE: ../../../third_party/angle/src/android_system_settings/src/com/android/angle/common/SearchProvider.java
-FILE: ../../../third_party/angle/src/common/vulkan/vk_google_filtering_precision.h
 FILE: ../../../third_party/angle/src/libANGLE/Overlay_font_autogen.cpp
 FILE: ../../../third_party/angle/src/libANGLE/overlay/RobotoMono-Bold.ttf
 FILE: ../../../third_party/perfetto/Android.bp
@@ -38089,7 +38087,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/dxgi_support_data.json
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/gl_bindings_data.json
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/FBConfigCompatibility.md
 FILE: ../../../third_party/angle/src/libANGLE/renderer/load_functions_data.json
-FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/vk_mandatory_format_support_data.json
 FILE: ../../../third_party/angle/src/libEGL/libEGL.rc
 FILE: ../../../third_party/angle/src/libEGL/resource.h
@@ -38224,6 +38221,9 @@ ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/DisplayV
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/DisplayVkAndroid.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/WindowSurfaceVkAndroid.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/WindowSurfaceVkAndroid.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Blit3DSrc.frag.00000000.inc + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Blit3DSrc.frag.00000001.inc + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Blit3DSrc.frag.00000002.inc + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000000.inc + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000001.inc + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000002.inc + ../../../third_party/angle/LICENSE
@@ -38483,6 +38483,9 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/DisplayVkA
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/DisplayVkAndroid.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/WindowSurfaceVkAndroid.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/android/WindowSurfaceVkAndroid.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Blit3DSrc.frag.00000000.inc
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Blit3DSrc.frag.00000001.inc
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/Blit3DSrc.frag.00000002.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000000.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000001.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/gen/BlitResolve.frag.00000002.inc
@@ -38904,12 +38907,8 @@ ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/ContextCGL.cpp +
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/ContextCGL.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/DeviceCGL.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/DeviceCGL.h + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/RendererCGL.cpp + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/RendererCGL.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/SyncEGL.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/SyncEGL.h + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/RendererGLX.cpp + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/RendererGLX.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/BufferMtl.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/BufferMtl.mm + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/CompilerMtl.h + ../../../third_party/angle/LICENSE
@@ -39095,12 +39094,8 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/ContextCGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/ContextCGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/DeviceCGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/DeviceCGL.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/RendererCGL.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/cgl/RendererCGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/SyncEGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/egl/SyncEGL.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/RendererGLX.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/RendererGLX.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/BufferMtl.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/BufferMtl.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/CompilerMtl.h
@@ -39498,8 +39493,6 @@ ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/IOSurfaceSurfac
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/IOSurfaceSurfaceEAGL.mm + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.h + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.cpp + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.mm + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/PixmapSurfaceGLX.cpp + ../../../third_party/angle/LICENSE
@@ -39514,8 +39507,7 @@ ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/TransformFeedback
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/TransformFeedbackMtl.mm + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/file_hooking/shader_cache_file_hooking.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_format_table_autogen.mm + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_ios_autogen.h + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_macos_autogen.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_autogen.metal + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_src_autogen.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.h + ../../../third_party/angle/LICENSE
@@ -39773,8 +39765,6 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/IOSurfaceSurfaceE
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/IOSurfaceSurfaceEAGL.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/PbufferSurfaceEAGL.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.cpp
-FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/RendererEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/eagl/WindowSurfaceEAGL.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/glx/PixmapSurfaceGLX.cpp
@@ -39789,8 +39779,7 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/TransformFeedbackMt
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/TransformFeedbackMtl.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/file_hooking/shader_cache_file_hooking.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_format_table_autogen.mm
-FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_ios_autogen.h
-FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_macos_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_autogen.metal
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/shaders/mtl_internal_shaders_src_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/CommandProcessor.h
@@ -40453,6 +40442,7 @@ ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/Emulat
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateDithering.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateYUVBuiltIns.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateYUVBuiltIns.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/ReswizzleYUVOps.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/image_util/AstcDecompressor.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/image_util/AstcDecompressor.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/image_util/AstcDecompressorNoOp.cpp + ../../../third_party/angle/LICENSE
@@ -40494,6 +40484,7 @@ ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/gbm/Displa
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/gbm/DisplayVkGbm.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/ExportStencil.frag + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.frag + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.inc + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.vert + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libGLESv2/entry_points_glx.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libGLESv2/entry_points_glx.h + ../../../third_party/angle/LICENSE
@@ -40534,6 +40525,7 @@ FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateD
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateDithering.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateYUVBuiltIns.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateYUVBuiltIns.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/ReswizzleYUVOps.cpp
 FILE: ../../../third_party/angle/src/image_util/AstcDecompressor.cpp
 FILE: ../../../third_party/angle/src/image_util/AstcDecompressor.h
 FILE: ../../../third_party/angle/src/image_util/AstcDecompressorNoOp.cpp
@@ -40575,6 +40567,7 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/gbm/DisplayV
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/gbm/DisplayVkGbm.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/ExportStencil.frag
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.frag
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/OverlayDraw.vert
 FILE: ../../../third_party/angle/src/libGLESv2/entry_points_glx.cpp
 FILE: ../../../third_party/angle/src/libGLESv2/entry_points_glx.h
@@ -40652,20 +40645,32 @@ LIBRARY: angle
 ORIGIN: ../../../third_party/angle/src/common/FixedQueue.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/common/platform_helpers.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/common/platform_helpers.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/RescopeGlobalVariables.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/RescopeGlobalVariables.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateFramebufferFetch.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateFramebufferFetch.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/ReswizzleYUVOps.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/ContextMutex.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/ContextMutex.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/GlobalMutex.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/GlobalMutex.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/ShareGroup.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/ShareGroup.h + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/SharedContextMutex.cpp + ../../../third_party/angle/LICENSE
-ORIGIN: ../../../third_party/angle/src/libANGLE/SharedContextMutex.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/context_private_call_gl.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/context_private_call_gl_autogen.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/context_private_call_gles.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/context_private_call_gles_autogen.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/ProgramExecutableImpl.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/d3d/ProgramExecutableD3D.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/d3d/ProgramExecutableD3D.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/ProgramExecutableGL.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/gl/ProgramExecutableGL.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/ProgramExecutableMtl.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/ProgramExecutableMtl.mm + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/blocklayoutMetal.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/blocklayoutMetal.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_library_cache.h + ../../../third_party/angle/LICENSE
@@ -40676,12 +40681,19 @@ ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/process.cpp + ../
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/process.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/renderermtl_utils.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/metal/renderermtl_utils.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/null/ProgramExecutableNULL.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/null/ProgramExecutableNULL.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/MemoryTracking.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/MemoryTracking.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/SecondaryCommandPool.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/SecondaryCommandPool.h + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ShareGroupVk.cpp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ShareGroupVk.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/DisplayVkOffscreen.cpp + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/DisplayVkOffscreen.h + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/Blit3DSrc.frag + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/Blit3DSrc.frag.json + ../../../third_party/angle/LICENSE
+ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/BlitResolve.inc + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/CopyImageToBuffer.comp + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/CopyImageToBuffer.comp.json + ../../../third_party/angle/LICENSE
 ORIGIN: ../../../third_party/angle/src/libGLESv2/egl_context_lock_autogen.h + ../../../third_party/angle/LICENSE
@@ -40690,20 +40702,32 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/angle/src/common/FixedQueue.h
 FILE: ../../../third_party/angle/src/common/platform_helpers.cpp
 FILE: ../../../third_party/angle/src/common/platform_helpers.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/PreTransformTextureCubeGradDerivatives.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RescopeGlobalVariables.cpp
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/RescopeGlobalVariables.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/msl/RewriteInterpolants.h
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateFramebufferFetch.cpp
 FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/EmulateFramebufferFetch.h
+FILE: ../../../third_party/angle/src/compiler/translator/tree_ops/spirv/ReswizzleYUVOps.h
+FILE: ../../../third_party/angle/src/libANGLE/ContextMutex.cpp
+FILE: ../../../third_party/angle/src/libANGLE/ContextMutex.h
 FILE: ../../../third_party/angle/src/libANGLE/GlobalMutex.cpp
 FILE: ../../../third_party/angle/src/libANGLE/GlobalMutex.h
 FILE: ../../../third_party/angle/src/libANGLE/ShareGroup.cpp
 FILE: ../../../third_party/angle/src/libANGLE/ShareGroup.h
-FILE: ../../../third_party/angle/src/libANGLE/SharedContextMutex.cpp
-FILE: ../../../third_party/angle/src/libANGLE/SharedContextMutex.h
 FILE: ../../../third_party/angle/src/libANGLE/context_private_call_gl.cpp
 FILE: ../../../third_party/angle/src/libANGLE/context_private_call_gl_autogen.h
 FILE: ../../../third_party/angle/src/libANGLE/context_private_call_gles.cpp
 FILE: ../../../third_party/angle/src/libANGLE/context_private_call_gles_autogen.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/ProgramExecutableImpl.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/ProgramExecutableD3D.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/d3d/ProgramExecutableD3D.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/ProgramExecutableGL.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/gl/ProgramExecutableGL.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/ProgramExecutableMtl.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/ProgramExecutableMtl.mm
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/blocklayoutMetal.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/blocklayoutMetal.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/mtl_library_cache.h
@@ -40714,12 +40738,19 @@ FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/process.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/process.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/renderermtl_utils.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/metal/renderermtl_utils.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/null/ProgramExecutableNULL.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/null/ProgramExecutableNULL.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/MemoryTracking.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/MemoryTracking.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/SecondaryCommandPool.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/SecondaryCommandPool.h
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ShareGroupVk.cpp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/ShareGroupVk.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/DisplayVkOffscreen.cpp
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/linux/DisplayVkOffscreen.h
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/Blit3DSrc.frag
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/Blit3DSrc.frag.json
+FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/BlitResolve.inc
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/CopyImageToBuffer.comp
 FILE: ../../../third_party/angle/src/libANGLE/renderer/vulkan/shaders/src/CopyImageToBuffer.comp.json
 FILE: ../../../third_party/angle/src/libGLESv2/egl_context_lock_autogen.h
