@@ -745,6 +745,14 @@ class ContentContext {
       const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
           create_callback) const;
 
+  /// Used by hot reload/hot restart to clear a cached pipeline from
+  /// GetCachedRuntimeEffectPipeline.
+  void ClearCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name,
+      const ContentContextOptions& options) const {
+    runtime_effect_pipelines_.erase({unique_entrypoint_name, options});
+  }
+
   /// @brief Retrieve the currnent host buffer for transient storage.
   ///
   /// This is only safe to use from the raster threads. Other threads should

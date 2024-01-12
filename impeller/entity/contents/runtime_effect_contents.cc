@@ -80,7 +80,22 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
+  //--------------------------------------------------------------------------
+  /// Resolve geometry and content context options.
+  ///
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+
   if (function && runtime_stage_->IsDirty()) {
+    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint(),
+                                              options);
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
@@ -118,13 +133,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
     runtime_stage_->SetClean();
   }
-
-  //--------------------------------------------------------------------------
-  /// Resolve geometry.
-  ///
-
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   //--------------------------------------------------------------------------
   /// Set up the command. Defer setting up the pipeline until the descriptor set
@@ -276,14 +284,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   /// Now that the descriptor set layouts are known, get the pipeline.
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-
   auto create_callback =
       [&]() -> std::shared_ptr<Pipeline<PipelineDescriptor>> {
     PipelineDescriptor desc;
