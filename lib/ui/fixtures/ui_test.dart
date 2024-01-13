@@ -294,6 +294,23 @@ void platformMessageResponseTest() {
   });
 }
 
+@pragma('vm:entry-point')
+void platformListenerDartPortTest() async {
+  ReceivePort receivePort = ReceivePort();
+  _callPlatformListenerDartPort(receivePort.sendPort.nativePort);
+  List<dynamic> resultList = await receivePort.first;
+  int identifier = resultList[0] as int;
+  Uint8List? bytes = resultList[2] as Uint8List?;
+  ByteData result = ByteData.sublistView(bytes!);
+  if (result.lengthInBytes == 100 && identifier == 101) {
+    _finishCallResponse(true);
+  } else {
+    _finishCallResponse(false);
+  }
+}
+
+@pragma('vm:external-name', 'CallPlatformListenerDartPort')
+external void _callPlatformListenerDartPort(int port);
 @pragma('vm:external-name', 'CallPlatformMessageResponseDartPort')
 external void _callPlatformMessageResponseDartPort(int port);
 @pragma('vm:external-name', 'CallPlatformMessageResponseDart')

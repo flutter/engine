@@ -14,6 +14,7 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
+#include "flutter/lib/ui/window/platform_message_listener_dart_port.h"
 #include "flutter/lib/ui/window/platform_message_response.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
@@ -632,6 +633,11 @@ class PlatformConfigurationNativeApi {
   static int64_t GetRootIsolateToken();
 
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
+
+  static Dart_Handle AddPlatformPortCallback(const std::string& name,
+                                             Dart_Handle send_port);
+
+  static Dart_Handle RemovePlatformPortCallback(const std::string& name);
 
   static double GetScaledFontSize(double unscaled_font_size,
                                   int configuration_id);

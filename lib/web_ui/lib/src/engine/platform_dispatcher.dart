@@ -422,6 +422,21 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
+  void addPlatformPortCallback(
+    String name,
+    Object port
+  ) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
+  @override
+  void removePlatformPortCallback(
+    String name
+  ) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
+  @override
   void sendPortPlatformMessage(
     String name,
     ByteData? data,
@@ -433,6 +448,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   void registerBackgroundIsolate(ui.RootIsolateToken token) {
+    throw Exception("Isolates aren't supported in web.");
+  }
+
+  @override
+  void dispachPlatformMessageFromIsolate(
+    String name,
+    ByteData? data,
+    int responseId
+  ) {
     throw Exception("Isolates aren't supported in web.");
   }
 

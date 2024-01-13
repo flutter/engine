@@ -513,6 +513,28 @@ Dart_Handle PlatformConfigurationNativeApi::SendPlatformMessage(
   return HandlePlatformMessage(dart_state, name, data_handle, response);
 }
 
+Dart_Handle PlatformConfigurationNativeApi::AddPlatformPortCallback(
+    const std::string& name,
+    Dart_Handle send_port) {
+  UIDartState* dart_state = UIDartState::Current();
+  if (dart_state->platform_configuration()) {
+    return tonic::ToDart(
+        "AddPlatformPortCallback only works on a background isolate");
+  }
+  int64_t c_send_port = tonic::DartConverter<int64_t>::FromDart(send_port);
+  return dart_state->AddPlatformPortCallback(c_send_port, name);
+}
+
+Dart_Handle PlatformConfigurationNativeApi::RemovePlatformPortCallback(
+    const std::string& name) {
+  UIDartState* dart_state = UIDartState::Current();
+  if (dart_state->platform_configuration()) {
+    return tonic::ToDart(
+        "RemovePlatformPortCallback only works on a background isolate");
+  }
+  return dart_state->RemovePlatformPortCallback(name);
+}
+
 Dart_Handle PlatformConfigurationNativeApi::SendPortPlatformMessage(
     const std::string& name,
     Dart_Handle identifier,
@@ -537,6 +559,19 @@ Dart_Handle PlatformConfigurationNativeApi::SendPortPlatformMessage(
 void PlatformConfigurationNativeApi::RespondToPlatformMessage(
     int response_id,
     const tonic::DartByteData& data) {
+  UIDartState* dart_state = UIDartState::Current();
+  if (!dart_state->platform_configuration()) {
+    if (Dart_IsNull(data.dart_handle())) {
+      dart_state->RespondToPlatformCallbackEmpty(response_id);
+    } else {
+      const uint8_t* buffer = static_cast<const uint8_t*>(data.data());
+      dart_state->RespondToPlatformCallback(
+          response_id,
+          std::vector<uint8_t>(buffer, buffer + data.length_in_bytes()));
+    }
+    return;
+  }
+
   if (Dart_IsNull(data.dart_handle())) {
     UIDartState::Current()
         ->platform_configuration()
@@ -648,6 +683,13 @@ void PlatformConfigurationNativeApi::RegisterBackgroundIsolate(
 
 void PlatformConfigurationNativeApi::SendChannelUpdate(const std::string& name,
                                                        bool listening) {
+  UIDartState* dart_state = UIDartState::Current();
+  if (!dart_state->platform_configuration()) {
+    FML_LOG(ERROR) << "PlatformConfigurationNativeApi::SendChannelUpdate "
+                      "ignored when called from background isolate";
+    return;
+  }
+
   UIDartState::Current()->platform_configuration()->client()->SendChannelUpdate(
       name, listening);
 }
