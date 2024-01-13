@@ -159,7 +159,7 @@ class EntityPass {
 
   /// Returns the mip map count that should be required for the render target
   /// receiving this EntityPass.
-  int32_t GetChildrenRequiredMipCount() const;
+  int32_t GetBackdropFilterMipCount() const;
 
   //----------------------------------------------------------------------------
   /// @brief  Computes the coverage of a given subpass. This is used to
