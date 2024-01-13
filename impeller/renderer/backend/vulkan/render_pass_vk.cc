@@ -12,6 +12,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/texture.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
@@ -29,6 +30,11 @@
 #include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
+
+// Warning: if any of the constant values or layouts are changed in the
+// framebuffer fetch shader, then this input binding may need to be
+// manually changed.
+static constexpr size_t kMagicSubpassInputBinding = 64;
 
 static vk::ClearColorValue VKClearValueFromColor(Color color) {
   vk::ClearColorValue value;
@@ -310,6 +316,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
 
   color_image_vk_ =
       render_target_.GetColorAttachments().find(0u)->second.texture;
+  resolve_image_vk_ =
+      render_target_.GetColorAttachments().find(0u)->second.resolve_texture;
   is_valid_ = true;
 }
 
@@ -400,7 +408,7 @@ void RenderPassVK::SetPipeline(
     image_workspace_[bound_image_offset_++] = image_info;
 
     vk::WriteDescriptorSet write_set;
-    write_set.dstBinding = 64;
+    write_set.dstBinding = kMagicSubpassInputBinding;
     write_set.descriptorCount = 1u;
     write_set.descriptorType = vk::DescriptorType::eInputAttachment;
     write_set.pImageInfo = &image_workspace_[bound_image_offset_ - 1];
@@ -562,24 +570,28 @@ fml::Status RenderPassVK::Draw() {
   return fml::Status();
 }
 
-// Vulkan Binding only cares about binding and set values.
-// ShaderMetadata is unused and ignored.
+// The RenderPassVK binding methods only need the binding, set, and buffer type
+// information.
 bool RenderPassVK::BindResource(ShaderStage stage,
+                                DescriptorType type,
                                 const ShaderUniformSlot& slot,
                                 const ShaderMetadata& metadata,
                                 BufferView view) {
-  return BindResource(slot.binding, std::move(view));
+  return BindResource(slot.binding, type, std::move(view));
 }
 
 bool RenderPassVK::BindResource(
     ShaderStage stage,
+    DescriptorType type,
     const ShaderUniformSlot& slot,
     const std::shared_ptr<const ShaderMetadata>& metadata,
     BufferView view) {
-  return BindResource(slot.binding, std::move(view));
+  return BindResource(slot.binding, type, std::move(view));
 }
 
-bool RenderPassVK::BindResource(size_t binding, BufferView view) {
+bool RenderPassVK::BindResource(size_t binding,
+                                DescriptorType type,
+                                BufferView view) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }
@@ -602,14 +614,10 @@ bool RenderPassVK::BindResource(size_t binding, BufferView view) {
   buffer_info.range = view.range.length;
   buffer_workspace_[bound_buffer_offset_++] = buffer_info;
 
-  // TODO(jonahwilliams): currently this does not work for storage buffers.
-  // Add more binding metdata that can be used to record this.
-
   vk::WriteDescriptorSet write_set;
-  // write_set.dstSet = vk_desc_set; // The desc set will be filled in layer.
   write_set.dstBinding = binding;
   write_set.descriptorCount = 1u;
-  write_set.descriptorType = ToVKDescriptorType(DescriptorType::kUniformBuffer);
+  write_set.descriptorType = ToVKDescriptorType(type);
   write_set.pBufferInfo = &buffer_workspace_[bound_buffer_offset_ - 1];
 
   write_workspace_[descriptor_write_offset_++] = write_set;
@@ -617,6 +625,7 @@ bool RenderPassVK::BindResource(size_t binding, BufferView view) {
 }
 
 bool RenderPassVK::BindResource(ShaderStage stage,
+                                DescriptorType type,
                                 const SampledImageSlot& slot,
                                 const ShaderMetadata& metadata,
                                 std::shared_ptr<const Texture> texture,
@@ -626,23 +635,6 @@ bool RenderPassVK::BindResource(ShaderStage stage,
   }
   const TextureVK& texture_vk = TextureVK::Cast(*texture);
   const SamplerVK& sampler_vk = SamplerVK::Cast(*sampler);
-
-  // All previous writes via a render or blit pass must be done before another
-  // shader attempts to read the resource.
-  BarrierVK barrier;
-  barrier.cmd_buffer = command_buffer_vk_;
-  barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                       vk::AccessFlagBits::eTransferWrite;
-  barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                      vk::PipelineStageFlagBits::eTransfer;
-  barrier.dst_access = vk::AccessFlagBits::eShaderRead;
-  barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
-
-  barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-  if (!texture_vk.SetLayout(barrier)) {
-    return false;
-  }
 
   if (!command_buffer_->GetEncoder()->Track(texture) ||
       !command_buffer_->GetEncoder()->Track(sampler_vk.GetSharedSampler())) {
@@ -667,6 +659,29 @@ bool RenderPassVK::BindResource(ShaderStage stage,
 
 bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   command_buffer_->GetEncoder()->GetCommandBuffer().endRenderPass();
+
+  // If this render target will be consumed by a subsequent render pass,
+  // perform a layout transition to a shader read state.
+  const std::shared_ptr<Texture>& result_texture =
+      resolve_image_vk_ ? resolve_image_vk_ : color_image_vk_;
+  if (result_texture->GetTextureDescriptor().usage &
+      static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
+    BarrierVK barrier;
+    barrier.cmd_buffer = command_buffer_vk_;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                         vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                        vk::PipelineStageFlagBits::eTransfer;
+    barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+    barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+    barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+    if (!TextureVK::Cast(*result_texture).SetLayout(barrier)) {
+      return false;
+    }
+  }
+
   return true;
 }
 

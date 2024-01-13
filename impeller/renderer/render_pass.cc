@@ -136,27 +136,30 @@ fml::Status RenderPass::Draw() {
 
 // |ResourceBinder|
 bool RenderPass::BindResource(ShaderStage stage,
+                              DescriptorType type,
                               const ShaderUniformSlot& slot,
                               const ShaderMetadata& metadata,
                               BufferView view) {
-  return pending_.BindResource(stage, slot, metadata, view);
+  return pending_.BindResource(stage, type, slot, metadata, view);
 }
 
 bool RenderPass::BindResource(
     ShaderStage stage,
+    DescriptorType type,
     const ShaderUniformSlot& slot,
     const std::shared_ptr<const ShaderMetadata>& metadata,
     BufferView view) {
-  return pending_.BindResource(stage, slot, metadata, std::move(view));
+  return pending_.BindResource(stage, type, slot, metadata, std::move(view));
 }
 
 // |ResourceBinder|
 bool RenderPass::BindResource(ShaderStage stage,
+                              DescriptorType type,
                               const SampledImageSlot& slot,
                               const ShaderMetadata& metadata,
                               std::shared_ptr<const Texture> texture,
                               std::shared_ptr<const Sampler> sampler) {
-  return pending_.BindResource(stage, slot, metadata, std::move(texture),
+  return pending_.BindResource(stage, type, slot, metadata, std::move(texture),
                                std::move(sampler));
 }
 

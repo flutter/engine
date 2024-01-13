@@ -29,6 +29,10 @@ class RenderPassVK final : public RenderPass {
   bool is_valid_ = false;
 
   vk::CommandBuffer command_buffer_vk_;
+  std::shared_ptr<Texture> color_image_vk_;
+  std::shared_ptr<Texture> resolve_image_vk_;
+
+  // Per-command state.
   std::array<vk::DescriptorImageInfo, kMaxBindings> image_workspace_;
   std::array<vk::DescriptorBufferInfo, kMaxBindings> buffer_workspace_;
   std::array<vk::WriteDescriptorSet, kMaxBindings + kMaxBindings>
@@ -39,7 +43,6 @@ class RenderPassVK final : public RenderPass {
   size_t instance_count_ = 1u;
   size_t base_vertex_ = 0u;
   size_t vertex_count_ = 0u;
-  std::shared_ptr<Texture> color_image_vk_;
   bool has_index_buffer_ = false;
   bool has_label_ = false;
   bool pipeline_valid_ = false;
@@ -78,26 +81,32 @@ class RenderPassVK final : public RenderPass {
   // |RenderPass|
   fml::Status Draw() override;
 
+  // |RenderPass|
+  void ReserveCommands(size_t command_count) override {}
+
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
                     BufferView view) override;
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,
                     BufferView view) override;
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
                     std::shared_ptr<const Sampler> sampler) override;
 
-  bool BindResource(size_t binding, BufferView view);
+  bool BindResource(size_t binding, DescriptorType type, BufferView view);
 
   // |RenderPass|
   bool IsValid() const override;
