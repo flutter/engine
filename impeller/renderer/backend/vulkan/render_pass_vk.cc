@@ -577,7 +577,7 @@ bool RenderPassVK::BindResource(ShaderStage stage,
                                 const ShaderUniformSlot& slot,
                                 const ShaderMetadata& metadata,
                                 BufferView view) {
-  return BindResource(slot.binding, type, std::move(view));
+  return BindResource(slot.binding, type, view);
 }
 
 bool RenderPassVK::BindResource(
@@ -586,12 +586,12 @@ bool RenderPassVK::BindResource(
     const ShaderUniformSlot& slot,
     const std::shared_ptr<const ShaderMetadata>& metadata,
     BufferView view) {
-  return BindResource(slot.binding, type, std::move(view));
+  return BindResource(slot.binding, type, view);
 }
 
 bool RenderPassVK::BindResource(size_t binding,
                                 DescriptorType type,
-                                BufferView view) {
+                                const BufferView& view) {
   if (bound_buffer_offset_ >= kMaxBindings) {
     return false;
   }

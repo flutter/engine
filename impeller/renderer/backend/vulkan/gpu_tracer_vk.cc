@@ -8,6 +8,7 @@
 #include <optional>
 #include <thread>
 #include <utility>
+
 #include "fml/logging.h"
 #include "fml/trace_event.h"
 #include "impeller/base/validation.h"
@@ -28,7 +29,7 @@ GPUTracerVK::GPUTracerVK(const std::shared_ptr<DeviceHolder>& device_holder)
     return;
   }
   // Disable tracing in release mode.
-  enabled_ = false;
+  enabled_ = true;
 }
 
 bool GPUTracerVK::IsEnabled() const {
@@ -103,16 +104,14 @@ void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer,
                         trace_states_[current_state_].query_pool.get(),
                         state.current_index);
   state.current_index += 1;
-  if (!probe.index_.has_value()) {
-    state.pending_buffers += 1;
-    probe.index_ = current_state_;
-  }
+  probe.index_ = current_state_;
+  state.pending_buffers += 1;
 }
 
 void GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer,
                                      GPUProbe& probe) {
   if (!enabled_ || std::this_thread::get_id() != raster_thread_id_ ||
-      !in_frame_) {
+      !in_frame_ || !probe.index_.has_value()) {
     return;
   }
   Lock lock(trace_state_mutex_);
@@ -126,10 +125,6 @@ void GPUTracerVK::RecordCmdBufferEnd(const vk::CommandBuffer& buffer,
                         state.query_pool.get(), state.current_index);
 
   state.current_index += 1;
-  if (!probe.index_.has_value()) {
-    state.pending_buffers += 1;
-    probe.index_ = current_state_;
-  }
 }
 
 void GPUTracerVK::OnFenceComplete(size_t frame_index) {
