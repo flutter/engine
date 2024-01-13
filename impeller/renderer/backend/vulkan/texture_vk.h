@@ -38,6 +38,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   std::shared_ptr<const TextureSourceVK> GetTextureSource() const;
 
+  void SetMipMapGenerated() { mipmap_generated_ = true; }
+
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
