@@ -28,9 +28,7 @@ GPUTracerVK::GPUTracerVK(const std::shared_ptr<DeviceHolder>& device_holder)
     return;
   }
   // Disable tracing in release mode.
-#ifdef IMPELLER_DEBUG
-  enabled_ = true;
-#endif
+  enabled_ = false;
 }
 
 bool GPUTracerVK::IsEnabled() const {

@@ -22,7 +22,6 @@ InlinePassContext::InlinePassContext(
     std::optional<RenderPassResult> collapsed_parent_pass)
     : context_(std::move(context)),
       pass_target_(pass_target),
-      entity_count_(entity_count),
       is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
     pass_ = collapsed_parent_pass.value().pass;
@@ -154,7 +153,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
   // Commands are fairly large (500B) objects, so re-allocation of the command
   // buffer while encoding can add a surprising amount of overhead. We make a
   // conservative npot estimate to avoid this case.
-  pass_->ReserveCommands(Allocation::NextPowerOfTwoSize(entity_count_));
+  // pass_->ReserveCommands(Allocation::NextPowerOfTwoSize(entity_count_));
   pass_->SetLabel(
       "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
       " Count=" + std::to_string(pass_count_));
