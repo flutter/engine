@@ -602,7 +602,7 @@ bool RenderPassVK::BindResource(size_t binding, BufferView view) {
   buffer_info.range = view.range.length;
   buffer_workspace_[bound_buffer_offset_++] = buffer_info;
 
-  // TODO: currently this does not work for storage buffers.
+  // TODO(jonahwilliams): currently this does not work for storage buffers.
   // Add more binding metdata that can be used to record this.
 
   vk::WriteDescriptorSet write_set;

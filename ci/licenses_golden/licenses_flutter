@@ -5494,6 +5494,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.cc +
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/tracked_objects_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/tracked_objects_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/vk.h + ../../../flutter/LICENSE
@@ -5551,6 +5553,8 @@ ORIGIN: ../../../flutter/impeller/renderer/snapshot.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/texture_mipmap.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/texture_mipmap.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/threadgroup_sizing_test.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_buffer_builder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/vertex_buffer_builder.h + ../../../flutter/LICENSE
@@ -8320,6 +8324,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/tracked_objects_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/tracked_objects_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vk.h
@@ -8377,6 +8383,8 @@ FILE: ../../../flutter/impeller/renderer/snapshot.h
 FILE: ../../../flutter/impeller/renderer/stroke.comp
 FILE: ../../../flutter/impeller/renderer/surface.cc
 FILE: ../../../flutter/impeller/renderer/surface.h
+FILE: ../../../flutter/impeller/renderer/texture_mipmap.cc
+FILE: ../../../flutter/impeller/renderer/texture_mipmap.h
 FILE: ../../../flutter/impeller/renderer/threadgroup_sizing_test.comp
 FILE: ../../../flutter/impeller/renderer/vertex_buffer_builder.cc
 FILE: ../../../flutter/impeller/renderer/vertex_buffer_builder.h
