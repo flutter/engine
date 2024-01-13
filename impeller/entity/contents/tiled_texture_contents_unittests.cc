@@ -17,6 +17,9 @@ namespace testing {
 using EntityTest = EntityPlayground;
 
 TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
+  if (GetParam() == PlaygroundBackend::kVulkan) {
+    GTEST_SKIP_("Vulkan does not support querying recorded commands.");
+  }
   TextureDescriptor texture_desc;
   texture_desc.size = {100, 100};
   texture_desc.type = TextureType::kTexture2D;
