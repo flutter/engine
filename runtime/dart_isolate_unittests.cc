@@ -935,9 +935,10 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
 
   fml::AutoResetWaitableEvent ui_thread_latch;
+  Dart_Isolate platform_isolate = nullptr;
   fml::TaskRunner::RunNowOrPostTask(
       ui_thread, fml::MakeCopyable([&]() mutable {
-        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate]() {
+        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate, &platform_isolate]() {
           Dart_Handle lib = Dart_RootLibrary();
           Dart_Handle port_handle = Dart_Invoke(
               lib, tonic::ToDart("createPortThatReplies"), 0, nullptr);
@@ -946,7 +947,7 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
 
           Dart_Handle entry_point = Dart_GetField(
               lib, tonic::ToDart("mainPlatformIsolateReplyPort"));
-          root_isolate->CreatePlatformIsolate(entry_point, port_id,
+          platform_isolate = root_isolate->CreatePlatformIsolate(entry_point, port_id,
                                               "PlatformIsolate");
           return true;
         }));
@@ -956,6 +957,19 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
 
   // Wait for a message from the platform isolate.
   message_latch.Wait();
+
+  // Post a task to the platform_thread that runs after the platform isolate's
+  // entry point and all messages, and wait for it to run.
+  fml::AutoResetWaitableEvent epilogue_latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      platform_thread, fml::MakeCopyable([&epilogue_latch]() mutable {
+        epilogue_latch.Signal();
+      }));
+  epilogue_latch.Wait();
+
+  // The platform isolate has been shutdown because there are no more pending
+  // messages and the receive port is closed.
+  EXPECT_FALSE(client.mgr.IsRegistered(platform_isolate));
 
   // root isolate will be auto-shutdown
 }
