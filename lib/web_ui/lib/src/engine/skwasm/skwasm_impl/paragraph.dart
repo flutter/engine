@@ -549,17 +549,17 @@ class SkwasmTextStyle implements ui.TextStyle {
   }
 }
 
-class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implements ui.StrutStyle {
+final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implements ui.StrutStyle {
   factory SkwasmStrutStyle({
     String? fontFamily,
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
-    ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
     bool? forceStrutHeight,
+    ui.TextLeadingDistribution? leadingDistribution,
   }) {
     final StrutStyleHandle handle = strutStyleCreate();
     if (fontFamily != null || fontFamilyFallback != null) {
@@ -595,13 +595,72 @@ class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implements ui.
     if (forceStrutHeight != null) {
       strutStyleSetForceStrutHeight(handle, forceStrutHeight);
     }
-    return SkwasmStrutStyle._(handle);
+    return SkwasmStrutStyle._(
+      handle,
+      fontFamily,
+      fontFamilyFallback,
+      fontSize,
+      height,
+      leadingDistribution,
+      leading,
+      fontWeight,
+      fontStyle,
+      forceStrutHeight,
+    );
   }
 
-  SkwasmStrutStyle._(StrutStyleHandle handle) : super(handle, _registry);
+  SkwasmStrutStyle._(
+    StrutStyleHandle handle,
+    this._fontFamily,
+    this._fontFamilyFallback,
+    this._fontSize,
+    this._height,
+    this._leadingDistribution,
+    this._leading,
+    this._fontWeight,
+    this._fontStyle,
+    this._forceStrutHeight,
+  ) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawStrutStyle> _registry =
     SkwasmFinalizationRegistry<RawStrutStyle>(strutStyleDispose);
+
+  final String? _fontFamily;
+  final List<String>? _fontFamilyFallback;
+  final double? _fontSize;
+  final double? _height;
+  final double? _leading;
+  final ui.FontWeight? _fontWeight;
+  final ui.FontStyle? _fontStyle;
+  final bool? _forceStrutHeight;
+  final ui.TextLeadingDistribution? _leadingDistribution;
+
+  @override
+  bool operator ==(Object other) {
+    return other is SkwasmStrutStyle &&
+        other._fontFamily == _fontFamily &&
+        other._fontSize == _fontSize &&
+        other._height == _height &&
+        other._leading == _leading &&
+        other._leadingDistribution == _leadingDistribution &&
+        other._fontWeight == _fontWeight &&
+        other._fontStyle == _fontStyle &&
+        other._forceStrutHeight == _forceStrutHeight &&
+        listEquals<String>(other._fontFamilyFallback, _fontFamilyFallback);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    _fontFamily,
+    _fontFamilyFallback != null ? Object.hashAll(_fontFamilyFallback) : null,
+    _fontSize,
+    _height,
+    _leading,
+    _leadingDistribution,
+    _fontWeight,
+    _fontStyle,
+    _forceStrutHeight,
+  );
 }
 
 class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implements ui.ParagraphStyle {
@@ -678,13 +737,41 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       skStringFree(localeHandle);
     }
     paragraphStyleSetTextStyle(handle, textStyleHandle);
-    return SkwasmParagraphStyle._(handle, textStyle, fontFamily);
+    return SkwasmParagraphStyle._(
+      handle,
+      textStyle,
+      fontFamily,
+      textAlign,
+      textDirection,
+      fontWeight,
+      fontStyle,
+      maxLines,
+      fontFamily,
+      fontSize,
+      height,
+      textHeightBehavior,
+      strutStyle,
+      ellipsis,
+      locale,
+    );
   }
 
   SkwasmParagraphStyle._(
     ParagraphStyleHandle handle,
     this.textStyle,
-    this.defaultFontFamily
+    this.defaultFontFamily,
+    this._textAlign,
+    this._textDirection,
+    this._fontWeight,
+    this._fontStyle,
+    this._maxLines,
+    this._fontFamily,
+    this._fontSize,
+    this._height,
+    this._textHeightBehavior,
+    this._strutStyle,
+    this._ellipsis,
+    this._locale,
   ) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawParagraphStyle> _registry =
@@ -692,6 +779,85 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
 
   final SkwasmNativeTextStyle textStyle;
   final String? defaultFontFamily;
+
+  final ui.TextAlign? _textAlign;
+  final ui.TextDirection? _textDirection;
+  final ui.FontWeight? _fontWeight;
+  final ui.FontStyle? _fontStyle;
+  final int? _maxLines;
+  final String? _fontFamily;
+  final double? _fontSize;
+  final double? _height;
+  final ui.TextHeightBehavior? _textHeightBehavior;
+  final ui.StrutStyle? _strutStyle;
+  final String? _ellipsis;
+  final ui.Locale? _locale;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is SkwasmParagraphStyle &&
+        other._textAlign == _textAlign &&
+        other._textDirection == _textDirection &&
+        other._fontWeight == _fontWeight &&
+        other._fontStyle == _fontStyle &&
+        other._maxLines == _maxLines &&
+        other._fontFamily == _fontFamily &&
+        other._fontSize == _fontSize &&
+        other._height == _height &&
+        other._textHeightBehavior == _textHeightBehavior &&
+        other._strutStyle == _strutStyle &&
+        other._ellipsis == _ellipsis &&
+        other._locale == _locale;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      _textAlign,
+      _textDirection,
+      _fontWeight,
+      _fontStyle,
+      _maxLines,
+      _fontFamily,
+      _fontSize,
+      _height,
+      _textHeightBehavior,
+      _strutStyle,
+      _ellipsis,
+      _locale,
+    );
+  }
+
+  @override
+  String toString() {
+    String result = super.toString();
+    assert(() {
+      final double? fontSize = _fontSize;
+      final double? height = _height;
+      result = 'ParagraphStyle('
+          'textAlign: ${_textAlign ?? "unspecified"}, '
+          'textDirection: ${_textDirection ?? "unspecified"}, '
+          'fontWeight: ${_fontWeight ?? "unspecified"}, '
+          'fontStyle: ${_fontStyle ?? "unspecified"}, '
+          'maxLines: ${_maxLines ?? "unspecified"}, '
+          'textHeightBehavior: ${_textHeightBehavior ?? "unspecified"}, '
+          'fontFamily: ${_fontFamily ?? "unspecified"}, '
+          'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
+          'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'strutStyle: ${_strutStyle ?? "unspecified"}, '
+          'ellipsis: ${_ellipsis != null ? '"$_ellipsis"' : "unspecified"}, '
+          'locale: ${_locale ?? "unspecified"}'
+          ')';
+      return true;
+    }());
+    return result;
+  }
 }
 
 class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> implements ui.ParagraphBuilder {

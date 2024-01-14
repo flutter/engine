@@ -848,7 +848,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   @override
   int get hashCode => Object.hash(
         _fontFamily,
-        _fontFamilyFallback,
+        _fontFamilyFallback != null ? Object.hashAll(_fontFamilyFallback) : null,
         _fontSize,
         _height,
         _leading,

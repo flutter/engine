@@ -116,6 +116,7 @@ final ui.Paint _foregroundA = ui.Paint();
 final ui.Paint _backgroundB = ui.Paint();
 final ui.Paint _foregroundB = ui.Paint();
 
+// Intentionally do not use const List expressions to make sure Object.hashAll is used to compute hashCode
 final Map<String, _TextStylePropertyPopulator> _populatorsA = <String, _TextStylePropertyPopulator>{
   'color': (_TestTextStyleBuilder builder) { builder.color = const ui.Color(0xff000000); },
   'decoration': (_TestTextStyleBuilder builder) { builder.decoration = ui.TextDecoration.none; },
@@ -140,6 +141,7 @@ final Map<String, _TextStylePropertyPopulator> _populatorsA = <String, _TextStyl
   'fontVariations': (_TestTextStyleBuilder builder) { builder.fontVariations = <ui.FontVariation>[ const ui.FontVariation.italic(0.1)]; },
 };
 
+// Intentionally do not use const List expressions to make sure Object.hashAll is used to compute hashCode
 final Map<String, _TextStylePropertyPopulator> _populatorsB = <String, _TextStylePropertyPopulator>{
   'color': (_TestTextStyleBuilder builder) { builder.color = const ui.Color(0xffbb0000); },
   'decoration': (_TestTextStyleBuilder builder) { builder.decoration = ui.TextDecoration.lineThrough; },
