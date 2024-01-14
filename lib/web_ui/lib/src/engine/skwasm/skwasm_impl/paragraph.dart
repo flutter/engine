@@ -650,17 +650,20 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
   }
 
   @override
-  int get hashCode => Object.hash(
-    _fontFamily,
-    _fontFamilyFallback != null ? Object.hashAll(_fontFamilyFallback) : null,
-    _fontSize,
-    _height,
-    _leading,
-    _leadingDistribution,
-    _fontWeight,
-    _fontStyle,
-    _forceStrutHeight,
-  );
+  int get hashCode {
+    final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    return Object.hash(
+      _fontFamily,
+      fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
+      _fontSize,
+      _height,
+      _leading,
+      _leadingDistribution,
+      _fontWeight,
+      _fontStyle,
+      _forceStrutHeight,
+    );
+  }
 }
 
 class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implements ui.ParagraphStyle {

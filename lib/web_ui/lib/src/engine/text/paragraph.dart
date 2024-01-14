@@ -846,9 +846,11 @@ class EngineStrutStyle implements ui.StrutStyle {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode {
+    final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    return Object.hash(
         _fontFamily,
-        _fontFamilyFallback != null ? Object.hashAll(_fontFamilyFallback) : null,
+        fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
         _fontSize,
         _height,
         _leading,
@@ -857,6 +859,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontStyle,
         _forceStrutHeight,
       );
+  }
 }
 
 /// Holds information for a placeholder in a paragraph.
