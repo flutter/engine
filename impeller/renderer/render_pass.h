@@ -49,18 +49,18 @@ class RenderPass : public ResourceBinder {
   /// @brief Reserve [command_count] commands in the HAL command buffer.
   ///
   /// Note: this is not the native command buffer.
-  void ReserveCommands(size_t command_count) {
+  virtual void ReserveCommands(size_t command_count) {
     commands_.reserve(command_count);
   }
 
   //----------------------------------------------------------------------------
   /// The pipeline to use for this command.
-  void SetPipeline(
+  virtual void SetPipeline(
       const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline);
 
   //----------------------------------------------------------------------------
   /// The debugging label to use for the command.
-  void SetCommandLabel(std::string_view label);
+  virtual void SetCommandLabel(std::string_view label);
 
   //----------------------------------------------------------------------------
   /// The reference value to use in stenciling operations. Stencil configuration
@@ -69,9 +69,9 @@ class RenderPass : public ResourceBinder {
   /// @see         `Pipeline`
   /// @see         `PipelineDescriptor`
   ///
-  void SetStencilReference(uint32_t value);
+  virtual void SetStencilReference(uint32_t value);
 
-  void SetBaseVertex(uint64_t value);
+  virtual void SetBaseVertex(uint64_t value);
 
   //----------------------------------------------------------------------------
   /// The viewport coordinates that the rasterizer linearly maps normalized
@@ -79,14 +79,14 @@ class RenderPass : public ResourceBinder {
   /// If unset, the viewport is the size of the render target with a zero
   /// origin, znear=0, and zfar=1.
   ///
-  void SetViewport(Viewport viewport);
+  virtual void SetViewport(Viewport viewport);
 
   //----------------------------------------------------------------------------
   /// The scissor rect to use for clipping writes to the render target. The
   /// scissor rect must lie entirely within the render target.
   /// If unset, no scissor is applied.
   ///
-  void SetScissor(IRect scissor);
+  virtual void SetScissor(IRect scissor);
 
   //----------------------------------------------------------------------------
   /// The number of instances of the given set of vertices to render. Not all
@@ -95,7 +95,7 @@ class RenderPass : public ResourceBinder {
   /// @warning      Setting this to more than one will limit the availability of
   ///               backends to use with this command.
   ///
-  void SetInstanceCount(size_t count);
+  virtual void SetInstanceCount(size_t count);
 
   //----------------------------------------------------------------------------
   /// @brief      Specify the vertex and index buffer to use for this command.
@@ -105,28 +105,29 @@ class RenderPass : public ResourceBinder {
   ///
   /// @return     returns if the binding was updated.
   ///
-  bool SetVertexBuffer(VertexBuffer buffer);
+  virtual bool SetVertexBuffer(VertexBuffer buffer);
 
   /// Record the currently pending command.
-  fml::Status Draw();
+  virtual fml::Status Draw();
 
   // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    const ShaderUniformSlot& slot,
-                    const ShaderMetadata& metadata,
-                    BufferView view) override;
+  virtual bool BindResource(ShaderStage stage,
+                            const ShaderUniformSlot& slot,
+                            const ShaderMetadata& metadata,
+                            BufferView view) override;
 
-  bool BindResource(ShaderStage stage,
-                    const ShaderUniformSlot& slot,
-                    const std::shared_ptr<const ShaderMetadata>& metadata,
-                    BufferView view);
+  virtual bool BindResource(
+      ShaderStage stage,
+      const ShaderUniformSlot& slot,
+      const std::shared_ptr<const ShaderMetadata>& metadata,
+      BufferView view);
 
   // |ResourceBinder|
-  bool BindResource(ShaderStage stage,
-                    const SampledImageSlot& slot,
-                    const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler) override;
+  virtual bool BindResource(ShaderStage stage,
+                            const SampledImageSlot& slot,
+                            const ShaderMetadata& metadata,
+                            std::shared_ptr<const Texture> texture,
+                            std::shared_ptr<const Sampler> sampler) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
