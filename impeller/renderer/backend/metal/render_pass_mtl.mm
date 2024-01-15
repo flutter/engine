@@ -7,7 +7,6 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/make_copyable.h"
-#include "flutter/fml/trace_event.h"
 #include "fml/status.h"
 
 #include "impeller/base/backend_cast.h"
@@ -280,7 +279,7 @@ void RenderPassMTL::SetInstanceCount(size_t count) {
 
 // |RenderPass|
 bool RenderPassMTL::SetVertexBuffer(VertexBuffer buffer) {
-  if (buffer.index_type == IndexType::kUnknown || !has_valid_pipeline_) {
+  if (buffer.index_type == IndexType::kUnknown) {
     return false;
   }
 

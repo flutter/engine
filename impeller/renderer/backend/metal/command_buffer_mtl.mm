@@ -6,7 +6,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/semaphore.h"
-#include "flutter/fml/trace_event.h"
 
 #include "impeller/renderer/backend/metal/blit_pass_mtl.h"
 #include "impeller/renderer/backend/metal/compute_pass_mtl.h"
