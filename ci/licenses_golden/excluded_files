@@ -146,6 +146,7 @@
 ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
+../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
 ../../../flutter/impeller/entity/contents/test
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/vertices_contents_unittests.cc
@@ -187,7 +188,6 @@
 ../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
 ../../../flutter/impeller/renderer/compute_unittests.cc
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
-../../../flutter/impeller/renderer/host_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
 ../../../flutter/impeller/renderer/pool_unittests.cc
 ../../../flutter/impeller/renderer/renderer_dart_unittests.cc
@@ -271,13 +271,16 @@
 ../../../flutter/shell/common/vsync_waiter_unittests.cc
 ../../../flutter/shell/gpu/gpu_surface_metal_impeller_unittests.mm
 ../../../flutter/shell/platform/android/.gitignore
+../../../flutter/shell/platform/android/README.md
 ../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
 ../../../flutter/shell/platform/android/android_context_gl_unittests.cc
 ../../../flutter/shell/platform/android/android_shell_holder_unittests.cc
 ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
+../../../flutter/shell/platform/android/build.gradle
 ../../../flutter/shell/platform/android/external_view_embedder/external_view_embedder_unittests.cc
 ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
 ../../../flutter/shell/platform/android/flutter_shell_native_unittests.cc
+../../../flutter/shell/platform/android/gradle.properties
 ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate_unittests.cc
 ../../../flutter/shell/platform/android/platform_view_android_unittests.cc
@@ -1312,6 +1315,8 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-15/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-16/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-16/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-17/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-17/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-12/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-13/sysroot/dist/lib/asan/ld.so.1
@@ -1322,6 +1327,8 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-15/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-17/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-17/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-12/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-13/sysroot/dist/lib/asan/ld.so.1
@@ -1332,6 +1339,8 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-15/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-17/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-17/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
 ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/meta.json
@@ -1736,7 +1745,6 @@
 ../../../third_party/abseil-cpp/create_lts.py
 ../../../third_party/abseil-cpp/generate_def_files.py
 ../../../third_party/abseil-cpp/roll_abseil.py
-../../../third_party/android_embedding_dependencies
 ../../../third_party/android_tools
 ../../../third_party/angle/.clang-format
 ../../../third_party/angle/.git
@@ -2629,7 +2637,6 @@
 ../../../third_party/freetype2/vms_make.com
 ../../../third_party/google_fonts_for_unit_tests
 ../../../third_party/googletest
-../../../third_party/gradle
 ../../../third_party/harfbuzz/.ci/requirements.txt
 ../../../third_party/harfbuzz/.clang-format
 ../../../third_party/harfbuzz/.editorconfig
@@ -2830,7 +2837,6 @@
 ../../../third_party/icu/source/tools/toolutil/sources.txt
 ../../../third_party/icu/source/tools/tzcode/Makefile.in
 ../../../third_party/icu/source/tools/tzcode/readme.txt
-../../../third_party/java
 ../../../third_party/libcxx/.clang-format
 ../../../third_party/libcxx/.clang-tidy
 ../../../third_party/libcxx/.git

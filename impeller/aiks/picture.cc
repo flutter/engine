@@ -64,6 +64,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
         *impeller_context,        // context
         render_target_allocator,  // allocator
         size,                     // size
+        /*mip_count=*/1,
         "Picture Snapshot MSAA",  // label
         RenderTarget::
             kDefaultColorAttachmentConfigMSAA,  // color_attachment_config
@@ -71,9 +72,10 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     );
   } else {
     target = RenderTarget::CreateOffscreen(
-        *impeller_context,                            // context
-        render_target_allocator,                      // allocator
-        size,                                         // size
+        *impeller_context,        // context
+        render_target_allocator,  // allocator
+        size,                     // size
+        /*mip_count=*/1,
         "Picture Snapshot",                           // label
         RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config
         std::nullopt  // stencil_attachment_config
@@ -84,7 +86,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     return nullptr;
   }
 
-  if (!context.Render(*this, target)) {
+  if (!context.Render(*this, target, false)) {
     VALIDATION_LOG << "Could not render Picture to Texture.";
     return nullptr;
   }

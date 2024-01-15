@@ -184,10 +184,12 @@ ContentContext::ContentContext(
       render_target_cache_(render_target_allocator == nullptr
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
-                               : std::move(render_target_allocator)) {
+                               : std::move(render_target_allocator)),
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
+
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
       .color_attachment_pixel_format =
@@ -416,14 +418,14 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
@@ -486,6 +488,20 @@ const Capabilities& ContentContext::GetDeviceCapabilities() const {
 
 void ContentContext::SetWireframe(bool wireframe) {
   wireframe_ = wireframe;
+}
+
+std::shared_ptr<Pipeline<PipelineDescriptor>>
+ContentContext::GetCachedRuntimeEffectPipeline(
+    const std::string& unique_entrypoint_name,
+    const ContentContextOptions& options,
+    const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
+        create_callback) const {
+  RuntimeEffectPipelineKey key{unique_entrypoint_name, options};
+  auto it = runtime_effect_pipelines_.find(key);
+  if (it == runtime_effect_pipelines_.end()) {
+    it = runtime_effect_pipelines_.insert(it, {key, create_callback()});
+  }
+  return it->second;
 }
 
 }  // namespace impeller
