@@ -553,6 +553,9 @@ void PipelineVK::PreloadPipeline(SubpassCursorVK cursor) const {
 }
 
 bool PipelineVK::HasPreloadedPipeline(SubpassCursorVK cursor) const {
+  if (subpass_cursor_ == cursor) {
+    return true;
+  }
   Lock lock(subpass_pipelines_mutex_);
   return subpass_pipelines_.find(cursor) != subpass_pipelines_.end();
 }
