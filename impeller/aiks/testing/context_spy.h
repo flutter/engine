@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "impeller/aiks/testing/context_mock.h"
-#include "impeller/aiks/testing/recording_render_pass.h"
+#include "impeller/entity/contents/test/recording_render_pass.h"
 
 namespace impeller {
 namespace testing {

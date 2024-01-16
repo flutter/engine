@@ -74,10 +74,9 @@ impeller_component("context_spy") {
     "testing/context_mock.h",
     "testing/context_spy.cc",
     "testing/context_spy.h",
-    "testing/recording_render_pass.cc",
-    "testing/recording_render_pass.h",
   ]
   deps = [
+    "//flutter/impeller/entity:entity_test_helpers",
     "//flutter/impeller/renderer",
     "//flutter/testing:testing_lib",
   ]

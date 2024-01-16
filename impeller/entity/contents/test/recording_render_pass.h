@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_AIKS_TESTING_RECORDING_RENDER_PASS_H_
-#define FLUTTER_IMPELLER_AIKS_TESTING_RECORDING_RENDER_PASS_H_
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_RECORDING_RENDER_PASS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_RECORDING_RENDER_PASS_H_
 
 #include "impeller/renderer/render_pass.h"
 
@@ -44,7 +44,7 @@ class RecordingRenderPass : public RenderPass {
   bool SetVertexBuffer(VertexBuffer buffer) override;
 
   // |RenderPass|
-  fml::Status Draw();
+  fml::Status Draw() override;
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
@@ -58,7 +58,7 @@ class RecordingRenderPass : public RenderPass {
                     DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,
-                    BufferView view);
+                    BufferView view) override;
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
@@ -84,4 +84,4 @@ class RecordingRenderPass : public RenderPass {
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_AIKS_TESTING_RECORDING_RENDER_PASS_H_
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TEST_RECORDING_RENDER_PASS_H_

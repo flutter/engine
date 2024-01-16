@@ -7,9 +7,9 @@
 
 #include "gtest/gtest.h"
 
-#include "impeller/aiks/testing/recording_render_pass.h"
 #include "impeller/entity/contents/checkerboard_contents.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/test/recording_render_pass.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/renderer/render_target.h"

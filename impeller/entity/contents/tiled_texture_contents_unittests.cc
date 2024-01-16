@@ -4,9 +4,9 @@
 
 #include <memory>
 
-#include "impeller/aiks/testing/recording_render_pass.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/entity/contents/test/recording_render_pass.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/playground/playground_test.h"
