@@ -7,6 +7,9 @@ It is responsible for:
 2. Providing a view for the Flutter engine to render into.
 3. Dispatching events to the Flutter engine.
 
+For more information on embedders, see the
+[Flutter architectural overview](https://docs.flutter.dev/resources/architectural-overview).
+
 > [!CAUTION]
 > This is a best effort attempt to document the Windows embedder. It is not
 > guaranteed to be up to date or complete. If you find a discrepancy, please
