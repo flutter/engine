@@ -7,7 +7,6 @@
 
 #include "gtest/gtest.h"
 
-#include "impeller/entity/contents/test/recording_render_pass.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/test/contents_test_helpers.h"
@@ -66,7 +65,8 @@ TEST_P(EntityTest, RendersDstPerColorWithAlpha) {
       *GetContentContext()->GetRenderTargetCache(), {100, 100},
       /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
-  auto recording_pass = std::make_shared<RecordingRenderPass>(render_pass, GetContext(), render_target);
+  auto recording_pass = std::make_shared<RecordingRenderPass>(
+      render_pass, GetContext(), render_target);
   Entity entity;
 
   ASSERT_TRUE(recording_pass->GetCommands().empty());
