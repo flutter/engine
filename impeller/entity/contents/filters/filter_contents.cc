@@ -50,6 +50,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   return blur;
 }
 
+#define IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER 1
+
 #ifdef IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER
 const int32_t FilterContents::kBlurFilterRequiredMipCount = 4;
 #else
