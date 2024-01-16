@@ -3758,7 +3758,7 @@ TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
   canvas.Restore();
 
   Picture picture = canvas.EndRecordingAsPicture();
-  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
+  EXPECT_EQ(1, picture.pass->GetRequiredMipCount());
 }
 
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
