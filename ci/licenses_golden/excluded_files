@@ -143,6 +143,7 @@
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/checkerboard_contents_unittests.cc
+../../../flutter/impeller/entity/contents/content_context_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
@@ -366,6 +367,7 @@
 ../../../flutter/shell/platform/glfw/client_wrapper/plugin_registrar_glfw_unittests.cc
 ../../../flutter/shell/platform/glfw/client_wrapper/testing
 ../../../flutter/shell/platform/linux/testing
+../../../flutter/shell/platform/windows/README.md
 ../../../flutter/shell/platform/windows/accessibility_bridge_windows_unittests.cc
 ../../../flutter/shell/platform/windows/client_wrapper/dart_project_unittests.cc
 ../../../flutter/shell/platform/windows/client_wrapper/flutter_engine_unittests.cc
@@ -1745,7 +1747,6 @@
 ../../../third_party/abseil-cpp/create_lts.py
 ../../../third_party/abseil-cpp/generate_def_files.py
 ../../../third_party/abseil-cpp/roll_abseil.py
-../../../third_party/android_embedding_dependencies
 ../../../third_party/android_tools
 ../../../third_party/angle/.clang-format
 ../../../third_party/angle/.git
@@ -2638,7 +2639,6 @@
 ../../../third_party/freetype2/vms_make.com
 ../../../third_party/google_fonts_for_unit_tests
 ../../../third_party/googletest
-../../../third_party/gradle
 ../../../third_party/harfbuzz/.ci/requirements.txt
 ../../../third_party/harfbuzz/.clang-format
 ../../../third_party/harfbuzz/.editorconfig
@@ -2839,7 +2839,6 @@
 ../../../third_party/icu/source/tools/toolutil/sources.txt
 ../../../third_party/icu/source/tools/tzcode/Makefile.in
 ../../../third_party/icu/source/tools/tzcode/readme.txt
-../../../third_party/java
 ../../../third_party/libcxx/.clang-format
 ../../../third_party/libcxx/.clang-tidy
 ../../../third_party/libcxx/.git

@@ -80,7 +80,21 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
+  //--------------------------------------------------------------------------
+  /// Resolve geometry and content context options.
+  ///
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+
   if (function && runtime_stage_->IsDirty()) {
+    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint());
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
@@ -120,13 +134,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   //--------------------------------------------------------------------------
-  /// Resolve geometry.
-  ///
-
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
-  //--------------------------------------------------------------------------
   /// Set up the command. Defer setting up the pipeline until the descriptor set
   /// layouts are known from the uniforms.
   ///
@@ -137,10 +144,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   using VS = RuntimeEffectVertexShader;
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "RuntimeEffectContents");
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
+  pass.SetCommandLabel("RuntimeEffectContents");
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   //--------------------------------------------------------------------------
   /// Vertex stage uniforms.
@@ -148,7 +154,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd,
+  VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
@@ -192,8 +198,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
         uniform_slot.ext_res_0 = uniform.location;
-        cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
-                         buffer_view);
+        pass.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
+                          buffer_view);
         buffer_index++;
         buffer_offset += uniform.GetSize();
         break;
@@ -228,10 +234,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                     DefaultUniformAlignment());
 
         auto buffer_view = renderer.GetTransientsBuffer().Emplace(
-            reinterpret_cast<const void*>(uniform_buffer.data()), alignment,
-            alignment);
-        cmd.BindResource(ShaderStage::kFragment, uniform_slot, ShaderMetadata{},
-                         buffer_view);
+            reinterpret_cast<const void*>(uniform_buffer.data()),
+            sizeof(float) * uniform_buffer.size(), alignment);
+        pass.BindResource(ShaderStage::kFragment, uniform_slot,
+                          ShaderMetadata{}, buffer_view);
       }
     }
   }
@@ -264,8 +270,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
         image_slot.binding = sampler_binding_location;
         image_slot.texture_index = uniform.location - minimum_sampler_index;
-        cmd.BindResource(ShaderStage::kFragment, image_slot, *metadata,
-                         input.texture, sampler);
+        pass.BindResource(ShaderStage::kFragment, image_slot, *metadata,
+                          input.texture, sampler);
 
         sampler_index++;
         break;
@@ -276,14 +282,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   /// Now that the descriptor set layouts are known, get the pipeline.
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-
   auto create_callback =
       [&]() -> std::shared_ptr<Pipeline<PipelineDescriptor>> {
     PipelineDescriptor desc;
@@ -317,10 +315,12 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     return pipeline;
   };
 
-  cmd.pipeline = renderer.GetCachedRuntimeEffectPipeline(
-      runtime_stage_->GetEntrypoint(), options, create_callback);
+  pass.SetPipeline(renderer.GetCachedRuntimeEffectPipeline(
+      runtime_stage_->GetEntrypoint(), options, create_callback));
 
-  pass.AddCommand(std::move(cmd));
+  if (!pass.Draw().ok()) {
+    return false;
+  }
 
   if (geometry_result.prevent_overdraw) {
     auto restore = ClipRestoreContents();

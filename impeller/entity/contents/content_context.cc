@@ -418,14 +418,14 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
@@ -502,6 +502,18 @@ ContentContext::GetCachedRuntimeEffectPipeline(
     it = runtime_effect_pipelines_.insert(it, {key, create_callback()});
   }
   return it->second;
+}
+
+void ContentContext::ClearCachedRuntimeEffectPipeline(
+    const std::string& unique_entrypoint_name) const {
+  for (auto it = runtime_effect_pipelines_.begin();
+       it != runtime_effect_pipelines_.end();) {
+    if (it->first.unique_entrypoint_name == unique_entrypoint_name) {
+      it = runtime_effect_pipelines_.erase(it);
+    } else {
+      it++;
+    }
+  }
 }
 
 }  // namespace impeller
