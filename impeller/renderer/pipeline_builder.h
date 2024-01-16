@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_BUILDER_H_
+#define FLUTTER_IMPELLER_RENDERER_PIPELINE_BUILDER_H_
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -49,7 +50,7 @@ struct PipelineBuilder {
   ///
   static std::optional<PipelineDescriptor> MakeDefaultPipelineDescriptor(
       const Context& context,
-      const std::vector<int>& constants = {}) {
+      const std::vector<Scalar>& constants = {}) {
     PipelineDescriptor desc;
     desc.SetSpecializationConstants(constants);
     if (InitializePipelineDescriptorDefaults(context, desc)) {
@@ -120,3 +121,5 @@ struct PipelineBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_PIPELINE_BUILDER_H_

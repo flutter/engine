@@ -145,6 +145,7 @@ external void _validateVertices(Vertices vertices);
 @pragma('vm:entry-point')
 void sendSemanticsUpdate() {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
+  final String identifier = "identifier";
   final String label = "label";
   final List<StringAttribute> labelAttributes = <StringAttribute> [
     SpellOutStringAttribute(range: TextRange(start: 1, end: 2)),
@@ -171,6 +172,8 @@ void sendSemanticsUpdate() {
       locale: Locale('en', 'MX'), range: TextRange(start: 0, end: 1),
     ),
   ];
+
+  String tooltip = "tooltip";
 
   final Float64List transform = Float64List(16);
   final Int32List childrenInTraversalOrder = Int32List(0);
@@ -212,6 +215,7 @@ void sendSemanticsUpdate() {
     rect: Rect.fromLTRB(0, 0, 10, 10),
     elevation: 0,
     thickness: 0,
+    identifier: identifier,
     label: label,
     labelAttributes: labelAttributes,
     value: value,
@@ -222,6 +226,7 @@ void sendSemanticsUpdate() {
     decreasedValueAttributes: decreasedValueAttributes,
     hint: hint,
     hintAttributes: hintAttributes,
+    tooltip: tooltip,
     textDirection: TextDirection.ltr,
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,

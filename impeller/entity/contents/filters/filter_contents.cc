@@ -50,6 +50,12 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   return blur;
 }
 
+#ifdef IMPELLER_ENABLE_NEW_GAUSSIAN_FILTER
+const int32_t FilterContents::kBlurFilterRequiredMipCount = 4;
+#else
+const int32_t FilterContents::kBlurFilterRequiredMipCount = 1;
+#endif
+
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const FilterInput::Ref& input,
     Sigma sigma_x,
@@ -66,7 +72,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
   // TODO(https://github.com/flutter/flutter/issues/131580): Remove once the new
   // blur handles all cases.
   if (use_new_filter) {
-    auto blur = std::make_shared<GaussianBlurFilterContents>(sigma_x.sigma);
+    auto blur = std::make_shared<GaussianBlurFilterContents>(
+        sigma_x.sigma, sigma_y.sigma, tile_mode);
     blur->SetInputs({input});
     return blur;
   }
@@ -202,7 +209,7 @@ std::optional<Rect> FilterContents::GetLocalCoverage(
 }
 
 std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
-  Entity entity_with_local_transform = entity;
+  Entity entity_with_local_transform = entity.Clone();
   entity_with_local_transform.SetTransform(GetTransform(entity.GetTransform()));
 
   return GetLocalCoverage(entity_with_local_transform);
@@ -269,7 +276,7 @@ std::optional<Entity> FilterContents::GetEntity(
     const ContentContext& renderer,
     const Entity& entity,
     const std::optional<Rect>& coverage_hint) const {
-  Entity entity_with_local_transform = entity;
+  Entity entity_with_local_transform = entity.Clone();
   entity_with_local_transform.SetTransform(GetTransform(entity.GetTransform()));
 
   auto coverage = GetLocalCoverage(entity_with_local_transform);

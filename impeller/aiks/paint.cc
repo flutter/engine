@@ -26,23 +26,6 @@ constexpr ColorMatrix kColorInversion = {
 };
 // clang-format on
 
-std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
-                                                         bool cover) const {
-  std::shared_ptr<Geometry> geometry;
-  switch (style) {
-    case Style::kFill:
-      geometry = cover ? Geometry::MakeCover() : Geometry::MakeFillPath(path);
-      break;
-    case Style::kStroke:
-      geometry =
-          cover ? Geometry::MakeCover()
-                : Geometry::MakeStrokePath(path, stroke_width, stroke_miter,
-                                           stroke_cap, stroke_join);
-      break;
-  }
-  return CreateContentsForGeometry(geometry);
-}
-
 std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
     const std::shared_ptr<Geometry>& geometry) const {
   auto contents = color_source.GetContents(*this);

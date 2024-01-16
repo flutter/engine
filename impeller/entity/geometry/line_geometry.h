@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
 
 #include <type_traits>
 #include "impeller/entity/geometry/geometry.h"
@@ -14,6 +15,8 @@ class LineGeometry final : public Geometry {
   explicit LineGeometry(Point p0, Point p1, Scalar width, Cap cap);
 
   ~LineGeometry() = default;
+
+  static Scalar ComputePixelHalfWidth(const Matrix& transform, Scalar width);
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
@@ -39,6 +42,9 @@ class LineGeometry final : public Geometry {
   bool ComputeCorners(Point corners[4],
                       const Matrix& transform,
                       bool extend_endpoints) const;
+
+  Vector2 ComputeAlongVector(const Matrix& transform,
+                             bool allow_zero_length) const;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -71,3 +77,5 @@ class LineGeometry final : public Geometry {
 static_assert(std::is_trivially_destructible<LineGeometry>::value);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_

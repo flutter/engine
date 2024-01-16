@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
 
 #include <functional>
 #include <string>
@@ -239,7 +240,7 @@ class ProcTableGLES {
   /// support static specialization. For example, setting "#define Foo 1".
   void ShaderSourceMapping(GLuint shader,
                            const fml::Mapping& mapping,
-                           const std::vector<int32_t>& defines = {}) const;
+                           const std::vector<Scalar>& defines = {}) const;
 
   const DescriptionGLES* GetDescription() const;
 
@@ -262,7 +263,7 @@ class ProcTableGLES {
   // Visible For testing.
   std::optional<std::string> ComputeShaderWithDefines(
       const fml::Mapping& mapping,
-      const std::vector<int32_t>& defines) const;
+      const std::vector<Scalar>& defines) const;
 
  private:
   bool is_valid_ = false;
@@ -276,3 +277,5 @@ class ProcTableGLES {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_

@@ -74,6 +74,7 @@ bool EmbedderExternalView::HasEngineRenderedContents() {
   DlOpSpy dl_op_spy;
   slice_->dispatch(dl_op_spy);
   has_engine_rendered_contents_ = dl_op_spy.did_draw() && !slice_->is_empty();
+  // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
   return has_engine_rendered_contents_.value();
 }
 
@@ -106,7 +107,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     auto dispatcher = impeller::DlDispatcher();
     dispatcher.drawDisplayList(dl_builder.Build(), 1);
     return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
-                                *impeller_target);
+                                *impeller_target, /*reset_host_buffer=*/true);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 

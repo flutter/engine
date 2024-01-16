@@ -2,21 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_RENDERER_H_
+#define FLUTTER_IMPELLER_RENDERER_RENDERER_H_
 
 #include <functional>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/synchronization/semaphore.h"
-#include "impeller/geometry/size.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
 class Surface;
-class RenderPass;
 
 class Renderer {
  public:
@@ -47,3 +45,5 @@ class Renderer {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_RENDERER_H_

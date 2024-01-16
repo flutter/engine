@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMPUTE_TESSELLATOR_H_
+#define FLUTTER_IMPELLER_RENDERER_COMPUTE_TESSELLATOR_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
@@ -64,6 +65,7 @@ class ComputeTessellator {
   // and heap allocated buffers on Metal.
   Status Tessellate(
       const Path& path,
+      HostBuffer& host_buffer,
       const std::shared_ptr<Context>& context,
       BufferView vertex_buffer,
       BufferView vertex_buffer_count,
@@ -84,3 +86,5 @@ class ComputeTessellator {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMPUTE_TESSELLATOR_H_

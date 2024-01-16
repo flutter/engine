@@ -3,15 +3,16 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/text_input_plugin.h"
-#include "flutter/fml/string_conversion.h"
-#include "flutter/shell/platform/common/text_editing_delta.h"
-#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 
 #include <windows.h>
 
 #include <cstdint>
 
+#include "flutter/fml/string_conversion.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
+#include "flutter/shell/platform/common/text_editing_delta.h"
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
 static constexpr char kClearClientMethod[] = "TextInput.clearClient";
@@ -104,12 +105,12 @@ void TextInputPlugin::KeyboardHook(int key,
 }
 
 TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
-                                 TextInputPluginDelegate* delegate)
+                                 FlutterWindowsEngine* engine)
     : channel_(std::make_unique<flutter::MethodChannel<rapidjson::Document>>(
           messenger,
           kChannelName,
           &flutter::JsonMethodCodec::GetInstance())),
-      delegate_(delegate),
+      engine_(engine),
       active_model_(nullptr) {
   channel_->SetMethodCallHandler(
       [this](
@@ -196,9 +197,7 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   std::string text_before_change = active_model_->GetText();
   TextRange composing_before_change = active_model_->composing_range();
   active_model_->AddText(text);
-  cursor_pos += active_model_->composing_range().start();
-  active_model_->UpdateComposingText(text);
-  active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
+  active_model_->UpdateComposingText(text, TextRange(cursor_pos, cursor_pos));
   std::string text_after_change = active_model_->GetText();
   if (enable_delta_model) {
     TextEditingDelta delta = TextEditingDelta(
@@ -217,12 +216,18 @@ void TextInputPlugin::HandleMethodCall(
   if (method.compare(kShowMethod) == 0 || method.compare(kHideMethod) == 0) {
     // These methods are no-ops.
   } else if (method.compare(kClearClientMethod) == 0) {
+    FlutterWindowsView* view = engine_->view();
+    if (view == nullptr) {
+      result->Error(kInternalConsistencyError,
+                    "Text input is not available in Windows headless mode");
+      return;
+    }
     if (active_model_ != nullptr && active_model_->composing()) {
       active_model_->CommitComposing();
       active_model_->EndComposing();
       SendStateUpdate(*active_model_);
     }
-    delegate_->OnResetImeComposing();
+    view->OnResetImeComposing();
     active_model_ = nullptr;
   } else if (method.compare(kSetClientMethod) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
@@ -321,6 +326,12 @@ void TextInputPlugin::HandleMethodCall(
           TextRange(composing_base, composing_extent), cursor_offset);
     }
   } else if (method.compare(kSetMarkedTextRect) == 0) {
+    FlutterWindowsView* view = engine_->view();
+    if (view == nullptr) {
+      result->Error(kInternalConsistencyError,
+                    "Text input is not available in Windows headless mode");
+      return;
+    }
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
       result->Error(kBadArgumentError, "Method invoked without args");
       return;
@@ -342,8 +353,14 @@ void TextInputPlugin::HandleMethodCall(
                        {width->value.GetDouble(), height->value.GetDouble()}};
 
     Rect transformed_rect = GetCursorRect();
-    delegate_->OnCursorRectUpdated(transformed_rect);
+    view->OnCursorRectUpdated(transformed_rect);
   } else if (method.compare(kSetEditableSizeAndTransform) == 0) {
+    FlutterWindowsView* view = engine_->view();
+    if (view == nullptr) {
+      result->Error(kInternalConsistencyError,
+                    "Text input is not available in Windows headless mode");
+      return;
+    }
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
       result->Error(kBadArgumentError, "Method invoked without args");
       return;
@@ -367,7 +384,7 @@ void TextInputPlugin::HandleMethodCall(
       ++i;
     }
     Rect transformed_rect = GetCursorRect();
-    delegate_->OnCursorRectUpdated(transformed_rect);
+    view->OnCursorRectUpdated(transformed_rect);
   } else {
     result->NotImplemented();
     return;

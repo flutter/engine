@@ -80,7 +80,7 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void render(Scene scene, [FlutterView view]);
+  Future<void> render(Scene scene, [FlutterView view]);
 
   AccessibilityFeatures get accessibilityFeatures;
 
@@ -545,4 +545,7 @@ class SemanticsActionEvent {
       arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
     );
   }
+
+  @override
+  String toString() => 'SemanticsActionEvent($type, view: $viewId, node: $nodeId)';
 }

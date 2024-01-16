@@ -20,6 +20,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/dart_snapshot.h"
+#include "flutter/runtime/isolate_configuration.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
 
@@ -391,6 +392,11 @@ class DartIsolate : public UIDartState {
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
 
+  /// Returns the "main" entrypoint of the library contained in the kernel
+  /// data in `mapping`.
+  static Dart_Handle LoadLibraryFromKernel(
+      const std::shared_ptr<const fml::Mapping>& mapping);
+
  private:
   friend class IsolateConfiguration;
   class AutoFireClosure {
@@ -406,12 +412,12 @@ class DartIsolate : public UIDartState {
   friend class DartVM;
 
   Phase phase_ = Phase::Unknown;
-  std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
   std::string domain_network_policy_;
+  const bool is_spawning_in_group_;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
@@ -425,7 +431,8 @@ class DartIsolate : public UIDartState {
 
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
-              const UIDartState::Context& context);
+              const UIDartState::Context& context,
+              bool is_spawning_in_group = false);
 
   //----------------------------------------------------------------------------
   /// @brief      Initializes the given (current) isolate.

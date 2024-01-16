@@ -63,20 +63,19 @@ class CursorHandlerTest : public WindowsTest {
   FlutterWindowsView* view() { return view_.get(); }
   MockWindowBindingHandler* window() { return window_; }
 
-  void use_headless_engine() {
+  void UseHeadlessEngine() {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     engine_ = builder.Build();
   }
 
-  void use_engine_with_view() {
+  void UseEngineWithView() {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     auto window = std::make_unique<MockWindowBindingHandler>();
 
     window_ = window.get();
     EXPECT_CALL(*window_, SetView).Times(1);
-    EXPECT_CALL(*window_, GetRenderTarget).WillOnce(Return(nullptr));
 
     engine_ = builder.Build();
     view_ = std::make_unique<FlutterWindowsView>(std::move(window));
@@ -93,7 +92,7 @@ class CursorHandlerTest : public WindowsTest {
 };
 
 TEST_F(CursorHandlerTest, ActivateSystemCursor) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -119,7 +118,7 @@ TEST_F(CursorHandlerTest, ActivateSystemCursor) {
 }
 
 TEST_F(CursorHandlerTest, ActivateSystemCursorRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -146,7 +145,7 @@ TEST_F(CursorHandlerTest, ActivateSystemCursorRequiresView) {
 }
 
 TEST_F(CursorHandlerTest, CreateCustomCursor) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -177,7 +176,7 @@ TEST_F(CursorHandlerTest, CreateCustomCursor) {
 }
 
 TEST_F(CursorHandlerTest, SetCustomCursor) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -217,7 +216,7 @@ TEST_F(CursorHandlerTest, SetCustomCursor) {
 }
 
 TEST_F(CursorHandlerTest, SetCustomCursorRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -258,7 +257,7 @@ TEST_F(CursorHandlerTest, SetCustomCursorRequiresView) {
 }
 
 TEST_F(CursorHandlerTest, SetNonexistentCustomCursor) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -287,7 +286,7 @@ TEST_F(CursorHandlerTest, SetNonexistentCustomCursor) {
 }
 
 TEST_F(CursorHandlerTest, DeleteCustomCursor) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());
@@ -325,7 +324,7 @@ TEST_F(CursorHandlerTest, DeleteCustomCursor) {
 }
 
 TEST_F(CursorHandlerTest, DeleteNonexistentCustomCursor) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   CursorHandler cursor_handler(&messenger, engine());

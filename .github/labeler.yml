@@ -4,37 +4,57 @@
 
 # See https://github.com/actions/labeler/blob/main/README.md for docs.
 'affects: desktop':
-  - shell/platform/darwin/common/**/*
-  - shell/platform/darwin/macos/**/*
-  - shell/platform/linux/**/*
-  - shell/platform/windows/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/darwin/common/**/*
+      - shell/platform/darwin/macos/**/*
+      - shell/platform/linux/**/*
+      - shell/platform/windows/**/*
 
 embedder:
-  - shell/platform/embedder
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/embedder
 
 'e: impeller':
-  - impeller/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - impeller/**/*
 
 platform-android:
-  - shell/platform/android/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/android/**/*
 
 platform-ios:
-  - shell/platform/darwin/common/**/*
-  - shell/platform/darwin/ios/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/darwin/common/**/*
+      - shell/platform/darwin/ios/**/*
 
 platform-fuchsia:
-  - shell/platform/fuchsia/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/fuchsia/**/*
 
 platform-linux:
-  - shell/platform/linux/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/linux/**/*
 
 platform-macos:
-  - shell/platform/darwin/common/**/*
-  - shell/platform/darwin/macos/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/darwin/common/**/*
+      - shell/platform/darwin/macos/**/*
 
 platform-web:
-  - lib/web_ui/**/*
-  - '**/web_sdk/**/*'
+  - changed-files:
+    - any-glob-to-any-file:
+      - lib/web_ui/**/*
+      - '**/web_sdk/**/*'
 
 platform-windows:
-  - shell/platform/windows/**/*
+  - changed-files:
+    - any-glob-to-any-file:
+      - shell/platform/windows/**/*

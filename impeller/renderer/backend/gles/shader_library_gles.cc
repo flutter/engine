@@ -41,12 +41,6 @@ static std::string GLESShaderNameToShaderKeyName(const std::string& name,
     case ShaderStage::kFragment:
       stream << "_fragment_";
       break;
-    case ShaderStage::kTessellationControl:
-      stream << "_tessellation_control_";
-      break;
-    case ShaderStage::kTessellationEvaluation:
-      stream << "_tessellation_evaluation_";
-      break;
     case ShaderStage::kCompute:
       stream << "_compute_";
       break;
@@ -147,7 +141,7 @@ void ShaderLibraryGLES::UnregisterFunction(std::string name,
   const auto key = ShaderKey{name, stage};
 
   auto found = functions_.find(key);
-  if (found != functions_.end()) {
+  if (found == functions_.end()) {
     VALIDATION_LOG << "Library function named " << name
                    << " was not found, so it couldn't be unregistered.";
     return;

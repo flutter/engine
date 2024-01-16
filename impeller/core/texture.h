@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_TEXTURE_H_
+#define FLUTTER_IMPELLER_CORE_TEXTURE_H_
 
 #include <string_view>
 
@@ -44,6 +45,9 @@ class Texture {
 
   virtual Scalar GetYCoordScale() const;
 
+  /// Returns true if mipmaps have never been generated.
+  /// The contents of the mipmap may be out of date if the root texture has been
+  /// modified and the mipmaps hasn't been regenerated.
   bool NeedsMipmapGeneration() const;
 
  protected:
@@ -73,3 +77,5 @@ class Texture {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_TEXTURE_H_

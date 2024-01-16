@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_
 
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/aiks/picture.h"
@@ -24,7 +25,7 @@ class MetalScreenshotter {
                                                                        300},
                                                   bool scale_content = true);
 
-  const PlaygroundImpl& GetPlayground() const { return *playground_; }
+  PlaygroundImpl& GetPlayground() { return *playground_; }
 
  private:
   std::unique_ptr<PlaygroundImpl> playground_;
@@ -32,3 +33,5 @@ class MetalScreenshotter {
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOTTER_H_

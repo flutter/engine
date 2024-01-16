@@ -20,27 +20,25 @@
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_proc_table.h"
 
 namespace flutter {
 
-// ID for the window frame buffer.
-inline constexpr uint32_t kWindowFrameBufferID = 0;
-
-// An OS-windowing neutral abstration for flutter
-// view that works with win32 hwnds and Windows::UI::Composition visuals.
-class FlutterWindowsView : public WindowBindingHandlerDelegate,
-                           public TextInputPluginDelegate {
+// An OS-windowing neutral abstration for a Flutter view that works
+// with win32 HWNDs.
+class FlutterWindowsView : public WindowBindingHandlerDelegate {
  public:
   // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
   //
   // In order for object to render Flutter content the SetEngine method must be
   // called with a valid FlutterWindowsEngine instance.
-  FlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding);
+  FlutterWindowsView(
+      std::unique_ptr<WindowBindingHandler> window_binding,
+      std::shared_ptr<WindowsProcTable> windows_proc_table = nullptr);
 
   virtual ~FlutterWindowsView();
 
@@ -55,11 +53,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Destroys current rendering surface if one has been allocated.
   void DestroyRenderSurface();
 
-  // Return the currently configured WindowsRenderTarget.
-  WindowsRenderTarget* GetRenderTarget() const;
-
-  // Return the currently configured PlatformWindow.
-  virtual PlatformWindow GetPlatformWindow() const;
+  // Return the currently configured HWND.
+  virtual HWND GetWindowHandle() const;
 
   // Returns the engine backing this view.
   FlutterWindowsEngine* GetEngine();
@@ -67,17 +62,24 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Tells the engine to generate a new frame
   void ForceRedraw();
 
-  // Callbacks for clearing context, settings context and swapping buffers,
-  // these are typically called on an engine-controlled (non-platform) thread.
-  bool ClearContext();
-  bool MakeCurrent();
-  bool MakeResourceCurrent();
-  bool SwapBuffers();
+  // Swap the view's surface buffers. Must be called on the engine's raster
+  // thread. Returns true if the buffers were swapped.
+  //
+  // |OnFrameGenerated| or |OnEmptyFrameGenerated| must be called before this
+  // method.
+  //
+  // If the view is resizing, this returns false if the frame is not the target
+  // size. Otherwise, it unblocks the platform thread and blocks the raster
+  // thread until the v-blank.
+  virtual bool SwapBuffers();
+
+  // Callback to clear a previously presented software bitmap.
+  virtual bool ClearSoftwareBitmap();
 
   // Callback for presenting a software bitmap.
-  bool PresentSoftwareBitmap(const void* allocation,
-                             size_t row_bytes,
-                             size_t height);
+  virtual bool PresentSoftwareBitmap(const void* allocation,
+                                     size_t row_bytes,
+                                     size_t height);
 
   // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
@@ -88,8 +90,18 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |WindowBindingHandlerDelegate|
   void OnHighContrastChanged() override;
 
-  // Returns the frame buffer id for the engine to render to.
-  uint32_t GetFrameBufferId(size_t width, size_t height);
+  // Called on the raster thread when |CompositorOpenGL| receives an empty
+  // frame.
+  //
+  // This resizes the surface if a resize is pending.
+  void OnEmptyFrameGenerated();
+
+  // Called on the raster thread when |CompositorOpenGL| receives a frame.
+  // Returns true if the frame can be presented.
+  //
+  // This resizes the surface if a resize is pending and |width| and
+  // |height| match the target size.
+  bool OnFrameGenerated(size_t width, size_t height);
 
   // Sets the cursor that should be used when the mouse is over the Flutter
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
@@ -186,11 +198,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |WindowBindingHandlerDelegate|
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() override;
 
-  // |TextInputPluginDelegate|
-  void OnCursorRectUpdated(const Rect& rect) override;
+  // Notifies the delegate of the updated the cursor rect in Flutter root view
+  // coordinates.
+  virtual void OnCursorRectUpdated(const Rect& rect);
 
-  // |TextInputPluginDelegate|
-  void OnResetImeComposing() override;
+  // Notifies the delegate that the system IME composing state should be reset.
+  virtual void OnResetImeComposing();
 
   // Called when a WM_ONCOMPOSITIONCHANGED message is received.
   void OnDwmCompositionChanged();
@@ -355,13 +368,15 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void SendPointerEventWithData(const FlutterPointerEvent& event_data,
                                 PointerState* state);
 
-  // Currently configured WindowsRenderTarget for this view used by
-  // surface_manager for creation of render surfaces and bound to the physical
-  // os window.
-  std::unique_ptr<WindowsRenderTarget> render_target_;
+  // If true, rendering to the window should synchronize with the vsync
+  // to prevent screen tearing.
+  bool NeedsVsync() const;
 
   // The engine associated with this view.
   FlutterWindowsEngine* engine_ = nullptr;
+
+  // Mocks win32 APIs.
+  std::shared_ptr<WindowsProcTable> windows_proc_table_;
 
   // Keeps track of pointer states in relation to the window.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

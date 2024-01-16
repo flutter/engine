@@ -17,6 +17,8 @@
 #include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
+#include "flutter/shell/platform/windows/compositor_opengl.h"
+#include "flutter/shell/platform/windows/compositor_software.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/system_utils.h"
@@ -53,35 +55,23 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
   config.open_gl.struct_size = sizeof(config.open_gl);
   config.open_gl.make_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
+    if (!host->surface_manager()) {
       return false;
     }
-    return host->view()->MakeCurrent();
+    return host->surface_manager()->MakeCurrent();
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
+    if (!host->surface_manager()) {
       return false;
     }
-    return host->view()->ClearContext();
+    return host->surface_manager()->ClearContext();
   };
-  config.open_gl.present = [](void* user_data) -> bool {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->SwapBuffers();
-  };
+  config.open_gl.present = [](void* user_data) -> bool { FML_UNREACHABLE(); };
   config.open_gl.fbo_reset_after_present = true;
   config.open_gl.fbo_with_frame_info_callback =
       [](void* user_data, const FlutterFrameInfo* info) -> uint32_t {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (host->view()) {
-      return host->view()->GetFrameBufferId(info->size.width,
-                                            info->size.height);
-    } else {
-      return kWindowFrameBufferID;
-    }
+    FML_UNREACHABLE();
   };
   config.open_gl.gl_proc_resolver = [](void* user_data,
                                        const char* what) -> void* {
@@ -89,10 +79,10 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
   };
   config.open_gl.make_resource_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
+    if (!host->surface_manager()) {
       return false;
     }
-    return host->view()->MakeResourceCurrent();
+    return host->surface_manager()->MakeResourceCurrent();
   };
   config.open_gl.gl_external_texture_frame_callback =
       [](void* user_data, int64_t texture_id, size_t width, size_t height,
@@ -115,16 +105,12 @@ FlutterRendererConfig GetSoftwareRendererConfig() {
   FlutterRendererConfig config = {};
   config.type = kSoftware;
   config.software.struct_size = sizeof(config.software);
-  config.software.surface_present_callback = [](void* user_data,
-                                                const void* allocation,
-                                                size_t row_bytes,
-                                                size_t height) {
-    auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!host->view()) {
-      return false;
-    }
-    return host->view()->PresentSoftwareBitmap(allocation, row_bytes, height);
-  };
+  config.software.surface_present_callback =
+      [](void* user_data, const void* allocation, size_t row_bytes,
+         size_t height) {
+        FML_UNREACHABLE();
+        return false;
+      };
   return config;
 }
 
@@ -168,6 +154,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
     windows_proc_table_ = std::make_shared<WindowsProcTable>();
   }
 
+  gl_ = GlProcTable::Create();
+
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -204,9 +192,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       },
       static_cast<void*>(this));
 
-  FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
   texture_registrar_ =
-      std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
+      std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_);
 
   // Check for impeller support.
   auto& switches = project_->GetSwitches();
@@ -392,6 +379,43 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   };
 
   args.custom_task_runners = &custom_task_runners;
+
+  if (surface_manager_) {
+    auto resolver = [](const char* name) -> void* {
+      return reinterpret_cast<void*>(::eglGetProcAddress(name));
+    };
+
+    compositor_ = std::make_unique<CompositorOpenGL>(this, resolver);
+  } else {
+    compositor_ = std::make_unique<CompositorSoftware>(this);
+  }
+
+  FlutterCompositor compositor = {};
+  compositor.struct_size = sizeof(FlutterCompositor);
+  compositor.user_data = this;
+  compositor.create_backing_store_callback =
+      [](const FlutterBackingStoreConfig* config,
+         FlutterBackingStore* backing_store_out, void* user_data) -> bool {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    return host->compositor_->CreateBackingStore(*config, backing_store_out);
+  };
+
+  compositor.collect_backing_store_callback =
+      [](const FlutterBackingStore* backing_store, void* user_data) -> bool {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    return host->compositor_->CollectBackingStore(backing_store);
+  };
+
+  compositor.present_layers_callback = [](const FlutterLayer** layers,
+                                          size_t layers_count,
+                                          void* user_data) -> bool {
+    auto host = static_cast<FlutterWindowsEngine*>(user_data);
+
+    return host->compositor_->Present(layers, layers_count);
+  };
+  args.compositor = &compositor;
 
   if (aot_data_) {
     args.aot_data = aot_data_.get();
@@ -666,7 +690,7 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
 
 std::unique_ptr<TextInputPlugin> FlutterWindowsEngine::CreateTextInputPlugin(
     BinaryMessenger* messenger) {
-  return std::make_unique<TextInputPlugin>(messenger, view_);
+  return std::make_unique<TextInputPlugin>(messenger, this);
 }
 
 bool FlutterWindowsEngine::RegisterExternalTexture(int64_t texture_id) {
@@ -685,7 +709,7 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
-bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
+bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) const {
   struct Captures {
     fml::closure callback;
   };

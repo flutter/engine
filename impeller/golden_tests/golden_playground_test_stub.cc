@@ -42,10 +42,9 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     bool enable_mipmapping) const {
   return nullptr;
 }
-
-std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-  return nullptr;
+  return {};
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
@@ -65,5 +64,12 @@ ISize GoldenPlaygroundTest::GetWindowSize() const {
 }
 
 void GoldenPlaygroundTest::SetWindowSize(ISize size) {}
+
+fml::Status GoldenPlaygroundTest::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+}
 
 }  // namespace impeller

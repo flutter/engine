@@ -422,7 +422,7 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
       return nullptr;
     }
     blit_pass->SetLabel("Mipmap Blit Pass");
-    blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
+    blit_pass->AddCopy(DeviceBuffer::AsBufferView(buffer), dest_texture);
     if (enable_mipmapping) {
       blit_pass->GenerateMipmap(dest_texture);
     }
@@ -530,6 +530,15 @@ void Playground::SetWindowSize(ISize size) {
 
 bool Playground::ShouldKeepRendering() const {
   return true;
+}
+
+fml::Status Playground::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return impl_->SetCapabilities(capabilities);
+}
+
+bool Playground::WillRenderSomething() const {
+  return switches_.enable_playground;
 }
 
 }  // namespace impeller

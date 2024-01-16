@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_SAMPLER_LIBRARY_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_SAMPLER_LIBRARY_GLES_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -35,3 +35,5 @@ class SamplerLibraryGLES final : public SamplerLibrary {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_SAMPLER_LIBRARY_GLES_H_
