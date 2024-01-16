@@ -301,13 +301,24 @@ if (is_mac) {
 }
 
 if (host_os == "win") {
+  # This rule archives both gen_snapshot *and* analyze_snapshot. The name is
+  # misleading. We (shorebird) have updated this rule to include
+  # analyze_snapshot but did not update the name because it is referenced
+  # elsewhere in the tooling.
   zip_bundle("archive_win_gen_snapshot") {
-    deps = [ "//flutter:gen_snapshot" ]
+    deps = [
+      "//flutter:analyze_snapshot",
+      "//flutter:gen_snapshot",
+    ]
     output = "$full_target_platform_name-$flutter_runtime_mode/windows-x64.zip"
     files = [
       {
         source = "$root_out_dir/gen_snapshot/gen_snapshot.exe"
         destination = "gen_snapshot.exe"
+      },
+      {
+        source = "$root_out_dir/analyze_snapshot/analyze_snapshot.exe"
+        destination = "analyze_snapshot.exe"
       },
     ]
   }

@@ -1,0 +1,55 @@
+import("//flutter/common/config.gni")
+import("//flutter/testing/testing.gni")
+
+source_set("snapshots_data_handle") {
+  sources = [
+    "snapshots_data_handle.cc",
+    "snapshots_data_handle.h",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/runtime",
+    "//flutter/runtime:libdart",
+    "//flutter/shell/common",
+  ]
+}
+
+source_set("shorebird") {
+  sources = [
+    "shorebird.cc",
+    "shorebird.h",
+  ]
+
+  deps = [
+    ":snapshots_data_handle",
+    "//flutter/fml",
+    "//flutter/runtime",
+    "//flutter/runtime:libdart",
+    "//flutter/shell/common",
+  ]
+
+  include_dirs = [ "//flutter/updater" ]
+}
+
+if (enable_unittests) {
+  test_fixtures("shorebird_fixtures") {
+    fixtures = []
+  }
+
+  executable("shorebird_unittests") {
+    testonly = true
+
+    sources = [ "snapshots_data_handle_unittests.cc" ]
+
+    # This only includes snapshots_data_handle and not shorebird because
+    # shorebird fails to link due to a missing updater lib.
+    deps = [
+      ":shorebird_fixtures",
+      ":snapshots_data_handle",
+      "//flutter/runtime",
+      "//flutter/testing",
+      "//flutter/testing:fixture_test",
+    ]
+  }
+}

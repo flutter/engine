@@ -103,6 +103,7 @@ def main():
   )
 
   generate_gen_snapshot(args, dst, x64_out_dir, arm64_out_dir)
+  generate_analyze_snapshot(args, dst, x64_out_dir, arm64_out_dir)
   zip_archive(dst)
   return 0
 
@@ -202,6 +203,7 @@ def zip_archive(dst):
       'zip',
       '-r',
       'artifacts.zip',
+      'analyze_snapshot_arm64',
       'gen_snapshot_arm64',
       'Flutter.xcframework',
       'entitlements.txt',
@@ -246,6 +248,30 @@ def _generate_gen_snapshot(directory, destination):
     sys.exit(1)
 
   subprocess.check_call(['xcrun', 'bitcode_strip', '-r', gen_snapshot_dir, '-o', destination])
+
+
+def generate_analyze_snapshot(args, dst, x64_out_dir, arm64_out_dir):
+  if x64_out_dir:
+    _generate_analyze_snapshot(
+        x64_out_dir, os.path.join(dst, 'analyze_snapshot_x64')
+    )
+
+  if arm64_out_dir:
+    _generate_analyze_snapshot(
+        os.path.join(arm64_out_dir, args.clang_dir),
+        os.path.join(dst, 'analyze_snapshot_arm64')
+    )
+
+
+def _generate_analyze_snapshot(directory, destination):
+  analyze_snapshot_dir = os.path.join(directory, 'analyze_snapshot')
+  if not os.path.isfile(analyze_snapshot_dir):
+    print('Cannot find analyze_snapshot at %s' % analyze_snapshot_dir)
+    sys.exit(1)
+
+  subprocess.check_call([
+      'xcrun', 'bitcode_strip', '-r', analyze_snapshot_dir, '-o', destination
+  ])
 
 
 if __name__ == '__main__':
