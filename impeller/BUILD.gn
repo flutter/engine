@@ -137,8 +137,6 @@ if (impeller_supports_rendering) {
 
     testonly = true
 
-    public_configs = [ "//flutter:export_dynamic_symbols" ]
-
     deps = [ "renderer:renderer_dart_unittests" ]
   }
 }
