@@ -16,8 +16,10 @@ class DummyDisplayCanvas extends DisplayCanvas {
   @override
   void dispose() {}
 
+  final DomElement _element = createDomElement('div');
+
   @override
-  DomElement get hostElement => throw UnimplementedError();
+  DomElement get hostElement => _element;
 
   @override
   void initialize() {}
