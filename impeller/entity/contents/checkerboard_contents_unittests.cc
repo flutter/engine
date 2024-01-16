@@ -7,6 +7,7 @@
 
 #include "gtest/gtest.h"
 
+#include "impeller/aiks/testing/recording_render_pass.h"
 #include "impeller/entity/contents/checkerboard_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
@@ -38,11 +39,14 @@ TEST_P(EntityTest, RendersWithoutError) {
       *GetContentContext()->GetRenderTargetCache(), {100, 100},
       /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
+  auto recording_pass = std::make_shared<RecordingRenderPass>(
+      render_pass, GetContext(), render_target);
+
   Entity entity;
 
-  ASSERT_TRUE(render_pass->GetCommands().empty());
-  ASSERT_TRUE(contents->Render(*content_context, entity, *render_pass));
-  ASSERT_FALSE(render_pass->GetCommands().empty());
+  ASSERT_TRUE(recording_pass->GetCommands().empty());
+  ASSERT_TRUE(contents->Render(*content_context, entity, *recording_pass));
+  ASSERT_FALSE(recording_pass->GetCommands().empty());
 }
 #endif  // IMPELLER_DEBUG
 

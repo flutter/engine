@@ -4,6 +4,7 @@
 
 #include <memory>
 
+#include "impeller/aiks/testing/recording_render_pass.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
@@ -17,9 +18,6 @@ namespace testing {
 using EntityTest = EntityPlayground;
 
 TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
-  if (GetParam() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Vulkan does not support querying recorded commands.");
-  }
   TextureDescriptor texture_desc;
   texture_desc.size = {100, 100};
   texture_desc.type = TextureType::kTexture2D;
@@ -39,9 +37,11 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
       *GetContentContext()->GetRenderTargetCache(), {100, 100},
       /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
+  auto recording_pass = std::make_shared<RecordingRenderPass>(
+      render_pass, GetContext(), render_target);
 
-  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
-  const std::vector<Command>& commands = render_pass->GetCommands();
+  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *recording_pass));
+  const std::vector<Command>& commands = recording_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
   ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),

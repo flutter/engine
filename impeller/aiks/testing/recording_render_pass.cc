@@ -21,7 +21,9 @@ void RecordingRenderPass::SetPipeline(
 }
 
 void RecordingRenderPass::SetCommandLabel(std::string_view label) {
+#ifdef IMPELLER_DEBUG
   pending_.label = std::string(label);
+#endif  // IMPELLER_DEBUG
   delegate_->SetCommandLabel(label);
 }
 
