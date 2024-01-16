@@ -725,6 +725,14 @@ void Canvas::SaveLayer(const Paint& paint,
   auto& new_layer_pass = GetCurrentPass();
   new_layer_pass.SetBoundsLimit(bounds);
 
+  if (paint.image_filter) {
+    MipCountVisitor mip_count_visitor;
+    paint.image_filter->Visit(mip_count_visitor);
+    new_layer_pass.SetRequiredMipCount(
+        std::max(mip_count_visitor.GetRequiredMipCount(),
+                 new_layer_pass.GetRequiredMipCount()));
+  }
+
   // Only apply opacity peephole on default blending.
   if (paint.blend_mode == BlendMode::kSourceOver) {
     new_layer_pass.SetDelegate(
