@@ -64,9 +64,9 @@ class CommandEncoderVK {
 
   bool Track(std::shared_ptr<SharedObjectVK> object);
 
-  bool Track(std::shared_ptr<const Buffer> buffer);
+  bool Track(std::shared_ptr<const DeviceBuffer> buffer);
 
-  bool IsTracking(const std::shared_ptr<const Buffer>& texture) const;
+  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& texture) const;
 
   bool Track(const std::shared_ptr<const Texture>& texture);
 
@@ -82,11 +82,9 @@ class CommandEncoderVK {
 
   void InsertDebugMarker(const char* label) const;
 
-  fml::StatusOr<std::vector<vk::DescriptorSet>> AllocateDescriptorSets(
-      uint32_t buffer_count,
-      uint32_t sampler_count,
-      uint32_t subpass_count,
-      const std::vector<vk::DescriptorSetLayout>& layouts);
+  fml::StatusOr<vk::DescriptorSet> AllocateDescriptorSets(
+      const vk::DescriptorSetLayout& layout,
+      const ContextVK& context);
 
  private:
   friend class ContextVK;

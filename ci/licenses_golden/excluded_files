@@ -1122,7 +1122,6 @@
 ../../../flutter/tools/licenses/pubspec.yaml
 ../../../flutter/tools/licenses/test
 ../../../flutter/web_sdk
-../../../fuchsia/images
 ../../../fuchsia/sdk/linux/.build-id
 ../../../fuchsia/sdk/linux/.versions
 ../../../fuchsia/sdk/linux/AUTHORS
@@ -1435,7 +1434,6 @@
 ../../../fuchsia/sdk/linux/pkg/zx/meta.json
 ../../../fuchsia/sdk/linux/tools
 ../../../fuchsia/sdk/linux/version_history.json
-../../../fuchsia/test_scripts
 ../../../out
 ../../../third_party/abseil-cpp/.git
 ../../../third_party/abseil-cpp/.github
@@ -1747,7 +1745,6 @@
 ../../../third_party/abseil-cpp/create_lts.py
 ../../../third_party/abseil-cpp/generate_def_files.py
 ../../../third_party/abseil-cpp/roll_abseil.py
-../../../third_party/android_embedding_dependencies
 ../../../third_party/android_tools
 ../../../third_party/angle/.clang-format
 ../../../third_party/angle/.git
@@ -2640,7 +2637,6 @@
 ../../../third_party/freetype2/vms_make.com
 ../../../third_party/google_fonts_for_unit_tests
 ../../../third_party/googletest
-../../../third_party/gradle
 ../../../third_party/harfbuzz/.ci/requirements.txt
 ../../../third_party/harfbuzz/.clang-format
 ../../../third_party/harfbuzz/.editorconfig
@@ -2841,7 +2837,6 @@
 ../../../third_party/icu/source/tools/toolutil/sources.txt
 ../../../third_party/icu/source/tools/tzcode/Makefile.in
 ../../../third_party/icu/source/tools/tzcode/readme.txt
-../../../third_party/java
 ../../../third_party/libcxx/.clang-format
 ../../../third_party/libcxx/.clang-tidy
 ../../../third_party/libcxx/.git
