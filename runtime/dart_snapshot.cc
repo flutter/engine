@@ -63,7 +63,6 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
     // invalid mapping. If all the other methods for resolving the data also
     // fail, the engine will stop with accompanying error logs.
     if (auto mapping = embedder_mapping_callback()) {
-      FML_LOG(ERROR) << "SearchMapping: return mapping";
       return mapping;
     }
   }
@@ -71,7 +70,6 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
   // Attempt to open file at path specified.
   if (!file_path.empty()) {
     if (auto file_mapping = GetFileMapping(file_path, is_executable)) {
-      FML_LOG(ERROR) << "SearchMapping: return file_mapping";
       return file_mapping;
     }
   }
@@ -82,8 +80,6 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
     auto symbol_mapping = std::make_unique<const fml::SymbolMapping>(
         native_library, native_library_symbol_name);
     if (symbol_mapping->GetMapping() != nullptr) {
-      FML_LOG(ERROR)
-          << "SearchMapping: return symbol_mapping (native library path)";
       return symbol_mapping;
     }
   }
@@ -94,13 +90,10 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
     auto symbol_mapping = std::make_unique<const fml::SymbolMapping>(
         loaded_process, native_library_symbol_name);
     if (symbol_mapping->GetMapping() != nullptr) {
-      FML_LOG(ERROR)
-          << "SearchMapping: return symbol_mapping (current process)";
       return symbol_mapping;
     }
   }
 
-  FML_LOG(ERROR) << "SearchMapping: return nullptr";
   return nullptr;
 }
 
@@ -108,26 +101,13 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
 
 static std::shared_ptr<const fml::Mapping> ResolveVMData(
     const Settings& settings) {
-  FML_LOG(ERROR) << "static ResolveVMData(settings)";
 #if DART_SNAPSHOT_STATIC_LINK
-  FML_LOG(ERROR) << "Static link";
   return std::make_unique<fml::NonOwnedMapping>(kDartVmSnapshotData,
                                                 0,        // size
                                                 nullptr,  // release_func
                                                 true      // dontneed_safe
   );
 #else   // DART_SNAPSHOT_STATIC_LINK
-  FML_LOG(ERROR) << "Not static link; search mapping";
-  FML_LOG(ERROR) << "settings.vm_snapshot_data: "
-                 << static_cast<bool>(settings.vm_snapshot_data);
-  FML_LOG(ERROR) << "settings.vm_snapshot_data_path: "
-                 << settings.vm_snapshot_data_path;
-  FML_LOG(ERROR) << "settings.application_library_path: ";
-  for (const auto& path : settings.application_library_path) {
-    FML_LOG(ERROR) << " - " << path;
-  }
-  FML_LOG(ERROR) << "native_library_symbol_name: "
-                 << DartSnapshot::kVMDataSymbol;
   return SearchMapping(
       settings.vm_snapshot_data,          // embedder_mapping_callback
       settings.vm_snapshot_data_path,     // file_path
@@ -206,7 +186,6 @@ fml::RefPtr<const DartSnapshot> DartSnapshot::VMSnapshotFromSettings(
   if (snapshot->IsValid()) {
     return snapshot;
   }
-  FML_LOG(ERROR) << "Snapshot not valid";
   return nullptr;
 }
 
