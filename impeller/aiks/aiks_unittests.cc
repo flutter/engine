@@ -3829,7 +3829,6 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
   canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
 
   Picture picture = canvas.EndRecordingAsPicture();
-  // ASSERT_TRUE(OpenPlaygroundHere(std::move(picture)));
   std::shared_ptr<RenderTargetCache> cache =
       std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
   AiksContext aiks_context(GetContext(), nullptr, cache);
