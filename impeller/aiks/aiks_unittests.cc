@@ -3758,17 +3758,7 @@ TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
   canvas.Restore();
 
   Picture picture = canvas.EndRecordingAsPicture();
-
-  int32_t max_mip_count = 0;
-  picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
-    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      max_mip_count =
-          std::max(max_mip_count, subpass->get()->GetRequiredMipCount());
-    }
-    return true;
-  });
-
-  EXPECT_EQ(4, max_mip_count);
+  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
 }
 
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
