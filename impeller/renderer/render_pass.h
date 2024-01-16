@@ -34,7 +34,7 @@ class RenderPass : public ResourceBinder {
  public:
   virtual ~RenderPass();
 
-  const std::weak_ptr<const Context>& GetContext() const;
+  const std::shared_ptr<const Context>& GetContext() const;
 
   const RenderTarget& GetRenderTarget() const;
 
@@ -157,7 +157,7 @@ class RenderPass : public ResourceBinder {
   bool HasStencilAttachment() const;
 
  protected:
-  const std::weak_ptr<const Context> context_;
+  const std::shared_ptr<const Context> context_;
   // The following properties: sample_count, pixel_format,
   // has_stencil_attachment, and render_target_size are cached on the
   // RenderTarget to speed up numerous lookups during rendering. This is safe as
@@ -182,7 +182,8 @@ class RenderPass : public ResourceBinder {
   ///
   bool AddCommand(Command&& command);
 
-  RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
+  RenderPass(std::shared_ptr<const Context> context,
+             const RenderTarget& target);
 
   virtual void OnSetLabel(std::string label) = 0;
 

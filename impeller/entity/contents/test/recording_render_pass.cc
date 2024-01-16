@@ -8,9 +8,10 @@
 
 namespace impeller {
 
-RecordingRenderPass::RecordingRenderPass(std::shared_ptr<RenderPass> delegate,
-                                         const std::weak_ptr<Context>& context,
-                                         const RenderTarget& render_target)
+RecordingRenderPass::RecordingRenderPass(
+    std::shared_ptr<RenderPass> delegate,
+    const std::shared_ptr<Context>& context,
+    const RenderTarget& render_target)
     : RenderPass(context, render_target), delegate_(std::move(delegate)) {}
 
 // |RenderPass|

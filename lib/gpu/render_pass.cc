@@ -28,7 +28,7 @@ RenderPass::RenderPass()
 
 RenderPass::~RenderPass() = default;
 
-const std::weak_ptr<const impeller::Context>& RenderPass::GetContext() const {
+const std::shared_ptr<const impeller::Context>& RenderPass::GetContext() const {
   return render_pass_->GetContext();
 }
 
@@ -115,7 +115,7 @@ RenderPass::GetOrCreatePipeline() {
     }
   }
 
-  auto& context = *GetContext().lock();
+  auto& context = *GetContext();
 
   render_pipeline_->BindToPipelineDescriptor(*context.GetShaderLibrary(),
                                              pipeline_desc);
@@ -448,8 +448,8 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(width_address_mode);
   sampler_desc.height_address_mode =
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
-  auto sampler = wrapper->GetContext().lock()->GetSamplerLibrary()->GetSampler(
-      sampler_desc);
+  auto sampler =
+      wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
 
   return command.BindResource(
       shader->GetShaderStage(), impeller::DescriptorType::kSampledImage,

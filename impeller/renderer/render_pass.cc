@@ -7,7 +7,7 @@
 
 namespace impeller {
 
-RenderPass::RenderPass(std::weak_ptr<const Context> context,
+RenderPass::RenderPass(std::shared_ptr<const Context> context,
                        const RenderTarget& target)
     : context_(std::move(context)),
       sample_count_(target.GetSampleCount()),
@@ -77,15 +77,10 @@ bool RenderPass::AddCommand(Command&& command) {
 }
 
 bool RenderPass::EncodeCommands() const {
-  auto context = context_.lock();
-  // The context could have been collected in the meantime.
-  if (!context) {
-    return false;
-  }
-  return OnEncodeCommands(*context);
+  return OnEncodeCommands(*context_);
 }
 
-const std::weak_ptr<const Context>& RenderPass::GetContext() const {
+const std::shared_ptr<const Context>& RenderPass::GetContext() const {
   return context_;
 }
 

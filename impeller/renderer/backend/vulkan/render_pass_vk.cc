@@ -384,8 +384,7 @@ void RenderPassVK::SetPipeline(
 
   auto descriptor_result =
       command_buffer_->GetEncoder()->AllocateDescriptorSets(
-          pipeline_vk.GetDescriptorSetLayout(),
-          ContextVK::Cast(*context_.lock()));
+          pipeline_vk.GetDescriptorSetLayout(), ContextVK::Cast(*context_));
   if (!descriptor_result.ok()) {
     return;
   }
@@ -520,7 +519,7 @@ fml::Status RenderPassVK::Draw() {
                        "No valid pipeline is bound to the RenderPass.");
   }
 
-  const ContextVK& context_vk = ContextVK::Cast(*context_.lock());
+  const ContextVK& context_vk = ContextVK::Cast(*context_);
   for (auto i = 0u; i < descriptor_write_offset_; i++) {
     write_workspace_[i].dstSet = descriptor_set_;
   }
