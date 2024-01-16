@@ -6,9 +6,20 @@
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_GAUSSIAN_BLUR_FILTER_CONTENTS_H_
 
 #include <optional>
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 
 namespace impeller {
+
+struct BlurParameters {
+  Point blur_uv_offset;
+  Scalar blur_sigma;
+  int blur_radius;
+  int step_size;
+};
+
+KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
+    BlurParameters parameters);
 
 /// Performs a bidirectional Gaussian blur.
 ///
@@ -16,9 +27,14 @@ namespace impeller {
 /// Note: This will replace `DirectionalGaussianBlurFilterContents`.
 class GaussianBlurFilterContents final : public FilterContents {
  public:
-  explicit GaussianBlurFilterContents(Scalar sigma, Entity::TileMode tile_mode);
+  static std::string_view kNoMipsError;
 
-  Scalar GetSigma() const { return sigma_; }
+  explicit GaussianBlurFilterContents(Scalar sigma_x,
+                                      Scalar sigma_y,
+                                      Entity::TileMode tile_mode);
+
+  Scalar GetSigmaX() const { return sigma_x_; }
+  Scalar GetSigmaY() const { return sigma_y_; }
 
   // |FilterContents|
   std::optional<Rect> GetFilterSourceCoverage(
@@ -38,10 +54,12 @@ class GaussianBlurFilterContents final : public FilterContents {
   /// Calculate the UV coordinates for rendering the filter_input.
   /// @param filter_input The FilterInput that should be rendered.
   /// @param entity The associated entity for the filter_input.
-  /// @param texture_size The size of the texture_size the uvs will be used for.
+  /// @param source_rect The rect in source coordinates to convert to uvs.
+  /// @param texture_size The rect to convert in source coordinates.
   static Quad CalculateUVs(const std::shared_ptr<FilterInput>& filter_input,
                            const Entity& entity,
-                           const ISize& pass_size);
+                           const Rect& source_rect,
+                           const ISize& texture_size);
 
   /// Calculate the scale factor for the downsample pass given a sigma value.
   ///
@@ -67,7 +85,8 @@ class GaussianBlurFilterContents final : public FilterContents {
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const override;
 
-  const Scalar sigma_ = 0.0;
+  const Scalar sigma_x_ = 0.0;
+  const Scalar sigma_y_ = 0.0;
   const Entity::TileMode tile_mode_;
 };
 

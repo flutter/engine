@@ -65,6 +65,9 @@ class CanvasKitRenderer implements Renderer {
     _initialized ??= () async {
       if (windowFlutterCanvasKit != null) {
         canvasKit = windowFlutterCanvasKit!;
+      } else if (windowFlutterCanvasKitLoaded != null) {
+        // CanvasKit is being preloaded by flutter.js. Wait for it to complete.
+        canvasKit = await promiseToFuture<CanvasKit>(windowFlutterCanvasKitLoaded!);
       } else {
         canvasKit = await downloadCanvasKit();
         windowFlutterCanvasKit = canvasKit;
@@ -402,7 +405,7 @@ class CanvasKitRenderer implements Renderer {
     CkParagraphBuilder(style);
 
   @override
-  void renderScene(ui.Scene scene, ui.FlutterView view) {
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
@@ -417,7 +420,7 @@ class CanvasKitRenderer implements Renderer {
         "Unable to render to a view which hasn't been registered");
     final Rasterizer rasterizer = _rasterizers[view.viewId]!;
 
-    rasterizer.draw((scene as LayerScene).layerTree);
+    await rasterizer.draw((scene as LayerScene).layerTree);
     frameTimingsOnRasterFinish();
   }
 

@@ -134,7 +134,7 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
   return result;
 }
 
-RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
+RenderPassMTL::RenderPassMTL(std::shared_ptr<const Context> context,
                              const RenderTarget& target,
                              id<MTLCommandBuffer> buffer)
     : RenderPass(std::move(context), target),
@@ -311,10 +311,10 @@ struct PassBindingsCache {
       return;
     }
     [encoder_ setViewport:MTLViewport{
-                              .originX = viewport.rect.origin.x,
-                              .originY = viewport.rect.origin.y,
-                              .width = viewport.rect.size.width,
-                              .height = viewport.rect.size.height,
+                              .originX = viewport.rect.GetX(),
+                              .originY = viewport.rect.GetY(),
+                              .width = viewport.rect.GetWidth(),
+                              .height = viewport.rect.GetHeight(),
                               .znear = viewport.depth_range.z_near,
                               .zfar = viewport.depth_range.z_far,
                           }];
@@ -327,11 +327,11 @@ struct PassBindingsCache {
     }
     [encoder_
         setScissorRect:MTLScissorRect{
-                           .x = static_cast<NSUInteger>(scissor.origin.x),
-                           .y = static_cast<NSUInteger>(scissor.origin.y),
-                           .width = static_cast<NSUInteger>(scissor.size.width),
+                           .x = static_cast<NSUInteger>(scissor.GetX()),
+                           .y = static_cast<NSUInteger>(scissor.GetY()),
+                           .width = static_cast<NSUInteger>(scissor.GetWidth()),
                            .height =
-                               static_cast<NSUInteger>(scissor.size.height),
+                               static_cast<NSUInteger>(scissor.GetHeight()),
                        }];
     scissor_ = scissor;
   }
@@ -364,7 +364,7 @@ static bool Bind(PassBindingsCache& pass,
     return false;
   }
 
-  auto device_buffer = view.buffer->GetDeviceBuffer(allocator);
+  auto device_buffer = view.buffer;
   if (!device_buffer) {
     return false;
   }
@@ -508,12 +508,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
     if (!index_buffer) {
       return false;
     }
-    auto device_buffer = index_buffer->GetDeviceBuffer(*allocator);
-    if (!device_buffer) {
-      return false;
-    }
-    auto mtl_index_buffer =
-        DeviceBufferMTL::Cast(*device_buffer).GetMTLBuffer();
+    auto mtl_index_buffer = DeviceBufferMTL::Cast(*index_buffer).GetMTLBuffer();
     if (!mtl_index_buffer) {
       return false;
     }

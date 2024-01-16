@@ -6,10 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_COMPUTE_PASS_H_
 
 #include <string>
-#include <variant>
 
-#include "impeller/core/device_buffer.h"
-#include "impeller/core/texture.h"
 #include "impeller/renderer/compute_command.h"
 
 namespace impeller {
@@ -34,8 +31,6 @@ class ComputePass {
   void SetGridSize(const ISize& size);
 
   void SetThreadGroupSize(const ISize& size);
-
-  HostBuffer& GetTransientsBuffer();
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying

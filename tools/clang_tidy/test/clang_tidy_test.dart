@@ -32,7 +32,7 @@ final class Fixture {
       errSink: errBuffer,
       processManager: processManager,
       engine: engine,
-    ), errBuffer, outBuffer);
+    ), errBuffer);
   }
 
   /// Simulates running the tool with the given [options].
@@ -49,20 +49,16 @@ final class Fixture {
       outSink: outBuffer,
       errSink: errBuffer,
       processManager: processManager,
-    ), errBuffer, outBuffer);
+    ), errBuffer);
   }
 
   Fixture._(
     this.tool,
     this.errBuffer,
-    this.outBuffer,
   );
 
   /// The `clang-tidy` tool.
   final ClangTidy tool;
-
-  /// Captured `stdout` from the tool.
-  final StringBuffer outBuffer;
 
   /// Captured `stderr` from the tool.
   final StringBuffer errBuffer;
@@ -577,6 +573,17 @@ Future<int> main(List<String> args) async {
     );
 
     expect(lintAction, equals(LintAction.lint));
+  });
+
+  test('Command filters out sed command after a compile command', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          '../../buildtools/mac-x64/clang/bin/clang filename '
+          "&& sed -i 's@/b/f/w@../..@g' filename",
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
   });
 
   return 0;

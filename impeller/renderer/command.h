@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_COMMAND_H_
 
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -163,17 +162,20 @@ struct Command : public ResourceBinder {
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
                     BufferView view) override;
 
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,
                     BufferView view);
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
