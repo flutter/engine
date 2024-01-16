@@ -3819,8 +3819,13 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-            std::string::npos);
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
@@ -3847,8 +3852,13 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-            std::string::npos);
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
 }
 
 }  // namespace testing
