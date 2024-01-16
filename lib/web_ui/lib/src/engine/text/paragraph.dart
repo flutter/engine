@@ -780,6 +780,7 @@ class EngineTextStyle implements ui.TextStyle {
           'letterSpacing: ${letterSpacing != null ? "${letterSpacing}x" : "unspecified"}, '
           'wordSpacing: ${wordSpacing != null ? "${wordSpacing}x" : "unspecified"}, '
           'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
           'locale: ${locale ?? "unspecified"}, '
           'background: ${background ?? "unspecified"}, '
           'foreground: ${foreground ?? "unspecified"}, '

@@ -521,31 +521,37 @@ class SkwasmTextStyle implements ui.TextStyle {
 
   @override
   String toString() {
-    final List<String>? fontFamilyFallback = this.fontFamilyFallback;
-    final String? fontFamily = this.fontFamily;
-    return 'TextStyle('
-             'color: ${color ?? "unspecified"}, '
-             'decoration: ${decoration ?? "unspecified"}, '
-             'decorationColor: ${decorationColor ?? "unspecified"}, '
-             'decorationStyle: ${decorationStyle ?? "unspecified"}, '
-             'decorationThickness: ${decorationThickness ?? "unspecified"}, '
-             'fontWeight: ${fontWeight ?? "unspecified"}, '
-             'fontStyle: ${fontStyle ?? "unspecified"}, '
-             'textBaseline: ${textBaseline ?? "unspecified"}, '
-             'fontFamily: ${fontFamily != null && fontFamily.isNotEmpty ? fontFamily : "unspecified"}, '
-             'fontFamilyFallback: ${fontFamilyFallback != null && fontFamilyFallback.isNotEmpty ? fontFamilyFallback : "unspecified"}, '
-             'fontSize: ${fontSize ?? "unspecified"}, '
-             'letterSpacing: ${letterSpacing != null ? "${letterSpacing}x" : "unspecified"}, '
-             'wordSpacing: ${wordSpacing != null ? "${wordSpacing}x" : "unspecified"}, '
-             'height: ${height != null ? "${height}x" : "unspecified"}, '
-             'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
-             'locale: ${locale ?? "unspecified"}, '
-             'background: ${background ?? "unspecified"}, '
-             'foreground: ${foreground ?? "unspecified"}, '
-             'shadows: ${shadows ?? "unspecified"}, '
-             'fontFeatures: ${fontFeatures ?? "unspecified"}, '
-             'fontVariations: ${fontVariations ?? "unspecified"}'
-           ')';
+    String result = super.toString();
+    assert(() {
+      final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+      final double? fontSize = this.fontSize;
+      final double? height = this.height;
+      result = 'TextStyle('
+          'color: ${color ?? "unspecified"}, '
+          'decoration: ${decoration ?? "unspecified"}, '
+          'decorationColor: ${decorationColor ?? "unspecified"}, '
+          'decorationStyle: ${decorationStyle ?? "unspecified"}, '
+          'decorationThickness: ${decorationThickness ?? "unspecified"}, '
+          'fontWeight: ${fontWeight ?? "unspecified"}, '
+          'fontStyle: ${fontStyle ?? "unspecified"}, '
+          'textBaseline: ${textBaseline ?? "unspecified"}, '
+          'fontFamily: ${fontFamily ?? "unspecified"}, '
+          'fontFamilyFallback: ${fontFamilyFallback != null && fontFamilyFallback.isNotEmpty ? fontFamilyFallback : "unspecified"}, '
+          'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
+          'letterSpacing: ${letterSpacing != null ? "${letterSpacing}x" : "unspecified"}, '
+          'wordSpacing: ${wordSpacing != null ? "${wordSpacing}x" : "unspecified"}, '
+          'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
+          'locale: ${locale ?? "unspecified"}, '
+          'background: ${background ?? "unspecified"}, '
+          'foreground: ${foreground ?? "unspecified"}, '
+          'shadows: ${shadows ?? "unspecified"}, '
+          'fontFeatures: ${fontFeatures ?? "unspecified"}, '
+          'fontVariations: ${fontVariations ?? "unspecified"}'
+          ')';
+      return true;
+    }());
+    return result;
   }
 }
 

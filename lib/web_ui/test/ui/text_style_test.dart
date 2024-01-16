@@ -105,6 +105,88 @@ Future<void> testMain() async {
       expect(a.hashCode, isNot(b.hashCode));
     });
   }
+
+  test('toString() with color', () {
+    final _TestTextStyleBuilder builder = _TestTextStyleBuilder();
+
+    for (final String property in _populatorsA.keys) {
+      if (property == 'foreground') {
+        continue;
+      }
+      final _TextStylePropertyPopulator populator = _populatorsA[property]!;
+      populator(builder);
+    }
+
+    final ui.TextStyle style = builder.build();
+
+    expect(
+      style.toString(),
+      'TextStyle('
+      'color: Color(0xff000000), '
+      'decoration: TextDecoration.none, '
+      'decorationColor: Color(0xffaa0000), '
+      'decorationStyle: TextDecorationStyle.solid, '
+      'decorationThickness: ${1.0}, '
+      'fontWeight: FontWeight.w400, '
+      'fontStyle: FontStyle.normal, '
+      'textBaseline: TextBaseline.alphabetic, '
+      'fontFamily: Arial, '
+      'fontFamilyFallback: [Roboto], '
+      'fontSize: 12.0, '
+      'letterSpacing: 1.2x, '
+      'wordSpacing: 2.3x, '
+      'height: 13.0x, '
+      'leadingDistribution: TextLeadingDistribution.proportional, '
+      'locale: en_US, '
+      'background: Paint(), '
+      'foreground: unspecified, '
+      'shadows: [TextShadow(Color(0xff000000), Offset(0.0, 0.0), ${0.0})], '
+      "fontFeatures: [FontFeature('case', 1)], "
+      "fontVariations: [FontVariation('ital', 0.1)]"
+      ')',
+    );
+  });
+
+  test('toString() with foreground', () {
+    final _TestTextStyleBuilder builder = _TestTextStyleBuilder();
+
+    for (final String property in _populatorsA.keys) {
+      if (property == 'color') {
+        continue;
+      }
+      final _TextStylePropertyPopulator populator = _populatorsA[property]!;
+      populator(builder);
+    }
+
+    final ui.TextStyle style = builder.build();
+
+    expect(
+      style.toString(),
+      'TextStyle('
+      'color: unspecified, '
+      'decoration: TextDecoration.none, '
+      'decorationColor: Color(0xffaa0000), '
+      'decorationStyle: TextDecorationStyle.solid, '
+      'decorationThickness: ${1.0}, '
+      'fontWeight: FontWeight.w400, '
+      'fontStyle: FontStyle.normal, '
+      'textBaseline: TextBaseline.alphabetic, '
+      'fontFamily: Arial, '
+      'fontFamilyFallback: [Roboto], '
+      'fontSize: 12.0, '
+      'letterSpacing: 1.2x, '
+      'wordSpacing: 2.3x, '
+      'height: 13.0x, '
+      'leadingDistribution: TextLeadingDistribution.proportional, '
+      'locale: en_US, '
+      'background: Paint(), '
+      'foreground: Paint(), '
+      'shadows: [TextShadow(Color(0xff000000), Offset(0.0, 0.0), ${0.0})], '
+      "fontFeatures: [FontFeature('case', 1)], "
+      "fontVariations: [FontVariation('ital', 0.1)]"
+      ')',
+    );
+  });
 }
 
 typedef _TextStylePropertyPopulator = void Function(_TestTextStyleBuilder builder);
