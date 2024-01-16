@@ -25,6 +25,13 @@ declare_args() {
   impeller_enable_vulkan = (is_linux || is_win || is_android ||
                             enable_unittests) && target_os != "fuchsia"
 
+  # Whether playgrounds should run with Vulkan.
+  #
+  # impeller_enable_vulkan may be true in build environments that run tests but
+  # do not have a Vulkan ICD present.
+  impeller_enable_vulkan_playgrounds =
+      (is_linux || is_win || is_android) && target_os != "fuchsia"
+
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.
   # If it is non-empty, it should be the absolute path to impellerc.
