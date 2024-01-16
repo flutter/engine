@@ -158,13 +158,13 @@ bool RenderPass::Draw() {
   }
   for (const auto& texture : result.vertex_bindings.sampled_images) {
     render_pass_->BindResource(impeller::ShaderStage::kVertex,
-                               impeller::DescriptorType::kUniformBuffer,
+                               impeller::DescriptorType::kSampledImage,
                                texture.slot, *texture.texture.GetMetadata(),
                                texture.texture.resource, texture.sampler);
   }
   for (const auto& buffer : result.fragment_bindings.buffers) {
     render_pass_->BindResource(impeller::ShaderStage::kFragment,
-                               impeller::DescriptorType::kSampledImage,
+                               impeller::DescriptorType::kUniformBuffer,
                                buffer.slot, *buffer.view.GetMetadata(),
                                buffer.view.resource);
   }

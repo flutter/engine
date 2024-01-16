@@ -72,6 +72,7 @@ TEST_P(EntityTest, RendersDstPerColorWithAlpha) {
   ASSERT_TRUE(recording_pass->GetCommands().empty());
   ASSERT_TRUE(contents->Render(*content_context, entity, *recording_pass));
 
+  ASSERT_TRUE(recording_pass->GetCommands().size() > 0);
   const auto& cmd = recording_pass->GetCommands()[0];
   auto* frag_uniforms = GetFragInfo<FS>(cmd);
 
