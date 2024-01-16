@@ -156,29 +156,15 @@ vk::UniqueRenderPass RenderPassBuilderVK::Build(
         // All dependencies are framebuffer local.
         dep.dependencyFlags = vk::DependencyFlagBits::eByRegion;
 
-        if (!is_last_subpass) {
-          // All commands before this barrier must proceed till at least the
-          // color-attachment writes in the color-attachment output pipeline
-          // stage are executed. And, all commands after this barrier may
-          // continue till they encounter an input-attachment read in the
-          // fragment shader pipeline stage.
-          dep.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-          dep.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-          dep.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader;
-          dep.dstAccessMask = vk::AccessFlagBits::eInputAttachmentRead;
-        } else {
-          // This is the final subpass!
-          //
-          // All commands before this barrier must proceed till they finish
-          // color-attachment writes in the color-attachment output pipeline
-          // stage. And, there are no commands after this barrier since the
-          // subpass ends. Just say these non-existent commands can continue
-          // till the bottom of pipe.
-          dep.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-          dep.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
-          dep.dstStageMask = vk::PipelineStageFlagBits::eBottomOfPipe;
-          dep.dstAccessMask = {};
-        }
+        // All commands before this barrier must proceed till at least the
+        // color-attachment writes in the color-attachment output pipeline
+        // stage are executed. And, all commands after this barrier may
+        // continue till they encounter an input-attachment read in the
+        // fragment shader pipeline stage.
+        dep.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+        dep.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+        dep.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader;
+        dep.dstAccessMask = vk::AccessFlagBits::eInputAttachmentRead;
 
         subpass_dependencies.emplace_back(std::move(dep));
       }
