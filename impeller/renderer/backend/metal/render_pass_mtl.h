@@ -261,18 +261,21 @@ class RenderPassMTL final : public RenderPass {
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
                     BufferView view) override;
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,
                     BufferView view) override;
 
   // |RenderPass|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
