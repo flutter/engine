@@ -45,12 +45,16 @@ struct _FlStandardMessageCodecClass {
   /**
    * FlStandardMessageCodec::write_value:
    * @codec: an #FlStandardMessageCodec.
-   * @buffer: a buffer to write to.
-   * @value: message to encode or %NULL to encode the null value.
+   * @buffer: a buffer to write into.
+   * @value: (allow-none): value to write.
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL.
    *
-   * Virtual method to
+   * Virtual method to write an #FlValue in Flutter Standard encoding.
+   *
+   * If a codec needs to support custom #FlValue objects it must override this
+   * method to encode those values. For non-custom values the parent method
+   * should be called.
    *
    * Returns: %TRUE on success.
    */
@@ -68,7 +72,11 @@ struct _FlStandardMessageCodecClass {
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL.
    *
-   * Virtual method to
+   * Virtual method to read an #FlValue in Flutter Standard encoding.
+   *
+   * If a codec needs to support custom #FlValue objects it must override this
+   * method to decode those values. For non-custom values the parent method
+   * should be called.
    *
    * Returns: an #FlValue or %NULL on error.
    */
