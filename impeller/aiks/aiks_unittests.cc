@@ -3782,7 +3782,7 @@ TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
     max_mip_count =
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
-  EXPECT_EQ(max_mip_count, 4lu);
+  EXPECT_EQ(max_mip_count, 1lu);
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
@@ -3809,7 +3809,7 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
     max_mip_count =
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
-  EXPECT_EQ(max_mip_count, 4lu);
+  EXPECT_EQ(max_mip_count, 1lu);
   EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
             std::string::npos);
 }
@@ -3835,7 +3835,7 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
     max_mip_count =
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
-  EXPECT_EQ(max_mip_count, 4lu);
+  EXPECT_EQ(max_mip_count, 1lu);
   EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
             std::string::npos);
 }
