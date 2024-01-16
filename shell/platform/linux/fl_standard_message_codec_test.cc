@@ -1104,10 +1104,10 @@ G_DEFINE_TYPE(FlTestStandardMessageCodec,
               fl_test_standard_message_codec,
               fl_standard_message_codec_get_type())
 
-static gboolean write_custom_value(FlStandardMessageCodec* codec,
-                                   GByteArray* buffer,
-                                   FlValue* value,
-                                   GError** error) {
+static gboolean write_custom_value1(FlStandardMessageCodec* codec,
+                                    GByteArray* buffer,
+                                    FlValue* value,
+                                    GError** error) {
   const gchar* text =
       static_cast<const gchar*>(fl_value_get_custom_value(value));
   size_t length = strlen(text);
@@ -1119,6 +1119,15 @@ static gboolean write_custom_value(FlStandardMessageCodec* codec,
   return TRUE;
 }
 
+static gboolean write_custom_value2(FlStandardMessageCodec* codec,
+                                    GByteArray* buffer,
+                                    FlValue* value,
+                                    GError** error) {
+  uint8_t type = 129;
+  g_byte_array_append(buffer, &type, sizeof(uint8_t));
+  return TRUE;
+}
+
 static gboolean fl_test_standard_message_codec_write_value(
     FlStandardMessageCodec* codec,
     GByteArray* buffer,
@@ -1126,7 +1135,10 @@ static gboolean fl_test_standard_message_codec_write_value(
     GError** error) {
   if (fl_value_get_type(value) == FL_VALUE_TYPE_CUSTOM &&
       fl_value_get_custom_type(value) == 128) {
-    return write_custom_value(codec, buffer, value, error);
+    return write_custom_value1(codec, buffer, value, error);
+  } else if (fl_value_get_type(value) == FL_VALUE_TYPE_CUSTOM &&
+             fl_value_get_custom_type(value) == 129) {
+    return write_custom_value2(codec, buffer, value, error);
   } else {
     return FL_STANDARD_MESSAGE_CODEC_CLASS(
                fl_test_standard_message_codec_parent_class)
@@ -1134,10 +1146,10 @@ static gboolean fl_test_standard_message_codec_write_value(
   }
 }
 
-static FlValue* read_custom_value(FlStandardMessageCodec* codec,
-                                  GBytes* buffer,
-                                  size_t* offset,
-                                  GError** error) {
+static FlValue* read_custom_value1(FlStandardMessageCodec* codec,
+                                   GBytes* buffer,
+                                   size_t* offset,
+                                   GError** error) {
   uint32_t length;
   if (!fl_standard_message_codec_read_size(codec, buffer, offset, &length,
                                            error)) {
@@ -1159,6 +1171,13 @@ static FlValue* read_custom_value(FlStandardMessageCodec* codec,
   return value;
 }
 
+static FlValue* read_custom_value2(FlStandardMessageCodec* codec,
+                                   GBytes* buffer,
+                                   size_t* offset,
+                                   GError** error) {
+  return fl_value_new_custom(129, nullptr, nullptr);
+}
+
 static FlValue* fl_test_standard_message_codec_read_value_of_type(
     FlStandardMessageCodec* codec,
     GBytes* buffer,
@@ -1166,7 +1185,9 @@ static FlValue* fl_test_standard_message_codec_read_value_of_type(
     int type,
     GError** error) {
   if (type == 128) {
-    return read_custom_value(codec, buffer, offset, error);
+    return read_custom_value1(codec, buffer, offset, error);
+  } else if (type == 129) {
+    return read_custom_value2(codec, buffer, offset, error);
   } else {
     return FL_STANDARD_MESSAGE_CODEC_CLASS(
                fl_test_standard_message_codec_parent_class)
@@ -1199,8 +1220,26 @@ TEST(FlStandardMessageCodecTest, DecodeCustomType) {
   g_autoptr(FlValue) value =
       decode_message_with_codec("800568656c6c6f", FL_MESSAGE_CODEC(codec));
   ASSERT_EQ(fl_value_get_type(value), FL_VALUE_TYPE_CUSTOM);
+  ASSERT_EQ(fl_value_get_custom_type(value), 128);
   EXPECT_STREQ(static_cast<const gchar*>(fl_value_get_custom_value(value)),
                "hello");
+}
+
+TEST(FlStandardMessageCodecTest, DecodeCustomTypes) {
+  g_autoptr(FlTestStandardMessageCodec) codec =
+      fl_test_standard_message_codec_new();
+  g_autoptr(FlValue) value = decode_message_with_codec("0c02800568656c6c6f81",
+                                                       FL_MESSAGE_CODEC(codec));
+  ASSERT_EQ(fl_value_get_type(value), FL_VALUE_TYPE_LIST);
+  EXPECT_EQ(fl_value_get_length(value), static_cast<size_t>(2));
+  FlValue* value1 = fl_value_get_list_value(value, 0);
+  ASSERT_EQ(fl_value_get_type(value1), FL_VALUE_TYPE_CUSTOM);
+  ASSERT_EQ(fl_value_get_custom_type(value1), 128);
+  EXPECT_STREQ(static_cast<const gchar*>(fl_value_get_custom_value(value1)),
+               "hello");
+  FlValue* value2 = fl_value_get_list_value(value, 1);
+  ASSERT_EQ(fl_value_get_type(value2), FL_VALUE_TYPE_CUSTOM);
+  ASSERT_EQ(fl_value_get_custom_type(value2), 129);
 }
 
 TEST(FlStandardMessageCodecTest, EncodeCustomType) {
@@ -1210,6 +1249,17 @@ TEST(FlStandardMessageCodecTest, EncodeCustomType) {
   g_autofree gchar* hex_string =
       encode_message_with_codec(value, FL_MESSAGE_CODEC(codec));
   EXPECT_STREQ(hex_string, "800568656c6c6f");
+}
+
+TEST(FlStandardMessageCodecTest, EncodeCustomTypes) {
+  g_autoptr(FlValue) value = fl_value_new_list();
+  fl_value_append_take(value, fl_value_new_custom(128, "hello", nullptr));
+  fl_value_append_take(value, fl_value_new_custom(129, nullptr, nullptr));
+  g_autoptr(FlTestStandardMessageCodec) codec =
+      fl_test_standard_message_codec_new();
+  g_autofree gchar* hex_string =
+      encode_message_with_codec(value, FL_MESSAGE_CODEC(codec));
+  EXPECT_STREQ(hex_string, "0c02800568656c6c6f81");
 }
 
 TEST(FlStandardMessageCodecTest, EncodeDecode) {
