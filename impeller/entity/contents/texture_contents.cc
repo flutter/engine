@@ -159,19 +159,21 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
 #ifdef IMPELLER_ENABLE_OPENGLES
   if (is_external_texture) {
-    pass.SetPipeline(renderer.GetTextureExternalPipeline(pipeline_options));
+    pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  if (!cmd.pipeline) {
+  if (!pipeline) {
     if (strict_source_rect_enabled_) {
-      pass.SetPipeline(renderer.GetTextureStrictSrcPipeline(pipeline_options));
+      pipeline = renderer.GetTextureStrictSrcPipeline(pipeline_options);
     } else {
-      pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
+      pipeline = renderer.GetTexturePipeline(pipeline_options);
     }
   }
+  pass.SetPipeline(pipeline);
 
   pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
@@ -190,9 +192,9 @@ bool TextureContents::Render(const ContentContext& renderer,
 
     FSStrictSrc::FragInfo frag_info;
     frag_info.source_rect = Vector4(strict_texture_coords.GetLTRB());
-    FSStrictSrc::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    FSStrictSrc::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
     FSStrictSrc::BindTextureSampler(
-        cmd, texture_,
+        pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor_));
   } else {
