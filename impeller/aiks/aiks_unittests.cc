@@ -3749,9 +3749,6 @@ TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
 }
 
 TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
-  int32_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
-
   Canvas canvas;
   canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
   canvas.SaveLayer({}, std::nullopt,
@@ -3761,7 +3758,7 @@ TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
   canvas.Restore();
 
   Picture picture = canvas.EndRecordingAsPicture();
-  EXPECT_EQ(blur_required_mip_count, picture.pass->GetRequiredMipCount());
+  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
 }
 
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
