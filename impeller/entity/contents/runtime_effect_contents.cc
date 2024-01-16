@@ -16,6 +16,7 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/runtime_effect.vert.h"
+#include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/shader_function.h"
@@ -68,8 +69,8 @@ static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
-  auto context = renderer.GetContext();
-  auto library = context->GetShaderLibrary();
+  const std::shared_ptr<Context>& context = renderer.GetContext();
+  const std::shared_ptr<ShaderLibrary>& library = context->GetShaderLibrary();
 
   //--------------------------------------------------------------------------
   /// Get or register shader.
@@ -80,7 +81,21 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
+  //--------------------------------------------------------------------------
+  /// Resolve geometry and content context options.
+  ///
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+
   if (function && runtime_stage_->IsDirty()) {
+    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint());
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
@@ -120,18 +135,11 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   //--------------------------------------------------------------------------
-  /// Resolve geometry.
-  ///
-
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
-  //--------------------------------------------------------------------------
   /// Set up the command. Defer setting up the pipeline until the descriptor set
   /// layouts are known from the uniforms.
   ///
 
-  const auto& caps = context->GetCapabilities();
+  const std::shared_ptr<const Capabilities>& caps = context->GetCapabilities();
   const auto color_attachment_format = caps->GetDefaultColorFormat();
   const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
 
@@ -191,8 +199,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
         uniform_slot.ext_res_0 = uniform.location;
-        pass.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
-                          buffer_view);
+        pass.BindResource(ShaderStage::kFragment,
+                          DescriptorType::kUniformBuffer, uniform_slot,
+                          metadata, buffer_view);
         buffer_index++;
         buffer_offset += uniform.GetSize();
         break;
@@ -229,7 +238,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         auto buffer_view = renderer.GetTransientsBuffer().Emplace(
             reinterpret_cast<const void*>(uniform_buffer.data()),
             sizeof(float) * uniform_buffer.size(), alignment);
-        pass.BindResource(ShaderStage::kFragment, uniform_slot,
+        pass.BindResource(ShaderStage::kFragment,
+                          DescriptorType::kUniformBuffer, uniform_slot,
                           ShaderMetadata{}, buffer_view);
       }
     }
@@ -263,8 +273,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
         image_slot.binding = sampler_binding_location;
         image_slot.texture_index = uniform.location - minimum_sampler_index;
-        pass.BindResource(ShaderStage::kFragment, image_slot, *metadata,
-                          input.texture, sampler);
+        pass.BindResource(ShaderStage::kFragment, DescriptorType::kSampledImage,
+                          image_slot, *metadata, input.texture, sampler);
 
         sampler_index++;
         break;
@@ -275,14 +285,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   /// Now that the descriptor set layouts are known, get the pipeline.
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-
   auto create_callback =
       [&]() -> std::shared_ptr<Pipeline<PipelineDescriptor>> {
     PipelineDescriptor desc;

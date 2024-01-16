@@ -215,7 +215,7 @@ class RenderPassMTL final : public RenderPass {
   PrimitiveType primitive_type_;
   MTLIndexType index_type_;
 
-  RenderPassMTL(std::weak_ptr<const Context> context,
+  RenderPassMTL(std::shared_ptr<const Context> context,
                 const RenderTarget& target,
                 id<MTLCommandBuffer> buffer);
 

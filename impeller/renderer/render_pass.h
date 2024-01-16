@@ -34,7 +34,7 @@ class RenderPass : public ResourceBinder {
  public:
   virtual ~RenderPass();
 
-  const std::weak_ptr<const Context>& GetContext() const;
+  const std::shared_ptr<const Context>& GetContext() const;
 
   const RenderTarget& GetRenderTarget() const;
 
@@ -112,18 +112,21 @@ class RenderPass : public ResourceBinder {
 
   // |ResourceBinder|
   virtual bool BindResource(ShaderStage stage,
+                            DescriptorType type,
                             const ShaderUniformSlot& slot,
                             const ShaderMetadata& metadata,
                             BufferView view) override;
 
   virtual bool BindResource(
       ShaderStage stage,
+      DescriptorType type,
       const ShaderUniformSlot& slot,
       const std::shared_ptr<const ShaderMetadata>& metadata,
       BufferView view);
 
   // |ResourceBinder|
   virtual bool BindResource(ShaderStage stage,
+                            DescriptorType type,
                             const SampledImageSlot& slot,
                             const ShaderMetadata& metadata,
                             std::shared_ptr<const Texture> texture,
@@ -142,7 +145,7 @@ class RenderPass : public ResourceBinder {
   ///
   /// @details    Visible for testing.
   ///
-  const std::vector<Command>& GetCommands() const { return commands_; }
+  virtual const std::vector<Command>& GetCommands() const { return commands_; }
 
   //----------------------------------------------------------------------------
   /// @brief      The sample count of the attached render target.
@@ -157,7 +160,7 @@ class RenderPass : public ResourceBinder {
   bool HasStencilAttachment() const;
 
  protected:
-  const std::weak_ptr<const Context> context_;
+  const std::shared_ptr<const Context> context_;
   // The following properties: sample_count, pixel_format,
   // has_stencil_attachment, and render_target_size are cached on the
   // RenderTarget to speed up numerous lookups during rendering. This is safe as
@@ -182,7 +185,8 @@ class RenderPass : public ResourceBinder {
   ///
   bool AddCommand(Command&& command);
 
-  RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
+  RenderPass(std::shared_ptr<const Context> context,
+             const RenderTarget& target);
 
   virtual void OnSetLabel(std::string label) = 0;
 
