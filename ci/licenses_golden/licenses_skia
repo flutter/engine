@@ -1,4 +1,4 @@
-Signature: e0f6a89c592765faeefb2c2547a0194a
+Signature: bcc0e6074ce18c2da24dba86f6b3d31c
 
 ====================================================================================================
 LIBRARY: etc1
@@ -388,6 +388,7 @@ FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/BackendTextureFromView.md
 FILE: ../../../flutter/third_party/skia/relnotes/PDF_jpeg.md
+FILE: ../../../flutter/third_party/skia/relnotes/SwitchScopes.md
 FILE: ../../../flutter/third_party/skia/relnotes/Tick.md
 FILE: ../../../flutter/third_party/skia/relnotes/TopLevelShadowing.md
 FILE: ../../../flutter/third_party/skia/relnotes/font.md
