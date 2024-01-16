@@ -142,7 +142,7 @@ class RenderPass : public ResourceBinder {
   ///
   /// @details    Visible for testing.
   ///
-  const std::vector<Command>& GetCommands() const { return commands_; }
+  virtual const std::vector<Command>& GetCommands() const { return commands_; }
 
   //----------------------------------------------------------------------------
   /// @brief      The sample count of the attached render target.

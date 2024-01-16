@@ -3,6 +3,8 @@
 // found in the LICENSE file.
 
 #include "impeller/aiks/testing/context_spy.h"
+#include <memory>
+#include "impeller/aiks/testing/recording_render_pass.h"
 
 namespace impeller {
 namespace testing {
@@ -64,14 +66,17 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
             });
 
         ON_CALL(*spy, OnCreateRenderPass)
-            .WillByDefault(
-                [real_buffer, shared_this](const RenderTarget& render_target) {
-                  std::shared_ptr<RenderPass> result =
-                      CommandBufferMock::ForwardOnCreateRenderPass(
-                          real_buffer.get(), render_target);
-                  shared_this->render_passes_.push_back(result);
-                  return result;
-                });
+            .WillByDefault([real_buffer, shared_this,
+                            real_context](const RenderTarget& render_target) {
+              std::shared_ptr<RenderPass> result =
+                  CommandBufferMock::ForwardOnCreateRenderPass(
+                      real_buffer.get(), render_target);
+              std::shared_ptr<RecordingRenderPass> recorder =
+                  std::make_shared<RecordingRenderPass>(result, real_context,
+                                                        render_target);
+              shared_this->render_passes_.push_back(recorder);
+              return recorder;
+            });
 
         ON_CALL(*spy, OnCreateBlitPass).WillByDefault([real_buffer]() {
           return CommandBufferMock::ForwardOnCreateBlitPass(real_buffer.get());

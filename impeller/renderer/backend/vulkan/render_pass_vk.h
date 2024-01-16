@@ -8,6 +8,7 @@
 #include "impeller/core/buffer_view.h"
 #include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -46,6 +47,7 @@ class RenderPassVK final : public RenderPass {
   bool has_index_buffer_ = false;
   bool has_label_ = false;
   bool pipeline_valid_ = false;
+  vk::Pipeline last_pipeline_;
   vk::DescriptorSet descriptor_set_ = {};
   vk::PipelineLayout pipeline_layout_ = {};
 
