@@ -22,6 +22,7 @@
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
@@ -3795,6 +3796,7 @@ TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
+  fml::testing::LogCapture log_capture;
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Wheat()});
   canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
@@ -3818,9 +3820,12 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, 4lu);
+  EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+            std::string::npos);
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
+  fml::testing::LogCapture log_capture;
   Canvas canvas;
   canvas.SaveLayer(
       {.image_filter = ImageFilter::MakeBlur(Sigma(30), Sigma(30),
@@ -3841,6 +3846,8 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, 4lu);
+  EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+            std::string::npos);
 }
 
 }  // namespace testing

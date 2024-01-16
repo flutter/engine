@@ -190,6 +190,9 @@ void Canvas::Save(bool create_subpass,
       MipCountVisitor mip_count_visitor;
       backdrop_filter->Visit(mip_count_visitor);
       subpass->SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
+      current_pass_->SetRequiredMipCount(
+          std::max(current_pass_->GetRequiredMipCount(),
+                   mip_count_visitor.GetRequiredMipCount()));
     }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
