@@ -962,10 +962,10 @@ TEST(RectTest, IRectScale) {
 
   test2(IRect::MakeLTRB(10, 15, 100, 150), 2, 3);
   test2(IRect::MakeLTRB(10, 15, 100, 150), 3, 2);
-  // test2(IRect::MakeLTRB(10, 15, -100, 150), 2, 3);
-  // test2(IRect::MakeLTRB(10, 15, 100, -150), 2, 3);
-  // test2(IRect::MakeLTRB(10, 15, 100, 150), -2, 3);
-  // test2(IRect::MakeLTRB(10, 15, 100, 150), 2, -3);
+  test2(IRect::MakeLTRB(10, 15, -100, 150), 2, 3);
+  test2(IRect::MakeLTRB(10, 15, 100, -150), 2, 3);
+  test2(IRect::MakeLTRB(10, 15, 100, 150), -2, 3);
+  test2(IRect::MakeLTRB(10, 15, 100, 150), 2, -3);
 }
 
 TEST(RectTest, RectArea) {

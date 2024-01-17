@@ -32,13 +32,13 @@ namespace impeller {
 /// bottom edges; or they can be viewed as an origin and horizontal
 /// and vertical dimensions (width and height).
 ///
-/// When the left and right edges are reversed (right <= left) or the
-/// top and bottom edges are reversed (bottom <= top), the rectangle
-/// is considered empty. Viewing the rectangle in XYWH form, the width
-/// and/or the height would be negative or zero. Such reversed/empty
-/// rectangles contain no space and act as such in the methods that
-/// operate on them (Intersection, Union, IntersectsWithRect, Contains,
-/// Cutout, etc.)
+/// When the left and right edges are equal or reversed (right <= left)
+/// or the top and bottom edges are equal or reversed (bottom <= top),
+/// the rectangle is considered empty. Considering the rectangle in XYWH
+/// form, the width and/or the height would be negative or zero. Such
+/// reversed/empty rectangles contain no space and act as such in the
+/// methods that operate on them (Intersection, Union, IntersectsWithRect,
+/// Contains, Cutout, etc.)
 ///
 /// Rectangles cannot be modified by any method and a new value can only
 /// be stored into an existing rect using assignment. This keeps the API
@@ -56,11 +56,10 @@ namespace impeller {
 /// translate an empty optional answer into a simple empty rectangle of the
 /// same type.
 ///
-/// Rounding methods are not provided as sometimes the answer would be
-/// wanted as another floating point rectangle and sometimes as an integer
-/// rectangle and so a |RoundOut| factory, defined only for floating point
-/// input rectangles, is provided instead to provide that control over the
-/// resulting value type.
+/// Rounding instance methods are not provided as the return value might
+/// be wanted as another floating point rectangle or sometimes as an integer
+/// rectangle. Instead a |RoundOut| factory, defined only for floating point
+/// input rectangles, is provided to provide control over the result type.
 ///
 /// NaN and Infinity values
 ///
@@ -73,6 +72,11 @@ namespace impeller {
 /// edge from ([xy] -Infinity + [wh] +Infinity). Other combinations might
 /// work.
 ///
+/// The special factory |MakeMaximum| is provided to construct a rectangle
+/// of the indicated coordinate type that covers all finite coordinates.
+/// It does not use infinity values, but rather the largest finite values
+/// to avoid math that might produce a NaN value from various getters.
+///
 /// Any rectangle that is constructed with, or computed to have a NaN value
 /// will be considered the same as any empty rectangle.
 ///
@@ -83,9 +87,10 @@ namespace impeller {
 /// IntersectsWithRect will return false if either rect is empty
 /// Cutout will return the source rect if the argument is empty
 /// Cutout will return nullopt if the source rectangle is empty
-/// Contains(Rect) will return true if the argument is empty
-/// Contains(Rect or Point) will return false if the source rectangle is empty
-/// EmptyRect.Contains(EmptyRect) returns true
+/// Contains(Point) will return false if the source rectangle is empty
+/// Contains(Rect) will return false if the source rectangle is empty
+/// Contains(Rect) will otherwise return true if the argument is empty
+/// Specifically, EmptyRect.Contains(EmptyRect) returns false
 ///
 /// ---------------
 /// Special notes on problems using the XYWH form of specifying rectangles:
@@ -203,7 +208,7 @@ struct TRect {
   }
 
   /// @brief  Returns true iff the provided point |p| is inside the
-  ///         helf-open interior of this rectangle.
+  ///         half-open interior of this rectangle.
   ///
   ///         For purposes of containment, a rectangle contains points
   ///         along the top and left edges but not points along the
@@ -233,8 +238,6 @@ struct TRect {
   ///         is an empty set and so there are no points to fail the
   ///         containment criteria.
   [[nodiscard]] constexpr bool Contains(const TRect& o) const {
-    // Is this->IsEmpty test needed here? Write tests and then evaluate if
-    // they pass without the extra empty check.
     return !this->IsEmpty() &&                     //
            (o.IsEmpty() || (o.left_ >= left_ &&    //
                             o.top_ >= top_ &&      //
@@ -280,19 +283,14 @@ struct TRect {
   }
 
   /// @brief Returns the upper left corner of the rectangle as specified
-  ///        when it was constructed.
-  ///
-  ///        Note that unlike the |GetLeft|, |GetTop|, and |GetLeftTop|
-  ///        methods which will return values as if the rectangle had been
-  ///        "unswapped" by calling |GetPositive| on it, this method
-  ///        returns the raw origin values.
+  ///        by the left/top or x/y values when it was constructed.
   [[nodiscard]] constexpr TPoint<Type> GetOrigin() const {
     return {left_, top_};
   }
 
-  /// @brief Returns the size of the rectangle as specified when it was
-  ///        constructed and which may be negative in either width or
-  ///        height.
+  /// @brief Returns the size of the rectangle which may be negative in
+  ///        either width or height and may have been clipped to the
+  ///        maximum integer values for integer rects whose size overflows.
   [[nodiscard]] constexpr TSize<Type> GetSize() const {
     return {GetWidth(), GetHeight()};
   }
@@ -343,6 +341,8 @@ struct TRect {
 
   /// @brief  Get the area of the rectangle, equivalent to |GetSize().Area()|
   [[nodiscard]] constexpr T Area() const {
+    // TODO(flutter/flutter#141710) - Use saturated math to avoid overflow
+    // https://github.com/flutter/flutter/issues/141710
     return IsEmpty() ? 0 : (right_ - left_) * (bottom_ - top_);
   }
 
@@ -375,7 +375,9 @@ struct TRect {
     };
   }
 
-  /// @brief  Get the points that represent the 4 corners of this rectangle.
+  /// @brief  Get the points that represent the 4 corners of this rectangle
+  ///         in a Z order that is compatible with triangle strips or a set
+  ///         of all zero points if the rectangle is empty.
   ///         The order is: Top left, top right, bottom left, bottom right.
   [[nodiscard]] constexpr std::array<TPoint<T>, 4> GetPoints() const {
     if (IsEmpty()) {
@@ -479,8 +481,8 @@ struct TRect {
            bottom_ > o.top_;
   }
 
-  /// @brief Returns the new boundary rectangle that would result from the
-  ///        rectangle being cutout by a second rectangle.
+  /// @brief Returns the new boundary rectangle that would result from this
+  ///        rectangle being cut out by the specified rectangle.
   [[nodiscard]] constexpr std::optional<TRect<T>> Cutout(const TRect& o) const {
     if (IsEmpty()) {
       // This test isn't just a short-circuit, it also prevents the concise
@@ -604,8 +606,10 @@ struct TRect {
 
   ONLY_ON_FLOAT_M([[nodiscard]] constexpr static, TRect)
   RoundOut(const TRect<U>& r) {
-    return TRect::MakeLTRB(floor(r.GetLeft()), floor(r.GetTop()),
-                           ceil(r.GetRight()), ceil(r.GetBottom()));
+    return TRect::MakeLTRB(saturated::Cast<U, Type>(floor(r.GetLeft())),
+                           saturated::Cast<U, Type>(floor(r.GetTop())),
+                           saturated::Cast<U, Type>(ceil(r.GetRight())),
+                           saturated::Cast<U, Type>(ceil(r.GetBottom())));
   }
 
   [[nodiscard]] constexpr static std::optional<TRect> Union(
