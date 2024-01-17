@@ -43,7 +43,7 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
  private:
   friend class GPUProbe;
 
-  static const constexpr size_t kTraceStatesSize = 8u;
+  static const constexpr size_t kTraceStatesSize = 32u;
 
   /// @brief Signal that the cmd buffer is completed.
   ///

@@ -20,7 +20,7 @@
 
 namespace impeller {
 
-static constexpr uint32_t kPoolSize = 1024u;
+static constexpr uint32_t kPoolSize = 256u;
 
 GPUTracerVK::GPUTracerVK(std::weak_ptr<ContextVK> context)
     : context_(std::move(context)) {
