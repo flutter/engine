@@ -30,14 +30,12 @@ platform_properties:
           {"dependency": "open_jdk", "version": "version:17"}
         ]
       device_type: none
-      cpu: x86
+      cpu: arm64
       os: Mac-13
       $flutter/osx_sdk : >-
         {
           "sdk_version": "14e300c"
         }
-    dimensions:
-      mac_model: "Macmini8,1|Macmini9,1"
   windows:
     properties:
       # CIPD flutter/java/openjdk/$platform
