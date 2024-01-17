@@ -59,8 +59,8 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
           desc, impeller_context_->GetDevice(), latest_hardware_buffer,
           hb_desc);
 
-  auto texture = std::make_shared<impeller::TextureVK>(impeller_context_,
-                                                       texture_source, true);
+  auto texture =
+      std::make_shared<impeller::TextureVK>(impeller_context_, texture_source);
   // Transition the layout to shader read.
   {
     auto buffer = impeller_context_->CreateCommandBuffer();
