@@ -37,16 +37,16 @@ jobs:
           retention-days: 2
   vuln-scan:
     name: Vulnerability scanning
+    needs:
+      extract-deps
     uses: "google/osv-scanner/.github/workflows/osv-scanner-reusable.yml@main"
     with:
       # Download the artifact uploaded in extract-deps step
       download-artifact: "osv-lockfile-${{github.sha}}"
       scan-args: |-
-        --lockfile=osv-scanner:"osv-lockfile-${{github.sha}}.json"
+        --lockfile=osv-scanner:osv-lockfile-${{github.sha}}.json
       fail-on-vuln: false
     # makes sure the osv-formatted vulns are uploaded
-    needs:
-      extract-deps
     permissions:
       # Needed to upload the SARIF results to code-scanning dashboard.
       security-events: write
