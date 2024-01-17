@@ -31,17 +31,18 @@ jobs:
       - name: "upload osv-scanner deps"
         uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595
         with:
-          name: osv-lockfile
-          path: osv-lockfile.json
+          # use github.ref in name to avoid duplicated artifacts
+          name: "osv-lockfile-${{github.ref}}"
+          path: "osv-lockfile-${{github.ref}}.json"
           retention-days: 2
   vuln-scan:
     name: Vulnerability scanning
     uses: "google/osv-scanner/.github/workflows/osv-scanner-reusable.yml@main"
     with:
       # Download the artifact uploaded in extract-deps step
-      download-artifact: osv-lockfile
+      download-artifact: "osv-lockfile-${{github.ref}}"
       scan-args: |-
-        --lockfile=osv-scanner:osv-lockfile.json
+        --lockfile=osv-scanner:"osv-lockfile-${{github.ref}}.json"
       fail-on-vuln: false
     # makes sure the osv-formatted vulns are uploaded
     needs:
