@@ -138,6 +138,7 @@
         {
             "drone_dimensions": [
                 "device_type=none",
+                "kvm=1",
                 "os=Linux"
             ],
             "gclient_variables": {
