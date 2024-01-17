@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.7.7' # install the python version needed
       - name: "extract deps, find commit hash, pass to osv-scanner"
-        run: python ci/scan_deps.py --output osv-lockfile-${{github.sha}}
+        run: python ci/scan_deps.py --output osv-lockfile-${{github.sha}}.json
       - name: "upload osv-scanner deps"
         uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595
         with:
