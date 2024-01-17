@@ -278,16 +278,17 @@ class Surface extends DisplayCanvas {
         final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
-        if (useOffscreenCanvas) {
-          _offscreenCanvas!.width = newSize.width;
-          _offscreenCanvas!.height = newSize.height;
-        } else {
-          _canvasElement!.width = newSize.width;
-          _canvasElement!.height = newSize.height;
-        }
-        _currentCanvasPhysicalSize = newSize;
         _pixelWidth = newSize.width.ceil();
         _pixelHeight = newSize.height.ceil();
+        if (useOffscreenCanvas) {
+          _offscreenCanvas!.width = _pixelWidth.toDouble();
+          _offscreenCanvas!.height = _pixelHeight.toDouble();
+        } else {
+          _canvasElement!.width = _pixelWidth.toDouble();
+          _canvasElement!.height = _pixelHeight.toDouble();
+        }
+        _currentCanvasPhysicalSize =
+            ui.Size(_pixelWidth.toDouble(), _pixelHeight.toDouble());
         if (isDisplayCanvas) {
           _updateLogicalHtmlCanvasSize();
         }
@@ -477,8 +478,8 @@ class Surface extends DisplayCanvas {
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
           _grContext!,
-          size.width.roundToDouble(),
-          size.height.roundToDouble(),
+          size.width.ceilToDouble(),
+          size.height.ceilToDouble(),
           SkColorSpaceSRGB,
           _sampleCount,
           _stencilBits);
@@ -565,8 +566,8 @@ class CkSurface {
 
   int? get context => _glContext;
 
-  int width() => surface.width().round();
-  int height() => surface.height().round();
+  int width() => surface.width().ceil();
+  int height() => surface.height().ceil();
 
   void dispose() {
     if (_isDisposed) {
