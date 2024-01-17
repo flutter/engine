@@ -149,6 +149,10 @@ RenderPassMTL::RenderPassMTL(std::shared_ptr<const Context> context,
   if (!encoder_) {
     return;
   }
+#ifdef IMPELLER_DEBUG
+  is_metal_trace_active_ =
+      [[MTLCaptureManager sharedCaptureManager] isCapturing];
+#endif  // IMPELLER_DEBUG
   pass_bindings_.SetEncoder(encoder_);
   pass_bindings_.SetViewport(
       Viewport{.rect = Rect::MakeSize(GetRenderTargetSize())});
