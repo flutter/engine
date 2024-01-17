@@ -110,6 +110,10 @@ vars = {
   # local development.
   'download_fuchsia_sdk': False,
   'fuchsia_sdk_path': '',
+  # Whether checking out fuchsia dependencies, but whether the fuchsia sdk is
+  # coming from official roller / cipd or a gs path is based on the previous
+  # flags.
+  'download_fuchsia_deps': 'host_os == "linux" and target_os == "fuchsia"'
 
   # An LLVM backend needs LLVM binaries and headers. To avoid build time
   # increases we can use prebuilts. We don't want to download this on every
@@ -989,7 +993,7 @@ deps = {
         'version': 'dTy8CK4YxnUsW305O9ahIOnOm2gj69mZiTBBEWadDCMC'
        }
      ],
-     'condition': 'host_os == "linux" and not download_fuchsia_sdk',
+     'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',
      'dep_type': 'cipd',
    },
 
@@ -1000,7 +1004,7 @@ deps = {
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
-     'condition': 'host_os == "linux"',
+     'condition': 'download_fuchsia_deps',
      'dep_type': 'cipd',
    },
 
@@ -1094,7 +1098,7 @@ hooks = [
   {
     'name': 'Download Fuchsia SDK',
     'pattern': '.',
-    'condition': 'download_fuchsia_sdk',
+    'condition': 'download_fuchsia_deps and download_fuchsia_sdk',
     'action': [
       'python3',
       'src/flutter/tools/download_fuchsia_sdk.py',
@@ -1169,7 +1173,7 @@ hooks = [
   {
     'name': 'Download Fuchsia system images',
     'pattern': '.',
-    'condition': 'host_os == "linux"',
+    'condition': 'download_fuchsia_deps',
     'action': [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
