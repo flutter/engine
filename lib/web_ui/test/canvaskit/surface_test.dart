@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html';
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -126,8 +125,8 @@ void testMain() {
       surface.createOrUpdateSurface(const ui.Size(5, 15));
       final DomCanvasElement shrunk = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
-      expect(original.width, 9);
-      expect(original.height, 19);
+      expect(shrunk.width, 9);
+      expect(shrunk.height, 19);
       expect(canvasSize.width, 9);
       expect(canvasSize.height, 19);
 
