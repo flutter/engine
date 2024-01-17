@@ -83,7 +83,7 @@ def extract_deps(deps_file):
                                           deps_list)
     if ancestor_result:
       filtered_osv_deps.append({
-          'package': {'name': ancestor_result[0], 'commit': ancestor_result[1]}
+          'package': {'name': ancestor_result[1], 'commit': ancestor_result[0]}
       })
 
   try:
