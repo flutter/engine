@@ -423,7 +423,8 @@ bool EntityPass::Render(ContentContext& renderer,
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
-  if (stencil_attachment.has_value()) {
+  auto depth_attachment = root_render_target.GetDepthAttachment();
+  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
     auto stencil_texture = stencil_attachment->texture;
     if (!stencil_texture) {
       VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
