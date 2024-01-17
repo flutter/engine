@@ -6,10 +6,8 @@
 
 #include <cmath>
 #include <utility>
-#include <valarray>
 
 #include "impeller/base/strings.h"
-#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
@@ -19,7 +17,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -158,7 +155,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   ContentContext::SubpassCallback subpass_callback = [&](const ContentContext&
                                                              renderer,
                                                          RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
@@ -184,10 +181,11 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize() /
         Point(input_snapshot->GetCoverage().value().GetSize());
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, SPrintF("Gaussian Blur Filter (Radius=%.2f)",
-                                    transformed_blur_radius_length));
-    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
+#ifdef IMPELLER_DEBUG
+    pass.SetCommandLabel(SPrintF("Gaussian Blur Filter (Radius=%.2f)",
+                                 transformed_blur_radius_length));
+#endif  // IMPELLER_DEBUG
+    pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
     auto options = OptionsFromPass(pass);
     options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -222,19 +220,19 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
         !renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode();
 
     if (has_decal_specialization) {
-      cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+      pass.SetPipeline(renderer.GetGaussianBlurDecalPipeline(options));
     } else {
-      cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+      pass.SetPipeline(renderer.GetGaussianBlurPipeline(options));
     }
 
     FS::BindTextureSampler(
-        cmd, input_snapshot->texture,
+        pass, input_snapshot->texture,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             input_descriptor));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindBlurInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+    FS::BindBlurInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.Draw().ok();
   };
 
   Vector2 scale;

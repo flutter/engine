@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/core/buffer.h"
+precision mediump float;
 
-namespace impeller {
+#define ENABLE_DECAL_SPECIALIZATION 1
 
-Buffer::~Buffer() = default;
-
-}  // namespace impeller
+#include "kernel.glsl"

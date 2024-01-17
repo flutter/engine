@@ -11,7 +11,6 @@
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -187,20 +186,20 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
         return false;
       }
     }
 
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
         return false;
       }
     }
@@ -387,8 +386,7 @@ struct RenderPassData {
       return false;
     }
 
-    auto vertex_buffer =
-        vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+    auto vertex_buffer = vertex_buffer_view.buffer;
 
     if (!vertex_buffer) {
       return false;
@@ -447,8 +445,7 @@ struct RenderPassData {
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.vertex_buffer.index_buffer;
-      auto index_buffer =
-          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      auto index_buffer = index_buffer_view.buffer;
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {

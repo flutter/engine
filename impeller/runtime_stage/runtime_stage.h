@@ -9,7 +9,6 @@
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
 #include "flutter/impeller/core/runtime_types.h"
@@ -19,6 +18,8 @@ namespace impeller {
 
 class RuntimeStage {
  public:
+  static const char* kVulkanUBOName;
+
   using Map = std::map<RuntimeStageBackend, std::shared_ptr<RuntimeStage>>;
   static Map DecodeRuntimeStages(const std::shared_ptr<fml::Mapping>& payload);
 
