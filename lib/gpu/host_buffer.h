@@ -9,6 +9,7 @@
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/host_buffer.h"
+#include "lib/gpu/context.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
@@ -19,7 +20,7 @@ class HostBuffer : public RefCountedDartWrappable<HostBuffer> {
   FML_FRIEND_MAKE_REF_COUNTED(HostBuffer);
 
  public:
-  explicit HostBuffer();
+  explicit HostBuffer(Context* context);
 
   ~HostBuffer() override;
 
@@ -47,7 +48,9 @@ class HostBuffer : public RefCountedDartWrappable<HostBuffer> {
 extern "C" {
 
 FLUTTER_GPU_EXPORT
-extern void InternalFlutterGpu_HostBuffer_Initialize(Dart_Handle wrapper);
+extern void InternalFlutterGpu_HostBuffer_Initialize(
+    Dart_Handle wrapper,
+    flutter::gpu::Context* context);
 
 FLUTTER_GPU_EXPORT
 extern size_t InternalFlutterGpu_HostBuffer_EmplaceBytes(

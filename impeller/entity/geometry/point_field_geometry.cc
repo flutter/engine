@@ -26,7 +26,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     return {};
   }
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
@@ -54,7 +54,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
       ComputeUVGeometryCPU(vtx_builder.value(), {0, 0},
                            texture_coverage.GetSize(), effect_transform);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
@@ -152,7 +152,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
   auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
   auto compute_pass = cmd_buffer->CreateComputePass();
-  auto& host_buffer = compute_pass->GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   auto points_data =
       host_buffer.Emplace(points_.data(), points_.size() * sizeof(Point),
@@ -162,10 +162,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   buffer_desc.size = total * sizeof(Point);
   buffer_desc.storage_mode = StorageMode::kDevicePrivate;
 
-  auto geometry_buffer = renderer.GetContext()
-                             ->GetResourceAllocator()
-                             ->CreateBuffer(buffer_desc)
-                             ->AsBufferView();
+  auto geometry_buffer = DeviceBuffer::AsBufferView(
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc));
 
   BufferView output;
   {
@@ -197,10 +195,9 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     buffer_desc.size = total * sizeof(Vector4);
     buffer_desc.storage_mode = StorageMode::kDevicePrivate;
 
-    auto geometry_uv_buffer = renderer.GetContext()
-                                  ->GetResourceAllocator()
-                                  ->CreateBuffer(buffer_desc)
-                                  ->AsBufferView();
+    auto geometry_uv_buffer = DeviceBuffer::AsBufferView(
+        renderer.GetContext()->GetResourceAllocator()->CreateBuffer(
+            buffer_desc));
 
     using UV = UvComputeShader;
 

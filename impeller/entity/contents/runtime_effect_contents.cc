@@ -16,6 +16,7 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/runtime_effect.vert.h"
+#include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/shader_function.h"
@@ -47,19 +48,8 @@ static ShaderType GetShaderType(RuntimeUniformType type) {
       return ShaderType::kSampledImage;
     case kFloat:
       return ShaderType::kFloat;
-    case kBoolean:
-    case kSignedByte:
-    case kUnsignedByte:
-    case kSignedShort:
-    case kUnsignedShort:
-    case kSignedInt:
-    case kUnsignedInt:
-    case kSignedInt64:
-    case kUnsignedInt64:
-    case kHalfFloat:
-    case kDouble:
-      VALIDATION_LOG << "Unsupported uniform type.";
-      return ShaderType::kVoid;
+    case kStruct:
+      return ShaderType::kStruct;
   }
 }
 
@@ -79,17 +69,8 @@ static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
-  // TODO(jonahwilliams): FragmentProgram API is not fully wired up on Android.
-  // Disable until this is complete so that integration tests and benchmarks can
-  // run m3 applications.
-  if (renderer.GetContext()->GetBackendType() ==
-      Context::BackendType::kVulkan) {
-    FML_DLOG(WARNING)
-        << "Fragment programs not supported on Vulkan. Content dropped.";
-    return true;
-  }
-  auto context = renderer.GetContext();
-  auto library = context->GetShaderLibrary();
+  const std::shared_ptr<Context>& context = renderer.GetContext();
+  const std::shared_ptr<ShaderLibrary>& library = context->GetShaderLibrary();
 
   //--------------------------------------------------------------------------
   /// Get or register shader.
@@ -100,7 +81,21 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
+  //--------------------------------------------------------------------------
+  /// Resolve geometry and content context options.
+  ///
+
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+
   if (function && runtime_stage_->IsDirty()) {
+    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint());
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
@@ -140,58 +135,19 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   //--------------------------------------------------------------------------
-  /// Resolve geometry.
+  /// Set up the command. Defer setting up the pipeline until the descriptor set
+  /// layouts are known from the uniforms.
   ///
 
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
-  //--------------------------------------------------------------------------
-  /// Get or create runtime stage pipeline.
-  ///
-
-  const auto& caps = context->GetCapabilities();
+  const std::shared_ptr<const Capabilities>& caps = context->GetCapabilities();
   const auto color_attachment_format = caps->GetDefaultColorFormat();
   const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
 
   using VS = RuntimeEffectVertexShader;
-  PipelineDescriptor desc;
-  desc.SetLabel("Runtime Stage");
-  desc.AddStageEntrypoint(
-      library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
-  desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
-                                               ShaderStage::kFragment));
-  auto vertex_descriptor = std::make_shared<VertexDescriptor>();
-  vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
-                                    VS::kInterleavedBufferLayout);
-  desc.SetVertexDescriptor(std::move(vertex_descriptor));
-  desc.SetColorAttachmentDescriptor(
-      0u, {.format = color_attachment_format, .blending_enabled = true});
 
-  StencilAttachmentDescriptor stencil0;
-  stencil0.stencil_compare = CompareFunction::kEqual;
-  desc.SetStencilAttachmentDescriptors(stencil0);
-  desc.SetStencilPixelFormat(stencil_attachment_format);
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-  options.ApplyToPipelineDescriptor(desc);
-
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
-  if (!pipeline) {
-    VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
-    return false;
-  }
-
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "RuntimeEffectContents");
-  cmd.pipeline = pipeline;
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
+  pass.SetCommandLabel("RuntimeEffectContents");
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   //--------------------------------------------------------------------------
   /// Vertex stage uniforms.
@@ -199,7 +155,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(pass,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
   /// Fragment stage uniforms.
@@ -208,6 +165,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
   size_t buffer_offset = 0;
+
+  std::vector<DescriptorSetLayout> descriptor_set_layouts;
+
   for (const auto& uniform : runtime_stage_->GetUniforms()) {
     std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
 
@@ -226,35 +186,60 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         break;
       }
       case kFloat: {
+        FML_DCHECK(renderer.GetContext()->GetBackendType() !=
+                   Context::BackendType::kVulkan)
+            << "Uniform " << uniform.name
+            << " had unexpected type kFloat for Vulkan backend.";
         size_t alignment =
             std::max(uniform.bit_width / 8, DefaultUniformAlignment());
-        auto buffer_view = pass.GetTransientsBuffer().Emplace(
+        auto buffer_view = renderer.GetTransientsBuffer().Emplace(
             uniform_data_->data() + buffer_offset, uniform.GetSize(),
             alignment);
 
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
         uniform_slot.ext_res_0 = uniform.location;
-        cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
-                         buffer_view);
+        pass.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
+                          buffer_view);
         buffer_index++;
         buffer_offset += uniform.GetSize();
         break;
       }
-      case kBoolean:
-      case kSignedByte:
-      case kUnsignedByte:
-      case kSignedShort:
-      case kUnsignedShort:
-      case kSignedInt:
-      case kUnsignedInt:
-      case kSignedInt64:
-      case kUnsignedInt64:
-      case kHalfFloat:
-      case kDouble:
-        VALIDATION_LOG << "Unsupported uniform type for " << uniform.name
-                       << ".";
-        return true;
+      case kStruct: {
+        FML_DCHECK(renderer.GetContext()->GetBackendType() ==
+                   Context::BackendType::kVulkan);
+        descriptor_set_layouts.emplace_back(DescriptorSetLayout{
+            static_cast<uint32_t>(uniform.location),
+            DescriptorType::kUniformBuffer,
+            ShaderStage::kFragment,
+        });
+        ShaderUniformSlot uniform_slot;
+        uniform_slot.name = uniform.name.c_str();
+        uniform_slot.binding = uniform.location;
+
+        std::vector<float> uniform_buffer;
+        uniform_buffer.reserve(uniform.struct_layout.size());
+        size_t uniform_byte_index = 0u;
+        for (const auto& byte_type : uniform.struct_layout) {
+          if (byte_type == 0) {
+            uniform_buffer.push_back(0.f);
+          } else if (byte_type == 1) {
+            uniform_buffer.push_back(reinterpret_cast<float*>(
+                uniform_data_->data())[uniform_byte_index++]);
+          } else {
+            FML_UNREACHABLE();
+          }
+        }
+
+        size_t alignment = std::max(sizeof(float) * uniform_buffer.size(),
+                                    DefaultUniformAlignment());
+
+        auto buffer_view = renderer.GetTransientsBuffer().Emplace(
+            reinterpret_cast<const void*>(uniform_buffer.data()),
+            sizeof(float) * uniform_buffer.size(), alignment);
+        pass.BindResource(ShaderStage::kFragment, uniform_slot,
+                          ShaderMetadata{}, buffer_view);
+      }
     }
   }
 
@@ -272,9 +257,22 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
         SampledImageSlot image_slot;
         image_slot.name = uniform.name.c_str();
+
+        uint32_t sampler_binding_location = 0u;
+        if (!descriptor_set_layouts.empty()) {
+          sampler_binding_location = descriptor_set_layouts.back().binding + 1;
+        }
+
+        descriptor_set_layouts.emplace_back(DescriptorSetLayout{
+            sampler_binding_location,
+            DescriptorType::kSampledImage,
+            ShaderStage::kFragment,
+        });
+
+        image_slot.binding = sampler_binding_location;
         image_slot.texture_index = uniform.location - minimum_sampler_index;
-        cmd.BindResource(ShaderStage::kFragment, image_slot, *metadata,
-                         input.texture, sampler);
+        pass.BindResource(ShaderStage::kFragment, image_slot, *metadata,
+                          input.texture, sampler);
 
         sampler_index++;
         break;
@@ -284,7 +282,46 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     }
   }
 
-  pass.AddCommand(std::move(cmd));
+  /// Now that the descriptor set layouts are known, get the pipeline.
+  auto create_callback =
+      [&]() -> std::shared_ptr<Pipeline<PipelineDescriptor>> {
+    PipelineDescriptor desc;
+    desc.SetLabel("Runtime Stage");
+    desc.AddStageEntrypoint(
+        library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
+    desc.AddStageEntrypoint(library->GetFunction(
+        runtime_stage_->GetEntrypoint(), ShaderStage::kFragment));
+    auto vertex_descriptor = std::make_shared<VertexDescriptor>();
+    vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
+                                      VS::kInterleavedBufferLayout);
+    vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+    vertex_descriptor->RegisterDescriptorSetLayouts(
+        descriptor_set_layouts.data(), descriptor_set_layouts.size());
+    desc.SetVertexDescriptor(std::move(vertex_descriptor));
+    desc.SetColorAttachmentDescriptor(
+        0u, {.format = color_attachment_format, .blending_enabled = true});
+
+    StencilAttachmentDescriptor stencil0;
+    stencil0.stencil_compare = CompareFunction::kEqual;
+    desc.SetStencilAttachmentDescriptors(stencil0);
+    desc.SetStencilPixelFormat(stencil_attachment_format);
+
+    options.ApplyToPipelineDescriptor(desc);
+    auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+    if (!pipeline) {
+      VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
+      return nullptr;
+    }
+
+    return pipeline;
+  };
+
+  pass.SetPipeline(renderer.GetCachedRuntimeEffectPipeline(
+      runtime_stage_->GetEntrypoint(), options, create_callback));
+
+  if (!pass.Draw().ok()) {
+    return false;
+  }
 
   if (geometry_result.prevent_overdraw) {
     auto restore = ClipRestoreContents();

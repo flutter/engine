@@ -2,11 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <algorithm>
-
 #include "flutter/impeller/entity/geometry/round_rect_geometry.h"
-
-#include "flutter/impeller/entity/geometry/line_geometry.h"
 
 namespace impeller {
 
@@ -17,7 +13,8 @@ GeometryResult RoundRectGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  return ComputePositionGeometry(renderer.GetTessellator()->FilledRoundRect(
+  return ComputePositionGeometry(renderer,
+                                 renderer.GetTessellator()->FilledRoundRect(
                                      entity.GetTransform(), bounds_, radii_),
                                  entity, pass);
 }
@@ -30,6 +27,7 @@ GeometryResult RoundRectGeometry::GetPositionUVBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   return ComputePositionUVGeometry(
+      renderer,
       renderer.GetTessellator()->FilledRoundRect(entity.GetTransform(), bounds_,
                                                  radii_),
       texture_coverage.GetNormalizingTransform() * effect_transform, entity,

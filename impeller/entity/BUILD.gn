@@ -52,6 +52,7 @@ impeller_shaders("entity_shaders") {
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
     "shaders/texture_fill_external.frag",
+    "shaders/texture_fill_strict_src.frag",
     "shaders/tiled_texture_fill.frag",
     "shaders/tiled_texture_fill_external.frag",
     "shaders/vertices.frag",
@@ -266,9 +267,11 @@ impeller_component("entity_unittests") {
 
   sources = [
     "contents/checkerboard_contents_unittests.cc",
+    "contents/content_context_unittests.cc",
     "contents/filters/directional_gaussian_blur_filter_contents_unittests.cc",
     "contents/filters/gaussian_blur_filter_contents_unittests.cc",
     "contents/filters/inputs/filter_input_unittests.cc",
+    "contents/host_buffer_unittests.cc",
     "contents/tiled_texture_contents_unittests.cc",
     "contents/vertices_contents_unittests.cc",
     "entity_pass_target_unittests.cc",
