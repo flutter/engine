@@ -79,12 +79,13 @@ def extract_deps(deps_file):
       continue
 
     dep_split = dep.rsplit('@', 1)
-    ancestor_result = get_common_ancestor([dep_split[0], dep_split[1]], deps_list)
+    ancestor_result = get_common_ancestor([dep_split[0], dep_split[1]],
+                                          deps_list)
     if ancestor_result:
       filtered_osv_deps.append({
           'package': {'name': ancestor_result[0], 'commit': ancestor_result[1]}
       })
-  
+
   try:
     # Clean up cloned upstream dependency directory.
     shutil.rmtree(
@@ -226,7 +227,7 @@ def parse_args(args):
       '-o',
       type=str,
       help='Output osv-scanner compatible deps file.',
-     default=os.path.join(CHECKOUT_ROOT, 'osv-lockfile.json')
+      default=os.path.join(CHECKOUT_ROOT, 'osv-lockfile.json')
   )
 
   return parser.parse_args(args)
