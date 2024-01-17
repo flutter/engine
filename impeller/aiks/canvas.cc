@@ -133,6 +133,37 @@ void Canvas::Save() {
   Save(false);
 }
 
+namespace {
+class MipCountVisitor : public ImageFilterVisitor {
+ public:
+  virtual void Visit(const BlurImageFilter& filter) {
+    required_mip_count_ = FilterContents::kBlurFilterRequiredMipCount;
+  }
+  virtual void Visit(const LocalMatrixImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
+  virtual void Visit(const DilateImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
+  virtual void Visit(const ErodeImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
+  virtual void Visit(const MatrixImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
+  virtual void Visit(const ComposeImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
+  virtual void Visit(const ColorImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
+  int32_t GetRequiredMipCount() const { return required_mip_count_; }
+
+ private:
+  int32_t required_mip_count_ = -1;
+};
+}  // namespace
+
 void Canvas::Save(bool create_subpass,
                   BlendMode blend_mode,
                   const std::shared_ptr<ImageFilter>& backdrop_filter) {
@@ -156,6 +187,11 @@ void Canvas::Save(bool create_subpass,
             return filter;
           };
       subpass->SetBackdropFilter(backdrop_filter_proc);
+      MipCountVisitor mip_count_visitor;
+      backdrop_filter->Visit(mip_count_visitor);
+      current_pass_->SetRequiredMipCount(
+          std::max(current_pass_->GetRequiredMipCount(),
+                   mip_count_visitor.GetRequiredMipCount()));
     }
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
@@ -628,7 +664,8 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
                            Rect source,
                            Rect dest,
                            const Paint& paint,
-                           SamplerDescriptor sampler) {
+                           SamplerDescriptor sampler,
+                           SourceRectConstraint src_rect_constraint) {
   if (!image || source.IsEmpty() || dest.IsEmpty()) {
     return;
   }
@@ -642,6 +679,8 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   auto contents = TextureContents::MakeRect(dest);
   contents->SetTexture(image->GetTexture());
   contents->SetSourceRect(source);
+  contents->SetStrictSourceRect(src_rect_constraint ==
+                                SourceRectConstraint::kStrict);
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetOpacity(paint.color.alpha);
   contents->SetDeferApplyingOpacity(paint.HasColorFilter());
@@ -690,6 +729,12 @@ void Canvas::SaveLayer(const Paint& paint,
 
   auto& new_layer_pass = GetCurrentPass();
   new_layer_pass.SetBoundsLimit(bounds);
+
+  if (paint.image_filter) {
+    MipCountVisitor mip_count_visitor;
+    paint.image_filter->Visit(mip_count_visitor);
+    new_layer_pass.SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
+  }
 
   // Only apply opacity peephole on default blending.
   if (paint.blend_mode == BlendMode::kSourceOver) {
