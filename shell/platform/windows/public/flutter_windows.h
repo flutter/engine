@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_WINDOWS_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_WINDOWS_H_
 
 #include <dxgi.h>
 #include <stddef.h>
@@ -20,9 +20,9 @@ extern "C" {
 
 typedef void (*VoidCallback)(void* /* user data */);
 
-// Opaque reference to a Flutter window controller.
-typedef struct FlutterDesktopViewControllerState*
-    FlutterDesktopViewControllerRef;
+// Opaque reference to a Flutter view controller.
+struct FlutterDesktopViewController;
+typedef struct FlutterDesktopViewController* FlutterDesktopViewControllerRef;
 
 // Opaque reference to a Flutter window.
 struct FlutterDesktopView;

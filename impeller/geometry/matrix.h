@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_MATRIX_H_
+#define FLUTTER_IMPELLER_GEOMETRY_MATRIX_H_
 
 #include <cmath>
 #include <iomanip>
@@ -219,6 +220,7 @@ struct Matrix {
     // clang-format on
   }
 
+  /// The Matrix without its `w` components (without translation).
   constexpr Matrix Basis() const {
     // clang-format off
     return Matrix(
@@ -444,6 +446,15 @@ struct Matrix {
     return Vector2(v.x * m[0] + v.y * m[4], v.x * m[1] + v.y * m[5]);
   }
 
+  constexpr Quad Transform(const Quad& quad) const {
+    return {
+        *this * quad[0],
+        *this * quad[1],
+        *this * quad[2],
+        *this * quad[3],
+    };
+  }
+
   template <class T>
   static constexpr Matrix MakeOrthographic(TSize<T> size) {
     // Per assumptions about NDC documented above.
@@ -517,3 +528,5 @@ inline std::ostream& operator<<(std::ostream& out, const impeller::Matrix& m) {
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_MATRIX_H_

@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_VERTEX_DESCRIPTOR_H_
+#define FLUTTER_IMPELLER_RENDERER_VERTEX_DESCRIPTOR_H_
 
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/core/shader_types.h"
 
@@ -37,6 +37,9 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
     return SetStageInputs(inputs.data(), inputs.size(), layout.data(),
                           layout.size());
   }
+
+  void SetStageInputs(const std::vector<ShaderStageIOSlot>& inputs,
+                      const std::vector<ShaderStageBufferLayout>& layout);
 
   template <size_t Size>
   void RegisterDescriptorSetLayouts(
@@ -69,7 +72,11 @@ class VertexDescriptor final : public Comparable<VertexDescriptor> {
   std::vector<ShaderStageBufferLayout> layouts_;
   std::vector<DescriptorSetLayout> desc_set_layouts_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptor);
+  VertexDescriptor(const VertexDescriptor&) = delete;
+
+  VertexDescriptor& operator=(const VertexDescriptor&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_VERTEX_DESCRIPTOR_H_

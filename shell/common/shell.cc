@@ -28,6 +28,7 @@
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/vsync_waiter.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
@@ -64,7 +65,8 @@ std::unique_ptr<Engine> CreateEngine(
     const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
     const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& snapshot_delegate,
     const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch) {
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+    impeller::RuntimeStageBackend runtime_stage_backend) {
   return std::make_unique<Engine>(delegate,               //
                                   dispatcher_maker,       //
                                   vm,                     //
@@ -77,7 +79,8 @@ std::unique_ptr<Engine> CreateEngine(
                                   unref_queue,            //
                                   snapshot_delegate,      //
                                   volatile_path_tracker,  //
-                                  gpu_disabled_switch);
+                                  gpu_disabled_switch,    //
+                                  runtime_stage_backend);
 }
 
 void RegisterCodecsWithSkia() {
@@ -177,17 +180,33 @@ std::unique_ptr<Shell> Shell::Create(
   auto resource_cache_limit_calculator =
       std::make_shared<ResourceCacheLimitCalculator>(
           settings.resource_cache_max_bytes_threshold);
-  return CreateWithSnapshot(platform_data,                    //
-                            task_runners,                     //
-                            /*parent_merger=*/nullptr,        //
-                            /*parent_io_manager=*/nullptr,    //
-                            resource_cache_limit_calculator,  //
-                            settings,                         //
-                            std::move(vm),                    //
-                            std::move(isolate_snapshot),      //
-                            on_create_platform_view,          //
-                            on_create_rasterizer,             //
+
+  return CreateWithSnapshot(platform_data,                     //
+                            task_runners,                      //
+                            /*parent_thread_merger=*/nullptr,  //
+                            /*parent_io_manager=*/nullptr,     //
+                            resource_cache_limit_calculator,   //
+                            settings,                          //
+                            std::move(vm),                     //
+                            std::move(isolate_snapshot),       //
+                            on_create_platform_view,           //
+                            on_create_rasterizer,              //
                             CreateEngine, is_gpu_disabled);
+}
+
+static impeller::RuntimeStageBackend DetermineRuntimeStageBackend(
+    const std::shared_ptr<impeller::Context>& impeller_context) {
+  if (!impeller_context) {
+    return impeller::RuntimeStageBackend::kSkSL;
+  }
+  switch (impeller_context->GetBackendType()) {
+    case impeller::Context::BackendType::kMetal:
+      return impeller::RuntimeStageBackend::kMetal;
+    case impeller::Context::BackendType::kOpenGLES:
+      return impeller::RuntimeStageBackend::kOpenGLES;
+    case impeller::Context::BackendType::kVulkan:
+      return impeller::RuntimeStageBackend::kVulkan;
+  }
 }
 
 std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
@@ -311,7 +330,9 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
                          &weak_io_manager_future,                         //
                          &snapshot_delegate_future,                       //
                          &unref_queue_future,                             //
-                         &on_create_engine]() mutable {
+                         &on_create_engine,
+                         runtime_stage_backend = DetermineRuntimeStageBackend(
+                             platform_view->GetImpellerContext())]() mutable {
         TRACE_EVENT0("flutter", "ShellSetupUISubsystem");
         const auto& task_runners = shell->GetTaskRunners();
 
@@ -320,20 +341,22 @@ std::unique_ptr<Shell> Shell::CreateShellOnPlatformThread(
         auto animator = std::make_unique<Animator>(*shell, task_runners,
                                                    std::move(vsync_waiter));
 
-        engine_promise.set_value(
-            on_create_engine(*shell,                          //
-                             dispatcher_maker,                //
-                             *shell->GetDartVM(),             //
-                             std::move(isolate_snapshot),     //
-                             task_runners,                    //
-                             platform_data,                   //
-                             shell->GetSettings(),            //
-                             std::move(animator),             //
-                             weak_io_manager_future.get(),    //
-                             unref_queue_future.get(),        //
-                             snapshot_delegate_future.get(),  //
-                             shell->volatile_path_tracker_,
-                             shell->is_gpu_disabled_sync_switch_));
+        engine_promise.set_value(on_create_engine(
+            *shell,                               //
+            dispatcher_maker,                     //
+            *shell->GetDartVM(),                  //
+            std::move(isolate_snapshot),          //
+            task_runners,                         //
+            platform_data,                        //
+            shell->GetSettings(),                 //
+            std::move(animator),                  //
+            weak_io_manager_future.get(),         //
+            unref_queue_future.get(),             //
+            snapshot_delegate_future.get(),       //
+            shell->volatile_path_tracker_,        //
+            shell->is_gpu_disabled_sync_switch_,  //
+            runtime_stage_backend                 //
+            ));
       }));
 
   if (!shell->Setup(std::move(platform_view),  //
@@ -573,7 +596,8 @@ std::unique_ptr<Shell> Shell::Spawn(
           const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
           fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
           const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker,
-          const std::shared_ptr<fml::SyncSwitch>& is_gpu_disabled_sync_switch) {
+          const std::shared_ptr<fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+          impeller::RuntimeStageBackend runtime_stage_backend) {
         return engine->Spawn(
             /*delegate=*/delegate,
             /*dispatcher_maker=*/dispatcher_maker,
@@ -814,7 +838,6 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
-  fml::AutoResetWaitableEvent latch;
   auto raster_task = fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,  //
        rasterizer = rasterizer_->GetWeakPtr(),               //
@@ -841,8 +864,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // weak pointer. However, we are preventing the platform view from being
   // collected by using a latch.
   auto* platform_view = platform_view_.get();
-
   FML_DCHECK(platform_view);
+  fml::AutoResetWaitableEvent latch;
 
   auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
@@ -2219,6 +2242,7 @@ void Shell::OnDisplayUpdates(std::vector<std::unique_ptr<Display>> displays) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   std::vector<DisplayData> display_data;
+  display_data.reserve(displays.size());
   for (const auto& display : displays) {
     display_data.push_back(display->GetDisplayData());
   }

@@ -12,12 +12,14 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' show flutterViewEmbedder;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
+import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/text_editing/autofill_hint.dart';
 import 'package:ui/src/engine/text_editing/input_type.dart';
 import 'package:ui/src/engine/text_editing/text_editing.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
+import 'package:ui/ui.dart' as ui;
 
 import '../common/spy.dart';
 import '../common/test_initialization.dart';
@@ -368,6 +370,52 @@ Future<void> testMain() async {
         keyCode: _kReturnKeyCode,
       );
       expect(lastInputAction, 'TextInputAction.done');
+    });
+
+   test('handling keyboard event prevents triggering input action', () {
+      final ui.PlatformMessageCallback? savedCallback = ui.PlatformDispatcher.instance.onPlatformMessage;
+
+      bool markTextEventHandled = false;
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
+          ui.PlatformMessageResponseCallback? callback) {
+        final ByteData response = const JSONMessageCodec()
+            .encodeMessage(<String, dynamic>{'handled': markTextEventHandled})!;
+        callback!(response);
+      };
+      RawKeyboard.initialize();
+
+      final InputConfiguration config = InputConfiguration();
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      // No input action so far.
+      expect(lastInputAction, isNull);
+
+      markTextEventHandled = true;
+      dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // Input action prevented by platform message callback.
+      expect(lastInputAction, isNull);
+
+      markTextEventHandled = false;
+      dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+
+      // Input action received.
+      expect(lastInputAction, 'TextInputAction.done');
+
+      ui.PlatformDispatcher.instance.onPlatformMessage = savedCallback;
+      RawKeyboard.instance?.dispose();
     });
 
     test('Triggers input action in multi-line mode', () {
@@ -2503,6 +2551,46 @@ Future<void> testMain() async {
       expect(autofillForm.formElement.style.pointerEvents, 'none');
     }, skip: !isSafari);
 
+    test(
+        'the focused element within a form should explicitly set pointer events on Safari',
+        () {
+      final List<dynamic> fields = createFieldValues(<String>[
+        'email',
+        'username',
+        'password',
+      ], <String>[
+        'field1',
+        'field2',
+        'field3'
+      ]);
+      final EngineAutofillForm autofillForm =
+          EngineAutofillForm.fromFrameworkMessage(
+              createAutofillInfo('email', 'field1'), fields)!;
+
+      final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
+      testInputElement.name = 'email';
+      autofillForm.placeForm(testInputElement);
+
+      final List<DomHTMLInputElement> formChildNodes =
+          autofillForm.formElement.childNodes.toList()
+              as List<DomHTMLInputElement>;
+      final DomHTMLInputElement email = formChildNodes[0];
+      final DomHTMLInputElement username = formChildNodes[1];
+      final DomHTMLInputElement password = formChildNodes[2];
+
+      expect(email.name, 'email');
+      expect(username.name, 'username');
+      expect(password.name, 'current-password');
+
+      // pointer events are none on the form and all non-focused elements
+      expect(autofillForm.formElement.style.pointerEvents, 'none');
+      expect(username.style.pointerEvents, 'none');
+      expect(password.style.pointerEvents, 'none');
+
+      // pointer events are set to all on the activeDomElement
+      expect(email.style.pointerEvents, 'all');
+    }, skip: !isSafari);
+
     tearDown(() {
       clearForms();
     });
@@ -2987,11 +3075,18 @@ Future<void> testMain() async {
 
       final DomHTMLElement input = editingStrategy!.activeDomElement;
       expect(input.style.color, contains('transparent'));
-      expect(input.style.background, contains('transparent'));
+      if (isSafari) {
+        // macOS 13 returns different values than macOS 12.
+        expect(input.style.background, anyOf(contains('transparent'), contains('none')));
+        expect(input.style.outline, anyOf(contains('none'), contains('currentcolor')));
+        expect(input.style.border, anyOf(contains('none'), contains('medium')));
+      } else {
+        expect(input.style.background, contains('transparent'));
+        expect(input.style.outline, contains('none'));
+        expect(input.style.border, contains('none'));
+      }
       expect(input.style.backgroundColor, contains('transparent'));
       expect(input.style.caretColor, contains('transparent'));
-      expect(input.style.outline, contains('none'));
-      expect(input.style.border, contains('none'));
       expect(input.style.textShadow, contains('none'));
     });
 

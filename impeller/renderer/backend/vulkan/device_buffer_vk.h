@@ -2,22 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_DEVICE_BUFFER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_DEVICE_BUFFER_VK_H_
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
-#include "flutter/fml/trace_event.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/device_buffer.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/vma.h"
 
 namespace impeller {
 
 class DeviceBufferVK final : public DeviceBuffer,
-                             public BackendCast<DeviceBufferVK, Buffer> {
+                             public BackendCast<DeviceBufferVK, DeviceBuffer> {
  public:
   DeviceBufferVK(DeviceBufferDescriptor desc,
                  std::weak_ptr<Context> context,
@@ -46,7 +44,9 @@ class DeviceBufferVK final : public DeviceBuffer,
       std::swap(o.info, info);
     }
 
-    FML_DISALLOW_COPY_AND_ASSIGN(BufferResource);
+    BufferResource(const BufferResource&) = delete;
+
+    BufferResource& operator=(const BufferResource&) = delete;
   };
 
   std::weak_ptr<Context> context_;
@@ -66,7 +66,14 @@ class DeviceBufferVK final : public DeviceBuffer,
   // |DeviceBuffer|
   bool SetLabel(const std::string& label, Range range) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DeviceBufferVK);
+  // |DeviceBuffer|
+  void Flush(std::optional<Range> range) const override;
+
+  DeviceBufferVK(const DeviceBufferVK&) = delete;
+
+  DeviceBufferVK& operator=(const DeviceBufferVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_DEVICE_BUFFER_VK_H_

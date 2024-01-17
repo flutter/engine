@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 
 #include <chrono>
+#include <cstdint>
 #include <optional>
 #include <sstream>
 
@@ -18,6 +19,8 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
 #include "impeller/renderer/backend/vulkan/vertex_descriptor_vk.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -27,6 +30,7 @@ PipelineLibraryVK::PipelineLibraryVK(
     fml::UniqueFD cache_directory,
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner)
     : device_holder_(device_holder),
+      supports_framebuffer_fetch_(caps->SupportsFramebufferFetch()),
       pso_cache_(std::make_shared<PipelineCacheVK>(std::move(caps),
                                                    device_holder,
                                                    std::move(cache_directory))),
@@ -59,11 +63,12 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
     SampleCount sample_count) {
   // Load store ops are immaterial for pass compatibility. The right ops will be
   // picked up when the pass associated with framebuffer.
-  return CreateAttachmentDescription(format,                      //
-                                     sample_count,                //
-                                     LoadAction::kDontCare,       //
-                                     StoreAction::kDontCare,      //
-                                     vk::ImageLayout::eUndefined  //
+  return CreateAttachmentDescription(format,                       //
+                                     sample_count,                 //
+                                     LoadAction::kDontCare,        //
+                                     StoreAction::kDontCare,       //
+                                     vk::ImageLayout::eUndefined,  //
+                                     false                         //
   );
 }
 
@@ -77,10 +82,12 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
 ///
 static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     const vk::Device& device,
-    const PipelineDescriptor& desc) {
+    const PipelineDescriptor& desc,
+    bool supports_framebuffer_fetch) {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
+  std::vector<vk::AttachmentReference> subpass_color_ref;
   vk::AttachmentReference depth_stencil_ref = kUnusedAttachmentReference;
 
   color_refs.resize(desc.GetMaxColorAttacmentBindIndex() + 1,
@@ -95,6 +102,8 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
     attachments.emplace_back(
         CreatePlaceholderAttachmentDescription(color.format, sample_count));
   }
+  subpass_color_ref.push_back(vk::AttachmentReference{
+      static_cast<uint32_t>(0), vk::ImageLayout::eColorAttachmentOptimal});
 
   if (auto depth = desc.GetDepthStencilAttachmentDescriptor();
       depth.has_value()) {
@@ -114,6 +123,17 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
 
   vk::SubpassDescription subpass_desc;
   subpass_desc.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+
+  // If the device supports framebuffer fetch, compatibility pipelines are
+  // always created with the self reference and rasterization order flag. This
+  // ensures that all compiled pipelines are compatible with a render pass that
+  // contains a framebuffer fetch shader (advanced blends).
+  std::vector<vk::SubpassDependency> subpass_dependencies;
+  if (supports_framebuffer_fetch) {
+    subpass_desc.setFlags(vk::SubpassDescriptionFlagBits::
+                              eRasterizationOrderAttachmentColorAccessARM);
+    subpass_desc.setInputAttachments(subpass_color_ref);
+  }
   subpass_desc.setColorAttachments(color_refs);
   subpass_desc.setPDepthStencilAttachment(&depth_stencil_ref);
 
@@ -121,6 +141,7 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
   render_pass_desc.setAttachments(attachments);
   render_pass_desc.setPSubpasses(&subpass_desc);
   render_pass_desc.setSubpassCount(1u);
+  render_pass_desc.setDependencies(subpass_dependencies);
 
   auto [result, pass] = device.createRenderPassUnique(render_pass_desc);
   if (result != vk::Result::eSuccess) {
@@ -277,7 +298,15 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
   //----------------------------------------------------------------------------
   /// Shader Stages
   ///
+  const auto& constants = desc.GetSpecializationConstants();
+
+  std::vector<std::vector<vk::SpecializationMapEntry>> map_entries(
+      desc.GetStageEntrypoints().size());
+  std::vector<vk::SpecializationInfo> specialization_infos(
+      desc.GetStageEntrypoints().size());
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
+
+  size_t entrypoint_count = 0;
   for (const auto& entrypoint : desc.GetStageEntrypoints()) {
     auto stage = ToVKShaderStageFlagBits(entrypoint.first);
     if (!stage.has_value()) {
@@ -285,12 +314,31 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
                      << desc.GetLabel();
       return nullptr;
     }
+
+    std::vector<vk::SpecializationMapEntry>& entries =
+        map_entries[entrypoint_count];
+    for (auto i = 0u; i < constants.size(); i++) {
+      vk::SpecializationMapEntry entry;
+      entry.offset = (i * sizeof(Scalar));
+      entry.size = sizeof(Scalar);
+      entry.constantID = i;
+      entries.emplace_back(entry);
+    }
+
+    vk::SpecializationInfo& specialization_info =
+        specialization_infos[entrypoint_count];
+    specialization_info.setMapEntries(map_entries[entrypoint_count]);
+    specialization_info.setPData(constants.data());
+    specialization_info.setDataSize(sizeof(Scalar) * constants.size());
+
     vk::PipelineShaderStageCreateInfo info;
     info.setStage(stage.value());
     info.setPName("main");
     info.setModule(
         ShaderFunctionVK::Cast(entrypoint.second.get())->GetModule());
+    info.setPSpecializationInfo(&specialization_info);
     shader_stages.push_back(info);
+    entrypoint_count++;
   }
   pipeline_info.setStages(shader_stages);
 
@@ -340,8 +388,8 @@ std::unique_ptr<PipelineVK> PipelineLibraryVK::CreatePipeline(
     return nullptr;
   }
 
-  auto render_pass =
-      CreateCompatRenderPassForPipeline(strong_device->GetDevice(), desc);
+  auto render_pass = CreateCompatRenderPassForPipeline(
+      strong_device->GetDevice(), desc, supports_framebuffer_fetch_);
   if (render_pass) {
     pipeline_info.setBasePipelineHandle(VK_NULL_HANDLE);
     pipeline_info.setSubpass(0);

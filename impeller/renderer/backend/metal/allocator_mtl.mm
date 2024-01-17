@@ -7,7 +7,6 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/buffer.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
@@ -217,7 +216,7 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
   if (!texture) {
     return nullptr;
   }
-  return std::make_shared<TextureMTL>(desc, texture);
+  return TextureMTL::Create(desc, texture);
 }
 
 uint16_t AllocatorMTL::MinimumBytesPerRow(PixelFormat format) const {

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_INSTRUMENTATION_H_
-#define FLUTTER_FLOW_INSTRUMENTATION_H_
+#ifndef FLUTTER_FLOW_STOPWATCH_H_
+#define FLUTTER_FLOW_STOPWATCH_H_
 
 #include <vector>
 
@@ -56,7 +56,7 @@ class Stopwatch {
   const RefreshRateUpdater& refresh_rate_updater_;
   fml::TimePoint start_;
   std::vector<fml::TimeDelta> laps_;
-  size_t current_sample_;
+  size_t current_sample_ = 0;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Stopwatch);
 };
@@ -93,7 +93,12 @@ class FixedRefreshRateStopwatch : public Stopwatch {
 class StopwatchVisualizer {
  public:
   explicit StopwatchVisualizer(const Stopwatch& stopwatch)
-      : stopwatch_(stopwatch) {}
+      : stopwatch_(stopwatch) {
+    // Looking up the frame budget from the stopwatch delegate class may call
+    // into JNI or make platform calls which are slow. This value is safe to
+    // cache since the StopwatchVisualizer is recreated on each frame.
+    frame_budget_ = stopwatch_.GetFrameBudget();
+  }
 
   virtual ~StopwatchVisualizer() = default;
 
@@ -112,9 +117,12 @@ class StopwatchVisualizer {
   /// @brief      Converts a raster time to a unit height.
   double UnitHeight(double time_ms, double max_height) const;
 
+  fml::Milliseconds GetFrameBudget() const { return frame_budget_; }
+
   const Stopwatch& stopwatch_;
+  fml::Milliseconds frame_budget_;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_INSTRUMENTATION_H_
+#endif  // FLUTTER_FLOW_STOPWATCH_H_

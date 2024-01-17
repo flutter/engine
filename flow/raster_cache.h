@@ -117,7 +117,7 @@ class RasterCache {
  public:
   struct Context {
     GrDirectContext* gr_context;
-    const SkColorSpace* dst_color_space;
+    const sk_sp<SkColorSpace> dst_color_space;
     const SkMatrix& matrix;
     const SkRect& logical_rect;
     const char* flow_type;
@@ -264,7 +264,7 @@ class RasterCache {
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;
   mutable RasterCacheKey::Map<Entry> cache_;
-  bool checkerboard_images_;
+  bool checkerboard_images_ = false;
 
   void TraceStatsToTimeline() const;
 

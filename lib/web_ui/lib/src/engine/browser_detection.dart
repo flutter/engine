@@ -81,7 +81,8 @@ BrowserEngine detectBrowserEngineByVendorAgent(String vendor, String agent) {
   }
 
   // Assume Blink otherwise, but issue a warning.
-  print('WARNING: failed to detect current browser engine. Assuming this is a Chromium-compatible browser.');
+  print(
+      'WARNING: failed to detect current browser engine. Assuming this is a Chromium-compatible browser.');
   return BrowserEngine.blink;
 }
 
@@ -141,8 +142,9 @@ OperatingSystem detectOperatingSystem({
   if (platform.startsWith('Mac')) {
     // iDevices requesting a "desktop site" spoof their UA so it looks like a Mac.
     // This checks if we're in a touch device, or on a real mac.
-    final int maxTouchPoints =
-        overrideMaxTouchPoints ?? domWindow.navigator.maxTouchPoints?.toInt() ?? 0;
+    final int maxTouchPoints = overrideMaxTouchPoints ??
+        domWindow.navigator.maxTouchPoints?.toInt() ??
+        0;
     if (maxTouchPoints > 2) {
       return OperatingSystem.iOs;
     }
@@ -204,6 +206,34 @@ bool get isIOS15 {
       domWindow.navigator.userAgent.contains('OS 15_');
 }
 
+/// Detect if running on Chrome version 110 or older.
+///
+/// These versions of Chrome have a bug which causes rendering to be flipped
+/// upside down when using `createImageBitmap`: see
+/// https://chromium.googlesource.com/chromium/src/+/a7f9b00e422a1755918f8ca5500380f98b6fddf2
+// TODO(harryterkelsen): Remove this check once we stop supporting Chrome 110
+// and earlier, https://github.com/flutter/flutter/issues/139186.
+bool get isChrome110OrOlder {
+  if (debugIsChrome110OrOlder != null) {
+    return debugIsChrome110OrOlder!;
+  }
+  if (_cachedIsChrome110OrOlder != null) {
+    return _cachedIsChrome110OrOlder!;
+  }
+  final RegExp chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
+  final RegExpMatch? match =
+      chromeRegexp.firstMatch(domWindow.navigator.userAgent);
+  if (match != null) {
+    final int chromeVersion = int.parse(match.group(2)!);
+    return _cachedIsChrome110OrOlder = chromeVersion <= 110;
+  }
+  return _cachedIsChrome110OrOlder = false;
+}
+
+// Cache the result of checking if the app is running on Chrome 110 on Windows
+// since we check this on every frame.
+bool? _cachedIsChrome110OrOlder;
+
 /// If set to true pretends that the current browser is iOS Safari.
 ///
 /// Useful for tests. Do not use in production code.
@@ -233,6 +263,9 @@ bool get isWasm => const bool.fromEnvironment('dart.library.ffi');
 
 /// Use in tests to simulate the detection of iOS 15.
 bool? debugIsIOS15;
+
+/// Use in tests to simulated the detection of Chrome 110 or older on Windows.
+bool? debugIsChrome110OrOlder;
 
 int? _cachedWebGLVersion;
 

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_CACHE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_CACHE_VK_H_
 
 #include "flutter/fml/file.h"
 #include "flutter/fml/macros.h"
@@ -42,7 +43,11 @@ class PipelineCacheVK {
 
   std::shared_ptr<fml::Mapping> CopyPipelineCacheData() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineCacheVK);
+  PipelineCacheVK(const PipelineCacheVK&) = delete;
+
+  PipelineCacheVK& operator=(const PipelineCacheVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_CACHE_VK_H_

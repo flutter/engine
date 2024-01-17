@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_
+#define FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_
 
 #include <array>
 #include <iostream>
@@ -39,7 +40,8 @@ inline ::testing::AssertionResult MatrixNear(impeller::Matrix a,
                && NumberNear(a.m[15], b.m[15]);
 
   return equal ? ::testing::AssertionSuccess()
-               : ::testing::AssertionFailure() << "Matrixes are not equal.";
+               : ::testing::AssertionFailure()
+                     << "Matrixes are not equal " << a << " " << b;
 }
 
 inline ::testing::AssertionResult QuaternionNear(impeller::Quaternion a,
@@ -52,13 +54,14 @@ inline ::testing::AssertionResult QuaternionNear(impeller::Quaternion a,
 }
 
 inline ::testing::AssertionResult RectNear(impeller::Rect a, impeller::Rect b) {
-  auto equal = NumberNear(a.origin.x, b.origin.x) &&
-               NumberNear(a.origin.y, b.origin.y) &&
-               NumberNear(a.size.width, b.size.width) &&
-               NumberNear(a.size.height, b.size.height);
+  auto equal = NumberNear(a.GetX(), b.GetX()) &&
+               NumberNear(a.GetY(), b.GetY()) &&
+               NumberNear(a.GetWidth(), b.GetWidth()) &&
+               NumberNear(a.GetHeight(), b.GetHeight());
 
   return equal ? ::testing::AssertionSuccess()
-               : ::testing::AssertionFailure() << "Rects are not equal.";
+               : ::testing::AssertionFailure()
+                     << "Rects are not equal (" << a << " " << b << ")";
 }
 
 inline ::testing::AssertionResult ColorNear(impeller::Color a,
@@ -75,7 +78,8 @@ inline ::testing::AssertionResult PointNear(impeller::Point a,
   auto equal = NumberNear(a.x, b.x) && NumberNear(a.y, b.y);
 
   return equal ? ::testing::AssertionSuccess()
-               : ::testing::AssertionFailure() << "Points are not equal.";
+               : ::testing::AssertionFailure()
+                     << "Points are not equal (" << a << " " << b << ").";
 }
 
 inline ::testing::AssertionResult Vector3Near(impeller::Vector3 a,
@@ -160,3 +164,17 @@ inline ::testing::AssertionResult ColorsNear(std::vector<impeller::Color> a,
 #define ASSERT_ARRAY_4_NEAR(a, b) ASSERT_PRED2(&::Array4Near, a, b)
 #define ASSERT_COLOR_BUFFER_NEAR(a, b) ASSERT_PRED2(&::ColorBufferNear, a, b)
 #define ASSERT_COLORS_NEAR(a, b) ASSERT_PRED2(&::ColorsNear, a, b)
+
+#define EXPECT_MATRIX_NEAR(a, b) EXPECT_PRED2(&::MatrixNear, a, b)
+#define EXPECT_QUATERNION_NEAR(a, b) EXPECT_PRED2(&::QuaternionNear, a, b)
+#define EXPECT_RECT_NEAR(a, b) EXPECT_PRED2(&::RectNear, a, b)
+#define EXPECT_COLOR_NEAR(a, b) EXPECT_PRED2(&::ColorNear, a, b)
+#define EXPECT_POINT_NEAR(a, b) EXPECT_PRED2(&::PointNear, a, b)
+#define EXPECT_VECTOR3_NEAR(a, b) EXPECT_PRED2(&::Vector3Near, a, b)
+#define EXPECT_VECTOR4_NEAR(a, b) EXPECT_PRED2(&::Vector4Near, a, b)
+#define EXPECT_SIZE_NEAR(a, b) EXPECT_PRED2(&::SizeNear, a, b)
+#define EXPECT_ARRAY_4_NEAR(a, b) EXPECT_PRED2(&::Array4Near, a, b)
+#define EXPECT_COLOR_BUFFER_NEAR(a, b) EXPECT_PRED2(&::ColorBufferNear, a, b)
+#define EXPECT_COLORS_NEAR(a, b) EXPECT_PRED2(&::ColorsNear, a, b)
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_

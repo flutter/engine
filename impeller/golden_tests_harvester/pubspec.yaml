@@ -27,14 +27,16 @@ dependency_overrides:
   crypto:
     path: ../../../third_party/dart/third_party/pkg/crypto
   file:
-    path: ../../../third_party/pkg/file/packages/file
+    path: ../../../third_party/dart/third_party/pkg/file/packages/file
   meta:
     path: ../../../third_party/dart/pkg/meta
+  engine_repo_tools:
+    path: ../../tools/pkg/engine_repo_tools
   path:
     path: ../../../third_party/dart/third_party/pkg/path
   platform:
-    path: ../../../third_party/pkg/platform
+    path: ../../third_party/pkg/platform
   process:
-    path: ../../../third_party/pkg/process
+    path: ../../third_party/pkg/process
   typed_data:
     path: ../../../third_party/dart/third_party/pkg/typed_data

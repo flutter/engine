@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_CONTEXT_H_
+#define FLUTTER_IMPELLER_TOOLKIT_EGL_CONTEXT_H_
 
 #include <functional>
 
@@ -49,8 +50,12 @@ class Context {
 
   void DispatchLifecyleEvent(LifecycleEvent event) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Context);
+  Context(const Context&) = delete;
+
+  Context& operator=(const Context&) = delete;
 };
 
 }  // namespace egl
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TOOLKIT_EGL_CONTEXT_H_

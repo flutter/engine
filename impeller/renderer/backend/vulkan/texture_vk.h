@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
 
 #include <variant>
 
@@ -59,7 +60,11 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   // |Texture|
   ISize GetSize() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureVK);
+  TextureVK(const TextureVK&) = delete;
+
+  TextureVK& operator=(const TextureVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_

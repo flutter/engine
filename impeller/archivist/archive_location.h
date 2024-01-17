@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_LOCATION_H_
+#define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_LOCATION_H_
 
 #include <optional>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archivable.h"
 #include "impeller/archivist/archive.h"
 #include "impeller/base/allocation.h"
@@ -166,7 +166,11 @@ class ArchiveLocation {
             const ArchiveDef& otherDef,
             Archivable& other);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveLocation);
+  ArchiveLocation(const ArchiveLocation&) = delete;
+
+  ArchiveLocation& operator=(const ArchiveLocation&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_LOCATION_H_

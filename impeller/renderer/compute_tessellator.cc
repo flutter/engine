@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/compute_tessellator.h"
 
+#include <cstdint>
+
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/path_polyline.comp.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -60,6 +62,7 @@ ComputeTessellator& ComputeTessellator::SetQuadraticTolerance(Scalar value) {
 
 ComputeTessellator::Status ComputeTessellator::Tessellate(
     const Path& path,
+    HostBuffer& host_buffer,
     const std::shared_ptr<Context>& context,
     BufferView vertex_buffer,
     BufferView vertex_buffer_count,
@@ -125,14 +128,12 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     DEBUG_COMMAND_INFO(cmd, "Generate Polyline");
     cmd.pipeline = compute_pipeline;
 
-    PS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
-    PS::BindCubics(cmd,
-                   pass->GetTransientsBuffer().EmplaceStorageBuffer(cubics));
-    PS::BindQuads(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(quads));
-    PS::BindLines(cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(lines));
-    PS::BindComponents(
-        cmd, pass->GetTransientsBuffer().EmplaceStorageBuffer(components));
-    PS::BindPolyline(cmd, polyline_buffer->AsBufferView());
+    PS::BindConfig(cmd, host_buffer.EmplaceUniform(config));
+    PS::BindCubics(cmd, host_buffer.EmplaceStorageBuffer(cubics));
+    PS::BindQuads(cmd, host_buffer.EmplaceStorageBuffer(quads));
+    PS::BindLines(cmd, host_buffer.EmplaceStorageBuffer(lines));
+    PS::BindComponents(cmd, host_buffer.EmplaceStorageBuffer(components));
+    PS::BindPolyline(cmd, DeviceBuffer::AsBufferView(polyline_buffer));
 
     if (!pass->AddCommand(std::move(cmd))) {
       return Status::kCommandInvalid;
@@ -161,9 +162,9 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
         .join = static_cast<uint32_t>(stroke_join_),
         .miter_limit = miter_limit_,
     };
-    SS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
+    SS::BindConfig(cmd, host_buffer.EmplaceUniform(config));
 
-    SS::BindPolyline(cmd, polyline_buffer->AsBufferView());
+    SS::BindPolyline(cmd, DeviceBuffer::AsBufferView(polyline_buffer));
     SS::BindVertexBufferCount(cmd, std::move(vertex_buffer_count));
     SS::BindVertexBuffer(cmd, std::move(vertex_buffer));
 

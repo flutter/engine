@@ -5,30 +5,29 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show PlatformViewManager;
+import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
 import '../platform_views/slots.dart';
 import '../svg.dart';
 import '../util.dart';
 import '../vector_math.dart';
-import '../window.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
+import 'rasterizer.dart';
 import 'render_canvas.dart';
 import 'render_canvas_factory.dart';
-import 'renderer.dart';
 
 /// This composites HTML views into the [ui.Scene].
 class HtmlViewEmbedder {
-  HtmlViewEmbedder._();
+  HtmlViewEmbedder(this.sceneHost, this.rasterizer, this.renderCanvasFactory);
 
-  /// The [HtmlViewEmbedder] singleton.
-  static HtmlViewEmbedder instance = HtmlViewEmbedder._();
-
-  DomElement get skiaSceneHost => CanvasKitRenderer.instance.sceneHost!;
+  final DomElement sceneHost;
+  final Rasterizer rasterizer;
+  final RenderCanvasFactory renderCanvasFactory;
 
   /// The context for the current frame.
   EmbedderFrameContext _context = EmbedderFrameContext();
@@ -69,7 +68,7 @@ class HtmlViewEmbedder {
   List<OverlayGroup> _activeOverlayGroups = <OverlayGroup>[];
 
   /// The size of the frame, in physical pixels.
-  ui.Size _frameSize = ui.window.physicalSize;
+  late ui.Size _frameSize;
 
   set frameSize(ui.Size size) {
     _frameSize = size;
@@ -119,6 +118,9 @@ class HtmlViewEmbedder {
   /// If this returns a [CkCanvas], then that canvas should be the new leaf
   /// node. Otherwise, keep the same leaf node.
   CkCanvas? compositeEmbeddedView(int viewId) {
+    // Ensure platform view with `viewId` is injected into the `rasterizer.view`.
+    rasterizer.view.dom.injectPlatformView(viewId);
+
     final int overlayIndex = _context.visibleViewCount;
     _compositionOrder.add(viewId);
     // Keep track of the number of visible platform views.
@@ -143,10 +145,10 @@ class HtmlViewEmbedder {
     return recorderToUseForRendering?.recordingCanvas;
   }
 
-  void _compositeWithParams(int viewId, EmbeddedViewParams params) {
+  void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
     // If we haven't seen this viewId yet, cache it for clips/transforms.
-    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(viewId, () {
-      return ViewClipChain(view: createPlatformViewSlot(viewId));
+    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(platformViewId, () {
+      return ViewClipChain(view: createPlatformViewSlot(platformViewId));
     });
 
     final DomElement slot = clipChain.slot;
@@ -176,7 +178,7 @@ class HtmlViewEmbedder {
     }
 
     // Apply mutators to the slot
-    _applyMutators(params, slot, viewId);
+    _applyMutators(params, slot, platformViewId);
   }
 
   int _countClips(MutatorsStack mutators) {
@@ -219,7 +221,7 @@ class HtmlViewEmbedder {
 
     // If the chain was previously attached, attach it to the same position.
     if (headClipViewWasAttached) {
-      skiaSceneHost.insertBefore(head, headClipViewNextSibling);
+      sceneHost.insertBefore(head, headClipViewNextSibling);
     }
     return head;
   }
@@ -327,7 +329,7 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = window.devicePixelRatio;
+    final double scale = EngineFlutterDisplay.instance.devicePixelRatio;
     final double inverseScale = 1 / scale;
     final Matrix4 scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
@@ -359,10 +361,10 @@ class HtmlViewEmbedder {
     }
     _svgPathDefs = kSvgResourceHeader.cloneNode(false) as SVGElement;
     _svgPathDefs!.append(createSVGDefsElement()..id = 'sk_path_defs');
-    skiaSceneHost.append(_svgPathDefs!);
+    sceneHost.append(_svgPathDefs!);
   }
 
-  void submitFrame() {
+  Future<void> submitFrame() async {
     final ViewListDiffResult? diffResult =
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
@@ -386,8 +388,7 @@ class HtmlViewEmbedder {
             _context.pictureRecorders[pictureRecorderIndex].endRecording());
         pictureRecorderIndex++;
       }
-      CanvasKitRenderer.instance.rasterizer
-          .rasterizeToCanvas(overlay, pictures);
+      await rasterizer.rasterizeToCanvas(overlay, pictures);
     }
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
@@ -439,18 +440,18 @@ class HtmlViewEmbedder {
 
         if (diffResult.addToBeginning) {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-          skiaSceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
+          sceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
           final RenderCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
-            skiaSceneHost.insertBefore(
+            sceneHost.insertBefore(
                 overlay.htmlElement, elementToInsertBefore);
           }
         } else {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-          skiaSceneHost.append(platformViewRoot);
+          sceneHost.append(platformViewRoot);
           final RenderCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
-            skiaSceneHost.append(overlay.htmlElement);
+            sceneHost.append(overlay.htmlElement);
           }
         }
       }
@@ -463,17 +464,17 @@ class HtmlViewEmbedder {
           if (!overlayElement.isConnected!) {
             // This overlay wasn't added to the DOM.
             if (i == _compositionOrder.length - 1) {
-              skiaSceneHost.append(overlayElement);
+              sceneHost.append(overlayElement);
             } else {
               final int nextView = _compositionOrder[i + 1];
               final DomElement nextElement = _viewClipChains[nextView]!.root;
-              skiaSceneHost.insertBefore(overlayElement, nextElement);
+              sceneHost.insertBefore(overlayElement, nextElement);
             }
           }
         }
       }
     } else {
-      RenderCanvasFactory.instance.removeSurfacesFromDom();
+      renderCanvasFactory.removeSurfacesFromDom();
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
 
@@ -492,9 +493,9 @@ class HtmlViewEmbedder {
 
         final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
         final RenderCanvas? overlay = _overlays[viewId];
-        skiaSceneHost.append(platformViewRoot);
+        sceneHost.append(platformViewRoot);
         if (overlay != null) {
-          skiaSceneHost.append(overlay.htmlElement);
+          sceneHost.append(overlay.htmlElement);
         }
         _activeCompositionOrder.add(viewId);
         unusedViews.remove(viewId);
@@ -528,7 +529,7 @@ class HtmlViewEmbedder {
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
       final RenderCanvas overlay = _overlays[viewId]!;
-      RenderCanvasFactory.instance.releaseCanvas(overlay);
+      renderCanvasFactory.releaseCanvas(overlay);
       _overlays.remove(viewId);
     }
   }
@@ -568,7 +569,7 @@ class HtmlViewEmbedder {
     if (diffResult == null) {
       // Everything is going to be explicitly recomposited anyway. Release all
       // the surfaces and assign an overlay to all the surfaces needing one.
-      RenderCanvasFactory.instance.releaseCanvases();
+      renderCanvasFactory.releaseCanvases();
       _overlays.clear();
       viewsNeedingOverlays.forEach(_initializeOverlay);
     } else {
@@ -638,7 +639,7 @@ class HtmlViewEmbedder {
     assert(!_overlays.containsKey(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    final RenderCanvas overlay = RenderCanvasFactory.instance.getCanvas();
+    final RenderCanvas overlay = renderCanvasFactory.getCanvas();
     _overlays[viewId] = overlay;
   }
 
@@ -659,8 +660,8 @@ class HtmlViewEmbedder {
     element.remove();
   }
 
-  /// Clears the state of this view embedder. Used in tests.
-  void debugClear() {
+  /// Disposes the state of this view embedder.
+  void dispose() {
     final Set<int> allViews = PlatformViewManager.instance.debugClear();
     disposeViews(allViews);
     _context = EmbedderFrameContext();

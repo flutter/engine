@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_
 
 #include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
@@ -39,7 +40,7 @@ class ShaderLibraryMTL final : public ShaderLibrary {
   ShaderFunctionMap functions_;
   bool is_valid_ = false;
 
-  ShaderLibraryMTL(NSArray<id<MTLLibrary>>* libraries);
+  explicit ShaderLibraryMTL(NSArray<id<MTLLibrary>>* libraries);
 
   // |ShaderLibrary|
   std::shared_ptr<const ShaderFunction> GetFunction(std::string_view name,
@@ -58,7 +59,11 @@ class ShaderLibraryMTL final : public ShaderLibrary {
 
   void RegisterLibrary(id<MTLLibrary> library);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderLibraryMTL);
+  ShaderLibraryMTL(const ShaderLibraryMTL&) = delete;
+
+  ShaderLibraryMTL& operator=(const ShaderLibraryMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_

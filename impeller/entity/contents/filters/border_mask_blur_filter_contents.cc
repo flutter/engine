@@ -8,7 +8,7 @@
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -89,33 +89,23 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
                             outer_blur_factor = outer_blur_factor_, sigma](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    auto origin = coverage.GetOrigin();
+    auto size = coverage.GetSize();
     vtx_builder.AddVertices({
-        {coverage.origin, input_uvs[0]},
-        {{coverage.origin.x + coverage.size.width, coverage.origin.y},
-         input_uvs[1]},
-        {{coverage.origin.x, coverage.origin.y + coverage.size.height},
-         input_uvs[2]},
-        {{coverage.origin.x + coverage.size.width,
-          coverage.origin.y + coverage.size.height},
-         input_uvs[3]},
+        {origin, input_uvs[0]},
+        {{origin.x + size.width, origin.y}, input_uvs[1]},
+        {{origin.x, origin.y + size.height}, input_uvs[2]},
+        {{origin.x + size.width, origin.y + size.height}, input_uvs[3]},
     });
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Border Mask Blur Filter");
     auto options = OptionsFromPassAndEntity(pass, entity);
     options.primitive_type = PrimitiveType::kTriangleStrip;
 
-    cmd.pipeline = renderer.GetBorderMaskBlurPipeline(options);
-    cmd.BindVertices(vtx_buffer);
-    cmd.stencil_reference = entity.GetClipDepth();
-
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
@@ -125,18 +115,23 @@ std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     frag_info.inner_blur_factor = inner_blur_factor;
     frag_info.outer_blur_factor = outer_blur_factor;
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+    pass.SetCommandLabel("Border Mask Blur Filter");
+    pass.SetPipeline(renderer.GetBorderMaskBlurPipeline(options));
+    pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
+    pass.SetStencilReference(entity.GetClipDepth());
+
+    FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+    VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-    FS::BindTextureSampler(cmd, input_snapshot->texture, sampler);
+    FS::BindTextureSampler(pass, input_snapshot->texture, sampler);
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.Draw().ok();
   };
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
@@ -164,9 +159,18 @@ std::optional<Rect> BorderMaskBlurFilterContents::GetFilterCoverage(
   auto transformed_blur_vector =
       transform.TransformDirection(Vector2(Radius{sigma_x_}.radius, 0)).Abs() +
       transform.TransformDirection(Vector2(0, Radius{sigma_y_}.radius)).Abs();
-  auto extent = coverage->size + transformed_blur_vector * 2;
-  return Rect(coverage->origin - transformed_blur_vector,
-              Size(extent.x, extent.y));
+  return coverage->Expand(transformed_blur_vector);
+}
+
+std::optional<Rect> BorderMaskBlurFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto transformed_blur_vector =
+      effect_transform.TransformDirection(Vector2(Radius{sigma_x_}.radius, 0))
+          .Abs() +
+      effect_transform.TransformDirection(Vector2(0, Radius{sigma_y_}.radius))
+          .Abs();
+  return output_limit.Expand(transformed_blur_vector);
 }
 
 }  // namespace impeller

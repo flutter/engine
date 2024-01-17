@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_QUEUE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_QUEUE_VK_H_
 
 #include <memory>
 
@@ -47,7 +48,9 @@ class QueueVK {
   const QueueIndexVK index_;
   const vk::Queue queue_ IPLR_GUARDED_BY(queue_mutex_);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(QueueVK);
+  QueueVK(const QueueVK&) = delete;
+
+  QueueVK& operator=(const QueueVK&) = delete;
 };
 
 //------------------------------------------------------------------------------
@@ -70,3 +73,5 @@ struct QueuesVK {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_QUEUE_VK_H_

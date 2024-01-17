@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
 
+#include <cstdint>
 #include <memory>
 #include <variant>
 
@@ -44,9 +46,10 @@ class SwapchainImplVK final
     std::unique_ptr<Surface> surface;
     bool out_of_date = false;
 
-    AcquireResult(bool p_out_of_date = false) : out_of_date(p_out_of_date) {}
+    explicit AcquireResult(bool p_out_of_date = false)
+        : out_of_date(p_out_of_date) {}
 
-    AcquireResult(std::unique_ptr<Surface> p_surface)
+    explicit AcquireResult(std::unique_ptr<Surface> p_surface)
         : surface(std::move(p_surface)) {}
   };
 
@@ -82,7 +85,11 @@ class SwapchainImplVK final
 
   void WaitIdle() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SwapchainImplVK);
+  SwapchainImplVK(const SwapchainImplVK&) = delete;
+
+  SwapchainImplVK& operator=(const SwapchainImplVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_

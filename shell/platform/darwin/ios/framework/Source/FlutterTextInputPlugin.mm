@@ -304,14 +304,12 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
     return UITextContentTypePassword;
   }
 
-  if (@available(iOS 12.0, *)) {
-    if ([hint isEqualToString:@"oneTimeCode"]) {
-      return UITextContentTypeOneTimeCode;
-    }
+  if ([hint isEqualToString:@"oneTimeCode"]) {
+    return UITextContentTypeOneTimeCode;
+  }
 
-    if ([hint isEqualToString:@"newPassword"]) {
-      return UITextContentTypeNewPassword;
-    }
+  if ([hint isEqualToString:@"newPassword"]) {
+    return UITextContentTypeNewPassword;
   }
 
   return hints[0];
@@ -407,11 +405,10 @@ static BOOL IsFieldPasswordRelated(NSDictionary* configuration) {
     return YES;
   }
 
-  if (@available(iOS 12.0, *)) {
-    if ([contentType isEqualToString:UITextContentTypeNewPassword]) {
-      return YES;
-    }
+  if ([contentType isEqualToString:UITextContentTypeNewPassword]) {
+    return YES;
   }
+
   return NO;
 }
 
@@ -602,7 +599,7 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
     case UITextGranularityLine:
       // The default UITextInputStringTokenizer does not handle line granularity
       // correctly. We need to implement our own line tokenizer.
-      result = [self lineEnclosingPosition:position];
+      result = [self lineEnclosingPosition:position inDirection:direction];
       break;
     case UITextGranularityCharacter:
     case UITextGranularityWord:
@@ -618,7 +615,21 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return result;
 }
 
-- (UITextRange*)lineEnclosingPosition:(UITextPosition*)position {
+- (UITextRange*)lineEnclosingPosition:(UITextPosition*)position
+                          inDirection:(UITextDirection)direction {
+  // TODO(hellohuanlin): remove iOS 17 check. The same logic should apply to older iOS version.
+  if (@available(iOS 17.0, *)) {
+    // According to the API doc if the text position is at a text-unit boundary, it is considered
+    // enclosed only if the next position in the given direction is entirely enclosed. Link:
+    // https://developer.apple.com/documentation/uikit/uitextinputtokenizer/1614464-rangeenclosingposition?language=objc
+    FlutterTextPosition* flutterPosition = (FlutterTextPosition*)position;
+    if (flutterPosition.index > _textInputView.text.length ||
+        (flutterPosition.index == _textInputView.text.length &&
+         direction == UITextStorageDirectionForward)) {
+      return nil;
+    }
+  }
+
   // Gets the first line break position after the input position.
   NSString* textAfter = [_textInputView
       textInRange:[_textInputView textRangeFromPosition:position
@@ -1674,6 +1685,16 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
                                                end:end
                                         withClient:_textInputClient];
     }
+  }
+
+  // The iOS 16 system highlight does not repect the height returned by `firstRectForRange`
+  // API (unlike iOS 17). So we return CGRectZero to hide it (unless if scribble is enabled).
+  // To support scribble's advanced gestures (e.g. insert a space with a vertical bar),
+  // at least 1 character's width is required.
+  if (@available(iOS 17, *)) {
+    // No-op
+  } else if (![self isScribbleAvailable]) {
+    return CGRectZero;
   }
 
   NSUInteger first = start;

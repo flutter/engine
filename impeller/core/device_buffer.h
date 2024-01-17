@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_H_
+#define FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_H_
 
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/allocator.h"
-#include "impeller/core/buffer.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/range.h"
@@ -17,8 +16,7 @@
 
 namespace impeller {
 
-class DeviceBuffer : public Buffer,
-                     public std::enable_shared_from_this<DeviceBuffer> {
+class DeviceBuffer {
  public:
   virtual ~DeviceBuffer();
 
@@ -30,20 +28,26 @@ class DeviceBuffer : public Buffer,
 
   virtual bool SetLabel(const std::string& label, Range range) = 0;
 
-  BufferView AsBufferView() const;
+  /// @brief Create a buffer view of this entire buffer.
+  static BufferView AsBufferView(std::shared_ptr<DeviceBuffer> buffer);
 
   virtual std::shared_ptr<Texture> AsTexture(
       Allocator& allocator,
       const TextureDescriptor& descriptor,
       uint16_t row_bytes) const;
 
-  // |Buffer|
-  std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
-      Allocator& allocator) const;
-
   const DeviceBufferDescriptor& GetDeviceBufferDescriptor() const;
 
   virtual uint8_t* OnGetContents() const = 0;
+
+  /// Make any pending writes visible to the GPU.
+  ///
+  /// This method must be called if the device pointer provided by
+  /// [OnGetContents] is written to without using [CopyHostBuffer]. On Devices
+  /// with coherent host memory, this method will not perform extra work.
+  ///
+  /// If the range is not provided, the entire buffer is flushed.
+  virtual void Flush(std::optional<Range> range = std::nullopt) const;
 
  protected:
   const DeviceBufferDescriptor desc_;
@@ -55,7 +59,11 @@ class DeviceBuffer : public Buffer,
                                 size_t offset) = 0;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(DeviceBuffer);
+  DeviceBuffer(const DeviceBuffer&) = delete;
+
+  DeviceBuffer& operator=(const DeviceBuffer&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_DEVICE_BUFFER_H_

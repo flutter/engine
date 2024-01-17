@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SAMPLER_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SAMPLER_MTL_H_
 
 #include <Metal/Metal.h>
 
@@ -34,7 +35,11 @@ class SamplerMTL final : public Sampler,
   // |Sampler|
   bool IsValid() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SamplerMTL);
+  SamplerMTL(const SamplerMTL&) = delete;
+
+  SamplerMTL& operator=(const SamplerMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SAMPLER_MTL_H_

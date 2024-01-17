@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_VK_H_
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -50,7 +50,11 @@ class PipelineVK final
   // |Pipeline|
   bool IsValid() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineVK);
+  PipelineVK(const PipelineVK&) = delete;
+
+  PipelineVK& operator=(const PipelineVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_VK_H_

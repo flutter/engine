@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_VERTICES_H_
-#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_VERTICES_H_
+#ifndef FLUTTER_DISPLAY_LIST_DL_VERTICES_H_
+#define FLUTTER_DISPLAY_LIST_DL_VERTICES_H_
 
 #include <memory>
 
@@ -165,7 +165,7 @@ class DlVertices {
 
    private:
     std::shared_ptr<DlVertices> vertices_;
-    bool needs_vertices_;
+    bool needs_vertices_ = true;
     bool needs_texture_coords_;
     bool needs_colors_;
     bool needs_indices_;
@@ -284,4 +284,4 @@ class DlVertices {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_VERTICES_H_
+#endif  // FLUTTER_DISPLAY_LIST_DL_VERTICES_H_

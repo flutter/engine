@@ -1,12 +1,14 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#include "flutter/testing/testing.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
+
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#include "flutter/testing/autoreleasepool_test.h"
+#include "flutter/testing/testing.h"
 
 namespace flutter::testing {
 
@@ -56,17 +58,41 @@ FlutterViewController* CreateTestViewController() {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   return [[AccessibilityBridgeTestViewController alloc] initWithProject:project];
 }
+
+// Test fixture that instantiates and re-uses a single NSWindow across multiple tests.
+//
+// Works around: http://www.openradar.me/FB13291861
+class AccessibilityBridgeMacWindowTest : public AutoreleasePoolTest {
+ public:
+  AccessibilityBridgeMacWindowTest() {
+    if (!gWindow_) {
+      gWindow_ = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
+                                             styleMask:NSBorderlessWindowMask
+                                               backing:NSBackingStoreBuffered
+                                                 defer:NO];
+    }
+  }
+
+  NSWindow* GetWindow() const { return gWindow_; }
+
+ private:
+  static NSWindow* gWindow_;
+  FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgeMacWindowTest);
+};
+
+NSWindow* AccessibilityBridgeMacWindowTest::gWindow_ = nil;
+
+// Test-specific name for AutoreleasePoolTest fixture.
+using AccessibilityBridgeMacTest = AutoreleasePoolTest;
+
 }  // namespace
 
-TEST(AccessibilityBridgeMacTest, SendsAccessibilityCreateNotificationToWindowOfFlutterView) {
+TEST_F(AccessibilityBridgeMacWindowTest, SendsAccessibilityCreateNotificationFlutterViewWindow) {
   FlutterViewController* viewController = CreateTestViewController();
   FlutterEngine* engine = viewController.engine;
-
-  NSWindow* expectedTarget = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                         styleMask:NSBorderlessWindowMask
-                                                           backing:NSBackingStoreBuffered
-                                                             defer:NO];
+  NSWindow* expectedTarget = GetWindow();
   expectedTarget.contentView = viewController.view;
+
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
@@ -118,15 +144,12 @@ TEST(AccessibilityBridgeMacTest, SendsAccessibilityCreateNotificationToWindowOfF
 //        node1
 //          |
 //        node2
-TEST(AccessibilityBridgeMacTest, NonZeroRootNodeId) {
+TEST_F(AccessibilityBridgeMacWindowTest, NonZeroRootNodeId) {
   FlutterViewController* viewController = CreateTestViewController();
   FlutterEngine* engine = viewController.engine;
-
-  NSWindow* expectedTarget = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
-                                                         styleMask:NSBorderlessWindowMask
-                                                           backing:NSBackingStoreBuffered
-                                                             defer:NO];
+  NSWindow* expectedTarget = GetWindow();
   expectedTarget.contentView = viewController.view;
+
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
@@ -187,7 +210,7 @@ TEST(AccessibilityBridgeMacTest, NonZeroRootNodeId) {
   [engine shutDownEngine];
 }
 
-TEST(AccessibilityBridgeMacTest, DoesNotSendAccessibilityCreateNotificationWhenHeadless) {
+TEST_F(AccessibilityBridgeMacTest, DoesNotSendAccessibilityCreateNotificationWhenHeadless) {
   FlutterViewController* viewController = CreateTestViewController();
   FlutterEngine* engine = viewController.engine;
 
@@ -233,7 +256,7 @@ TEST(AccessibilityBridgeMacTest, DoesNotSendAccessibilityCreateNotificationWhenH
   [engine shutDownEngine];
 }
 
-TEST(AccessibilityBridgeMacTest, DoesNotSendAccessibilityCreateNotificationWhenNoWindow) {
+TEST_F(AccessibilityBridgeMacTest, DoesNotSendAccessibilityCreateNotificationWhenNoWindow) {
   FlutterViewController* viewController = CreateTestViewController();
   FlutterEngine* engine = viewController.engine;
 

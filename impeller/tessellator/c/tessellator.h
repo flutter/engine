@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TESSELLATOR_C_TESSELLATOR_H_
+#define FLUTTER_IMPELLER_TESSELLATOR_C_TESSELLATOR_H_
+
+#include <cstdint>
 
 #include "impeller/geometry/path_builder.h"
 #include "impeller/tessellator/tessellator.h"
@@ -48,3 +51,5 @@ IMPELLER_API void DestroyVertices(Vertices* vertices);
 
 }  // namespace impeller
 }
+
+#endif  // FLUTTER_IMPELLER_TESSELLATOR_C_TESSELLATOR_H_

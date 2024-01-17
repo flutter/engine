@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_CONTENTS_FILTER_INPUT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_CONTENTS_FILTER_INPUT_H_
 
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
@@ -24,6 +25,11 @@ class FilterContentsFilterInput final : public FilterInput {
 
   // |FilterInput|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |FilterInput|
+  std::optional<Rect> GetSourceCoverage(
+      const Matrix& effect_transform,
+      const Rect& output_limit) const override;
 
   // |FilterInput|
   Matrix GetLocalTransform(const Entity& entity) const override;
@@ -61,3 +67,5 @@ class FilterContentsFilterInput final : public FilterInput {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_CONTENTS_FILTER_INPUT_H_

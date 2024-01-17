@@ -98,7 +98,7 @@ typedef CanvasPath Path;
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
-  V(PlatformConfigurationNativeApi::Render, 2)                        \
+  V(PlatformConfigurationNativeApi::Render, 1)                        \
   V(PlatformConfigurationNativeApi::UpdateSemantics, 1)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings, 1)         \
   V(PlatformConfigurationNativeApi::SetIsolateDebugName, 1)           \
@@ -217,7 +217,12 @@ typedef CanvasPath Path;
   V(Paragraph, computeLineMetrics, 1)                  \
   V(Paragraph, didExceedMaxLines, 1)                   \
   V(Paragraph, dispose, 1)                             \
+  V(Paragraph, getClosestGlyphInfo, 3)                 \
+  V(Paragraph, getGlyphInfoAt, 2)                      \
   V(Paragraph, getLineBoundary, 2)                     \
+  V(Paragraph, getLineMetricsAt, 3)                    \
+  V(Paragraph, getLineNumberAt, 2)                     \
+  V(Paragraph, getNumberOfLines, 1)                    \
   V(Paragraph, getPositionForOffset, 3)                \
   V(Paragraph, getRectsForPlaceholders, 1)             \
   V(Paragraph, getRectsForRange, 5)                    \

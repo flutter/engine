@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -21,7 +22,7 @@ class ClipContents final : public Contents {
 
   ~ClipContents();
 
-  void SetGeometry(std::unique_ptr<Geometry> geometry);
+  void SetGeometry(const std::shared_ptr<Geometry>& geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
@@ -35,7 +36,7 @@ class ClipContents final : public Contents {
 
   // |Contents|
   bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& clip_coverage) const override;
+                    const std::optional<Rect> clip_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -48,10 +49,12 @@ class ClipContents final : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
  private:
-  std::unique_ptr<Geometry> geometry_;
+  std::shared_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ClipContents);
+  ClipContents(const ClipContents&) = delete;
+
+  ClipContents& operator=(const ClipContents&) = delete;
 };
 
 class ClipRestoreContents final : public Contents {
@@ -63,7 +66,7 @@ class ClipRestoreContents final : public Contents {
   /// @brief  The area on the pass texture where this clip restore will be
   ///         applied. If unset, the entire pass texture will be restored.
   ///
-  /// @note   This rectangle is not transformed by the entity's transformation.
+  /// @note   This rectangle is not transformed by the entity's transform.
   void SetRestoreCoverage(std::optional<Rect> coverage);
 
   // |Contents|
@@ -76,7 +79,7 @@ class ClipRestoreContents final : public Contents {
 
   // |Contents|
   bool ShouldRender(const Entity& entity,
-                    const std::optional<Rect>& clip_coverage) const override;
+                    const std::optional<Rect> clip_coverage) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
@@ -92,7 +95,11 @@ class ClipRestoreContents final : public Contents {
  private:
   std::optional<Rect> restore_coverage_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ClipRestoreContents);
+  ClipRestoreContents(const ClipRestoreContents&) = delete;
+
+  ClipRestoreContents& operator=(const ClipRestoreContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_

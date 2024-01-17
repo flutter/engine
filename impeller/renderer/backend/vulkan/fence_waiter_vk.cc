@@ -43,7 +43,13 @@ class WaitSetEntry {
       : fence_(std::move(p_fence)),
         callback_(fml::ScopedCleanupClosure{p_callback}) {}
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(WaitSetEntry);
+  WaitSetEntry(const WaitSetEntry&) = delete;
+
+  WaitSetEntry(WaitSetEntry&&) = delete;
+
+  WaitSetEntry& operator=(const WaitSetEntry&) = delete;
+
+  WaitSetEntry& operator=(WaitSetEntry&&) = delete;
 };
 
 FenceWaiterVK::FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder)
@@ -58,7 +64,6 @@ FenceWaiterVK::~FenceWaiterVK() {
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
-  TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
   if (!fence || !callback) {
     return false;
   }
@@ -86,7 +91,7 @@ static std::vector<vk::Fence> GetFencesForWaitSet(const WaitSet& set) {
 
 void FenceWaiterVK::Main() {
   fml::Thread::SetCurrentThreadName(
-      fml::Thread::ThreadConfig{"io.flutter.impeller.fence_waiter"});
+      fml::Thread::ThreadConfig{"IplrVkFenceWait"});
   // Since this thread mostly waits on fences, it doesn't need to be fast.
   fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
 

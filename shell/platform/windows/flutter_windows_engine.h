@@ -23,6 +23,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
+#include "flutter/shell/platform/windows/compositor.h"
 #include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/flutter_desktop_messenger.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
@@ -78,7 +79,9 @@ static void WindowsPlatformThreadPrioritySetter(
 class FlutterWindowsEngine {
  public:
   // Creates a new Flutter engine object configured to run |project|.
-  explicit FlutterWindowsEngine(const FlutterProjectBundle& project);
+  FlutterWindowsEngine(
+      const FlutterProjectBundle& project,
+      std::shared_ptr<WindowsProcTable> windows_proc_table = nullptr);
 
   virtual ~FlutterWindowsEngine();
 
@@ -100,7 +103,7 @@ class FlutterWindowsEngine {
   bool Run(std::string_view entrypoint);
 
   // Returns true if the engine is currently running.
-  bool running() { return engine_ != nullptr; }
+  virtual bool running() const { return engine_ != nullptr; }
 
   // Stops the engine. This invalidates the pointer returned by engine().
   //
@@ -139,7 +142,9 @@ class FlutterWindowsEngine {
 
   // The ANGLE surface manager object. If this is nullptr, then we are
   // rendering using software instead of OpenGL.
-  AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
+  AngleSurfaceManager* surface_manager() const {
+    return surface_manager_.get();
+  }
 
   WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
@@ -199,7 +204,7 @@ class FlutterWindowsEngine {
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
   // Posts the given callback onto the raster thread.
-  virtual bool PostRasterThreadTask(fml::closure callback);
+  virtual bool PostRasterThreadTask(fml::closure callback) const;
 
   // Invoke on the embedder's vsync callback to schedule a frame.
   void OnVsync(intptr_t baton);
@@ -215,11 +220,11 @@ class FlutterWindowsEngine {
   // Returns true if the semantics tree is enabled.
   bool semantics_enabled() const { return semantics_enabled_; }
 
-  // Update the high contrast feature state.
-  void UpdateHighContrastEnabled(bool enabled);
+  // Refresh accessibility features and send them to the engine.
+  void UpdateAccessibilityFeatures();
 
-  // Returns the flags for all currently enabled accessibility features
-  int EnabledAccessibilityFeatures() const;
+  // Refresh high contrast accessibility mode and notify the engine.
+  void UpdateHighContrastMode();
 
   // Returns true if the high contrast feature is enabled.
   bool high_contrast_enabled() const { return high_contrast_enabled_; }
@@ -239,9 +244,6 @@ class FlutterWindowsEngine {
 
   // Returns the executable name for this process or "Flutter" if unknown.
   std::string GetExecutableName() const;
-
-  // Updates accessibility, e.g. switch to high contrast mode
-  void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
   // Called when the application quits in response to a quit request.
   void OnQuit(std::optional<HWND> hwnd,
@@ -272,6 +274,10 @@ class FlutterWindowsEngine {
 
   WindowsLifecycleManager* lifecycle_manager() {
     return lifecycle_manager_.get();
+  }
+
+  std::shared_ptr<WindowsProcTable> windows_proc_table() {
+    return windows_proc_table_;
   }
 
  protected:
@@ -320,6 +326,9 @@ class FlutterWindowsEngine {
   // Calling this method again resets the keyboard state.
   void InitializeKeyboard();
 
+  // Send the currently enabled accessibility features to the engine.
+  void SendAccessibilityFeatures();
+
   void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
                                   const FlutterDesktopMessage* message);
 
@@ -354,13 +363,14 @@ class FlutterWindowsEngine {
   // The texture registrar.
   std::unique_ptr<FlutterWindowsTextureRegistrar> texture_registrar_;
 
-  // Resolved OpenGL functions used by external texture implementations.
-  GlProcs gl_procs_ = {};
-
   // An object used for intializing Angle and creating / destroying render
   // surfaces. Surface creation functionality requires a valid render_target.
   // May be nullptr if ANGLE failed to initialize.
   std::unique_ptr<AngleSurfaceManager> surface_manager_;
+
+  // The compositor that creates backing stores for the engine to render into
+  // and then presents them onto views.
+  std::unique_ptr<Compositor> compositor_;
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
@@ -414,7 +424,9 @@ class FlutterWindowsEngine {
   // Handler for top level window messages.
   std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;
 
-  WindowsProcTable windows_proc_table_;
+  std::shared_ptr<WindowsProcTable> windows_proc_table_;
+
+  std::shared_ptr<GlProcTable> gl_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

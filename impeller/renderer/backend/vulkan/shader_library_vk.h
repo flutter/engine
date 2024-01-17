@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_LIBRARY_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_LIBRARY_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
@@ -51,7 +52,11 @@ class ShaderLibraryVK final : public ShaderLibrary {
   // |ShaderLibrary|
   void UnregisterFunction(std::string name, ShaderStage stage) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderLibraryVK);
+  ShaderLibraryVK(const ShaderLibraryVK&) = delete;
+
+  ShaderLibraryVK& operator=(const ShaderLibraryVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_LIBRARY_VK_H_

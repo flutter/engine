@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
+#define FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
-#include "flutter/fml/macros.h"
 #include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/paint.h"
 
@@ -25,9 +25,6 @@ class DlDispatcher final : public flutter::DlOpReceiver {
 
   // |flutter::DlOpReceiver|
   void setAntiAlias(bool aa) override;
-
-  // |flutter::DlOpReceiver|
-  void setDither(bool dither) override;
 
   // |flutter::DlOpReceiver|
   void setDrawStyle(flutter::DlDrawStyle style) override;
@@ -229,7 +226,15 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   CanvasType canvas_;
   Matrix initial_matrix_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DlDispatcher);
+  static void SimplifyOrDrawPath(CanvasType& canvas,
+                                 const SkPath& path,
+                                 const Paint& paint);
+
+  DlDispatcher(const DlDispatcher&) = delete;
+
+  DlDispatcher& operator=(const DlDispatcher&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_

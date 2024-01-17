@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreImage/CoreImage.h>
@@ -31,9 +32,13 @@ class MetalScreenshot {
  private:
   friend class MetalScreenshotter;
   explicit MetalScreenshot(CGImageRef cgImage);
-  FML_DISALLOW_COPY_AND_ASSIGN(MetalScreenshot);
+  MetalScreenshot(const MetalScreenshot&) = delete;
+
+  MetalScreenshot& operator=(const MetalScreenshot&) = delete;
   CGImageRef cg_image_;
   CFDataRef pixel_data_;
 };
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_

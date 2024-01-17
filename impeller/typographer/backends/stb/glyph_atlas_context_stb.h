@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_GLYPH_ATLAS_CONTEXT_STB_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_GLYPH_ATLAS_CONTEXT_STB_H_
 
 #include "impeller/base/backend_cast.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -53,7 +54,11 @@ class GlyphAtlasContextSTB
  private:
   std::shared_ptr<BitmapSTB> bitmap_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContextSTB);
+  GlyphAtlasContextSTB(const GlyphAtlasContextSTB&) = delete;
+
+  GlyphAtlasContextSTB& operator=(const GlyphAtlasContextSTB&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_GLYPH_ATLAS_CONTEXT_STB_H_

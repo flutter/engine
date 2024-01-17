@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_TYPES_H_
+#define FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_TYPES_H_
 
 namespace impeller {
 
@@ -12,4 +13,12 @@ enum class ArchiveShaderType {
   kCompute,
 };
 
+enum class ArchiveRenderingBackend {
+  kMetal,
+  kVulkan,
+  kOpenGLES,
+};
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_TYPES_H_

@@ -5,9 +5,9 @@
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
-import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../view_embedder/style_manager.dart';
 import 'layout_fragmenter.dart';
 import 'layout_service.dart';
 import 'paint_service.dart';
@@ -40,7 +40,7 @@ class CanvasParagraph implements ui.Paragraph {
   final EngineParagraphStyle paragraphStyle;
 
   /// The full textual content of the paragraph.
-  late String plainText;
+  final String plainText;
 
   /// Whether this paragraph can be drawn on a bitmap canvas.
   ///
@@ -206,6 +206,35 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   @override
+  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) => _layoutService.getClosestGlyphInfo(offset);
+
+  @override
+  ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
+    final int? lineNumber = _findLine(codeUnitOffset, 0, numberOfLines);
+    if (lineNumber == null) {
+      return null;
+    }
+    final ParagraphLine line = lines[lineNumber];
+    final ui.TextRange? range = line.getCharacterRangeAt(codeUnitOffset);
+    if (range == null) {
+      return null;
+    }
+    assert(line.overlapsWith(range.start, range.end));
+    for (final LayoutFragment fragment in line.fragments) {
+      if (fragment.overlapsWith(range.start, range.end)) {
+        // If the grapheme cluster is split into multiple fragments (which really
+        // shouldn't happen but currently if they are in different TextSpans they
+        // don't combine), use the layout box of the first base character as its
+        // layout box has a better chance to be not that far-off.
+        final ui.TextBox textBox = fragment.toTextBox(start: range.start, end: range.end);
+        return ui.GlyphInfo(textBox.toRect(), range, textBox.direction);
+      }
+    }
+    assert(false, 'This should not be reachable.');
+    return null;
+  }
+
+  @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     final int characterPosition;
     switch (position.affinity) {
@@ -221,23 +250,51 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    final int index = position.offset;
-
-    int i;
-    for (i = 0; i < lines.length - 1; i++) {
-      final ParagraphLine line = lines[i];
-      if (index >= line.startIndex && index < line.endIndex) {
-        break;
-      }
+    if (lines.isEmpty) {
+      return ui.TextRange.empty;
     }
-
-    final ParagraphLine line = lines[i];
+    final int? lineNumber = getLineNumberAt(position.offset);
+    // Fallback to the last line for backward compatibility.
+    final ParagraphLine line = lineNumber != null ? lines[lineNumber] : lines.last;
     return ui.TextRange(start: line.startIndex, end: line.endIndex - line.trailingNewlines);
   }
 
   @override
   List<EngineLineMetrics> computeLineMetrics() {
     return lines.map((ParagraphLine line) => line.lineMetrics).toList();
+  }
+
+  @override
+  EngineLineMetrics? getLineMetricsAt(int lineNumber) {
+    return 0 <= lineNumber && lineNumber < lines.length
+      ? lines[lineNumber].lineMetrics
+      : null;
+  }
+
+  @override
+  int get numberOfLines => lines.length;
+
+  @override
+  int? getLineNumberAt(int codeUnitOffset) => _findLine(codeUnitOffset, 0, lines.length);
+
+  int? _findLine(int codeUnitOffset, int startLine, int endLine) {
+    assert(endLine <= lines.length);
+    final bool isOutOfBounds = endLine <= startLine
+                            || codeUnitOffset < lines[startLine].startIndex
+                            || (endLine < numberOfLines && lines[endLine].startIndex <= codeUnitOffset);
+    if (isOutOfBounds) {
+      return null;
+    }
+
+    if (endLine == startLine + 1) {
+      assert(lines[startLine].startIndex <= codeUnitOffset);
+      assert(endLine == numberOfLines || codeUnitOffset < lines[endLine].startIndex);
+      return codeUnitOffset >= lines[startLine].visibleEndIndex ? null : startLine;
+    }
+    // endLine >= startLine + 2 thus we have
+    // startLine + 1 <= midIndex <= endLine - 1
+    final int midIndex = (startLine + endLine) ~/ 2;
+    return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
   }
 
   bool _disposed = false;
@@ -374,6 +431,7 @@ abstract class StyleNode {
         letterSpacing: _letterSpacing,
         wordSpacing: _wordSpacing,
         height: _height,
+        leadingDistribution: _leadingDistribution,
         locale: _locale,
         background: _background,
         foreground: _foreground,
@@ -399,6 +457,7 @@ abstract class StyleNode {
   double? get _letterSpacing;
   double? get _wordSpacing;
   double? get _height;
+  ui.TextLeadingDistribution? get _leadingDistribution;
   ui.Locale? get _locale;
   ui.Paint? get _background;
   ui.Paint? get _foreground;
@@ -465,6 +524,9 @@ class ChildStyleNode extends StyleNode {
   double? get _height => style.height ?? parent._height;
 
   @override
+  ui.TextLeadingDistribution? get _leadingDistribution => style.leadingDistribution ?? parent._leadingDistribution;
+
+  @override
   ui.Locale? get _locale => style.locale ?? parent._locale;
 
   @override
@@ -518,7 +580,7 @@ class RootStyleNode extends StyleNode {
   ui.TextBaseline? get _textBaseline => null;
 
   @override
-  String get _fontFamily => paragraphStyle.fontFamily ?? FlutterViewEmbedder.defaultFontFamily;
+  String get _fontFamily => paragraphStyle.fontFamily ?? StyleManager.defaultFontFamily;
 
   @override
   List<String>? get _fontFamilyFallback => null;
@@ -530,7 +592,7 @@ class RootStyleNode extends StyleNode {
   List<ui.FontVariation>? get _fontVariations => null;
 
   @override
-  double get _fontSize => paragraphStyle.fontSize ?? FlutterViewEmbedder.defaultFontSize;
+  double get _fontSize => paragraphStyle.fontSize ?? StyleManager.defaultFontSize;
 
   @override
   double? get _letterSpacing => null;
@@ -540,6 +602,9 @@ class RootStyleNode extends StyleNode {
 
   @override
   double? get _height => paragraphStyle.height;
+
+  @override
+  ui.TextLeadingDistribution? get _leadingDistribution => null;
 
   @override
   ui.Locale? get _locale => paragraphStyle.locale;

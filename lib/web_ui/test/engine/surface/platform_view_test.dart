@@ -11,16 +11,16 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
+import '../../common/test_initialization.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineFlutterWindow window = EngineFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await ui_web.bootstrapEngine();
+  await bootstrapAndRunApp();
 
   late PersistedPlatformView view;
 
@@ -104,7 +104,7 @@ Future<void> testMain() async {
 // Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> _createPlatformView(int id, String viewType) {
   final Completer<void> completer = Completer<void>();
-  window.sendPlatformMessage(
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
       'create',

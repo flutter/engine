@@ -8,24 +8,18 @@
 
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/host_buffer.h"
-#include "impeller/renderer/blit_command.h"
+#include "impeller/core/formats.h"
 
 namespace impeller {
 
-BlitPass::BlitPass() : transients_buffer_(HostBuffer::Create()) {}
+BlitPass::BlitPass() {}
 
 BlitPass::~BlitPass() = default;
-
-HostBuffer& BlitPass::GetTransientsBuffer() {
-  return *transients_buffer_;
-}
 
 void BlitPass::SetLabel(std::string label) {
   if (label.empty()) {
     return;
   }
-  transients_buffer_->SetLabel(SPrintF("%s Transients", label.c_str()));
   OnSetLabel(std::move(label));
 }
 
@@ -52,6 +46,16 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
         static_cast<int>(destination->GetTextureDescriptor().sample_count));
     return false;
   }
+  if (source->GetTextureDescriptor().format !=
+      destination->GetTextureDescriptor().format) {
+    VALIDATION_LOG << SPrintF(
+        "The source pixel format (%s) must match the destination pixel format "
+        "(%s) "
+        "for blits.",
+        PixelFormatToString(source->GetTextureDescriptor().format),
+        PixelFormatToString(destination->GetTextureDescriptor().format));
+    return false;
+  }
 
   if (!source_region.has_value()) {
     source_region = IRect::MakeSize(source->GetSize());
@@ -66,7 +70,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
   // Clip the destination image.
   source_region = source_region->Intersection(
-      IRect(-destination_origin, destination->GetSize()));
+      IRect::MakeOriginSize(-destination_origin, destination->GetSize()));
   if (!source_region.has_value()) {
     return true;  // Nothing to blit.
   }
@@ -96,7 +100,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
   auto bytes_per_pixel =
       BytesPerPixelForPixelFormat(source->GetTextureDescriptor().format);
-  auto bytes_per_image = source_region->size.Area() * bytes_per_pixel;
+  auto bytes_per_image = source_region->Area() * bytes_per_pixel;
   if (destination_offset + bytes_per_image >
       destination->GetDeviceBufferDescriptor().size) {
     VALIDATION_LOG

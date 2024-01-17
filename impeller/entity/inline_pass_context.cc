@@ -6,11 +6,13 @@
 
 #include <utility>
 
+#include "flutter/fml/status.h"
+#include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/entity_pass_target.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/texture_mipmap.h"
 
 namespace impeller {
 
@@ -18,10 +20,11 @@ InlinePassContext::InlinePassContext(
     std::shared_ptr<Context> context,
     EntityPassTarget& pass_target,
     uint32_t pass_texture_reads,
+    uint32_t entity_count,
     std::optional<RenderPassResult> collapsed_parent_pass)
     : context_(std::move(context)),
       pass_target_(pass_target),
-      total_pass_reads_(pass_texture_reads),
+      entity_count_(entity_count),
       is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
     pass_ = collapsed_parent_pass.value().pass;
@@ -55,10 +58,19 @@ bool InlinePassContext::EndPass() {
   }
 
   if (command_buffer_) {
-    if (!command_buffer_->SubmitCommandsAsync(std::move(pass_))) {
+    if (!command_buffer_->EncodeAndSubmit(pass_)) {
       VALIDATION_LOG
           << "Failed to encode and submit command buffer while ending "
              "render pass.";
+      return false;
+    }
+  }
+
+  std::shared_ptr<Texture> target_texture =
+      GetPassTarget().GetRenderTarget().GetRenderTargetTexture();
+  if (target_texture->GetMipCount() > 1) {
+    fml::Status mip_status = AddMipmapGeneration(context_, target_texture);
+    if (!mip_status.ok()) {
       return false;
     }
   }
@@ -140,17 +152,9 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     return {};
   }
 
-  // Only clear the stencil if this is the very first pass of the
-  // layer.
-  stencil->load_action =
-      pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
-  // If we're on the last pass of the layer, there's no need to store the
-  // stencil because nothing needs to read it.
-  stencil->store_action = pass_count_ == total_pass_reads_
-                              ? StoreAction::kDontCare
-                              : StoreAction::kStore;
+  stencil->load_action = LoadAction::kClear;
+  stencil->store_action = StoreAction::kDontCare;
   pass_target_.target_.SetStencilAttachment(stencil.value());
-
   pass_target_.target_.SetColorAttachment(color0, 0);
 
   pass_ = command_buffer_->CreateRenderPass(pass_target_.GetRenderTarget());
@@ -158,7 +162,10 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     VALIDATION_LOG << "Could not create render pass.";
     return {};
   }
-
+  // Commands are fairly large (500B) objects, so re-allocation of the command
+  // buffer while encoding can add a surprising amount of overhead. We make a
+  // conservative npot estimate to avoid this case.
+  pass_->ReserveCommands(Allocation::NextPowerOfTwoSize(entity_count_));
   pass_->SetLabel(
       "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
       " Count=" + std::to_string(pass_count_));

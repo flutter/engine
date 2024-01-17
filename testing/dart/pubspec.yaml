@@ -17,8 +17,10 @@ environment:
   sdk: '>=3.2.0-0 <4.0.0'
 
 dependencies:
+  ffi: any
   litetest: any
   path: any
+  skia_gold_client: any
   sky_engine: any
   vector_math: any
   vm_service: any
@@ -29,8 +31,16 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/async_helper
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
+  crypto:
+    path: ../../../third_party/dart/third_party/pkg/crypto
+  engine_repo_tools:
+    path: ../../tools/pkg/engine_repo_tools
   expect:
     path: ../../../third_party/dart/pkg/expect
+  file:
+    path: ../../../third_party/dart/third_party/pkg/file/packages/file
+  ffi:
+    path: ../../../third_party/dart/third_party/pkg/ffi
   fixnum:
     path: ../../../third_party/dart/third_party/pkg/fixnum
   litetest:
@@ -39,14 +49,22 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/meta
   path:
     path: ../../../third_party/dart/third_party/pkg/path
+  platform:
+    path: ../../third_party/pkg/platform
+  process:
+    path: ../../third_party/pkg/process
   protobuf:
     path: ../../../third_party/dart/third_party/pkg/protobuf/protobuf
   smith:
     path: ../../../third_party/dart/pkg/smith
+  skia_gold_client:
+    path: ../skia_gold_client
   sky_engine:
     path: ../../sky/packages/sky_engine
+  typed_data:
+    path: ../../../third_party/dart/third_party/pkg/typed_data
   vector_math:
-    path: ../../../third_party/pkg/vector_math
+    path: ../../third_party/pkg/vector_math
   vm_service:
     path: ../../../third_party/dart/pkg/vm_service
   vm_service_protos:

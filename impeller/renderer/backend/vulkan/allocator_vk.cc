@@ -12,6 +12,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -90,8 +91,6 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          const vk::Instance& instance,
                          const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
-  TRACE_EVENT0("impeller", "CreateAllocatorVK");
-
   auto limits = physical_device.getProperties().limits;
   max_texture_size_.width = max_texture_size_.height =
       limits.maxImageDimension2D;
@@ -148,6 +147,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   allocator_.reset(allocator);
   supports_memoryless_textures_ =
       capabilities.SupportsDeviceTransientTextures();
+  supports_framebuffer_fetch_ = capabilities.SupportsFramebufferFetch();
   is_valid_ = true;
 }
 
@@ -167,7 +167,8 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
     PixelFormat format,
     TextureUsageMask usage,
     StorageMode mode,
-    bool supports_memoryless_textures) {
+    bool supports_memoryless_textures,
+    bool supports_framebuffer_fetch) {
   vk::ImageUsageFlags vk_usage;
 
   switch (mode) {
@@ -186,6 +187,9 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
+    }
+    if (supports_framebuffer_fetch) {
+      vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
     }
   }
 
@@ -263,10 +267,10 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                            const TextureDescriptor& desc,
                            VmaAllocator allocator,
                            vk::Device device,
-                           bool supports_memoryless_textures)
+                           bool supports_memoryless_textures,
+                           bool supports_framebuffer_fetch)
       : TextureSourceVK(desc), resource_(std::move(resource_manager)) {
     FML_DCHECK(desc.format != PixelFormat::kUnknown);
-    TRACE_EVENT0("impeller", "CreateDeviceTexture");
     vk::ImageCreateInfo image_info;
     image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
@@ -281,9 +285,9 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     image_info.arrayLayers = ToArrayLayerCount(desc.type);
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;
-    image_info.usage =
-        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode,
-                            supports_memoryless_textures);
+    image_info.usage = ToVKImageUsageFlags(
+        desc.format, desc.usage, desc.storage_mode,
+        supports_memoryless_textures, supports_framebuffer_fetch);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo alloc_nfo = {};
@@ -379,19 +383,22 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
       std::swap(image_view, o.image_view);
     }
 
-    FML_DISALLOW_COPY_AND_ASSIGN(ImageResource);
+    ImageResource(const ImageResource&) = delete;
+
+    ImageResource& operator=(const ImageResource&) = delete;
   };
 
   UniqueResourceVKT<ImageResource> resource_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatedTextureSourceVK);
+  AllocatedTextureSourceVK(const AllocatedTextureSourceVK&) = delete;
+
+  AllocatedTextureSourceVK& operator=(const AllocatedTextureSourceVK&) = delete;
 };
 
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
-  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateTexture");
   if (!IsValid()) {
     return nullptr;
   }
@@ -408,7 +415,8 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
       desc,                                            //
       allocator_.get(),                                //
       device_holder->GetDevice(),                      //
-      supports_memoryless_textures_                    //
+      supports_memoryless_textures_,                   //
+      supports_framebuffer_fetch_                      //
   );
   if (!source->IsValid()) {
     return nullptr;
@@ -424,7 +432,6 @@ void AllocatorVK::DidAcquireSurfaceFrame() {
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
-  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
   buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
                       vk::BufferUsageFlagBits::eIndexBuffer |

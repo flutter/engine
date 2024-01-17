@@ -29,6 +29,7 @@ uniform BlurInfo {
   // radius is used to limit how much of the function is integrated.
   float blur_sigma;
   float16_t blur_radius;
+  float16_t step_size;
 }
 blur_info;
 
@@ -48,8 +49,13 @@ void main() {
   f16vec4 total_color = f16vec4(0.0hf);
   float16_t gaussian_integral = 0.0hf;
 
+  // Step by 2.0 as a performance optimization, relying on bilinear filtering in
+  // the sampler to blend the texels. Typically the space between pixels is
+  // calculated so their blended amounts match the gaussian coefficients. This
+  // just uses 0.5 as an optimization until the gaussian coefficients are
+  // calculated and passed in from the cpu.
   for (float16_t i = -blur_info.blur_radius; i <= blur_info.blur_radius;
-       i += 2.0hf) {
+       i += blur_info.step_size) {
     // Use the 32 bit Gaussian function because the 16 bit variation results in
     // quality loss/visible banding. Also, 16 bit variation internally breaks
     // down at a moderately high (but still reasonable) blur sigma of >255 when

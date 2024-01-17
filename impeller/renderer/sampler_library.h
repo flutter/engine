@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
+#define FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_
 
-#include <unordered_map>
-
-#include "flutter/fml/macros.h"
+#include "impeller/core/sampler.h"
 #include "impeller/core/sampler_descriptor.h"
 
 namespace impeller {
@@ -22,7 +21,11 @@ class SamplerLibrary {
   SamplerLibrary();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(SamplerLibrary);
+  SamplerLibrary(const SamplerLibrary&) = delete;
+
+  SamplerLibrary& operator=(const SamplerLibrary&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_SAMPLER_LIBRARY_H_

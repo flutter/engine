@@ -14,16 +14,24 @@ void main() {
 void testMain() {
   group('initializeEngineServices', () {
     test('stores user configuration', () async {
-      // dev/test_platform.dart injects a global configuration object. Let's
-      // fetch that, override one of its properties (under test), then delete it
-      // from window (so our configuration asserts don't fire!)
-      final JsFlutterConfiguration config = js_util.getProperty(domWindow, 'flutterConfiguration');
+      final JsFlutterConfiguration config = JsFlutterConfiguration();
+      // `canvasKitBaseUrl` is required for the test to actually run.
+      js_util.setProperty(config, 'canvasKitBaseUrl', '/canvaskit/');
+      // A property under test, that we'll try to read later.
+      js_util.setProperty(config, 'nonce', 'some_nonce');
+      // A non-existing property to verify our js-interop doesn't crash.
       js_util.setProperty(config, 'canvasKitMaximumSurfaces', 32.0);
+
+      // Remove window.flutterConfiguration (if it's there)
       js_util.setProperty(domWindow, 'flutterConfiguration', null);
+
+      // TODO(web): Replace the above nullification by the following assertion
+      // when wasm and JS tests initialize their config the same way:
+      // assert(js_util.getProperty<Object?>(domWindow, 'flutterConfiguration') == null);
 
       await initializeEngineServices(jsConfiguration: config);
 
-      expect(configuration.canvasKitMaximumSurfaces, 32);
+      expect(configuration.nonce, 'some_nonce');
     });
   });
 }

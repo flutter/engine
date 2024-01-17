@@ -38,7 +38,7 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   // Create flutter Window for use as child window
   FlutterWindow(int width,
                 int height,
-                std::unique_ptr<WindowsProcTable> windows_proc_table = nullptr,
+                std::shared_ptr<WindowsProcTable> windows_proc_table = nullptr,
                 std::unique_ptr<TextInputManager> text_input_manager = nullptr);
 
   virtual ~FlutterWindow();
@@ -49,8 +49,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   void InitializeChild(const char* title,
                        unsigned int width,
                        unsigned int height);
-
-  HWND GetWindowHandle();
 
   // |KeyboardManager::WindowDelegate|
   virtual BOOL Win32PeekMessage(LPMSG lpMsg,
@@ -155,10 +153,7 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void SetView(WindowBindingHandlerDelegate* view) override;
 
   // |FlutterWindowBindingHandler|
-  virtual WindowsRenderTarget GetRenderTarget() override;
-
-  // |FlutterWindowBindingHandler|
-  virtual PlatformWindow GetPlatformWindow() override;
+  virtual HWND GetWindowHandle() override;
 
   // |FlutterWindowBindingHandler|
   virtual float GetDpiScale() override;
@@ -176,7 +171,7 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void SetFlutterCursor(HCURSOR cursor) override;
 
   // |FlutterWindowBindingHandler|
-  virtual void OnWindowResized() override;
+  virtual bool OnBitmapSurfaceCleared() override;
 
   // |FlutterWindowBindingHandler|
   virtual bool OnBitmapSurfaceUpdated(const void* allocation,
@@ -190,16 +185,10 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
   virtual void OnThemeChange();
 
   // |WindowBindingHandler|
-  virtual void SendInitialAccessibilityFeatures() override;
-
-  // |WindowBindingHandler|
   virtual AlertPlatformNodeDelegate* GetAlertDelegate() override;
 
   // |WindowBindingHandler|
   virtual ui::AXPlatformNodeWin* GetAlert() override;
-
-  // |WindowBindingHandler|
-  virtual bool NeedsVSync() override;
 
   // Called to obtain a pointer to the fragment root delegate.
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate();
@@ -280,9 +269,6 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
 
   // Returns the current pixel per scroll tick value.
   virtual float GetScrollOffsetMultiplier();
-
-  // Check if the high contrast feature is enabled on the OS
-  virtual bool GetHighContrastEnabled();
 
   // Delegate to a alert_node_ used to set the announcement text.
   std::unique_ptr<AlertPlatformNodeDelegate> alert_delegate_;
@@ -381,7 +367,7 @@ class FlutterWindow : public KeyboardManager::WindowDelegate,
 
   // Abstracts Windows APIs that may not be available on all supported versions
   // of Windows.
-  std::unique_ptr<WindowsProcTable> windows_proc_table_;
+  std::shared_ptr<WindowsProcTable> windows_proc_table_;
 
   // Manages IME state.
   std::unique_ptr<TextInputManager> text_input_manager_;

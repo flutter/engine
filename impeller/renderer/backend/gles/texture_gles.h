@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -19,6 +19,7 @@ class TextureGLES final : public Texture,
     kTexture,
     kTextureMultisampled,
     kRenderBuffer,
+    kRenderBufferMultisampled,
   };
 
   enum class IsWrapped {
@@ -89,7 +90,11 @@ class TextureGLES final : public Texture,
 
   void InitializeContentsIfNecessary() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureGLES);
+  TextureGLES(const TextureGLES&) = delete;
+
+  TextureGLES& operator=(const TextureGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_

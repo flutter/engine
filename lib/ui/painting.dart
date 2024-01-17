@@ -1090,10 +1090,7 @@ enum Clip {
 class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  Paint() {
-    // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
-    _enableDithering();
-  }
+  Paint();
 
   // Paint objects are encoded in two buffers:
   //
@@ -1126,7 +1123,6 @@ class Paint {
   static const int _kMaskFilterBlurStyleIndex = 10;
   static const int _kMaskFilterSigmaIndex = 11;
   static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1141,9 +1137,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-  static const int _kDitherOffset = _kDitherIndex << 2;
+
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
+  static const int _kDataByteCount = 52; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1478,11 +1474,6 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
-  // TODO(matanlurey): Remove as part of https://github.com/flutter/flutter/issues/112498.
-  void _enableDithering() {
-    _data.setInt32(_kDitherOffset, 1, _kFakeHostEndian);
-  }
-
   @override
   String toString() {
     if (const bool.fromEnvironment('dart.vm.product')) {
@@ -1510,7 +1501,7 @@ class Paint {
       }
       semicolon = '; ';
     }
-    if (isAntiAlias != true) {
+    if (!isAntiAlias) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
@@ -1977,6 +1968,11 @@ base class _Image extends NativeFieldWrapperClass1 {
 
   @override
   String toString() => '[$width\u00D7$height]';
+}
+
+@pragma('vm:entry-point')
+Image _wrapImage(_Image image) {
+  return Image._(image, image.width, image.height);
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -5778,6 +5774,18 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
   external void save();
 
+  static Rect _sorted(Rect rect) {
+    if (rect.isEmpty) {
+      rect = Rect.fromLTRB(
+        math.min(rect.left, rect.right),
+        math.min(rect.top, rect.bottom),
+        math.max(rect.left, rect.right),
+        math.max(rect.top, rect.bottom),
+      );
+    }
+    return rect;
+  }
+
   @override
   void saveLayer(Rect? bounds, Paint paint) {
     if (bounds == null) {
@@ -5848,6 +5856,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
+    rect = _sorted(rect);
+    // Even if rect is still empty - which implies it has a zero dimension -
+    // we still need to perform the clipRect operation as it will effectively
+    // nullify any further rendering until the next restore call.
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
@@ -5920,7 +5932,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
@@ -5948,7 +5963,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
@@ -6868,9 +6886,7 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
       targetHeight = height;
     } else if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (width / height)).round();
-      targetHeight = targetHeight;
     } else if (targetHeight == null && targetWidth != null) {
-      targetWidth = targetWidth;
       targetHeight = targetWidth ~/ (width / height);
     }
     assert(targetWidth != null);

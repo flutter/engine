@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 
-#include <thread>
-#include <unordered_map>
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
@@ -90,7 +88,11 @@ class ContextGLES final : public Context,
   // |Context|
   void Shutdown() override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
+  ContextGLES(const ContextGLES&) = delete;
+
+  ContextGLES& operator=(const ContextGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_

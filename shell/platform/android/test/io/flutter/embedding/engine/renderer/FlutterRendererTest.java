@@ -3,6 +3,8 @@ package io.flutter.embedding.engine.renderer;
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -14,8 +16,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.media.Image;
 import android.os.Looper;
 import android.view.Surface;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -36,11 +40,19 @@ public class FlutterRendererTest {
 
   private FlutterJNI fakeFlutterJNI;
   private Surface fakeSurface;
+  private Surface fakeSurface2;
+
+  @Before
+  public void init() {
+    // Uncomment the following line to enable logging output in test.
+    // ShadowLog.stream = System.out;
+  }
 
   @Before
   public void setup() {
     fakeFlutterJNI = mock(FlutterJNI.class);
     fakeSurface = mock(Surface.class);
+    fakeSurface2 = mock(Surface.class);
   }
 
   @Test
@@ -50,7 +62,7 @@ public class FlutterRendererTest {
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
     // Execute the behavior under test.
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Verify the behavior under test.
     verify(fakeFlutterJNI, times(1)).onSurfaceCreated(eq(fakeSurface));
@@ -62,7 +74,7 @@ public class FlutterRendererTest {
     Surface fakeSurface = mock(Surface.class);
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute the behavior under test.
     flutterRenderer.surfaceChanged(100, 50);
@@ -77,7 +89,7 @@ public class FlutterRendererTest {
     Surface fakeSurface = mock(Surface.class);
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute the behavior under test.
     flutterRenderer.stopRenderingToSurface();
@@ -92,10 +104,10 @@ public class FlutterRendererTest {
     Surface fakeSurface2 = mock(Surface.class);
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute behavior under test.
-    flutterRenderer.startRenderingToSurface(fakeSurface2, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface2, false);
 
     // Verify behavior under test.
     verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed(); // notification of 1st surface's removal.
@@ -106,7 +118,7 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute the behavior under test.
     flutterRenderer.stopRenderingToSurface();
@@ -120,9 +132,9 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Verify behavior under test.
     verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed();
@@ -133,9 +145,9 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ true);
+    flutterRenderer.startRenderingToSurface(fakeSurface, true);
 
     // Verify behavior under test.
     verify(fakeFlutterJNI, never()).onSurfaceDestroyed();
@@ -151,7 +163,7 @@ public class FlutterRendererTest {
     FlutterRenderer.SurfaceTextureRegistryEntry entry =
         (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute the behavior under test.
     flutterRenderer.stopRenderingToSurface();
@@ -174,7 +186,7 @@ public class FlutterRendererTest {
         (FlutterRenderer.SurfaceTextureRegistryEntry)
             flutterRenderer.registerSurfaceTexture(surfaceTexture);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Verify behavior under test.
     assertEquals(surfaceTexture, entry.surfaceTexture());
@@ -195,7 +207,7 @@ public class FlutterRendererTest {
         (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
     long id = entry.id();
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute the behavior under test.
     runFinalization(entry);
@@ -221,7 +233,7 @@ public class FlutterRendererTest {
         (FlutterRenderer.SurfaceTextureRegistryEntry) flutterRenderer.createSurfaceTexture();
     long id = entry.id();
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     flutterRenderer.stopRenderingToSurface();
 
@@ -399,7 +411,7 @@ public class FlutterRendererTest {
     // Setup the test.
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
 
-    flutterRenderer.startRenderingToSurface(fakeSurface, /*keepCurrentSurface=*/ false);
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
 
     // Execute the behavior under test.
     // Simulate calling |FlutterRenderer#stopRenderingToSurface| twice with different code paths.
@@ -408,5 +420,183 @@ public class FlutterRendererTest {
 
     // Verify behavior under test.
     verify(fakeFlutterJNI, times(1)).onSurfaceDestroyed();
+  }
+
+  @Test
+  public void itInvokesCreatesSurfaceWhenStartingRendering() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
+    verify(fakeFlutterJNI, times(1)).onSurfaceCreated(eq(fakeSurface));
+  }
+
+  @Test
+  public void itDoesNotInvokeCreatesSurfaceWhenResumingRendering() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
+    // The following call sequence mimics the behaviour of FlutterView when it exits from hybrid
+    // composition mode.
+
+    // Install initial rendering surface.
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
+    verify(fakeFlutterJNI, times(1)).onSurfaceCreated(eq(fakeSurface));
+    verify(fakeFlutterJNI, times(0)).onSurfaceWindowChanged(eq(fakeSurface));
+
+    // Install the image view.
+    flutterRenderer.startRenderingToSurface(fakeSurface2, true);
+    verify(fakeFlutterJNI, times(1)).onSurfaceCreated(eq(fakeSurface));
+    verify(fakeFlutterJNI, times(0)).onSurfaceWindowChanged(eq(fakeSurface));
+    verify(fakeFlutterJNI, times(0)).onSurfaceCreated(eq(fakeSurface2));
+    verify(fakeFlutterJNI, times(1)).onSurfaceWindowChanged(eq(fakeSurface2));
+
+    flutterRenderer.startRenderingToSurface(fakeSurface, true);
+    verify(fakeFlutterJNI, times(1)).onSurfaceCreated(eq(fakeSurface));
+    verify(fakeFlutterJNI, times(1)).onSurfaceWindowChanged(eq(fakeSurface));
+    verify(fakeFlutterJNI, times(0)).onSurfaceCreated(eq(fakeSurface2));
+    verify(fakeFlutterJNI, times(1)).onSurfaceWindowChanged(eq(fakeSurface2));
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerProducesImageOfCorrectSize() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+    texture.disableFenceForTest();
+
+    // Returns a null image when one hasn't been produced.
+    assertNull(texture.acquireLatestImage());
+
+    // Give the texture an initial size.
+    texture.setSize(1, 1);
+
+    // Render a frame.
+    Surface surface = texture.getSurface();
+    assertNotNull(surface);
+    Canvas canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // Extract the image and check its size.
+    Image image = texture.acquireLatestImage();
+    assertEquals(1, image.getWidth());
+    assertEquals(1, image.getHeight());
+    image.close();
+
+    // Resize the texture.
+    texture.setSize(5, 5);
+
+    // Render a frame.
+    surface = texture.getSurface();
+    assertNotNull(surface);
+    canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // Extract the image and check its size.
+    image = texture.acquireLatestImage();
+    assertEquals(5, image.getWidth());
+    assertEquals(5, image.getHeight());
+    image.close();
+
+    assertNull(texture.acquireLatestImage());
+
+    texture.release();
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerSkipsFramesWhenResizeInflight() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+    texture.disableFenceForTest();
+
+    // Returns a null image when one hasn't been produced.
+    assertNull(texture.acquireLatestImage());
+
+    // Give the texture an initial size.
+    texture.setSize(1, 1);
+
+    // Render a frame.
+    Surface surface = texture.getSurface();
+    assertNotNull(surface);
+    Canvas canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Resize.
+    texture.setSize(4, 4);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // We should not get a new frame because the produced frame was for the previous size.
+    assertNull(texture.acquireLatestImage());
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerHandlesLateFrameWhenResizeInflight() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+    texture.disableFenceForTest();
+
+    // Returns a null image when one hasn't been produced.
+    assertNull(texture.acquireLatestImage());
+
+    // Give the texture an initial size.
+    texture.setSize(1, 1);
+
+    // Grab the surface so we can render a frame at 1x1 after resizing.
+    Surface surface = texture.getSurface();
+    assertNotNull(surface);
+    Canvas canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run, this will produce a single frame.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // Resize.
+    texture.setSize(4, 4);
+
+    // Render a frame at the old size (by using the pre-resized Surface)
+    canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // We will acquire a frame that is the old size.
+    Image produced = texture.acquireLatestImage();
+    assertNotNull(produced);
+    assertEquals(produced.getWidth(), 1);
+    assertEquals(produced.getHeight(), 1);
+
+    // We will still have one pending reader to be closed.
+    // If we didn't we would have closed the reader that owned the image we just acquired.
+    assertEquals(1, texture.readersToCloseSize());
+
+    // Render a new frame with the current size.
+    surface = texture.getSurface();
+    assertNotNull(surface);
+    canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // Acquire the new image.
+    assertNotNull(texture.acquireLatestImage());
+
+    // We will have no pending readers to close.
+    assertEquals(0, texture.readersToCloseSize());
   }
 }

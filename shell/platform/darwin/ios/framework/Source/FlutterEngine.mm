@@ -11,6 +11,7 @@
 #include "flutter/common/constants.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/engine.h"
@@ -116,9 +117,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory;
 
-  fml::WeakPtr<FlutterViewController> _viewController;
+  fml::WeakNSObject<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
@@ -189,7 +190,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
+  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(self);
 
   if (project == nil) {
     _dartProject.reset([[FlutterDartProject alloc] init]);
@@ -327,8 +328,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return *_shell;
 }
 
-- (fml::WeakPtr<FlutterEngine>)getWeakPtr {
-  return _weakFactory->GetWeakPtr();
+- (fml::WeakNSObject<FlutterEngine>)getWeakNSObject {
+  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
@@ -423,8 +424,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
-  _viewController =
-      viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
+  _viewController = viewController ? [viewController getWeakNSObject]
+                                   : fml::WeakNSObject<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
   [self updateDisplays];
@@ -584,7 +585,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)setUpChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
-  fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
                             if (weakSelf) {
@@ -674,7 +675,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   _undoManagerPlugin.reset(undoManagerPlugin);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakNSObject]]);
 
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
@@ -719,7 +720,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [platformPlugin handleMethodCall:call result:result];
     }];
 
-    fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+    fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
@@ -792,11 +793,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::RASTER |
-                            flutter::ThreadHost::Type::IO;
+  uint32_t threadHostType = flutter::ThreadHost::Type::kUi | flutter::ThreadHost::Type::kRaster |
+                            flutter::ThreadHost::Type::kIo;
 
   if ([FlutterEngine isProfilerEnabled]) {
-    threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
+    threadHostType = threadHostType | flutter::ThreadHost::Type::kProfiler;
   }
 
   flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
@@ -804,17 +805,17 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   host_config.ui_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::UI, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
                                 fml::Thread::ThreadPriority::kDisplay);
 
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::RASTER, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kRaster, threadLabel.UTF8String),
                                 fml::Thread::ThreadPriority::kRaster);
 
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kIo, threadLabel.UTF8String),
                                 fml::Thread::ThreadPriority::kNormal);
 
   return (flutter::ThreadHost){host_config};

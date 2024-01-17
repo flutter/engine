@@ -13,6 +13,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/entity/vk/entity_shaders_vk.h"
+#include "impeller/entity/vk/framebuffer_blend_shaders_vk.h"
 #include "impeller/entity/vk/modern_shaders_vk.h"
 #include "impeller/fixtures/vk/fixtures_shaders_vk.h"
 #include "impeller/playground/imgui/vk/imgui_shaders_vk.h"
@@ -34,6 +35,9 @@ ShaderLibraryMappingsForPlayground() {
       std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_vk_data,
                                              impeller_modern_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_vk_data,
+          impeller_framebuffer_blend_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(
           impeller_fixtures_shaders_vk_data,
           impeller_fixtures_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_vk_data,
@@ -44,6 +48,8 @@ ShaderLibraryMappingsForPlayground() {
           impeller_compute_shaders_vk_data, impeller_compute_shaders_vk_length),
   };
 }
+
+vk::UniqueInstance PlaygroundImplVK::global_instance_;
 
 void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
   if (!handle) {
@@ -66,6 +72,8 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
 #endif
     return;
   }
+
+  InitGlobalVulkanInstance();
 
   ::glfwDefaultWindowHints();
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -143,6 +151,42 @@ std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
   SurfaceContextVK* surface_context_vk =
       reinterpret_cast<SurfaceContextVK*>(context_.get());
   return surface_context_vk->AcquireNextSurface();
+}
+
+// Create a global instance of Vulkan in order to prevent unloading of the
+// Vulkan library.
+// A test suite may repeatedly create and destroy PlaygroundImplVK instances,
+// and if the PlaygroundImplVK's Vulkan instance is the only one in the
+// process then the Vulkan library will be unloaded when the instance is
+// destroyed.  Repeated loading and unloading of SwiftShader was leaking
+// resources, so this will work around that leak.
+// (see https://github.com/flutter/flutter/issues/138028)
+void PlaygroundImplVK::InitGlobalVulkanInstance() {
+  if (global_instance_) {
+    return;
+  }
+
+  VULKAN_HPP_DEFAULT_DISPATCHER.init(::glfwGetInstanceProcAddress);
+
+  vk::ApplicationInfo application_info;
+  application_info.setApplicationVersion(VK_API_VERSION_1_0);
+  application_info.setApiVersion(VK_API_VERSION_1_1);
+  application_info.setEngineVersion(VK_API_VERSION_1_0);
+  application_info.setPEngineName("PlaygroundImplVK");
+  application_info.setPApplicationName("PlaygroundImplVK");
+
+  auto instance_result =
+      vk::createInstanceUnique(vk::InstanceCreateInfo({}, &application_info));
+  FML_CHECK(instance_result.result == vk::Result::eSuccess)
+      << "Unable to initialize global Vulkan instance";
+  global_instance_ = std::move(instance_result.value);
+}
+
+fml::Status PlaygroundImplVK::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "PlaygroundImplVK doesn't support setting the capabilities.");
 }
 
 }  // namespace impeller

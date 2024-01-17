@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_
 
 #include <unordered_map>
 
@@ -39,7 +40,11 @@ class LazyGlyphAtlas {
   mutable std::unordered_map<GlyphAtlas::Type, std::shared_ptr<GlyphAtlas>>
       atlas_map_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(LazyGlyphAtlas);
+  LazyGlyphAtlas(const LazyGlyphAtlas&) = delete;
+
+  LazyGlyphAtlas& operator=(const LazyGlyphAtlas&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_LAZY_GLYPH_ATLAS_H_

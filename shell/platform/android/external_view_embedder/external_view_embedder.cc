@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
+#include "flutter/common/constants.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/trace_event.h"
 
@@ -62,11 +63,11 @@ SkRect AndroidExternalViewEmbedder::GetViewRect(int64_t view_id) const {
 }
 
 // |ExternalViewEmbedder|
-void AndroidExternalViewEmbedder::SubmitFrame(
+void AndroidExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
-  TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFrame");
+  TRACE_EVENT0("flutter", "AndroidExternalViewEmbedder::SubmitFlutterView");
 
   if (!FrameHasPlatformLayers()) {
     frame->Submit();
@@ -79,7 +80,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
   // Restore the clip context after exiting this method since it's changed
   // below.
-  DlAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  DlAutoCanvasRestore save(background_canvas, /*do_save=*/true);
 
   for (size_t i = 0; i < current_frame_view_count; i++) {
     int64_t view_id = composition_order_[i];
@@ -104,15 +105,15 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // The rect above the `current_view_rect`
       SkRect partial_joined_rect = SkRect::MakeEmpty();
       // Each rect corresponds to a native view that renders Flutter UI.
-      std::list<SkRect> intersection_rects =
-          slice->searchNonOverlappingDrawnRects(current_view_rect);
+      std::vector<SkIRect> intersection_rects =
+          slice->region(current_view_rect).getRects();
 
       // Limit the number of native views, so it doesn't grow forever.
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
-      for (const SkRect& rect : intersection_rects) {
-        partial_joined_rect.join(rect);
+      for (const SkIRect& rect : intersection_rects) {
+        partial_joined_rect.join(SkRect::Make(rect));
       }
       // Get the intersection rect with the `current_view_rect`,
       partial_joined_rect.intersect(current_view_rect);
@@ -212,7 +213,7 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
 
 // |ExternalViewEmbedder|
 PostPrerollResult AndroidExternalViewEmbedder::PostPrerollAction(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   if (!FrameHasPlatformLayers()) {
     return PostPrerollResult::kSuccess;
   }
@@ -257,10 +258,22 @@ void AndroidExternalViewEmbedder::Reset() {
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
+  // JNI method must be called on the platform thread.
+  if (raster_thread_merger->IsOnPlatformThread()) {
+    jni_facade_->FlutterViewBeginFrame();
+  }
+}
+
+// |ExternalViewEmbedder|
+void AndroidExternalViewEmbedder::PrepareFlutterView(
+    int64_t flutter_view_id,
+    SkISize frame_size,
+    double device_pixel_ratio) {
+  // TODO(dkwingsmt): This class only supports rendering into the implicit view.
+  // Properly support multi-view in the future.
+  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   Reset();
 
   // The surface size changed. Therefore, destroy existing surfaces as
@@ -269,10 +282,6 @@ void AndroidExternalViewEmbedder::BeginFrame(
     DestroySurfaces();
   }
   surface_pool_->SetFrameSize(frame_size);
-  // JNI method must be called on the platform thread.
-  if (raster_thread_merger->IsOnPlatformThread()) {
-    jni_facade_->FlutterViewBeginFrame();
-  }
 
   frame_size_ = frame_size;
   device_pixel_ratio_ = device_pixel_ratio;
@@ -286,7 +295,7 @@ void AndroidExternalViewEmbedder::CancelFrame() {
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   surface_pool_->RecycleLayers();
   // JNI method must be called on the platform thread.
   if (raster_thread_merger->IsOnPlatformThread()) {

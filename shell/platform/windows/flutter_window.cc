@@ -119,7 +119,7 @@ static uint64_t ConvertWinButtonToFlutterButton(UINT button) {
 FlutterWindow::FlutterWindow(
     int width,
     int height,
-    std::unique_ptr<WindowsProcTable> windows_proc_table,
+    std::shared_ptr<WindowsProcTable> windows_proc_table,
     std::unique_ptr<TextInputManager> text_input_manager)
     : binding_handler_delegate_(nullptr),
       touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
@@ -164,14 +164,6 @@ void FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {
   }
 }
 
-WindowsRenderTarget FlutterWindow::GetRenderTarget() {
-  return WindowsRenderTarget(GetWindowHandle());
-}
-
-PlatformWindow FlutterWindow::GetPlatformWindow() {
-  return GetWindowHandle();
-}
-
 float FlutterWindow::GetDpiScale() {
   return static_cast<float>(GetCurrentDPI()) / static_cast<float>(base_dpi);
 }
@@ -193,13 +185,7 @@ void FlutterWindow::SetFlutterCursor(HCURSOR cursor) {
   ::SetCursor(current_cursor_);
 }
 
-void FlutterWindow::OnWindowResized() {
-  // Blocking the raster thread until DWM flushes alleviates glitches where
-  // previous size surface is stretched over current size view.
-  DwmFlush();
-}
-
-void FlutterWindow::OnDpiScale(unsigned int dpi){};
+void FlutterWindow::OnDpiScale(unsigned int dpi) {};
 
 // When DesktopWindow notifies that a WM_Size message has come in
 // lets FlutterEngine know about the new size.
@@ -322,6 +308,13 @@ void FlutterWindow::OnResetImeComposing() {
   AbortImeComposing();
 }
 
+bool FlutterWindow::OnBitmapSurfaceCleared() {
+  HDC dc = ::GetDC(GetWindowHandle());
+  bool result = ::PatBlt(dc, 0, 0, current_width_, current_height_, BLACKNESS);
+  ::ReleaseDC(GetWindowHandle(), dc);
+  return result;
+}
+
 bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
                                            size_t row_bytes,
                                            size_t height) {
@@ -334,8 +327,8 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
   bmi.bmiHeader.biBitCount = 32;
   bmi.bmiHeader.biCompression = BI_RGB;
   bmi.bmiHeader.biSizeImage = 0;
-  int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
-                              allocation, &bmi, DIB_RGB_COLORS);
+  int ret = ::SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0,
+                                height, allocation, &bmi, DIB_RGB_COLORS);
   ::ReleaseDC(GetWindowHandle(), dc);
   return ret != 0;
 }
@@ -356,12 +349,7 @@ PointerLocation FlutterWindow::GetPrimaryPointerLocation() {
 }
 
 void FlutterWindow::OnThemeChange() {
-  binding_handler_delegate_->UpdateHighContrastEnabled(
-      GetHighContrastEnabled());
-}
-
-void FlutterWindow::SendInitialAccessibilityFeatures() {
-  OnThemeChange();
+  binding_handler_delegate_->OnHighContrastChanged();
 }
 
 ui::AXFragmentRootDelegateWin* FlutterWindow::GetAxFragmentRootDelegate() {
@@ -376,18 +364,6 @@ AlertPlatformNodeDelegate* FlutterWindow::GetAlertDelegate() {
 ui::AXPlatformNodeWin* FlutterWindow::GetAlert() {
   CreateAxFragmentRoot();
   return alert_node_.get();
-}
-
-bool FlutterWindow::NeedsVSync() {
-  // If the Desktop Window Manager composition is enabled,
-  // the system itself synchronizes with v-sync.
-  // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw
-  BOOL composition_enabled;
-  if (SUCCEEDED(::DwmIsCompositionEnabled(&composition_enabled))) {
-    return !composition_enabled;
-  }
-
-  return true;
 }
 
 void FlutterWindow::OnWindowStateEvent(WindowStateEvent event) {
@@ -406,7 +382,7 @@ void FlutterWindow::OnWindowStateEvent(WindowStateEvent event) {
       focused_ = false;
       break;
   }
-  HWND hwnd = GetPlatformWindow();
+  HWND hwnd = GetWindowHandle();
   if (hwnd && binding_handler_delegate_) {
     binding_handler_delegate_->OnWindowStateEvent(hwnd, event);
   }
@@ -948,19 +924,6 @@ UINT FlutterWindow::GetCurrentHeight() {
 
 float FlutterWindow::GetScrollOffsetMultiplier() {
   return scroll_offset_multiplier_;
-}
-
-bool FlutterWindow::GetHighContrastEnabled() {
-  HIGHCONTRAST high_contrast = {.cbSize = sizeof(HIGHCONTRAST)};
-  // API call is only supported on Windows 8+
-  if (SystemParametersInfoW(SPI_GETHIGHCONTRAST, sizeof(HIGHCONTRAST),
-                            &high_contrast, 0)) {
-    return high_contrast.dwFlags & HCF_HIGHCONTRASTON;
-  } else {
-    FML_LOG(INFO) << "Failed to get status of high contrast feature,"
-                  << "support only for Windows 8 + ";
-    return false;
-  }
 }
 
 LRESULT FlutterWindow::Win32DefWindowProc(HWND hWnd,

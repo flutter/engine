@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_
+#define FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_
 
 #include <memory>
 
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -52,6 +54,8 @@ class SceneContext {
 
   std::shared_ptr<Texture> GetPlaceholderTexture() const;
 
+  HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
+
  private:
   class PipelineVariants {
    public:
@@ -67,9 +71,14 @@ class SceneContext {
    public:
     explicit PipelineVariantsT(Context& context) {
       auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
+      if (!desc.has_value()) {
+        is_valid_ = false;
+        return;
+      }
       // Apply default ContentContextOptions to the descriptor.
       SceneContextOptions{}.ApplyToPipelineDescriptor(
-          *context.GetCapabilities(), *desc);
+          /*capabilities=*/*context.GetCapabilities(),
+          /*desc=*/desc.value());
       variants_[{}] = std::make_unique<PipelineT>(context, desc);
     };
 
@@ -99,7 +108,10 @@ class SceneContext {
       return variant_pipeline;
     }
 
+    bool IsValid() const { return is_valid_; }
+
    private:
+    bool is_valid_ = true;
     std::unordered_map<SceneContextOptions,
                        std::unique_ptr<PipelineT>,
                        SceneContextOptions::Hash,
@@ -108,10 +120,19 @@ class SceneContext {
   };
 
   template <typename VertexShader, typename FragmentShader>
+  /// Creates a PipelineVariantsT for the given vertex and fragment shaders.
+  ///
+  /// If a pipeline could not be created, returns nullptr.
   std::unique_ptr<PipelineVariants> MakePipelineVariants(Context& context) {
+    auto pipeline =
+        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>(
+            context);
+    if (!pipeline.IsValid()) {
+      return nullptr;
+    }
     return std::make_unique<
         PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>>(
-        context);
+        std::move(pipeline));
   }
 
   std::unordered_map<PipelineKey,
@@ -126,9 +147,14 @@ class SceneContext {
   // A 1x1 opaque white texture that can be used as a placeholder binding.
   // Available for the lifetime of the scene context
   std::shared_ptr<Texture> placeholder_texture_;
+  std::shared_ptr<HostBuffer> host_buffer_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SceneContext);
+  SceneContext(const SceneContext&) = delete;
+
+  SceneContext& operator=(const SceneContext&) = delete;
 };
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_

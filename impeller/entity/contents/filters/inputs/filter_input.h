@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
 
 #include <memory>
 #include <optional>
@@ -56,12 +57,15 @@ class FilterInput {
 
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
 
+  virtual std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
+                                                const Rect& output_limit) const;
+
   /// @brief  Get the local transform of this filter input. This transform is
   ///         relative to the `Entity` transform space.
   virtual Matrix GetLocalTransform(const Entity& entity) const;
 
   /// @brief  Get the transform of this `FilterInput`. This is equivalent to
-  ///         calling `entity.GetTransformation() * GetLocalTransform()`.
+  ///         calling `entity.GetTransform() * GetLocalTransform()`.
   virtual Matrix GetTransform(const Entity& entity) const;
 
   /// @see    `Contents::PopulateGlyphAtlas`
@@ -69,7 +73,7 @@ class FilterInput {
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
       Scalar scale);
 
-  /// @see  `FilterContents::HasBasisTransformations`
+  /// @see  `FilterContents::HasBasisTransforms`
   virtual bool IsTranslationOnly() const;
 
   /// @brief  Returns `true` unless this input is a `FilterInput`, which may
@@ -89,3 +93,5 @@ class FilterInput {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_

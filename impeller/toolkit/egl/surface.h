@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_SURFACE_H_
+#define FLUTTER_IMPELLER_TOOLKIT_EGL_SURFACE_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/toolkit/egl/egl.h"
@@ -26,8 +27,12 @@ class Surface {
   EGLDisplay display_ = EGL_NO_DISPLAY;
   EGLSurface surface_ = EGL_NO_SURFACE;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Surface);
+  Surface(const Surface&) = delete;
+
+  Surface& operator=(const Surface&) = delete;
 };
 
 }  // namespace egl
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TOOLKIT_EGL_SURFACE_H_

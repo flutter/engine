@@ -7,6 +7,7 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/renderer/render_pass.h"
 
@@ -38,23 +39,18 @@ std::optional<Rect> SolidColorContents::GetCoverage(
     return std::nullopt;
   }
 
-  auto geometry = GetGeometry();
+  const std::shared_ptr<Geometry>& geometry = GetGeometry();
   if (geometry == nullptr) {
     return std::nullopt;
   }
-  return geometry->GetCoverage(entity.GetTransformation());
+  return geometry->GetCoverage(entity.GetTransform());
 };
 
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
   auto capture = entity.GetCapture().CreateChild("SolidColorContents");
-
   using VS = SolidFillPipeline::VertexShader;
-
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "Solid Fill");
-  cmd.stencil_reference = entity.GetClipDepth();
 
   auto geometry_result =
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
@@ -66,15 +62,19 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   }
 
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetSolidFillPipeline(options);
-  cmd.BindVertices(geometry_result.vertex_buffer);
+
+  pass.SetCommandLabel("Solid Fill");
+  pass.SetPipeline(renderer.GetSolidFillPipeline(options));
+  pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
+  pass.SetStencilReference(entity.GetClipDepth());
 
   VS::FrameInfo frame_info;
   frame_info.mvp = capture.AddMatrix("Transform", geometry_result.transform);
   frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(pass,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (!pass.AddCommand(std::move(cmd))) {
+  if (!pass.Draw().ok()) {
     return false;
   }
 
@@ -86,10 +86,10 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   return true;
 }
 
-std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
+std::unique_ptr<SolidColorContents> SolidColorContents::Make(Path path,
                                                              Color color) {
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
   contents->SetColor(color);
   return contents;
 }
@@ -98,7 +98,7 @@ std::optional<Color> SolidColorContents::AsBackgroundColor(
     const Entity& entity,
     ISize target_size) const {
   Rect target_rect = Rect::MakeSize(target_size);
-  return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
+  return GetGeometry()->CoversArea(entity.GetTransform(), target_rect)
              ? GetColor()
              : std::optional<Color>();
 }

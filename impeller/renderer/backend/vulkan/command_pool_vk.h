@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_POOL_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_POOL_VK_H_
 
 #include <memory>
 #include <optional>
 #include <utility>
-#include "fml/macros.h"
+
 #include "impeller/base/thread.h"
-#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 
 namespace impeller {
@@ -57,15 +57,17 @@ class CommandPoolVK final {
   void Destroy();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolVK);
+  CommandPoolVK(const CommandPoolVK&) = delete;
+
+  CommandPoolVK& operator=(const CommandPoolVK&) = delete;
 
   Mutex pool_mutex_;
   vk::UniqueCommandPool pool_ IPLR_GUARDED_BY(pool_mutex_);
   std::weak_ptr<ContextVK>& context_;
 
   // Used to retain a reference on these until the pool is reset.
-  std::vector<vk::UniqueCommandBuffer> collected_buffers_
-      IPLR_GUARDED_BY(pool_mutex_);
+  std::vector<vk::UniqueCommandBuffer> collected_buffers_ IPLR_GUARDED_BY(
+      pool_mutex_);
 };
 
 //------------------------------------------------------------------------------
@@ -138,7 +140,11 @@ class CommandPoolRecyclerVK final
   /// @returns    Returns a |std::nullopt| if a pool was not available.
   std::optional<vk::UniqueCommandPool> Reuse();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandPoolRecyclerVK);
+  CommandPoolRecyclerVK(const CommandPoolRecyclerVK&) = delete;
+
+  CommandPoolRecyclerVK& operator=(const CommandPoolRecyclerVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_POOL_VK_H_

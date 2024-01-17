@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GPU_TRACER_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GPU_TRACER_GLES_H_
 
+#include <cstdint>
 #include <deque>
 #include <thread>
 
@@ -49,3 +51,5 @@ class GPUTracerGLES {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_GPU_TRACER_GLES_H_

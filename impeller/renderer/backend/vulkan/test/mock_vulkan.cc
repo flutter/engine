@@ -3,9 +3,12 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
+
+#include <cstdint>
 #include <cstring>
 #include <utility>
 #include <vector>
+
 #include "fml/macros.h"
 #include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
@@ -28,6 +31,8 @@ struct MockCommandBuffer {
 struct MockQueryPool {};
 
 struct MockCommandPool {};
+
+struct MockDescriptorPool {};
 
 class MockDevice final {
  public:
@@ -70,7 +75,9 @@ class MockDevice final {
   }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockDevice);
+  MockDevice(const MockDevice&) = delete;
+
+  MockDevice& operator=(const MockDevice&) = delete;
 
   Mutex called_functions_mutex_;
   std::shared_ptr<std::vector<std::string>> called_functions_
@@ -534,6 +541,34 @@ VkResult vkGetQueryPoolResults(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkCreateDescriptorPool(VkDevice device,
+                                const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                const VkAllocationCallbacks* pAllocator,
+                                VkDescriptorPool* pDescriptorPool) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  *pDescriptorPool =
+      reinterpret_cast<VkDescriptorPool>(new MockDescriptorPool());
+  mock_device->AddCalledFunction("vkCreateDescriptorPool");
+  return VK_SUCCESS;
+}
+
+VkResult vkResetDescriptorPool(VkDevice device,
+                               VkDescriptorPool descriptorPool,
+                               VkDescriptorPoolResetFlags flags) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkResetDescriptorPool");
+  return VK_SUCCESS;
+}
+
+VkResult vkAllocateDescriptorSets(
+    VkDevice device,
+    const VkDescriptorSetAllocateInfo* pAllocateInfo,
+    VkDescriptorSet* pDescriptorSets) {
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkAllocateDescriptorSets");
+  return VK_SUCCESS;
+}
+
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -638,6 +673,12 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkCreateQueryPool;
   } else if (strcmp("vkGetQueryPoolResults", pName) == 0) {
     return (PFN_vkVoidFunction)vkGetQueryPoolResults;
+  } else if (strcmp("vkCreateDescriptorPool", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateDescriptorPool;
+  } else if (strcmp("vkResetDescriptorPool", pName) == 0) {
+    return (PFN_vkVoidFunction)vkResetDescriptorPool;
+  } else if (strcmp("vkAllocateDescriptorSets", pName) == 0) {
+    return (PFN_vkVoidFunction)vkAllocateDescriptorSets;
   }
   return noop;
 }

@@ -4,10 +4,13 @@
 
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 
+#include <cstdint>
+
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
+#include "impeller/shader_archive/multi_arch_shader_archive.h"
 #include "impeller/shader_archive/shader_archive.h"
 
 namespace impeller {
@@ -38,12 +41,6 @@ static std::string VKShaderNameToShaderKeyName(const std::string& name,
     case ShaderStage::kFragment:
       stream << "_fragment_";
       break;
-    case ShaderStage::kTessellationControl:
-      stream << "_tessellation_control_";
-      break;
-    case ShaderStage::kTessellationEvaluation:
-      stream << "_tessellation_evaluation_";
-      break;
     case ShaderStage::kCompute:
       stream << "_compute_";
       break;
@@ -62,19 +59,22 @@ ShaderLibraryVK::ShaderLibraryVK(
                       const auto& name,  //
                       const auto& code   //
                       ) -> bool {
-    if (!RegisterFunction(name, ToShaderStage(type), code)) {
+    const auto stage = ToShaderStage(type);
+    if (!RegisterFunction(VKShaderNameToShaderKeyName(name, stage), stage,
+                          code)) {
       success = false;
       return false;
     }
     return true;
   };
   for (const auto& library_data : shader_libraries_data) {
-    auto blob_library = ShaderArchive{library_data};
-    if (!blob_library.IsValid()) {
-      VALIDATION_LOG << "Could not construct shader blob library.";
+    auto vulkan_library = MultiArchShaderArchive::CreateArchiveFromMapping(
+        library_data, ArchiveRenderingBackend::kVulkan);
+    if (!vulkan_library || !vulkan_library->IsValid()) {
+      VALIDATION_LOG << "Could not construct Vulkan shader library archive.";
       return;
     }
-    blob_library.IterateAllShaders(iterator);
+    vulkan_library->IterateAllShaders(iterator);
   }
 
   if (!success) {
@@ -159,17 +159,15 @@ bool ShaderLibraryVK::RegisterFunction(
     return false;
   }
 
-  const auto key_name = VKShaderNameToShaderKeyName(name, stage);
-
   vk::UniqueShaderModule shader_module = std::move(module.value);
   ContextVK::SetDebugName(device_holder->GetDevice(), *shader_module,
                           "Shader " + name);
 
   WriterLock lock(functions_mutex_);
-  functions_[ShaderKey{key_name, stage}] = std::shared_ptr<ShaderFunctionVK>(
+  functions_[ShaderKey{name, stage}] = std::shared_ptr<ShaderFunctionVK>(
       new ShaderFunctionVK(device_holder_,
                            library_id_,              //
-                           key_name,                 //
+                           name,                     //
                            stage,                    //
                            std::move(shader_module)  //
                            ));
@@ -184,7 +182,7 @@ void ShaderLibraryVK::UnregisterFunction(std::string name, ShaderStage stage) {
   const auto key = ShaderKey{name, stage};
 
   auto found = functions_.find(key);
-  if (found != functions_.end()) {
+  if (found == functions_.end()) {
     VALIDATION_LOG << "Library function named " << name
                    << " was not found, so it couldn't be unregistered.";
     return;

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_VK_H_
 
 #include <memory>
 
@@ -40,7 +41,11 @@ class SwapchainVK {
 
   explicit SwapchainVK(std::shared_ptr<SwapchainImplVK> impl);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SwapchainVK);
+  SwapchainVK(const SwapchainVK&) = delete;
+
+  SwapchainVK& operator=(const SwapchainVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_VK_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_RRECT_BLUR_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_RRECT_BLUR_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -54,7 +55,11 @@ class SolidRRectBlurContents final : public Contents {
 
   Color color_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SolidRRectBlurContents);
+  SolidRRectBlurContents(const SolidRRectBlurContents&) = delete;
+
+  SolidRRectBlurContents& operator=(const SolidRRectBlurContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_RRECT_BLUR_CONTENTS_H_

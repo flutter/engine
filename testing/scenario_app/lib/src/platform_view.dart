@@ -510,6 +510,13 @@ class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     PlatformMessageResponseCallback? callback,
   ) {
     final String message = utf8.decode(data!.buffer.asUint8List());
+
+    // The expected first event should be 'AppLifecycleState.resumed', but
+    // occasionally it will receive 'AppLifecycleState.inactive' first. Skip
+    // any messages until 'AppLifecycleState.resumed' is received.
+    if (_lastLifecycleState.isEmpty && message != 'AppLifecycleState.resumed') {
+      return;
+    }
     if (_lastLifecycleState == 'AppLifecycleState.inactive' &&
         message == 'AppLifecycleState.resumed') {
       _nextFrame = _secondFrame;
@@ -1758,6 +1765,7 @@ class PlatformViewsWithClipsScrolling extends Scenario
 }
 
 final Map<String, int> _createdPlatformViews = <String, int> {};
+final Map<String, bool> _calledToBeCreatedPlatformViews = <String, bool> {};
 
 /// Adds the platform view to the scene.
 ///
@@ -1787,6 +1795,10 @@ void addPlatformView(
     );
     return;
   }
+  if (_calledToBeCreatedPlatformViews.containsKey(platformViewKey)) {
+    return;
+  }
+  _calledToBeCreatedPlatformViews[platformViewKey] = true;
 
   final bool usesAndroidHybridComposition = scenarioParams['use_android_view'] as bool? ?? false;
   final bool expectAndroidHybridCompositionFallback =

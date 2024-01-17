@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TYPOGRAPHER_CONTEXT_SKIA_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TYPOGRAPHER_CONTEXT_SKIA_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/typographer/typographer_context.h"
@@ -28,7 +29,11 @@ class TypographerContextSkia : public TypographerContext {
       const FontGlyphMap& font_glyph_map) const override;
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(TypographerContextSkia);
+  TypographerContextSkia(const TypographerContextSkia&) = delete;
+
+  TypographerContextSkia& operator=(const TypographerContextSkia&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TYPOGRAPHER_CONTEXT_SKIA_H_

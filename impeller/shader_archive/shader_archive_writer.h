@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_WRITER_H_
+#define FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_WRITER_H_
 
 #include <memory>
 #include <string>
@@ -37,7 +38,11 @@ class ShaderArchiveWriter {
 
   std::vector<ShaderDescription> shader_descriptions_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderArchiveWriter);
+  ShaderArchiveWriter(const ShaderArchiveWriter&) = delete;
+
+  ShaderArchiveWriter& operator=(const ShaderArchiveWriter&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SHADER_ARCHIVE_SHADER_ARCHIVE_WRITER_H_

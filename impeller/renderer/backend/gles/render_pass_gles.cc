@@ -4,11 +4,13 @@
 
 #include "impeller/renderer/backend/gles/render_pass_gles.h"
 
+#include <cstdint>
+
+#include "GLES3/gl3.h"
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -127,7 +129,6 @@ struct RenderPassData {
   Scalar clear_depth = 1.0;
 
   std::shared_ptr<Texture> color_attachment;
-  std::shared_ptr<Texture> resolve_attachment;
   std::shared_ptr<Texture> depth_attachment;
   std::shared_ptr<Texture> stencil_attachment;
 
@@ -311,11 +312,11 @@ struct RenderPassData {
     /// Setup the viewport.
     ///
     const auto& viewport = command.viewport.value_or(pass_data.viewport);
-    gl.Viewport(viewport.rect.origin.x,  // x
-                target_size.height - viewport.rect.origin.y -
-                    viewport.rect.size.height,  // y
-                viewport.rect.size.width,       // width
-                viewport.rect.size.height       // height
+    gl.Viewport(viewport.rect.GetX(),  // x
+                target_size.height - viewport.rect.GetY() -
+                    viewport.rect.GetHeight(),  // y
+                viewport.rect.GetWidth(),       // width
+                viewport.rect.GetHeight()       // height
     );
     if (pass_data.depth_attachment) {
       // TODO(bdero): Desktop GL for Apple requires glDepthRange. glDepthRangef
@@ -333,10 +334,10 @@ struct RenderPassData {
       const auto& scissor = command.scissor.value();
       gl.Enable(GL_SCISSOR_TEST);
       gl.Scissor(
-          scissor.origin.x,                                             // x
-          target_size.height - scissor.origin.y - scissor.size.height,  // y
-          scissor.size.width,                                           // width
-          scissor.size.height  // height
+          scissor.GetX(),                                             // x
+          target_size.height - scissor.GetY() - scissor.GetHeight(),  // y
+          scissor.GetWidth(),                                         // width
+          scissor.GetHeight()                                         // height
       );
     } else {
       gl.Disable(GL_SCISSOR_TEST);
@@ -370,23 +371,22 @@ struct RenderPassData {
         break;
     }
 
-    if (command.index_type == IndexType::kUnknown) {
+    if (command.vertex_buffer.index_type == IndexType::kUnknown) {
       return false;
     }
 
-    const auto& vertex_desc_gles = pipeline.GetBufferBindings();
+    auto vertex_desc_gles = pipeline.GetBufferBindings();
 
     //--------------------------------------------------------------------------
     /// Bind vertex and index buffers.
     ///
-    auto vertex_buffer_view = command.GetVertexBuffer();
+    auto& vertex_buffer_view = command.vertex_buffer.vertex_buffer;
 
     if (!vertex_buffer_view) {
       return false;
     }
 
-    auto vertex_buffer =
-        vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+    auto vertex_buffer = vertex_buffer_view.buffer;
 
     if (!vertex_buffer) {
       return false;
@@ -439,21 +439,21 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    if (command.index_type == IndexType::kNone) {
-      gl.DrawArrays(mode, command.base_vertex, command.vertex_count);
+    if (command.vertex_buffer.index_type == IndexType::kNone) {
+      gl.DrawArrays(mode, command.base_vertex,
+                    command.vertex_buffer.vertex_count);
     } else {
       // Bind the index buffer if necessary.
-      auto index_buffer_view = command.index_buffer;
-      auto index_buffer =
-          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      auto index_buffer_view = command.vertex_buffer.index_buffer;
+      auto index_buffer = index_buffer_view.buffer;
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
         return false;
       }
-      gl.DrawElements(mode,                             // mode
-                      command.vertex_count,             // count
-                      ToIndexType(command.index_type),  // type
+      gl.DrawElements(mode,                                           // mode
+                      command.vertex_buffer.vertex_count,             // count
+                      ToIndexType(command.vertex_buffer.index_type),  // type
                       reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
                           index_buffer_view.range.offset))  // indices
       );
@@ -472,45 +472,6 @@ struct RenderPassData {
     if (!pipeline.UnbindProgram()) {
       return false;
     }
-  }
-
-  // When we have a resolve_attachment, MSAA is being used. We blit from the
-  // MSAA FBO to the resolve FBO, otherwise the resolve FBO ends up being
-  // incomplete (because it has no attachments).
-  //
-  // Note that this only works on OpenGLES 3.0+, or put another way, in older
-  // versions of OpenGLES, MSAA is not currently supported by Impeller. It's
-  // possible to work around this issue a few different ways (not yet done).
-  //
-  // TODO(matanlurey): See https://github.com/flutter/flutter/issues/137093.
-  if (!is_default_fbo && pass_data.resolve_attachment) {
-    // MSAA should not be enabled if BlitFramebuffer is not available.
-    FML_DCHECK(gl.BlitFramebuffer.IsAvailable());
-
-    GLuint draw_fbo = GL_NONE;
-    gl.GenFramebuffers(1u, &draw_fbo);
-    gl.BindFramebuffer(GL_FRAMEBUFFER, draw_fbo);
-
-    auto resolve = TextureGLES::Cast(pass_data.resolve_attachment.get());
-    if (!resolve->SetAsFramebufferAttachment(
-            GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
-      return false;
-    }
-
-    gl.BindFramebuffer(GL_DRAW_FRAMEBUFFER, draw_fbo);
-    gl.BindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
-    auto size = pass_data.resolve_attachment->GetSize();
-    gl.BlitFramebuffer(0,                    // srcX0
-                       0,                    // srcY0
-                       size.width,           // srcX1
-                       size.height,          // srcY1
-                       0,                    // dstX0
-                       0,                    // dstY0
-                       size.width,           // dstX1
-                       size.height,          // dstY1
-                       GL_COLOR_BUFFER_BIT,  // mask
-                       GL_NEAREST            // filter
-    );
   }
 
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
@@ -542,6 +503,12 @@ struct RenderPassData {
     );
   }
 
+#ifdef IMPELLER_DEBUG
+  if (is_default_fbo) {
+    tracer->MarkFrameEnd(gl);
+  }
+#endif  // IMPELLER_DEBUG
+
   return true;
 }
 
@@ -569,11 +536,18 @@ bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   /// Setup color data.
   ///
   pass_data->color_attachment = color0.texture;
-  pass_data->resolve_attachment = color0.resolve_texture;
   pass_data->clear_color = color0.clear_color;
   pass_data->clear_color_attachment = CanClearAttachment(color0.load_action);
   pass_data->discard_color_attachment =
       CanDiscardAttachmentWhenDone(color0.store_action);
+
+  // When we are using EXT_multisampled_render_to_texture, it is implicitly
+  // resolved when we bind the texture to the framebuffer. We don't need to
+  // discard the attachment when we are done.
+  if (color0.resolve_texture) {
+    FML_DCHECK(context.GetCapabilities()->SupportsImplicitResolvingMSAA());
+    pass_data->discard_color_attachment = false;
+  }
 
   //----------------------------------------------------------------------------
   /// Setup depth data.

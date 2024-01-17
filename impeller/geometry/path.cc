@@ -7,7 +7,9 @@
 #include <optional>
 #include <variant>
 
+#include "flutter/fml/logging.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -20,29 +22,30 @@ Path::~Path() = default;
 std::tuple<size_t, size_t> Path::Polyline::GetContourPointBounds(
     size_t contour_index) const {
   if (contour_index >= contours.size()) {
-    return {points.size(), points.size()};
+    return {points->size(), points->size()};
   }
   const size_t start_index = contours.at(contour_index).start_index;
   const size_t end_index = (contour_index >= contours.size() - 1)
-                               ? points.size()
+                               ? points->size()
                                : contours.at(contour_index + 1).start_index;
   return std::make_tuple(start_index, end_index);
 }
 
 size_t Path::GetComponentCount(std::optional<ComponentType> type) const {
-  if (type.has_value()) {
-    switch (type.value()) {
-      case ComponentType::kLinear:
-        return linears_.size();
-      case ComponentType::kQuadratic:
-        return quads_.size();
-      case ComponentType::kCubic:
-        return cubics_.size();
-      case ComponentType::kContour:
-        return contours_.size();
+  if (!type.has_value()) {
+    return components_.size();
+  }
+  auto type_value = type.value();
+  if (type_value == ComponentType::kContour) {
+    return contours_.size();
+  }
+  size_t count = 0u;
+  for (const auto& component : components_) {
+    if (component.type == type_value) {
+      count++;
     }
   }
-  return components_.size();
+  return count;
 }
 
 void Path::SetFillType(FillType fill) {
@@ -62,51 +65,52 @@ void Path::SetConvexity(Convexity value) {
 }
 
 void Path::Shift(Point shift) {
-  size_t currentIndex = 0;
-  for (const auto& component : components_) {
-    switch (component.type) {
-      case ComponentType::kLinear:
-        linears_[component.index].p1 += shift;
-        linears_[component.index].p2 += shift;
-        break;
-      case ComponentType::kQuadratic:
-        quads_[component.index].cp += shift;
-        quads_[component.index].p1 += shift;
-        quads_[component.index].p2 += shift;
-        break;
-      case ComponentType::kCubic:
-        cubics_[component.index].cp1 += shift;
-        cubics_[component.index].cp2 += shift;
-        cubics_[component.index].p1 += shift;
-        cubics_[component.index].p2 += shift;
-        break;
-      case ComponentType::kContour:
-        contours_[component.index].destination += shift;
-        break;
-    }
-    currentIndex++;
+  for (auto i = 0u; i < points_.size(); i++) {
+    points_[i] += shift;
+  }
+  for (auto& contour : contours_) {
+    contour.destination += shift;
   }
 }
 
-Path& Path::AddLinearComponent(Point p1, Point p2) {
-  linears_.emplace_back(p1, p2);
-  components_.emplace_back(ComponentType::kLinear, linears_.size() - 1);
+Path Path::Clone() const {
+  Path new_path = *this;
+  return new_path;
+}
+
+Path& Path::AddLinearComponent(const Point& p1, const Point& p2) {
+  auto index = points_.size();
+  points_.emplace_back(p1);
+  points_.emplace_back(p2);
+  components_.emplace_back(ComponentType::kLinear, index);
   return *this;
 }
 
-Path& Path::AddQuadraticComponent(Point p1, Point cp, Point p2) {
-  quads_.emplace_back(p1, cp, p2);
-  components_.emplace_back(ComponentType::kQuadratic, quads_.size() - 1);
+Path& Path::AddQuadraticComponent(const Point& p1,
+                                  const Point& cp,
+                                  const Point& p2) {
+  auto index = points_.size();
+  points_.emplace_back(p1);
+  points_.emplace_back(cp);
+  points_.emplace_back(p2);
+  components_.emplace_back(ComponentType::kQuadratic, index);
   return *this;
 }
 
-Path& Path::AddCubicComponent(Point p1, Point cp1, Point cp2, Point p2) {
-  cubics_.emplace_back(p1, cp1, cp2, p2);
-  components_.emplace_back(ComponentType::kCubic, cubics_.size() - 1);
+Path& Path::AddCubicComponent(const Point& p1,
+                              const Point& cp1,
+                              const Point& cp2,
+                              const Point& p2) {
+  auto index = points_.size();
+  points_.emplace_back(p1);
+  points_.emplace_back(cp1);
+  points_.emplace_back(cp2);
+  points_.emplace_back(p2);
+  components_.emplace_back(ComponentType::kCubic, index);
   return *this;
 }
 
-Path& Path::AddContourComponent(Point destination, bool is_closed) {
+Path& Path::AddContourComponent(const Point& destination, bool is_closed) {
   if (components_.size() > 0 &&
       components_.back().type == ComponentType::kContour) {
     // Never insert contiguous contours.
@@ -132,17 +136,26 @@ void Path::EnumerateComponents(
     switch (component.type) {
       case ComponentType::kLinear:
         if (linear_applier) {
-          linear_applier(currentIndex, linears_[component.index]);
+          linear_applier(currentIndex,
+                         LinearPathComponent(points_[component.index],
+                                             points_[component.index + 1]));
         }
         break;
       case ComponentType::kQuadratic:
         if (quad_applier) {
-          quad_applier(currentIndex, quads_[component.index]);
+          quad_applier(currentIndex,
+                       QuadraticPathComponent(points_[component.index],
+                                              points_[component.index + 1],
+                                              points_[component.index + 2]));
         }
         break;
       case ComponentType::kCubic:
         if (cubic_applier) {
-          cubic_applier(currentIndex, cubics_[component.index]);
+          cubic_applier(currentIndex,
+                        CubicPathComponent(points_[component.index],
+                                           points_[component.index + 1],
+                                           points_[component.index + 2],
+                                           points_[component.index + 3]));
         }
         break;
       case ComponentType::kContour:
@@ -165,7 +178,8 @@ bool Path::GetLinearComponentAtIndex(size_t index,
     return false;
   }
 
-  linear = linears_[components_[index].index];
+  auto point_index = components_[index].index;
+  linear = LinearPathComponent(points_[point_index], points_[point_index + 1]);
   return true;
 }
 
@@ -180,7 +194,9 @@ bool Path::GetQuadraticComponentAtIndex(
     return false;
   }
 
-  quadratic = quads_[components_[index].index];
+  auto point_index = components_[index].index;
+  quadratic = QuadraticPathComponent(
+      points_[point_index], points_[point_index + 1], points_[point_index + 2]);
   return true;
 }
 
@@ -194,7 +210,10 @@ bool Path::GetCubicComponentAtIndex(size_t index,
     return false;
   }
 
-  cubic = cubics_[components_[index].index];
+  auto point_index = components_[index].index;
+  cubic =
+      CubicPathComponent(points_[point_index], points_[point_index + 1],
+                         points_[point_index + 2], points_[point_index + 3]);
   return true;
 }
 
@@ -212,83 +231,30 @@ bool Path::GetContourComponentAtIndex(size_t index,
   return true;
 }
 
-bool Path::UpdateLinearComponentAtIndex(size_t index,
-                                        const LinearPathComponent& linear) {
-  if (index >= components_.size()) {
-    return false;
-  }
-
-  if (components_[index].type != ComponentType::kLinear) {
-    return false;
-  }
-
-  linears_[components_[index].index] = linear;
-  return true;
+Path::Polyline::Polyline(Path::Polyline::PointBufferPtr point_buffer,
+                         Path::Polyline::ReclaimPointBufferCallback reclaim)
+    : points(std::move(point_buffer)), reclaim_points_(std::move(reclaim)) {
+  FML_DCHECK(points);
 }
 
-bool Path::UpdateQuadraticComponentAtIndex(
-    size_t index,
-    const QuadraticPathComponent& quadratic) {
-  if (index >= components_.size()) {
-    return false;
-  }
-
-  if (components_[index].type != ComponentType::kQuadratic) {
-    return false;
-  }
-
-  quads_[components_[index].index] = quadratic;
-  return true;
+Path::Polyline::Polyline(Path::Polyline&& other) {
+  points = std::move(other.points);
+  reclaim_points_ = std::move(other.reclaim_points_);
+  contours = std::move(other.contours);
 }
 
-bool Path::UpdateCubicComponentAtIndex(size_t index,
-                                       CubicPathComponent& cubic) {
-  if (index >= components_.size()) {
-    return false;
+Path::Polyline::~Polyline() {
+  if (reclaim_points_) {
+    points->clear();
+    reclaim_points_(std::move(points));
   }
-
-  if (components_[index].type != ComponentType::kCubic) {
-    return false;
-  }
-
-  cubics_[components_[index].index] = cubic;
-  return true;
 }
 
-bool Path::UpdateContourComponentAtIndex(size_t index,
-                                         const ContourComponent& move) {
-  if (index >= components_.size()) {
-    return false;
-  }
-
-  if (components_[index].type != ComponentType::kContour) {
-    return false;
-  }
-
-  contours_[components_[index].index] = move;
-  return true;
-}
-
-Path::Polyline Path::CreatePolyline(Scalar scale) const {
-  Polyline polyline;
-
-  std::optional<Point> previous_contour_point;
-  auto collect_points = [&polyline, &previous_contour_point](
-                            const std::vector<Point>& collection) {
-    if (collection.empty()) {
-      return;
-    }
-
-    for (const auto& point : collection) {
-      if (previous_contour_point.has_value() &&
-          previous_contour_point.value() == point) {
-        // Skip over duplicate points in the same contour.
-        continue;
-      }
-      previous_contour_point = point;
-      polyline.points.push_back(point);
-    }
-  };
+Path::Polyline Path::CreatePolyline(
+    Scalar scale,
+    Path::Polyline::PointBufferPtr point_buffer,
+    Path::Polyline::ReclaimPointBufferCallback reclaim) const {
+  Polyline polyline(std::move(point_buffer), std::move(reclaim));
 
   auto get_path_component = [this](size_t component_i) -> PathComponentVariant {
     if (component_i >= components_.size()) {
@@ -297,11 +263,14 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     const auto& component = components_[component_i];
     switch (component.type) {
       case ComponentType::kLinear:
-        return &linears_[component.index];
+        return reinterpret_cast<const LinearPathComponent*>(
+            &points_[component.index]);
       case ComponentType::kQuadratic:
-        return &quads_[component.index];
+        return reinterpret_cast<const QuadraticPathComponent*>(
+            &points_[component.index]);
       case ComponentType::kCubic:
-        return &cubics_[component.index];
+        return reinterpret_cast<const CubicPathComponent*>(
+            &points_[component.index]);
       case ComponentType::kContour:
         return std::monostate{};
     }
@@ -328,8 +297,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
   std::optional<size_t> previous_path_component_index;
   auto end_contour = [&polyline, &previous_path_component_index,
                       &get_path_component, &components]() {
-    // Whenever a contour has ended, extract the exact end direction from the
-    // last component.
+    // Whenever a contour has ended, extract the exact end direction from
+    // the last component.
     if (polyline.contours.empty()) {
       return;
     }
@@ -367,26 +336,30 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     switch (component.type) {
       case ComponentType::kLinear:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = false,
         });
-        collect_points(linears_[component.index].CreatePolyline());
+        reinterpret_cast<const LinearPathComponent*>(&points_[component.index])
+            ->AppendPolylinePoints(*polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        collect_points(quads_[component.index].CreatePolyline(scale));
+        reinterpret_cast<const QuadraticPathComponent*>(
+            &points_[component.index])
+            ->AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
         components.push_back({
-            .component_start_index = polyline.points.size() - 1,
+            .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        collect_points(cubics_[component.index].CreatePolyline(scale));
+        reinterpret_cast<const CubicPathComponent*>(&points_[component.index])
+            ->AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
@@ -399,12 +372,12 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 
         Vector2 start_direction = compute_contour_start_direction(component_i);
         const auto& contour = contours_[component.index];
-        polyline.contours.push_back({.start_index = polyline.points.size(),
+        polyline.contours.push_back({.start_index = polyline.points->size(),
                                      .is_closed = contour.is_closed,
                                      .start_direction = start_direction,
                                      .components = components});
-        previous_contour_point = std::nullopt;
-        collect_points({contour.destination});
+
+        polyline.points->push_back(contour.destination);
         break;
     }
   }
@@ -425,7 +398,7 @@ void Path::ComputeBounds() {
   auto min = min_max->first;
   auto max = min_max->second;
   const auto difference = max - min;
-  computed_bounds_ = Rect{min.x, min.y, difference.x, difference.y};
+  computed_bounds_ = Rect::MakeXYWH(min.x, min.y, difference.x, difference.y);
 }
 
 std::optional<Rect> Path::GetTransformedBoundingBox(
@@ -438,7 +411,7 @@ std::optional<Rect> Path::GetTransformedBoundingBox(
 }
 
 std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
-  if (linears_.empty() && quads_.empty() && cubics_.empty()) {
+  if (points_.empty()) {
     return std::nullopt;
   }
 
@@ -458,20 +431,32 @@ std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
     }
   };
 
-  for (const auto& linear : linears_) {
-    clamp(linear.p1);
-    clamp(linear.p2);
-  }
-
-  for (const auto& quad : quads_) {
-    for (const Point& point : quad.Extrema()) {
-      clamp(point);
-    }
-  }
-
-  for (const auto& cubic : cubics_) {
-    for (const Point& point : cubic.Extrema()) {
-      clamp(point);
+  for (const auto& component : components_) {
+    switch (component.type) {
+      case ComponentType::kLinear: {
+        auto* linear = reinterpret_cast<const LinearPathComponent*>(
+            &points_[component.index]);
+        clamp(linear->p1);
+        clamp(linear->p2);
+        break;
+      }
+      case ComponentType::kQuadratic:
+        for (const auto& extrema :
+             reinterpret_cast<const QuadraticPathComponent*>(
+                 &points_[component.index])
+                 ->Extrema()) {
+          clamp(extrema);
+        }
+        break;
+      case ComponentType::kCubic:
+        for (const auto& extrema : reinterpret_cast<const CubicPathComponent*>(
+                                       &points_[component.index])
+                                       ->Extrema()) {
+          clamp(extrema);
+        }
+        break;
+      case ComponentType::kContour:
+        break;
     }
   }
 

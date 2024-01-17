@@ -29,7 +29,7 @@ source_set("image_generator") {
   deps = [
     "//flutter/fml",
     "//flutter/lib/ui:ui",
-    "//third_party/skia",
+    "//flutter/skia",
   ]
 
   libs = [
@@ -47,6 +47,7 @@ executable("flutter_shell_native_unittests") {
     "android_shell_holder_unittests.cc",
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
+    "platform_view_android_unittests.cc",
   ]
   public_configs = [ "//flutter:config" ]
   deps = [
@@ -153,8 +154,9 @@ source_set("flutter_shell_native_src") {
     "//flutter/shell/platform/android/platform_view_android_delegate",
     "//flutter/shell/platform/android/surface",
     "//flutter/shell/platform/android/surface:native_window",
+    "//flutter/skia",
+    "//flutter/third_party/txt",
     "//flutter/vulkan",
-    "//third_party/skia",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -264,6 +266,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
   "io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java",
   "io/flutter/embedding/engine/renderer/RenderSurface.java",
+  "io/flutter/embedding/engine/renderer/SurfaceTextureSurfaceProducer.java",
   "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java",
   "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
   "io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java",
@@ -321,6 +324,7 @@ android_java_sources = [
   "io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java",
   "io/flutter/plugin/platform/PlatformViewsController.java",
   "io/flutter/plugin/platform/SingleViewPresentation.java",
+  "io/flutter/plugin/platform/SurfaceProducerPlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/VirtualDisplayController.java",
   "io/flutter/plugin/text/ProcessTextPlugin.java",
@@ -497,13 +501,9 @@ action("android_jar") {
       "--native_lib",
       rebase_path("$validation_layer_out_dir/libVkLayer_khronos_validation.so"),
     ]
-    if (current_cpu == "arm64") {
-      args += [
-        "--native_lib",
-        rebase_path("$android_libcpp_root/libs/arm64-v8a/libc++_shared.so",
-                    root_build_dir),
-      ]
-    } else {
+    if (current_cpu != "arm64") {
+      # This may not be necessarily required anymore. It was kept to maintain
+      # old behavior.
       assert(false, "Validation layers not supported for arch.")
     }
   }

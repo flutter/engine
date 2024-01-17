@@ -9,6 +9,8 @@
 
 #include "flutter/fml/build_config.h"
 #include "impeller/entity/gles/entity_shaders_gles.h"
+#include "impeller/entity/gles/framebuffer_blend_shaders_gles.h"
+#include "impeller/entity/gles/modern_shaders_gles.h"
 #include "impeller/fixtures/gles/fixtures_shaders_gles.h"
 #include "impeller/playground/imgui/gles/imgui_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
@@ -41,7 +43,9 @@ class PlaygroundImplGLES::ReactorWorker final : public ReactorGLES::Worker {
   mutable RWMutex mutex_;
   std::map<std::thread::id, bool> reactions_allowed_ IPLR_GUARDED_BY(mutex_);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ReactorWorker);
+  ReactorWorker(const ReactorWorker&) = delete;
+
+  ReactorWorker& operator=(const ReactorWorker&) = delete;
 };
 
 void PlaygroundImplGLES::DestroyWindowHandle(WindowHandle handle) {
@@ -91,6 +95,12 @@ ShaderLibraryMappingsForPlayground() {
       std::make_shared<fml::NonOwnedMapping>(
           impeller_entity_shaders_gles_data,
           impeller_entity_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_modern_shaders_gles_data,
+          impeller_modern_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_gles_data,
+          impeller_framebuffer_blend_shaders_gles_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_fixtures_shaders_gles_data,
           impeller_fixtures_shaders_gles_length),
@@ -152,6 +162,13 @@ std::unique_ptr<Surface> PlaygroundImplGLES::AcquireSurfaceFrame(
                               PixelFormat::kR8G8B8A8UNormInt,  //
                               ISize::MakeWH(width, height)     //
   );
+}
+
+fml::Status PlaygroundImplGLES::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "PlaygroundImplGLES doesn't support setting the capabilities.");
 }
 
 }  // namespace impeller

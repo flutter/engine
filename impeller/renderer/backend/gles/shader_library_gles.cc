@@ -10,6 +10,7 @@
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/shader_function_gles.h"
+#include "impeller/shader_archive/multi_arch_shader_archive.h"
 #include "impeller/shader_archive/shader_archive.h"
 
 namespace impeller {
@@ -40,12 +41,6 @@ static std::string GLESShaderNameToShaderKeyName(const std::string& name,
     case ShaderStage::kFragment:
       stream << "_fragment_";
       break;
-    case ShaderStage::kTessellationControl:
-      stream << "_tessellation_control_";
-      break;
-    case ShaderStage::kTessellationEvaluation:
-      stream << "_tessellation_evaluation_";
-      break;
     case ShaderStage::kCompute:
       stream << "_compute_";
       break;
@@ -74,12 +69,13 @@ ShaderLibraryGLES::ShaderLibraryGLES(
     return true;
   };
   for (auto library : shader_libraries) {
-    auto blob_library = ShaderArchive{std::move(library)};
-    if (!blob_library.IsValid()) {
-      VALIDATION_LOG << "Could not construct blob library for shaders.";
+    auto gles_archive = MultiArchShaderArchive::CreateArchiveFromMapping(
+        std::move(library), ArchiveRenderingBackend::kOpenGLES);
+    if (!gles_archive || !gles_archive->IsValid()) {
+      VALIDATION_LOG << "Could not construct shader library.";
       return;
     }
-    blob_library.IterateAllShaders(iterator);
+    gles_archive->IterateAllShaders(iterator);
   }
 
   functions_ = functions;
@@ -145,7 +141,7 @@ void ShaderLibraryGLES::UnregisterFunction(std::string name,
   const auto key = ShaderKey{name, stage};
 
   auto found = functions_.find(key);
-  if (found != functions_.end()) {
+  if (found == functions_.end()) {
     VALIDATION_LOG << "Library function named " << name
                    << " was not found, so it couldn't be unregistered.";
     return;

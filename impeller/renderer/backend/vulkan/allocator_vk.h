@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
@@ -13,6 +14,7 @@
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 namespace impeller {
@@ -32,6 +34,7 @@ class AllocatorVK final : public Allocator {
   ISize max_texture_size_;
   bool is_valid_ = false;
   bool supports_memoryless_textures_ = false;
+  bool supports_framebuffer_fetch_ = false;
   // TODO(jonahwilliams): figure out why CI can't create these buffer pools.
   bool created_buffer_pool_ = true;
   uint32_t frame_count_ = 0;
@@ -61,7 +64,11 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
+  AllocatorVK(const AllocatorVK&) = delete;
+
+  AllocatorVK& operator=(const AllocatorVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_

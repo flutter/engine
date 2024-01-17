@@ -125,7 +125,7 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/darwin/common:framework_common",
     "//flutter/shell/platform/darwin/graphics:graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//third_party/skia",
+    "//flutter/skia",
   ]
 
   public_configs = [ "//flutter:config" ]
@@ -173,7 +173,6 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterAppDelegateTest.mm",
     "framework/Source/FlutterAppLifecycleDelegateTest.mm",
     "framework/Source/FlutterChannelKeyResponderTest.mm",
-    "framework/Source/FlutterCompositorTest.mm",
     "framework/Source/FlutterEmbedderExternalTextureTest.mm",
     "framework/Source/FlutterEmbedderKeyResponderTest.mm",
     "framework/Source/FlutterEngineTest.mm",
@@ -193,6 +192,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterViewControllerTestUtils.mm",
     "framework/Source/FlutterViewEngineProviderTest.mm",
     "framework/Source/FlutterViewTest.mm",
+    "framework/Source/KeyCodeMapTest.mm",
     "framework/Source/TestFlutterPlatformView.h",
     "framework/Source/TestFlutterPlatformView.mm",
   ]
@@ -211,10 +211,11 @@ executable("flutter_desktop_darwin_unittests") {
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",
+    "//flutter/testing:autoreleasepool_test",
     "//flutter/testing:dart",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
-    "//third_party/ocmock:ocmock",
+    "//flutter/third_party/ocmock:ocmock",
   ]
 }
 

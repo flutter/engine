@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_LINEAR_GRADIENT_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_LINEAR_GRADIENT_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -49,8 +50,6 @@ class LinearGradientContents final : public ColorSourceContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
-  void SetDither(bool dither);
-
  private:
   bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,
@@ -66,9 +65,12 @@ class LinearGradientContents final : public ColorSourceContents {
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
   Color decal_border_color_ = Color::BlackTransparent();
-  bool dither_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(LinearGradientContents);
+  LinearGradientContents(const LinearGradientContents&) = delete;
+
+  LinearGradientContents& operator=(const LinearGradientContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_LINEAR_GRADIENT_CONTENTS_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_NODE_H_
+#define FLUTTER_IMPELLER_SCENE_NODE_H_
 
 #include <memory>
 #include <mutex>
@@ -128,10 +129,14 @@ class Node final {
 
   std::unique_ptr<Skin> skin_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Node);
+  Node(const Node&) = delete;
+
+  Node& operator=(const Node&) = delete;
 
   friend Scene;
 };
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_NODE_H_

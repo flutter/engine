@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
 
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "fml/thread.h"
@@ -34,6 +34,7 @@ class FenceWaiterVK;
 class ResourceManagerVK;
 class SurfaceContextVK;
 class GPUTracerVK;
+class DescriptorPoolRecyclerVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -158,6 +159,10 @@ class ContextVK final : public Context,
 
   std::shared_ptr<CommandPoolRecyclerVK> GetCommandPoolRecycler() const;
 
+  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const {
+    return descriptor_pool_recycler_;
+  }
+
   std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
 
   void RecordFrameEndTime() const;
@@ -191,6 +196,7 @@ class ContextVK final : public Context,
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
+  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
 
   bool sync_presentation_ = false;
   const uint64_t hash_;
@@ -204,7 +210,11 @@ class ContextVK final : public Context,
   std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory()
       const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
+  ContextVK(const ContextVK&) = delete;
+
+  ContextVK& operator=(const ContextVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_

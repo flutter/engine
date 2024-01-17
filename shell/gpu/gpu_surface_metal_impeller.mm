@@ -51,7 +51,7 @@ GPUSurfaceMetalImpeller::~GPUSurfaceMetalImpeller() = default;
 
 // |Surface|
 bool GPUSurfaceMetalImpeller::IsValid() {
-  return !!aiks_context_;
+  return !!aiks_context_ && aiks_context_->IsValid();
 }
 
 // |Surface|
@@ -99,6 +99,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
   auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
       impeller_renderer_->GetContext(), mtl_layer);
+  if (!drawable) {
+    return nullptr;
+  }
   if (Settings::kSurfaceDataAccessible) {
     last_texture_.reset([drawable.texture retain]);
   }
@@ -146,12 +149,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(
             impeller_renderer_->GetContext(), drawable, clip_rect);
 
-        if (clip_rect && (clip_rect->size.width == 0 || clip_rect->size.height == 0)) {
+        if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
         }
 
         impeller::IRect cull_rect = surface->coverage();
-        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
@@ -160,7 +163,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
             std::move(surface),
             fml::MakeCopyable([aiks_context, picture = std::move(picture)](
                                   impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target);
+              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
             }));
       });
 
@@ -244,22 +247,22 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         auto surface =
             impeller::SurfaceMTL::MakeFromTexture(renderer->GetContext(), mtl_texture, clip_rect);
 
-        if (clip_rect && (clip_rect->size.width == 0 || clip_rect->size.height == 0)) {
+        if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
         }
 
         impeller::IRect cull_rect = surface->coverage();
-        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
-        bool render_result =
-            renderer->Render(std::move(surface),
-                             fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                                   impeller::RenderTarget& render_target) -> bool {
-                               return aiks_context->Render(picture, render_target);
-                             }));
+        bool render_result = renderer->Render(
+            std::move(surface),
+            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
+                                  impeller::RenderTarget& render_target) -> bool {
+              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
+            }));
         if (!render_result) {
           FML_LOG(ERROR) << "Failed to render Impeller frame";
           return false;
