@@ -31,12 +31,13 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
   ///        [MarkFrameEnd] will be attributed to the current frame.
   void MarkFrameStart();
 
-  /// @brief Signal the end of a frame workload and reset pending query pools.
+  /// @brief Signal the end of a frame workload.
   void MarkFrameEnd();
 
   // visible for testing.
   bool IsEnabled() const;
 
+  /// Initialize the set of query pools.
   void InitializeQueryPool(const ContextVK& context);
 
  private:
