@@ -27,22 +27,22 @@ jobs:
         with:
           python-version: '3.7.7' # install the python version needed
       - name: "extract deps, find commit hash, pass to osv-scanner"
-        run: python ci/scan_deps.py
+        run: python ci/scan_deps.py --output osv-lockfile-${{github.sha}}
       - name: "upload osv-scanner deps"
         uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595
         with:
           # use github.ref in name to avoid duplicated artifacts
-          name: "osv-lockfile-${{github.ref}}"
-          path: "osv-lockfile-${{github.ref}}.json"
+          name: "osv-lockfile-${{github.sha}}"
+          path: "osv-lockfile-${{github.sha}}.json"
           retention-days: 2
   vuln-scan:
     name: Vulnerability scanning
     uses: "google/osv-scanner/.github/workflows/osv-scanner-reusable.yml@main"
     with:
       # Download the artifact uploaded in extract-deps step
-      download-artifact: "osv-lockfile-${{github.ref}}"
+      download-artifact: "osv-lockfile-${{github.sha}}"
       scan-args: |-
-        --lockfile=osv-scanner:"osv-lockfile-${{github.ref}}.json"
+        --lockfile=osv-scanner:"osv-lockfile-${{github.sha}}.json"
       fail-on-vuln: false
     # makes sure the osv-formatted vulns are uploaded
     needs:
