@@ -117,9 +117,9 @@ ONLY_ON_SAME_TYPES(T, U) Cast(T v) {
 }
 
 ONLY_ON_FLOAT_TO_SIGNED_INT(FP, SI) Cast(FP v) {
-  if (v <= std::numeric_limits<SI>::min()) {
+  if (v <= static_cast<FP>(std::numeric_limits<SI>::min())) {
     return std::numeric_limits<SI>::min();
-  } else if (v >= std::numeric_limits<SI>::max()) {
+  } else if (v >= static_cast<FP>(std::numeric_limits<SI>::max())) {
     return std::numeric_limits<SI>::max();
   }
   return static_cast<SI>(v);
