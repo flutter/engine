@@ -1289,6 +1289,20 @@ TEST_P(RendererTest, CanLookupRenderTargetProperties) {
             render_target.GetRenderTargetSize());
 }
 
+TEST_P(RendererTest,
+       RenderTargetCreateOffscreenMSAASetsDefaultDepthStencilFormat) {
+  auto context = GetContext();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  RenderTarget render_target = RenderTarget::CreateOffscreenMSAA(
+      *context, *render_target_cache, {100, 100}, /*mip_count=*/1);
+  EXPECT_EQ(render_target.GetDepthAttachment()
+                ->texture->GetTextureDescriptor()
+                .format,
+            GetContext()->GetCapabilities()->GetDefaultDepthStencilFormat());
+}
+
 }  // namespace testing
 }  // namespace impeller
 
