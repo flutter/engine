@@ -113,7 +113,7 @@ vars = {
   # Whether checking out fuchsia dependencies, but whether the fuchsia sdk is
   # coming from official roller / cipd or a gs path is based on the previous
   # flags.
-  'download_fuchsia_deps': 'host_os == "linux" and target_os == "fuchsia"'
+  'download_fuchsia_deps': 'host_os == "linux" and target_os == "fuchsia"',
 
   # An LLVM backend needs LLVM binaries and headers. To avoid build time
   # increases we can use prebuilts. We don't want to download this on every
