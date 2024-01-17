@@ -17,7 +17,7 @@ class GPUProbe;
 /// execution time.
 class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
  public:
-  explicit GPUTracerVK(const std::shared_ptr<DeviceHolder>& device_holder);
+  explicit GPUTracerVK(std::weak_ptr<ContextVK> context);
 
   ~GPUTracerVK() = default;
 
@@ -31,16 +31,18 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
   ///        [MarkFrameEnd] will be attributed to the current frame.
   void MarkFrameStart();
 
-  /// @brief Signal the end of a frame workload.
+  /// @brief Signal the end of a frame workload and reset pending query pools.
   void MarkFrameEnd();
 
   // visible for testing.
   bool IsEnabled() const;
 
+  void InitializeQueryPool(const ContextVK& context);
+
  private:
   friend class GPUProbe;
 
-  static const constexpr size_t kTraceStatesSize = 32u;
+  static const constexpr size_t kTraceStatesSize = 8u;
 
   /// @brief Signal that the cmd buffer is completed.
   ///
@@ -55,7 +57,7 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
   ///        time.
   void RecordCmdBufferEnd(const vk::CommandBuffer& buffer, GPUProbe& probe);
 
-  const std::shared_ptr<DeviceHolder> device_holder_;
+  std::weak_ptr<ContextVK> context_;
 
   struct GPUTraceState {
     size_t current_index = 0;
