@@ -257,8 +257,10 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   /// changed for the lifetime of the textures.
 
   if (context->GetBackendType() != Context::BackendType::kMetal) {
-    // TODO(tbd): Implement mip map generation on vulkan.
-    // TODO(tbd): Implement mip map generation on opengles.
+    // TODO(https://github.com/flutter/flutter/issues/141495): Implement mip map
+    // generation on vulkan.
+    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
+    // generation on opengles.
     mip_count = 1;
   }
 
