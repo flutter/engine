@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../ui/utils.dart';
 import 'common.dart';
 
 void main() {
@@ -193,7 +194,8 @@ void testMain() {
       // 2.0.
       expect(canvasSize.width, 14);
       expect(canvasSize.height, 28);
-    });
+      // Skip on Skwasm since same() doesn't work for JSValues.
+    }, skip: isSkwasm);
 
     test(
       'Surface creates new context when WebGL context is restored',
