@@ -28,7 +28,7 @@ LazyGlyphAtlas::LazyGlyphAtlas(
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
 void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame, Scalar scale) {
-  FML_DCHECK(alpha_atlas_ != nullptr || color_atlas_ != nullptr);
+  FML_DCHECK(alpha_atlas_ == nullptr && color_atlas_ == nullptr);
   if (frame.GetAtlasType() == GlyphAtlas::Type::kAlphaBitmap) {
     frame.CollectUniqueFontGlyphPairs(alpha_glyph_map_, scale);
   } else {
