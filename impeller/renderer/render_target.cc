@@ -350,6 +350,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     target.SetupDepthStencilAttachments(context, allocator, size, true, label,
                                         stencil_attachment_config.value());
   } else {
+    target.SetDepthAttachment(std::nullopt);
     target.SetStencilAttachment(std::nullopt);
   }
 
@@ -414,9 +415,6 @@ size_t RenderTarget::GetTotalAttachmentCount() const {
     count++;
   }
   if (stencil_.has_value()) {
-    count++;
-  }
-  if (depth_.has_value()) {
     count++;
   }
   return count;
