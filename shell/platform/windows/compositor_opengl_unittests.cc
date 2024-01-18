@@ -57,16 +57,6 @@ const impeller::ProcTableGLES::Resolver kMockResolver = [](const char* name) {
   }
 };
 
-class MockFlutterWindowsView : public FlutterWindowsView {
- public:
-  MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window)
-      : FlutterWindowsView(std::move(window)) {}
-  virtual ~MockFlutterWindowsView() = default;
-
- private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
-};
-
 class CompositorOpenGLTest : public WindowsTest {
  public:
   CompositorOpenGLTest() = default;
@@ -74,7 +64,6 @@ class CompositorOpenGLTest : public WindowsTest {
 
  protected:
   FlutterWindowsEngine* engine() { return engine_.get(); }
-  MockFlutterWindowsView* view() { return view_.get(); }
   MockAngleSurfaceManager* surface_manager() { return surface_manager_; }
 
   void UseHeadlessEngine() {
@@ -95,14 +84,14 @@ class CompositorOpenGLTest : public WindowsTest {
     EXPECT_CALL(*window.get(), SetView).Times(1);
     EXPECT_CALL(*window.get(), GetWindowHandle).WillRepeatedly(Return(nullptr));
 
-    view_ = std::make_unique<MockFlutterWindowsView>(std::move(window));
+    view_ = std::make_unique<FlutterWindowsView>(std::move(window));
 
     engine_->SetView(view_.get());
   }
 
  private:
   std::unique_ptr<FlutterWindowsEngine> engine_;
-  std::unique_ptr<MockFlutterWindowsView> view_;
+  std::unique_ptr<FlutterWindowsView> view_;
   MockAngleSurfaceManager* surface_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CompositorOpenGLTest);
