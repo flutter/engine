@@ -16,12 +16,12 @@ namespace testing {
 
 namespace {
 std::unique_ptr<Screenshot> ReadTexture(
-    const std::shared_ptr<SurfaceContextVK>& surface_context,
-    const std::shared_ptr<TextureVK>& texture) {
-  const int bpp = 4;
+    const std::shared_ptr<Context>& surface_context,
+    const std::shared_ptr<Texture>& texture) {
   DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = StorageMode::kHostVisible;
-  buffer_desc.size = texture->GetSize().width * texture->GetSize().height * bpp;
+  buffer_desc.size =
+      texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
   std::shared_ptr<DeviceBuffer> device_buffer =
       surface_context->GetResourceAllocator()->CreateBuffer(buffer_desc);
   FML_CHECK(device_buffer);
@@ -52,7 +52,8 @@ std::unique_ptr<Screenshot> ReadTexture(
   CGContextRef context = CGBitmapContextCreate(
       device_buffer->OnGetContents(), texture->GetSize().width,
       texture->GetSize().height,
-      /*bitsPerComponent=*/8, /*bytesPerRow=*/texture->GetSize().width * bpp,
+      /*bitsPerComponent=*/8,
+      /*bytesPerRow=*/texture->GetTextureDescriptor().GetBytesPerRow(),
       color_space, bitmap_info);
   FML_CHECK(context);
   CGImageRef image_ref = CGBitmapContextCreateImage(context);
@@ -82,13 +83,7 @@ std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(
   std::shared_ptr<Texture> texture = image->GetTexture();
   FML_CHECK(aiks_context.GetContext()->GetBackendType() ==
             Context::BackendType::kVulkan);
-  std::shared_ptr<SurfaceContextVK> surface_context =
-      std::static_pointer_cast<SurfaceContextVK>(aiks_context.GetContext());
-  std::shared_ptr<TextureVK> vulkan_texture =
-      std::reinterpret_pointer_cast<TextureVK>(texture);
-  std::unique_ptr<Screenshot> result =
-      ReadTexture(surface_context, vulkan_texture);
-  return result;
+  return ReadTexture(aiks_context.GetContext(), texture);
 }
 
 }  // namespace testing
