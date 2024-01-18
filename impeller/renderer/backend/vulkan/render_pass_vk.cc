@@ -34,6 +34,8 @@ namespace impeller {
 // Warning: if any of the constant values or layouts are changed in the
 // framebuffer fetch shader, then this input binding may need to be
 // manually changed.
+//
+// See: impeller/entity/shaders/blending/framebuffer_blend.frag
 static constexpr size_t kMagicSubpassInputBinding = 64;
 
 static vk::ClearColorValue VKClearValueFromColor(Color color) {
