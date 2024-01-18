@@ -110,15 +110,8 @@ vars = {
   # local development.
   'download_fuchsia_sdk': False,
   'fuchsia_sdk_path': '',
-  # For legacy reasons, some builders like fuchsia femu cannot consume the
-  # target_os gn variable, so the fuchsia sdk has to be downloaded
-  # unconditionally. This variable should be removed in favor of the
-  # 'download_fuchsia_deps' once the legacy builders have been removed.
-  'download_fuchsia_deps_legacy': 'host_os == "linux"',
-  # Whether checking out fuchsia dependencies, but whether the fuchsia sdk is
-  # coming from official roller / cipd or a gs path is based on the previous
-  # flags.
-  'download_fuchsia_deps': 'download_fuchsia_deps_legacy and target_os == "fuchsia"',
+  # If download and run fuchsia emu locally to test fuchsia builds.
+  'run_fuchsia_emu': False,
 
   # An LLVM backend needs LLVM binaries and headers. To avoid build time
   # increases we can use prebuilts. We don't want to download this on every
@@ -998,7 +991,7 @@ deps = {
         'version': 'dTy8CK4YxnUsW305O9ahIOnOm2gj69mZiTBBEWadDCMC'
        }
      ],
-     'condition': 'download_fuchsia_deps_legacy and not download_fuchsia_sdk',
+     'condition': 'host_os == "linux" and not download_fuchsia_sdk',
      'dep_type': 'cipd',
    },
 
@@ -1009,7 +1002,7 @@ deps = {
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
-     'condition': 'download_fuchsia_deps_legacy',
+     'condition': 'host_os == "linux"',
      'dep_type': 'cipd',
    },
 
@@ -1103,7 +1096,7 @@ hooks = [
   {
     'name': 'Download Fuchsia SDK',
     'pattern': '.',
-    'condition': 'download_fuchsia_deps_legacy and download_fuchsia_sdk',
+    'condition': 'host_os == "linux" and download_fuchsia_sdk',
     'action': [
       'python3',
       'src/flutter/tools/download_fuchsia_sdk.py',
@@ -1178,7 +1171,7 @@ hooks = [
   {
     'name': 'Download Fuchsia system images',
     'pattern': '.',
-    'condition': 'download_fuchsia_deps',
+    'condition': 'run_fuchsia_emu',
     'action': [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',

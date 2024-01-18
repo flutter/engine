@@ -7,8 +7,7 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false,
-                "target_os": "fuchsia"
+                "download_android_deps": false
             },
             "gn": [
                 "--fuchsia",
@@ -32,8 +31,7 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false,
-                "target_os": "fuchsia"
+                "download_android_deps": false
             },
             "gn": [
                 "--fuchsia",
@@ -57,8 +55,7 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false,
-                "target_os": "fuchsia"
+                "download_android_deps": false
             },
             "gn": [
                 "--fuchsia",
@@ -98,8 +95,7 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false,
-                "target_os": "fuchsia"
+                "download_android_deps": false
             },
             "gn": [
                 "--fuchsia",
@@ -122,8 +118,7 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false,
-                "target_os": "fuchsia"
+                "download_android_deps": false
             },
             "gn": [
                 "--fuchsia",
@@ -148,7 +143,7 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "target_os": "fuchsia"
+                "run_fuchsia_emu": true
             },
             "gn": [
                 "--fuchsia",
