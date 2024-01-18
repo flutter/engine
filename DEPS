@@ -1096,7 +1096,7 @@ hooks = [
   {
     'name': 'Download Fuchsia SDK',
     'pattern': '.',
-    'condition': 'host_os == "linux" and download_fuchsia_sdk',
+    'condition': 'download_fuchsia_sdk',
     'action': [
       'python3',
       'src/flutter/tools/download_fuchsia_sdk.py',
