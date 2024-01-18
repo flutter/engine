@@ -194,8 +194,8 @@ void testMain() {
       // 2.0.
       expect(canvasSize.width, 14);
       expect(canvasSize.height, 28);
-      // Skip on Skwasm since same() doesn't work for JSValues.
-    }, skip: isSkwasm);
+      // Skip on wasm since same() doesn't work for JSValues.
+    }, skip: isWasm);
 
     test(
       'Surface creates new context when WebGL context is restored',
