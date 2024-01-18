@@ -78,7 +78,7 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -166,7 +166,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   AiksContext renderer(GetContext(), typographer_context_);
 
   std::optional<Picture> picture;
-  std::unique_ptr<testing::MetalScreenshot> screenshot;
+  std::unique_ptr<testing::Screenshot> screenshot;
   for (int i = 0; i < 2; ++i) {
     picture = callback(renderer);
     if (!picture.has_value()) {

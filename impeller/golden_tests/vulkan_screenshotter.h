@@ -20,7 +20,7 @@ class VulkanScreenshotter : public Screenshotter {
  public:
   VulkanScreenshotter();
 
-  std::unique_ptr<MetalScreenshot> MakeScreenshot(
+  std::unique_ptr<Screenshot> MakeScreenshot(
       AiksContext& aiks_context,
       const Picture& picture,
       const ISize& size = {300, 300},

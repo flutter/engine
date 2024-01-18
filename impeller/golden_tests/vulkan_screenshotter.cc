@@ -16,7 +16,7 @@ VulkanScreenshotter::VulkanScreenshotter() {
       PlaygroundImpl::Create(PlaygroundBackend::kVulkan, PlaygroundSwitches{});
 }
 
-std::unique_ptr<MetalScreenshot> VulkanScreenshotter::MakeScreenshot(
+std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(
     AiksContext& aiks_context,
     const Picture& picture,
     const ISize& size,

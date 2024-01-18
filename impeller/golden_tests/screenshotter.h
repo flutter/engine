@@ -7,7 +7,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/aiks/picture.h"
-#include "flutter/impeller/golden_tests/metal_screenshot.h"
+#include "flutter/impeller/golden_tests/screenshot.h"
 #include "flutter/impeller/playground/playground_impl.h"
 
 namespace impeller {
@@ -19,7 +19,7 @@ class Screenshotter {
  public:
   virtual ~Screenshotter() = default;
 
-  virtual std::unique_ptr<MetalScreenshot> MakeScreenshot(
+  virtual std::unique_ptr<Screenshot> MakeScreenshot(
       AiksContext& aiks_context,
       const Picture& picture,
       const ISize& size = {300, 300},
