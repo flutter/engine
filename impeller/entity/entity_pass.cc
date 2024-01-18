@@ -256,11 +256,11 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
-  if (context->GetBackendType() != Context::BackendType::kMetal) {
-    // TODO(tbd): Implement mip map generation on vulkan.
-    // TODO(tbd): Implement mip map generation on opengles.
-    mip_count = 1;
-  }
+  // if (context->GetBackendType() != Context::BackendType::kMetal) {
+  //   // TODO(tbd): Implement mip map generation on vulkan.
+  //   // TODO(tbd): Implement mip map generation on opengles.
+  //   mip_count = 1;
+  // }
 
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {

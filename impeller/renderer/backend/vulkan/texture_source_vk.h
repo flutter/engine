@@ -27,7 +27,17 @@ class TextureSourceVK {
 
   virtual vk::Image GetImage() const = 0;
 
+  /// @brief Retrieve the image view used for sampling/blitting/compute with
+  ///        this texture source.
   virtual vk::ImageView GetImageView() const = 0;
+
+  /// @brief Retrieve the image view used for render target attachments
+  ///        with this texture source.
+  ///
+  /// image views used as render target attachments cannot have any mip levels.
+  /// In cases where we want to generate mipmaps with the result of this
+  /// texture, we need to create multiple image views.
+  virtual vk::ImageView GetRenderTargetView() const = 0;
 
   /// Encodes the layout transition `barrier` to `barrier.cmd_buffer` for the
   /// image.

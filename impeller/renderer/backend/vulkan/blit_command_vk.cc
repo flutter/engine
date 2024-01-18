@@ -352,6 +352,7 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   // We modified the layouts of this image from underneath it. Tell it its new
   // state so it doesn't try to perform redundant transitions under the hood.
   src.SetLayoutWithoutEncoding(vk::ImageLayout::eShaderReadOnlyOptimal);
+  src.SetMipMapGenerated();
 
   return true;
 }

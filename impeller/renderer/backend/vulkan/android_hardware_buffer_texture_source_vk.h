@@ -38,6 +38,9 @@ class AndroidHardwareBufferTextureSourceVK final : public TextureSourceVK {
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
 
+  // |TextureSourceVK|
+  vk::ImageView GetRenderTargetView() const override;
+
   bool IsValid() const;
 
  private:

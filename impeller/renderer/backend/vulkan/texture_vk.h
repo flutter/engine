@@ -30,6 +30,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   vk::ImageView GetImageView() const;
 
+  vk::ImageView GetRenderTargetView() const;
+
   bool SetLayout(const BarrierVK& barrier) const;
 
   vk::ImageLayout SetLayoutWithoutEncoding(vk::ImageLayout layout) const;
@@ -37,6 +39,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   vk::ImageLayout GetLayout() const;
 
   std::shared_ptr<const TextureSourceVK> GetTextureSource() const;
+
+  void SetMipMapGenerated() { mipmap_generated_ = true; }
 
  private:
   std::weak_ptr<Context> context_;
