@@ -16,7 +16,7 @@ namespace testing {
 MetalScreenshotter::MetalScreenshotter() {
   FML_CHECK(::glfwInit() == GLFW_TRUE);
   playground_ =
-      PlaygroundImpl::Create(PlaygroundBackend::kVulkan, PlaygroundSwitches{});
+      PlaygroundImpl::Create(PlaygroundBackend::kMetal, PlaygroundSwitches{});
 }
 
 std::unique_ptr<MetalScreenshot> MetalScreenshotter::MakeScreenshot(
