@@ -19,11 +19,6 @@
 
 namespace impeller {
 
-enum class WindingOrder {
-  kClockwise,
-  kCounterClockwise,
-};
-
 class Texture;
 
 //------------------------------------------------------------------------------
