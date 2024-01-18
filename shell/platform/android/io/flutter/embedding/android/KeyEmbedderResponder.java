@@ -398,9 +398,11 @@ public class KeyEmbedderResponder implements KeyboardManager.Responder {
             ? null
             : message -> {
               Boolean handled = false;
-              message.rewind();
-              if (message.capacity() != 0) {
-                handled = message.get() != 0;
+              if (message != null) {
+                message.rewind();
+                if (message.capacity() != 0) {
+                  handled = message.get() != 0;
+                }
               }
               onKeyEventHandledCallback.onKeyEventHandled(handled);
             };
