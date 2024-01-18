@@ -17,7 +17,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '31309ff0953761327b6bbb8c465a4bdb0c33f1fd',
+  'skia_revision': 'b1611add59398da71316d5247ddebe38ae285a7c',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -981,7 +981,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'Klxww53tA4-TG5pA9ZV503yJNi1sB4rWaimC6yDpe70C'
+        'version': 'dTy8CK4YxnUsW305O9ahIOnOm2gj69mZiTBBEWadDCMC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
@@ -989,7 +989,7 @@ deps = {
    },
 
   'src/third_party/impeller-cmake-example': {
-     'url': Var('flutter_git') + '/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
+     'url': Var('flutter_git') + '/third_party/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
      'condition': 'download_impeller_cmake_example',
   },
 
