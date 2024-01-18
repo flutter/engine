@@ -4,6 +4,8 @@
 
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 
+#include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/impeller/golden_tests/metal_screenshot.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #define GLFW_INCLUDE_NONE
@@ -16,29 +18,48 @@ namespace {
 std::unique_ptr<Screenshot> ReadTexture(
     const std::shared_ptr<SurfaceContextVK>& surface_context,
     const std::shared_ptr<TextureVK>& texture) {
-  vk::BufferCreateInfo buffer_create_info;
   const int bpp = 4;
-  buffer_create_info.size =
-      texture->GetSize().width * texture->GetSize().height * bpp;
-  buffer_create_info.usage = vk::BufferUsageFlagBits::eTransferDst;
-  buffer_create_info.sharingMode = vk::SharingMode::eExclusive;
+  DeviceBufferDescriptor buffer_desc;
+  buffer_desc.storage_mode = StorageMode::kHostVisible;
+  buffer_desc.size = texture->GetSize().width * texture->GetSize().height * bpp;
+  std::shared_ptr<DeviceBuffer> device_buffer =
+      surface_context->GetResourceAllocator()->CreateBuffer(buffer_desc);
+  FML_CHECK(device_buffer);
 
-  auto buffer_result = surface_context->GetDevice().createBufferUnique(
-      buffer_create_info, nullptr);
-  FML_CHECK(buffer_result.result == vk::Result::eSuccess);
+  auto command_buffer = surface_context->CreateCommandBuffer();
+  auto blit_pass = command_buffer->CreateBlitPass();
+  bool success = blit_pass->AddCopy(texture, device_buffer);
+  FML_CHECK(success);
 
-  vk::MemoryRequirements memory_requirements;
-  surface_context->GetDevice().getBufferMemoryRequirements(
-      buffer_result.value.get(), &memory_requirements);
+  success = blit_pass->EncodeCommands(surface_context->GetResourceAllocator());
+  FML_CHECK(success);
 
-  vk::MemoryAllocateInfo alloc_info;
-  alloc_info.allocationSize = memory_requirements.size;
-  // alloc_info.memoryTypeIndex =
-  auto memory_result =
-      surface_context->GetDevice().allocateMemoryUnique(alloc_info, nullptr);
-  FML_CHECK(memory_result.result == vk::Result::eSuccess);
+  fml::AutoResetWaitableEvent latch;
+  success =
+      command_buffer->SubmitCommands([&latch](CommandBuffer::Status status) {
+        FML_CHECK(status == CommandBuffer::Status::kCompleted);
+        latch.Signal();
+      });
+  FML_CHECK(success);
+  latch.Wait();
 
-  return {};
+  // TODO(gaaclarke): Replace CoreImage requirement with something
+  // crossplatform.
+
+  CGColorSpaceRef color_space = CGColorSpaceCreateDeviceRGB();
+  CGBitmapInfo bitmap_info =
+      kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big;
+  CGContextRef context = CGBitmapContextCreate(
+      device_buffer->OnGetContents(), texture->GetSize().width,
+      texture->GetSize().height,
+      /*bitsPerComponent=*/8, /*bytesPerRow=*/texture->GetSize().width * bpp,
+      color_space, bitmap_info);
+  FML_CHECK(context);
+  CGImageRef image_ref = CGBitmapContextCreateImage(context);
+  FML_CHECK(image_ref);
+  CGContextRelease(context);
+  CGColorSpaceRelease(color_space);
+  return std::make_unique<MetalScreenshot>(image_ref);
 }
 }  // namespace
 
@@ -65,10 +86,8 @@ std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(
       std::static_pointer_cast<SurfaceContextVK>(aiks_context.GetContext());
   std::shared_ptr<TextureVK> vulkan_texture =
       std::reinterpret_pointer_cast<TextureVK>(texture);
-  // TODO(gaaclarke)
   std::unique_ptr<Screenshot> result =
       ReadTexture(surface_context, vulkan_texture);
-  FML_CHECK(result);
   return result;
 }
 

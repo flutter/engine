@@ -19,6 +19,8 @@ namespace testing {
 /// A screenshot that was produced from `MetalScreenshotter`.
 class MetalScreenshot : public Screenshot {
  public:
+  explicit MetalScreenshot(CGImageRef cgImage);
+
   ~MetalScreenshot();
 
   const uint8_t* GetBytes() const override;
@@ -32,8 +34,6 @@ class MetalScreenshot : public Screenshot {
   bool WriteToPNG(const std::string& path) const override;
 
  private:
-  friend class MetalScreenshotter;
-  explicit MetalScreenshot(CGImageRef cgImage);
   MetalScreenshot(const MetalScreenshot&) = delete;
 
   MetalScreenshot& operator=(const MetalScreenshot&) = delete;

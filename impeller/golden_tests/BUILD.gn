@@ -50,8 +50,8 @@ if (is_mac) {
       "metal_screenshotter.h",
       "metal_screenshotter.mm",
       "screenshot.h",
-      "vulkan_screenshotter.cc",
       "vulkan_screenshotter.h",
+      "vulkan_screenshotter.mm",
     ]
 
     deps = [
