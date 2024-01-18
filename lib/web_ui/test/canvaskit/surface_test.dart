@@ -9,7 +9,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../ui/utils.dart';
 import 'common.dart';
 
 void main() {
