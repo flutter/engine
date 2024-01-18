@@ -9,6 +9,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/context.h"
 
