@@ -31,9 +31,14 @@ class CommandBufferVK final
 
   std::shared_ptr<CommandEncoderVK> encoder_;
   std::shared_ptr<CommandEncoderFactoryVK> encoder_factory_;
+  // If this command buffer was created on the raster thread as part of a
+  // frame workload, we collect them until frame submission to batch queue
+  // submissions.
+  const bool is_raster_task_;
 
   CommandBufferVK(std::weak_ptr<const Context> context,
-                  std::shared_ptr<CommandEncoderFactoryVK> encoder_factory);
+                  std::shared_ptr<CommandEncoderFactoryVK> encoder_factory,
+                  bool is_raster_task);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;

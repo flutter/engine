@@ -122,6 +122,14 @@ class ContextVK final : public Context,
 
   void SetOffscreenFormat(PixelFormat pixel_format);
 
+  bool IsRasterWorkload() const {
+    return raster_thread_id_ == std::this_thread::get_id();
+  }
+
+  void DidAcquireNextSurface() {
+    raster_thread_id_ = std::this_thread::get_id();
+  }
+
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
     return SetDebugName(GetDevice(), handle, label);
@@ -227,6 +235,7 @@ class ContextVK final : public Context,
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::unique_ptr<PendingQueueSubmit> pending_queue_submit_;
+  std::thread::id raster_thread_id_;
 
   bool sync_presentation_ = false;
   const uint64_t hash_;

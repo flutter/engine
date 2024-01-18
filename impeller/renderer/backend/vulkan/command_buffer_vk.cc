@@ -22,9 +22,11 @@ namespace impeller {
 
 CommandBufferVK::CommandBufferVK(
     std::weak_ptr<const Context> context,
-    std::shared_ptr<CommandEncoderFactoryVK> encoder_factory)
+    std::shared_ptr<CommandEncoderFactoryVK> encoder_factory,
+    bool is_raster_task)
     : CommandBuffer(std::move(context)),
-      encoder_factory_(std::move(encoder_factory)) {}
+      encoder_factory_(std::move(encoder_factory)),
+      is_raster_task_(is_raster_task) {}
 
 CommandBufferVK::~CommandBufferVK() = default;
 
@@ -60,19 +62,29 @@ bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
     return false;
   }
 
-  auto submit_callback = [callback](bool submitted) {
-    if (!callback) {
-      return;
-    }
+  if (is_raster_task_) {
+    auto submit_callback = [callback](bool submitted) {
+      if (!callback) {
+        return;
+      }
+      callback(submitted ? CommandBuffer::Status::kCompleted
+                         : CommandBuffer::Status::kError);
+    };
+
+    const ContextVK& context_vk = ContextVK::Cast(*context);
+    encoder_->End(context_vk, submit_callback);
+    context_vk.GetPendingQueueSubmit()->RecordEncoder(std::move(encoder_),
+                                                      submit_callback);
+    return true;
+  }
+
+  if (!callback) {
+    return encoder_->Submit();
+  }
+  return encoder_->Submit([callback](bool submitted) {
     callback(submitted ? CommandBuffer::Status::kCompleted
                        : CommandBuffer::Status::kError);
-  };
-
-  const ContextVK& context_vk = ContextVK::Cast(*context);
-  encoder_->End(context_vk, submit_callback);
-  context_vk.GetPendingQueueSubmit()->RecordEncoder(std::move(encoder_),
-                                                    submit_callback);
-  return true;
+  });
 }
 
 void CommandBufferVK::OnWaitUntilScheduled() {}

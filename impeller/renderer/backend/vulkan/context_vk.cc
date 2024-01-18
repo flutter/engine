@@ -492,7 +492,8 @@ std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   return std::shared_ptr<CommandBufferVK>(
       new CommandBufferVK(shared_from_this(),                     //
-                          CreateGraphicsCommandEncoderFactory())  //
+                          CreateGraphicsCommandEncoderFactory(),  //
+                          IsRasterWorkload())                     //
   );
 }
 
@@ -514,7 +515,6 @@ ContextVK::GetConcurrentWorkerTaskRunner() const {
 }
 
 PendingQueueSubmit* ContextVK::GetPendingQueueSubmit() const {
-  // TODO: deal with worker threads.
   return pending_queue_submit_.get();
 }
 
