@@ -24,7 +24,7 @@ import run_test
 from run_executable_test import ExecutableTestRunner
 from test_runner import TestRunner
 
-# This file is expected to be executed from src/flutter/.
+# This file is expected to be executed from src/.
 
 
 # TODO(https://github.com/flutter/flutter/issues/140179): Execute all the tests
