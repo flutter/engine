@@ -116,9 +116,7 @@ void GoldenPlaygroundTest::SetTypographerContext(
 };
 
 void GoldenPlaygroundTest::TearDown() {
-  // TODO(gaaclarke): Use swiftshader instead of moltenvk.  Moltenvk is just
-  // turned on for easy development.
-  // ASSERT_FALSE(dlopen("/usr/local/lib/libMoltenVK.dylib", RTLD_NOLOAD));
+  ASSERT_FALSE(dlopen("/usr/local/lib/libMoltenVK.dylib", RTLD_NOLOAD));
 }
 
 void GoldenPlaygroundTest::SetUp() {
