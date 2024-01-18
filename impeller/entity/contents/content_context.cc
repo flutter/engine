@@ -332,6 +332,7 @@ ContentContext::ContentContext(
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   texture_blend_pipelines_.CreateDefault(*context_, options);
   texture_pipelines_.CreateDefault(*context_, options);
+  texture_strict_src_pipelines_.CreateDefault(*context_, options);
   position_uv_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options);
   gaussian_blur_noalpha_decal_pipelines_.CreateDefault(*context_,
@@ -414,7 +415,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled) const {
-  std::shared_ptr<Context> context = GetContext();
+  const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
@@ -438,7 +439,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
     const RenderTarget& subpass_target,
     const SubpassCallback& subpass_callback) const {
-  std::shared_ptr<Context> context = GetContext();
+  const std::shared_ptr<Context>& context = GetContext();
 
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
