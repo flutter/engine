@@ -198,10 +198,9 @@ class Context {
 
   /// @brief Flush any pending GPU workloads.
   ///
-  /// This is primarily used by the Vulkan backend to batch submit command buffers.
-  virtual fml::Status FlushPendingTasks() const {
-    return fml::Status();
-  }
+  /// This is primarily used by the Vulkan backend to batch submit command
+  /// buffers.
+  virtual fml::Status FlushPendingTasks() const { return fml::Status(); }
 
  protected:
   Context();
