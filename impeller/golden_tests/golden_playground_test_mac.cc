@@ -11,6 +11,7 @@
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
+#include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -91,15 +92,21 @@ bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
-  GoldenPlaygroundTestImpl()
-      : screenshotter(new testing::MetalScreenshotter()) {}
-  std::unique_ptr<testing::MetalScreenshotter> screenshotter;
+  std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
     : typographer_context_(TypographerContextSkia::Make()),
-      pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
+      pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>();
+  } else {
+    FML_CHECK(false) << "unsupported backend";
+  }
+}
 
 GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
 
