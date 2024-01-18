@@ -1,4 +1,4 @@
-Signature: 060d035c8dfcec9a4b371d11e16a782b
+Signature: 5a95f9e1af7d8fda97c14f76859d4438
 
 ====================================================================================================
 LIBRARY: etc1
@@ -392,6 +392,7 @@ FILE: ../../../flutter/third_party/skia/relnotes/SwitchScopes.md
 FILE: ../../../flutter/third_party/skia/relnotes/Tick.md
 FILE: ../../../flutter/third_party/skia/relnotes/TopLevelShadowing.md
 FILE: ../../../flutter/third_party/skia/relnotes/font.md
+FILE: ../../../flutter/third_party/skia/relnotes/fontmgr.md
 FILE: ../../../flutter/third_party/skia/relnotes/skfontarguments_type.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
@@ -942,9 +943,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontHost_FreeType_common.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontHost_FreeType_common.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/ports/SkTypeface_FreeType.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontHost_FreeType_common.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontHost_FreeType_common.h
+FILE: ../../../flutter/third_party/skia/src/ports/SkTypeface_FreeType.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2006-2012 The Android Open Source Project
 Copyright 2012 Mozilla Foundation
@@ -1030,10 +1033,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_matrixProcs.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_FontConfigInterface_factory.cpp + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_matrixProcs.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_FontConfigInterface_factory.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2008 Google Inc.
 
@@ -1081,7 +1082,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/core/SkPoint.cpp + ../../../flutte
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkPtrRecorder.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkStroke.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkWriter32.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_empty_factory.cpp + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/include/core/SkMallocPixelRef.h
 FILE: ../../../flutter/third_party/skia/include/core/SkPixelRef.h
@@ -1096,7 +1096,6 @@ FILE: ../../../flutter/third_party/skia/src/core/SkPoint.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkPtrRecorder.h
 FILE: ../../../flutter/third_party/skia/src/core/SkStroke.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkWriter32.h
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_empty_factory.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2008 The Android Open Source Project
 
@@ -3318,11 +3317,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.cpp + ../../../flu
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_android_factory.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_directory_factory.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_embedded_factory.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_fontconfig_factory.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_win_dw_factory.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSLibrary.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_posix.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_win.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -3604,11 +3598,6 @@ FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFBitmap.h
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMetadata.h
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_android_factory.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_directory_factory.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_embedded_factory.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_fontconfig_factory.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_win_dw_factory.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkOSLibrary.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_posix.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkOSLibrary_win.cpp
@@ -3976,7 +3965,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.c
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFMakeToUnicodeCmap.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontConfigInterface.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_empty_factory.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkImageGeneratorCG.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkImageGeneratorWIC.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/shaders/SkColorFilterShader.h + ../../../flutter/third_party/skia/LICENSE
@@ -4281,7 +4269,6 @@ FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.cpp
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMakeCIDGlyphWidthsArray.h
 FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFMakeToUnicodeCmap.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontConfigInterface.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_empty_factory.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkImageGeneratorCG.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkImageGeneratorWIC.cpp
 FILE: ../../../flutter/third_party/skia/src/shaders/SkColorFilterShader.h
@@ -4604,7 +4591,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/core/SkDrawShadowInfo.cpp + ../../
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkDrawShadowInfo.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkDraw_vertices.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkExecutor.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/core/SkFontMgrPriv.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkGaussFilter.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkGaussFilter.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkImageInfoPriv.h + ../../../flutter/third_party/skia/LICENSE
@@ -4679,7 +4665,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/pdf/SkPDFGradientShader.h + ../../
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_directory.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_embedded.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_empty.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_mac_ct_factory.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkOSFile_ios.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sfnt/SkOTTable_fvar.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/shaders/SkShaderBase.h + ../../../flutter/third_party/skia/LICENSE
@@ -4825,7 +4810,6 @@ FILE: ../../../flutter/third_party/skia/src/core/SkDrawShadowInfo.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkDrawShadowInfo.h
 FILE: ../../../flutter/third_party/skia/src/core/SkDraw_vertices.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkExecutor.cpp
-FILE: ../../../flutter/third_party/skia/src/core/SkFontMgrPriv.h
 FILE: ../../../flutter/third_party/skia/src/core/SkGaussFilter.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkGaussFilter.h
 FILE: ../../../flutter/third_party/skia/src/core/SkImageInfoPriv.h
@@ -4900,7 +4884,6 @@ FILE: ../../../flutter/third_party/skia/src/pdf/SkPDFGradientShader.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_directory.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_embedded.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_custom_empty.cpp
-FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_mac_ct_factory.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkOSFile_ios.h
 FILE: ../../../flutter/third_party/skia/src/sfnt/SkOTTable_fvar.h
 FILE: ../../../flutter/third_party/skia/src/shaders/SkShaderBase.h
@@ -9475,6 +9458,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
+ORIGIN: ../../../flutter/third_party/skia/src/core/SkFontScanner.h + ../../../flutter/third_party/skia/LICENSE
+TYPE: LicenseType.bsd
+FILE: ../../../flutter/third_party/skia/src/core/SkFontScanner.h
+----------------------------------------------------------------------------------------------------
+Copyright 2024 Google Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+  * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+
+  * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the
+    distribution.
+
+  * Neither the name of the copyright holder nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+====================================================================================================
+
+====================================================================================================
+LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp
@@ -9510,4 +9530,4 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
-Total license count: 68
+Total license count: 69
