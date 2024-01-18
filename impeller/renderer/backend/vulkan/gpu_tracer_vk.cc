@@ -20,7 +20,7 @@
 
 namespace impeller {
 
-static constexpr uint32_t kPoolSize = 256u;
+static constexpr uint32_t kPoolSize = 128u;
 
 GPUTracerVK::GPUTracerVK(std::weak_ptr<ContextVK> context)
     : context_(std::move(context)) {
@@ -110,6 +110,15 @@ void GPUTracerVK::RecordCmdBufferStart(const vk::CommandBuffer& buffer,
   Lock lock(trace_state_mutex_);
   auto& state = trace_states_[current_state_];
 
+  // Reset previously completed queries.
+  if (!states_to_reset_.empty()) {
+    for (auto i = 0u; i < states_to_reset_.size(); i++) {
+      buffer.resetQueryPool(trace_states_[states_to_reset_[i]].query_pool.get(),
+                            0, kPoolSize);
+    }
+    states_to_reset_.clear();
+  }
+
   // We size the query pool to kPoolSize, but Flutter applications can create an
   // unbounded amount of work per frame. If we encounter this, stop recording
   // cmds.
@@ -196,15 +205,9 @@ void GPUTracerVK::OnFenceComplete(size_t frame_index) {
                         "FrameTimeMS", gpu_ms);
     }
 
-    // Reset the query pool after use.
-    std::shared_ptr<CommandBuffer> buffer = context->CreateCommandBuffer();
-    CommandBufferVK& buffer_vk = CommandBufferVK::Cast(*buffer);
-
-    buffer_vk.GetEncoder()->GetCommandBuffer().resetQueryPool(pool, 0,
-                                                              kPoolSize);
-    if (!buffer->SubmitCommands()) {
-      VALIDATION_LOG << "Failed to reset query pool";
-    }
+    // Record this query to be reset the next time a command is recorded.
+    Lock lock(trace_state_mutex_);
+    states_to_reset_.push_back(frame_index);
   }
 }
 

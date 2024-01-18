@@ -43,7 +43,7 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
  private:
   friend class GPUProbe;
 
-  static const constexpr size_t kTraceStatesSize = 32u;
+  static const constexpr size_t kTraceStatesSize = 16u;
 
   /// @brief Signal that the cmd buffer is completed.
   ///
@@ -70,6 +70,7 @@ class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
   GPUTraceState trace_states_[kTraceStatesSize] IPLR_GUARDED_BY(
       trace_state_mutex_);
   size_t current_state_ IPLR_GUARDED_BY(trace_state_mutex_) = 0u;
+  std::vector<size_t> IPLR_GUARDED_BY(trace_state_mutex_) states_to_reset_ = {};
 
   // The number of nanoseconds for each timestamp unit.
   float timestamp_period_ = 1;
