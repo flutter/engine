@@ -1126,7 +1126,6 @@
 ../../../flutter/tools/licenses/pubspec.yaml
 ../../../flutter/tools/licenses/test
 ../../../flutter/web_sdk
-../../../fuchsia/images
 ../../../fuchsia/sdk/linux/.build-id
 ../../../fuchsia/sdk/linux/.versions
 ../../../fuchsia/sdk/linux/AUTHORS
