@@ -50,6 +50,7 @@ if (is_mac) {
       "metal_screenshotter.h",
       "metal_screenshotter.mm",
       "screenshot.h",
+      "screenshotter.h",
       "vulkan_screenshotter.h",
       "vulkan_screenshotter.mm",
     ]
