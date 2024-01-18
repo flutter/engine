@@ -11,6 +11,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_angle_surface_manager.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "gmock/gmock.h"
@@ -56,23 +57,11 @@ const impeller::ProcTableGLES::Resolver kMockResolver = [](const char* name) {
   }
 };
 
-class MockAngleSurfaceManager : public AngleSurfaceManager {
- public:
-  MockAngleSurfaceManager() : AngleSurfaceManager(false) {}
-
-  MOCK_METHOD(bool, MakeCurrent, (), (override));
-
- private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockAngleSurfaceManager);
-};
-
 class MockFlutterWindowsView : public FlutterWindowsView {
  public:
   MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window)
       : FlutterWindowsView(std::move(window)) {}
   virtual ~MockFlutterWindowsView() = default;
-
-  MOCK_METHOD(bool, SwapBuffers, (), (override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
@@ -163,7 +152,7 @@ TEST_F(CompositorOpenGLTest, Present) {
   const FlutterLayer* layer_ptr = &layer;
 
   EXPECT_CALL(*surface_manager(), MakeCurrent).WillOnce(Return(true));
-  EXPECT_CALL(*view(), SwapBuffers).WillOnce(Return(true));
+  EXPECT_CALL(*surface_manager(), SwapBuffers).WillOnce(Return(true));
   EXPECT_TRUE(compositor.Present(&layer_ptr, 1));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
@@ -179,7 +168,7 @@ TEST_F(CompositorOpenGLTest, PresentEmpty) {
   EXPECT_CALL(*surface_manager(), MakeCurrent)
       .Times(2)
       .WillRepeatedly(Return(true));
-  EXPECT_CALL(*view(), SwapBuffers).WillOnce(Return(true));
+  EXPECT_CALL(*surface_manager(), SwapBuffers).WillOnce(Return(true));
   EXPECT_TRUE(compositor.Present(nullptr, 0));
 }
 
