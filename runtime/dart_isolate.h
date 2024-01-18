@@ -394,7 +394,8 @@ class DartIsolate : public UIDartState {
 
   Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
                                      Dart_Port isolate_ready_port_id,
-                                     const std::string& debug_name) override;
+                                     const char* debug_name,
+                                     char** error) override;
 
  private:
   friend class IsolateConfiguration;

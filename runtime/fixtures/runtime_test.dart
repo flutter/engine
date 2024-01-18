@@ -210,7 +210,7 @@ void mainForPlatformIsolates(SendPort isolateReadyPort) {
 }
 
 @pragma('vm:entry-point')
-void emptyMain() {}
+void emptyMain(args) {}
 
 @pragma('vm:entry-point')
 void mainPlatformIsolateReplyPort(SendPort isolateReadyPort) {

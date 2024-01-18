@@ -7,22 +7,29 @@ class PlatformIsolate {
   static Future<Isolate> spawn<T>(
       void entryPoint(T message), T message,
       {/*bool paused = false,  // TODO: Support these params.
-      bool errorsAreFatal = true,
+      bool errorsAreFatal = true,*/
       SendPort? onExit,
-      SendPort? onError,*/
+      SendPort? onError,
       String? debugName}) {
     final isolateCompleter = Completer<Isolate>();
     final isolateReadyPort = RawReceivePort();
     isolateReadyPort.handler = (readyMessage) {
       isolateReadyPort.close();
-      print("PlatformIsolate has been spawned: $readyMessage");
 
       if (readyMessage is _PlatformIsolateReadyMessage) {
-        readyMessage.entryPointPort.send((entryPoint, message));
-        isolateCompleter.complete(new Isolate(
+        final isolate = new Isolate(
             readyMessage.controlPort,
             pauseCapability: readyMessage.pauseCapability,
-            terminateCapability: readyMessage.terminateCapability));
+            terminateCapability: readyMessage.terminateCapability);
+        if (onError != null) {
+          isolate.addErrorListener(onError);
+        }
+        if (onExit != null) {
+          isolate.addOnExitListener(onExit);
+        }
+
+        isolateCompleter.complete(isolate);
+        readyMessage.entryPointPort.send((entryPoint, message));
       } else if (readyMessage is String) {
         // We encountered an error while starting the new isolate.
         isolateCompleter.completeError(new IsolateSpawnException(
@@ -42,8 +49,6 @@ class PlatformIsolate {
   static void _platformIsolateMain<T>(SendPort isolateReadyPort) {
     final entryPointPort = RawReceivePort();
     entryPointPort.handler = (entryPointAndMessage) {
-      print("Received entrypoint: $entryPointAndMessage");
-      print("    Are we on the platform thread? ${isRunningOnPlatformThread()}");
       entryPointPort.close();
       final (void Function(T) entryPoint, T message) = entryPointAndMessage;
       entryPoint(message);
@@ -58,7 +63,7 @@ class PlatformIsolate {
   external static void _spawn(
       Function entryPoint, SendPort isolateReadyPort, String debugName);
 
-  static Future<R> run<R>(FutureOr<R> computation(), {String? debugName}) {
+  static FutureOr<R> run<R>(FutureOr<R> computation(), {String? debugName}) {
     final resultCompleter = Completer<R>();
     final resultPort = RawReceivePort();
     resultPort.handler = (
@@ -72,7 +77,7 @@ class PlatformIsolate {
         return;
       }
       final (result, remoteError, remoteStack) = response;
-      if (result == null) {
+      if (remoteStack != null) {
         if (remoteStack is StackTrace) {
           // Typed error.
           resultCompleter.completeError(remoteError!, remoteStack);
@@ -80,7 +85,7 @@ class PlatformIsolate {
           // onError handler message, uncaught async error.
           // Both values are strings, so calling `toString` is efficient.
           final error =
-              RemoteError(remoteError!.toString(), remoteStack!.toString());
+              RemoteError(remoteError!.toString(), remoteStack.toString());
           resultCompleter.completeError(error, error.stackTrace);
         }
       } else {
@@ -91,9 +96,6 @@ class PlatformIsolate {
       PlatformIsolate.spawn(_remoteRun, (computation, resultPort.sendPort),
           debugName: debugName);
     } on Object {
-      // Sending the computation failed synchronously.
-      // This is not expected to happen, but if it does,
-      // the synchronous error is respected and rethrown synchronously.
       resultPort.close();
       rethrow;
     }
@@ -111,14 +113,14 @@ class PlatformIsolate {
       } else {
         result = potentiallyAsyncResult;
       }
+      // TODO: Use Isolate.exit. It's causing an error atm.
+      //Isolate.exit(resultPort, (result, null, null));
+      resultPort.send((result, null, null));
     } catch (e, s) {
       // If sending fails, the error becomes an uncaught error.
       //Isolate.exit(resultPort, (null, e, s));
       resultPort.send((null, e, s));
     }
-    // TODO: Use Isolate.exit. It's causing an error atm.
-    //Isolate.exit(resultPort, (result, null, null));
-    resultPort.send((result, null, null));
   }
 
   // Using this function to verify we're on the platform thread for prototyping.

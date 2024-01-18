@@ -173,7 +173,8 @@ class UIDartState : public tonic::DartState {
 
   virtual Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
                                      Dart_Port isolate_ready_port_id,
-                                     const std::string& debug_name);
+                                     const char* debug_name,
+                                     char** error);
 
  protected:
   UIDartState(TaskObserverAdd add_callback,

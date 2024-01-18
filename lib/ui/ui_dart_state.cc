@@ -266,7 +266,8 @@ int64_t UIDartState::GetRootIsolateToken() const {
 
 Dart_Isolate UIDartState::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
-                                        const std::string& debug_name) {
+                                        const char* debug_name,
+                                        char** error) {
   FML_UNREACHABLE();
   return nullptr;
 }

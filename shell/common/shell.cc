@@ -5,7 +5,6 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 #include "flutter/shell/common/shell.h"
 
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <utility>
@@ -518,7 +517,6 @@ Shell::Shell(DartVMRef vm,
 }
 
 Shell::~Shell() {
-  std::cout << "Shell::~Shell" << std::endl;
   PersistentCache::GetCacheForProcess()->RemoveWorkerTaskRunner(
       task_runners_.GetIOTaskRunner());
 

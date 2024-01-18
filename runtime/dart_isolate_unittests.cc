@@ -784,24 +784,26 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAndShutdown) {
     fml::AutoResetWaitableEvent ui_thread_latch;
     fml::TaskRunner::RunNowOrPostTask(
         ui_thread, fml::MakeCopyable([&]() mutable {
-          ASSERT_TRUE(
-              isolate->RunInIsolateScope([root_isolate, &platform_isolate]() {
-                Dart_Handle lib = Dart_RootLibrary();
-                Dart_Handle port_handle =
-                    Dart_Invoke(lib, tonic::ToDart("createUnusedPort"), 0, nullptr);
-                Dart_Port port_id = 0;
-                tonic::CheckAndHandleError(
-                    Dart_SendPortGetId(port_handle, &port_id));
+          ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate,
+                                                  &platform_isolate]() {
+            Dart_Handle lib = Dart_RootLibrary();
+            Dart_Handle port_handle =
+                Dart_Invoke(lib, tonic::ToDart("createUnusedPort"), 0, nullptr);
+            Dart_Port port_id = 0;
+            tonic::CheckAndHandleError(
+                Dart_SendPortGetId(port_handle, &port_id));
 
-                Dart_Handle entry_point = Dart_GetField(
-                    lib, tonic::ToDart("mainForPlatformIsolates"));
-                platform_isolate = root_isolate->CreatePlatformIsolate(
-                    entry_point, port_id, "PlatformIsolate");
+            Dart_Handle entry_point =
+                Dart_GetField(lib, tonic::ToDart("mainForPlatformIsolates"));
+            char* error = nullptr;
+            platform_isolate = root_isolate->CreatePlatformIsolate(
+                entry_point, port_id, "PlatformIsolate", &error);
 
-                EXPECT_TRUE(platform_isolate);
-                EXPECT_EQ(Dart_CurrentIsolate(), root_isolate->isolate());
-                return true;
-              }));
+            EXPECT_FALSE(error);
+            EXPECT_TRUE(platform_isolate);
+            EXPECT_EQ(Dart_CurrentIsolate(), root_isolate->isolate());
+            return true;
+          }));
           ui_thread_latch.Signal();
         }));
 
@@ -863,9 +865,11 @@ TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
 
           Dart_Handle entry_point =
               Dart_GetField(lib, tonic::ToDart("emptyMain"));
+          char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate");
+              entry_point, port_id, "PlatformIsolate", &error);
 
+          EXPECT_FALSE(error);
           EXPECT_TRUE(platform_isolate);
           EXPECT_EQ(Dart_CurrentIsolate(), root_isolate->isolate());
 
@@ -938,17 +942,20 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
   Dart_Isolate platform_isolate = nullptr;
   fml::TaskRunner::RunNowOrPostTask(
       ui_thread, fml::MakeCopyable([&]() mutable {
-        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate, &platform_isolate]() {
+        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate,
+                                                &platform_isolate]() {
           Dart_Handle lib = Dart_RootLibrary();
           Dart_Handle port_handle = Dart_Invoke(
               lib, tonic::ToDart("createPortThatReplies"), 0, nullptr);
           Dart_Port port_id = 0;
           tonic::CheckAndHandleError(Dart_SendPortGetId(port_handle, &port_id));
 
-          Dart_Handle entry_point = Dart_GetField(
-              lib, tonic::ToDart("mainPlatformIsolateReplyPort"));
-          platform_isolate = root_isolate->CreatePlatformIsolate(entry_point, port_id,
-                                              "PlatformIsolate");
+          Dart_Handle entry_point =
+              Dart_GetField(lib, tonic::ToDart("mainPlatformIsolateReplyPort"));
+          char* error = nullptr;
+          platform_isolate = root_isolate->CreatePlatformIsolate(
+              entry_point, port_id, "PlatformIsolate", &error);
+          EXPECT_FALSE(error);
           return true;
         }));
         ui_thread_latch.Signal();
@@ -975,11 +982,9 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
 }
 
 TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
-  AddNativeCallback(
-      "PassMessage",
-      CREATE_NATIVE_ENTRY(([](Dart_NativeArguments args) {
-        FML_UNREACHABLE();
-      })));
+  AddNativeCallback("PassMessage",
+                    CREATE_NATIVE_ENTRY((
+                        [](Dart_NativeArguments args) { FML_UNREACHABLE(); })));
 
   FakePlatformConfigurationClient client;
   auto platform_configuration =
@@ -1011,7 +1016,8 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
   // Shut down the manager on the platform thread.
   fml::AutoResetWaitableEvent manager_shutdown_latch;
   fml::TaskRunner::RunNowOrPostTask(
-      platform_thread, fml::MakeCopyable([&manager_shutdown_latch, &client]() mutable {
+      platform_thread,
+      fml::MakeCopyable([&manager_shutdown_latch, &client]() mutable {
         client.mgr.ShutdownPlatformIsolates();
         manager_shutdown_latch.Signal();
       }));
@@ -1025,16 +1031,17 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
           Dart_Handle port_handle =
               Dart_Invoke(lib, tonic::ToDart("createPort"), 0, nullptr);
           Dart_Port port_id = 0;
-          tonic::CheckAndHandleError(
-              Dart_SendPortGetId(port_handle, &port_id));
+          tonic::CheckAndHandleError(Dart_SendPortGetId(port_handle, &port_id));
 
-          Dart_Handle entry_point = Dart_GetField(
-              lib, tonic::ToDart("mainForPlatformIsolates"));
+          Dart_Handle entry_point =
+              Dart_GetField(lib, tonic::ToDart("mainForPlatformIsolates"));
+          char* error = nullptr;
           Dart_Isolate platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate");
+              entry_point, port_id, "PlatformIsolate", &error);
 
           // Failed to create a platform isolate, but we've still re-entered the
           // root isolate.
+          EXPECT_FALSE(error);
           EXPECT_FALSE(platform_isolate);
           EXPECT_EQ(Dart_CurrentIsolate(), root_isolate->isolate());
 
@@ -1048,11 +1055,9 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
 }
 
 TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
-  AddNativeCallback(
-      "PassMessage",
-      CREATE_NATIVE_ENTRY(([](Dart_NativeArguments args) {
-        FML_UNREACHABLE();
-      })));
+  AddNativeCallback("PassMessage",
+                    CREATE_NATIVE_ENTRY((
+                        [](Dart_NativeArguments args) { FML_UNREACHABLE(); })));
 
   FakePlatformConfigurationClient client;
   auto platform_configuration =
@@ -1088,7 +1093,8 @@ TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
   // before it runs.
   fml::AutoResetWaitableEvent platform_thread_latch;
   fml::TaskRunner::RunNowOrPostTask(
-      platform_thread, fml::MakeCopyable([&platform_thread_latch, &client, &platform_isolate]() mutable {
+      platform_thread, fml::MakeCopyable([&platform_thread_latch, &client,
+                                          &platform_isolate]() mutable {
         platform_thread_latch.Wait();
         client.mgr.ShutdownPlatformIsolates();
         EXPECT_TRUE(platform_isolate);
@@ -1098,19 +1104,21 @@ TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
   fml::AutoResetWaitableEvent ui_thread_latch;
   fml::TaskRunner::RunNowOrPostTask(
       ui_thread, fml::MakeCopyable([&]() mutable {
-        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate, &platform_isolate]() {
+        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate,
+                                                &platform_isolate]() {
           Dart_Handle lib = Dart_RootLibrary();
           Dart_Handle port_handle =
               Dart_Invoke(lib, tonic::ToDart("createUnusedPort"), 0, nullptr);
           Dart_Port port_id = 0;
-          tonic::CheckAndHandleError(
-              Dart_SendPortGetId(port_handle, &port_id));
+          tonic::CheckAndHandleError(Dart_SendPortGetId(port_handle, &port_id));
 
-          Dart_Handle entry_point = Dart_GetField(
-              lib, tonic::ToDart("mainForPlatformIsolates"));
+          Dart_Handle entry_point =
+              Dart_GetField(lib, tonic::ToDart("mainForPlatformIsolates"));
+          char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate");
+              entry_point, port_id, "PlatformIsolate", &error);
 
+          EXPECT_FALSE(error);
           EXPECT_TRUE(platform_isolate);
           EXPECT_EQ(Dart_CurrentIsolate(), root_isolate->isolate());
 
@@ -1138,11 +1146,9 @@ TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
 }
 
 TEST_F(DartIsolateTest, PlatformIsolateMainThrowsError) {
-  AddNativeCallback(
-      "PassMessage",
-      CREATE_NATIVE_ENTRY(([](Dart_NativeArguments args) {
-        FML_UNREACHABLE();
-      })));
+  AddNativeCallback("PassMessage",
+                    CREATE_NATIVE_ENTRY((
+                        [](Dart_NativeArguments args) { FML_UNREACHABLE(); })));
 
   FakePlatformConfigurationClient client;
   auto platform_configuration =
@@ -1175,19 +1181,21 @@ TEST_F(DartIsolateTest, PlatformIsolateMainThrowsError) {
   fml::AutoResetWaitableEvent ui_thread_latch;
   fml::TaskRunner::RunNowOrPostTask(
       ui_thread, fml::MakeCopyable([&]() mutable {
-        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate, &platform_isolate]() {
+        ASSERT_TRUE(isolate->RunInIsolateScope([root_isolate,
+                                                &platform_isolate]() {
           Dart_Handle lib = Dart_RootLibrary();
           Dart_Handle port_handle =
               Dart_Invoke(lib, tonic::ToDart("createUnusedPort"), 0, nullptr);
           Dart_Port port_id = 0;
-          tonic::CheckAndHandleError(
-              Dart_SendPortGetId(port_handle, &port_id));
+          tonic::CheckAndHandleError(Dart_SendPortGetId(port_handle, &port_id));
 
           Dart_Handle entry_point = Dart_GetField(
               lib, tonic::ToDart("mainForPlatformIsolatesThrowError"));
+          char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate");
+              entry_point, port_id, "PlatformIsolate", &error);
 
+          EXPECT_FALSE(error);
           EXPECT_TRUE(platform_isolate);
           EXPECT_EQ(Dart_CurrentIsolate(), root_isolate->isolate());
 

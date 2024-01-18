@@ -5,7 +5,6 @@
 #include "flutter/runtime/dart_isolate.h"
 
 #include <cstdlib>
-#include <iostream>
 #include <tuple>
 #include <utility>
 
@@ -286,13 +285,17 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
-                                        const std::string& debug_name) {
+                                        const char* debug_name,
+                                        char** error) {
+  *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
   FML_DCHECK(platform_config != nullptr);
   PlatformIsolateManager* platform_isolate_manager =
       platform_config->client()->GetPlatformIsolateManager();
   if (platform_isolate_manager->IsShutdown()) {
-    // Not allowed to spawn new platform isolates.
+    // Don't set the error string. We want to silently ignore this error,
+    // because the engine is shutting down.
+    FML_LOG(ERROR) << "CreatePlatformIsolate called after shutdown";
     return nullptr;
   }
 
@@ -304,26 +307,29 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   Dart_Isolate parent_isolate = isolate();
   Dart_ExitIsolate();  // Exit parent_isolate.
 
-  // PlatformConfigurationClient* client = platform_configuration()->client();
-  // RuntimeController* runtime = (RuntimeController*)(client);
-  // std::cout << "RuntimeController: " << (void*)runtime << std::endl;
-
-  // TODO: This doesn't work for platform isolates spawned from other child
-  //     isolates, since their TaskRunners are null. Need a better way of
-  //     getting them. Maybe child isolates should have non-null TaskRunners?
   const TaskRunners& task_runners = GetTaskRunners();
-  /*((RuntimeController*)platform_configuration()->client())
-      ->GetRootIsolate()
-      .lock()
-      ->GetTaskRunners();*/
+  fml::RefPtr<fml::TaskRunner> platform_task_runner =
+      task_runners.GetPlatformTaskRunner();
+  FML_DCHECK(platform_task_runner);
+
   auto isolate_group_data =
       std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
           std::shared_ptr<DartIsolateGroupData>(
               *static_cast<std::shared_ptr<DartIsolateGroupData>*>(
                   Dart_IsolateGroupData(parent_isolate))));
 
-  std::cout << "Task runner: "
-            << (void*)task_runners.GetPlatformTaskRunner().get() << std::endl;
+  Settings settings((*isolate_group_data)->GetSettings());
+
+  // PlatformIsolate.spawn should behave like Isolate.spawn when unhandled
+  // exceptions happen (log the exception, but don't terminate the app). But the
+  // unhandled_exception_callback may terminate the app, because it is usually
+  // only called for the root isolate (child isolates are managed by the VM and
+  // have a different code path). So override it to simply log the error.
+  settings.unhandled_exception_callback =  [](const std::string& error,
+                                              const std::string& stack_trace) {
+    FML_LOG(ERROR) << "Unhandled exception:\n" << error << "\n" << stack_trace;
+    return true;
+  };
 
   UIDartState::Context context(task_runners);
   context.advisory_script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
@@ -331,7 +337,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
       (*isolate_group_data)->GetAdvisoryScriptEntrypoint();
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(
-          new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
+          new DartIsolate(settings,  // settings
                           false,       // is_root_isolate
                           true,        // is_platform_isolate
                           context)));  // context
@@ -342,11 +348,9 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
           std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
           std::shared_ptr<DartIsolate>* isolate_data, Dart_IsolateFlags* flags,
           char** error) {
-        std::cout << "           PlatformIsolate data: " << (void*)isolate_data
-                  << std::endl;
         return Dart_CreateIsolateInGroup(
             /*group_member=*/parent_isolate,
-            /*name=*/debug_name.c_str(),
+            /*name=*/debug_name,
             /*shutdown_callback=*/
             reinterpret_cast<Dart_IsolateShutdownCallback>(
                 DartIsolate::SpawnIsolateShutdownCallback),
@@ -356,15 +360,13 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
             /*child_isolate_data=*/isolate_data,
             /*error=*/error);
       };
-  DartErrorString error;
   Dart_Isolate platform_isolate = CreateDartIsolateGroup(
       std::move(isolate_group_data), std::move(isolate_data), nullptr,
-      error.error(), isolate_maker);
+      error, isolate_maker);
 
   Dart_EnterIsolate(parent_isolate);
 
-  if (error) {
-    FML_LOG(ERROR) << "CreatePlatformIsolate failed: " << error.str();
+  if (*error) {
     return nullptr;
   }
 
@@ -372,21 +374,17 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     // The PlatformIsolateManager was shutdown while we were creating the
     // isolate. This means that we're shutting down the engine. Do nothing. The
     // ordinary engine shut down procedure will clean up the isolate.
+    FML_LOG(ERROR) << "Shutdown during platform isolate creation";
     return nullptr;
   }
 
-  fml::RefPtr<fml::TaskRunner> platform_task_runner =
-      task_runners.GetPlatformTaskRunner();
-  std::cout << "platform_task_runner = " << (void*)platform_task_runner.get()
-            << std::endl;
   platform_task_runner->PostTask([entry_point_handle, platform_isolate,
                                   isolate_ready_port_id,
                                   platform_isolate_manager]() {
-    std::cout << "Hello from the platform task runner" << std::endl;
     if (platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
       // platform_isolate has already been shut down. Do nothing.
-      std::cout << "platform_isolate_manager is shutdown" << std::endl;
+      FML_LOG(ERROR) << "Shutdown before platform isolate entry point";
       return;
     }
     Dart_EnterIsolate(platform_isolate);
@@ -394,13 +392,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
 
-    std::cout << "Dart_InvokeClosure" << std::endl;
-    Dart_Handle result = Dart_InvokeClosure(entry_point, 1, &isolate_ready_port);
-    std::cout << "Dart_InvokeClosure done" << std::endl;
-    if (Dart_IsError(result)) {
-      // TODO: Handle error.
-      std::cout << "platform isolate threw an error" << std::endl;
-    }
+    tonic::DartInvoke(entry_point, {isolate_ready_port});
 
     Dart_DeletePersistentHandle(entry_point_handle);
     Dart_ExitScope();
@@ -468,13 +460,6 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     tonic::DartApiScope api_scope;
     Dart_SetCurrentUserTag(Dart_NewUserTag("AppStartUp"));
   }
-
-  Dart_EnterScope();
-  std::cout << "Creating isolate: " << std::endl;
-  const char* name = Dart_DebugNameToCString();
-  std::cout << "    debug name: " << (name ? name : "<null>") << std::endl;
-  std::cout << "    is_platform_isolate: " << is_platform_isolate_ << std::endl;
-  Dart_ExitScope();
 
   SetMessageHandlingTaskRunner(is_platform_isolate_
                                    ? GetTaskRunners().GetPlatformTaskRunner()
@@ -1206,8 +1191,6 @@ void DartIsolate::DartIsolateShutdownCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateShutdownCallback");
-  std::cout << "           DartIsolateShutdownCallback data: "
-            << (void*)isolate_data << std::endl;
 
   // If the isolate initialization failed there will be nothing to do.
   // This can happen e.g. during a [DartIsolateInitializeCallback] invocation
@@ -1230,8 +1213,6 @@ void DartIsolate::DartIsolateGroupCleanupCallback(
 void DartIsolate::DartIsolateCleanupCallback(
     std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
     std::shared_ptr<DartIsolate>* isolate_data) {
-  std::cout << "           DartIsolateCleanupCallback data: "
-            << (void*)isolate_data << std::endl;
   TRACE_EVENT0("flutter", "DartIsolate::DartIsolateCleanupCallback");
   delete isolate_data;
 }
@@ -1274,14 +1255,10 @@ void DartIsolate::OnShutdownCallback() {
 
 void DartIsolate::MessageEpilogue(Dart_Handle result) {
   if (is_platform_isolate_) {
-    std::cout << "MessageEpilogue for platform isolate: " << (void*)this
-              << std::endl;
-    // TODO: Are there cases where this assert is false?
     FML_DCHECK(Dart_CurrentIsolate() == isolate());
     FML_DCHECK(platform_isolate_pending_messages_ > 0);
     --platform_isolate_pending_messages_;
     if (platform_isolate_pending_messages_ == 0 && !Dart_HasLivePorts()) {
-      std::cout << "    Shutting down platform isolate" << std::endl;
       Dart_ShutdownIsolate();
     }
   }
@@ -1294,7 +1271,7 @@ Dart_Handle DartIsolate::OnDartLoadLibrary(intptr_t loading_unit_id) {
     return Dart_Null();
   }
   const std::string error_message =
-      "Platform Configuration was null. Deferred library load request"
+      "Platform Configuration was null. Deferred library load request "
       "for loading unit id " +
       std::to_string(loading_unit_id) + " was not sent.";
   FML_LOG(ERROR) << error_message;

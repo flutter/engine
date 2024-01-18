@@ -9,29 +9,35 @@
 #include "flutter/fml/task_runner.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_isolate.h"
+#include "third_party/tonic/converter/dart_converter.h"
 
 namespace flutter {
 
 void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
                                      Dart_Handle isolate_ready_port,
                                      Dart_Handle debug_name) {
+  UIDartState* current_state = UIDartState::Current();
+  FML_DCHECK(current_state != nullptr);
+  if (!current_state->IsRootIsolate()) {
+    // TODO(flutter/flutter#136314): Remove this restriction.
+    Dart_EnterScope();
+    Dart_ThrowException(tonic::ToDart(
+        "PlatformIsolates can only be spawned on the root isolate."));
+  }
+
   Dart_Port isolate_ready_port_id;
   Dart_SendPortGetId(isolate_ready_port, &isolate_ready_port_id);
   const char* debug_name_cstr;
   Dart_StringToCString(debug_name, &debug_name_cstr);
-  std::string debug_name_str = debug_name_cstr;
-  const char* eps;
-  Dart_StringToCString(Dart_ToString(entry_point), &eps);
-  std::cout << "PlatformIsolateNativeApi::Spawn\t" << debug_name_str << "\t"
-            << eps << std::endl;
 
-  UIDartState* current_state = UIDartState::Current();
-  FML_DCHECK(current_state != nullptr);
-
+  char* error = nullptr;
   Dart_Isolate platform_isolate = current_state->CreatePlatformIsolate(
-      entry_point, isolate_ready_port_id, debug_name_str);
-  if (platform_isolate == nullptr) {
-    // TODO: Report error to Dart.
+      entry_point, isolate_ready_port_id, debug_name_cstr, &error);
+  if (error) {
+    Dart_EnterScope();
+    Dart_Handle error_handle = tonic::ToDart<const char*>(error);
+    ::free(error);
+    Dart_ThrowException(error_handle);
   }
 }
 
