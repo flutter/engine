@@ -12,7 +12,7 @@ sys.path.insert(
     0,
     os.path.abspath(
         os.path.join(
-            os.path.dirname(__file__), '../../../fuchsia/test_scripts/test/'
+            os.path.dirname(__file__), 'test_scripts/test/'
         )
     )
 )

@@ -110,7 +110,8 @@ vars = {
   # local development.
   'download_fuchsia_sdk': False,
   'fuchsia_sdk_path': '',
-  # If download and run fuchsia emu locally to test fuchsia builds.
+  # Whether to download and run the Fuchsia emulator locally to test Fuchsia
+  # builds.
   'run_fuchsia_emu': False,
 
   # An LLVM backend needs LLVM binaries and headers. To avoid build time
@@ -995,14 +996,14 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/fuchsia/test_scripts': {
+  'src/flutter/tools/fuchsia/test_scripts': {
      'packages': [
        {
         'package': 'chromium/fuchsia/test-scripts',
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
-     'condition': 'host_os == "linux"',
+     'condition': 'run_fuchsia_emu',
      'dep_type': 'cipd',
    },
 
@@ -1175,7 +1176,7 @@ hooks = [
     'action': [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
-      'src/fuchsia/test_scripts/update_product_bundles.py',
+      'src/flutter/tools/fuchsia/test_scripts/update_product_bundles.py',
       'terminal.x64',
     ]
   }

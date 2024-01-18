@@ -15,7 +15,7 @@ import sys
 sys.path.insert(
     0,
     os.path.join(
-        os.path.dirname(__file__), '../../../fuchsia/test_scripts/test/'
+        os.path.dirname(__file__), '../../tools/fuchsia/test_scripts/test/'
     )
 )
 
