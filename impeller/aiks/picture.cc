@@ -96,6 +96,9 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     VALIDATION_LOG << "RenderTarget has no target texture.";
     return nullptr;
   }
+  if (!impeller_context->FlushPendingTasks().ok()) {
+    return nullptr;
+  }
 
   return texture;
 }

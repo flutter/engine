@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 
+#include "fml/status.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
@@ -193,6 +194,13 @@ class Context {
   /// `task` will be executed on the platform thread.
   virtual void StoreTaskForGPU(const std::function<void()>& task) {
     FML_CHECK(false && "not supported in this context");
+  }
+
+  /// @brief Flush any pending GPU workloads.
+  ///
+  /// This is primarily used by the Vulkan backend to batch submit command buffers.
+  virtual fml::Status FlushPendingTasks() const {
+    return fml::Status();
   }
 
  protected:

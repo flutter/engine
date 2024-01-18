@@ -6,6 +6,7 @@
 #include <thread>
 
 #include "fml/concurrent_message_loop.h"
+#include "fml/status.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -567,6 +568,57 @@ ContextVK::CreateGraphicsCommandEncoderFactory() const {
 
 std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
   return gpu_tracer_;
+}
+
+fml::Status ContextVK::FlushPendingTasks() const {
+  auto bundle = GetPendingQueueSubmit()->TakeEncoders();
+  if (bundle.first.empty()) {
+    return fml::Status();
+  }
+
+  auto [fence_result, fence] = GetDevice().createFenceUnique({});
+  if (fence_result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to create fence: " << vk::to_string(fence_result);
+    for (auto& callback : bundle.second) {
+      callback(false);
+    }
+    return fml::Status(fml::StatusCode::kUnknown, "Failed to create fence.");
+  }
+
+  vk::SubmitInfo submit_info;
+  std::vector<vk::CommandBuffer> buffers(bundle.first.size());
+  for (auto i = 0u; i < bundle.first.size(); i++) {
+    buffers[i] = bundle.first[i]->GetCommandBuffer();
+  }
+  submit_info.setCommandBuffers(buffers);
+
+  auto status = GetGraphicsQueue()->Submit(submit_info, *fence);
+  if (status != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
+    for (auto& callback : bundle.second) {
+      callback(false);
+    }
+    return fml::Status(fml::StatusCode::kUnknown, "Failed to submit queue.");
+  }
+
+  bool created_fence = GetFenceWaiter()->AddFence(
+      std::move(fence), [bundle = std::move(bundle)]() mutable {
+        // Ensure tracked objects are destructed before calling any final
+        // callbacks.
+        for (auto& encoder : bundle.first) {
+          encoder.reset();
+        }
+        for (auto& callback : bundle.second) {
+          callback(true);
+        }
+      });
+  if (!created_fence) {
+    for (auto& callback : bundle.second) {
+      callback(false);
+    }
+    return fml::Status(fml::StatusCode::kUnknown, "Failed to add fence.");
+  }
+  return fml::Status();
 }
 
 }  // namespace impeller

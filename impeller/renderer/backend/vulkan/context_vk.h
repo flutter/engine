@@ -10,6 +10,7 @@
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
+#include "fml/status.h"
 #include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
@@ -129,6 +130,8 @@ class ContextVK final : public Context,
   void DidAcquireNextSurface() {
     raster_thread_id_ = std::this_thread::get_id();
   }
+
+  fml::Status FlushPendingTasks() const override;
 
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
