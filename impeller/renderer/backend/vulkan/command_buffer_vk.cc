@@ -61,6 +61,9 @@ bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
   }
 
   auto submit_callback = [callback](bool submitted) {
+    if (!callback) {
+      return;
+    }
     callback(submitted ? CommandBuffer::Status::kCompleted
                        : CommandBuffer::Status::kError);
   };
