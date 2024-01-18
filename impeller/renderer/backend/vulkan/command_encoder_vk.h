@@ -82,6 +82,8 @@ class CommandEncoderVK {
 
   void InsertDebugMarker(const char* label) const;
 
+  bool End(const ContextVK& context, const SubmitCallback& callback) const;
+
   fml::StatusOr<vk::DescriptorSet> AllocateDescriptorSets(
       const vk::DescriptorSetLayout& layout,
       const ContextVK& context);

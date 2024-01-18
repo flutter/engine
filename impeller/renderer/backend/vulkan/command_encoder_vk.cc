@@ -145,6 +145,33 @@ bool CommandEncoderVK::Submit(SubmitCallback callback) {
       });
 }
 
+bool CommandEncoderVK::End(const ContextVK& context,
+                           const SubmitCallback& callback) const {
+  // Make sure to call callback with `false` if anything returns early.
+  bool fail_callback = !!callback;
+  if (!IsValid()) {
+    VALIDATION_LOG << "Cannot submit invalid CommandEncoderVK.";
+    if (fail_callback) {
+      callback(false);
+    }
+    return false;
+  }
+
+  InsertDebugMarker("QueueSubmit");
+
+  auto command_buffer = GetCommandBuffer();
+
+  tracked_objects_->GetGPUProbe().RecordCmdBufferEnd(command_buffer);
+
+  auto status = command_buffer.end();
+  if (status != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(status);
+    return false;
+  }
+
+  return true;
+}
+
 vk::CommandBuffer CommandEncoderVK::GetCommandBuffer() const {
   if (tracked_objects_) {
     return tracked_objects_->GetCommandBuffer();

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include <thread>
 
 #include "fml/concurrent_message_loop.h"
 
@@ -445,6 +446,7 @@ void ContextVK::Setup(Settings settings) {
   command_pool_recycler_ = std::move(command_pool_recycler);
   descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
+  pending_queue_submit_ = std::make_unique<PendingQueueSubmit>();
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from
@@ -509,6 +511,11 @@ const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner() const {
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
+}
+
+PendingQueueSubmit* ContextVK::GetPendingQueueSubmit() const {
+  // TODO: deal with worker threads.
+  return pending_queue_submit_.get();
 }
 
 void ContextVK::Shutdown() {

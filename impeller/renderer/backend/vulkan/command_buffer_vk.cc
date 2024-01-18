@@ -55,13 +55,21 @@ bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
   if (!encoder_) {
     encoder_ = encoder_factory_->Create();
   }
-  if (!callback) {
-    return encoder_->Submit();
+  auto context = context_.lock();
+  if (!context) {
+    return false;
   }
-  return encoder_->Submit([callback](bool submitted) {
+
+  auto submit_callback = [callback](bool submitted) {
     callback(submitted ? CommandBuffer::Status::kCompleted
                        : CommandBuffer::Status::kError);
-  });
+  };
+
+  const ContextVK& context_vk = ContextVK::Cast(*context);
+  encoder_->End(context_vk, submit_callback);
+  context_vk.GetPendingQueueSubmit()->RecordEncoder(std::move(encoder_),
+                                                    submit_callback);
+  return true;
 }
 
 void CommandBufferVK::OnWaitUntilScheduled() {}

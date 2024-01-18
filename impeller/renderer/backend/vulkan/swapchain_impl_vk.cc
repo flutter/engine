@@ -9,6 +9,7 @@
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
@@ -439,6 +440,56 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   const auto& sync = synchronizers_[current_frame_];
+
+  //----------------------------------------------------------------------------
+  /// Submit all pending command buffers.
+  ///
+  {
+    auto bundle = context.GetPendingQueueSubmit()->TakeEncoders();
+    auto [fence_result, fence] = context.GetDevice().createFenceUnique({});
+    if (fence_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to create fence: "
+                     << vk::to_string(fence_result);
+      for (auto& callback : bundle.second) {
+        callback(false);
+      }
+      return false;
+    }
+
+    vk::SubmitInfo submit_info;
+    std::vector<vk::CommandBuffer> buffers(bundle.first.size());
+    for (auto i = 0u; i < bundle.first.size(); i++) {
+      buffers[i] = bundle.first[i]->GetCommandBuffer();
+    }
+    submit_info.setCommandBuffers(buffers);
+
+    auto status = context.GetGraphicsQueue()->Submit(submit_info, *fence);
+    if (status != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
+      for (auto& callback : bundle.second) {
+        callback(false);
+      }
+      return false;
+    }
+
+    auto status_2 = context.GetFenceWaiter()->AddFence(
+        std::move(fence), [bundle = std::move(bundle)]() mutable {
+          // Ensure tracked objects are destructed before calling any final
+          // callbacks.
+          for (auto& encoder : bundle.first) {
+            encoder.reset();
+          }
+          for (auto& callback : bundle.second) {
+            callback(true);
+          }
+        });
+    if (!status_2) {
+      for (auto& callback : bundle.second) {
+        callback(false);
+      }
+      return false;
+    }
+  }
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.

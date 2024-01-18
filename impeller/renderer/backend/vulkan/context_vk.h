@@ -36,6 +36,33 @@ class SurfaceContextVK;
 class GPUTracerVK;
 class DescriptorPoolRecyclerVK;
 
+/// @brief A system for batching queue submission of command buffers submitted
+///        on the raster thread.
+class PendingQueueSubmit {
+ public:
+  PendingQueueSubmit() {}
+
+  ~PendingQueueSubmit() = default;
+
+  using SubmitCallback = std::function<void(bool)>;
+
+  void RecordEncoder(std::shared_ptr<CommandEncoderVK> encoder,
+                     SubmitCallback callback) {
+    encoders_.push_back(std::move(encoder));
+    callbacks_.push_back(std::move(callback));
+  }
+
+  std::pair<std::vector<std::shared_ptr<CommandEncoderVK>>,
+            std::vector<SubmitCallback>>
+  TakeEncoders() {
+    return std::make_pair(std::move(encoders_), std::move(callbacks_));
+  }
+
+ private:
+  std::vector<std::shared_ptr<CommandEncoderVK>> encoders_;
+  std::vector<SubmitCallback> callbacks_;
+};
+
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
                         public std::enable_shared_from_this<ContextVK> {
@@ -165,6 +192,8 @@ class ContextVK final : public Context,
 
   std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
 
+  PendingQueueSubmit* GetPendingQueueSubmit() const;
+
   void RecordFrameEndTime() const;
 
  private:
@@ -197,6 +226,7 @@ class ContextVK final : public Context,
   std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
+  std::unique_ptr<PendingQueueSubmit> pending_queue_submit_;
 
   bool sync_presentation_ = false;
   const uint64_t hash_;
