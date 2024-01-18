@@ -38,6 +38,9 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   std::shared_ptr<const TextureSourceVK> GetTextureSource() const;
 
+  // |Texture|
+  ISize GetSize() const override;
+
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
@@ -56,9 +59,6 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   // |Texture|
   bool IsValid() const override;
-
-  // |Texture|
-  ISize GetSize() const override;
 
   TextureVK(const TextureVK&) = delete;
 

@@ -59,6 +59,7 @@ if (is_mac) {
       "//flutter/impeller/display_list",
       "//flutter/impeller/playground",
       "//flutter/impeller/renderer/backend/metal:metal",
+      "//flutter/impeller/renderer/backend/vulkan",
     ]
   }
 
