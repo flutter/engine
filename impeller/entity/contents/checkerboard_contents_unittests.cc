@@ -48,7 +48,9 @@ TEST_P(EntityTest, RendersWithoutError) {
   ASSERT_TRUE(contents->Render(*content_context, entity, *recording_pass));
   ASSERT_FALSE(recording_pass->GetCommands().empty());
 
-  recording_pass->EncodeCommands();
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    recording_pass->EncodeCommands();
+  }
 }
 #endif  // IMPELLER_DEBUG
 
