@@ -508,7 +508,6 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
   if (!path_bounds.has_value()) {
     return std::nullopt;
   }
-  // auto path_coverage = path_bounds->TransformBounds(transform);
 
   Scalar max_radius = 0.5;
   if (stroke_cap_ == Cap::kSquare) {
