@@ -23,12 +23,13 @@ vk::Result QueueVK::Submit(const vk::SubmitInfo& submit_info,
   return queue_.submit(submit_info, fence);
 }
 
-void QueueVK::InsertDebugMarker(const char* label) const {
+void QueueVK::InsertDebugMarker(std::string_view label) const {
   if (!HasValidationLayers()) {
     return;
   }
+  std::string label_copy(label);
   vk::DebugUtilsLabelEXT label_info;
-  label_info.pLabelName = label;
+  label_info.pLabelName = label_copy.c_str();
   Lock lock(queue_mutex_);
   queue_.insertDebugUtilsLabelEXT(label_info);
 }

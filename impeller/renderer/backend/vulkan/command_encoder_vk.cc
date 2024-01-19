@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
+#include <string>
 
 #include "flutter/fml/closure.h"
 #include "fml/status.h"
@@ -222,12 +223,13 @@ fml::StatusOr<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSets(
                                                                       context);
 }
 
-void CommandEncoderVK::PushDebugGroup(const char* label) const {
+void CommandEncoderVK::PushDebugGroup(std::string_view label) const {
   if (!HasValidationLayers()) {
     return;
   }
+  std::string label_copy(label);
   vk::DebugUtilsLabelEXT label_info;
-  label_info.pLabelName = label;
+  label_info.pLabelName = label_copy.c_str();
   if (auto command_buffer = GetCommandBuffer()) {
     command_buffer.beginDebugUtilsLabelEXT(label_info);
   }
@@ -242,17 +244,18 @@ void CommandEncoderVK::PopDebugGroup() const {
   }
 }
 
-void CommandEncoderVK::InsertDebugMarker(const char* label) const {
+void CommandEncoderVK::InsertDebugMarker(std::string_view label) const {
   if (!HasValidationLayers()) {
     return;
   }
+  std::string label_copy(label);
   vk::DebugUtilsLabelEXT label_info;
-  label_info.pLabelName = label;
+  label_info.pLabelName = label_copy.c_str();
   if (auto command_buffer = GetCommandBuffer()) {
     command_buffer.insertDebugUtilsLabelEXT(label_info);
   }
   if (queue_) {
-    queue_->InsertDebugMarker(label);
+    queue_->InsertDebugMarker(label_copy.c_str());
   }
 }
 
