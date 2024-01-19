@@ -2,23 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_CONTEXT_H_
+#define FLUTTER_IMPELLER_RENDERER_CONTEXT_H_
 
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pool.h"
+#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
 class ShaderLibrary;
-class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 
@@ -180,10 +180,6 @@ class Context {
   ///             pending work.
   virtual void SetSyncPresentation(bool value) {}
 
-  //----------------------------------------------------------------------------
-  /// @brief Accessor for a pool of HostBuffers.
-  Pool<HostBuffer>& GetHostBufferPool() const { return host_buffer_pool_; }
-
   CaptureContext capture;
 
   /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
@@ -202,12 +198,14 @@ class Context {
  protected:
   Context();
 
- private:
-  mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
+  std::vector<std::function<void()>> per_frame_task_;
 
+ private:
   Context(const Context&) = delete;
 
   Context& operator=(const Context&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_CONTEXT_H_

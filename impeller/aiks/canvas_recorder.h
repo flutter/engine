@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_
+#define FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_
 
 #include <cstdint>
 
@@ -32,7 +33,9 @@ enum CanvasRecorderOp : uint16_t {
   kRotate,
   kDrawPath,
   kDrawPaint,
+  kDrawLine,
   kDrawRect,
+  kDrawOval,
   kDrawRRect,
   kDrawCircle,
   kDrawPoints,
@@ -40,6 +43,7 @@ enum CanvasRecorderOp : uint16_t {
   kDrawImageRect,
   kClipPath,
   kClipRect,
+  kClipOval,
   kClipRRect,
   kDrawPicture,
   kDrawTextFrame,
@@ -87,6 +91,16 @@ class CanvasRecorder {
                    canvasMethod)(std::forward<Args>(args)...)) {
     // Serialize each argument
     (serializer_.Write(std::forward<Args>(args)), ...);
+    serializer_.Write(op);
+    return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
+  }
+
+  template <typename FuncType, typename... Args>
+  auto ExecuteAndSkipArgSerialize(CanvasRecorderOp op,
+                                  FuncType canvasMethod,
+                                  Args&&... args)
+      -> decltype((std::declval<Canvas>().*
+                   canvasMethod)(std::forward<Args>(args)...)) {
     serializer_.Write(op);
     return (canvas_.*canvasMethod)(std::forward<Args>(args)...);
   }
@@ -169,13 +183,20 @@ class CanvasRecorder {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(Rotate), radians);
   }
 
-  void DrawPath(const Path& path, const Paint& paint) {
-    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPath), path,
-                               paint);
+  void DrawPath(Path path, const Paint& paint) {
+    serializer_.Write(path);
+    serializer_.Write(paint);
+    return ExecuteAndSkipArgSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPath),
+                                      std::move(path), paint);
   }
 
   void DrawPaint(const Paint& paint) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawPaint), paint);
+  }
+
+  void DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawLine), p0, p1,
+                               paint);
   }
 
   void DrawRect(Rect rect, const Paint& paint) {
@@ -183,7 +204,14 @@ class CanvasRecorder {
                                paint);
   }
 
-  void DrawRRect(Rect rect, Point corner_radii, const Paint& paint) {
+  void DrawOval(const Rect& rect, const Paint& paint) {
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawOval), rect,
+                               paint);
+  }
+
+  void DrawRRect(const Rect& rect,
+                 const Size& corner_radii,
+                 const Paint& paint) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawRRect), rect,
                                corner_radii, paint);
   }
@@ -209,20 +237,25 @@ class CanvasRecorder {
                                offset, paint, sampler);
   }
 
-  void DrawImageRect(const std::shared_ptr<Image>& image,
-                     Rect source,
-                     Rect dest,
-                     const Paint& paint,
-                     SamplerDescriptor sampler = {}) {
+  void DrawImageRect(
+      const std::shared_ptr<Image>& image,
+      Rect source,
+      Rect dest,
+      const Paint& paint,
+      SamplerDescriptor sampler = {},
+      SourceRectConstraint src_rect_constraint = SourceRectConstraint::kFast) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawImageRect), image,
-                               source, dest, paint, sampler);
+                               source, dest, paint, sampler,
+                               src_rect_constraint);
   }
 
   void ClipPath(
-      const Path& path,
+      Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
-    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipPath), path,
-                               clip_op);
+    serializer_.Write(path);
+    serializer_.Write(clip_op);
+    return ExecuteAndSkipArgSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipPath),
+                                      std::move(path), clip_op);
   }
 
   void ClipRect(
@@ -232,9 +265,16 @@ class CanvasRecorder {
                                clip_op);
   }
 
+  void ClipOval(
+      const Rect& bounds,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
+    return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipOval), bounds,
+                               clip_op);
+  }
+
   void ClipRRect(
       const Rect& rect,
-      Point corner_radii,
+      const Size& corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(ClipRRect), rect,
                                corner_radii, clip_op);
@@ -287,3 +327,5 @@ class CanvasRecorder {
 #endif
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_CANVAS_RECORDER_H_

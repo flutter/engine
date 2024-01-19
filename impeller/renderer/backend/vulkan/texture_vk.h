@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
 
-#include <variant>
-
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -65,3 +63,5 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_

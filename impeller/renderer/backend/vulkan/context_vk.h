@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
 
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "fml/thread.h"
@@ -216,3 +216,5 @@ class ContextVK final : public Context,
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_

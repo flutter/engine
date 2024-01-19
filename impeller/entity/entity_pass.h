@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
+#define FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
 
 #include <cstdint>
 #include <functional>
@@ -72,6 +73,7 @@ class EntityPass {
 
   std::unique_ptr<EntityPass> Clone() const;
 
+  /// @brief Add an entity to the current entity pass.
   void AddEntity(Entity entity);
 
   void SetElements(std::vector<Element> elements);
@@ -98,6 +100,9 @@ class EntityPass {
   ///         order is depth-first. Whenever a subpass elements is encountered,
   ///         it's included in the stream before its children.
   void IterateAllElements(const std::function<bool(Element&)>& iterator);
+
+  void IterateAllElements(
+      const std::function<bool(const Element&)>& iterator) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Iterate all entities in this pass, recursively including entities
@@ -134,11 +139,23 @@ class EntityPass {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  Color GetClearColor(ISize size = ISize::Infinite()) const;
+  /// @brief Return the premultiplied clear color of the pass entities, if any.
+  std::optional<Color> GetClearColor(ISize size = ISize::Infinite()) const;
+
+  /// @brief Return the premultiplied clear color of the pass entities.
+  ///
+  /// If the entity pass has no clear color, this will return transparent black.
+  Color GetClearColorOrDefault(ISize size = ISize::Infinite()) const;
 
   void SetBackdropFilter(BackdropFilterProc proc);
 
   void SetEnableOffscreenCheckerboard(bool enabled);
+
+  int32_t GetRequiredMipCount() const { return required_mip_count_; }
+
+  void SetRequiredMipCount(int32_t mip_count) {
+    required_mip_count_ = mip_count;
+  }
 
   //----------------------------------------------------------------------------
   /// @brief  Computes the coverage of a given subpass. This is used to
@@ -183,7 +200,7 @@ class EntityPass {
     ///         error while resolving the Entity.
     Status status = kFailure;
 
-    static EntityResult Success(const Entity& e) { return {e, kSuccess}; }
+    static EntityResult Success(Entity e) { return {std::move(e), kSuccess}; }
     static EntityResult Failure() { return {{}, kFailure}; }
     static EntityResult Skip() { return {{}, kSkip}; }
   };
@@ -289,6 +306,7 @@ class EntityPass {
   std::optional<Rect> bounds_limit_;
   std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
       std::make_unique<EntityPassClipRecorder>();
+  int32_t required_mip_count_ = 1;
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
@@ -334,3 +352,5 @@ class EntityPassClipRecorder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_

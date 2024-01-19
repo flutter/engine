@@ -64,7 +64,6 @@ FenceWaiterVK::~FenceWaiterVK() {
 
 bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
                              const fml::closure& callback) {
-  TRACE_EVENT0("flutter", "FenceWaiterVK::AddFence");
   if (!fence || !callback) {
     return false;
   }
@@ -92,7 +91,7 @@ static std::vector<vk::Fence> GetFencesForWaitSet(const WaitSet& set) {
 
 void FenceWaiterVK::Main() {
   fml::Thread::SetCurrentThreadName(
-      fml::Thread::ThreadConfig{"io.flutter.impeller.fence_waiter"});
+      fml::Thread::ThreadConfig{"IplrVkFenceWait"});
   // Since this thread mostly waits on fences, it doesn't need to be fast.
   fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
 

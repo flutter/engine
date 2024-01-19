@@ -137,6 +137,7 @@ Future<void> a11y_main() async {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
     ..updateNode(
       id: 42,
+      identifier: '',
       label: 'A: root',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(0.0, 0.0, 10.0, 10.0),
@@ -166,11 +167,13 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       headingLevel: 0
     )
     ..updateNode(
       id: 84,
+      identifier: '',
       label: 'B: leaf',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
@@ -198,6 +201,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
@@ -205,6 +209,7 @@ Future<void> a11y_main() async {
     )
     ..updateNode(
       id: 96,
+      identifier: '',
       label: 'C: branch',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
@@ -234,11 +239,13 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       headingLevel: -1
     )
     ..updateNode(
       id: 128,
+      identifier: '',
       label: 'D: leaf',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
@@ -267,6 +274,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
       headingLevel: 0
@@ -305,6 +313,7 @@ Future<void> a11y_string_attributes() async {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
     ..updateNode(
       id: 42,
+      identifier: 'identifier',
       label: 'What is the meaning of life?',
       labelAttributes: <StringAttribute>[
         LocaleStringAttribute(
@@ -363,6 +372,7 @@ Future<void> a11y_string_attributes() async {
       decreasedValue: '41',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       headingLevel: 0,
     );
@@ -1308,8 +1318,21 @@ void pointer_data_packet() {
     (PointerDataPacket packet) {
     signalNativeCount(packet.data.length);
 
-    for (final pointerData in packet.data) {
+    for (final PointerData pointerData in packet.data) {
       signalNativeMessage(pointerData.toString());
+    }
+  };
+
+  signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void pointer_data_packet_view_id() {
+  PlatformDispatcher.instance.onPointerDataPacket = (PointerDataPacket packet) {
+    assert(packet.data.length == 1);
+
+    for (final PointerData pointerData in packet.data) {
+      signalNativeMessage('ViewID: ${pointerData.viewId}');
     }
   };
 

@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TYPOGRAPHER_CONTEXT_SKIA_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TYPOGRAPHER_CONTEXT_SKIA_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
@@ -24,7 +24,7 @@ class TypographerContextSkia : public TypographerContext {
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,
       GlyphAtlas::Type type,
-      std::shared_ptr<GlyphAtlasContext> atlas_context,
+      const std::shared_ptr<GlyphAtlasContext>& atlas_context,
       const FontGlyphMap& font_glyph_map) const override;
 
  private:
@@ -34,3 +34,5 @@ class TypographerContextSkia : public TypographerContext {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TYPOGRAPHER_CONTEXT_SKIA_H_

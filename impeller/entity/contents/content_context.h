@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENT_CONTEXT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENT_CONTEXT_H_
 
 #include <initializer_list>
 #include <memory>
@@ -10,14 +11,15 @@
 #include <unordered_map>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
+#include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -57,6 +59,7 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -66,6 +69,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
 #include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel_decal.frag.h"
+#include "impeller/entity/kernel_nodecal.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -126,6 +131,9 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using TextureStrictSrcPipeline =
+    RenderPipelineT<TextureFillVertexShader,
+                    TextureFillStrictSrcFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -136,6 +144,10 @@ using GaussianBlurDecalPipeline =
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurNoalphaNodecalFragmentShader>;
+using KernelDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+using KernelPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -278,11 +290,25 @@ struct ContentContextOptions {
   bool is_for_rrect_blur_clear = false;
 
   struct Hash {
-    constexpr std::size_t operator()(const ContentContextOptions& o) const {
-      return fml::HashCombine(
-          o.sample_count, o.blend_mode, o.stencil_compare, o.stencil_operation,
-          o.primitive_type, o.color_attachment_pixel_format,
-          o.has_stencil_attachment, o.wireframe, o.is_for_rrect_blur_clear);
+    constexpr uint64_t operator()(const ContentContextOptions& o) const {
+      static_assert(sizeof(o.sample_count) == 1);
+      static_assert(sizeof(o.blend_mode) == 1);
+      static_assert(sizeof(o.sample_count) == 1);
+      static_assert(sizeof(o.stencil_compare) == 1);
+      static_assert(sizeof(o.stencil_operation) == 1);
+      static_assert(sizeof(o.primitive_type) == 1);
+      static_assert(sizeof(o.color_attachment_pixel_format) == 1);
+
+      return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
+             (o.wireframe ? 1llu : 0llu) << 1 |
+             (o.has_stencil_attachment ? 1llu : 0llu) << 2 |
+             // enums
+             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
+             static_cast<uint64_t>(o.primitive_type) << 24 |
+             static_cast<uint64_t>(o.stencil_operation) << 32 |
+             static_cast<uint64_t>(o.stencil_compare) << 40 |
+             static_cast<uint64_t>(o.blend_mode) << 48 |
+             static_cast<uint64_t>(o.sample_count) << 56;
     }
   };
 
@@ -396,6 +422,11 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureStrictSrcPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(texture_strict_src_pipelines_, opts);
+  }
+
 #ifdef IMPELLER_ENABLE_OPENGLES
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
       ContentContextOptions opts) const {
@@ -430,6 +461,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_decal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_nodecal_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
@@ -678,22 +719,81 @@ class ContentContext {
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(const std::string& label,
-                                       ISize texture_size,
-                                       const SubpassCallback& subpass_callback,
-                                       bool msaa_enabled = true) const;
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      ISize texture_size,
+      const SubpassCallback& subpass_callback,
+      bool msaa_enabled = true) const;
 
-  std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
+  /// Makes a subpass that will render to `subpass_target`.
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      const RenderTarget& subpass_target,
+      const SubpassCallback& subpass_callback) const;
+
+  const std::shared_ptr<LazyGlyphAtlas>& GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
   }
 
-  std::shared_ptr<RenderTargetAllocator> GetRenderTargetCache() const {
+  const std::shared_ptr<RenderTargetAllocator>& GetRenderTargetCache() const {
     return render_target_cache_;
   }
+
+  /// RuntimeEffect pipelines must be obtained via this method to avoid
+  /// re-creating them every frame.
+  ///
+  /// The unique_entrypoint_name comes from RuntimeEffect::GetEntrypoint.
+  /// Impellerc generates a unique entrypoint name for runtime effect shaders
+  /// based on the input file name and shader stage.
+  ///
+  /// The create_callback is synchronously invoked exactly once if a cached
+  /// pipeline is not found.
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name,
+      const ContentContextOptions& options,
+      const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
+          create_callback) const;
+
+  /// Used by hot reload/hot restart to clear a cached pipeline from
+  /// GetCachedRuntimeEffectPipeline.
+  void ClearCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name) const;
+
+  /// @brief Retrieve the currnent host buffer for transient storage.
+  ///
+  /// This is only safe to use from the raster threads. Other threads should
+  /// allocate their own device buffers.
+  HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
 
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+
+  struct RuntimeEffectPipelineKey {
+    std::string unique_entrypoint_name;
+    ContentContextOptions options;
+
+    struct Hash {
+      std::size_t operator()(const RuntimeEffectPipelineKey& key) const {
+        return fml::HashCombine(key.unique_entrypoint_name,
+                                ContentContextOptions::Hash{}(key.options));
+      }
+    };
+
+    struct Equal {
+      constexpr bool operator()(const RuntimeEffectPipelineKey& lhs,
+                                const RuntimeEffectPipelineKey& rhs) const {
+        return lhs.unique_entrypoint_name == rhs.unique_entrypoint_name &&
+               ContentContextOptions::Equal{}(lhs.options, rhs.options);
+      }
+    };
+  };
+
+  mutable std::unordered_map<RuntimeEffectPipelineKey,
+                             std::shared_ptr<Pipeline<PipelineDescriptor>>,
+                             RuntimeEffectPipelineKey::Hash,
+                             RuntimeEffectPipelineKey::Equal>
+      runtime_effect_pipelines_;
 
   template <class PipelineT>
   class Variants {
@@ -713,13 +813,15 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<int32_t>& constants = {}) {
+                       const std::initializer_list<Scalar>& constants = {},
+                       UseSubpassInput subpass_input = UseSubpassInput::kNo) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
+      desc->SetUseSubpassInput(subpass_input);
       options.ApplyToPipelineDescriptor(*desc);
       SetDefault(options, std::make_unique<PipelineT>(context, desc));
     }
@@ -778,6 +880,7 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<TextureStrictSrcPipeline> texture_strict_src_pipelines_;
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
   mutable Variants<TiledTextureExternalPipeline>
@@ -789,6 +892,8 @@ class ContentContext {
       gaussian_blur_noalpha_decal_pipelines_;
   mutable Variants<GaussianBlurPipeline>
       gaussian_blur_noalpha_nodecal_pipelines_;
+  mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
+  mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
@@ -898,6 +1003,7 @@ class ContentContext {
   std::shared_ptr<scene::SceneContext> scene_context_;
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
+  std::shared_ptr<HostBuffer> host_buffer_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;
@@ -906,3 +1012,5 @@ class ContentContext {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENT_CONTEXT_H_

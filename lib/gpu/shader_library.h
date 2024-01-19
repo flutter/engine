@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_GPU_SHADER_LIBRARY_H_
+#define FLUTTER_LIB_GPU_SHADER_LIBRARY_H_
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -23,10 +25,16 @@ class ShaderLibrary : public RefCountedDartWrappable<ShaderLibrary> {
  public:
   using ShaderMap = std::unordered_map<std::string, fml::RefPtr<Shader>>;
 
-  static fml::RefPtr<ShaderLibrary> MakeFromAsset(const std::string& name,
-                                                  std::string& out_error);
+  static fml::RefPtr<ShaderLibrary> MakeFromAsset(
+      impeller::Context::BackendType backend_type,
+      const std::string& name,
+      std::string& out_error);
 
   static fml::RefPtr<ShaderLibrary> MakeFromShaders(ShaderMap shaders);
+
+  static fml::RefPtr<ShaderLibrary> MakeFromFlatbuffer(
+      impeller::Context::BackendType backend_type,
+      std::shared_ptr<fml::Mapping> payload);
 
   /// Sets a return override for `MakeFromAsset` for testing purposes.
   static void SetOverride(fml::RefPtr<ShaderLibrary> override_shader_library);
@@ -42,9 +50,11 @@ class ShaderLibrary : public RefCountedDartWrappable<ShaderLibrary> {
   /// this library.
   static fml::RefPtr<ShaderLibrary> override_shader_library_;
 
+  std::shared_ptr<fml::Mapping> payload_;
   ShaderMap shaders_;
 
-  explicit ShaderLibrary(ShaderMap shaders);
+  explicit ShaderLibrary(std::shared_ptr<fml::Mapping> payload,
+                         ShaderMap shaders);
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShaderLibrary);
 };
@@ -70,3 +80,5 @@ extern Dart_Handle InternalFlutterGpu_ShaderLibrary_GetShader(
     Dart_Handle shader_wrapper);
 
 }  // extern "C"
+
+#endif  // FLUTTER_LIB_GPU_SHADER_LIBRARY_H_

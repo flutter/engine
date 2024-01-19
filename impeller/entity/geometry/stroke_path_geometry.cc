@@ -8,12 +8,12 @@
 
 namespace impeller {
 
-StrokePathGeometry::StrokePathGeometry(const Path& path,
+StrokePathGeometry::StrokePathGeometry(Path path,
                                        Scalar stroke_width,
                                        Scalar miter_limit,
                                        Cap stroke_cap,
                                        Join stroke_join)
-    : path_(path),
+    : path_(std::move(path)),
       stroke_width_(stroke_width),
       miter_limit_(miter_limit),
       stroke_cap_(stroke_cap),
@@ -451,7 +451,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto vertex_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
@@ -460,8 +460,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = true,
   };
 }
@@ -483,19 +482,18 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto stroke_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
       entity.GetTransform().GetMaxBasisLength());
   auto vertex_builder = ComputeUVGeometryCPU(
-      stroke_builder, {0, 0}, texture_coverage.size, effect_transform);
+      stroke_builder, {0, 0}, texture_coverage.GetSize(), effect_transform);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_builder.CreateVertexBuffer(host_buffer),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = true,
   };
 }
@@ -510,7 +508,6 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
   if (!path_bounds.has_value()) {
     return std::nullopt;
   }
-  auto path_coverage = path_bounds->TransformBounds(transform);
 
   Scalar max_radius = 0.5;
   if (stroke_cap_ == Cap::kSquare) {
@@ -524,12 +521,8 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
     return std::nullopt;
   }
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
-  Vector2 max_radius_xy =
-      transform
-          .TransformDirection(Vector2(max_radius, max_radius) *
-                              std::max(stroke_width_, min_size))
-          .Abs();
-  return path_coverage.Expand(max_radius_xy);
+  max_radius *= std::max(stroke_width_, min_size);
+  return path_bounds->Expand(max_radius).TransformBounds(transform);
 }
 
 }  // namespace impeller

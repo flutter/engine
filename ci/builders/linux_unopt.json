@@ -6,6 +6,9 @@
                 "os=Linux",
                 "cores=32"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
                 "--runtime-mode",
                 "debug",
@@ -21,7 +24,7 @@
             "ninja": {
                 "config": "host_debug_unopt",
                 "targets": [
-                    "flutter/tools/font-subset",
+                    "flutter/tools/font_subset",
                     "flutter:unittests",
                     "flutter/build/dart:copy_dart_sdk",
                     "flutter/shell/platform/common/client_wrapper:client_wrapper_unittests",
@@ -83,12 +86,41 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "dependencies": [],
+            "gclient_variables": {
+                "use_rbe": true
+            },
+            "gn": [
+                "--android",
+                "--embedder-for-target",
+                "--target-dir",
+                "android_embedder_debug_unopt",
+                "--unoptimized",
+                "--rbe",
+                "--no-goma"
+            ],
+            "name": "android_embedder_debug_unopt",
+            "ninja": {
+                "config": "android_embedder_debug_unopt",
+                "targets": [
+                    "flutter/shell/platform/embedder:flutter_engine"
+                ]
+            }
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
             "dependencies": [
                 {
                     "dependency": "arm_tools",
                     "version": "last_updated:2023-02-03T15:32:01-0800"
                 }
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
                 "--android",
                 "--unoptimized",

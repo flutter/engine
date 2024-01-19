@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_
+#define FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_
 
 #include "impeller/renderer/render_target.h"
 
@@ -42,6 +43,19 @@ class RenderTargetCache : public RenderTargetAllocator {
   RenderTargetCache(const RenderTargetCache&) = delete;
 
   RenderTargetCache& operator=(const RenderTargetCache&) = delete;
+
+ public:
+  /// Visible for testing.
+  std::vector<TextureData>::const_iterator GetTextureDataBegin() const {
+    return texture_data_.begin();
+  }
+
+  /// Visible for testing.
+  std::vector<TextureData>::const_iterator GetTextureDataEnd() const {
+    return texture_data_.end();
+  }
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_

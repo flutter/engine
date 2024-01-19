@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_FILTER_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_FILTER_CONTENTS_H_
 
 #include <memory>
 #include <optional>
@@ -12,12 +13,15 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/matrix.h"
 #include "impeller/geometry/sigma.h"
 
 namespace impeller {
 
 class FilterContents : public Contents {
  public:
+  static const int32_t kBlurFilterRequiredMipCount;
+
   enum class BlurStyle {
     /// Blurred inside and outside.
     kNormal,
@@ -230,7 +234,7 @@ class FilterContents : public Contents {
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 
   FilterInput::Vector inputs_;
-  Matrix effect_transform_;
+  Matrix effect_transform_ = Matrix();
 
   FilterContents(const FilterContents&) = delete;
 
@@ -238,3 +242,5 @@ class FilterContents : public Contents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_FILTER_CONTENTS_H_

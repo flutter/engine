@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/testing/testing.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
-#include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
@@ -38,7 +39,7 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
 }
 
 TEST_P(TypographerTest, CanConvertTextBlob) {
-  SkFont font;
+  SkFont font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString(
       "the quick brown fox jumped over the lazy dog.", font);
   ASSERT_TRUE(blob);
@@ -59,7 +60,7 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -97,7 +98,7 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
   ASSERT_TRUE(mapping);
   sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
   SkFont emoji_font(font_mgr->makeFromData(mapping), 50.0);
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
 
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
@@ -130,7 +131,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -147,7 +148,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -177,7 +178,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
       "œ∑´®†¥¨ˆøπ““‘‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥≥≥≥÷¡™£¢∞§¶•ªº–≠⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰Á¨Ø∏”’/"
       "* Í˝ */¸˛Ç◊ı˜Â¯˘¿";
 
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString(test_string, sk_font);
   ASSERT_TRUE(blob);
 
@@ -189,7 +190,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   };
   auto atlas =
       context->CreateGlyphAtlas(*GetContext(), GlyphAtlas::Type::kAlphaBitmap,
-                                std::move(atlas_context), font_glyph_map);
+                                atlas_context, font_glyph_map);
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
@@ -214,7 +215,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -247,7 +248,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   auto context = TypographerContextSkia::Make();
   auto atlas_context = context->CreateGlyphAtlasContext();
   ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
@@ -335,6 +336,42 @@ TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
   packer->reset();
   // Should be empty now.
   ASSERT_EQ(packer->percentFull(), 0);
+}
+
+TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledWhenContentsAreRecreated) {
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context = context->CreateGlyphAtlasContext();
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
+  auto blob = SkTextBlob::MakeFromString("ABCDEFGHIJKLMNOPQRSTUVQXYZ123456789",
+                                         sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas = CreateGlyphAtlas(
+      *GetContext(), context.get(), GlyphAtlas::Type::kColorBitmap, 32.0f,
+      atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
+  auto old_packer = atlas_context->GetRectPacker();
+
+  ASSERT_NE(atlas, nullptr);
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+  ASSERT_EQ(atlas, atlas_context->GetGlyphAtlas());
+
+  auto* first_texture = atlas->GetTexture().get();
+
+  // Now create a new glyph atlas with a completely different textblob.
+  // everything should be different except for the underlying atlas texture.
+
+  auto blob2 = SkTextBlob::MakeFromString("abcdefghijklmnopqrstuvwxyz123456789",
+                                          sk_font);
+  auto next_atlas = CreateGlyphAtlas(
+      *GetContext(), context.get(), GlyphAtlas::Type::kColorBitmap, 32.0f,
+      atlas_context, *MakeTextFrameFromTextBlobSkia(blob2));
+  ASSERT_NE(atlas, next_atlas);
+  auto* second_texture = next_atlas->GetTexture().get();
+
+  auto new_packer = atlas_context->GetRectPacker();
+
+  ASSERT_EQ(second_texture, first_texture);
+  ASSERT_NE(old_packer, new_packer);
 }
 
 }  // namespace testing

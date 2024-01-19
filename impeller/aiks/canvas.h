@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_CANVAS_H_
+#define FLUTTER_IMPELLER_AIKS_CANVAS_H_
 
 #include <deque>
 #include <functional>
@@ -42,6 +43,15 @@ enum class PointStyle {
 
   /// @brief Points are drawn as circles.
   kSquare,
+};
+
+/// Controls the behavior of the source rectangle given to DrawImageRect.
+enum class SourceRectConstraint {
+  /// @brief Faster, but may sample outside the bounds of the source rectangle.
+  kFast,
+
+  /// @brief Sample only within the source rectangle. May be slower.
+  kStrict,
 };
 
 class Canvas {
@@ -96,19 +106,23 @@ class Canvas {
 
   void Rotate(Radians radians);
 
-  void DrawPath(const Path& path, const Paint& paint);
+  void DrawPath(Path path, const Paint& paint);
 
   void DrawPaint(const Paint& paint);
 
   void DrawLine(const Point& p0, const Point& p1, const Paint& paint);
 
-  void DrawRect(Rect rect, const Paint& paint);
+  void DrawRect(const Rect& rect, const Paint& paint);
 
-  void DrawRRect(Rect rect, Point corner_radii, const Paint& paint);
+  void DrawOval(const Rect& rect, const Paint& paint);
 
-  void DrawCircle(Point center, Scalar radius, const Paint& paint);
+  void DrawRRect(const Rect& rect,
+                 const Size& corner_radii,
+                 const Paint& paint);
 
-  void DrawPoints(std::vector<Point>,
+  void DrawCircle(const Point& center, Scalar radius, const Paint& paint);
+
+  void DrawPoints(std::vector<Point> points,
                   Scalar radius,
                   const Paint& paint,
                   PointStyle point_style);
@@ -118,23 +132,29 @@ class Canvas {
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
-  void DrawImageRect(const std::shared_ptr<Image>& image,
-                     Rect source,
-                     Rect dest,
-                     const Paint& paint,
-                     SamplerDescriptor sampler = {});
+  void DrawImageRect(
+      const std::shared_ptr<Image>& image,
+      Rect source,
+      Rect dest,
+      const Paint& paint,
+      SamplerDescriptor sampler = {},
+      SourceRectConstraint src_rect_constraint = SourceRectConstraint::kFast);
 
   void ClipPath(
-      const Path& path,
+      Path path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void ClipRect(
       const Rect& rect,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
+  void ClipOval(
+      const Rect& bounds,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
+
   void ClipRRect(
       const Rect& rect,
-      Point corner_radii,
+      const Size& corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void DrawPicture(const Picture& picture);
@@ -194,3 +214,5 @@ class Canvas {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_CANVAS_H_

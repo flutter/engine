@@ -54,6 +54,8 @@ class Serializer {
 
   void Write(const std::vector<Color>& matrices) {}
 
+  void Write(const SourceRectConstraint& src_rect_constraint) {}
+
   CanvasRecorderOp last_op_;
 };
 }  // namespace
@@ -152,10 +154,22 @@ TEST(CanvasRecorder, DrawPaint) {
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kDrawPaint);
 }
 
+TEST(CanvasRecorder, DrawLine) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawLine(Point(), Point(), Paint());
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kDrawLine);
+}
+
 TEST(CanvasRecorder, DrawRect) {
   CanvasRecorder<Serializer> recorder;
   recorder.DrawRect(Rect(), Paint());
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kDrawRect);
+}
+
+TEST(CanvasRecorder, DrawOval) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.DrawOval(Rect(), Paint());
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kDrawOval);
 }
 
 TEST(CanvasRecorder, DrawRRect) {
@@ -184,7 +198,7 @@ TEST(CanvasRecorder, DrawImage) {
 
 TEST(CanvasRecorder, DrawImageRect) {
   CanvasRecorder<Serializer> recorder;
-  recorder.DrawImageRect({}, {}, {}, {}, {});
+  recorder.DrawImageRect({}, {}, {}, {}, {}, SourceRectConstraint::kFast);
   ASSERT_EQ(recorder.GetSerializer().last_op_,
             CanvasRecorderOp::kDrawImageRect);
 }
@@ -199,6 +213,12 @@ TEST(CanvasRecorder, ClipRect) {
   CanvasRecorder<Serializer> recorder;
   recorder.ClipRect({});
   ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kClipRect);
+}
+
+TEST(CanvasRecorder, ClipOval) {
+  CanvasRecorder<Serializer> recorder;
+  recorder.ClipOval({});
+  ASSERT_EQ(recorder.GetSerializer().last_op_, CanvasRecorderOp::kClipOval);
 }
 
 TEST(CanvasRecorder, ClipRRect) {

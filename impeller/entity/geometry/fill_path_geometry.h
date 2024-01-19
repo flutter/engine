@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_
 
 #include <optional>
 
@@ -14,7 +15,7 @@ namespace impeller {
 /// @brief A geometry that is created from a filled path object.
 class FillPathGeometry final : public Geometry {
  public:
-  explicit FillPathGeometry(const Path& path,
+  explicit FillPathGeometry(Path path,
                             std::optional<Rect> inner_rect = std::nullopt);
 
   ~FillPathGeometry() = default;
@@ -50,3 +51,5 @@ class FillPathGeometry final : public Geometry {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_

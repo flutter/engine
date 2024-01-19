@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_
+#define FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_
 
 #include <memory>
 
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -51,6 +53,8 @@ class SceneContext {
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<Texture> GetPlaceholderTexture() const;
+
+  HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
 
  private:
   class PipelineVariants {
@@ -143,6 +147,7 @@ class SceneContext {
   // A 1x1 opaque white texture that can be used as a placeholder binding.
   // Available for the lifetime of the scene context
   std::shared_ptr<Texture> placeholder_texture_;
+  std::shared_ptr<HostBuffer> host_buffer_;
 
   SceneContext(const SceneContext&) = delete;
 
@@ -151,3 +156,5 @@ class SceneContext {
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_

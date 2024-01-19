@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_CONTEXT_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_CONTEXT_VK_H_
 
 #include <memory>
 
@@ -16,6 +17,16 @@ class ContextVK;
 class Surface;
 class SwapchainVK;
 
+/// For Vulkan, there is both a ContextVK that implements Context and a
+/// SurfaceContextVK that also implements Context and takes a ContextVK as its
+/// parent. There is a one to many relationship between ContextVK and
+/// SurfaceContextVK.
+///
+/// Most operations in this class are delegated to the parent ContextVK.
+/// This class specifically manages swapchains and creation of VkSurfaces on
+/// Android. By maintaining the swapchain this way, it is possible to have
+/// multiple surfaces sharing the same ContextVK without stepping on each
+/// other's swapchains.
 class SurfaceContextVK : public Context,
                          public BackendCast<SurfaceContextVK, Context> {
  public:
@@ -71,3 +82,5 @@ class SurfaceContextVK : public Context,
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_CONTEXT_VK_H_

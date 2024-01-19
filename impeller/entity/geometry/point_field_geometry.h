@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_POINT_FIELD_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_POINT_FIELD_GEOMETRY_H_
 
 #include "impeller/entity/geometry/geometry.h"
 
@@ -15,6 +16,9 @@ class PointFieldGeometry final : public Geometry {
   ~PointFieldGeometry() = default;
 
   static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
+
+  /// If the platform can use compute safely.
+  static bool CanUseCompute(const ContentContext& renderer);
 
  private:
   // |Geometry|
@@ -57,3 +61,5 @@ class PointFieldGeometry final : public Geometry {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_POINT_FIELD_GEOMETRY_H_

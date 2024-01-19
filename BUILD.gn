@@ -53,6 +53,23 @@ config("export_dynamic_symbols") {
   }
 }
 
+config("export_dynamic_test_symbols") {
+  # See comment in :export_dynamic_symbols.
+  # This config exposes an additional symbol meant for flutter_tester.
+  if (is_linux || is_fuchsia) {
+    inputs = [ "//flutter/common/exported_test_symbols.sym" ]
+    ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  } else if (is_mac) {
+    inputs = [ "//flutter/common/exported_test_symbols_mac.sym" ]
+    ldflags = [
+      "-Xlinker",
+      "-exported_symbols_list",
+      "-Xlinker",
+      rebase_path(inputs[0], root_build_dir),
+    ]
+  }
+}
+
 group("flutter") {
   testonly = true
 
@@ -114,7 +131,7 @@ group("flutter") {
     public_deps += [
       "//flutter/shell/testing",
       "//flutter/tools/const_finder",
-      "//flutter/tools/font-subset",
+      "//flutter/tools/font_subset",
     ]
   }
 
@@ -201,6 +218,7 @@ group("unittests") {
       public_deps += [
         "//flutter/impeller/golden_tests:impeller_golden_tests",
         "//flutter/shell/gpu:gpu_surface_metal_unittests",
+        "//flutter/shell/platform/darwin/common:availability_version_check_unittests",
         "//flutter/shell/platform/darwin/common:framework_common_unittests",
         "//flutter/third_party/spring_animation:spring_animation_unittests",
       ]

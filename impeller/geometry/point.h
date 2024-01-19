@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_POINT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_POINT_H_
 
 #include <algorithm>
 #include <cmath>
@@ -16,6 +17,11 @@
 #include "impeller/geometry/type_traits.h"
 
 namespace impeller {
+
+#define ONLY_ON_FLOAT_M(Modifiers, Return) \
+  template <typename U = T>                \
+  Modifiers std::enable_if_t<std::is_floating_point_v<U>, Return>
+#define ONLY_ON_FLOAT(Return) DL_ONLY_ON_FLOAT_M(, Return)
 
 template <class T>
 struct TPoint {
@@ -226,6 +232,9 @@ struct TPoint {
   }
 
   constexpr bool IsZero() const { return x == 0 && y == 0; }
+
+  ONLY_ON_FLOAT_M(constexpr, bool)
+  IsFinite() const { return std::isfinite(x) && std::isfinite(y); }
 };
 
 // Specializations for mixed (float & integer) algebraic operations.
@@ -311,6 +320,9 @@ using UintPoint32 = TPoint<uint32_t>;
 using Vector2 = Point;
 using Quad = std::array<Point, 4>;
 
+#undef ONLY_ON_FLOAT
+#undef ONLY_ON_FLOAT_M
+
 }  // namespace impeller
 
 namespace std {
@@ -323,3 +335,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_POINT_H_

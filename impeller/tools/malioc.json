@@ -3758,7 +3758,7 @@
       "core": "Mali-G78",
       "filename": "flutter/impeller/entity/gles/glyph_atlas_color.frag.gles",
       "has_side_effects": false,
-      "has_uniform_computation": false,
+      "has_uniform_computation": true,
       "modifies_coverage": false,
       "reads_color_buffer": false,
       "type": "Fragment",
@@ -3773,9 +3773,9 @@
               "varying"
             ],
             "longest_path_cycles": [
-              0.03125,
-              0.03125,
-              0.03125,
+              0.0625,
+              0.0625,
+              0.0625,
               0.0,
               0.0,
               0.5,
@@ -3794,9 +3794,9 @@
               "varying"
             ],
             "shortest_path_cycles": [
+              0.0625,
+              0.0625,
               0.03125,
-              0.03125,
-              0.0,
               0.0,
               0.0,
               0.5,
@@ -3806,9 +3806,9 @@
               "varying"
             ],
             "total_cycles": [
-              0.03125,
-              0.03125,
-              0.03125,
+              0.0625,
+              0.0625,
+              0.0625,
               0.0,
               0.0,
               0.5,
@@ -3857,17 +3857,16 @@
               1.0
             ],
             "total_bound_pipelines": [
-              "load_store",
-              "texture"
+              "arithmetic"
             ],
             "total_cycles": [
-              0.6666666865348816,
+              1.3333333730697632,
               1.0,
               1.0
             ]
           },
           "thread_occupancy": 100,
-          "uniform_registers_used": 0,
+          "uniform_registers_used": 1,
           "work_registers_used": 2
         }
       }
@@ -4026,6 +4025,240 @@
           "thread_occupancy": 100,
           "uniform_registers_used": 8,
           "work_registers_used": 2
+        }
+      }
+    }
+  },
+  "flutter/impeller/entity/gles/kernel_decal.frag.gles": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/gles/kernel_decal.frag.gles",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 66,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              null
+            ],
+            "longest_path_cycles": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arith_total",
+              "arith_cvt"
+            ],
+            "shortest_path_cycles": [
+              0.078125,
+              0.0,
+              0.078125,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "load_store"
+            ],
+            "total_cycles": [
+              0.359375,
+              0.0625,
+              0.359375,
+              0.1875,
+              2.0,
+              0.25,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 4,
+          "work_registers_used": 19
+        }
+      }
+    },
+    "Mali-T880": {
+      "core": "Mali-T880",
+      "filename": "flutter/impeller/entity/gles/kernel_decal.frag.gles",
+      "has_uniform_computation": false,
+      "type": "Fragment",
+      "variants": {
+        "Main": {
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              null
+            ],
+            "longest_path_cycles": [
+              null,
+              null,
+              null
+            ],
+            "pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arithmetic",
+              "load_store"
+            ],
+            "shortest_path_cycles": [
+              1.0,
+              1.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "arithmetic"
+            ],
+            "total_cycles": [
+              3.6666667461395264,
+              3.0,
+              1.0
+            ]
+          },
+          "thread_occupancy": 100,
+          "uniform_registers_used": 1,
+          "work_registers_used": 3
+        }
+      }
+    }
+  },
+  "flutter/impeller/entity/gles/kernel_nodecal.frag.gles": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/gles/kernel_nodecal.frag.gles",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 50,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              null
+            ],
+            "longest_path_cycles": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arith_total",
+              "arith_cvt"
+            ],
+            "shortest_path_cycles": [
+              0.078125,
+              0.0,
+              0.078125,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "load_store"
+            ],
+            "total_cycles": [
+              0.25,
+              0.0625,
+              0.25,
+              0.0,
+              2.0,
+              0.25,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 4,
+          "work_registers_used": 19
+        }
+      }
+    },
+    "Mali-T880": {
+      "core": "Mali-T880",
+      "filename": "flutter/impeller/entity/gles/kernel_nodecal.frag.gles",
+      "has_uniform_computation": false,
+      "type": "Fragment",
+      "variants": {
+        "Main": {
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              null
+            ],
+            "longest_path_cycles": [
+              null,
+              null,
+              null
+            ],
+            "pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arithmetic",
+              "load_store"
+            ],
+            "shortest_path_cycles": [
+              1.0,
+              1.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "arithmetic"
+            ],
+            "total_cycles": [
+              2.3333332538604736,
+              2.0,
+              1.0
+            ]
+          },
+          "thread_occupancy": 100,
+          "uniform_registers_used": 1,
+          "work_registers_used": 3
         }
       }
     }
@@ -6736,6 +6969,127 @@
       }
     }
   },
+  "flutter/impeller/entity/gles/texture_fill_strict_src.frag.gles": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/gles/texture_fill_strict_src.frag.gles",
+      "has_side_effects": false,
+      "has_uniform_computation": false,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 33,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "varying"
+            ],
+            "longest_path_cycles": [
+              0.109375,
+              0.03125,
+              0.109375,
+              0.0,
+              0.0,
+              0.375,
+              0.25
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "varying"
+            ],
+            "shortest_path_cycles": [
+              0.078125,
+              0.03125,
+              0.078125,
+              0.0,
+              0.0,
+              0.375,
+              0.25
+            ],
+            "total_bound_pipelines": [
+              "varying"
+            ],
+            "total_cycles": [
+              0.109375,
+              0.03125,
+              0.109375,
+              0.0,
+              0.0,
+              0.375,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 4,
+          "work_registers_used": 20
+        }
+      }
+    },
+    "Mali-T880": {
+      "core": "Mali-T880",
+      "filename": "flutter/impeller/entity/gles/texture_fill_strict_src.frag.gles",
+      "has_uniform_computation": false,
+      "type": "Fragment",
+      "variants": {
+        "Main": {
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "longest_path_cycles": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "shortest_path_cycles": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "total_bound_pipelines": [
+              "arithmetic",
+              "load_store",
+              "texture"
+            ],
+            "total_cycles": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          },
+          "thread_occupancy": 100,
+          "uniform_registers_used": 1,
+          "work_registers_used": 2
+        }
+      }
+    }
+  },
   "flutter/impeller/entity/gles/tiled_texture_fill.frag.gles": {
     "Mali-G78": {
       "core": "Mali-G78",
@@ -7544,7 +7898,7 @@
       "core": "Mali-G78",
       "filename": "flutter/impeller/entity/glyph_atlas_color.frag.vkspv",
       "has_side_effects": false,
-      "has_uniform_computation": false,
+      "has_uniform_computation": true,
       "modifies_coverage": false,
       "reads_color_buffer": false,
       "type": "Fragment",
@@ -7559,9 +7913,9 @@
               "varying"
             ],
             "longest_path_cycles": [
+              0.0625,
+              0.0625,
               0.03125,
-              0.03125,
-              0.0,
               0.0,
               0.0,
               0.5,
@@ -7580,9 +7934,9 @@
               "varying"
             ],
             "shortest_path_cycles": [
+              0.0625,
+              0.0625,
               0.03125,
-              0.03125,
-              0.0,
               0.0,
               0.0,
               0.5,
@@ -7592,9 +7946,9 @@
               "varying"
             ],
             "total_cycles": [
+              0.0625,
+              0.0625,
               0.03125,
-              0.03125,
-              0.0,
               0.0,
               0.0,
               0.5,
@@ -7604,7 +7958,7 @@
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
           "uniform_registers_used": 4,
-          "work_registers_used": 6
+          "work_registers_used": 8
         }
       }
     }
@@ -7716,6 +8070,148 @@
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
           "uniform_registers_used": 36,
+          "work_registers_used": 11
+        }
+      }
+    }
+  },
+  "flutter/impeller/entity/kernel_decal.frag.vkspv": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/kernel_decal.frag.vkspv",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 66,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              null
+            ],
+            "longest_path_cycles": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arith_total",
+              "arith_cvt"
+            ],
+            "shortest_path_cycles": [
+              0.09375,
+              0.0,
+              0.09375,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "load_store"
+            ],
+            "total_cycles": [
+              0.34375,
+              0.0625,
+              0.34375,
+              0.1875,
+              1.0,
+              0.25,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 4,
+          "work_registers_used": 17
+        }
+      }
+    }
+  },
+  "flutter/impeller/entity/kernel_nodecal.frag.vkspv": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/kernel_nodecal.frag.vkspv",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 50,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              null
+            ],
+            "longest_path_cycles": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "arith_total",
+              "arith_cvt"
+            ],
+            "shortest_path_cycles": [
+              0.09375,
+              0.0,
+              0.09375,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "total_bound_pipelines": [
+              "load_store"
+            ],
+            "total_cycles": [
+              0.21875,
+              0.0625,
+              0.21875,
+              0.0,
+              1.0,
+              0.25,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 4,
           "work_registers_used": 11
         }
       }
@@ -9790,6 +10286,76 @@
           "thread_occupancy": 100,
           "uniform_registers_used": 4,
           "work_registers_used": 10
+        }
+      }
+    }
+  },
+  "flutter/impeller/entity/texture_fill_strict_src.frag.vkspv": {
+    "Mali-G78": {
+      "core": "Mali-G78",
+      "filename": "flutter/impeller/entity/texture_fill_strict_src.frag.vkspv",
+      "has_side_effects": false,
+      "has_uniform_computation": true,
+      "modifies_coverage": false,
+      "reads_color_buffer": false,
+      "type": "Fragment",
+      "uses_late_zs_test": false,
+      "uses_late_zs_update": false,
+      "variants": {
+        "Main": {
+          "fp16_arithmetic": 33,
+          "has_stack_spilling": false,
+          "performance": {
+            "longest_path_bound_pipelines": [
+              "varying"
+            ],
+            "longest_path_cycles": [
+              0.078125,
+              0.03125,
+              0.078125,
+              0.0,
+              0.0,
+              0.375,
+              0.25
+            ],
+            "pipelines": [
+              "arith_total",
+              "arith_fma",
+              "arith_cvt",
+              "arith_sfu",
+              "load_store",
+              "varying",
+              "texture"
+            ],
+            "shortest_path_bound_pipelines": [
+              "varying"
+            ],
+            "shortest_path_cycles": [
+              0.078125,
+              0.03125,
+              0.078125,
+              0.0,
+              0.0,
+              0.375,
+              0.25
+            ],
+            "total_bound_pipelines": [
+              "varying"
+            ],
+            "total_cycles": [
+              0.078125,
+              0.03125,
+              0.078125,
+              0.0,
+              0.0,
+              0.375,
+              0.25
+            ]
+          },
+          "stack_spill_bytes": 0,
+          "thread_occupancy": 100,
+          "uniform_registers_used": 6,
+          "work_registers_used": 6
         }
       }
     }

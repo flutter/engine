@@ -79,26 +79,26 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     }
   }
 
-  auto texture = renderer.MakeSubpass(
-      label, ISize::Ceil(coverage->size),
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      label, ISize::Ceil(coverage->GetSize()),
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
         sub_entity.SetTransform(
-            Matrix::MakeTranslation(Vector3(-coverage->origin)) *
+            Matrix::MakeTranslation(Vector3(-coverage->GetOrigin())) *
             entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
       msaa_enabled);
 
-  if (!texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
   auto snapshot = Snapshot{
-      .texture = texture,
-      .transform = Matrix::MakeTranslation(coverage->origin),
+      .texture = render_target.value().GetRenderTargetTexture(),
+      .transform = Matrix::MakeTranslation(coverage->GetOrigin()),
   };
   if (sampler_descriptor.has_value()) {
     snapshot.sampler_descriptor = sampler_descriptor.value();
@@ -131,11 +131,10 @@ bool Contents::ApplyColorFilter(
 }
 
 bool Contents::ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const {
+                            const std::optional<Rect> clip_coverage) const {
   if (!clip_coverage.has_value()) {
     return false;
   }
-
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return false;

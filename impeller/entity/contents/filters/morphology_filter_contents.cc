@@ -10,7 +10,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -75,7 +75,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
 
   ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
                                                  RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
@@ -84,8 +84,6 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
         {Point(0, 1), input_uvs[2]},
         {Point(1, 1), input_uvs[3]},
     });
-
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
@@ -114,13 +112,12 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
             .Normalize() /
         Point(transformed_texture_width, transformed_texture_height);
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Morphology Filter");
+    pass.SetCommandLabel("Morphology Filter");
     auto options = OptionsFromPass(pass);
     options.primitive_type = PrimitiveType::kTriangleStrip;
     options.blend_mode = BlendMode::kSource;
-    cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
-    cmd.BindVertices(vtx_buffer);
+    pass.SetPipeline(renderer.GetMorphologyFilterPipeline(options));
+    pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
     auto sampler_descriptor = input_snapshot->sampler_descriptor;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
@@ -129,18 +126,18 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     }
 
     FS::BindTextureSampler(
-        cmd, input_snapshot->texture,
+        pass, input_snapshot->texture,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+    FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.Draw().ok();
   };
 
-  auto out_texture = renderer.MakeSubpass("Directional Morphology Filter",
-                                          ISize(coverage.size), callback);
-  if (!out_texture) {
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      "Directional Morphology Filter", ISize(coverage.GetSize()), callback);
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
@@ -149,8 +146,8 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
   return Entity::FromSnapshot(
-      Snapshot{.texture = out_texture,
-               .transform = Matrix::MakeTranslation(coverage.origin),
+      Snapshot{.texture = render_target.value().GetRenderTargetTexture(),
+               .transform = Matrix::MakeTranslation(coverage.GetOrigin()),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
@@ -172,8 +169,8 @@ std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(
   auto transformed_vector =
       transform.TransformDirection(direction_ * radius_.radius).Abs();
 
-  auto origin = coverage->origin;
-  auto size = Vector2(coverage->size);
+  auto origin = coverage->GetOrigin();
+  auto size = Vector2(coverage->GetSize());
   switch (morph_type_) {
     case FilterContents::MorphType::kDilate:
       origin -= transformed_vector;
