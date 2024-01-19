@@ -103,8 +103,6 @@ GoldenPlaygroundTest::GoldenPlaygroundTest()
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
     pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>();
-  } else {
-    FML_CHECK(false) << "unsupported backend";
   }
 }
 
@@ -129,7 +127,8 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetBackend() != PlaygroundBackend::kMetal &&
+      GetBackend() != PlaygroundBackend::kVulkan) {
     GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
     return;
   }
