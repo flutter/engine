@@ -161,6 +161,7 @@
 ../../../flutter/impeller/geometry/matrix_unittests.cc
 ../../../flutter/impeller/geometry/path_unittests.cc
 ../../../flutter/impeller/geometry/rect_unittests.cc
+../../../flutter/impeller/geometry/saturated_math_unittests.cc
 ../../../flutter/impeller/geometry/size_unittests.cc
 ../../../flutter/impeller/geometry/trig_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
@@ -375,6 +376,8 @@
 ../../../flutter/shell/platform/windows/client_wrapper/flutter_view_unittests.cc
 ../../../flutter/shell/platform/windows/client_wrapper/plugin_registrar_windows_unittests.cc
 ../../../flutter/shell/platform/windows/client_wrapper/testing
+../../../flutter/shell/platform/windows/compositor_opengl_unittests.cc
+../../../flutter/shell/platform/windows/compositor_software_unittests.cc
 ../../../flutter/shell/platform/windows/cursor_handler_unittests.cc
 ../../../flutter/shell/platform/windows/direct_manipulation_unittests.cc
 ../../../flutter/shell/platform/windows/dpi_utils_unittests.cc
@@ -1185,6 +1188,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics.types/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.driver.development/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.framework/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.registrar/meta.json
@@ -1207,6 +1211,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/meta.json
@@ -1398,6 +1403,7 @@
 ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/input_report_reader/meta.json
 ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
+../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/magma_client/meta.json
 ../../../fuchsia/sdk/linux/pkg/magma_common/meta.json
@@ -1747,6 +1753,7 @@
 ../../../third_party/abseil-cpp/create_lts.py
 ../../../third_party/abseil-cpp/generate_def_files.py
 ../../../third_party/abseil-cpp/roll_abseil.py
+../../../third_party/android_embedding_dependencies
 ../../../third_party/android_tools
 ../../../third_party/angle/.clang-format
 ../../../third_party/angle/.git
@@ -2639,6 +2646,7 @@
 ../../../third_party/freetype2/vms_make.com
 ../../../third_party/google_fonts_for_unit_tests
 ../../../third_party/googletest
+../../../third_party/gradle
 ../../../third_party/harfbuzz/.ci/requirements.txt
 ../../../third_party/harfbuzz/.clang-format
 ../../../third_party/harfbuzz/.editorconfig
@@ -2839,6 +2847,7 @@
 ../../../third_party/icu/source/tools/toolutil/sources.txt
 ../../../third_party/icu/source/tools/tzcode/Makefile.in
 ../../../third_party/icu/source/tools/tzcode/readme.txt
+../../../third_party/java
 ../../../third_party/libcxx/.clang-format
 ../../../third_party/libcxx/.clang-tidy
 ../../../third_party/libcxx/.git
