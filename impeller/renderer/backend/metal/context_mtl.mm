@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/metal/context_mtl.h"
 
-#include <Foundation/Foundation.h>
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"

@@ -8,68 +8,11 @@
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/metal/pass_bindings_cache_mtl.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
-
-//-----------------------------------------------------------------------------
-/// @brief      Ensures that bindings on the pass are not redundantly set or
-///             updated. Avoids making the driver do additional checks and makes
-///             the frame insights during profiling and instrumentation not
-///             complain about the same.
-///
-///             There should be no change to rendering if this caching was
-///             absent.
-///
-struct PassBindingsCache {
-  explicit PassBindingsCache() {}
-
-  ~PassBindingsCache() = default;
-
-  PassBindingsCache(const PassBindingsCache&) = delete;
-
-  PassBindingsCache(PassBindingsCache&&) = delete;
-
-  void SetEncoder(id<MTLRenderCommandEncoder> encoder);
-
-  void SetRenderPipelineState(id<MTLRenderPipelineState> pipeline);
-
-  void SetDepthStencilState(id<MTLDepthStencilState> depth_stencil);
-
-  bool SetBuffer(ShaderStage stage,
-                 uint64_t index,
-                 uint64_t offset,
-                 id<MTLBuffer> buffer);
-
-  bool SetTexture(ShaderStage stage, uint64_t index, id<MTLTexture> texture);
-
-  bool SetSampler(ShaderStage stage,
-                  uint64_t index,
-                  id<MTLSamplerState> sampler);
-
-  void SetViewport(const Viewport& viewport);
-
-  void SetScissor(const IRect& scissor);
-
- private:
-  struct BufferOffsetPair {
-    id<MTLBuffer> buffer = nullptr;
-    size_t offset = 0u;
-  };
-  using BufferMap = std::map<uint64_t, BufferOffsetPair>;
-  using TextureMap = std::map<uint64_t, id<MTLTexture>>;
-  using SamplerMap = std::map<uint64_t, id<MTLSamplerState>>;
-
-  id<MTLRenderCommandEncoder> encoder_;
-  id<MTLRenderPipelineState> pipeline_ = nullptr;
-  id<MTLDepthStencilState> depth_stencil_ = nullptr;
-  std::map<ShaderStage, BufferMap> buffers_;
-  std::map<ShaderStage, TextureMap> textures_;
-  std::map<ShaderStage, SamplerMap> samplers_;
-  std::optional<Viewport> viewport_;
-  std::optional<IRect> scissor_;
-};
 
 class RenderPassMTL final : public RenderPass {
  public:
@@ -86,7 +29,7 @@ class RenderPassMTL final : public RenderPass {
   bool is_metal_trace_active_ = false;
   bool is_valid_ = false;
 
-  PassBindingsCache pass_bindings_;
+  PassBindingsCacheMTL pass_bindings_;
 
   // Per-command state
   size_t instance_count_ = 1u;
@@ -94,9 +37,9 @@ class RenderPassMTL final : public RenderPass {
   size_t vertex_count_ = 0u;
   bool has_valid_pipeline_ = false;
   bool has_label_ = false;
-  BufferView index_buffer_;
-  PrimitiveType primitive_type_;
-  MTLIndexType index_type_;
+  BufferView index_buffer_ = {};
+  PrimitiveType primitive_type_ = {};
+  MTLIndexType index_type_ = {};
 
   RenderPassMTL(std::shared_ptr<const Context> context,
                 const RenderTarget& target,
