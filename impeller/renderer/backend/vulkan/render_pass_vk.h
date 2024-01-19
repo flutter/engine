@@ -120,7 +120,7 @@ class RenderPassVK final : public RenderPass {
   void OnSetLabel(std::string label) override;
 
   // |RenderPass|
-  bool OnEncodeCommands(const Context& context) override;
+  bool OnEncodeCommands(const Context& context) const override;
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,

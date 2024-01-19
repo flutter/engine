@@ -28,7 +28,6 @@ class RenderPassMTL final : public RenderPass {
   std::string label_;
   bool is_metal_trace_active_ = false;
   bool is_valid_ = false;
-  bool did_submit_encoder_ = false;
 
   PassBindingsCacheMTL pass_bindings_;
 
@@ -56,7 +55,7 @@ class RenderPassMTL final : public RenderPass {
   void OnSetLabel(std::string label) override;
 
   // |RenderPass|
-  bool OnEncodeCommands(const Context& context) override;
+  bool OnEncodeCommands(const Context& context) const override;
 
   // |RenderPass|
   void SetPipeline(

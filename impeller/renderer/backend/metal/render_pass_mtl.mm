@@ -160,13 +160,7 @@ RenderPassMTL::RenderPassMTL(std::shared_ptr<const Context> context,
   is_valid_ = true;
 }
 
-RenderPassMTL::~RenderPassMTL() {
-  // Ensure the render passes always submit their encoder, which would otherwise
-  // cause a validation error when running unit tests.
-  if (!did_submit_encoder_) {
-    [encoder_ endEncoding];
-  }
-}
+RenderPassMTL::~RenderPassMTL() = default;
 
 bool RenderPassMTL::IsValid() const {
   return is_valid_;
@@ -181,9 +175,8 @@ void RenderPassMTL::OnSetLabel(std::string label) {
 #endif  // IMPELLER_DEBUG
 }
 
-bool RenderPassMTL::OnEncodeCommands(const Context& context) {
+bool RenderPassMTL::OnEncodeCommands(const Context& context) const {
   [encoder_ endEncoding];
-  did_submit_encoder_ = true;
   return true;
 }
 

@@ -660,7 +660,7 @@ bool RenderPassVK::BindResource(ShaderStage stage,
   return true;
 }
 
-bool RenderPassVK::OnEncodeCommands(const Context& context) {
+bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   command_buffer_->GetEncoder()->GetCommandBuffer().endRenderPass();
 
   // If this render target will be consumed by a subsequent render pass,

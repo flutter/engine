@@ -37,7 +37,7 @@ class RenderPassGLES final
   void OnSetLabel(std::string label) override;
 
   // |RenderPass|
-  bool OnEncodeCommands(const Context& context) override;
+  bool OnEncodeCommands(const Context& context) const override;
 
   RenderPassGLES(const RenderPassGLES&) = delete;
 

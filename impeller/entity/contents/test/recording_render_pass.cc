@@ -77,7 +77,7 @@ void RecordingRenderPass::OnSetLabel(std::string label) {
 }
 
 // |RenderPass|
-bool RecordingRenderPass::OnEncodeCommands(const Context& context) {
+bool RecordingRenderPass::OnEncodeCommands(const Context& context) const {
   return true;
 }
 
