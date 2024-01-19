@@ -55,21 +55,14 @@ inline constexpr bool is_signed_integral_v =
   ONLY_ON_SAME_TYPES_RET(Type1, Type2, Type2)
 
 ONLY_ON_SIGNED_INT(SI) Add(SI location, SI distance) {
-  SI result = location + distance;
-  if (distance <= static_cast<SI>(0)) {
-    // result should be <= location
-    if (result > location) {
-      // We must have had 2's complement underflow, return U_MIN
-      return std::numeric_limits<SI>::min();
-    }
-  } else {
-    // result should be >= location
-    if (result < location) {
-      // We must have had 2's complement overflow, return U_MAX
+  if (location >= 0) {
+    if (distance > std::numeric_limits<SI>::max() - location) {
       return std::numeric_limits<SI>::max();
     }
+  } else if (distance < std::numeric_limits<SI>::min() - location) {
+    return std::numeric_limits<SI>::min();
   }
-  return result;
+  return location + distance;
 }
 
 ONLY_ON_FLOAT(FP) Add(FP location, FP distance) {
@@ -77,21 +70,14 @@ ONLY_ON_FLOAT(FP) Add(FP location, FP distance) {
 }
 
 ONLY_ON_SIGNED_INT(SI) Sub(SI upper, SI lower) {
-  SI result = upper - lower;
-  if (upper >= lower) {
-    // result should be >= 0
-    if (result < static_cast<SI>(0)) {
-      // We must have had 2's complement overflow, return T_MAX
+  if (upper >= 0) {
+    if (lower < 0 && upper > std::numeric_limits<SI>::max() + lower) {
       return std::numeric_limits<SI>::max();
     }
-  } else {
-    // result should be <= 0
-    if (result > static_cast<SI>(0)) {
-      // We must have had 2's complement underflow, return T_MIN
-      return std::numeric_limits<SI>::min();
-    }
+  } else if (lower > 0 && upper < std::numeric_limits<SI>::min() + lower) {
+    return std::numeric_limits<SI>::min();
   }
-  return result;
+  return upper - lower;
 }
 
 ONLY_ON_FLOAT(FP) Sub(FP upper, FP lower) {
@@ -109,7 +95,15 @@ ONLY_ON_FLOAT(FP) AverageScalar(FP a, FP b) {
   // will currently produce NaN instead.  For the Maximum Rect itself
   // a 0 would make sense as the center, but for a computed rect that
   // incidentally ended up with infinities, NaN may be a better choice.
-  return std::scalbn(a + b, -1);
+  // return static_cast<Scalar>(std::scalbn(a, -1) + std::scalbn(b, -1));
+
+  // This equation would save an extra scalbn operation but at the cost
+  // of having very large (or very neagive) a's and b's overflow to
+  // +/- infinity. Scaling first allows finite numbers to be more likely
+  // to have a finite average.
+  // return std::scalbn(a + b, -1);
+
+  return static_cast<Scalar>(std::scalbn(a, -1) + std::scalbn(b, -1));
 }
 
 ONLY_ON_SAME_TYPES(T, U) Cast(T v) {
