@@ -76,7 +76,7 @@ bool RenderPass::AddCommand(Command&& command) {
   return true;
 }
 
-bool RenderPass::EncodeCommands() const {
+bool RenderPass::EncodeCommands() {
   return OnEncodeCommands(*context_);
 }
 

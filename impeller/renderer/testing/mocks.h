@@ -96,10 +96,7 @@ class MockRenderPass : public RenderPass {
                  const RenderTarget& target)
       : RenderPass(std::move(context), target) {}
   MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(bool,
-              OnEncodeCommands,
-              (const Context& context),
-              (const, override));
+  MOCK_METHOD(bool, OnEncodeCommands, (const Context& context), (override));
   MOCK_METHOD(void, OnSetLabel, (std::string label), (override));
 };
 

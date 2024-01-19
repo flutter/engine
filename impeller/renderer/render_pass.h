@@ -138,7 +138,7 @@ class RenderPass : public ResourceBinder {
   /// @return     If the commands were encoded to the underlying command
   ///             buffer.
   ///
-  bool EncodeCommands() const;
+  bool EncodeCommands();
 
   //----------------------------------------------------------------------------
   /// @brief      Accessor for the current Commands.
@@ -190,7 +190,7 @@ class RenderPass : public ResourceBinder {
 
   virtual void OnSetLabel(std::string label) = 0;
 
-  virtual bool OnEncodeCommands(const Context& context) const = 0;
+  virtual bool OnEncodeCommands(const Context& context) = 0;
 
  private:
   RenderPass(const RenderPass&) = delete;

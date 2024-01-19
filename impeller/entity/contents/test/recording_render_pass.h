@@ -72,7 +72,7 @@ class RecordingRenderPass : public RenderPass {
   void OnSetLabel(std::string label) override;
 
   // |RenderPass|
-  bool OnEncodeCommands(const Context& context) const override;
+  bool OnEncodeCommands(const Context& context) override;
 
   bool IsValid() const override { return true; }
 

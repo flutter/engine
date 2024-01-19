@@ -513,7 +513,7 @@ struct RenderPassData {
 }
 
 // |RenderPass|
-bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
+bool RenderPassGLES::OnEncodeCommands(const Context& context) {
   if (!IsValid()) {
     return false;
   }
