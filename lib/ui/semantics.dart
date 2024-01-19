@@ -1030,8 +1030,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Float64List transform,
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
-      Int32List additionalAction,
-      int headingLevel);
+      int headingLevel,
+      Int32List additionalAction);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
