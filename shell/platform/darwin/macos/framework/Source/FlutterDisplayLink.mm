@@ -51,11 +51,11 @@ class DisplayLinkManager {
   CFTimeInterval GetNominalOutputPeriod(CGDirectDisplayID display_id);
 
  private:
-  void OnDisplayLink(CVDisplayLinkRef displayLink,
-                     const CVTimeStamp* inNow,
-                     const CVTimeStamp* inOutputTime,
-                     CVOptionFlags flagsIn,
-                     CVOptionFlags* flagsOut);
+  void OnDisplayLink(CVDisplayLinkRef display_link,
+                     const CVTimeStamp* in_now,
+                     const CVTimeStamp* in_output_time,
+                     CVOptionFlags flags_in,
+                     CVOptionFlags* flags_out);
 
   struct ScreenEntry {
     CGDirectDisplayID display_id;
@@ -101,10 +101,10 @@ void RunOrStopDisplayLink(CVDisplayLinkRef display_link, bool should_be_running)
   }
 }
 
-void DisplayLinkManager::UnregisterDisplayLink(_FlutterDisplayLink* displayLink) {
+void DisplayLinkManager::UnregisterDisplayLink(_FlutterDisplayLink* display_link) {
   std::unique_lock<std::mutex> lock(mutex_);
   for (auto entry = entries_.begin(); entry != entries_.end(); ++entry) {
-    auto it = std::find(entry->clients.begin(), entry->clients.end(), displayLink);
+    auto it = std::find(entry->clients.begin(), entry->clients.end(), display_link);
     if (it != entry->clients.end()) {
       entry->clients.erase(it);
       if (entry->clients.empty()) {
@@ -128,12 +128,12 @@ void DisplayLinkManager::UnregisterDisplayLink(_FlutterDisplayLink* displayLink)
   }
 }
 
-void DisplayLinkManager::RegisterDisplayLink(_FlutterDisplayLink* displayLink,
+void DisplayLinkManager::RegisterDisplayLink(_FlutterDisplayLink* display_link,
                                              CGDirectDisplayID display_id) {
   std::unique_lock<std::mutex> lock(mutex_);
   for (ScreenEntry& entry : entries_) {
     if (entry.display_id == display_id) {
-      entry.clients.push_back(displayLink);
+      entry.clients.push_back(display_link);
       bool should_be_running = entry.ShouldBeRunning();
       CVDisplayLinkRef display_link = CVDisplayLinkRetain(entry.display_link_locked);
       lock.unlock();
@@ -145,14 +145,14 @@ void DisplayLinkManager::RegisterDisplayLink(_FlutterDisplayLink* displayLink,
 
   ScreenEntry entry;
   entry.display_id = display_id;
-  entry.clients.push_back(displayLink);
+  entry.clients.push_back(display_link);
   CVDisplayLinkCreateWithCGDisplay(display_id, &entry.display_link_locked);
 
   CVDisplayLinkSetOutputHandler(
       entry.display_link_locked,
-      ^(CVDisplayLinkRef displayLink, const CVTimeStamp* inNow, const CVTimeStamp* inOutputTime,
-        CVOptionFlags flagsIn, CVOptionFlags* flagsOut) {
-        OnDisplayLink(displayLink, inNow, inOutputTime, flagsIn, flagsOut);
+      ^(CVDisplayLinkRef display_link, const CVTimeStamp* in_now, const CVTimeStamp* in_output_time,
+        CVOptionFlags flags_in, CVOptionFlags* flags_out) {
+        OnDisplayLink(display_link, in_now, in_output_time, flags_in, flags_out);
         return 0;
       });
 
@@ -162,10 +162,10 @@ void DisplayLinkManager::RegisterDisplayLink(_FlutterDisplayLink* displayLink,
   entries_.push_back(entry);
 }
 
-void DisplayLinkManager::PausedDidChange(_FlutterDisplayLink* displayLink) {
+void DisplayLinkManager::PausedDidChange(_FlutterDisplayLink* display_link) {
   std::unique_lock<std::mutex> lock(mutex_);
   for (ScreenEntry& entry : entries_) {
-    auto it = std::find(entry.clients.begin(), entry.clients.end(), displayLink);
+    auto it = std::find(entry.clients.begin(), entry.clients.end(), display_link);
     if (it != entry.clients.end()) {
       bool running = entry.ShouldBeRunning();
       CVDisplayLinkRef display_link = CVDisplayLinkRetain(entry.display_link_locked);
@@ -191,17 +191,17 @@ CFTimeInterval DisplayLinkManager::GetNominalOutputPeriod(CGDirectDisplayID disp
   return 0;
 }
 
-void DisplayLinkManager::OnDisplayLink(CVDisplayLinkRef displayLink,
-                                       const CVTimeStamp* inNow,
-                                       const CVTimeStamp* inOutputTime,
-                                       CVOptionFlags flagsIn,
-                                       CVOptionFlags* flagsOut) {
+void DisplayLinkManager::OnDisplayLink(CVDisplayLinkRef display_link,
+                                       const CVTimeStamp* in_now,
+                                       const CVTimeStamp* in_output_time,
+                                       CVOptionFlags flags_in,
+                                       CVOptionFlags* flags_out) {
   // Hold the mutex only while copying clients.
   std::vector<_FlutterDisplayLink*> clients;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     for (ScreenEntry& entry : entries_) {
-      if (entry.display_link_locked == displayLink) {
+      if (entry.display_link_locked == display_link) {
         clients = entry.clients;
         break;
       }
@@ -209,12 +209,12 @@ void DisplayLinkManager::OnDisplayLink(CVDisplayLinkRef displayLink,
   }
 
   CFTimeInterval timestamp =
-      (CFTimeInterval)inNow->hostTime / (CFTimeInterval)inNow->videoTimeScale;
-  CFTimeInterval targetTimestamp =
-      (CFTimeInterval)inOutputTime->hostTime / (CFTimeInterval)inOutputTime->videoTimeScale;
+      (CFTimeInterval)in_now->hostTime / (CFTimeInterval)in_now->videoTimeScale;
+  CFTimeInterval target_timestamp =
+      (CFTimeInterval)in_output_time->hostTime / (CFTimeInterval)in_output_time->videoTimeScale;
 
   for (_FlutterDisplayLink* client : clients) {
-    [client didFireWithTimestamp:timestamp targetTimestamp:targetTimestamp];
+    [client didFireWithTimestamp:timestamp targetTimestamp:target_timestamp];
   }
 }
 }  // namespace

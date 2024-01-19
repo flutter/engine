@@ -1737,7 +1737,8 @@ typedef struct {
   /// use during presentation.
   FlutterBackingStorePresentInfo* backing_store_present_info;
 
-  // Time at which this frame is scheduled to be presented. 0 if not known.
+  // Time in nanoseconds at which this frame is scheduled to be presented. 0 if
+  // not known. See FlutterEngineGetCurrentTime().
   uint64_t presentation_time;
 } FlutterLayer;
 
