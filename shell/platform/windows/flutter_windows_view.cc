@@ -106,12 +106,28 @@ void FlutterWindowsView::SetEngine(FlutterWindowsEngine* engine) {
                     binding_handler_->GetDpiScale());
 }
 
-uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
-  // Called on an engine-controlled (non-platform) thread.
+void FlutterWindowsView::OnEmptyFrameGenerated() {
+  // Called on the raster thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
   if (resize_status_ != ResizeState::kResizeStarted) {
-    return kWindowFrameBufferID;
+    return;
+  }
+
+  // Platform thread is blocked for the entire duration until the
+  // resize_status_ is set to kDone.
+  engine_->surface_manager()->ResizeSurface(
+      GetWindowHandle(), resize_target_width_, resize_target_height_,
+      NeedsVsync());
+  resize_status_ = ResizeState::kFrameGenerated;
+}
+
+bool FlutterWindowsView::OnFrameGenerated(size_t width, size_t height) {
+  // Called on the raster thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (resize_status_ != ResizeState::kResizeStarted) {
+    return true;
   }
 
   if (resize_target_width_ == width && resize_target_height_ == height) {
@@ -120,9 +136,10 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
     engine_->surface_manager()->ResizeSurface(GetWindowHandle(), width, height,
                                               NeedsVsync());
     resize_status_ = ResizeState::kFrameGenerated;
+    return true;
   }
 
-  return kWindowFrameBufferID;
+  return false;
 }
 
 void FlutterWindowsView::UpdateFlutterCursor(const std::string& cursor_name) {
@@ -573,26 +590,20 @@ void FlutterWindowsView::SendPointerEventWithData(
   }
 }
 
-bool FlutterWindowsView::SwapBuffers() {
-  // Called on an engine-controlled (non-platform) thread.
+void FlutterWindowsView::OnFramePresented() {
+  // Called on the engine's raster thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
   switch (resize_status_) {
-    // SwapBuffer requests during resize are ignored until the frame with the
-    // right dimensions has been generated. This is marked with
-    // kFrameGenerated resize status.
     case ResizeState::kResizeStarted:
-      return false;
+      // The caller must first call |OnFrameGenerated| or
+      // |OnEmptyFrameGenerated| before calling this method. This status
+      // indicates the caller did not call these methods or ignored their
+      // result.
+      FML_UNREACHABLE();
     case ResizeState::kFrameGenerated: {
-      bool visible = binding_handler_->IsVisible();
-      bool swap_buffers_result;
-      // For visible windows swap the buffers while resize handler is waiting.
-      // For invisible windows unblock the handler first and then swap buffers.
-      // SwapBuffers waits for vsync and there's no point doing that for
-      // invisible windows.
-      if (visible) {
-        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
-      }
+      // A frame was generated for a pending resize.
+      // Unblock the platform thread.
       resize_status_ = ResizeState::kDone;
       lock.unlock();
       resize_cv_.notify_all();
@@ -600,16 +611,14 @@ bool FlutterWindowsView::SwapBuffers() {
       // Blocking the raster thread until DWM flushes alleviates glitches where
       // previous size surface is stretched over current size view.
       windows_proc_table_->DwmFlush();
-
-      if (!visible) {
-        swap_buffers_result = engine_->surface_manager()->SwapBuffers();
-      }
-      return swap_buffers_result;
     }
     case ResizeState::kDone:
-    default:
-      return engine_->surface_manager()->SwapBuffers();
+      return;
   }
+}
+
+bool FlutterWindowsView::ClearSoftwareBitmap() {
+  return binding_handler_->OnBitmapSurfaceCleared();
 }
 
 bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
