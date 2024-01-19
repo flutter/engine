@@ -176,7 +176,7 @@ void PlaygroundImplVK::InitGlobalVulkanInstance() {
   application_info.setPApplicationName("PlaygroundImplVK");
 
   auto caps = std::shared_ptr<CapabilitiesVK>(
-      new CapabilitiesVK(/*enable_validation=*/true));
+      new CapabilitiesVK(/*enable_validations=*/true));
   FML_DCHECK(caps->IsValid());
 
   std::optional<std::vector<std::string>> enabled_layers =
@@ -188,12 +188,16 @@ void PlaygroundImplVK::InitGlobalVulkanInstance() {
   std::vector<const char*> enabled_layers_c;
   std::vector<const char*> enabled_extensions_c;
 
-  for (const auto& layer : enabled_layers.value()) {
-    enabled_layers_c.push_back(layer.c_str());
+  if (enabled_layers.has_value()) {
+    for (const auto& layer : enabled_layers.value()) {
+      enabled_layers_c.push_back(layer.c_str());
+    }
   }
 
-  for (const auto& ext : enabled_extensions.value()) {
-    enabled_extensions_c.push_back(ext.c_str());
+  if (enabled_extensions.has_value()) {
+    for (const auto& ext : enabled_extensions.value()) {
+      enabled_extensions_c.push_back(ext.c_str());
+    }
   }
 
   vk::InstanceCreateFlags instance_flags = {};
