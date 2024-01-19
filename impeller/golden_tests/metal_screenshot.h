@@ -29,7 +29,7 @@ class MetalScreenshot : public Screenshot {
 
   size_t GetWidth() const override;
 
-  size_t GetBytesPerRow() const;
+  size_t GetBytesPerRow() const override;
 
   bool WriteToPNG(const std::string& path) const override;
 

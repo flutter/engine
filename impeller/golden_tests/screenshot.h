@@ -23,6 +23,8 @@ class Screenshot {
 
   virtual size_t GetWidth() const = 0;
 
+  virtual size_t GetBytesPerRow() const = 0;
+
   virtual bool WriteToPNG(const std::string& path) const = 0;
 };
 
