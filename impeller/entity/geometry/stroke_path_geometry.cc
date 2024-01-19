@@ -521,7 +521,7 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
     return std::nullopt;
   }
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
-  max_radius = std::max(max_radius, std::max(stroke_width_, min_size));
+  max_radius *= std::max(stroke_width_, min_size);
   return path_bounds->Expand(max_radius).TransformBounds(transform);
 }
 
