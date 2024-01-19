@@ -167,7 +167,7 @@ Future<void> a11y_main() async {
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
       additionalActions: Int32List(0),
-      headingLevel: -1
+      headingLevel: 0
     )
     ..updateNode(
       id: 84,
@@ -201,7 +201,7 @@ Future<void> a11y_main() async {
       additionalActions: Int32List(0),
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
-      headingLevel: -1
+      headingLevel: 0
     )
     ..updateNode(
       id: 96,
@@ -269,7 +269,7 @@ Future<void> a11y_main() async {
       tooltip: 'tooltip',
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
-      headingLevel: -1
+      headingLevel: 0
     )
     ..updateCustomAction(
       id: 21,
@@ -364,7 +364,7 @@ Future<void> a11y_string_attributes() async {
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
       additionalActions: Int32List(0),
-      headingLevel: -1,
+      headingLevel: 0,
     );
 
   PlatformDispatcher.instance.views.first.updateSemantics(builder.build());

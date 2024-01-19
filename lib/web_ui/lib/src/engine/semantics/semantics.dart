@@ -1027,7 +1027,7 @@ class SemanticsObject {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   int get headingLevel => _headingLevel;
-  int _headingLevel = -1;
+  int _headingLevel = 0;
 
   static const int _headingLevelIndex = 1 << 24;
 
@@ -1143,7 +1143,7 @@ class SemanticsObject {
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
   /// Whether this object represents a heading element.
-  bool get isHeading => headingLevel != -1;
+  bool get isHeading => headingLevel != 0;
 
     /// Whether this object represents an editable text field.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);

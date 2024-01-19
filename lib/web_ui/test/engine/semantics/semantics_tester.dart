@@ -317,7 +317,7 @@ class SemanticsTester {
       childrenInTraversalOrder: childIds,
       childrenInHitTestOrder: childIds,
       additionalActions: additionalActions ?? Int32List(0),
-      headingLevel: headingLevel ?? -1,
+      headingLevel: headingLevel ?? 0,
     );
     _nodeUpdates.add(update);
     return update;

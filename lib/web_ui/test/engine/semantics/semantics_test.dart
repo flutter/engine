@@ -3092,7 +3092,7 @@ void updateNode(
   Int32List? childrenInTraversalOrder,
   Int32List? childrenInHitTestOrder,
   Int32List? additionalActions,
-  int headingLevel = -1,
+  int headingLevel = 0,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);

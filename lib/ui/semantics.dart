@@ -913,8 +913,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
   }) {
     assert(_matrix4IsValid(transform));
     assert (
-      headingLevel == -1 || (headingLevel >= 1 && headingLevel <= 6),
-      'Heading level must be between 1 and 6, or -1 to indicate that this node is not a heading.'
+      headingLevel >= 0 && headingLevel <= 6,
+      'Heading level must be between 1 and 6, or 0 to indicate that this node is not a heading.'
     );
     _updateNode(
       id,
@@ -1033,7 +1033,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Float64List transform,
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
-      Int32List additionalActions);
+      Int32List additionalActions,
+      int headingLevel,);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
@@ -1183,6 +1184,7 @@ abstract class SemanticsUpdateBuilderNew {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    required int headingLevel,
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -1253,6 +1255,7 @@ base class _NativeSemanticsUpdateBuilderNew extends NativeFieldWrapperClass1 imp
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    required int headingLevel,
   }) {
     assert(_matrix4IsValid(transform));
     _updateNode(
@@ -1292,6 +1295,7 @@ base class _NativeSemanticsUpdateBuilderNew extends NativeFieldWrapperClass1 imp
       childrenInTraversalOrder,
       childrenInHitTestOrder,
       additionalActions,
+      headingLevel,
     );
   }
   @Native<
@@ -1332,7 +1336,8 @@ base class _NativeSemanticsUpdateBuilderNew extends NativeFieldWrapperClass1 imp
           Handle,
           Handle,
           Handle,
-          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
+          Handle,
+          Int32)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,

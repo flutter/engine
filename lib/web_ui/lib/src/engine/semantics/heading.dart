@@ -23,7 +23,7 @@ class Heading extends PrimaryRoleManager {
       return;
     }
 
-    if (semanticsObject.headingLevel != -1) {
+    if (semanticsObject.headingLevel != 0) {
       addHeadingLevel(semanticsObject.headingLevel);
     } else {
       addHeadingLevel(defaultHeadingLevel);
