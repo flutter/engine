@@ -1887,7 +1887,6 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
-  render_pass->EncodeCommands();
 }
 
 // This is important to enforce with texture reuse, since cached textures need
@@ -1913,7 +1912,6 @@ TEST_P(AiksTest,
             GetBackend() == PlaygroundBackend::kOpenGLES ? 4llu : 3llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
-  render_pass->EncodeCommands();
 }
 
 TEST_P(AiksTest, DrawRectAbsorbsClears) {
@@ -1934,7 +1932,6 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
-  render_pass->EncodeCommands();
 }
 
 TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
@@ -1955,7 +1952,6 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
-  render_pass->EncodeCommands();
 }
 
 TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRotation) {
@@ -1976,7 +1972,6 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRotation) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 1llu);
-  render_pass->EncodeCommands();
 }
 
 TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
@@ -1997,7 +1992,6 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
-  render_pass->EncodeCommands();
 }
 
 TEST_P(AiksTest, ClipRectElidesNoOpClips) {
@@ -2022,7 +2016,6 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   ASSERT_EQ(spy->render_passes_.size(), 1llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
-  render_pass->EncodeCommands();
 }
 
 TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
