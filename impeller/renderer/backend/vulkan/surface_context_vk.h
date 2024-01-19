@@ -25,7 +25,7 @@ class SwapchainVK;
 /// Most operations in this class are delegated to the parent ContextVK.
 /// This class specifically manages swapchains and creation of VkSurfaces on
 /// Android. By maintaining the swapchain this way, it is possible to have
-/// multiple surfaces sharing the same ContextVK without stepping on eachothers
+/// multiple surfaces sharing the same ContextVK without stepping on each other's
 /// swapchains.
 class SurfaceContextVK : public Context,
                          public BackendCast<SurfaceContextVK, Context> {
