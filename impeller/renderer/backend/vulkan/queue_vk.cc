@@ -27,9 +27,8 @@ void QueueVK::InsertDebugMarker(std::string_view label) const {
   if (!HasValidationLayers()) {
     return;
   }
-  std::string label_copy(label);
   vk::DebugUtilsLabelEXT label_info;
-  label_info.pLabelName = label_copy.c_str();
+  label_info.pLabelName = label.data();
   Lock lock(queue_mutex_);
   queue_.insertDebugUtilsLabelEXT(label_info);
 }
