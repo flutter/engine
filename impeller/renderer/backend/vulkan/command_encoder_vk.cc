@@ -227,9 +227,8 @@ void CommandEncoderVK::PushDebugGroup(std::string_view label) const {
   if (!HasValidationLayers()) {
     return;
   }
-  std::string label_copy(label);
   vk::DebugUtilsLabelEXT label_info;
-  label_info.pLabelName = label_copy.c_str();
+  label_info.pLabelName = label.data();
   if (auto command_buffer = GetCommandBuffer()) {
     command_buffer.beginDebugUtilsLabelEXT(label_info);
   }
@@ -248,14 +247,13 @@ void CommandEncoderVK::InsertDebugMarker(std::string_view label) const {
   if (!HasValidationLayers()) {
     return;
   }
-  std::string label_copy(label);
   vk::DebugUtilsLabelEXT label_info;
-  label_info.pLabelName = label_copy.c_str();
+  label_info.pLabelName = label.data();
   if (auto command_buffer = GetCommandBuffer()) {
     command_buffer.insertDebugUtilsLabelEXT(label_info);
   }
   if (queue_) {
-    queue_->InsertDebugMarker(label_copy.c_str());
+    queue_->InsertDebugMarker(label);
   }
 }
 
