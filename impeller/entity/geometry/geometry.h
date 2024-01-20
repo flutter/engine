@@ -48,6 +48,16 @@ ComputeUVGeometryCPU(
     Size texture_coverage,
     Matrix effect_transform);
 
+/// @brief Computes geometry and UV coordinates for a rectangle to be rendered.
+///
+/// UV is the horizontal and vertical axes within the texture.
+///
+/// @param source_rect      The rectangle to be rendered.
+/// @param texture_coverage The size of the texture to be rendered.
+/// @param effect_transform The transform to apply to the UV coordinates.
+/// @param renderer         The content context to use for allocating buffers.
+/// @param entity           The entity to use for the transform.
+/// @param pass             The render pass to use for the transform.
 GeometryResult ComputeUVGeometryForRect(Rect source_rect,
                                         Rect texture_coverage,
                                         Matrix effect_transform,
