@@ -160,7 +160,12 @@ RenderPassMTL::RenderPassMTL(std::shared_ptr<const Context> context,
   is_valid_ = true;
 }
 
-RenderPassMTL::~RenderPassMTL() = default;
+RenderPassMTL::~RenderPassMTL() {
+  if (!did_finish_encoding_) {
+    [encoder_ endEncoding];
+    did_finish_encoding_ = true;
+  }
+}
 
 bool RenderPassMTL::IsValid() const {
   return is_valid_;
@@ -176,6 +181,7 @@ void RenderPassMTL::OnSetLabel(std::string label) {
 }
 
 bool RenderPassMTL::OnEncodeCommands(const Context& context) const {
+  did_finish_encoding_ = true;
   [encoder_ endEncoding];
   return true;
 }

@@ -28,6 +28,10 @@ class RenderPassMTL final : public RenderPass {
   std::string label_;
   bool is_metal_trace_active_ = false;
   bool is_valid_ = false;
+  // Many parts of the codebase will start writing to a render pass but
+  // never submit them. This boolean is used to track if a submit happened
+  // so that in the dtor we can always ensure the render pass is finished.
+  mutable bool did_finish_encoding_ = false;
 
   PassBindingsCacheMTL pass_bindings_;
 
