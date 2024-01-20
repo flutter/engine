@@ -1255,21 +1255,6 @@ TEST_P(RendererTest, StencilMask) {
   OpenPlaygroundHere(callback);
 }
 
-TEST_P(RendererTest, CanPreAllocateCommands) {
-  auto context = GetContext();
-  auto cmd_buffer = context->CreateCommandBuffer();
-  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
-      GetContext()->GetResourceAllocator());
-
-  auto render_target = RenderTarget::CreateOffscreen(
-      *context, *render_target_cache, {100, 100}, /*mip_count=*/1);
-  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
-
-  render_pass->ReserveCommands(100u);
-
-  EXPECT_EQ(render_pass->GetCommands().capacity(), 100u);
-}
-
 TEST_P(RendererTest, CanLookupRenderTargetProperties) {
   auto context = GetContext();
   auto cmd_buffer = context->CreateCommandBuffer();
@@ -1287,6 +1272,7 @@ TEST_P(RendererTest, CanLookupRenderTargetProperties) {
             render_target.GetStencilAttachment().has_value());
   EXPECT_EQ(render_pass->GetRenderTargetSize(),
             render_target.GetRenderTargetSize());
+  render_pass->EncodeCommands();
 }
 
 }  // namespace testing
