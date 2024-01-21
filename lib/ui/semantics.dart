@@ -792,7 +792,7 @@ abstract class SemanticsUpdateBuilder {
   /// `thickness` above the parent.
   ///
   /// The `headingLevel` describes that this node is a heading and the hierarchy
-  /// level this node represents as a heading. A value of -1 indicates that this
+  /// level this node represents as a heading. A value of 0 indicates that this
   /// node is not a heading. A value of 1 or greater indicates that this node is
   /// a heading at the specified level. The valid value range is from 1 to 6,
   /// inclusive. This attribute is only used for Web platform, and it will have
