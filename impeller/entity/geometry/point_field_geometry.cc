@@ -200,6 +200,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
     using UV = UvComputeShader;
 
+    compute_pass->AddBufferMemoryBarrier(geometry_buffer);
     compute_pass->SetCommandLabel("UV Geometry");
     compute_pass->SetPipeline(renderer.GetUvComputePipeline());
 
@@ -267,9 +268,7 @@ GeometryVertexType PointFieldGeometry::GetVertexType() const {
 // Compute is disabled for Vulkan because the barriers are incorrect, see
 // also: https://github.com/flutter/flutter/issues/140798 .
 bool PointFieldGeometry::CanUseCompute(const ContentContext& renderer) {
-  return renderer.GetDeviceCapabilities().SupportsCompute() &&
-         renderer.GetContext()->GetBackendType() ==
-             Context::BackendType::kMetal;
+  return renderer.GetDeviceCapabilities().SupportsCompute();
 }
 
 // |Geometry|

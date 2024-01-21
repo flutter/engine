@@ -4,11 +4,15 @@
 
 #include "impeller/renderer/backend/vulkan/compute_pass_vk.h"
 
+#include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/compute_pipeline_vk.h"
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -18,7 +22,7 @@ ComputePassVK::ComputePassVK(std::shared_ptr<const Context> context,
       command_buffer_(std::move(command_buffer)) {
   // TOOD(dnfield): This should be moved to caps. But for now keeping this
   // in parallel with Metal.
-  max_wg_size_ = ContextVK::Cast(*context)
+  max_wg_size_ = ContextVK::Cast(GetContext())
                      .GetPhysicalDevice()
                      .getProperties()
                      .limits.maxComputeWorkGroupSize;
@@ -207,8 +211,69 @@ bool ComputePassVK::BindResource(size_t binding,
   return true;
 }
 
+// Note:
+// https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
+// Seems to suggest that anything more finely grained than a global memory
+// barrier is likely to be ignored. Confirming this on mobile devices will
+// require some experimentation.
+
+// |ComputePass|
+void ComputePassVK::AddBufferMemoryBarrier(const BufferView& view) {
+  vk::MemoryBarrier2KHR barrier;
+  barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+  barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
+  barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+  barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+
+  vk::DependencyInfo dependency_info;
+  dependency_info.setMemoryBarrierCount(1);
+  dependency_info.pMemoryBarriers = &barrier;
+
+  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier2KHR(
+      dependency_info);
+}
+
+// |ComputePass|
+void ComputePassVK::AddTextureMemoryBarrier(
+    const std::shared_ptr<const Texture>& texture) {
+  vk::MemoryBarrier2KHR barrier;
+  barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+  barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
+  barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+  barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+
+  vk::DependencyInfo dependency_info;
+  dependency_info.setMemoryBarrierCount(1);
+  dependency_info.pMemoryBarriers = &barrier;
+
+  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier2KHR(
+      dependency_info);
+}
+
 // |ComputePass|
 bool ComputePassVK::EncodeCommands() const {
+  // Since we only use global memory barrier, we don't have to worry about
+  // compute to compute dependencies across cmd buffers. Instead, we pessimize
+  // here and assume that we wrote to a storage image or buffer and that a
+  // render pass will read from it. if there are ever scenarios where we end up
+  // with compute to compute dependencies this should be revisited.
+
+  // This does not currently handle image barriers as we do not use them
+  // for anything.
+  vk::MemoryBarrier2KHR barrier;
+  barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
+  barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
+  barrier.dstStageMask = vk::PipelineStageFlagBits2::eVertexInput;
+  barrier.dstAccessMask = vk::AccessFlagBits2::eIndexRead |
+                          vk::AccessFlagBits2::eVertexAttributeRead;
+
+  vk::DependencyInfo dependency_info;
+  dependency_info.setMemoryBarrierCount(1);
+  dependency_info.pMemoryBarriers = &barrier;
+
+  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier2KHR(
+      dependency_info);
+
   return true;
 }
 

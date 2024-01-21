@@ -59,6 +59,13 @@ class ComputePassVK final : public ComputePass {
                        pipeline) override;
 
   // |ComputePass|
+  void AddBufferMemoryBarrier(const BufferView& view) override;
+
+  // |ComputePass|
+  void AddTextureMemoryBarrier(
+      const std::shared_ptr<const Texture>& texture) override;
+
+  // |ComputePass|
   fml::Status Compute(const ISize& grid_size) override;
 
   // |ResourceBinder|

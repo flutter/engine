@@ -150,6 +150,13 @@ class ComputePassMTL final : public ComputePass {
   // |ComputePass|
   bool EncodeCommands() const override;
 
+  // |ComputePass|
+  void AddBufferMemoryBarrier(const BufferView& view) override;
+
+  // |ComputePass|
+  void AddTextureMemoryBarrier(
+      const std::shared_ptr<const Texture>& texture) override;
+
   ComputePassMTL(const ComputePassMTL&) = delete;
 
   ComputePassMTL& operator=(const ComputePassMTL&) = delete;

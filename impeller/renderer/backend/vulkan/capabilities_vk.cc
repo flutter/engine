@@ -65,7 +65,8 @@ bool CapabilitiesVK::AreValidationsEnabled() const {
 
 std::optional<std::vector<std::string>> CapabilitiesVK::GetEnabledLayers()
     const {
-  std::vector<std::string> required;
+  // VK_LAYER_KHRONOS_synchronization2 ?
+  std::vector<std::string> required = {};
 
   if (validations_enabled_) {
     // The presence of this layer is already checked in the ctor.
@@ -161,6 +162,8 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
       return VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess:
       return VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
+    case OptionalDeviceExtensionVK::kKHRSynchronization2:
+      return VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -287,7 +290,7 @@ static bool HasRequiredQueues(const vk::PhysicalDevice& physical_device) {
                                     vk::QueueFlagBits::eTransfer));
 }
 
-std::optional<vk::PhysicalDeviceFeatures>
+std::optional<vk::PhysicalDeviceFeatures2>
 CapabilitiesVK::GetEnabledDeviceFeatures(
     const vk::PhysicalDevice& device) const {
   if (!PhysicalDeviceSupportsRequiredFormats(device)) {
@@ -312,11 +315,11 @@ CapabilitiesVK::GetEnabledDeviceFeatures(
 
   const auto device_features = device.getFeatures();
 
-  vk::PhysicalDeviceFeatures required;
+  vk::PhysicalDeviceFeatures2 required;
 
   // We require this for enabling wireframes in the playground. But its not
   // necessarily a big deal if we don't have this feature.
-  required.fillModeNonSolid = device_features.fillModeNonSolid;
+  required.features.fillModeNonSolid = device_features.fillModeNonSolid;
 
   return required;
 }

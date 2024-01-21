@@ -156,7 +156,7 @@ void ContextVK::Setup(Settings settings) {
   // 1. The user has explicitly enabled it.
   // 2. We are in a combination of debug mode, and running on Android.
   // (It's possible 2 is overly conservative and we can simplify this)
-  auto enable_validation = settings.enable_validation;
+  auto enable_validation = false;  // settings.enable_validation;
 
 #if defined(FML_OS_ANDROID) && !defined(NDEBUG)
   enable_validation = true;
@@ -308,19 +308,24 @@ void ContextVK::Setup(Settings settings) {
   const auto queue_create_infos = GetQueueCreateInfos(
       {graphics_queue.value(), compute_queue.value(), transfer_queue.value()});
 
-  const auto enabled_features =
+  const auto enabled_features_x =
       caps->GetEnabledDeviceFeatures(device_holder->physical_device);
-  if (!enabled_features.has_value()) {
+  if (!enabled_features_x.has_value()) {
     // This shouldn't happen since the device can't be picked if this was not
     // true. But doesn't hurt to check.
     return;
   }
 
+  vk::PhysicalDeviceFeatures2 enabled_features = enabled_features_x.value();
+  vk::PhysicalDeviceSynchronization2Features physical_features;
+  physical_features.synchronization2 = true;
+  enabled_features.pNext = &physical_features;
+
   vk::DeviceCreateInfo device_info;
 
   device_info.setQueueCreateInfos(queue_create_infos);
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
-  device_info.setPEnabledFeatures(&enabled_features.value());
+  device_info.setPNext(&enabled_features);
   // Device layers are deprecated and ignored.
 
   {
