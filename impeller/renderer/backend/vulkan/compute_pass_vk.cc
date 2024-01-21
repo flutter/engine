@@ -18,7 +18,7 @@ ComputePassVK::ComputePassVK(std::shared_ptr<const Context> context,
       command_buffer_(std::move(command_buffer)) {
   // TOOD(dnfield): This should be moved to caps. But for now keeping this
   // in parallel with Metal.
-  max_wg_size_ = ContextVK::Cast(*context)
+  max_wg_size_ = ContextVK::Cast(*context_)
                      .GetPhysicalDevice()
                      .getProperties()
                      .limits.maxComputeWorkGroupSize;
