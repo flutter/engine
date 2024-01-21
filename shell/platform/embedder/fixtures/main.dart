@@ -241,7 +241,7 @@ Future<void> a11y_main() async {
       tooltip: 'tooltip',
       textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
-      headingLevel: -1
+      headingLevel: 0
     )
     ..updateNode(
       id: 128,
