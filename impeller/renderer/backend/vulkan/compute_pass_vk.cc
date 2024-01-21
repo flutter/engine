@@ -257,7 +257,7 @@ bool ComputePassVK::EncodeCommands() const {
 
   command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier(
       vk::PipelineStageFlagBits::eComputeShader,
-      vk::PipelineStageFlagBits::eVertexShader, {}, 1, &barrier, 0, {}, 0, {});
+      vk::PipelineStageFlagBits::eVertexInput, {}, 1, &barrier, 0, {}, 0, {});
 
   return true;
 }
