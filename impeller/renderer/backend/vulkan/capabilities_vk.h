@@ -24,7 +24,6 @@ enum class OptionalDeviceExtensionVK : uint32_t {
   kEXTPipelineCreationFeedback,
   kARMRasterizationOrderAttachmentAccess,
   kEXTRasterizationOrderAttachmentAccess,
-  kKHRSynchronization2,
   kLast,
 };
 

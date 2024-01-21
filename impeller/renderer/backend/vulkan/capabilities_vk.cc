@@ -65,7 +65,6 @@ bool CapabilitiesVK::AreValidationsEnabled() const {
 
 std::optional<std::vector<std::string>> CapabilitiesVK::GetEnabledLayers()
     const {
-  // VK_LAYER_KHRONOS_synchronization2 ?
   std::vector<std::string> required = {};
 
   if (validations_enabled_) {
@@ -162,8 +161,6 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
       return VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess:
       return VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
-    case OptionalDeviceExtensionVK::kKHRSynchronization2:
-      return VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }

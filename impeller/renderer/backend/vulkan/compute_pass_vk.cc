@@ -219,35 +219,25 @@ bool ComputePassVK::BindResource(size_t binding,
 
 // |ComputePass|
 void ComputePassVK::AddBufferMemoryBarrier(const BufferView& view) {
-  vk::MemoryBarrier2KHR barrier;
-  barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-  barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
-  barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-  barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+  vk::MemoryBarrier barrier;
+  barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+  barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-  vk::DependencyInfo dependency_info;
-  dependency_info.setMemoryBarrierCount(1);
-  dependency_info.pMemoryBarriers = &barrier;
-
-  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier2KHR(
-      dependency_info);
+  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier(
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader, {}, 1, &barrier, 0, {}, 0, {});
 }
 
 // |ComputePass|
 void ComputePassVK::AddTextureMemoryBarrier(
     const std::shared_ptr<const Texture>& texture) {
-  vk::MemoryBarrier2KHR barrier;
-  barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-  barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
-  barrier.dstStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-  barrier.dstAccessMask = vk::AccessFlagBits2::eShaderRead;
+  vk::MemoryBarrier barrier;
+  barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+  barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
-  vk::DependencyInfo dependency_info;
-  dependency_info.setMemoryBarrierCount(1);
-  dependency_info.pMemoryBarriers = &barrier;
-
-  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier2KHR(
-      dependency_info);
+  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier(
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eComputeShader, {}, 1, &barrier, 0, {}, 0, {});
 }
 
 // |ComputePass|
@@ -260,19 +250,14 @@ bool ComputePassVK::EncodeCommands() const {
 
   // This does not currently handle image barriers as we do not use them
   // for anything.
-  vk::MemoryBarrier2KHR barrier;
-  barrier.srcStageMask = vk::PipelineStageFlagBits2::eComputeShader;
-  barrier.srcAccessMask = vk::AccessFlagBits2::eShaderWrite;
-  barrier.dstStageMask = vk::PipelineStageFlagBits2::eVertexInput;
-  barrier.dstAccessMask = vk::AccessFlagBits2::eIndexRead |
-                          vk::AccessFlagBits2::eVertexAttributeRead;
+  vk::MemoryBarrier barrier;
+  barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+  barrier.dstAccessMask =
+      vk::AccessFlagBits::eIndexRead | vk::AccessFlagBits::eVertexAttributeRead;
 
-  vk::DependencyInfo dependency_info;
-  dependency_info.setMemoryBarrierCount(1);
-  dependency_info.pMemoryBarriers = &barrier;
-
-  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier2KHR(
-      dependency_info);
+  command_buffer_->GetEncoder()->GetCommandBuffer().pipelineBarrier(
+      vk::PipelineStageFlagBits::eComputeShader,
+      vk::PipelineStageFlagBits::eVertexShader, {}, 1, &barrier, 0, {}, 0, {});
 
   return true;
 }
