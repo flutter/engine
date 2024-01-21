@@ -184,7 +184,11 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
                                                      coverage_limit.value());
   }
 
-  auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
+  // Note: I'm not sure why, but feeding the coverage limit back into the
+  // element coverage with a scale tranform image filter (one that is center
+  // aligned and offsets as it scales), causes the entity coverage to wildly
+  // vary, which destabilizes the image cache.
+  auto entities_coverage = subpass.GetElementsCoverage(std::nullopt);
   // The entities don't cover anything. There is nothing to do.
   if (!entities_coverage.has_value()) {
     return std::nullopt;
