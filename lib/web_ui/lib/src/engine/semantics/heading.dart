@@ -30,6 +30,9 @@ class Heading extends PrimaryRoleManager {
     }
   }
 
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
+
   void addHeadingRole() {
     setAriaRole('heading');
   }
