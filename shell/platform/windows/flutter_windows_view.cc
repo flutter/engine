@@ -181,10 +181,9 @@ bool FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
 
   if (surface_will_update) {
-    // Block the platform thread until:
-    //   1. |OnEmptyFrameGenerated| is called or |OnFrameGenerated| is called
-    //   with the right size.
-    //   2. |OnFramePresented| is called
+    // Block the platform thread until a frame is presented with the target
+    // size. See |OnFrameGenerated|, |OnEmptyFrameGenerated|, and
+    // |OnFramePresented|.
     return resize_cv_.wait_for(lock, kWindowResizeTimeout,
                                [&resize_status = resize_status_] {
                                  return resize_status == ResizeState::kDone;
