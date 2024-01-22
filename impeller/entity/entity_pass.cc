@@ -179,16 +179,16 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   // If the subpass has an image filter, then its coverage space may deviate
   // from the parent pass and make intersecting with the pass coverage limit
   // unsafe.
-  if (image_filter && coverage_limit.has_value()) {
-    coverage_limit = image_filter->GetSourceCoverage(subpass.transform_,
-                                                     coverage_limit.value());
-  }
+  // if (image_filter && coverage_limit.has_value()) {
+  //   coverage_limit = image_filter->GetSourceCoverage(subpass.transform_,
+  //                                                    coverage_limit.value());
+  // }
 
   // Note: I'm not sure why, but feeding the coverage limit back into the
   // element coverage with a scale tranform image filter (one that is center
   // aligned and offsets as it scales), causes the entity coverage to wildly
   // vary, which destabilizes the image cache.
-  auto entities_coverage = subpass.GetElementsCoverage(std::nullopt);
+  auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
   // The entities don't cover anything. There is nothing to do.
   if (!entities_coverage.has_value()) {
     return std::nullopt;
