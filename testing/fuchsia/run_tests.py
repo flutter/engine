@@ -48,8 +48,7 @@ if __name__ == '__main__':
   except FileNotFoundError:
     pass
   os.symlink(
-      'dart_runner_tests-0.far',
-      'out/fuchsia_debug_x64/dart_runner_tests.far'
+      'dart_runner_tests-0.far', 'out/fuchsia_debug_x64/dart_runner_tests.far'
   )
   sys.argv.append('--out-dir=out/fuchsia_debug_x64')
   # The 'flutter-test-type' is a place holder and has no specific meaning; the
