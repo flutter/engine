@@ -21,10 +21,11 @@ sys.path.insert(
 
 # pylint: disable=import-error, wrong-import-position
 import run_test
+from common import DIR_SRC_ROOT
 from run_executable_test import ExecutableTestRunner
 from test_runner import TestRunner
 
-# This file is expected to be executed from src/.
+OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out/fuchsia_debug_x64')
 
 
 # TODO(https://github.com/flutter/flutter/issues/140179): Execute all the tests
@@ -33,10 +34,10 @@ from test_runner import TestRunner
 # and avoid hardcoded paths.
 def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
   return ExecutableTestRunner(
-      runner_args.out_dir, [],
+      OUT_DIR, [],
       'fuchsia-pkg://fuchsia.com/dart_runner_tests#meta/dart_runner_tests.cm',
       runner_args.target_id, None, '/tmp/log',
-      ['out/fuchsia_debug_x64/dart_runner_tests.far'], None
+      [os.path.join(OUT_DIR, 'dart_runner_tests.far')], None
   )
 
 
@@ -44,13 +45,13 @@ def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
 # configurations.
 if __name__ == '__main__':
   try:
-    os.remove('out/fuchsia_debug_x64/dart_runner_tests.far')
+    os.remove(os.path.join(OUT_DIR, 'dart_runner_tests.far'))
   except FileNotFoundError:
     pass
   os.symlink(
-      'dart_runner_tests-0.far', 'out/fuchsia_debug_x64/dart_runner_tests.far'
+      'dart_runner_tests-0.far', os.path.join(OUT_DIR, 'dart_runner_tests.far')
   )
-  sys.argv.append('--out-dir=out/fuchsia_debug_x64')
+  sys.argv.append('--out-dir=' + OUT_DIR)
   # The 'flutter-test-type' is a place holder and has no specific meaning; the
   # _get_test_runner is overrided.
   sys.argv.append('flutter-test-type')
