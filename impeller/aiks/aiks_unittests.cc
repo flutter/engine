@@ -2742,8 +2742,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
   auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
-  auto runtime_stage =
-      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
@@ -3266,7 +3265,7 @@ TEST_P(AiksTest, VerticesGeometryUVPositionData) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-// Regression test for https://github.com/flutter/flutter/issues/135441.
+// Regression test for https://github.com/flutter/flutter/issues/135441 .
 TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
   Canvas canvas;
   Paint paint;
@@ -3286,45 +3285,6 @@ TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
       Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
 
   canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/141890.
-TEST_P(AiksTest, 1x1RectWithALargeScaleShouldIncludeEntityTransform) {
-  // When handling external textures provided by Android/GLES (for example),
-  // the incoming texture is vertically flopped, and we apply a transform (both
-  // a translate/scale, and then draw a 1x1 rect) to flip it back.
-  //
-  // As of #141890, the computed entity transform was not being applied to the
-  // UV coordinates, which resulted in the texture being drawn as a scaled up
-  // single pixel. This test emulates that scenario.
-  Canvas canvas;
-  Paint paint;
-
-  auto texture = CreateTextureForFixture("table_mountain_nx.png");
-
-  // First, draw the texture normally so we can "see" what it's supposed to be.
-  {
-    canvas.DrawImage(
-        /*image=*/std::make_shared<Image>(texture),
-        /*offset=*/Point::MakeXY(0, 0),
-        /*paint=*/paint);
-  }
-
-  // Next, draw the texture scaled up by 256x as a 1x1 rect, similar to #141890.
-  {
-    canvas.Translate({300, 0, 1});
-    canvas.Scale({256, 256, 1});
-    paint.color_source = ColorSource::MakeImage(
-        /*texture=*/texture,
-        /*x_tile_mode=*/Entity::TileMode::kRepeat,
-        /*y_tile_mode=*/Entity::TileMode::kRepeat,
-        /*sampler_descriptor=*/{},
-        /*effect_transform=*/Matrix::MakeTranslation({0, 0}));
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, 1, 1), paint);
-  }
-
-  // canvas.DrawRect(Rect::MakeLTRB(0, 0, 256, 256), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -3597,8 +3557,6 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
       .WillRepeatedly(::testing::Return(false));
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
-  FLT_FORWARD(mock_capabilities, old_capabilities,
-              GetDefaultDepthStencilFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsImplicitResolvingMSAA);

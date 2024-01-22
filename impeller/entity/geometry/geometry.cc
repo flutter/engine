@@ -122,9 +122,8 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
   // Calculate UV-specific transform based on texture coverage and effect.
   // For example, if the texture is 100x100 and the effect transform is
   // scaling by 2, then the UV transform should be scaling by 0.5.
-  auto uv_transform = texture_coverage.GetNormalizingTransform() *
-                      // FIXME: This is a hack, and should not be submitted.
-                      effect_transform * entity.GetTransform().Basis();
+  auto uv_transform = texture_coverage.GetNormalizingTransform() *  //
+                      effect_transform;
 
   // Allocate space for vertex and UV data (4 vertices)
   // 0: position
