@@ -126,12 +126,12 @@ fml::Status ComputePassMTL::Compute(const ISize& grid_size) {
 
   // Special case for linear processing.
   if (height == 1) {
-    int64_t threadGroups = std::max(
+    int64_t thread_groups = std::max(
         static_cast<int64_t>(
             std::ceil(width * 1.0 / max_total_threads_per_threadgroup * 1.0)),
         1LL);
     [encoder_
-         dispatchThreadgroups:MTLSizeMake(threadGroups, 1, 1)
+         dispatchThreadgroups:MTLSizeMake(thread_groups, 1, 1)
         threadsPerThreadgroup:MTLSizeMake(max_total_threads_per_threadgroup, 1,
                                           1)];
   } else {
