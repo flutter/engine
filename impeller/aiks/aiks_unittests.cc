@@ -3765,11 +3765,7 @@ TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
 
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
   size_t blur_required_mip_count =
-<<<<<<< HEAD
-      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
-=======
       GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
->>>>>>> 6a566807882b08fe81dd607688c6a01474794565
 
   Canvas canvas;
   canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
