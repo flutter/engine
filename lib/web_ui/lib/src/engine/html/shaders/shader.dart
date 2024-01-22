@@ -64,6 +64,9 @@ abstract class EngineGradient implements ui.Gradient {
 
   @override
   void dispose() {}
+
+  @override
+  String toString() => 'Gradient()';
 }
 
 class GradientSweep extends EngineGradient {
@@ -756,7 +759,7 @@ class _BlurEngineImageFilter extends EngineImageFilter {
 
   @override
   String toString() {
-    return 'ImageFilter.blur($sigmaX, $sigmaY, $tileMode)';
+    return 'ImageFilter.blur($sigmaX, $sigmaY, ${tileModeString(tileMode)})';
   }
 }
 
