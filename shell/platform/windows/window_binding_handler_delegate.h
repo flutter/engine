@@ -24,7 +24,7 @@ class WindowBindingHandlerDelegate {
   // Called by |FlutterWindow| on the platform thread.
   //
   // Returns true if the delegate completed the window resize synchronously.
-  // The return value should only be used for unit testing.
+  // The return value is exposed for unit testing.
   virtual bool OnWindowSizeChanged(size_t width, size_t height) = 0;
 
   // Notifies delegate that backing window needs to be repainted.
