@@ -25,6 +25,8 @@ from common import DIR_SRC_ROOT
 from run_executable_test import ExecutableTestRunner
 from test_runner import TestRunner
 
+# TODO(https://github.com/flutter/flutter/issues/140179): Respect build
+# configurations.
 OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out/fuchsia_debug_x64')
 
 
@@ -41,8 +43,6 @@ def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
   )
 
 
-# TODO(https://github.com/flutter/flutter/issues/140179): Respect build
-# configurations.
 if __name__ == '__main__':
   try:
     os.remove(os.path.join(OUT_DIR, 'dart_runner_tests.far'))
