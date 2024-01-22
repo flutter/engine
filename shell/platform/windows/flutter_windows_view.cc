@@ -157,13 +157,13 @@ void FlutterWindowsView::ForceRedraw() {
   }
 }
 
-void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
+bool FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
   // Called on the platform thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
   if (!engine_->surface_manager()) {
     SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
-    return;
+    return true;
   }
 
   EGLint surface_width, surface_height;
@@ -182,13 +182,16 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
 
   if (surface_will_update) {
     // Block the platform thread until:
-    //   1. GetFrameBufferId is called with the right frame size.
-    //   2. Any pending SwapBuffers calls have been invoked.
-    resize_cv_.wait_for(lock, kWindowResizeTimeout,
-                        [&resize_status = resize_status_] {
-                          return resize_status == ResizeState::kDone;
-                        });
+    //   1. |OnEmptyFrameGenerated| is called or |OnFrameGenerated| is called
+    //   with the right size.
+    //   2. |OnFramePresented| is called
+    return resize_cv_.wait_for(lock, kWindowResizeTimeout,
+                               [&resize_status = resize_status_] {
+                                 return resize_status == ResizeState::kDone;
+                               });
   }
+
+  return true;
 }
 
 void FlutterWindowsView::OnWindowRepaint() {
