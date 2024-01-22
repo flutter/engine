@@ -110,7 +110,7 @@ struct PipelineBuilder {
     // Setup default depth buffer descriptions.
     {
       DepthAttachmentDescriptor depth0;
-      depth0.depth_compare = CompareFunction::kGreater;
+      depth0.depth_compare = CompareFunction::kAlways;
       desc.SetDepthStencilAttachmentDescriptor(depth0);
       desc.SetDepthPixelFormat(
           context.GetCapabilities()->GetDefaultDepthStencilFormat());
