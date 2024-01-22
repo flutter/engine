@@ -5387,6 +5387,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.h + ../..
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/compute_pass_bindings_cache_mtl.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/compute_pass_bindings_cache_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/compute_pipeline_mtl.h + ../../../flutter/LICENSE
@@ -8225,6 +8227,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/blit_pass_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/command_buffer_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_bindings_cache_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_bindings_cache_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pass_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/compute_pipeline_mtl.h

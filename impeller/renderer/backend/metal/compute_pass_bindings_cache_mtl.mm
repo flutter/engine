@@ -6,7 +6,7 @@
 
 namespace impeller {
 
-void ComputePassBindingsCache::SetComputePipelineState(
+void ComputePassBindingsCacheMTL::SetComputePipelineState(
     id<MTLComputePipelineState> pipeline) {
   if (pipeline == pipeline_) {
     return;
@@ -15,18 +15,18 @@ void ComputePassBindingsCache::SetComputePipelineState(
   [encoder_ setComputePipelineState:pipeline_];
 }
 
-id<MTLComputePipelineState> ComputePassBindingsCache::GetPipeline() const {
+id<MTLComputePipelineState> ComputePassBindingsCacheMTL::GetPipeline() const {
   return pipeline_;
 }
 
-void ComputePassBindingsCache::SetEncoder(
+void ComputePassBindingsCacheMTL::SetEncoder(
     id<MTLComputeCommandEncoder> encoder) {
   encoder_ = encoder;
 }
 
-void ComputePassBindingsCache::SetBuffer(uint64_t index,
-                                         uint64_t offset,
-                                         id<MTLBuffer> buffer) {
+void ComputePassBindingsCacheMTL::SetBuffer(uint64_t index,
+                                            uint64_t offset,
+                                            id<MTLBuffer> buffer) {
   auto found = buffers_.find(index);
   if (found != buffers_.end() && found->second.buffer == buffer) {
     // The right buffer is bound. Check if its offset needs to be updated.
@@ -46,8 +46,8 @@ void ComputePassBindingsCache::SetBuffer(uint64_t index,
   [encoder_ setBuffer:buffer offset:offset atIndex:index];
 }
 
-void ComputePassBindingsCache::SetTexture(uint64_t index,
-                                          id<MTLTexture> texture) {
+void ComputePassBindingsCacheMTL::SetTexture(uint64_t index,
+                                             id<MTLTexture> texture) {
   auto found = textures_.find(index);
   if (found != textures_.end() && found->second == texture) {
     // Already bound.
@@ -58,8 +58,8 @@ void ComputePassBindingsCache::SetTexture(uint64_t index,
   return;
 }
 
-void ComputePassBindingsCache::SetSampler(uint64_t index,
-                                          id<MTLSamplerState> sampler) {
+void ComputePassBindingsCacheMTL::SetSampler(uint64_t index,
+                                             id<MTLSamplerState> sampler) {
   auto found = samplers_.find(index);
   if (found != samplers_.end() && found->second == sampler) {
     // Already bound.

@@ -22,12 +22,12 @@ namespace impeller {
 ///             There should be no change to rendering if this caching was
 ///             absent.
 ///
-struct ComputePassBindingsCache {
-  explicit ComputePassBindingsCache() {}
+struct ComputePassBindingsCacheMTL {
+  explicit ComputePassBindingsCacheMTL() {}
 
-  ComputePassBindingsCache(const ComputePassBindingsCache&) = delete;
+  ComputePassBindingsCacheMTL(const ComputePassBindingsCacheMTL&) = delete;
 
-  ComputePassBindingsCache(ComputePassBindingsCache&&) = delete;
+  ComputePassBindingsCacheMTL(ComputePassBindingsCacheMTL&&) = delete;
 
   void SetComputePipelineState(id<MTLComputePipelineState> pipeline);
 
