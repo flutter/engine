@@ -963,7 +963,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|
@@ -1013,6 +1014,10 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   bool GetAssetAsBuffer(const std::string& name, std::vector<uint8_t>* data);
 
+  void MarkAsEndOfFrame();
+
+  void SubmitFrameIfEndOfFrame();
+
   friend class testing::ShellTest;
 
   Engine::Delegate& delegate_;
@@ -1024,6 +1029,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // So it should be defined after them to ensure that pointer_data_dispatcher_
   // is destructed first.
   std::unique_ptr<PointerDataDispatcher> pointer_data_dispatcher_;
+
+  std::unordered_set<uint64_t> rendered_views_during_frame_;
 
   std::string last_entry_point_;
   std::string last_entry_point_library_;

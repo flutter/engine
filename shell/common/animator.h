@@ -60,7 +60,8 @@ class Animator final {
   ///           technically, between Animator::BeginFrame and Animator::EndFrame
   ///           (both private methods). Otherwise, this call will be ignored.
   ///
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio);
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
@@ -88,7 +89,14 @@ class Animator final {
   // rendering.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
+  void EndFrame();
+
  private:
+  // Animator's work during a vsync is split into two methods, BeginFrame and
+  // EndFrame. The two methods should be called synchronously back-to-back to
+  // avoid being interrupted by a regular vsync. The reason to split them is to
+  // allow ShellTest::PumpOneFrame to insert a Render in between.
+
   void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   bool CanReuseLastLayerTrees();
@@ -106,6 +114,7 @@ class Animator final {
   std::shared_ptr<VsyncWaiter> waiter_;
 
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
+  std::vector<std::unique_ptr<LayerTreeTask>> layer_trees_tasks_;
   uint64_t frame_request_number_ = 1;
   fml::TimeDelta dart_frame_deadline_;
   std::shared_ptr<FramePipeline> layer_tree_pipeline_;

@@ -193,6 +193,11 @@ class RuntimeController : public PlatformConfigurationClient {
   bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
+  /// @brief      Return the number of views registered.
+  ///
+  size_t NumViews() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      Forward the specified viewport metrics to the running isolate.
   ///             If the isolate is not running, these metrics will be saved and
   ///             flushed to the isolate when it starts.
@@ -658,7 +663,10 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
-  void Render(Scene* scene, double width, double height) override;
+  void Render(int64_t view_id,
+              Scene* scene,
+              double width,
+              double height) override;
 
   // |PlatformConfigurationClient|
   void UpdateSemantics(SemanticsUpdate* update) override;
