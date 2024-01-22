@@ -37,8 +37,6 @@ void doTests() {
 
       expect(userMeta, isNotNull);
 
-      strategy.initialize();
-
       expect(target.getAttribute('flt-embedding'), 'full-page',
           reason:
               'Should identify itself as a specific key=value into the target element.');
@@ -60,7 +58,6 @@ void doTests() {
   group('attachViewRoot', () {
     setUp(() {
       strategy = FullPageEmbeddingStrategy();
-      strategy.initialize();
     });
 
     test('Should attach glasspane into embedder target (body)', () async {

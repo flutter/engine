@@ -30,8 +30,6 @@ void doTests() {
     });
 
     test('Prepares target environment', () {
-      strategy.initialize();
-
       expect(target.getAttribute('flt-embedding'), 'custom-element',
           reason:
               'Should identify itself as a specific key=value into the target element.');
@@ -43,7 +41,6 @@ void doTests() {
       target = createDomElement('this-is-the-target');
       domDocument.body!.append(target);
       strategy = CustomElementEmbeddingStrategy(target);
-      strategy.initialize();
     });
 
     tearDown(() {
