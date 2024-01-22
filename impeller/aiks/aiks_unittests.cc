@@ -3765,7 +3765,7 @@ TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
 
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
   size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
 
   Canvas canvas;
   canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
@@ -3793,7 +3793,7 @@ TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
 TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
   fml::testing::LogCapture log_capture;
   size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
 
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Wheat()});
@@ -3820,7 +3820,7 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
   // The log is FML_DLOG, so only check in debug builds.
 #ifndef NDEBUG
-  if (GetParam() == PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
     EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
               std::string::npos);
   } else {
@@ -3832,7 +3832,7 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
 
 TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
   size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
   fml::testing::LogCapture log_capture;
   Canvas canvas;
   canvas.SaveLayer(
@@ -3856,7 +3856,7 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
   // The log is FML_DLOG, so only check in debug builds.
 #ifndef NDEBUG
-  if (GetParam() == PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
     EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
               std::string::npos);
   } else {
