@@ -5,9 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
 
-#include <variant>
-
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -38,6 +35,9 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   std::shared_ptr<const TextureSourceVK> GetTextureSource() const;
 
+  // |Texture|
+  ISize GetSize() const override;
+
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
@@ -56,9 +56,6 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   // |Texture|
   bool IsValid() const override;
-
-  // |Texture|
-  ISize GetSize() const override;
 
   TextureVK(const TextureVK&) = delete;
 
