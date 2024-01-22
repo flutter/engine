@@ -32,7 +32,11 @@
 
 #if FML_OS_MACOSX
 #include "fml/platform/darwin/scoped_nsautorelease_pool.h"
-#endif
+#endif  // FML_OS_MACOSX
+
+#if IMPELLER_ENABLE_VULKAN
+#include "impeller/playground/backend/vulkan/playground_impl_vk.h"
+#endif  // IMPELLER_ENABLE_VULKAN
 
 namespace impeller {
 
@@ -109,7 +113,7 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
 #endif  // IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kVulkan:
 #if IMPELLER_ENABLE_VULKAN
-      return true;
+      return true && PlaygroundImplVK::IsVulkanDriverPresent();
 #else   // IMPELLER_ENABLE_VULKAN
       return false;
 #endif  // IMPELLER_ENABLE_VULKAN

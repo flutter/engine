@@ -13,6 +13,8 @@ namespace impeller {
 
 class PlaygroundImplVK final : public PlaygroundImpl {
  public:
+  static bool IsVulkanDriverPresent();
+
   explicit PlaygroundImplVK(PlaygroundSwitches switches);
 
   ~PlaygroundImplVK();
