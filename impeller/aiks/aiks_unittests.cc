@@ -2742,7 +2742,8 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
   auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
-  auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
@@ -3557,6 +3558,8 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
       .WillRepeatedly(::testing::Return(false));
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              GetDefaultDepthStencilFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsImplicitResolvingMSAA);
