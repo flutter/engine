@@ -35,7 +35,7 @@ def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
   return ExecutableTestRunner(
       runner_args.out_dir, [],
       'fuchsia-pkg://fuchsia.com/dart_runner_tests#meta/dart_runner_tests.cm',
-      runner_args.target_id, 'codecoverage', '/tmp/log',
+      runner_args.target_id, None, '/tmp/log',
       ['out/fuchsia_debug_x64/dart_runner_tests.far'], None
   )
 
