@@ -918,14 +918,14 @@ TEST(FlutterWindowsViewTest, WindowResizeRace) {
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
   auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  std::unique_ptr<egl::MockManager> egl_manager =
+      std::make_unique<egl::MockManager>();
 
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*egl_manager.get(), DestroySurface).Times(1);
 
   FlutterWindowsView view(std::move(window_binding_handler),
                           std::move(windows_proc_table));
-  modifier.SetSurfaceManager(std::move(surface_manager));
+  modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
 
   // Begin a frame.
