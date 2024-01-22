@@ -5292,6 +5292,7 @@ ORIGIN: ../../../flutter/impeller/geometry/quaternion.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/impeller/geometry/quaternion.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/rect.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/rect.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/geometry/saturated_math.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/scalar.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/shear.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/shear.h + ../../../flutter/LICENSE
@@ -5316,6 +5317,10 @@ ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.h + ../../../flu
 ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshotter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshotter.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/screenshot.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/screenshotter.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests_harvester/bin/golden_tests_harvester.dart + ../../../flutter/LICENSE
@@ -5396,6 +5401,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h + ../.
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pass_bindings_cache_mtl.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pass_bindings_cache_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h + ../../../flutter/LICENSE
@@ -8129,6 +8136,7 @@ FILE: ../../../flutter/impeller/geometry/quaternion.cc
 FILE: ../../../flutter/impeller/geometry/quaternion.h
 FILE: ../../../flutter/impeller/geometry/rect.cc
 FILE: ../../../flutter/impeller/geometry/rect.h
+FILE: ../../../flutter/impeller/geometry/saturated_math.h
 FILE: ../../../flutter/impeller/geometry/scalar.h
 FILE: ../../../flutter/impeller/geometry/shear.cc
 FILE: ../../../flutter/impeller/geometry/shear.h
@@ -8153,6 +8161,10 @@ FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.h
 FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.mm
 FILE: ../../../flutter/impeller/golden_tests/metal_screenshotter.h
 FILE: ../../../flutter/impeller/golden_tests/metal_screenshotter.mm
+FILE: ../../../flutter/impeller/golden_tests/screenshot.h
+FILE: ../../../flutter/impeller/golden_tests/screenshotter.h
+FILE: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.h
+FILE: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.mm
 FILE: ../../../flutter/impeller/golden_tests/working_directory.cc
 FILE: ../../../flutter/impeller/golden_tests/working_directory.h
 FILE: ../../../flutter/impeller/golden_tests_harvester/bin/golden_tests_harvester.dart
@@ -8233,6 +8245,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/lazy_drawable_holder.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/pass_bindings_cache_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/pass_bindings_cache_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
