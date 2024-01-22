@@ -119,8 +119,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
                                         RenderPass& pass) {
   auto& host_buffer = renderer.GetTransientsBuffer();
 
-  auto uv_transform =
-      texture_coverage.GetNormalizingTransform() * effect_transform;
+  auto uv_transform = source_rect.GetNormalizingTransform() * effect_transform;
   std::vector<Point> data(8);
   auto points = source_rect.GetPoints();
   for (auto i = 0u, j = 0u; i < 8; i += 2, j++) {
