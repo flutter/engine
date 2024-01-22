@@ -128,7 +128,7 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
     return false;
   }
 
-  if (!engine_->surface_manager()->MakeCurrent()) {
+  if (!engine_->egl_manager()->MakeCurrent()) {
     return false;
   }
 
@@ -154,13 +154,18 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
                        GL_NEAREST            // filter
   );
 
-  return engine_->view()->SwapBuffers();
+  if (!engine_->egl_manager()->SwapBuffers()) {
+    return false;
+  }
+
+  engine_->view()->OnFramePresented();
+  return true;
 }
 
 bool CompositorOpenGL::Initialize() {
   FML_DCHECK(!is_initialized_);
 
-  if (!engine_->surface_manager()->MakeCurrent()) {
+  if (!engine_->egl_manager()->MakeCurrent()) {
     return false;
   }
 
@@ -181,14 +186,19 @@ bool CompositorOpenGL::ClearSurface() {
   // Resize the surface if needed.
   engine_->view()->OnEmptyFrameGenerated();
 
-  if (!engine_->surface_manager()->MakeCurrent()) {
+  if (!engine_->egl_manager()->MakeCurrent()) {
     return false;
   }
 
   gl_->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  return engine_->view()->SwapBuffers();
+  if (!engine_->egl_manager()->SwapBuffers()) {
+    return false;
+  }
+
+  engine_->view()->OnFramePresented();
+  return true;
 }
 
 }  // namespace flutter

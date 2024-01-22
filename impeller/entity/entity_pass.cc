@@ -333,8 +333,8 @@ bool EntityPass::Render(ContentContext& renderer,
                   Rect::MakeSize(root_render_target.GetRenderTargetSize()),
                   {.readonly = true});
 
-  IterateAllEntities([lazy_glyph_atlas =
-                          renderer.GetLazyGlyphAtlas()](const Entity& entity) {
+  const auto& lazy_glyph_atlas = renderer.GetLazyGlyphAtlas();
+  IterateAllEntities([&lazy_glyph_atlas](const Entity& entity) {
     if (const auto& contents = entity.GetContents()) {
       contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
     }
@@ -431,7 +431,8 @@ bool EntityPass::Render(ContentContext& renderer,
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
-  if (stencil_attachment.has_value()) {
+  auto depth_attachment = root_render_target.GetDepthAttachment();
+  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
     auto stencil_texture = stencil_attachment->texture;
     if (!stencil_texture) {
       VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
@@ -450,7 +451,7 @@ bool EntityPass::Render(ContentContext& renderer,
   // Setup a new root stencil with an optimal configuration if one wasn't
   // provided by the caller.
   else {
-    root_render_target.SetupStencilAttachment(
+    root_render_target.SetupDepthStencilAttachments(
         *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
