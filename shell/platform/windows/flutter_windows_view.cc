@@ -166,31 +166,32 @@ bool FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
     return true;
   }
 
+  // We're using OpenGL rendering. Resizing the surface must happen on the
+  // raster thread.
   EGLint surface_width, surface_height;
   engine_->surface_manager()->GetSurfaceDimensions(&surface_width,
                                                    &surface_height);
 
   bool surface_will_update =
       SurfaceWillUpdate(surface_width, surface_height, width, height);
-  if (surface_will_update) {
-    resize_status_ = ResizeState::kResizeStarted;
-    resize_target_width_ = width;
-    resize_target_height_ = height;
+  if (!surface_will_update) {
+    SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+    return true;
   }
+
+  resize_status_ = ResizeState::kResizeStarted;
+  resize_target_width_ = width;
+  resize_target_height_ = height;
 
   SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
 
-  if (surface_will_update) {
-    // Block the platform thread until a frame is presented with the target
-    // size. See |OnFrameGenerated|, |OnEmptyFrameGenerated|, and
-    // |OnFramePresented|.
-    return resize_cv_.wait_for(lock, kWindowResizeTimeout,
-                               [&resize_status = resize_status_] {
-                                 return resize_status == ResizeState::kDone;
-                               });
-  }
-
-  return true;
+  // Block the platform thread until a frame is presented with the target
+  // size. See |OnFrameGenerated|, |OnEmptyFrameGenerated|, and
+  // |OnFramePresented|.
+  return resize_cv_.wait_for(lock, kWindowResizeTimeout,
+                             [&resize_status = resize_status_] {
+                               return resize_status == ResizeState::kDone;
+                             });
 }
 
 void FlutterWindowsView::OnWindowRepaint() {
