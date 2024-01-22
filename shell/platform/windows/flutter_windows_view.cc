@@ -597,10 +597,15 @@ void FlutterWindowsView::OnFramePresented() {
   switch (resize_status_) {
     case ResizeState::kResizeStarted:
       // The caller must first call |OnFrameGenerated| or
-      // |OnEmptyFrameGenerated| before calling this method. This status
-      // indicates the caller did not call these methods or ignored their
-      // result.
-      FML_UNREACHABLE();
+      // |OnEmptyFrameGenerated| before calling this method. This
+      // indicates one of the following:
+      //
+      // 1. The caller did not call these methods.
+      // 2. The caller ignored these methods' result.
+      // 3. The platform thread started a resize after the caller called these
+      //    methods. We might have presented a frame of the wrong size to the
+      //    view.
+      return;
     case ResizeState::kFrameGenerated: {
       // A frame was generated for a pending resize.
       // Unblock the platform thread.
