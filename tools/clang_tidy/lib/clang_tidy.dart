@@ -426,13 +426,11 @@ class ClangTidy {
         continue;
       }
       _errSink.writeln('❌ Failures for ${job.name}:');
-      if (!job.printOutput) {
-        final Exception? exception = job.exception;
-        if (exception != null) {
-          _errSink.writeln(trimOutput(exception.toString()));
-        } else {
-          _errSink.writeln(trimOutput(job.result.output));
-        }
+      final Exception? exception = job.exception;
+      if (exception != null) {
+        _errSink.writeln(trimOutput(exception.toString()));
+      } else if (options.verbose) {
+        _errSink.writeln(trimOutput(job.result.output));
       }
       result = 1;
     }
