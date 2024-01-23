@@ -65,7 +65,7 @@ bool CapabilitiesVK::AreValidationsEnabled() const {
 
 std::optional<std::vector<std::string>> CapabilitiesVK::GetEnabledLayers()
     const {
-  std::vector<std::string> required = {};
+  std::vector<std::string> required;
 
   if (validations_enabled_) {
     // The presence of this layer is already checked in the ctor.
@@ -287,7 +287,7 @@ static bool HasRequiredQueues(const vk::PhysicalDevice& physical_device) {
                                     vk::QueueFlagBits::eTransfer));
 }
 
-std::optional<vk::PhysicalDeviceFeatures2>
+std::optional<vk::PhysicalDeviceFeatures>
 CapabilitiesVK::GetEnabledDeviceFeatures(
     const vk::PhysicalDevice& device) const {
   if (!PhysicalDeviceSupportsRequiredFormats(device)) {
@@ -312,11 +312,11 @@ CapabilitiesVK::GetEnabledDeviceFeatures(
 
   const auto device_features = device.getFeatures();
 
-  vk::PhysicalDeviceFeatures2 required;
+  vk::PhysicalDeviceFeatures required;
 
   // We require this for enabling wireframes in the playground. But its not
   // necessarily a big deal if we don't have this feature.
-  required.features.fillModeNonSolid = device_features.fillModeNonSolid;
+  required.fillModeNonSolid = device_features.fillModeNonSolid;
 
   return required;
 }

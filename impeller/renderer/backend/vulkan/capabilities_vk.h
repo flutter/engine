@@ -50,7 +50,7 @@ class CapabilitiesVK final : public Capabilities,
   std::optional<std::vector<std::string>> GetEnabledDeviceExtensions(
       const vk::PhysicalDevice& physical_device) const;
 
-  std::optional<vk::PhysicalDeviceFeatures2> GetEnabledDeviceFeatures(
+  std::optional<vk::PhysicalDeviceFeatures> GetEnabledDeviceFeatures(
       const vk::PhysicalDevice& physical_device) const;
 
   [[nodiscard]] bool SetPhysicalDevice(
