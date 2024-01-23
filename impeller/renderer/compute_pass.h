@@ -35,17 +35,16 @@ class ComputePass : public ResourceBinder {
 
   virtual fml::Status Compute(const ISize& grid_size) = 0;
 
-  /// @brief Ensures all previously encoded command's buffer writes are visible
-  /// to
-  ///        any subsequent compute commands.
+  /// @brief Ensures all previously encoded compute command's buffer writes are
+  ///        visible to any subsequent compute commands.
   ///
   ///        On Vulkan, it does not matter if the compute command is in a
   ///        different command buffer, only that it is executed later in queue
   ///        order.
   virtual void AddBufferMemoryBarrier() = 0;
 
-  /// @brief Ensures all previously encoded command's texture writes are visible
-  ///        to any subsequent compute commands.
+  /// @brief Ensures all previously encoded compute command's texture writes are
+  ///        visible to any subsequent compute commands.
   ///
   ///        On Vulkan, it does not matter if the compute command is in a
   ///        different command buffer, only that it is executed later in queue
