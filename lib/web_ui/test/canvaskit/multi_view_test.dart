@@ -16,7 +16,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     late LayerScene scene;
 
@@ -33,13 +33,13 @@ void testMain() {
     });
 
     test('can render into arbitrary views', () async {
-      CanvasKitRenderer.instance.renderScene(scene, implicitView);
+      await CanvasKitRenderer.instance.renderScene(scene, implicitView);
 
       final EngineFlutterView anotherView = EngineFlutterView(
           EnginePlatformDispatcher.instance, createDomElement('another-view'));
       EnginePlatformDispatcher.instance.viewManager.registerView(anotherView);
 
-      CanvasKitRenderer.instance.renderScene(scene, anotherView);
+      await CanvasKitRenderer.instance.renderScene(scene, anotherView);
     });
 
     test('will error if trying to render into an unregistered view', () async {

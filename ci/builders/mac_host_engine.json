@@ -15,7 +15,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -41,13 +41,13 @@
                     "flutter/build/archives:flutter_embedder_framework",
                     "flutter/build/dart:copy_dart_sdk",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
-                    "flutter/tools/font-subset",
+                    "flutter/tools/font_subset",
                     "flutter:unittests"
                 ]
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             },
             "tests": [
@@ -79,7 +79,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -106,7 +106,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             },
             "tests": [
@@ -139,7 +139,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -170,13 +170,13 @@
                     "flutter/build/dart:copy_dart_sdk",
                     "flutter/impeller/golden_tests:impeller_golden_tests",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
-                    "flutter/tools/font-subset",
+                    "flutter/tools/font_subset",
                     "flutter:unittests"
                 ]
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             },
             "tests": [
@@ -208,7 +208,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -227,7 +227,7 @@
             "ninja": {
                 "config": "mac_debug_arm64",
                 "targets": [
-                    "flutter/tools/font-subset",
+                    "flutter/tools/font_subset",
                     "flutter/build/archives:archive_gen_snapshot",
                     "flutter/build/archives:artifacts",
                     "flutter/build/archives:dart_sdk_archive",
@@ -237,7 +237,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             }
         },
@@ -255,7 +255,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -280,7 +280,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             }
         },
@@ -299,7 +299,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -318,14 +318,14 @@
             "ninja": {
                 "config": "mac_release_arm64",
                 "targets": [
-                    "flutter/tools/font-subset",
+                    "flutter/tools/font_subset",
                     "flutter/build/archives:artifacts",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             }
         }

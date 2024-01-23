@@ -58,7 +58,7 @@
                         "--variant",
                         "host_debug_impeller_vulkan",
                         "--type",
-                        "impeller-vulkan",
+                        "impeller",
                         "--engine-capture-core-dump"
                     ]
                 }
@@ -103,7 +103,7 @@
                     "flutter/build/archives:embedder",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/build/dart:copy_dart_sdk",
-                    "flutter/tools/font-subset"
+                    "flutter/tools/font_subset"
                 ]
             },
             "tests": [

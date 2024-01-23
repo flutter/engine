@@ -247,35 +247,47 @@ static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
 
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
+                                           int mip_count,
                                            const Color& clear_color) {
-  auto context = renderer.GetContext();
+  const std::shared_ptr<Context>& context = renderer.GetContext();
 
   /// All of the load/store actions are managed by `InlinePassContext` when
   /// `RenderPasses` are created, so we just set them to `kDontCare` here.
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
+  if (context->GetBackendType() != Context::BackendType::kMetal) {
+    // TODO(https://github.com/flutter/flutter/issues/141495): Implement mip map
+    // generation on vulkan.
+    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
+    // generation on opengles.
+    mip_count = 1;
+  }
+
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
-        *context,                          // context
-        *renderer.GetRenderTargetCache(),  // allocator
-        size,                              // size
-        "EntityPass",                      // label
+        /*context=*/*context,
+        /*allocator=*/*renderer.GetRenderTargetCache(),
+        /*size=*/size,
+        /*mip_count=*/mip_count,
+        /*label=*/"EntityPass",
+        /*color_attachment_config=*/
         RenderTarget::AttachmentConfigMSAA{
             .storage_mode = StorageMode::kDeviceTransient,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},  // color_attachment_config
-        kDefaultStencilConfig             // stencil_attachment_config
-    );
+            .clear_color = clear_color},
+        /*stencil_attachment_config=*/
+        kDefaultStencilConfig);
   } else {
     target = RenderTarget::CreateOffscreen(
         *context,                          // context
         *renderer.GetRenderTargetCache(),  // allocator
         size,                              // size
-        "EntityPass",                      // label
+        /*mip_count=*/mip_count,
+        "EntityPass",  // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
@@ -304,6 +316,10 @@ bool EntityPass::Render(ContentContext& renderer,
       renderer.GetContext()->capture.GetDocument(kCaptureDocumentName);
 
   renderer.GetRenderTargetCache()->Start();
+  fml::ScopedCleanupClosure reset_state([&renderer]() {
+    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
+    renderer.GetRenderTargetCache()->End();
+  });
 
   auto root_render_target = render_target;
 
@@ -317,13 +333,8 @@ bool EntityPass::Render(ContentContext& renderer,
                   Rect::MakeSize(root_render_target.GetRenderTargetSize()),
                   {.readonly = true});
 
-  fml::ScopedCleanupClosure reset_state([&renderer]() {
-    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
-    renderer.GetRenderTargetCache()->End();
-  });
-
-  IterateAllEntities([lazy_glyph_atlas =
-                          renderer.GetLazyGlyphAtlas()](const Entity& entity) {
+  const auto& lazy_glyph_atlas = renderer.GetLazyGlyphAtlas();
+  IterateAllEntities([&lazy_glyph_atlas](const Entity& entity) {
     if (const auto& contents = entity.GetContents()) {
       contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
     }
@@ -339,8 +350,9 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (reads_from_onscreen_backdrop) {
-    auto offscreen_target = CreateRenderTarget(
+    EntityPassTarget offscreen_target = CreateRenderTarget(
         renderer, root_render_target.GetRenderTargetSize(),
+        GetRequiredMipCount(),
         GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
@@ -419,7 +431,8 @@ bool EntityPass::Render(ContentContext& renderer,
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
-  if (stencil_attachment.has_value()) {
+  auto depth_attachment = root_render_target.GetDepthAttachment();
+  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
     auto stencil_texture = stencil_attachment->texture;
     if (!stencil_texture) {
       VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
@@ -438,7 +451,7 @@ bool EntityPass::Render(ContentContext& renderer,
   // Setup a new root stencil with an optimal configuration if one wasn't
   // provided by the caller.
   else {
-    root_render_target.SetupStencilAttachment(
+    root_render_target.SetupDepthStencilAttachments(
         *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
@@ -593,15 +606,16 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     subpass_coverage = Rect::RoundOut(subpass_coverage.value());
 
-    auto subpass_size = ISize(subpass_coverage->size);
+    auto subpass_size = ISize(subpass_coverage->GetSize());
     if (subpass_size.IsEmpty()) {
       capture.CreateChild("Subpass Entity (Skipped: Empty subpass coverage B)");
       return EntityPass::EntityResult::Skip();
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,                                        // renderer
-        subpass_size,                                    // size
+        renderer,      // renderer
+        subpass_size,  // size
+        subpass->GetRequiredMipCount(),
         subpass->GetClearColorOrDefault(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
@@ -623,12 +637,12 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
     if (!subpass->OnRender(
-            renderer,                  // renderer
-            subpass_capture,           // capture
-            root_pass_size,            // root_pass_size
-            subpass_target,            // pass_target
-            subpass_coverage->origin,  // global_pass_position
-            subpass_coverage->origin -
+            renderer,                       // renderer
+            subpass_capture,                // capture
+            root_pass_size,                 // root_pass_size
+            subpass_target,                 // pass_target
+            subpass_coverage->GetOrigin(),  // global_pass_position
+            subpass_coverage->GetOrigin() -
                 global_pass_position,         // local_pass_position
             ++pass_depth,                     // pass_depth
             subpass_clip_coverage_stack,      // clip_coverage_stack
@@ -669,8 +683,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     element_entity.SetClipDepth(subpass->clip_depth_);
     element_entity.SetBlendMode(subpass->blend_mode_);
     element_entity.SetTransform(subpass_texture_capture.AddMatrix(
-        "Transform", Matrix::MakeTranslation(Vector3(subpass_coverage->origin -
-                                                     global_pass_position))));
+        "Transform",
+        Matrix::MakeTranslation(
+            Vector3(subpass_coverage->GetOrigin() - global_pass_position))));
 
     return EntityPass::EntityResult::Success(std::move(element_entity));
   }
@@ -727,7 +742,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
   if (current_clip_coverage.has_value()) {
     // Entity transforms are relative to the current pass position, so we need
     // to check clip coverage in the same space.
-    current_clip_coverage->origin -= global_pass_position;
+    current_clip_coverage = current_clip_coverage->Shift(-global_pass_position);
   }
 
   if (!element_entity.ShouldRender(current_clip_coverage)) {
@@ -736,7 +751,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
 
   auto clip_coverage = element_entity.GetClipCoverage(current_clip_coverage);
   if (clip_coverage.coverage.has_value()) {
-    clip_coverage.coverage->origin += global_pass_position;
+    clip_coverage.coverage =
+        clip_coverage.coverage->Shift(global_pass_position);
   }
 
   // The coverage hint tells the rendered Contents which portion of the
@@ -784,7 +800,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
               : std::nullopt;
       if (restore_coverage.has_value()) {
         // Make the coverage rectangle relative to the current pass.
-        restore_coverage->origin -= global_pass_position;
+        restore_coverage = restore_coverage->Shift(-global_pass_position);
       }
       clip_coverage_stack.resize(restoration_index + 1);
 
@@ -804,7 +820,8 @@ bool EntityPass::RenderElement(Entity& element_entity,
   {
     auto element_entity_coverage = element_entity.GetCoverage();
     if (element_entity_coverage.has_value()) {
-      element_entity_coverage->origin += global_pass_position;
+      element_entity_coverage =
+          element_entity_coverage->Shift(global_pass_position);
       element_entity.GetCapture().AddRect("Coverage", *element_entity_coverage,
                                           {.readonly = true});
     }
@@ -835,7 +852,7 @@ bool EntityPass::OnRender(
         collapsed_parent_pass) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
-  auto context = renderer.GetContext();
+  const std::shared_ptr<Context>& context = renderer.GetContext();
   InlinePassContext pass_context(context, pass_target,
                                  GetTotalPassReads(renderer), GetElementCount(),
                                  collapsed_parent_pass);
@@ -877,7 +894,6 @@ bool EntityPass::OnRender(
                                     !backdrop_filter_proc_;
   for (const auto& element : elements_) {
     // Skip elements that are incorporated into the clear color.
-    bool was_collapsing_clear_colors = is_collapsing_clear_colors;
     if (is_collapsing_clear_colors) {
       auto [entity_color, _] =
           ElementAsBackgroundColor(element, clear_color_size);
@@ -951,20 +967,9 @@ bool EntityPass::OnRender(
         FilterInput::Vector inputs = {
             FilterInput::Make(texture, result.entity.GetTransform().Invert()),
             FilterInput::Make(result.entity.GetContents())};
-        std::optional<Color> foreground_color;
-        std::optional<Rect> coverage;
-        if (was_collapsing_clear_colors) {
-          // If all previous elements were skipped due to clear color
-          // optimization, then provide the clear color as the foreground of the
-          // advanced blend.
-          foreground_color = GetClearColorOrDefault(clear_color_size);
-          coverage = Rect::MakeSize(clear_color_size);
-        } else {
-          coverage = result.entity.GetCoverage();
-        }
         auto contents = ColorFilterContents::MakeBlend(
-            result.entity.GetBlendMode(), inputs, foreground_color);
-        contents->SetCoverageHint(coverage);
+            result.entity.GetBlendMode(), inputs);
+        contents->SetCoverageHint(result.entity.GetCoverage());
         result.entity.SetContents(std::move(contents));
         result.entity.SetBlendMode(BlendMode::kSource);
       }
@@ -1021,6 +1026,25 @@ void EntityPass::IterateAllElements(
     }
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       subpass->get()->IterateAllElements(iterator);
+    }
+  }
+}
+
+void EntityPass::IterateAllElements(
+    const std::function<bool(const Element&)>& iterator) const {
+  /// TODO(gaaclarke): Remove duplication here between const and non-const
+  /// versions.
+  if (!iterator) {
+    return;
+  }
+
+  for (auto& element : elements_) {
+    if (!iterator(element)) {
+      return;
+    }
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      const EntityPass* entity_pass = subpass->get();
+      entity_pass->IterateAllElements(iterator);
     }
   }
 }

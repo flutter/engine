@@ -11,8 +11,8 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 import 'package:web_engine_tester/golden_tester.dart';
 
+import '../common/rendering.dart';
 import '../common/test_initialization.dart';
-import 'utils.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -20,6 +20,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpUnitTests(
+    withImplicitView: true,
     emulateTesterEnvironment: false,
     setUpTestViewDimensions: false,
   );
@@ -65,7 +66,7 @@ Future<void> testMain() async {
       width: 50,
       height: 50,
     );
-    await renderer.renderScene(sb.build(), implicitView);
+    await renderScene(sb.build());
 
     await matchGoldenFile('picture_platformview_overlap.png', region: region);
   });
@@ -97,7 +98,7 @@ Future<void> testMain() async {
     );
 
     sb.addPicture(const ui.Offset(125, 125), picture);
-    await renderer.renderScene(sb.build(), implicitView);
+    await renderScene(sb.build());
 
     await matchGoldenFile('picture_platformview_sandwich.png', region: region);
   });
@@ -126,7 +127,7 @@ Future<void> testMain() async {
       width: 50,
       height: 50,
     );
-    await renderer.renderScene(sb.build(), implicitView);
+    await renderScene(sb.build());
 
     await matchGoldenFile('platformview_transformed.png', region: region);
   });
@@ -155,7 +156,7 @@ Future<void> testMain() async {
       width: 50,
       height: 50,
     );
-    await renderer.renderScene(sb.build(), implicitView);
+    await renderScene(sb.build());
 
     await matchGoldenFile('platformview_opacity.png', region: region);
   });

@@ -9,6 +9,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/context.h"
 
@@ -224,6 +225,7 @@ RenderTarget RenderTarget::CreateOffscreen(
     const Context& context,
     RenderTargetAllocator& allocator,
     ISize size,
+    int mip_count,
     const std::string& label,
     AttachmentConfig color_attachment_config,
     std::optional<AttachmentConfig> stencil_attachment_config) {
@@ -237,6 +239,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   color_tex0.storage_mode = color_attachment_config.storage_mode;
   color_tex0.format = pixel_format;
   color_tex0.size = size;
+  color_tex0.mip_count = mip_count;
   color_tex0.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                      static_cast<uint64_t>(TextureUsage::kShaderRead);
 
@@ -253,8 +256,8 @@ RenderTarget RenderTarget::CreateOffscreen(
   target.SetColorAttachment(color0, 0u);
 
   if (stencil_attachment_config.has_value()) {
-    target.SetupStencilAttachment(context, allocator, size, false, label,
-                                  stencil_attachment_config.value());
+    target.SetupDepthStencilAttachments(context, allocator, size, false, label,
+                                        stencil_attachment_config.value());
   } else {
     target.SetStencilAttachment(std::nullopt);
   }
@@ -266,6 +269,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     const Context& context,
     RenderTargetAllocator& allocator,
     ISize size,
+    int mip_count,
     const std::string& label,
     AttachmentConfigMSAA color_attachment_config,
     std::optional<AttachmentConfig> stencil_attachment_config) {
@@ -310,6 +314,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   color0_resolve_tex_desc.usage =
       static_cast<uint64_t>(TextureUsage::kRenderTarget) |
       static_cast<uint64_t>(TextureUsage::kShaderRead);
+  color0_resolve_tex_desc.mip_count = mip_count;
 
   auto color0_resolve_tex = allocator.CreateTexture(color0_resolve_tex_desc);
   if (!color0_resolve_tex) {
@@ -343,43 +348,57 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   // Create MSAA stencil texture.
 
   if (stencil_attachment_config.has_value()) {
-    target.SetupStencilAttachment(context, allocator, size, true, label,
-                                  stencil_attachment_config.value());
+    target.SetupDepthStencilAttachments(context, allocator, size, true, label,
+                                        stencil_attachment_config.value());
   } else {
+    target.SetDepthAttachment(std::nullopt);
     target.SetStencilAttachment(std::nullopt);
   }
 
   return target;
 }
 
-void RenderTarget::SetupStencilAttachment(
+void RenderTarget::SetupDepthStencilAttachments(
     const Context& context,
     RenderTargetAllocator& allocator,
     ISize size,
     bool msaa,
     const std::string& label,
     AttachmentConfig stencil_attachment_config) {
-  TextureDescriptor stencil_tex0;
-  stencil_tex0.storage_mode = stencil_attachment_config.storage_mode;
+  TextureDescriptor depth_stencil_texture_desc;
+  depth_stencil_texture_desc.storage_mode =
+      stencil_attachment_config.storage_mode;
   if (msaa) {
-    stencil_tex0.type = TextureType::kTexture2DMultisample;
-    stencil_tex0.sample_count = SampleCount::kCount4;
+    depth_stencil_texture_desc.type = TextureType::kTexture2DMultisample;
+    depth_stencil_texture_desc.sample_count = SampleCount::kCount4;
   }
-  stencil_tex0.format = context.GetCapabilities()->GetDefaultStencilFormat();
-  stencil_tex0.size = size;
-  stencil_tex0.usage =
+  depth_stencil_texture_desc.format =
+      context.GetCapabilities()->GetDefaultDepthStencilFormat();
+  depth_stencil_texture_desc.size = size;
+  depth_stencil_texture_desc.usage =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+
+  auto depth_stencil_texture =
+      allocator.CreateTexture(depth_stencil_texture_desc);
+  if (!depth_stencil_texture) {
+    return;  // Error messages are handled by `Allocator::CreateTexture`.
+  }
+
+  DepthAttachment depth0;
+  depth0.load_action = stencil_attachment_config.load_action;
+  depth0.store_action = stencil_attachment_config.store_action;
+  depth0.clear_depth = 0u;
+  depth0.texture = depth_stencil_texture;
 
   StencilAttachment stencil0;
   stencil0.load_action = stencil_attachment_config.load_action;
   stencil0.store_action = stencil_attachment_config.store_action;
   stencil0.clear_stencil = 0u;
-  stencil0.texture = allocator.CreateTexture(stencil_tex0);
+  stencil0.texture = depth_stencil_texture;
 
-  if (!stencil0.texture) {
-    return;  // Error messages are handled by `Allocator::CreateTexture`.
-  }
-  stencil0.texture->SetLabel(SPrintF("%s Stencil Texture", label.c_str()));
+  stencil0.texture->SetLabel(
+      SPrintF("%s Depth+Stencil Texture", label.c_str()));
+  SetDepthAttachment(std::move(depth0));
   SetStencilAttachment(std::move(stencil0));
 }
 

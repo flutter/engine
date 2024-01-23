@@ -81,9 +81,6 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
   }
-  if (auto allocator = parent_->GetResourceAllocator()) {
-    allocator->DidAcquireSurfaceFrame();
-  }
   parent_->GetCommandPoolRecycler()->Dispose();
   return surface;
 }
@@ -114,5 +111,9 @@ vk::UniqueSurfaceKHR SurfaceContextVK::CreateAndroidSurface(
 }
 
 #endif  // FML_OS_ANDROID
+
+const vk::Device& SurfaceContextVK::GetDevice() const {
+  return parent_->GetDevice();
+}
 
 }  // namespace impeller

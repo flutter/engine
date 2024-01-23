@@ -63,7 +63,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
       std::move(image_decoder),       std::move(image_generator_registry),
       std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
       context_.volatile_path_tracker, context_.concurrent_task_runner,
-      context_.enable_impeller};
+      context_.enable_impeller,       context_.runtime_stage_backend};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -341,16 +341,15 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(int64_t view_id,
-                               Scene* scene,
-                               double width,
-                               double height) {
+void RuntimeController::Render(Scene* scene, double width, double height) {
+  // TODO(dkwingsmt): Currently only supports a single window.
+  int64_t view_id = kFlutterImplicitViewId;
   const ViewportMetrics* view_metrics =
       UIDartState::Current()->platform_configuration()->GetMetrics(view_id);
   if (view_metrics == nullptr) {
     return;
   }
-  client_.Render(view_id, scene->takeLayerTree(width, height),
+  client_.Render(scene->takeLayerTree(width, height),
                  view_metrics->device_pixel_ratio);
 }
 

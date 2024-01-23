@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+#include "impeller/core/host_buffer.h"
+#include "impeller/core/platform.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/playground/imgui/imgui_raster.frag.h"
@@ -32,7 +34,6 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 struct ImGui_ImplImpeller_Data {
   std::shared_ptr<impeller::Context> context;
@@ -124,6 +125,8 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   if (draw_data->CmdListsCount == 0) {
     return;  // Nothing to render.
   }
+  auto host_buffer = impeller::HostBuffer::Create(
+      render_pass.GetContext()->GetResourceAllocator());
 
   using VS = impeller::ImguiRasterVertexShader;
   using FS = impeller::ImguiRasterFragmentShader;
@@ -150,18 +153,14 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
       draw_data->DisplaySize.x, draw_data->DisplaySize.y);
 
   auto viewport = impeller::Viewport{
-      .rect = impeller::Rect::MakeXYWH(
-          display_rect.origin.x * draw_data->FramebufferScale.x,
-          display_rect.origin.y * draw_data->FramebufferScale.y,
-          display_rect.size.width * draw_data->FramebufferScale.x,
-          display_rect.size.height * draw_data->FramebufferScale.y)};
+      .rect = display_rect.Scale(draw_data->FramebufferScale.x,
+                                 draw_data->FramebufferScale.y)};
 
   // Allocate vertex shader uniform buffer.
   VS::UniformBuffer uniforms;
-  uniforms.mvp = impeller::Matrix::MakeOrthographic(display_rect.size)
-                     .Translate(-display_rect.origin);
-  auto vtx_uniforms =
-      render_pass.GetTransientsBuffer().EmplaceUniform(uniforms);
+  uniforms.mvp = impeller::Matrix::MakeOrthographic(display_rect.GetSize())
+                     .Translate(-display_rect.GetOrigin());
+  auto vtx_uniforms = host_buffer->EmplaceUniform(uniforms);
 
   size_t vertex_buffer_offset = 0;
   size_t index_buffer_offset = total_vtx_bytes;
@@ -237,17 +236,13 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
           clip_rect = visible_clip.value();
         }
 
-        impeller::Command cmd;
-        DEBUG_COMMAND_INFO(cmd,
-                           impeller::SPrintF("ImGui draw list %d (command %d)",
-                                             draw_list_i, cmd_i));
-
-        cmd.viewport = viewport;
-        cmd.scissor = impeller::IRect(clip_rect);
-
-        cmd.pipeline = bd->pipeline;
-        VS::BindUniformBuffer(cmd, vtx_uniforms);
-        FS::BindTex(cmd, bd->font_texture, bd->sampler);
+        render_pass.SetCommandLabel(impeller::SPrintF(
+            "ImGui draw list %d (command %d)", draw_list_i, cmd_i));
+        render_pass.SetViewport(viewport);
+        render_pass.SetScissor(impeller::IRect::RoundOut(clip_rect));
+        render_pass.SetPipeline(bd->pipeline);
+        VS::BindUniformBuffer(render_pass, vtx_uniforms);
+        FS::BindTex(render_pass, bd->font_texture, bd->sampler);
 
         size_t vb_start =
             vertex_buffer_offset + pcmd->VtxOffset * sizeof(ImDrawVert);
@@ -263,14 +258,15 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
                 pcmd->ElemCount * sizeof(ImDrawIdx))};
         vertex_buffer.vertex_count = pcmd->ElemCount;
         vertex_buffer.index_type = impeller::IndexType::k16bit;
-        cmd.BindVertices(std::move(vertex_buffer));
-        cmd.base_vertex = pcmd->VtxOffset;
+        render_pass.SetVertexBuffer(std::move(vertex_buffer));
+        render_pass.SetBaseVertex(pcmd->VtxOffset);
 
-        render_pass.AddCommand(std::move(cmd));
+        render_pass.Draw().ok();
       }
     }
 
     vertex_buffer_offset += draw_list_vtx_bytes;
     index_buffer_offset += draw_list_idx_bytes;
   }
+  host_buffer->Reset();
 }

@@ -17,7 +17,7 @@ void main() {
 
 void testMain() {
   group('CanvasKit', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     // Regression test for https://github.com/flutter/flutter/issues/63715
     test('TransformLayer prerolls correctly', () async {
@@ -39,7 +39,7 @@ void testMain() {
       sb.addPicture(ui.Offset.zero, picture);
       final LayerScene scene = sb.build();
       final LayerTree layerTree = scene.layerTree;
-      CanvasKitRenderer.instance.renderScene(scene, implicitView);
+      await renderScene(scene);
       final ClipRectEngineLayer clipRect =
           layerTree.rootLayer.debugLayers.single as ClipRectEngineLayer;
       expect(clipRect.paintBounds, const ui.Rect.fromLTRB(15, 15, 30, 30));
@@ -95,7 +95,7 @@ void testMain() {
 
       final LayerScene scene = sb.build();
       final LayerTree layerTree = scene.layerTree;
-      CanvasKitRenderer.instance.renderScene(scene, implicitView);
+      await renderScene(scene);
 
       final ImageFilterEngineLayer imageFilterLayer =
           layerTree.rootLayer.debugLayers.single as ImageFilterEngineLayer;

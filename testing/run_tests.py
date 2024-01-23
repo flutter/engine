@@ -39,7 +39,7 @@ FONTS_DIR = os.path.join(
     BUILDROOT_DIR, 'flutter', 'third_party', 'txt', 'third_party', 'fonts'
 )
 ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
-FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
+FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
 
@@ -553,6 +553,16 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         extra_env=extra_env,
     )
 
+    # Run the Flutter GPU test suite.
+    run_engine_executable(
+        build_dir,
+        'impeller_dart_unittests',
+        executable_filter,
+        shuffle_flags + ['--enable_vulkan_validation'],
+        coverage=coverage,
+        extra_env=extra_env,
+    )
+
 
 def run_engine_benchmarks(build_dir, executable_filter):
   logger.info('Running Engine Benchmarks.')
@@ -611,6 +621,8 @@ class FlutterTesterOptions():
 
     if self.enable_impeller:
       command_args += ['--enable-impeller']
+    else:
+      command_args += ['--no-enable-impeller']
 
     if self.multithreaded:
       command_args.insert(0, '--force-multithreading')
@@ -1056,7 +1068,7 @@ def run_engine_tasks_in_parallel(tasks):
   if len(failures) > 0:
     logger.error('The following commands failed:')
     for task, exn in failures:
-      logger.error('%s\n', str(task))
+      logger.error('%s\n  %s\n\n', str(task), str(exn))
     return False
 
   return True
@@ -1264,8 +1276,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
         build_dir, engine_filter, args.coverage, args.engine_capture_core_dump
     )
 
-  # Use this type to exclusively run impeller vulkan tests.
-  if 'impeller-vulkan' in types:
+  # Use this type to exclusively run impeller tests.
+  if 'impeller' in types:
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
@@ -1273,8 +1285,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           build_dir,
           'impeller_unittests',
           engine_filter,
-          shuffle_flags + ['--gtest_filter=-'
-                           '*/OpenGLES:'],
+          shuffle_flags,
           coverage=args.coverage
       )
     finally:

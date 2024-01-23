@@ -12,7 +12,6 @@ import 'package:ui/src/engine.dart';
 import '../../common/test_initialization.dart';
 
 EngineSemantics semantics() => EngineSemantics.instance;
-EngineSemanticsOwner owner() => EnginePlatformDispatcher.instance.implicitView!.semantics;
 
 void main() {
   internalBootstrapBrowserTest(() {
@@ -21,7 +20,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await bootstrapAndRunApp();
+  await bootstrapAndRunApp(withImplicitView: true);
 
   test('EngineSemantics is enabled via a placeholder click', () async {
     expect(semantics().semanticsEnabled, isFalse);
