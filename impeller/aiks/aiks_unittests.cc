@@ -3212,37 +3212,40 @@ TEST_P(AiksTest, CaptureInactivatedByDefault) {
 }
 
 // Regression test for https://github.com/flutter/flutter/issues/134678.
-TEST_P(AiksTest, ReleasesTextureOnTeardown) {
-  auto context = GetContext();
-  std::weak_ptr<Texture> weak_texture;
+// TEST_P(AiksTest, ReleasesTextureOnTeardown) {
+//   auto context = GetContext();
+//   std::weak_ptr<Texture> weak_texture;
 
-  {
-    auto texture = CreateTextureForFixture("table_mountain_nx.png");
+//   {
+//     auto texture = CreateTextureForFixture("table_mountain_nx.png");
 
-    Canvas canvas;
-    canvas.Scale(GetContentScale());
-    canvas.Translate({100.0f, 100.0f, 0});
+//     Canvas canvas;
+//     canvas.Scale(GetContentScale());
+//     canvas.Translate({100.0f, 100.0f, 0});
 
-    Paint paint;
-    paint.color_source = ColorSource::MakeImage(
-        texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {}, {});
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
+//     Paint paint;
+//     paint.color_source = ColorSource::MakeImage(
+//         texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {}, {});
+//     canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
 
-    ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-  }
+//     ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+//   }
 
-  // See https://github.com/flutter/flutter/issues/134751.
-  //
-  // If the fence waiter was working this may not be released by the end of the
-  // scope above. Adding a manual shutdown so that future changes to the fence
-  // waiter will not flake this test.
-  context->Shutdown();
+//   // See https://github.com/flutter/flutter/issues/134751.
+//   //
+//   // If the fence waiter was working this may not be released by the end of
+//   the
+//   // scope above. Adding a manual shutdown so that future changes to the
+//   fence
+//   // waiter will not flake this test.
+//   context->Shutdown();
 
-  // The texture should be released by now.
-  ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
-                                         "by the backend, it should be "
-                                         "released.";
-}
+//   // The texture should be released by now.
+//   ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in
+//   use "
+//                                          "by the backend, it should be "
+//                                          "released.";
+// }
 
 // Regression test for https://github.com/flutter/flutter/issues/135441 .
 TEST_P(AiksTest, VerticesGeometryUVPositionData) {

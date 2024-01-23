@@ -15,7 +15,25 @@
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
+#define GLFW_INCLUDE_NONE
+#include "third_party/glfw/include/GLFW/glfw3.h"
+
 namespace impeller {
+
+namespace {
+// This is leaked on purpose to work around the limitations of TEST_P to share
+// data between tests.
+PlaygroundImpl* g_vulkan_playground = nullptr;
+PlaygroundImpl* g_vulkan_validation_playground = nullptr;
+
+std::unique_ptr<PlaygroundImpl> MakeVulkanPlayground(bool enable_validations) {
+  FML_CHECK(::glfwInit() == GLFW_TRUE);
+  PlaygroundSwitches playground_switches;
+  playground_switches.enable_vulkan_validation = enable_validations;
+  return PlaygroundImpl::Create(PlaygroundBackend::kVulkan,
+                                playground_switches);
+}
+}  // namespace
 
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
@@ -143,8 +161,21 @@ void GoldenPlaygroundTest::SetUp() {
   if (GetParam() == PlaygroundBackend::kMetal) {
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
-        enable_vulkan_validations);
+    if (enable_vulkan_validations) {
+      if (!g_vulkan_validation_playground) {
+        g_vulkan_validation_playground =
+            MakeVulkanPlayground(/*enable_validations=*/true).release();
+      }
+      pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+          g_vulkan_validation_playground);
+    } else {
+      if (!g_vulkan_playground) {
+        g_vulkan_playground =
+            MakeVulkanPlayground(/*enable_validations=*/false).release();
+      }
+      pimpl_->screenshotter =
+          std::make_unique<testing::VulkanScreenshotter>(g_vulkan_playground);
+    }
   }
 
   if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
