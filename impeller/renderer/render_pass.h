@@ -130,7 +130,7 @@ class RenderPass : public ResourceBinder {
                             const SampledImageSlot& slot,
                             const ShaderMetadata& metadata,
                             std::shared_ptr<const Texture> texture,
-                            std::shared_ptr<const Sampler> sampler) override;
+                            const Sampler& sampler) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.

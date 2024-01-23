@@ -98,15 +98,15 @@ bool ComputePassMTL::BindResource(ShaderStage stage,
                                   const SampledImageSlot& slot,
                                   const ShaderMetadata& metadata,
                                   std::shared_ptr<const Texture> texture,
-                                  std::shared_ptr<const Sampler> sampler) {
-  if (!sampler->IsValid() || !texture->IsValid()) {
+                                  const Sampler& sampler) {
+  if (!sampler.IsValid() || !texture->IsValid()) {
     return false;
   }
 
   pass_bindings_cache_.SetTexture(slot.texture_index,
                                   TextureMTL::Cast(*texture).GetMTLTexture());
   pass_bindings_cache_.SetSampler(
-      slot.texture_index, SamplerMTL::Cast(*sampler).GetMTLSamplerState());
+      slot.texture_index, SamplerMTL::Cast(sampler).GetMTLSamplerState());
   return true;
 }
 

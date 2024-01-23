@@ -13,14 +13,13 @@ SamplerLibraryMTL::SamplerLibraryMTL(id<MTLDevice> device) : device_(device) {}
 
 SamplerLibraryMTL::~SamplerLibraryMTL() = default;
 
-std::shared_ptr<const Sampler> SamplerLibraryMTL::GetSampler(
-    SamplerDescriptor descriptor) {
+const Sampler& SamplerLibraryMTL::GetSampler(SamplerDescriptor descriptor) {
   auto found = samplers_.find(descriptor);
   if (found != samplers_.end()) {
-    return found->second;
+    return *found->second.get();
   }
   if (!device_) {
-    return nullptr;
+    return invalid_sampler_;
   }
   auto desc = [[MTLSamplerDescriptor alloc] init];
   desc.minFilter = ToMTLSamplerMinMagFilter(descriptor.min_filter);
@@ -38,15 +37,14 @@ std::shared_ptr<const Sampler> SamplerLibraryMTL::GetSampler(
 
   auto mtl_sampler = [device_ newSamplerStateWithDescriptor:desc];
   if (!mtl_sampler) {
-    return nullptr;
+    return invalid_sampler_;
   }
   auto sampler =
-      std::shared_ptr<SamplerMTL>(new SamplerMTL(descriptor, mtl_sampler));
+      std::unique_ptr<SamplerMTL>(new SamplerMTL(descriptor, mtl_sampler));
   if (!sampler->IsValid()) {
-    return nullptr;
+    return invalid_sampler_;
   }
-  samplers_[descriptor] = sampler;
-  return sampler;
+  return *(samplers_[descriptor] = std::move(sampler)).get();
 }
 
 }  // namespace impeller

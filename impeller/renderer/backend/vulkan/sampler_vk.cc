@@ -18,11 +18,6 @@ vk::Sampler SamplerVK::GetSampler() const {
   return *sampler_;
 }
 
-const std::shared_ptr<SharedObjectVKT<vk::Sampler>>&
-SamplerVK::GetSharedSampler() const {
-  return sampler_;
-}
-
 bool SamplerVK::IsValid() const {
   return is_valid_;
 }

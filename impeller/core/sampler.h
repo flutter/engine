@@ -31,8 +31,19 @@ class Sampler {
   Sampler& operator=(const Sampler&) = delete;
 };
 
+/// @brief A sampler subclass to be returned in the result of a lost device
+//         or other failure to allocate a sampler object.
+class InvalidSampler : public Sampler {
+ public:
+  explicit InvalidSampler(SamplerDescriptor desc) : Sampler(std::move(desc)) {}
+
+  ~InvalidSampler() = default;
+
+  bool IsValid() const override { return false; }
+};
+
 using SamplerMap = std::unordered_map<SamplerDescriptor,
-                                      std::shared_ptr<const Sampler>,
+                                      std::unique_ptr<const Sampler>,
                                       ComparableHash<SamplerDescriptor>,
                                       ComparableEqual<SamplerDescriptor>>;
 

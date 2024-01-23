@@ -202,7 +202,7 @@ class MockCapabilities : public Capabilities {
 
 class MockSamplerLibrary : public SamplerLibrary {
  public:
-  MOCK_METHOD(std::shared_ptr<const Sampler>,
+  MOCK_METHOD(const Sampler&,
               GetSampler,
               (SamplerDescriptor descriptor),
               (override));

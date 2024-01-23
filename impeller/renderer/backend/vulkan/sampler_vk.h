@@ -24,8 +24,6 @@ class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
 
   vk::Sampler GetSampler() const;
 
-  const std::shared_ptr<SharedObjectVKT<vk::Sampler>>& GetSharedSampler() const;
-
  private:
   friend SamplerLibraryVK;
 

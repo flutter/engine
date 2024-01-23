@@ -14,8 +14,13 @@ class SamplerLibrary {
  public:
   virtual ~SamplerLibrary();
 
-  virtual std::shared_ptr<const Sampler> GetSampler(
-      SamplerDescriptor descriptor) = 0;
+  /// @brief Retrieve a backend specific sampler object for the given sampler
+  ///        descriptor.
+  ///
+  ///        The sampler library implementations must cache this sampler object
+  ///        and guarantee that the reference will continue to be valid
+  ///        throughout the lifetime of the engine.
+  virtual const Sampler& GetSampler(SamplerDescriptor descriptor) = 0;
 
  protected:
   SamplerLibrary();

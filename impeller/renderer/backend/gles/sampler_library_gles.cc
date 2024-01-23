@@ -19,23 +19,23 @@ SamplerLibraryGLES::SamplerLibraryGLES(bool supports_decal_sampler_address_mode)
 SamplerLibraryGLES::~SamplerLibraryGLES() = default;
 
 // |SamplerLibrary|
-std::shared_ptr<const Sampler> SamplerLibraryGLES::GetSampler(
-    SamplerDescriptor descriptor) {
+const Sampler& SamplerLibraryGLES::GetSampler(SamplerDescriptor descriptor) {
   if (!supports_decal_sampler_address_mode_ &&
       (descriptor.width_address_mode == SamplerAddressMode::kDecal ||
        descriptor.height_address_mode == SamplerAddressMode::kDecal ||
        descriptor.depth_address_mode == SamplerAddressMode::kDecal)) {
     VALIDATION_LOG << "SamplerAddressMode::kDecal is not supported by the "
                       "current OpenGLES backend.";
-    return nullptr;
+    return invalid_sampler_;
   }
 
   auto found = samplers_.find(descriptor);
   if (found != samplers_.end()) {
-    return found->second;
+    return *found->second.get();
   }
-  return samplers_[descriptor] =
-             std::shared_ptr<SamplerGLES>(new SamplerGLES(descriptor));
+  return *(samplers_[descriptor] =
+               std::unique_ptr<SamplerGLES>(new SamplerGLES(descriptor)))
+              .get();
 }
 
 }  // namespace impeller

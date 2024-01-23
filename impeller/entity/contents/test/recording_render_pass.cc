@@ -108,7 +108,7 @@ bool RecordingRenderPass::BindResource(ShaderStage stage,
                                        const SampledImageSlot& slot,
                                        const ShaderMetadata& metadata,
                                        std::shared_ptr<const Texture> texture,
-                                       std::shared_ptr<const Sampler> sampler) {
+                                       const Sampler& sampler) {
   pending_.BindResource(stage, type, slot, metadata, texture, sampler);
   return delegate_->BindResource(stage, type, slot, metadata, texture, sampler);
 }

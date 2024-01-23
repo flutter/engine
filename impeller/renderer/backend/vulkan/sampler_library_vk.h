@@ -23,13 +23,13 @@ class SamplerLibraryVK final
   friend class ContextVK;
 
   std::weak_ptr<DeviceHolder> device_holder_;
+  InvalidSampler invalid_sampler_ = InvalidSampler{{}};
   SamplerMap samplers_;
 
   explicit SamplerLibraryVK(const std::weak_ptr<DeviceHolder>& device_holder);
 
   // |SamplerLibrary|
-  std::shared_ptr<const Sampler> GetSampler(
-      SamplerDescriptor descriptor) override;
+  const Sampler& GetSampler(SamplerDescriptor descriptor) override;
 
   SamplerLibraryVK(const SamplerLibraryVK&) = delete;
 

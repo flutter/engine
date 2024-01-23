@@ -389,8 +389,8 @@ bool RenderPassMTL::BindResource(ShaderStage stage,
                                  const SampledImageSlot& slot,
                                  const ShaderMetadata& metadata,
                                  std::shared_ptr<const Texture> texture,
-                                 std::shared_ptr<const Sampler> sampler) {
-  return Bind(pass_bindings_, stage, slot.texture_index, *sampler, *texture);
+                                 const Sampler& sampler) {
+  return Bind(pass_bindings_, stage, slot.texture_index, sampler, *texture);
 }
 
 }  // namespace impeller
