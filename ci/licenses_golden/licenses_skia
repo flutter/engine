@@ -1,9 +1,14 @@
-Signature: 70ee7913bc3418bef9f60de46ba0c100
+Signature: 9dafd7a2221bc9a612a87195d57f8a79
 
 ====================================================================================================
 LIBRARY: etc1
 LIBRARY: vulkan
 ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_platform.h
+ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h264std.h
+ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h264std_decode.h
+ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h265std.h
+ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h265std_decode.h
+ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codecs_common.h
 ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vulkan.h
 ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vulkan_android.h
 ORIGIN: Apache-2.0 referenced by ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vulkan_core.h
@@ -15,6 +20,11 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutte
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/skia/third_party/etc1/etc1.h
 TYPE: LicenseType.apache
 FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_platform.h
+FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h264std.h
+FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h264std_decode.h
+FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h265std.h
+FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codec_h265std_decode.h
+FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vk_video/vulkan_video_codecs_common.h
 FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vulkan.h
 FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vulkan_android.h
 FILE: ../../../flutter/third_party/skia/include/third_party/vulkan/vulkan/vulkan_core.h
@@ -5149,6 +5159,7 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/Vulka
 ORIGIN: ../../../flutter/third_party/skia/src/image/SkImage_Lazy.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/opts/SkBitmapProcState_opts.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/opts/SkOpts_hsw.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/opts/SkOpts_skx.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/opts/SkRasterPipeline_opts.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pathops/SkPathOpsAsWinding.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/pathops/SkPathOpsTCurve.h + ../../../flutter/third_party/skia/LICENSE
@@ -5363,6 +5374,7 @@ FILE: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanM
 FILE: ../../../flutter/third_party/skia/src/image/SkImage_Lazy.h
 FILE: ../../../flutter/third_party/skia/src/opts/SkBitmapProcState_opts.h
 FILE: ../../../flutter/third_party/skia/src/opts/SkOpts_hsw.cpp
+FILE: ../../../flutter/third_party/skia/src/opts/SkOpts_skx.cpp
 FILE: ../../../flutter/third_party/skia/src/opts/SkRasterPipeline_opts.h
 FILE: ../../../flutter/third_party/skia/src/pathops/SkPathOpsAsWinding.cpp
 FILE: ../../../flutter/third_party/skia/src/pathops/SkPathOpsTCurve.h
