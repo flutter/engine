@@ -1,6 +1,7 @@
 package io.flutter.plugin.editing;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
@@ -1310,7 +1311,7 @@ public class TextInputPluginTest {
     InputConnection connection =
         textInputPlugin.createInputConnection(
             testView, mock(KeyboardManager.class), new EditorInfo());
-    assertEquals(connection, null);
+    assertNotNull(connection);
   }
 
   @Test
