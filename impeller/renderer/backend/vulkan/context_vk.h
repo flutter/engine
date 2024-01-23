@@ -53,11 +53,11 @@ class PendingQueueSubmit {
     callbacks_.push_back(std::move(callback));
   }
 
-  std::pair<std::vector<std::shared_ptr<CommandEncoderVK>>,
-            std::vector<SubmitCallback>>
-  TakeEncoders() {
-    return std::make_pair(std::move(encoders_), std::move(callbacks_));
+  std::vector<std::shared_ptr<CommandEncoderVK>> TakeEncoders() {
+    return std::move(encoders_);
   }
+
+  std::vector<SubmitCallback> TakeCallbacks() { return std::move(callbacks_); }
 
  private:
   std::vector<std::shared_ptr<CommandEncoderVK>> encoders_;

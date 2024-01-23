@@ -572,49 +572,51 @@ std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
 }
 
 fml::Status ContextVK::FlushPendingTasks() const {
-  auto bundle = GetPendingQueueSubmit()->TakeEncoders();
-  if (bundle.first.empty()) {
+  auto encoders = GetPendingQueueSubmit()->TakeEncoders();
+  auto callbacks = GetPendingQueueSubmit()->TakeCallbacks();
+  if (encoders.empty()) {
     return fml::Status();
   }
 
   auto [fence_result, fence] = GetDevice().createFenceUnique({});
   if (fence_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to create fence: " << vk::to_string(fence_result);
-    for (auto& callback : bundle.second) {
+    for (auto& callback : callbacks) {
       callback(false);
     }
     return fml::Status(fml::StatusCode::kUnknown, "Failed to create fence.");
   }
 
   vk::SubmitInfo submit_info;
-  std::vector<vk::CommandBuffer> buffers(bundle.first.size());
-  for (auto i = 0u; i < bundle.first.size(); i++) {
-    buffers[i] = bundle.first[i]->GetCommandBuffer();
+  std::vector<vk::CommandBuffer> buffers(encoders.size());
+  for (auto i = 0u; i < encoders.size(); i++) {
+    buffers[i] = encoders[i]->GetCommandBuffer();
   }
   submit_info.setCommandBuffers(buffers);
 
   auto status = GetGraphicsQueue()->Submit(submit_info, *fence);
   if (status != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to submit queue: " << vk::to_string(status);
-    for (auto& callback : bundle.second) {
+    for (auto& callback : callbacks) {
       callback(false);
     }
     return fml::Status(fml::StatusCode::kUnknown, "Failed to submit queue.");
   }
 
   bool created_fence = GetFenceWaiter()->AddFence(
-      std::move(fence), [bundle = std::move(bundle)]() mutable {
+      std::move(fence), [encoders = std::move(encoders),
+                         callbacks = std::move(callbacks)]() mutable {
         // Ensure tracked objects are destructed before calling any final
         // callbacks.
-        for (auto& encoder : bundle.first) {
+        for (auto& encoder : encoders) {
           encoder.reset();
         }
-        for (auto& callback : bundle.second) {
+        for (auto& callback : callbacks) {
           callback(true);
         }
       });
   if (!created_fence) {
-    for (auto& callback : bundle.second) {
+    for (auto& callback : callbacks) {
       callback(false);
     }
     return fml::Status(fml::StatusCode::kUnknown, "Failed to add fence.");
