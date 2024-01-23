@@ -206,6 +206,7 @@ executable("flutter_windows_unittests") {
     "settings_plugin_unittests.cc",
     "system_utils_unittests.cc",
     "task_runner_unittests.cc",
+    "testing/egl/mock_context.h",
     "testing/egl/mock_manager.h",
     "testing/egl/mock_proc_table.h",
     "testing/engine_modifier.h",
