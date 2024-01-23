@@ -133,20 +133,21 @@ fml::Status ComputePassMTL::Compute(const ISize& grid_size) {
   auto width = grid_size.width;
   auto height = grid_size.height;
 
-  auto maxTotalThreadsPerThreadgroup = static_cast<int64_t>(
+  auto max_total_threads_per_threadgroup = static_cast<int64_t>(
       pass_bindings_cache_.GetPipeline().maxTotalThreadsPerThreadgroup);
 
   // Special case for linear processing.
   if (height == 1) {
-    int64_t threadGroups = std::max(
+    int64_t thread_groups = std::max(
         static_cast<int64_t>(
-            std::ceil(width * 1.0 / maxTotalThreadsPerThreadgroup * 1.0)),
+            std::ceil(width * 1.0 / max_total_threads_per_threadgroup * 1.0)),
         1LL);
     [encoder_
-         dispatchThreadgroups:MTLSizeMake(threadGroups, 1, 1)
-        threadsPerThreadgroup:MTLSizeMake(maxTotalThreadsPerThreadgroup, 1, 1)];
+         dispatchThreadgroups:MTLSizeMake(thread_groups, 1, 1)
+        threadsPerThreadgroup:MTLSizeMake(max_total_threads_per_threadgroup, 1,
+                                          1)];
   } else {
-    while (width * height > maxTotalThreadsPerThreadgroup) {
+    while (width * height > max_total_threads_per_threadgroup) {
       width = std::max(1LL, width / 2);
       height = std::max(1LL, height / 2);
     }

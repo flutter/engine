@@ -4,14 +4,11 @@
 
 #include "impeller/renderer/backend/vulkan/compute_pass_vk.h"
 
-#include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/compute_pipeline_vk.h"
-#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
@@ -22,7 +19,7 @@ ComputePassVK::ComputePassVK(std::shared_ptr<const Context> context,
       command_buffer_(std::move(command_buffer)) {
   // TOOD(dnfield): This should be moved to caps. But for now keeping this
   // in parallel with Metal.
-  max_wg_size_ = ContextVK::Cast(GetContext())
+  max_wg_size_ = ContextVK::Cast(*context_)
                      .GetPhysicalDevice()
                      .getProperties()
                      .limits.maxComputeWorkGroupSize;
@@ -73,6 +70,11 @@ void ComputePassVK::SetPipeline(
 // |ComputePass|
 fml::Status ComputePassVK::Compute(const ISize& grid_size) {
   if (grid_size.IsEmpty() || !pipeline_valid_) {
+    bound_image_offset_ = 0u;
+    bound_buffer_offset_ = 0u;
+    descriptor_write_offset_ = 0u;
+    has_label_ = false;
+    pipeline_valid_ = false;
     return fml::Status(fml::StatusCode::kCancelled,
                        "Invalid pipeline or empty grid.");
   }
@@ -124,11 +126,11 @@ fml::Status ComputePassVK::Compute(const ISize& grid_size) {
   has_label_ = false;
 #endif  // IMPELLER_DEBUG
 
-  size_t bound_image_offset_ = 0u;
-  size_t bound_buffer_offset_ = 0u;
-  size_t descriptor_write_offset_ = 0u;
-  bool has_label_ = false;
-  bool pipeline_valid_ = false;
+  bound_image_offset_ = 0u;
+  bound_buffer_offset_ = 0u;
+  descriptor_write_offset_ = 0u;
+  has_label_ = false;
+  pipeline_valid_ = false;
 
   return fml::Status();
 }
@@ -149,7 +151,7 @@ bool ComputePassVK::BindResource(ShaderStage stage,
                                  const ShaderMetadata& metadata,
                                  std::shared_ptr<const Texture> texture,
                                  std::shared_ptr<const Sampler> sampler) {
-  if (bound_buffer_offset_ >= kMaxBindings) {
+  if (bound_image_offset_ >= kMaxBindings) {
     return false;
   }
   const TextureVK& texture_vk = TextureVK::Cast(*texture);

@@ -38,11 +38,14 @@ class ComputePass : public ResourceBinder {
   /// @brief Add a barrier that ensures all previously encoded commands have
   ///        finished reading or writing to the provided buffer before
   ///        subsequent commands will access it.
+  ///
+  ///        This only handles read after write hazards.
   virtual void AddBufferMemoryBarrier(const BufferView& view) = 0;
 
   /// @brief Add a barrier that ensures all previously encoded commands have
   ///        finished reading or writing to the provided texture before
   ///        subsequent commands will access it.
+  ///        This only handles read after write hazards.
   virtual void AddTextureMemoryBarrier(
       const std::shared_ptr<const Texture>& texture) = 0;
 

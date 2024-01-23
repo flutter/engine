@@ -8,6 +8,7 @@
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/metal/compute_pass_bindings_cache_mtl.h"
 #include "impeller/renderer/compute_pass.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 
@@ -109,7 +110,8 @@ class ComputePassMTL final : public ComputePass {
 
   id<MTLCommandBuffer> buffer_ = nil;
   id<MTLComputeCommandEncoder> encoder_ = nil;
-  ComputePassBindingsCache pass_bindings_cache_ = ComputePassBindingsCache();
+  ComputePassBindingsCacheMTL pass_bindings_cache_ =
+      ComputePassBindingsCacheMTL();
   bool is_valid_ = false;
   bool has_label_ = false;
 

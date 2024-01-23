@@ -35,7 +35,6 @@ class ComputePassVK final : public ComputePass {
   size_t descriptor_write_offset_ = 0u;
   bool has_label_ = false;
   bool pipeline_valid_ = false;
-  vk::Pipeline last_pipeline_;
   vk::DescriptorSet descriptor_set_ = {};
   vk::PipelineLayout pipeline_layout_ = {};
 
