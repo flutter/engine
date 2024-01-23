@@ -121,7 +121,10 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
 
   // Calculate UV-specific transform based on texture coverage and effect.
   // For example, if the texture is 100x100 and the effect transform is
-  // scaling by 2, then the UV transform should be scaling by 0.5.
+  // scaling by 0.2, texture_bounds.GetNormalizingTransform() will result in a
+  // Matrix that scales by 0.01, and then if the effect_transform is
+  // Matrix::MakeScale(Vector2{2, 2}), the resulting uv_transform will have x
+  // and y basis vectors with scale 0.02.
   auto uv_transform = texture_bounds.GetNormalizingTransform() *  //
                       effect_transform;
 
