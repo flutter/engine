@@ -110,6 +110,16 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
+
+bool ShouldTestHaveVulkanValidations() {
+  bool enable_vulkan_validations = false;
+  std::string test_name = GetTestName();
+  if (std::find(kVulkanValidationTests.begin(), kVulkanValidationTests.end(),
+                test_name) != kVulkanValidationTests.end()) {
+    enable_vulkan_validations = true;
+  }
+  return enable_vulkan_validations;
+}
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
@@ -149,13 +159,7 @@ void GoldenPlaygroundTest::SetUp() {
     return;
   }
 
-  bool enable_vulkan_validations = false;
-  std::string test_name = GetTestName();
-  if (std::find(kVulkanValidationTests.begin(), kVulkanValidationTests.end(),
-                test_name) != kVulkanValidationTests.end()) {
-    enable_vulkan_validations = true;
-  }
-
+  bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
   if (GetParam() == PlaygroundBackend::kMetal) {
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
@@ -173,6 +177,7 @@ void GoldenPlaygroundTest::SetUp() {
     }
   }
 
+  std::string test_name = GetTestName();
   if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
       kSkipTests.end()) {
     GTEST_SKIP_(
@@ -247,7 +252,7 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
     /// On Metal we create a context for each test.
     return GetContext();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    bool enable_vulkan_validations = false;
+    bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
     FML_CHECK(!pimpl_->test_vulkan_playground)
         << "We don't support creating multiple contexts for one test";
     pimpl_->test_vulkan_playground =
