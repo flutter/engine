@@ -30,14 +30,11 @@ platform_properties:
           {"dependency": "open_jdk", "version": "version:17"}
         ]
       device_type: none
-      cpu: x86
       os: Mac-13
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
-    dimensions:
-      mac_model: "Macmini8,1|Macmini9,1"
   windows:
     properties:
       # CIPD flutter/java/openjdk/$platform
@@ -118,6 +115,7 @@ targets:
     timeout: 60
 
   - name: Mac builder_cache
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/cache
@@ -129,6 +127,11 @@ targets:
         [
           "builder",
           "git"
+        ]
+      ignore_cache_paths: >-
+        [
+          "builder/src/flutter/prebuilts/SDKs",
+          "builder/src/flutter/prebuilts/Library"
         ]
       gclient_variables: >-
         {
@@ -381,7 +384,7 @@ targets:
         ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
     drone_dimensions:
       - os=Mac-13
@@ -402,7 +405,7 @@ targets:
       config_name: mac_ios_engine
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
     drone_dimensions:
       - os=Mac-13

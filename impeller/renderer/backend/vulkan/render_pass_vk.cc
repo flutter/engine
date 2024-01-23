@@ -14,7 +14,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
-#include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -34,6 +33,8 @@ namespace impeller {
 // Warning: if any of the constant values or layouts are changed in the
 // framebuffer fetch shader, then this input binding may need to be
 // manually changed.
+//
+// See: impeller/entity/shaders/blending/framebuffer_blend.frag
 static constexpr size_t kMagicSubpassInputBinding = 64;
 
 static vk::ClearColorValue VKClearValueFromColor(Color color) {
@@ -194,7 +195,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     }
   }
 
-  if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
+  auto depth = render_target_.GetDepthAttachment();
+  if (depth.has_value()) {
     depth_stencil_ref = vk::AttachmentReference{
         static_cast<uint32_t>(attachments.size()),
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
@@ -211,8 +213,14 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         vk::ImageLayout::eDepthStencilAttachmentOptimal};
     attachments.emplace_back(CreateAttachmentDescription(
         stencil.value(), &Attachment::texture, supports_framebuffer_fetch));
-    SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
-                     &Attachment::texture);
+
+    // If the depth and stencil are stored in the same texture, then we've
+    // already inserted a memory barrier to transition this texture as part of
+    // the depth branch above.
+    if (depth.has_value() && depth->texture != stencil->texture) {
+      SetTextureLayout(stencil.value(), attachments.back(), command_buffer,
+                       &Attachment::texture);
+    }
   }
 
   vk::SubpassDescription subpass_desc;
@@ -242,7 +250,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     VALIDATION_LOG << "Failed to create render pass: " << vk::to_string(result);
     return {};
   }
-  context.SetDebugName(pass.get(), debug_label_.c_str());
   return MakeSharedVK(std::move(pass));
 }
 
@@ -263,23 +270,23 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  SharedHandleVK<vk::RenderPass> render_pass = CreateVKRenderPass(
+  render_pass_ = CreateVKRenderPass(
       vk_context, command_buffer_,
       vk_context.GetCapabilities()->SupportsFramebufferFetch());
-  if (!render_pass) {
+  if (!render_pass_) {
     VALIDATION_LOG << "Could not create renderpass.";
     is_valid_ = false;
     return;
   }
 
-  auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass);
+  auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass_);
   if (!framebuffer) {
     VALIDATION_LOG << "Could not create framebuffer.";
     is_valid_ = false;
     return;
   }
 
-  if (!encoder->Track(framebuffer) || !encoder->Track(render_pass)) {
+  if (!encoder->Track(framebuffer) || !encoder->Track(render_pass_)) {
     is_valid_ = false;
     return;
   }
@@ -287,7 +294,7 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
   auto clear_values = GetVKClearValues(render_target_);
 
   vk::RenderPassBeginInfo pass_info;
-  pass_info.renderPass = *render_pass;
+  pass_info.renderPass = *render_pass_;
   pass_info.framebuffer = *framebuffer;
   pass_info.renderArea.extent.width = static_cast<uint32_t>(target_size.width);
   pass_info.renderArea.extent.height =
@@ -328,7 +335,10 @@ bool RenderPassVK::IsValid() const {
 }
 
 void RenderPassVK::OnSetLabel(std::string label) {
-  debug_label_ = std::move(label);
+#ifdef IMPELLER_DEBUG
+  ContextVK::Cast(*context_).SetDebugName(render_pass_->Get(),
+                                          std::string(label).c_str());
+#endif  // IMPELLER_DEBUG
 }
 
 SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
@@ -419,8 +429,7 @@ void RenderPassVK::SetPipeline(
 // |RenderPass|
 void RenderPassVK::SetCommandLabel(std::string_view label) {
 #ifdef IMPELLER_DEBUG
-  std::string label_copy(label);
-  command_buffer_->GetEncoder()->PushDebugGroup(label_copy.c_str());
+  command_buffer_->GetEncoder()->PushDebugGroup(label);
   has_label_ = true;
 #endif  // IMPELLER_DEBUG
 }
@@ -464,7 +473,7 @@ void RenderPassVK::SetInstanceCount(size_t count) {
 // |RenderPass|
 bool RenderPassVK::SetVertexBuffer(VertexBuffer buffer) {
   vertex_count_ = buffer.vertex_count;
-  if (buffer.index_type == IndexType::kUnknown) {
+  if (buffer.index_type == IndexType::kUnknown || !buffer.vertex_buffer) {
     return false;
   }
 

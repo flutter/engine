@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_RENDER_PASS_VK_H_
 
 #include "impeller/core/buffer_view.h"
-#include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
@@ -27,6 +26,7 @@ class RenderPassVK final : public RenderPass {
 
   std::shared_ptr<CommandBufferVK> command_buffer_;
   std::string debug_label_;
+  SharedHandleVK<vk::RenderPass> render_pass_;
   bool is_valid_ = false;
 
   vk::CommandBuffer command_buffer_vk_;

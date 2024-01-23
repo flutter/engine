@@ -22,6 +22,7 @@
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
@@ -2741,7 +2742,8 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
   auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
-  auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
@@ -3556,6 +3558,8 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
       .WillRepeatedly(::testing::Return(false));
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              GetDefaultDepthStencilFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsImplicitResolvingMSAA);
@@ -3757,20 +3761,13 @@ TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
   canvas.Restore();
 
   Picture picture = canvas.EndRecordingAsPicture();
-
-  int32_t max_mip_count = 0;
-  picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
-    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      max_mip_count =
-          std::max(max_mip_count, subpass->get()->GetRequiredMipCount());
-    }
-    return true;
-  });
-
-  EXPECT_EQ(1, max_mip_count);
+  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
 }
 
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
+
   Canvas canvas;
   canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
   canvas.SaveLayer({}, std::nullopt,
@@ -3791,10 +3788,14 @@ TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
     max_mip_count =
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
-  EXPECT_EQ(max_mip_count, 1lu);
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
+  fml::testing::LogCapture log_capture;
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
+
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Wheat()});
   canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
@@ -3817,7 +3818,100 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
     max_mip_count =
         std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
   }
-  EXPECT_EQ(max_mip_count, 1lu);
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+  // The log is FML_DLOG, so only check in debug builds.
+#ifndef NDEBUG
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
+#endif
+}
+
+TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kMetal ? 4 : 1;
+  fml::testing::LogCapture log_capture;
+  Canvas canvas;
+  canvas.SaveLayer(
+      {.image_filter = ImageFilter::MakeBlur(Sigma(30), Sigma(30),
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp)});
+  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {1024, 768});
+
+  size_t max_mip_count = 0;
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    max_mip_count =
+        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
+  }
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+  // The log is FML_DLOG, so only check in debug builds.
+#ifndef NDEBUG
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
+#endif
+}
+
+TEST_P(AiksTest, ImageColorSourceEffectTransform) {
+  // Compare with https://fiddle.skia.org/c/6cdc5aefb291fda3833b806ca347a885
+
+  Canvas canvas;
+  auto texture = CreateTextureForFixture("monkey.png");
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  // Translation
+  {
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix::MakeTranslation({50, 50}));
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
+  }
+
+  // Rotation/skew
+  {
+    canvas.Save();
+    canvas.Rotate(Degrees(45));
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix(1, -1, 0, 0,  //
+               1, 1, 0, 0,   //
+               0, 0, 1, 0,   //
+               0, 0, 0, 1)   //
+    );
+    canvas.DrawRect(Rect::MakeLTRB(100, 0, 200, 100), paint);
+    canvas.Restore();
+  }
+
+  // Scale
+  {
+    canvas.Translate(Vector2(100, 0));
+    canvas.Scale(Vector2(100, 100));
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix::MakeScale(Vector2(0.005, 0.005)));
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 1, 1), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 }  // namespace testing
