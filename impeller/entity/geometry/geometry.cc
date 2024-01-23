@@ -112,7 +112,7 @@ ComputeUVGeometryCPU(
 }
 
 GeometryResult ComputeUVGeometryForRect(Rect source_rect,
-                                        Rect texture_coverage,
+                                        Rect texture_bounds,
                                         Matrix effect_transform,
                                         const ContentContext& renderer,
                                         const Entity& entity,
@@ -122,7 +122,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
   // Calculate UV-specific transform based on texture coverage and effect.
   // For example, if the texture is 100x100 and the effect transform is
   // scaling by 2, then the UV transform should be scaling by 0.5.
-  auto uv_transform = texture_coverage.GetNormalizingTransform() *  //
+  auto uv_transform = texture_bounds.GetNormalizingTransform() *  //
                       effect_transform;
 
   // Allocate space for vertex and UV data (4 vertices)
@@ -131,7 +131,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
   // 2: position
   // 3: UV
   // etc.
-  std::vector<Point> data(8);
+  Point data[8];
 
   // Get the raw points from the rect and transform them into UV space.
   auto points = source_rect.GetPoints();
@@ -148,7 +148,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
       .vertex_buffer =
           {
               .vertex_buffer = host_buffer.Emplace(
-                  /*buffer=*/data.data(),
+                  /*buffer=*/data,
                   /*length=*/16 * sizeof(float),
                   /*align=*/alignof(float)),
               .vertex_count = 4,
