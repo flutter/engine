@@ -8,6 +8,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/metal_screenshot.h"
+#include "flutter/impeller/golden_tests/screenshotter.h"
 #include "flutter/impeller/playground/playground_impl.h"
 
 namespace impeller {
@@ -15,17 +16,17 @@ namespace testing {
 
 /// Converts `Picture`s and `DisplayList`s to `MetalScreenshot`s with the
 /// playground backend.
-class MetalScreenshotter {
+class MetalScreenshotter : public Screenshotter {
  public:
   MetalScreenshotter();
 
-  std::unique_ptr<MetalScreenshot> MakeScreenshot(AiksContext& aiks_context,
-                                                  const Picture& picture,
-                                                  const ISize& size = {300,
-                                                                       300},
-                                                  bool scale_content = true);
+  std::unique_ptr<Screenshot> MakeScreenshot(
+      AiksContext& aiks_context,
+      const Picture& picture,
+      const ISize& size = {300, 300},
+      bool scale_content = true) override;
 
-  PlaygroundImpl& GetPlayground() { return *playground_; }
+  PlaygroundImpl& GetPlayground() override { return *playground_; }
 
  private:
   std::unique_ptr<PlaygroundImpl> playground_;

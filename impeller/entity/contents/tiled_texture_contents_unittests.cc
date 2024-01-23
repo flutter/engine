@@ -6,6 +6,7 @@
 
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/entity/contents/test/recording_render_pass.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity_playground.h"
 #include "impeller/playground/playground_test.h"
@@ -33,15 +34,22 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
   auto render_target = RenderTarget::CreateOffscreenMSAA(
       *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100});
+      *GetContentContext()->GetRenderTargetCache(), {100, 100},
+      /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
+  auto recording_pass = std::make_shared<RecordingRenderPass>(
+      render_pass, GetContext(), render_target);
 
-  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
-  const std::vector<Command>& commands = render_pass->GetCommands();
+  ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *recording_pass));
+  const std::vector<Command>& commands = recording_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
   ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
                "TextureFill Pipeline V#1");
+
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    recording_pass->EncodeCommands();
+  }
 }
 
 // GL_OES_EGL_image_external isn't supported on MacOS hosts.
@@ -68,7 +76,8 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
   auto render_target = RenderTarget::CreateOffscreenMSAA(
       *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100});
+      *GetContentContext()->GetRenderTargetCache(), {100, 100},
+      /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
 
   ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));

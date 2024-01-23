@@ -28,7 +28,7 @@ RenderPass::RenderPass()
 
 RenderPass::~RenderPass() = default;
 
-const std::weak_ptr<const impeller::Context>& RenderPass::GetContext() const {
+const std::shared_ptr<const impeller::Context>& RenderPass::GetContext() const {
   return render_pass_->GetContext();
 }
 
@@ -115,7 +115,7 @@ RenderPass::GetOrCreatePipeline() {
     }
   }
 
-  auto& context = *GetContext().lock();
+  auto& context = *GetContext();
 
   render_pipeline_->BindToPipelineDescriptor(*context.GetShaderLibrary(),
                                              pipeline_desc);
@@ -137,7 +137,44 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
 
 bool RenderPass::Draw() {
   impeller::Command result = ProvisionRasterCommand();
-  return render_pass_->AddCommand(std::move(result));
+#ifdef IMPELLER_DEBUG
+  render_pass_->SetCommandLabel(result.label);
+#endif  // IMPELLER_DEBUG
+  render_pass_->SetPipeline(result.pipeline);
+  render_pass_->SetStencilReference(result.stencil_reference);
+  render_pass_->SetBaseVertex(result.base_vertex);
+  if (result.viewport.has_value()) {
+    render_pass_->SetViewport(result.viewport.value());
+  }
+  if (result.scissor.has_value()) {
+    render_pass_->SetScissor(result.scissor.value());
+  }
+  render_pass_->SetVertexBuffer(result.vertex_buffer);
+  for (const auto& buffer : result.vertex_bindings.buffers) {
+    render_pass_->BindResource(impeller::ShaderStage::kVertex,
+                               impeller::DescriptorType::kUniformBuffer,
+                               buffer.slot, *buffer.view.GetMetadata(),
+                               buffer.view.resource);
+  }
+  for (const auto& texture : result.vertex_bindings.sampled_images) {
+    render_pass_->BindResource(impeller::ShaderStage::kVertex,
+                               impeller::DescriptorType::kSampledImage,
+                               texture.slot, *texture.texture.GetMetadata(),
+                               texture.texture.resource, texture.sampler);
+  }
+  for (const auto& buffer : result.fragment_bindings.buffers) {
+    render_pass_->BindResource(impeller::ShaderStage::kFragment,
+                               impeller::DescriptorType::kUniformBuffer,
+                               buffer.slot, *buffer.view.GetMetadata(),
+                               buffer.view.resource);
+  }
+  for (const auto& texture : result.fragment_bindings.sampled_images) {
+    render_pass_->BindResource(impeller::ShaderStage::kFragment,
+                               impeller::DescriptorType::kSampledImage,
+                               texture.slot, *texture.texture.GetMetadata(),
+                               texture.texture.resource, texture.sampler);
+  }
+  return render_pass_->Draw().ok();
 }
 
 }  // namespace gpu
@@ -344,7 +381,8 @@ static bool BindUniform(flutter::gpu::RenderPass* wrapper,
   }
 
   return command.BindResource(
-      shader->GetShaderStage(), uniform_struct->slot, uniform_struct->metadata,
+      shader->GetShaderStage(), impeller::DescriptorType::kUniformBuffer,
+      uniform_struct->slot, uniform_struct->metadata,
       impeller::BufferView{
           .buffer = buffer,
           .range = impeller::Range(offset_in_bytes, length_in_bytes),
@@ -410,12 +448,12 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(width_address_mode);
   sampler_desc.height_address_mode =
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
-  auto sampler = wrapper->GetContext().lock()->GetSamplerLibrary()->GetSampler(
-      sampler_desc);
+  auto sampler =
+      wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
 
-  return command.BindResource(shader->GetShaderStage(), *image_slot,
-                              impeller::ShaderMetadata{}, texture->GetTexture(),
-                              sampler);
+  return command.BindResource(
+      shader->GetShaderStage(), impeller::DescriptorType::kSampledImage,
+      *image_slot, impeller::ShaderMetadata{}, texture->GetTexture(), sampler);
 }
 
 void InternalFlutterGpu_RenderPass_ClearBindings(

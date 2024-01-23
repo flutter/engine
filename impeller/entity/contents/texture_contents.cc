@@ -111,6 +111,7 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
+  using FSStrictSrc = TextureFillStrictSrcFragmentShader;
   using FSExternal = TextureFillExternalFragmentShader;
 
   if (destination_rect_.IsEmpty() || source_rect_.IsEmpty() ||
@@ -121,11 +122,9 @@ bool TextureContents::Render(const ContentContext& renderer,
   bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
 
-  // Expand the source rect by half a texel, which aligns sampled texels to the
-  // pixel grid if the source rect is the same size as the destination rect.
+  auto source_rect = capture.AddRect("Source rect", source_rect_);
   auto texture_coords =
-      Rect::MakeSize(texture_->GetSize())
-          .Project(capture.AddRect("Source rect", source_rect_).Expand(0.5));
+      Rect::MakeSize(texture_->GetSize()).Project(source_rect);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
 
@@ -146,12 +145,13 @@ bool TextureContents::Render(const ContentContext& renderer,
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = capture.AddScalar("Alpha", GetOpacity());
 
-  Command cmd;
+#ifdef IMPELLER_DEBUG
   if (label_.empty()) {
-    DEBUG_COMMAND_INFO(cmd, "Texture Fill");
+    pass.SetCommandLabel("Texture Fill");
   } else {
-    DEBUG_COMMAND_INFO(cmd, "Texture Fill: " + label_);
+    pass.SetCommandLabel("Texture Fill: " + label_);
   }
+#endif  // IMPELLER_DEBUG
 
   auto pipeline_options = OptionsFromPassAndEntity(pass, entity);
   if (!stencil_enabled_) {
@@ -159,33 +159,51 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
 #ifdef IMPELLER_ENABLE_OPENGLES
   if (is_external_texture) {
-    cmd.pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
-  } else {
-    cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
+    pipeline = renderer.GetTextureExternalPipeline(pipeline_options);
   }
-#else
-  cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  if (!pipeline) {
+    if (strict_source_rect_enabled_) {
+      pipeline = renderer.GetTextureStrictSrcPipeline(pipeline_options);
+    } else {
+      pipeline = renderer.GetTexturePipeline(pipeline_options);
+    }
+  }
+  pass.SetPipeline(pipeline);
+
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
   if (is_external_texture) {
     FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
-        cmd, texture_,
+        pass, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  } else if (strict_source_rect_enabled_) {
+    // For a strict source rect, shrink the texture coordinate range by half a
+    // texel to ensure that linear filtering does not sample anything outside
+    // the source rect bounds.
+    auto strict_texture_coords =
+        Rect::MakeSize(texture_->GetSize()).Project(source_rect.Expand(-0.5));
+
+    FSStrictSrc::FragInfo frag_info;
+    frag_info.source_rect = Vector4(strict_texture_coords.GetLTRB());
+    FSStrictSrc::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+    FSStrictSrc::BindTextureSampler(
+        pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor_));
   } else {
     FS::BindTextureSampler(
-        cmd, texture_,
+        pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor_));
   }
-  pass.AddCommand(std::move(cmd));
-
-  return true;
+  return pass.Draw().ok();
 }
 
 void TextureContents::SetSourceRect(const Rect& source_rect) {
@@ -194,6 +212,14 @@ void TextureContents::SetSourceRect(const Rect& source_rect) {
 
 const Rect& TextureContents::GetSourceRect() const {
   return source_rect_;
+}
+
+void TextureContents::SetStrictSourceRect(bool strict) {
+  strict_source_rect_enabled_ = strict;
+}
+
+bool TextureContents::GetStrictSourceRect() const {
+  return strict_source_rect_enabled_;
 }
 
 void TextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {

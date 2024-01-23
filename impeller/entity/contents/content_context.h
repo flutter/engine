@@ -59,6 +59,7 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -130,6 +131,9 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using TextureStrictSrcPipeline =
+    RenderPipelineT<TextureFillVertexShader,
+                    TextureFillStrictSrcFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -281,7 +285,7 @@ struct ContentContextOptions {
   StencilOperation stencil_operation = StencilOperation::kKeep;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
-  bool has_stencil_attachment = true;
+  bool has_depth_stencil_attachments = true;
   bool wireframe = false;
   bool is_for_rrect_blur_clear = false;
 
@@ -297,7 +301,7 @@ struct ContentContextOptions {
 
       return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
              (o.wireframe ? 1llu : 0llu) << 1 |
-             (o.has_stencil_attachment ? 1llu : 0llu) << 2 |
+             (o.has_depth_stencil_attachments ? 1llu : 0llu) << 2 |
              // enums
              static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
              static_cast<uint64_t>(o.primitive_type) << 24 |
@@ -318,7 +322,8 @@ struct ContentContextOptions {
              lhs.primitive_type == rhs.primitive_type &&
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
-             lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
+             lhs.has_depth_stencil_attachments ==
+                 rhs.has_depth_stencil_attachments &&
              lhs.wireframe == rhs.wireframe &&
              lhs.is_for_rrect_blur_clear == rhs.is_for_rrect_blur_clear;
     }
@@ -416,6 +421,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureStrictSrcPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(texture_strict_src_pipelines_, opts);
   }
 
 #ifdef IMPELLER_ENABLE_OPENGLES
@@ -722,11 +732,11 @@ class ContentContext {
       const RenderTarget& subpass_target,
       const SubpassCallback& subpass_callback) const;
 
-  std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
+  const std::shared_ptr<LazyGlyphAtlas>& GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
   }
 
-  std::shared_ptr<RenderTargetAllocator> GetRenderTargetCache() const {
+  const std::shared_ptr<RenderTargetAllocator>& GetRenderTargetCache() const {
     return render_target_cache_;
   }
 
@@ -744,6 +754,11 @@ class ContentContext {
       const ContentContextOptions& options,
       const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
           create_callback) const;
+
+  /// Used by hot reload/hot restart to clear a cached pipeline from
+  /// GetCachedRuntimeEffectPipeline.
+  void ClearCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name) const;
 
   /// @brief Retrieve the currnent host buffer for transient storage.
   ///
@@ -866,6 +881,7 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<TextureStrictSrcPipeline> texture_strict_src_pipelines_;
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
   mutable Variants<TiledTextureExternalPipeline>
