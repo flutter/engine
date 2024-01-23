@@ -46,18 +46,19 @@ const char* EGLErrorToString(EGLint error) {
     case EGL_CONTEXT_LOST:
       return "Context Lost";
   }
+  FML_UNREACHABLE();
   return "Unknown";
 }
 
 }  // namespace
 
-void LogEGLError(std::string message) {
-  const auto error = ::eglGetError();
+void LogEGLError(std::string_view message) {
+  const EGLint error = ::eglGetError();
   return FML_LOG(ERROR) << "EGL Error: " << EGLErrorToString(error) << " ("
                         << error << ") " << message;
 }
 
-void LogEGLError(const char* file, int line) {
+void LogEGLError(std::string_view file, int line) {
   std::stringstream stream;
   stream << "in " << file << ":" << line;
   LogEGLError(stream.str());

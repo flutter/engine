@@ -5,16 +5,16 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_EGL_EGL_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_EGL_EGL_H_
 
-#include <string>
+#include <string_view>
 
 namespace flutter {
 namespace egl {
 
 /// Log the last EGL error with an error message.
-void LogEGLError(std::string message);
+void LogEGLError(std::string_view message);
 
 /// Log the last EGL error.
-void LogEGLError(const char* file, int line);
+void LogEGLError(std::string_view file, int line);
 
 #define WINDOWS_LOG_EGL_ERROR LogEGLError(__FILE__, __LINE__);
 
