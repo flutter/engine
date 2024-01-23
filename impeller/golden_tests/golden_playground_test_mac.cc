@@ -116,6 +116,7 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
+  std::shared_ptr<PlaygroundImpl> test_vulkan_playground;
   std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
@@ -245,6 +246,25 @@ RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
   return pimpl_->screenshotter->GetPlayground().GetContext();
+}
+
+std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    /// On Metal we create a context for each test.
+    return GetContext();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    bool enable_vulkan_validations = false;
+    FML_CHECK(!pimpl_->test_vulkan_playground)
+        << "We don't support creating multiple contexts for one test";
+    pimpl_->test_vulkan_playground =
+        MakeVulkanPlayground(enable_vulkan_validations);
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+        pimpl_->test_vulkan_playground.get());
+    return pimpl_->test_vulkan_playground->GetContext();
+  } else {
+    FML_CHECK(false);
+    return nullptr;
+  }
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {
