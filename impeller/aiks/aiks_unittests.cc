@@ -2742,8 +2742,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
   auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
-  auto runtime_stage =
-      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
