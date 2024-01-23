@@ -604,8 +604,7 @@ fml::Status ContextVK::FlushPendingTasks() const {
   }
 
   bool created_fence = GetFenceWaiter()->AddFence(
-      std::move(fence), [encoders = std::move(encoders),
-                         callbacks = std::move(callbacks)]() mutable {
+      std::move(fence), [encoders = std::move(encoders), callbacks]() mutable {
         // Ensure tracked objects are destructed before calling any final
         // callbacks.
         for (auto& encoder : encoders) {
