@@ -157,6 +157,11 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
   }
+  if (maybe_depth.has_value()) {
+    DepthAttachmentDescriptor depth = maybe_depth.value();
+    depth.depth_compare = CompareFunction::kAlways;
+    depth.depth_write_enabled = false;
+  }
 
   desc.SetPrimitiveType(primitive_type);
 
