@@ -6,8 +6,8 @@ part of dart.ui;
 class PlatformIsolate {
   static Future<Isolate> spawn<T>(
       void entryPoint(T message), T message,
-      {/*bool paused = false,  // TODO: Support these params.
-      bool errorsAreFatal = true,*/
+      {//bool paused = false,  // TODO: Support this.
+      bool errorsAreFatal = true,
       SendPort? onExit,
       SendPort? onError,
       String? debugName}) {
@@ -27,6 +27,7 @@ class PlatformIsolate {
         if (onExit != null) {
           isolate.addOnExitListener(onExit);
         }
+        isolate.setErrorsFatal(errorsAreFatal);
 
         isolateCompleter.complete(isolate);
         readyMessage.entryPointPort.send((entryPoint, message));
@@ -42,7 +43,7 @@ class PlatformIsolate {
       }
     };
     _spawn(_platformIsolateMain<T>, isolateReadyPort.sendPort,
-        debugName ?? "PlatformIsolate");
+        debugName ?? "PlatformIsolate", errorsAreFatal);
     return isolateCompleter.future;
   }
 
@@ -59,9 +60,9 @@ class PlatformIsolate {
         isolate.terminateCapability, entryPointPort.sendPort));
   }
 
-  @Native<Void Function(Handle, Handle, Handle)>(symbol: 'PlatformIsolateNativeApi::Spawn')
+  @Native<Void Function(Handle, Handle, Handle, Bool)>(symbol: 'PlatformIsolateNativeApi::Spawn')
   external static void _spawn(
-      Function entryPoint, SendPort isolateReadyPort, String debugName);
+      Function entryPoint, SendPort isolateReadyPort, String debugName, bool errorsAreFatal);
 
   static FutureOr<R> run<R>(FutureOr<R> computation(), {String? debugName}) {
     final resultCompleter = Completer<R>();

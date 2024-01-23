@@ -395,6 +395,7 @@ class DartIsolate : public UIDartState {
   Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
                                      Dart_Port isolate_ready_port_id,
                                      const char* debug_name,
+                                     bool errors_are_fatal,
                                      char** error) override;
 
  private:

@@ -286,6 +286,7 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                         Dart_Port isolate_ready_port_id,
                                         const char* debug_name,
+                                        bool errors_are_fatal,
                                         char** error) {
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
@@ -325,9 +326,13 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   // unhandled_exception_callback may terminate the app, because it is usually
   // only called for the root isolate (child isolates are managed by the VM and
   // have a different code path). So override it to simply log the error.
-  settings.unhandled_exception_callback =  [](const std::string& error,
+  settings.unhandled_exception_callback = [errors_are_fatal](
+                                              const std::string& error,
                                               const std::string& stack_trace) {
     FML_LOG(ERROR) << "Unhandled exception:\n" << error << "\n" << stack_trace;
+    if (errors_are_fatal) {
+      Dart_ShutdownIsolate();
+    }
     return true;
   };
 
@@ -390,11 +395,16 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_EnterIsolate(platform_isolate);
     Dart_EnterScope();
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
+    Dart_DeletePersistentHandle(entry_point_handle);
     Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
 
     tonic::DartInvoke(entry_point, {isolate_ready_port});
 
-    Dart_DeletePersistentHandle(entry_point_handle);
+    if (Dart_CurrentIsolate() == nullptr) {
+      // The platform isolate entry point caused the isolate to shut down.
+      return;
+    }
+
     Dart_ExitScope();
     Dart_ExitIsolate();  // Exit platform_isolate.
   });
@@ -1254,7 +1264,7 @@ void DartIsolate::OnShutdownCallback() {
 }
 
 void DartIsolate::MessageEpilogue(Dart_Handle result) {
-  if (is_platform_isolate_) {
+  if (is_platform_isolate_ && Dart_CurrentIsolate() != nullptr) {
     FML_DCHECK(Dart_CurrentIsolate() == isolate());
     FML_DCHECK(platform_isolate_pending_messages_ > 0);
     --platform_isolate_pending_messages_;

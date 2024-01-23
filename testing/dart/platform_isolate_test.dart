@@ -205,43 +205,93 @@ void main() {
     expect(await exitCompleter.future, true);
   });
 
-  /*test('PlatformIsolate.spawn, errors not fatal', () async {
-    // Same as the 'send and receive messages' test, but we also send strings,
-    // which cause the 'as int' expression in the platform isolate to throw. The
-    // test should still complete successfully because we set errorsAreFatal to
-    // false.
-    final completer = Completer();
+  test('PlatformIsolate.spawn, errors are fatal', () async {
+    // Send two messages to the platform isolate. The first causes it to throw
+    // an error, which causes the isolate to exit because errorsAreFatal is set
+    // to true. So the second should not be received.
+    bool secondMessageReplyReceived = false;
     final recvPort = RawReceivePort();
-    int sum = 0;
     recvPort.handler = (message) {
       if (message is SendPort) {
-        for (int i = 1; i <= 10; ++i) {
-          message.send(i);
-          message.send("Throw me: $i");
-        }
+        message.send("First");
+        message.send("Second");
       } else {
-        sum += message as int;
-        if (message == 1000) {
-          completer.complete();
-        }
+        secondMessageReplyReceived = true;
       }
     };
+
+    final exitCompleter = Completer();
+    final exitPort = RawReceivePort();
+    exitPort.handler = (_) {
+      exitCompleter.complete();
+      exitPort.close();
+    };
+
     final isolate = await PlatformIsolate.spawn(
         (port) {
           final recvPort = RawReceivePort();
           recvPort.handler = (message) {
-            port.send((message as int) * 100);
-            if (message == 10) {
+            if (message == "First") {
+              throw "Oh no!";
+            } else {
+              port.send("Reply to second message");
               recvPort.close();
             }
           };
           port.send(recvPort.sendPort);
         },
-        recvPort.sendPort);
-    await completer.future;
-    expect(sum, 5500);  // sum(1 to 10) * 100
+        recvPort.sendPort,
+        onExit: exitPort.sendPort,
+        errorsAreFatal: true);
+
+    await exitCompleter.future;
+    expect(secondMessageReplyReceived, false);
     recvPort.close();
-  });*/
+  });
+
+  test('PlatformIsolate.spawn, errors are not fatal', () async {
+    // Send two messages to the platform isolate. The first causes it to throw
+    // an error, but the isolate continues running because errorsAreFatal is set
+    // to false. So the second should be received.
+    bool secondMessageReplyReceived = false;
+    final recvPort = RawReceivePort();
+    recvPort.handler = (message) {
+      if (message is SendPort) {
+        message.send("First");
+        message.send("Second");
+      } else {
+        secondMessageReplyReceived = true;
+      }
+    };
+
+    final exitCompleter = Completer();
+    final exitPort = RawReceivePort();
+    exitPort.handler = (_) {
+      exitCompleter.complete();
+      exitPort.close();
+    };
+
+    final isolate = await PlatformIsolate.spawn(
+        (port) {
+          final recvPort = RawReceivePort();
+          recvPort.handler = (message) {
+            if (message == "First") {
+              throw "Oh no!";
+            } else {
+              port.send("Reply to second message");
+              recvPort.close();
+            }
+          };
+          port.send(recvPort.sendPort);
+        },
+        recvPort.sendPort,
+        onExit: exitPort.sendPort,
+        errorsAreFatal: false);
+
+    await exitCompleter.future;
+    expect(secondMessageReplyReceived, true);
+    recvPort.close();
+  });
 
   test('PlatformIsolate.spawn, root isolate only', () async {
     await Isolate.run(

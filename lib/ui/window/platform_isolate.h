@@ -13,7 +13,8 @@ class PlatformIsolateNativeApi {
  public:
   static void Spawn(Dart_Handle entry_point,
                     Dart_Handle isolate_ready_port,
-                    Dart_Handle debug_name);
+                    Dart_Handle debug_name,
+                    bool errors_are_fatal);
 
   // Using this function to verify we're on the platform thread for prototyping.
   // TODO: Need to figure out a better way of doing this.
