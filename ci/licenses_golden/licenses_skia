@@ -1,4 +1,4 @@
-Signature: e65c8018bc4c65a078d1e1e152961918
+Signature: c5c52ca7db3580aa40c36bf1962afa9d
 
 ====================================================================================================
 LIBRARY: etc1
@@ -396,16 +396,6 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
-FILE: ../../../flutter/third_party/skia/relnotes/BackendTextureFromView.md
-FILE: ../../../flutter/third_party/skia/relnotes/ForLoopScopes.md
-FILE: ../../../flutter/third_party/skia/relnotes/PDF_jpeg.md
-FILE: ../../../flutter/third_party/skia/relnotes/SwitchScopes.md
-FILE: ../../../flutter/third_party/skia/relnotes/Tick.md
-FILE: ../../../flutter/third_party/skia/relnotes/TopLevelShadowing.md
-FILE: ../../../flutter/third_party/skia/relnotes/font.md
-FILE: ../../../flutter/third_party/skia/relnotes/fontmgr.md
-FILE: ../../../flutter/third_party/skia/relnotes/grglmakeinterface.md
-FILE: ../../../flutter/third_party/skia/relnotes/skfontarguments_type.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
