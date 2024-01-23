@@ -25,7 +25,7 @@ static const std::unique_ptr<Sampler>& find_thing(
   if (it == map.end()) {
     return kNullSampler;
   } else {
-    return &it->second;
+    return it->second;
   }
 }
 
