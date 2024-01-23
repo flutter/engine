@@ -69,13 +69,12 @@ void ComputePassMTL::SetPipeline(
 }
 
 // |ComputePass|
-void ComputePassMTL::AddBufferMemoryBarrier(const BufferView& view) {
+void ComputePassMTL::AddBufferMemoryBarrier() {
   [encoder_ memoryBarrierWithScope:MTLBarrierScopeBuffers];
 }
 
 // |ComputePass|
-void ComputePassMTL::AddTextureMemoryBarrier(
-    const std::shared_ptr<const Texture>& texture) {
+void ComputePassMTL::AddTextureMemoryBarrier() {
   [encoder_ memoryBarrierWithScope:MTLBarrierScopeTextures];
 }
 

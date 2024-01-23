@@ -220,7 +220,7 @@ bool ComputePassVK::BindResource(size_t binding,
 // require some experimentation.
 
 // |ComputePass|
-void ComputePassVK::AddBufferMemoryBarrier(const BufferView& view) {
+void ComputePassVK::AddBufferMemoryBarrier() {
   vk::MemoryBarrier barrier;
   barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
   barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -231,8 +231,7 @@ void ComputePassVK::AddBufferMemoryBarrier(const BufferView& view) {
 }
 
 // |ComputePass|
-void ComputePassVK::AddTextureMemoryBarrier(
-    const std::shared_ptr<const Texture>& texture) {
+void ComputePassVK::AddTextureMemoryBarrier() {
   vk::MemoryBarrier barrier;
   barrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
   barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;

@@ -200,7 +200,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
     using UV = UvComputeShader;
 
-    compute_pass->AddBufferMemoryBarrier(geometry_buffer);
+    compute_pass->AddBufferMemoryBarrier();
     compute_pass->SetCommandLabel("UV Geometry");
     compute_pass->SetPipeline(renderer.GetUvComputePipeline());
 

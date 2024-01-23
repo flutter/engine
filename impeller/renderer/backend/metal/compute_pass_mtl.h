@@ -67,11 +67,10 @@ class ComputePassMTL final : public ComputePass {
   bool EncodeCommands() const override;
 
   // |ComputePass|
-  void AddBufferMemoryBarrier(const BufferView& view) override;
+  void AddBufferMemoryBarrier() override;
 
   // |ComputePass|
-  void AddTextureMemoryBarrier(
-      const std::shared_ptr<const Texture>& texture) override;
+  void AddTextureMemoryBarrier() override;
 
   ComputePassMTL(const ComputePassMTL&) = delete;
 

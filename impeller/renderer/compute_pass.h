@@ -35,19 +35,18 @@ class ComputePass : public ResourceBinder {
 
   virtual fml::Status Compute(const ISize& grid_size) = 0;
 
-  /// @brief Add a barrier that ensures all previously encoded commands have
-  ///        finished reading or writing to the provided buffer before
-  ///        subsequent commands will access it.
+  /// @brief Ensures all previously encoded commands have finished reading or
+  ///        writing to any buffer before subsequent commands will access it.
   ///
   ///        This only handles read after write hazards.
-  virtual void AddBufferMemoryBarrier(const BufferView& view) = 0;
+  virtual void AddBufferMemoryBarrier() = 0;
 
   /// @brief Add a barrier that ensures all previously encoded commands have
-  ///        finished reading or writing to the provided texture before
-  ///        subsequent commands will access it.
+  ///        finished reading or writing to any textures subsequent commands
+  ///        will access it.
+  ///
   ///        This only handles read after write hazards.
-  virtual void AddTextureMemoryBarrier(
-      const std::shared_ptr<const Texture>& texture) = 0;
+  virtual void AddTextureMemoryBarrier() = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
