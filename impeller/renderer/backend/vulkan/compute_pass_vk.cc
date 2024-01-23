@@ -216,8 +216,8 @@ bool ComputePassVK::BindResource(size_t binding,
 // Note:
 // https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples
 // Seems to suggest that anything more finely grained than a global memory
-// barrier is likely to be ignored. Confirming this on mobile devices will
-// require some experimentation.
+// barrier is likely to be weakened into a global barrier. Confirming this on
+// mobile devices will require some experimentation.
 
 // |ComputePass|
 void ComputePassVK::AddBufferMemoryBarrier() {
