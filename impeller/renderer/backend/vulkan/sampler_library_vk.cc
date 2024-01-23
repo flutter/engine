@@ -16,6 +16,19 @@ SamplerLibraryVK::SamplerLibraryVK(
 
 SamplerLibraryVK::~SamplerLibraryVK() = default;
 
+static const std::unique_ptr<Sampler> kNullSampler = nullptr;
+
+static const std::unique_ptr<Sampler>& find_thing(
+    const SamplerMap& map,
+    const SamplerDescriptor& desc) {
+  const auto& it = map.find(desc);
+  if (it == map.end()) {
+    return kNullSampler;
+  } else {
+    return &it->second;
+  }
+}
+
 const Sampler& SamplerLibraryVK::GetSampler(SamplerDescriptor desc) {
   auto found = samplers_.find(desc);
   if (found != samplers_.end()) {
