@@ -88,11 +88,11 @@ class Playground {
   static std::shared_ptr<Texture> CreateTextureForMapping(
       const std::shared_ptr<Context>& context,
       std::shared_ptr<fml::Mapping> mapping,
-      bool enable_mipmapping = false);
+      bool enable_mipmapping = true);
 
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
-      bool enable_mipmapping = false) const;
+      bool enable_mipmapping = true) const;
 
   std::shared_ptr<Texture> CreateTextureCubeForFixture(
       std::array<const char*, 6> fixture_names) const;
