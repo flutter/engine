@@ -18,14 +18,11 @@
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
 
+#include "third_party/abseil-cpp/absl/base/no_destructor.h"
+
 namespace impeller {
 
 namespace {
-// This is leaked on purpose to work around the limitations of TEST_P to share
-// data between tests.
-PlaygroundImpl* g_vulkan_playground = nullptr;
-PlaygroundImpl* g_vulkan_validation_playground = nullptr;
-
 std::unique_ptr<PlaygroundImpl> MakeVulkanPlayground(bool enable_validations) {
   FML_CHECK(::glfwInit() == GLFW_TRUE);
   PlaygroundSwitches playground_switches;
@@ -116,7 +113,7 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
-  std::shared_ptr<PlaygroundImpl> test_vulkan_playground;
+  std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
   std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
@@ -163,19 +160,16 @@ void GoldenPlaygroundTest::SetUp() {
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
     if (enable_vulkan_validations) {
-      if (!g_vulkan_validation_playground) {
-        g_vulkan_validation_playground =
-            MakeVulkanPlayground(/*enable_validations=*/true).release();
-      }
+      static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+          vulkan_validation_playground(
+              MakeVulkanPlayground(/*enable_validations=*/true));
       pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
-          g_vulkan_validation_playground);
+          *vulkan_validation_playground);
     } else {
-      if (!g_vulkan_playground) {
-        g_vulkan_playground =
-            MakeVulkanPlayground(/*enable_validations=*/false).release();
-      }
+      static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+          vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
       pimpl_->screenshotter =
-          std::make_unique<testing::VulkanScreenshotter>(g_vulkan_playground);
+          std::make_unique<testing::VulkanScreenshotter>(*vulkan_playground);
     }
   }
 
@@ -259,7 +253,7 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
     pimpl_->test_vulkan_playground =
         MakeVulkanPlayground(enable_vulkan_validations);
     pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
-        pimpl_->test_vulkan_playground.get());
+        pimpl_->test_vulkan_playground);
     return pimpl_->test_vulkan_playground->GetContext();
   } else {
     FML_CHECK(false);

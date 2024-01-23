@@ -64,7 +64,8 @@ std::unique_ptr<Screenshot> ReadTexture(
 }
 }  // namespace
 
-VulkanScreenshotter::VulkanScreenshotter(PlaygroundImpl* playground)
+VulkanScreenshotter::VulkanScreenshotter(
+    const std::unique_ptr<PlaygroundImpl>& playground)
     : playground_(playground) {
   FML_CHECK(playground_);
 }
