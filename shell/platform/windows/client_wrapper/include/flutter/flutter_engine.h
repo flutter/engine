@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "binary_messenger.h"
@@ -22,7 +23,8 @@ namespace flutter {
 //
 // In the future, this will be the API surface used for all interactions with
 // the engine, rather than having them duplicated on FlutterViewController.
-// For now it is only used in the rare where you need a headless Flutter engine.
+// For now it is only used in the rare case where you need a headless Flutter
+// engine.
 class FlutterEngine : public PluginRegistry {
  public:
   // Creates a new engine for running the given project.
@@ -34,13 +36,17 @@ class FlutterEngine : public PluginRegistry {
   FlutterEngine(FlutterEngine const&) = delete;
   FlutterEngine& operator=(FlutterEngine const&) = delete;
 
+  // Starts running the engine at the entrypoint function specified in the
+  // DartProject used to configure the engine, or main() by default.
+  bool Run();
+
   // Starts running the engine, with an optional entry point.
   //
   // If provided, entry_point must be the name of a top-level function from the
   // same Dart library that contains the app's main() function, and must be
   // decorated with `@pragma(vm:entry-point)` to ensure the method is not
   // tree-shaken by the Dart compiler. If not provided, defaults to main().
-  bool Run(const char* entry_point = nullptr);
+  bool Run(const char* entry_point);
 
   // Terminates the running engine.
   void ShutDown();
@@ -58,6 +64,11 @@ class FlutterEngine : public PluginRegistry {
   // Win32 application).
   void ReloadSystemFonts();
 
+  // Tells the engine that the platform brightness value has changed. Should be
+  // called by clients when OS-level theme changes happen (e.g.,
+  // WM_DWMCOLORIZATIONCOLORCHANGED in a Win32 application).
+  void ReloadPlatformBrightness();
+
   // flutter::PluginRegistry:
   FlutterDesktopPluginRegistrarRef GetRegistrarForPlugin(
       const std::string& plugin_name) override;
@@ -67,6 +78,21 @@ class FlutterEngine : public PluginRegistry {
   //
   // This pointer will remain valid for the lifetime of this instance.
   BinaryMessenger* messenger() { return messenger_.get(); }
+
+  // Schedule a callback to be called after the next frame is drawn.
+  //
+  // This must be called from the platform thread. The callback is executed only
+  // once on the platform thread.
+  void SetNextFrameCallback(std::function<void()> callback);
+
+  // Called to pass an external window message to the engine for lifecycle
+  // state updates. Non-Flutter windows must call this method in their WndProc
+  // in order to be included in the logic for application lifecycle state
+  // updates. Returns a result if the message should be consumed.
+  std::optional<LRESULT> ProcessExternalWindowMessage(HWND hwnd,
+                                                      UINT message,
+                                                      WPARAM wparam,
+                                                      LPARAM lparam);
 
  private:
   // For access to RelinquishEngine.
@@ -91,6 +117,9 @@ class FlutterEngine : public PluginRegistry {
   // or if RelinquishEngine has been called (since the view controller will
   // run the engine if it hasn't already been run).
   bool has_been_run_ = false;
+
+  // The callback to execute once the next frame is drawn.
+  std::function<void()> next_frame_callback_ = nullptr;
 };
 
 }  // namespace flutter

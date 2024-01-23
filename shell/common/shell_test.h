@@ -15,9 +15,11 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_point.h"
+#include "flutter/lib/ui/volatile_path_tracker.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_test_external_view_embedder.h"
+#include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/vsync_waiters_test.h"
 #include "flutter/testing/elf_loader.h"
@@ -29,25 +31,36 @@ namespace testing {
 
 class ShellTest : public FixtureTest {
  public:
+  struct Config {
+    // Required.
+    const Settings& settings;
+    // Defaults to GetTaskRunnersForFixture().
+    std::optional<TaskRunners> task_runners = {};
+    bool is_gpu_disabled = false;
+    // Defaults to calling ShellTestPlatformView::Create with the provided
+    // arguments.
+    Shell::CreateCallback<PlatformView> platform_view_create_callback;
+  };
+
   ShellTest();
 
   Settings CreateSettingsForFixture() override;
-  std::unique_ptr<Shell> CreateShell(Settings settings,
-                                     bool simulate_vsync = false);
   std::unique_ptr<Shell> CreateShell(
-      Settings settings,
-      TaskRunners task_runners,
-      bool simulate_vsync = false,
-      std::shared_ptr<ShellTestExternalViewEmbedder>
-          shell_test_external_view_embedder = nullptr);
+      const Settings& settings,
+      std::optional<TaskRunners> task_runners = {});
+  std::unique_ptr<Shell> CreateShell(const Config& config);
   void DestroyShell(std::unique_ptr<Shell> shell);
-  void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
+  void DestroyShell(std::unique_ptr<Shell> shell,
+                    const TaskRunners& task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
   fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
 
+  void SendPlatformMessage(Shell* shell,
+                           std::unique_ptr<PlatformMessage> message);
+
   void SendEnginePlatformMessage(Shell* shell,
-                                 fml::RefPtr<PlatformMessage> message);
+                                 std::unique_ptr<PlatformMessage> message);
 
   static void PlatformViewNotifyCreated(
       Shell* shell);  // This creates the surface
@@ -66,14 +79,14 @@ class ShellTest : public FixtureTest {
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
 
   static void SetViewportMetrics(Shell* shell, double width, double height);
-  static void NotifyIdle(Shell* shell, int64_t deadline);
+  static void NotifyIdle(Shell* shell, fml::TimeDelta deadline);
 
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,
                            LayerTreeBuilder = {});
   static void PumpOneFrame(Shell* shell,
-                           flutter::ViewportMetrics viewport_metrics,
+                           const flutter::ViewportMetrics& viewport_metrics,
                            LayerTreeBuilder = {});
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
@@ -92,11 +105,14 @@ class ShellTest : public FixtureTest {
                                    const SkData& key,
                                    const SkData& value);
 
+  static bool IsAnimatorRunning(Shell* shell);
+
   enum ServiceProtocolEnum {
     kGetSkSLs,
     kEstimateRasterCacheMemory,
     kSetAssetBundlePath,
     kRunInView,
+    kRenderFrameWithRasterStats,
   };
 
   // Helper method to test private method Shell::OnServiceProtocolGetSkSLs.
@@ -105,7 +121,7 @@ class ShellTest : public FixtureTest {
   static void OnServiceProtocol(
       Shell* shell,
       ServiceProtocolEnum some_protocol,
-      fml::RefPtr<fml::TaskRunner> task_runner,
+      const fml::RefPtr<fml::TaskRunner>& task_runner,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 
@@ -115,6 +131,11 @@ class ShellTest : public FixtureTest {
   // Otherwise those tests will be flaky as the clearing of unreported timings
   // is unpredictive.
   static int UnreportedTimingsCount(Shell* shell);
+
+  static size_t GetLiveTrackedPathCount(
+      const std::shared_ptr<VolatilePathTracker>& tracker);
+
+  static void TurnOffGPU(Shell* shell, bool value);
 
  private:
   ThreadHost thread_host_;

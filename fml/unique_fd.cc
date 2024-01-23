@@ -9,17 +9,20 @@
 namespace fml {
 namespace internal {
 
-#if OS_WIN
+#if FML_OS_WIN
 
 namespace os_win {
 
-void UniqueFDTraits::Free(HANDLE fd) {
+std::mutex UniqueFDTraits::file_map_mutex;
+std::map<HANDLE, DirCacheEntry> UniqueFDTraits::file_map;
+
+void UniqueFDTraits::Free_Handle(HANDLE fd) {
   CloseHandle(fd);
 }
 
 }  // namespace os_win
 
-#else  // OS_WIN
+#else  // FML_OS_WIN
 
 namespace os_unix {
 
@@ -33,7 +36,7 @@ void UniqueDirTraits::Free(DIR* dir) {
 
 }  // namespace os_unix
 
-#endif  // OS_WIN
+#endif  // FML_OS_WIN
 
 }  // namespace internal
 }  // namespace fml

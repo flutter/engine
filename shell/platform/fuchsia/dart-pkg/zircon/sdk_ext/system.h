@@ -8,19 +8,11 @@
 #include <zircon/syscalls.h>
 
 #include "handle.h"
+#include "handle_disposition.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_library_natives.h"
 #include "third_party/tonic/dart_wrappable.h"
 #include "third_party/tonic/typed_data/dart_byte_data.h"
-
-// TODO (kaushikiska): Once fuchsia adds fs to their sdk,
-// use the rights macros from "fs/vfs.h"
-
-// Rights
-// The file may be read.
-#define ZX_FS_RIGHT_READABLE 0x00000001
-// The file may be written.
-#define ZX_FS_RIGHT_WRITABLE 0x00000002
 
 namespace zircon {
 namespace dart {
@@ -37,8 +29,13 @@ class System : public fml::RefCountedThreadSafe<System>,
   static zx_status_t ChannelWrite(fml::RefPtr<Handle> channel,
                                   const tonic::DartByteData& data,
                                   std::vector<Handle*> handles);
+  static zx_status_t ChannelWriteEtc(
+      fml::RefPtr<Handle> channel,
+      const tonic::DartByteData& data,
+      std::vector<HandleDisposition*> handle_dispositions);
   // TODO(ianloic): Add ChannelRead
   static Dart_Handle ChannelQueryAndRead(fml::RefPtr<Handle> channel);
+  static Dart_Handle ChannelQueryAndReadEtc(fml::RefPtr<Handle> channel);
 
   static Dart_Handle EventpairCreate(uint32_t options);
 
@@ -61,7 +58,7 @@ class System : public fml::RefCountedThreadSafe<System>,
 
   static Dart_Handle VmoMap(fml::RefPtr<Handle> vmo);
 
-  static uint64_t ClockGet(uint32_t clock_id);
+  static uint64_t ClockGetMonotonic();
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
@@ -70,8 +67,6 @@ class System : public fml::RefCountedThreadSafe<System>,
 
  private:
   static void VmoMapFinalizer(void* isolate_callback_data, void* peer);
-
-  static zx::channel CloneChannelFromFileDescriptor(int fd);
 };
 
 }  // namespace dart

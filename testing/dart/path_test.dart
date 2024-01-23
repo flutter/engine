@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:typed_data' show Float64List;
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 void main() {
   test('path getBounds', () {
@@ -78,6 +77,14 @@ void main() {
     expect(p1.getBounds().bottom, equals(p2.getBounds().bottom + 10));
   });
 
+  test('shift tests', () {
+    const Rect bounds = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
+    final Path p = Path()..addRect(bounds);
+    expect(p.getBounds(), equals(bounds));
+    final Path shifted = p.shift(const Offset(10, 10));
+    expect(shifted.getBounds(), equals(const Rect.fromLTRB(10, 10, 20, 20)));
+  });
+
   test('transformation tests', () {
     const Rect bounds = Rect.fromLTRB(0.0, 0.0, 10.0, 10.0);
     final Path p = Path()..addRect(bounds);
@@ -103,7 +110,7 @@ void main() {
     expect(p.getBounds(),
         equals(const Rect.fromLTRB(0.0, 0.0, 20 + (10 * 2.5), 20 + (10 * .5))));
 
-    p.extendWithPath(p2, const Offset(0.0, 0.0));
+    p.extendWithPath(p2, Offset.zero);
     expect(p.getBounds(), equals(const Rect.fromLTRB(0.0, 0.0, 45.0, 25.0)));
 
     p.extendWithPath(p2, const Offset(45.0, 25.0), matrix4: scaleMatrix);
@@ -122,8 +129,7 @@ void main() {
     expect(simpleHorizontalMetrics.iterator.current.isClosed, isFalse);
     final Path simpleExtract = simpleHorizontalMetrics.iterator.current.extractPath(1.0, 9.0);
     expect(simpleExtract.getBounds(), equals(const Rect.fromLTRB(1.0, 0.0, 9.0, 0.0)));
-    final Tangent posTan = simpleHorizontalMetrics.iterator.current.getTangentForOffset(1.0);
-    expect(posTan, isNotNull);
+    final Tangent posTan = simpleHorizontalMetrics.iterator.current.getTangentForOffset(1.0)!;
     expect(posTan.position, equals(const Offset(1.0, 0.0)));
     expect(posTan.angle, equals(0.0));
 
@@ -144,7 +150,7 @@ void main() {
     // test getTangentForOffset with vertical line
     final Path simpleVerticalLine = Path()..lineTo(0.0, 10.0);
     final PathMetrics simpleMetricsVertical = simpleVerticalLine.computeMetrics()..iterator.moveNext();
-    final Tangent posTanVertical = simpleMetricsVertical.iterator.current.getTangentForOffset(5.0);
+    final Tangent posTanVertical = simpleMetricsVertical.iterator.current.getTangentForOffset(5.0)!;
     expect(posTanVertical.position, equals(const Offset(0.0, 5.0)));
     expect(posTanVertical.angle, closeTo(-1.5708, .0001)); // 90 degrees
 
@@ -152,7 +158,7 @@ void main() {
     final Path simpleDiagonalLine = Path()..lineTo(10.0, 10.0);
     final PathMetrics simpleMetricsDiagonal = simpleDiagonalLine.computeMetrics()..iterator.moveNext();
     final double midPoint = simpleMetricsDiagonal.iterator.current.length / 2;
-    final Tangent posTanDiagonal = simpleMetricsDiagonal.iterator.current.getTangentForOffset(midPoint);
+    final Tangent posTanDiagonal = simpleMetricsDiagonal.iterator.current.getTangentForOffset(midPoint)!;
     expect(posTanDiagonal.position, equals(const Offset(5.0, 5.0)));
     expect(posTanDiagonal.angle, closeTo(-0.7853981633974483, .00001)); // ~45 degrees
 
@@ -183,11 +189,11 @@ void main() {
     expect(metrics.length, 2);
     expect(metrics[0].length, 20);
     expect(metrics[0].isClosed, true);
-    expect(metrics[0].getTangentForOffset(4.0).vector, const Offset(0.0, 1.0));
+    expect(metrics[0].getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(metrics[0].extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
     expect(metrics[1].length, 10);
     expect(metrics[1].isClosed, false);
-    expect(metrics[1].getTangentForOffset(4.0).vector, const Offset(1.0, 0.0));
+    expect(metrics[1].getTangentForOffset(4.0)!.vector, const Offset(1.0, 0.0));
     expect(metrics[1].extractPath(4.0, 6.0).computeMetrics().first.length, 2.0);
   });
 
@@ -199,7 +205,7 @@ void main() {
     expect(metrics, isEmpty);
     expect(firstMetric.length, 10);
     expect(firstMetric.isClosed, false);
-    expect(firstMetric.getTangentForOffset(4.0).vector, const Offset(0.0, 1.0));
+    expect(firstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(firstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
 
     path..lineTo(10, 10)..lineTo(10, 0)..close();
@@ -207,7 +213,7 @@ void main() {
     expect(metrics, isEmpty);
     expect(firstMetric.length, 10);
     expect(firstMetric.isClosed, false);
-    expect(firstMetric.getTangentForOffset(4.0).vector, const Offset(0.0, 1.0));
+    expect(firstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(firstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
 
     // getting a new iterator should update us.
@@ -216,7 +222,22 @@ void main() {
     expect(newMetrics, isEmpty);
     expect(newFirstMetric.length, 40);
     expect(newFirstMetric.isClosed, true);
-    expect(newFirstMetric.getTangentForOffset(4.0).vector, const Offset(0.0, 1.0));
+    expect(newFirstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(newFirstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
+  });
+
+  test('PathMetrics on a mutated path', () {
+    final Path path = Path()
+      ..lineTo(0, 30)
+      ..lineTo(40, 30)
+      ..moveTo(100, 0)
+      ..lineTo(100, 30)
+      ..lineTo(140, 30)
+      ..close();
+    final PathMetrics metrics = path.computeMetrics();
+    expect(metrics.toString(),
+      '(PathMetric(length: 70.0, isClosed: false, contourIndex: 0), '
+       'PathMetric(length: 120.0, isClosed: true, contourIndex: 1))',
+    );
   });
 }

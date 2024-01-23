@@ -12,8 +12,7 @@ import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.Locale;
+import java.util.Arrays;
 
 /**
  * A named channel for communicating with the Flutter application using basic, asynchronous message
@@ -22,7 +21,7 @@ import java.util.Locale;
  * <p>Messages are encoded into binary before being sent, and binary messages received are decoded
  * into Java objects. The {@link MessageCodec} used must be compatible with the one used by the
  * Flutter application. This can be achieved by creating a <a
- * href="https://docs.flutter.io/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
+ * href="https://api.flutter.dev/flutter/services/BasicMessageChannel-class.html">BasicMessageChannel</a>
  * counterpart of this channel on the Dart side. The static Java type of messages sent and received
  * is {@code Object}, but only values supported by the specified {@link MessageCodec} can be used.
  *
@@ -36,6 +35,7 @@ public final class BasicMessageChannel<T> {
   @NonNull private final BinaryMessenger messenger;
   @NonNull private final String name;
   @NonNull private final MessageCodec<T> codec;
+  @Nullable private final BinaryMessenger.TaskQueue taskQueue;
 
   /**
    * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
@@ -47,6 +47,25 @@ public final class BasicMessageChannel<T> {
    */
   public BasicMessageChannel(
       @NonNull BinaryMessenger messenger, @NonNull String name, @NonNull MessageCodec<T> codec) {
+    this(messenger, name, codec, null);
+  }
+
+  /**
+   * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
+   * specified name and {@link MessageCodec}.
+   *
+   * @param messenger a {@link BinaryMessenger}.
+   * @param name a channel name String.
+   * @param codec a {@link MessageCodec}.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null means execute on the platform thread. See also {@link
+   *     BinaryMessenger#makeBackgroundTaskQueue()}.
+   */
+  public BasicMessageChannel(
+      @NonNull BinaryMessenger messenger,
+      @NonNull String name,
+      @NonNull MessageCodec<T> codec,
+      BinaryMessenger.TaskQueue taskQueue) {
     if (BuildConfig.DEBUG) {
       if (messenger == null) {
         Log.e(TAG, "Parameter messenger must not be null.");
@@ -61,6 +80,7 @@ public final class BasicMessageChannel<T> {
     this.messenger = messenger;
     this.name = name;
     this.codec = codec;
+    this.taskQueue = taskQueue;
   }
 
   /**
@@ -101,24 +121,78 @@ public final class BasicMessageChannel<T> {
    */
   @UiThread
   public void setMessageHandler(@Nullable final MessageHandler<T> handler) {
-    messenger.setMessageHandler(name, handler == null ? null : new IncomingMessageHandler(handler));
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMessageHandler(handler));
+    }
   }
 
   /**
    * Adjusts the number of messages that will get buffered when sending messages to channels that
-   * aren't fully setup yet. For example, the engine isn't running yet or the channel's message
-   * handler isn't setup on the Dart side yet.
+   * aren't fully set up yet. For example, the engine isn't running yet or the channel's message
+   * handler isn't set up on the Dart side yet.
    */
   public void resizeChannelBuffer(int newSize) {
     resizeChannelBuffer(messenger, name, newSize);
   }
 
-  static void resizeChannelBuffer(
+  /**
+   * Toggles whether the channel should show warning messages when discarding messages due to
+   * overflow. When 'warns' is false the channel is expected to overflow and warning messages will
+   * not be shown.
+   */
+  public void setWarnsOnChannelOverflow(boolean warns) {
+    setWarnsOnChannelOverflow(messenger, name, warns);
+  }
+
+  private static ByteBuffer packetFromEncodedMessage(ByteBuffer message) {
+    // Create a bytes array using the buffer content (messages.array() can not be used here).
+    message.flip();
+    final byte[] bytes = new byte[message.remaining()];
+    message.get(bytes);
+
+    // The current Android Java/JNI platform message implementation assumes
+    // that all buffers passed to native are direct buffers.
+    ByteBuffer packet = ByteBuffer.allocateDirect(bytes.length);
+    packet.put(bytes);
+
+    return packet;
+  }
+
+  /**
+   * Adjusts the number of messages that will get buffered when sending messages to channels that
+   * aren't fully set up yet. For example, the engine isn't running yet or the channel's message
+   * handler isn't set up on the Dart side yet.
+   */
+  public static void resizeChannelBuffer(
       @NonNull BinaryMessenger messenger, @NonNull String channel, int newSize) {
-    Charset charset = Charset.forName("UTF-8");
-    String messageString = String.format(Locale.US, "resize\r%s\r%d", channel, newSize);
-    ByteBuffer message = ByteBuffer.wrap(messageString.getBytes(charset));
-    messenger.send(CHANNEL_BUFFERS_CHANNEL, message);
+    final StandardMethodCodec codec = StandardMethodCodec.INSTANCE;
+    Object[] arguments = {channel, newSize};
+    MethodCall methodCall = new MethodCall("resize", Arrays.asList(arguments));
+    ByteBuffer message = codec.encodeMethodCall(methodCall);
+    ByteBuffer packet = packetFromEncodedMessage(message);
+    messenger.send(BasicMessageChannel.CHANNEL_BUFFERS_CHANNEL, packet);
+  }
+
+  /**
+   * Toggles whether the channel should show warning messages when discarding messages due to
+   * overflow. When 'warns' is false the channel is expected to overflow and warning messages will
+   * not be shown.
+   */
+  public static void setWarnsOnChannelOverflow(
+      @NonNull BinaryMessenger messenger, @NonNull String channel, boolean warns) {
+    final StandardMethodCodec codec = StandardMethodCodec.INSTANCE;
+    Object[] arguments = {channel, !warns};
+    MethodCall methodCall = new MethodCall("overflow", Arrays.asList(arguments));
+    ByteBuffer message = codec.encodeMethodCall(methodCall);
+    ByteBuffer packet = packetFromEncodedMessage(message);
+    messenger.send(BasicMessageChannel.CHANNEL_BUFFERS_CHANNEL, packet);
   }
 
   /** A handler of incoming messages. */
@@ -129,7 +203,7 @@ public final class BasicMessageChannel<T> {
      *
      * <p>Handler implementations must reply to all incoming messages, by submitting a single reply
      * message to the given {@link Reply}. Failure to do so will result in lingering Flutter reply
-     * handlers. The reply may be submitted asynchronously.
+     * handlers. The reply may be submitted asynchronously and invoked on any thread.
      *
      * <p>Any uncaught exception thrown by this method, or the preceding message decoding, will be
      * caught by the channel implementation and logged, and a null reply message will be sent back

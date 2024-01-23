@@ -4,11 +4,15 @@
 
 package io.flutter.plugin.localization;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.LocaleList;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +23,62 @@ public class LocalizationPlugin {
   @NonNull private final LocalizationChannel localizationChannel;
   @NonNull private final Context context;
 
+  @SuppressLint({
+    "AppBundleLocaleChanges",
+    "DiscouragedApi"
+  }) // This is optionally turned on by apps.
+  @VisibleForTesting
+  final LocalizationChannel.LocalizationMessageHandler localizationMessageHandler =
+      new LocalizationChannel.LocalizationMessageHandler() {
+        @Override
+        public String getStringResource(@NonNull String key, @Nullable String localeString) {
+          Context localContext = context;
+          String stringToReturn = null;
+          Locale savedLocale = null;
+
+          if (localeString != null) {
+            Locale locale = localeFromString(localeString);
+
+            // setLocale and createConfigurationContext is only available on API >= 17
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+              Configuration config = new Configuration(context.getResources().getConfiguration());
+              config.setLocale(locale);
+              localContext = context.createConfigurationContext(config);
+            } else {
+              // In API < 17, we have to update the locale in Configuration.
+              Resources resources = context.getResources();
+              Configuration config = resources.getConfiguration();
+              savedLocale = config.locale;
+              config.locale = locale;
+              resources.updateConfiguration(config, null);
+            }
+          }
+
+          String packageName = context.getPackageName();
+          int resId = localContext.getResources().getIdentifier(key, "string", packageName);
+          if (resId != 0) {
+            // 0 means the resource is not found.
+            stringToReturn = localContext.getResources().getString(resId);
+          }
+
+          // In API < 17, we had to restore the original locale after using.
+          if (localeString != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            Resources resources = context.getResources();
+            Configuration config = resources.getConfiguration();
+            config.locale = savedLocale;
+            resources.updateConfiguration(config, null);
+          }
+
+          return stringToReturn;
+        }
+      };
+
   public LocalizationPlugin(
       @NonNull Context context, @NonNull LocalizationChannel localizationChannel) {
 
     this.context = context;
     this.localizationChannel = localizationChannel;
+    this.localizationChannel.setLocalizationMessageHandler(localizationMessageHandler);
   }
 
   /**
@@ -32,7 +87,8 @@ public class LocalizationPlugin {
    * <p>FlutterEngine must be non-null when this method is invoked.
    */
   @SuppressWarnings("deprecation")
-  public Locale resolveNativeLocale(List<Locale> supportedLocales) {
+  @Nullable
+  public Locale resolveNativeLocale(@Nullable List<Locale> supportedLocales) {
     if (supportedLocales == null || supportedLocales.isEmpty()) {
       return null;
     }
@@ -135,5 +191,40 @@ public class LocalizationPlugin {
     }
 
     localizationChannel.sendLocales(locales);
+  }
+
+  /**
+   * Computes the {@link Locale} from the provided {@code String} with format
+   * language[-script][-region][-...], where script is an alphabet string of length 4, and region is
+   * either an alphabet string of length 2 or a digit string of length 3.
+   */
+  @NonNull
+  public static Locale localeFromString(@NonNull String localeString) {
+    // Use Locale.forLanguageTag if available (API 21+).
+    if (false && Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+      return Locale.forLanguageTag(localeString);
+    } else {
+      // Normalize the locale string, replace all underscores with hyphens.
+      localeString = localeString.replace('_', '-');
+
+      // Pre-API 21, we fall back to manually parsing the locale tag.
+      String parts[] = localeString.split("-", -1);
+
+      // Assume the first part is always the language code.
+      String languageCode = parts[0];
+      String scriptCode = "";
+      String countryCode = "";
+      int index = 1;
+      if (parts.length > index && parts[index].length() == 4) {
+        scriptCode = parts[index];
+        index++;
+      }
+      if (parts.length > index && parts[index].length() >= 2 && parts[index].length() <= 3) {
+        countryCode = parts[index];
+        index++;
+      }
+      // Ignore the rest of the locale for this purpose.
+      return new Locale(languageCode, countryCode, scriptCode);
+    }
   }
 }

@@ -7,7 +7,7 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
 
 namespace vulkan {
 
@@ -16,7 +16,7 @@ class VulkanCommandBuffer;
 
 class VulkanImage {
  public:
-  VulkanImage(VulkanHandle<VkImage> image);
+  explicit VulkanImage(VulkanHandle<VkImage> image);
 
   ~VulkanImage();
 
@@ -26,7 +26,7 @@ class VulkanImage {
       const VulkanCommandBuffer& command_buffer,
       VkPipelineStageFlagBits src_pipline_bits,
       VkPipelineStageFlagBits dest_pipline_bits,
-      VkAccessFlagBits dest_access_flags,
+      VkAccessFlags dest_access_flags,
       VkImageLayout dest_layout);
 
  private:

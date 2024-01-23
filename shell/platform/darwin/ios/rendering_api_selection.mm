@@ -6,26 +6,29 @@
 
 #include <Foundation/Foundation.h>
 #include <QuartzCore/CAEAGLLayer.h>
-#include <QuartzCore/CAMetalLayer.h>
-#if FLUTTER_SHELL_ENABLE_METAL
+#import <QuartzCore/CAMetalLayer.h>
+#if SHELL_ENABLE_METAL
 #include <Metal/Metal.h>
-#endif  // FLUTTER_SHELL_ENABLE_METAL
+#endif  // SHELL_ENABLE_METAL
 #import <TargetConditionals.h>
 
 #include "flutter/fml/logging.h"
 
+#include "flutter/shell/platform/darwin/ios/framework/Source/FlutterMetalLayer.h"
+
 namespace flutter {
 
-#if FLUTTER_SHELL_ENABLE_METAL
+#if SHELL_ENABLE_METAL
 bool ShouldUseMetalRenderer() {
   bool ios_version_supports_metal = false;
   if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
     auto device = MTLCreateSystemDefaultDevice();
     ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
+    [device release];
   }
   return ios_version_supports_metal;
 }
-#endif  // FLUTTER_SHELL_ENABLE_METAL
+#endif  // SHELL_ENABLE_METAL
 
 IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
 #if TARGET_OS_SIMULATOR
@@ -39,19 +42,21 @@ IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
   }
 #endif  // TARGET_OS_SIMULATOR
 
-#if FLUTTER_SHELL_ENABLE_METAL
+#if SHELL_ENABLE_METAL
   static bool should_use_metal = ShouldUseMetalRenderer();
   if (should_use_metal) {
     return IOSRenderingAPI::kMetal;
   }
-#endif  // FLUTTER_SHELL_ENABLE_METAL
+#endif  // SHELL_ENABLE_METAL
 
-  // OpenGL will be emulated using software rendering by Apple on the simulator, so we use the
-  // Skia software rendering since it performs a little better than the emulated OpenGL.
+  // When Metal isn't available we use Skia software rendering since it performs
+  // a little better than emulated OpenGL. Also, omitting an OpenGL backend
+  // reduces binary footprint.
 #if TARGET_OS_SIMULATOR
   return IOSRenderingAPI::kSoftware;
 #else
-  return IOSRenderingAPI::kOpenGLES;
+  FML_CHECK(false) << "Metal may only be unavailable on simulators";
+  return IOSRenderingAPI::kSoftware;
 #endif  // TARGET_OS_SIMULATOR
 }
 
@@ -59,11 +64,13 @@ Class GetCoreAnimationLayerClassForRenderingAPI(IOSRenderingAPI rendering_api) {
   switch (rendering_api) {
     case IOSRenderingAPI::kSoftware:
       return [CALayer class];
-    case IOSRenderingAPI::kOpenGLES:
-      return [CAEAGLLayer class];
     case IOSRenderingAPI::kMetal:
       if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
-        return [CAMetalLayer class];
+        if ([FlutterMetalLayer enabled]) {
+          return [FlutterMetalLayer class];
+        } else {
+          return [CAMetalLayer class];
+        }
       }
       FML_CHECK(false) << "Metal availability should already have been checked";
       break;

@@ -2,161 +2,257 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:js_interop';
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
-void skiaInstantiateImageCodec(Uint8List list, Callback<ui.Codec> callback,
-    [int? width, int? height, int? format, int? rowBytes]) {
-  final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list);
-  callback(codec);
+FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
+    [int? targetWidth, int? targetHeight]) {
+  // If we have either a target width or target height, use canvaskit to decode.
+  if (browserSupportsImageDecoder && (targetWidth == null && targetHeight == null)) {
+    return CkBrowserImageDecoder.create(
+      data: list,
+      debugSource: 'encoded image bytes',
+    );
+  } else {
+    return CkAnimatedImage.decodeFromBytes(list, 'encoded image bytes', targetWidth: targetWidth, targetHeight: targetHeight);
+  }
 }
+
+void skiaDecodeImageFromPixels(
+  Uint8List pixels,
+  int width,
+  int height,
+  ui.PixelFormat format,
+  ui.ImageDecoderCallback callback, {
+  int? rowBytes,
+  int? targetWidth,
+  int? targetHeight,
+  bool allowUpscaling = true,
+}) {
+  if (targetWidth != null) {
+    assert(allowUpscaling || targetWidth <= width);
+  }
+  if (targetHeight != null) {
+    assert(allowUpscaling || targetHeight <= height);
+  }
+
+  // Run in a timer to avoid janking the current frame by moving the decoding
+  // work outside the frame event.
+  Timer.run(() {
+    final SkImage? skImage = canvasKit.MakeImage(
+      SkImageInfo(
+        width: width.toDouble(),
+        height: height.toDouble(),
+        colorType: format == ui.PixelFormat.rgba8888 ? canvasKit.ColorType.RGBA_8888 : canvasKit.ColorType.BGRA_8888,
+        alphaType: canvasKit.AlphaType.Premul,
+        colorSpace: SkColorSpaceSRGB,
+      ),
+      pixels,
+      (rowBytes ?? 4 * width).toDouble(),
+    );
+
+    if (skImage == null) {
+      domWindow.console.warn('Failed to create image from pixels.');
+      return;
+    }
+
+    if (targetWidth != null || targetHeight != null) {
+      if (validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
+        return callback(scaleImage(skImage, targetWidth, targetHeight));
+      }
+    }
+    return callback(CkImage(skImage));
+  });
+}
+
+// An invalid upscale happens when allowUpscaling is false AND either the given
+// targetWidth is larger than the originalWidth OR the targetHeight is larger than originalHeight.
+bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int originalWidth, int originalHeight) {
+  if (allowUpscaling) {
+    return true;
+  }
+  final bool targetWidthFits;
+  final bool targetHeightFits;
+  if (targetWidth != null) {
+    targetWidthFits = targetWidth <= originalWidth;
+  } else {
+    targetWidthFits = true;
+  }
+
+  if (targetHeight != null) {
+    targetHeightFits = targetHeight <= originalHeight;
+  } else {
+    targetHeightFits = true;
+  }
+  return targetWidthFits && targetHeightFits;
+}
+
+/// Creates a scaled [CkImage] from an [SkImage] by drawing the [SkImage] to a canvas.
+///
+/// This function will only be called if either a targetWidth or targetHeight is not null
+///
+/// If only one of targetWidth or  targetHeight are specified, the other
+/// dimension will be scaled according to the aspect ratio of the supplied
+/// dimension.
+///
+/// If either targetWidth or targetHeight is less than or equal to zero, it
+/// will be treated as if it is null.
+CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
+    assert(targetWidth != null || targetHeight != null);
+    if (targetWidth != null && targetWidth <= 0) {
+      targetWidth = null;
+    }
+    if (targetHeight != null && targetHeight <= 0) {
+      targetHeight = null;
+    }
+    if (targetWidth == null && targetHeight != null) {
+      targetWidth = (targetHeight * (image.width() / image.height())).round();
+    } else if (targetHeight == null && targetWidth != null) {
+      targetHeight = targetWidth ~/ (image.width() / image.height());
+    }
+
+    assert(targetWidth != null);
+    assert(targetHeight != null);
+
+    final CkPictureRecorder recorder = CkPictureRecorder();
+    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+
+    final CkPaint paint = CkPaint();
+    canvas.drawImageRect(
+      CkImage(image),
+      ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
+      ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
+      paint,
+    );
+    paint.dispose();
+
+    final CkPicture picture = recorder.endRecording();
+    final ui.Image finalImage = picture.toImageSync(
+      targetWidth,
+      targetHeight
+    );
+
+    final CkImage ckImage = finalImage as CkImage;
+    return ckImage;
+}
+
+/// Thrown when the web engine fails to decode an image, either due to a
+/// network issue, corrupted image contents, or missing codec.
+class ImageCodecException implements Exception {
+  ImageCodecException(this._message);
+
+  final String _message;
+
+  @override
+  String toString() => 'ImageCodecException: $_message';
+}
+
+const String _kNetworkImageMessage = 'Failed to load network image.';
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
-    String uri, WebOnlyImageCodecChunkCallback? chunkCallback) {
-  Completer<ui.Codec> completer = Completer<ui.Codec>();
-  //TODO: Switch to using MakeImageFromCanvasImageSource when animated images are supported.
-  html.HttpRequest.request(uri, responseType: "arraybuffer",
-      onProgress: (html.ProgressEvent event) {
-    if (event.lengthComputable) {
-      chunkCallback?.call(event.loaded!, event.total!);
-    }
-  }).then((html.HttpRequest response) {
-    if (response.status != 200) {
-      completer.completeError(Exception(
-          'Network image request failed with status: ${response.status}'));
-    }
-    final Uint8List list =
-        new Uint8List.view((response.response as ByteBuffer));
-    final CkAnimatedImage codec = CkAnimatedImage.decodeFromBytes(list);
-    completer.complete(codec);
-  }, onError: (dynamic error) {
-    completer.completeError(error);
-  });
-  return completer.future;
+    String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
+  final Uint8List list = await fetchImage(url, chunkCallback);
+  if (browserSupportsImageDecoder) {
+    return CkBrowserImageDecoder.create(data: list, debugSource: url);
+  } else {
+    return CkAnimatedImage.decodeFromBytes(list, url);
+  }
 }
 
-/// The CanvasKit implementation of [ui.Codec].
-///
-/// Wraps `SkAnimatedImage`.
-class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage> implements ui.Codec {
-  /// Decodes an image from a list of encoded bytes.
-  CkAnimatedImage.decodeFromBytes(this._bytes);
+/// Sends a request to fetch image data.
+Future<Uint8List> fetchImage(String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
+  try {
+    final HttpFetchResponse response = await httpFetch(url);
+    final int? contentLength = response.contentLength;
 
-  final Uint8List _bytes;
+    if (!response.hasPayload) {
+      throw ImageCodecException(
+        '$_kNetworkImageMessage\n'
+        'Image URL: $url\n'
+        'Server response code: ${response.status}',
+      );
+    }
 
-  @override
-  SkAnimatedImage createDefault() {
-    return canvasKit.MakeAnimatedImageFromEncoded(_bytes);
-  }
-
-  @override
-  SkAnimatedImage resurrect() => createDefault();
-
-  @override
-  void delete() {
-    rawSkiaObject?.delete();
-  }
-
-  bool _disposed = false;
-  bool get debugDisposed => _disposed;
-
-  bool _debugCheckIsNotDisposed() {
-    assert(!_disposed, 'This image has been disposed.');
-    return true;
-  }
-
-  @override
-  void dispose() {
-    assert(
-      !_disposed,
-      'Cannot dispose a codec that has already been disposed.',
+    if (chunkCallback != null && contentLength != null) {
+      return readChunked(response.payload, contentLength, chunkCallback);
+    } else {
+      return await response.asUint8List();
+    }
+  } on HttpFetchError catch (_) {
+    throw ImageCodecException(
+      '$_kNetworkImageMessage\n'
+      'Image URL: $url\n'
+      'Trying to load an image from another domain? Find answers at:\n'
+      'https://flutter.dev/docs/development/platform-integration/web-images',
     );
-    _disposed = true;
-    delete();
   }
+}
 
-  @override
-  int get frameCount {
-    assert(_debugCheckIsNotDisposed());
-    return skiaObject.getFrameCount();
-  }
-
-  @override
-  int get repetitionCount {
-    assert(_debugCheckIsNotDisposed());
-    return skiaObject.getRepetitionCount();
-  }
-
-  @override
-  Future<ui.FrameInfo> getNextFrame() {
-    assert(_debugCheckIsNotDisposed());
-    final int durationMillis = skiaObject.decodeNextFrame();
-    final Duration duration = Duration(milliseconds: durationMillis);
-    final CkImage image = CkImage(skiaObject.getCurrentFrame());
-    return Future<ui.FrameInfo>.value(AnimatedImageFrameInfo(duration, image));
-  }
+/// Reads the [payload] in chunks using the browser's Streams API
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
+Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, ui_web.ImageCodecChunkCallback chunkCallback) async {
+  final JSUint8Array result = createUint8ArrayFromLength(contentLength);
+  int position = 0;
+  int cumulativeBytesLoaded = 0;
+  await payload.read<JSUint8Array>((JSUint8Array chunk) {
+    cumulativeBytesLoaded += chunk.length.toDartInt;
+    chunkCallback(cumulativeBytesLoaded, contentLength);
+    result.set(chunk, position.toJS);
+    position += chunk.length.toDartInt;
+  });
+  return result.toDart;
 }
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
-  CkImage(SkImage skImage) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
-    if (browserSupportsFinalizationRegistry) {
-      box = SkiaObjectBox<CkImage, SkImage>(this, skImage);
-    } else {
-      // If finalizers are not supported we need to be able to resurrect the
-      // image if it was temporarily deleted. To do that, we keep the original
-      // pixels and ask the SkiaObjectBox to make an image from them when
-      // resurrecting.
-      //
-      // IMPORTANT: the alphaType, colorType, and colorSpace passed to
-      // _encodeImage and to canvasKit.MakeImage must be the same. Otherwise
-      // Skia will misinterpret the pixels and corrupt the image.
-      final ByteData originalBytes = _encodeImage(
-        skImage: skImage,
-        format: ui.ImageByteFormat.rawRgba,
-        alphaType: canvasKit.AlphaType.Premul,
-        colorType: canvasKit.ColorType.RGBA_8888,
-        colorSpace: SkColorSpaceSRGB,
-      );
-      box = SkiaObjectBox<CkImage, SkImage>.resurrectable(this, skImage, () {
-        return canvasKit.MakeImage(
-          originalBytes.buffer.asUint8List(),
-          width,
-          height,
-          canvasKit.AlphaType.Premul,
-          canvasKit.ColorType.RGBA_8888,
-          SkColorSpaceSRGB,
-        );
-      });
-    }
+  CkImage(SkImage skImage, { this.videoFrame }) {
+    box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
+    _init();
   }
 
-  CkImage.cloneOf(this.box) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
+  CkImage.cloneOf(this.box, {this.videoFrame}) {
+    _init();
     box.ref(this);
   }
 
-  @override
-  StackTrace get debugStackTrace => _debugStackTrace!;
-  StackTrace? _debugStackTrace;
+  void _init() {
+    assert(() {
+      _debugStackTrace = StackTrace.current;
+      return true;
+    }());
+    ui.Image.onCreate?.call(this);
+  }
 
-  // Use a box because `SkImage` may be deleted either due to this object
+  @override
+  StackTrace get debugStackTrace => _debugStackTrace;
+  late StackTrace _debugStackTrace;
+
+  // Use ref counting because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
-  late final SkiaObjectBox<CkImage, SkImage> box;
+  late final CountedRef<CkImage, SkImage> box;
+
+  /// For browsers that support `ImageDecoder` this field holds the video frame
+  /// from which this image was created.
+  ///
+  /// Skia owns the video frame and will close it when it's no longer used.
+  /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
+  /// the video frame until the image is [dispose]d of.
+  VideoFrame? videoFrame;
 
   /// The underlying Skia image object.
   ///
-  /// Do not store the returned value. It is memory-managed by [SkiaObjectBox].
+  /// Do not store the returned value. It is memory-managed by [CountedRef].
   /// Storing it may result in use-after-free bugs.
-  SkImage get skImage => box.skiaObject;
+  SkImage get skImage => box.nativeObject;
 
   bool _disposed = false;
 
@@ -171,23 +267,31 @@ class CkImage implements ui.Image, StackTraceDebugger {
       !_disposed,
       'Cannot dispose an image that has already been disposed.',
     );
+    ui.Image.onDispose?.call(this);
     _disposed = true;
     box.unref(this);
   }
 
   @override
   bool get debugDisposed {
-    if (assertionsEnabled) {
-      return _disposed;
+    bool? result;
+    assert(() {
+      result = _disposed;
+      return true;
+    }());
+
+    if (result != null) {
+      return result!;
     }
+
     throw StateError(
         'Image.debugDisposed is only available when asserts are enabled.');
   }
 
   @override
-  ui.Image clone() {
+  CkImage clone() {
     assert(_debugCheckIsNotDisposed());
-    return CkImage.cloneOf(box);
+    return CkImage.cloneOf(box, videoFrame: videoFrame?.clone());
   }
 
   @override
@@ -203,13 +307,13 @@ class CkImage implements ui.Image, StackTraceDebugger {
   @override
   int get width {
     assert(_debugCheckIsNotDisposed());
-    return skImage.width();
+    return skImage.width().toInt();
   }
 
   @override
   int get height {
     assert(_debugCheckIsNotDisposed());
-    return skImage.height();
+    return skImage.height().toInt();
   }
 
   @override
@@ -217,25 +321,44 @@ class CkImage implements ui.Image, StackTraceDebugger {
     ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
   }) {
     assert(_debugCheckIsNotDisposed());
-    return Future<ByteData>.value(_encodeImage(
-      skImage: skImage,
-      format: format,
-      alphaType: canvasKit.AlphaType.Premul,
-      colorType: canvasKit.ColorType.RGBA_8888,
-      colorSpace: SkColorSpaceSRGB,
-    ));
+    // readPixelsFromVideoFrame currently does not convert I420, I444, I422
+    // videoFrame formats to RGBA
+    if (videoFrame != null && videoFrame!.format != 'I420' && videoFrame!.format != 'I444' && videoFrame!.format != 'I422') {
+      return readPixelsFromVideoFrame(videoFrame!, format);
+    } else {
+      return _readPixelsFromSkImage(format);
+    }
   }
 
-  static ByteData _encodeImage({
+  @override
+  ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
+
+  Future<ByteData> _readPixelsFromSkImage(ui.ImageByteFormat format) {
+    final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba ? canvasKit.AlphaType.Unpremul : canvasKit.AlphaType.Premul;
+    final ByteData? data = _encodeImage(
+      skImage: skImage,
+      format: format,
+      alphaType: alphaType,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+    );
+    if (data == null) {
+      return Future<ByteData>.error('Failed to encode the image into bytes.');
+    } else {
+      return Future<ByteData>.value(data);
+    }
+  }
+
+  static ByteData? _encodeImage({
     required SkImage skImage,
     required ui.ImageByteFormat format,
     required SkAlphaType alphaType,
     required SkColorType colorType,
     required ColorSpace colorSpace,
   }) {
-    Uint8List bytes;
+    Uint8List? bytes;
 
-    if (format == ui.ImageByteFormat.rawRgba) {
+    if (format == ui.ImageByteFormat.rawRgba || format == ui.ImageByteFormat.rawStraightRgba) {
       final SkImageInfo imageInfo = SkImageInfo(
         alphaType: alphaType,
         colorType: colorType,
@@ -243,15 +366,12 @@ class CkImage implements ui.Image, StackTraceDebugger {
         width: skImage.width(),
         height: skImage.height(),
       );
-      bytes = skImage.readPixels(imageInfo, 0, 0);
+      bytes = skImage.readPixels(0, 0, imageInfo);
     } else {
-      final SkData skData = skImage.encodeToData(); //defaults to PNG 100%
-      // make a copy that we can return
-      bytes = Uint8List.fromList(canvasKit.getDataBytes(skData));
-      skData.delete();
+      bytes = skImage.encodeToBytes(); // defaults to PNG 100%
     }
 
-    return bytes.buffer.asByteData(0, bytes.length);
+    return bytes?.buffer.asByteData(0, bytes.length);
   }
 
   @override
@@ -259,18 +379,4 @@ class CkImage implements ui.Image, StackTraceDebugger {
     assert(_debugCheckIsNotDisposed());
     return '[$width\u00D7$height]';
   }
-}
-
-/// Data for a single frame of an animated image.
-class AnimatedImageFrameInfo implements ui.FrameInfo {
-  final Duration _duration;
-  final CkImage _image;
-
-  AnimatedImageFrameInfo(this._duration, this._image);
-
-  @override
-  Duration get duration => _duration;
-
-  @override
-  ui.Image get image => _image;
 }

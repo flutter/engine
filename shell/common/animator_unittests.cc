@@ -12,11 +12,43 @@
 
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/shell_test_platform_view.h"
+#include "flutter/testing/post_task_sync.h"
 #include "flutter/testing/testing.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
 namespace flutter {
 namespace testing {
+
+class FakeAnimatorDelegate : public Animator::Delegate {
+ public:
+  MOCK_METHOD(void,
+              OnAnimatorBeginFrame,
+              (fml::TimePoint frame_target_time, uint64_t frame_number),
+              (override));
+
+  void OnAnimatorNotifyIdle(fml::TimeDelta deadline) override {
+    notify_idle_called_ = true;
+  }
+
+  MOCK_METHOD(void,
+              OnAnimatorUpdateLatestFrameTargetTime,
+              (fml::TimePoint frame_target_time),
+              (override));
+
+  MOCK_METHOD(void,
+              OnAnimatorDraw,
+              (std::shared_ptr<FramePipeline> pipeline),
+              (override));
+
+  void OnAnimatorDrawLastLayerTrees(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
+
+  bool notify_idle_called_ = false;
+};
 
 TEST_F(ShellTest, VSyncTargetTime) {
   // Add native callbacks to listen for window.onBeginFrame
@@ -51,12 +83,12 @@ TEST_F(ShellTest, VSyncTargetTime) {
     fml::MessageLoop::EnsureInitializedForCurrentThread();
 
     shell = Shell::Create(
-        task_runners, settings,
+        flutter::PlatformData(), task_runners, settings,
         [vsync_clock, &create_vsync_waiter](Shell& shell) {
           return ShellTestPlatformView::Create(
-              shell, shell.GetTaskRunners(), vsync_clock,
-              std::move(create_vsync_waiter),
-              ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
+              shell, shell.GetTaskRunners(), vsync_clock, create_vsync_waiter,
+              ShellTestPlatformView::BackendType::kDefaultBackend, nullptr,
+              shell.GetIsGpuDisabledSyncSwitch());
         },
         [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
     ASSERT_TRUE(DartVMRef::IsInstanceRunning());
@@ -68,21 +100,9 @@ TEST_F(ShellTest, VSyncTargetTime) {
     RunEngine(shell.get(), std::move(configuration));
   });
   platform_task.wait();
-
-  // schedule a frame to trigger window.onBeginFrame
-  fml::TaskRunner::RunNowOrPostTask(shell->GetTaskRunners().GetUITaskRunner(),
-                                    [engine = shell->GetEngine()]() {
-                                      if (engine) {
-                                        // this implies we can re-use the last
-                                        // frame to trigger begin frame rather
-                                        // than re-generating the layer tree.
-                                        engine->ScheduleFrame(true);
-                                      }
-                                    });
-
   on_target_time_latch.Wait();
   const auto vsync_waiter_target_time =
-      ConstantFiringVsyncWaiter::frame_target_time;
+      ConstantFiringVsyncWaiter::kFrameTargetTime;
   ASSERT_EQ(vsync_waiter_target_time.ToEpochDelta().ToMicroseconds(),
             target_time);
 
@@ -90,9 +110,151 @@ TEST_F(ShellTest, VSyncTargetTime) {
   ASSERT_EQ(GetLatestFrameTargetTime(shell.get()), vsync_waiter_target_time);
 
   // teardown.
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
+  FakeAnimatorDelegate delegate;
+  TaskRunners task_runners = {
+      "test",
+      CreateNewThread(),  // platform
+      CreateNewThread(),  // raster
+      CreateNewThread(),  // ui
+      CreateNewThread()   // io
+  };
+
+  auto clock = std::make_shared<ShellTestVsyncClock>();
+  fml::AutoResetWaitableEvent latch;
+  std::shared_ptr<Animator> animator;
+
+  auto flush_vsync_task = [&] {
+    fml::AutoResetWaitableEvent ui_latch;
+    task_runners.GetUITaskRunner()->PostTask([&] { ui_latch.Signal(); });
+    do {
+      clock->SimulateVSync();
+    } while (ui_latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1)));
+    latch.Signal();
+  };
+
+  // Create the animator on the UI task runner.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    auto vsync_waiter = static_cast<std::unique_ptr<VsyncWaiter>>(
+        std::make_unique<ShellTestVsyncWaiter>(task_runners, clock));
+    animator = std::make_unique<Animator>(delegate, task_runners,
+                                          std::move(vsync_waiter));
+    latch.Signal();
+  });
+  latch.Wait();
+
+  // Validate it has not notified idle and start it. This will request a frame.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_FALSE(delegate.notify_idle_called_);
+    // Immediately request a frame saying it can reuse the last layer tree to
+    // avoid more calls to BeginFrame by the animator.
+    animator->RequestFrame(false);
+    task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
+  });
+  latch.Wait();
+  ASSERT_FALSE(delegate.notify_idle_called_);
+
+  // Validate it has not notified idle and try to render.
+  task_runners.GetUITaskRunner()->PostDelayedTask(
+      [&] {
+        ASSERT_FALSE(delegate.notify_idle_called_);
+        auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
+                                                      SkISize::Make(600, 800));
+        animator->Render(std::move(layer_tree), 1.0);
+        task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
+      },
+      // See kNotifyIdleTaskWaitTime in animator.cc.
+      fml::TimeDelta::FromMilliseconds(60));
+  latch.Wait();
+
+  // Still hasn't notified idle because there has been no frame request.
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    ASSERT_FALSE(delegate.notify_idle_called_);
+    // False to avoid getting cals to BeginFrame that will request more frames
+    // before we are ready.
+    animator->RequestFrame(false);
+    task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
+  });
+  latch.Wait();
+
+  // Now it should notify idle. Make sure it is destroyed on the UI thread.
+  ASSERT_TRUE(delegate.notify_idle_called_);
+
+  task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
+  latch.Wait();
+
+  task_runners.GetUITaskRunner()->PostTask([&] {
+    animator.reset();
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
+  FakeAnimatorDelegate delegate;
+  TaskRunners task_runners = {
+      "test",
+      CreateNewThread(),  // platform
+      CreateNewThread(),  // raster
+      CreateNewThread(),  // ui
+      CreateNewThread()   // io
+  };
+
+  auto clock = std::make_shared<ShellTestVsyncClock>();
+  std::shared_ptr<Animator> animator;
+
+  auto flush_vsync_task = [&] {
+    fml::AutoResetWaitableEvent ui_latch;
+    task_runners.GetUITaskRunner()->PostTask([&] { ui_latch.Signal(); });
+    do {
+      clock->SimulateVSync();
+    } while (ui_latch.WaitWithTimeout(fml::TimeDelta::FromMilliseconds(1)));
+  };
+
+  // Create the animator on the UI task runner.
+  PostTaskSync(task_runners.GetUITaskRunner(), [&] {
+    auto vsync_waiter = static_cast<std::unique_ptr<VsyncWaiter>>(
+        std::make_unique<ShellTestVsyncWaiter>(task_runners, clock));
+    animator = std::make_unique<Animator>(delegate, task_runners,
+                                          std::move(vsync_waiter));
+  });
+
+  fml::AutoResetWaitableEvent begin_frame_latch;
+  EXPECT_CALL(delegate, OnAnimatorBeginFrame)
+      .WillRepeatedly(
+          [&](fml::TimePoint frame_target_time, uint64_t frame_number) {
+            begin_frame_latch.Signal();
+          });
+  // It must always be called when the method 'Animator::Render' is called,
+  // regardless of whether the pipeline is empty or not.
+  EXPECT_CALL(delegate, OnAnimatorUpdateLatestFrameTargetTime).Times(2);
+  // It will only be called once even though we call the method
+  // 'Animator::Render' twice. because it will only be called when the pipeline
+  // is empty.
+  EXPECT_CALL(delegate, OnAnimatorDraw).Times(1);
+
+  for (int i = 0; i < 2; i++) {
+    task_runners.GetUITaskRunner()->PostTask([&] {
+      animator->RequestFrame();
+      task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
+    });
+    begin_frame_latch.Wait();
+
+    PostTaskSync(task_runners.GetUITaskRunner(), [&] {
+      auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
+                                                    SkISize::Make(600, 800));
+      animator->Render(std::move(layer_tree), 1.0);
+    });
+  }
+
+  PostTaskSync(task_runners.GetUITaskRunner(), [&] { animator.reset(); });
 }
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

@@ -14,6 +14,7 @@
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkPoint3.h"
 #include "third_party/skia/include/core/SkRRect.h"
+#include "third_party/skia/include/core/SkSamplingOptions.h"
 
 namespace flutter {
 namespace testing {
@@ -22,6 +23,7 @@ extern std::ostream& operator<<(std::ostream& os, const SkClipOp& o);
 extern std::ostream& operator<<(std::ostream& os, const SkMatrix& m);
 extern std::ostream& operator<<(std::ostream& os, const SkM44& m);
 extern std::ostream& operator<<(std::ostream& os, const SkVector3& v);
+extern std::ostream& operator<<(std::ostream& os, const SkIRect& r);
 extern std::ostream& operator<<(std::ostream& os, const SkRect& r);
 extern std::ostream& operator<<(std::ostream& os, const SkRRect& r);
 extern std::ostream& operator<<(std::ostream& os, const SkPath& r);
@@ -29,6 +31,7 @@ extern std::ostream& operator<<(std::ostream& os, const SkPoint& r);
 extern std::ostream& operator<<(std::ostream& os, const SkISize& size);
 extern std::ostream& operator<<(std::ostream& os, const SkColor4f& r);
 extern std::ostream& operator<<(std::ostream& os, const SkPaint& r);
+extern std::ostream& operator<<(std::ostream& os, const SkSamplingOptions& s);
 
 }  // namespace testing
 }  // namespace flutter

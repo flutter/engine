@@ -18,6 +18,7 @@
 #define TXT_ASSET_FONT_MANAGER_H_
 
 #include <memory>
+#include <utility>
 
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
@@ -29,13 +30,13 @@ namespace txt {
 
 class AssetFontManager : public SkFontMgr {
  public:
-  AssetFontManager(std::unique_ptr<FontAssetProvider> font_provider);
+  explicit AssetFontManager(std::unique_ptr<FontAssetProvider> font_provider);
 
   ~AssetFontManager() override;
 
  protected:
   // |SkFontMgr|
-  SkFontStyleSet* onMatchFamily(const char familyName[]) const override;
+  sk_sp<SkFontStyleSet> onMatchFamily(const char familyName[]) const override;
 
   std::unique_ptr<FontAssetProvider> font_provider_;
 
@@ -47,22 +48,19 @@ class AssetFontManager : public SkFontMgr {
   void onGetFamilyName(int index, SkString* familyName) const override;
 
   // |SkFontMgr|
-  SkFontStyleSet* onCreateStyleSet(int index) const override;
+  sk_sp<SkFontStyleSet> onCreateStyleSet(int index) const override;
 
   // |SkFontMgr|
-  SkTypeface* onMatchFamilyStyle(const char familyName[],
-                                 const SkFontStyle&) const override;
+  sk_sp<SkTypeface> onMatchFamilyStyle(const char familyName[],
+                                       const SkFontStyle&) const override;
 
   // |SkFontMgr|
-  SkTypeface* onMatchFamilyStyleCharacter(const char familyName[],
-                                          const SkFontStyle&,
-                                          const char* bcp47[],
-                                          int bcp47Count,
-                                          SkUnichar character) const override;
-
-  // |SkFontMgr|
-  SkTypeface* onMatchFaceStyle(const SkTypeface*,
-                               const SkFontStyle&) const override;
+  sk_sp<SkTypeface> onMatchFamilyStyleCharacter(
+      const char familyName[],
+      const SkFontStyle&,
+      const char* bcp47[],
+      int bcp47Count,
+      SkUnichar character) const override;
 
   // |SkFontMgr|
   sk_sp<SkTypeface> onMakeFromData(sk_sp<SkData>, int ttcIndex) const override;
@@ -91,7 +89,7 @@ class DynamicFontManager : public AssetFontManager {
   DynamicFontManager()
       : AssetFontManager(std::make_unique<TypefaceFontAssetProvider>()) {}
 
-  TypefaceFontAssetProvider& font_provider() {
+  TypefaceFontAssetProvider& font_provider() const {
     return static_cast<TypefaceFontAssetProvider&>(*font_provider_);
   }
 };

@@ -49,5 +49,41 @@
       "androidx.annotation.UiThread",
       "androidx.annotation.VisibleForTesting"
     ]
+  },
+  {
+    "url": "https://maven.google.com/androidx/tracing/tracing/1.0.0/tracing-1.0.0.aar",
+    "out_file_name": "androidx_tracing.aar",
+    "maven_dependency": "androidx.tracing:tracing:1.0.0",
+    "provides": [
+      "androidx.tracing.Trace"
+    ]
+  },
+  {
+    "url": "https://dl.google.com/android/maven2/androidx/core/core/1.6.0/core-1.6.0.aar",
+    "out_file_name": "androidx_core.aar",
+    "maven_dependency": "androidx.core:core:1.6.0",
+    "provides": [
+      "androidx.core.view.WindowInsetsControllerCompat"
+    ]
+  },
+  {
+    "url": "https://maven.google.com/androidx/window/window-java/1.0.0-beta04/window-java-1.0.0-beta04.aar",
+    "out_file_name": "androidx_window_java.aar",
+    "maven_dependency": "androidx.window:window-java:1.0.0-beta04",
+    "provides": [
+      "androidx.window.java.layout.WindowInfoRepositoryCallbackAdapter",
+      "androidx.window.layout.DisplayFeature",
+      "androidx.window.layout.FoldingFeature",
+      "androidx.window.layout.FoldingFeature.OcclusionType",
+      "androidx.window.layout.FoldingFeature.State",
+      "androidx.window.layout.WindowLayoutInfo",
+      "androidx.window.layout.WindowInfoRepository"
+    ]
+  },
+  {
+    "url": "https://dl.google.com/android/maven2/com/google/android/play/core/1.8.0/core-1.8.0.aar",
+    "out_file_name": "core-1.8.0.aar",
+    "maven_dependency": "com.google.android.play:core:1.8.0",
+    "provides": []
   }
 ]

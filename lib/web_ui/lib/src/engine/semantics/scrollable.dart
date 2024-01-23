@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
 
 /// Implements vertical and horizontal scrolling functionality for semantics
 /// objects.
@@ -22,18 +22,38 @@ part of engine;
 /// contents is less than the size of the viewport the browser snaps
 /// "scrollTop" back to zero. If there is more content than available in the
 /// viewport "scrollTop" may take positive values.
-class Scrollable extends RoleManager {
+class Scrollable extends PrimaryRoleManager {
   Scrollable(SemanticsObject semanticsObject)
-      : super(Role.scrollable, semanticsObject);
+      : super.withBasics(PrimaryRole.scrollable, semanticsObject) {
+    _scrollOverflowElement.style
+      ..position = 'absolute'
+      ..transformOrigin = '0 0 0'
+      // Ignore pointer events since this is a dummy element.
+      ..pointerEvents = 'none';
+    append(_scrollOverflowElement);
+  }
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;
+
+  /// DOM element used as a workaround for: https://github.com/flutter/flutter/issues/104036
+  ///
+  /// When the assistive technology gets to the last element of the scrollable
+  /// list, the browser thinks the scrollable area doesn't have any more content,
+  /// so it overrides the value of "scrollTop"/"scrollLeft" with zero. As a result,
+  /// the user can't scroll back up/left.
+  ///
+  /// As a workaround, we add this DOM element and set its size to
+  /// [canonicalNeutralScrollPosition] so the browser believes
+  /// that the scrollable area still has some more content, and doesn't override
+  /// scrollTop/scrollLetf with zero.
+  final DomElement _scrollOverflowElement = createDomElement('flt-semantics-scroll-overflow');
 
   /// Listens to HTML "scroll" gestures detected by the browser.
   ///
   /// This gesture is converted to [ui.SemanticsAction.scrollUp] or
   /// [ui.SemanticsAction.scrollDown], depending on the direction.
-  html.EventListener? _scrollListener;
+  DomEventListener? _scrollListener;
 
   /// The value of the "scrollTop" or "scrollLeft" property of this object's
   /// [element] that has zero offset relative to the [scrollPosition].
@@ -42,7 +62,7 @@ class Scrollable extends RoleManager {
   /// Responds to browser-detected "scroll" gestures.
   void _recomputeScrollPosition() {
     if (_domScrollPosition != _effectiveNeutralScrollPosition) {
-      if (!semanticsObject.owner.shouldAcceptBrowserGesture('scroll')) {
+      if (!EngineSemantics.instance.shouldAcceptBrowserGesture('scroll')) {
         return;
       }
       final bool doScrollForward =
@@ -75,6 +95,13 @@ class Scrollable extends RoleManager {
 
   @override
   void update() {
+    super.update();
+
+    semanticsObject.owner.addOneTimePostUpdateCallback(() {
+      _neutralizeDomScrollPosition();
+      semanticsObject.recomputePositionAndSize();
+    });
+
     if (_scrollListener == null) {
       // We need to set touch-action:none explicitly here, despite the fact
       // that we already have it on the <body> tag because overflow:scroll
@@ -85,15 +112,8 @@ class Scrollable extends RoleManager {
       // This is effective only in Chrome. Safari does not implement this
       // CSS property. In Safari the `PointerBinding` uses `preventDefault`
       // to prevent browser scrolling.
-      semanticsObject.element.style.touchAction = 'none';
+      element.style.touchAction = 'none';
       _gestureModeDidChange();
-
-      // We neutralize the scroll position after all children have been
-      // updated. Otherwise the browser does not yet have the sizes of the
-      // child nodes and resets the scrollTop value back to zero.
-      semanticsObject.owner.addOneTimePostUpdateCallback(() {
-        _neutralizeDomScrollPosition();
-      });
 
       // Memoize the tear-off because Dart does not guarantee that two
       // tear-offs of a method on the same instance will produce the same
@@ -101,22 +121,22 @@ class Scrollable extends RoleManager {
       _gestureModeListener = (_) {
         _gestureModeDidChange();
       };
-      semanticsObject.owner.addGestureModeListener(_gestureModeListener);
+      EngineSemantics.instance.addGestureModeListener(_gestureModeListener!);
 
-      _scrollListener = (_) {
+      _scrollListener = createDomEventListener((_) {
         _recomputeScrollPosition();
-      };
-      semanticsObject.element.addEventListener('scroll', _scrollListener);
+      });
+      addEventListener('scroll', _scrollListener);
     }
   }
 
   /// The value of "scrollTop" or "scrollLeft", depending on the scroll axis.
   int get _domScrollPosition {
     if (semanticsObject.isVerticalScrollContainer) {
-      return semanticsObject.element.scrollTop;
+      return element.scrollTop.toInt();
     } else {
       assert(semanticsObject.isHorizontalScrollContainer);
-      return semanticsObject.element.scrollLeft;
+      return element.scrollLeft.toInt();
     }
   }
 
@@ -132,21 +152,42 @@ class Scrollable extends RoleManager {
   /// content available.
   void _neutralizeDomScrollPosition() {
     // This value is arbitrary.
-    const int _canonicalNeutralScrollPosition = 10;
-
-    final html.Element element = semanticsObject.element;
+    const int canonicalNeutralScrollPosition = 10;
+    final ui.Rect? rect = semanticsObject.rect;
+    if (rect == null) {
+      printWarning('Warning! the rect attribute of semanticsObject is null');
+      return;
+    }
     if (semanticsObject.isVerticalScrollContainer) {
-      element.scrollTop = _canonicalNeutralScrollPosition;
+      // Place the _scrollOverflowElement at the end of the content and
+      // make sure that when we neutralize the scrolling position,
+      // it doesn't scroll into the visible area.
+      final int verticalOffset = rect.height.ceil() + canonicalNeutralScrollPosition;
+      _scrollOverflowElement.style
+        ..transform = 'translate(0px,${verticalOffset}px)'
+        ..width = '${rect.width.round()}px'
+        ..height = '${canonicalNeutralScrollPosition}px';
+
+      element.scrollTop = canonicalNeutralScrollPosition.toDouble();
       // Read back because the effective value depends on the amount of content.
-      _effectiveNeutralScrollPosition = element.scrollTop;
+      _effectiveNeutralScrollPosition = element.scrollTop.toInt();
       semanticsObject
         ..verticalContainerAdjustment =
             _effectiveNeutralScrollPosition.toDouble()
         ..horizontalContainerAdjustment = 0.0;
     } else {
-      element.scrollLeft = _canonicalNeutralScrollPosition;
+      // Place the _scrollOverflowElement at the end of the content and
+      // make sure that when we neutralize the scrolling position,
+      // it doesn't scroll into the visible area.
+      final int horizontalOffset = rect.width.ceil() + canonicalNeutralScrollPosition;
+      _scrollOverflowElement.style
+        ..transform = 'translate(${horizontalOffset}px,0px)'
+        ..width = '${canonicalNeutralScrollPosition}px'
+        ..height = '${rect.height.round()}px';
+
+      element.scrollLeft = canonicalNeutralScrollPosition.toDouble();
       // Read back because the effective value depends on the amount of content.
-      _effectiveNeutralScrollPosition = element.scrollLeft;
+      _effectiveNeutralScrollPosition = element.scrollLeft.toInt();
       semanticsObject
         ..verticalContainerAdjustment = 0.0
         ..horizontalContainerAdjustment =
@@ -155,8 +196,7 @@ class Scrollable extends RoleManager {
   }
 
   void _gestureModeDidChange() {
-    final html.Element element = semanticsObject.element;
-    switch (semanticsObject.owner.gestureMode) {
+    switch (EngineSemantics.instance.gestureMode) {
       case GestureMode.browserGestures:
         // overflow:scroll will cause the browser report "scroll" events when
         // the accessibility focus shifts outside the visible bounds.
@@ -169,7 +209,6 @@ class Scrollable extends RoleManager {
           assert(semanticsObject.isHorizontalScrollContainer);
           element.style.overflowX = 'scroll';
         }
-        break;
       case GestureMode.pointerEvents:
         // We use "hidden" instead of "scroll" so that the browser does
         // not "steal" pointer events. Flutter gesture recognizers need
@@ -180,21 +219,27 @@ class Scrollable extends RoleManager {
           assert(semanticsObject.isHorizontalScrollContainer);
           element.style.overflowX = 'hidden';
         }
-        break;
     }
   }
 
   @override
   void dispose() {
-    final html.CssStyleDeclaration style = semanticsObject.element.style;
+    super.dispose();
+    final DomCSSStyleDeclaration style = element.style;
     assert(_gestureModeListener != null);
     style.removeProperty('overflowY');
     style.removeProperty('overflowX');
     style.removeProperty('touch-action');
     if (_scrollListener != null) {
-      semanticsObject.element.removeEventListener('scroll', _scrollListener);
+      removeEventListener('scroll', _scrollListener);
+      _scrollListener = null;
     }
-    semanticsObject.owner.removeGestureModeListener(_gestureModeListener);
-    _gestureModeListener = null;
+    if (_gestureModeListener != null) {
+      EngineSemantics.instance.removeGestureModeListener(_gestureModeListener!);
+      _gestureModeListener = null;
+    }
   }
+
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 }

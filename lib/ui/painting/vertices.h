@@ -5,13 +5,10 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_VERTICES_H_
 #define FLUTTER_LIB_UI_PAINTING_VERTICES_H_
 
+#include "flutter/display_list/dl_vertices.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/tonic/typed_data/typed_list.h"
-
-namespace tonic {
-class DartLibraryNatives;
-}  // namespace tonic
 
 namespace flutter {
 
@@ -22,23 +19,21 @@ class Vertices : public RefCountedDartWrappable<Vertices> {
  public:
   ~Vertices() override;
 
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
   static bool init(Dart_Handle vertices_handle,
-                   SkVertices::VertexMode vertex_mode,
-                   const tonic::Float32List& positions,
-                   const tonic::Float32List& texture_coordinates,
-                   const tonic::Int32List& colors,
-                   const tonic::Uint16List& indices);
+                   DlVertexMode vertex_mode,
+                   Dart_Handle positions_handle,
+                   Dart_Handle texture_coordinates_handle,
+                   Dart_Handle colors_handle,
+                   Dart_Handle indices_handle);
 
-  const sk_sp<SkVertices>& vertices() const { return vertices_; }
+  const DlVertices* vertices() const { return vertices_.get(); }
 
-  size_t GetAllocationSize() const override;
+  void dispose();
 
  private:
   Vertices();
 
-  sk_sp<SkVertices> vertices_;
+  std::shared_ptr<DlVertices> vertices_;
 };
 
 }  // namespace flutter

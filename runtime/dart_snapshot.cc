@@ -25,7 +25,7 @@ const char* DartSnapshot::kIsolateInstructionsSymbol =
 // data through symbols that are statically linked into the executable.
 // On other platforms this data is obtained by a dynamic symbol lookup.
 #define DART_SNAPSHOT_STATIC_LINK \
-  ((OS_WIN || OS_ANDROID) && FLUTTER_JIT_RUNTIME)
+  ((FML_OS_WIN || FML_OS_ANDROID) && FLUTTER_JIT_RUNTIME)
 
 #if !DART_SNAPSHOT_STATIC_LINK
 
@@ -51,7 +51,7 @@ static std::unique_ptr<const fml::Mapping> GetFileMapping(
 // moves to the embedder API, this method can effectively be reduced to just
 // invoking the embedder_mapping_callback directly.
 static std::shared_ptr<const fml::Mapping> SearchMapping(
-    MappingCallback embedder_mapping_callback,
+    const MappingCallback& embedder_mapping_callback,
     const std::string& file_path,
     const std::vector<std::string>& native_library_path,
     const char* native_library_symbol_name,
@@ -59,11 +59,16 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
   // Ask the embedder. There is no fallback as we expect the embedders (via
   // their embedding APIs) to just specify the mappings directly.
   if (embedder_mapping_callback) {
-    return embedder_mapping_callback();
+    // Note that mapping will be nullptr if the mapping callback returns an
+    // invalid mapping. If all the other methods for resolving the data also
+    // fail, the engine will stop with accompanying error logs.
+    if (auto mapping = embedder_mapping_callback()) {
+      return mapping;
+    }
   }
 
   // Attempt to open file at path specified.
-  if (file_path.size() > 0) {
+  if (!file_path.empty()) {
     if (auto file_mapping = GetFileMapping(file_path, is_executable)) {
       return file_mapping;
     }
@@ -97,7 +102,11 @@ static std::shared_ptr<const fml::Mapping> SearchMapping(
 static std::shared_ptr<const fml::Mapping> ResolveVMData(
     const Settings& settings) {
 #if DART_SNAPSHOT_STATIC_LINK
-  return std::make_unique<fml::NonOwnedMapping>(kDartVmSnapshotData, 0);
+  return std::make_unique<fml::NonOwnedMapping>(kDartVmSnapshotData,
+                                                0,        // size
+                                                nullptr,  // release_func
+                                                true      // dontneed_safe
+  );
 #else   // DART_SNAPSHOT_STATIC_LINK
   return SearchMapping(
       settings.vm_snapshot_data,          // embedder_mapping_callback
@@ -112,7 +121,11 @@ static std::shared_ptr<const fml::Mapping> ResolveVMData(
 static std::shared_ptr<const fml::Mapping> ResolveVMInstructions(
     const Settings& settings) {
 #if DART_SNAPSHOT_STATIC_LINK
-  return std::make_unique<fml::NonOwnedMapping>(kDartVmSnapshotInstructions, 0);
+  return std::make_unique<fml::NonOwnedMapping>(kDartVmSnapshotInstructions,
+                                                0,        // size
+                                                nullptr,  // release_func
+                                                true      // dontneed_safe
+  );
 #else   // DART_SNAPSHOT_STATIC_LINK
   return SearchMapping(
       settings.vm_snapshot_instr,           // embedder_mapping_callback
@@ -127,7 +140,11 @@ static std::shared_ptr<const fml::Mapping> ResolveVMInstructions(
 static std::shared_ptr<const fml::Mapping> ResolveIsolateData(
     const Settings& settings) {
 #if DART_SNAPSHOT_STATIC_LINK
-  return std::make_unique<fml::NonOwnedMapping>(kDartIsolateSnapshotData, 0);
+  return std::make_unique<fml::NonOwnedMapping>(kDartIsolateSnapshotData,
+                                                0,        // size
+                                                nullptr,  // release_func
+                                                true      // dontneed_safe
+  );
 #else   // DART_SNAPSHOT_STATIC_LINK
   return SearchMapping(
       settings.isolate_snapshot_data,       // embedder_mapping_callback
@@ -143,7 +160,11 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateInstructions(
     const Settings& settings) {
 #if DART_SNAPSHOT_STATIC_LINK
   return std::make_unique<fml::NonOwnedMapping>(
-      kDartIsolateSnapshotInstructions, 0);
+      kDartIsolateSnapshotInstructions,
+      0,        // size
+      nullptr,  // release_func
+      true      // dontneed_safe
+  );
 #else   // DART_SNAPSHOT_STATIC_LINK
   return SearchMapping(
       settings.isolate_snapshot_instr,           // embedder_mapping_callback
@@ -155,7 +176,7 @@ static std::shared_ptr<const fml::Mapping> ResolveIsolateInstructions(
 #endif  // DART_SNAPSHOT_STATIC_LINK
 }
 
-fml::RefPtr<DartSnapshot> DartSnapshot::VMSnapshotFromSettings(
+fml::RefPtr<const DartSnapshot> DartSnapshot::VMSnapshotFromSettings(
     const Settings& settings) {
   TRACE_EVENT0("flutter", "DartSnapshot::VMSnapshotFromSettings");
   auto snapshot =
@@ -168,7 +189,7 @@ fml::RefPtr<DartSnapshot> DartSnapshot::VMSnapshotFromSettings(
   return nullptr;
 }
 
-fml::RefPtr<DartSnapshot> DartSnapshot::IsolateSnapshotFromSettings(
+fml::RefPtr<const DartSnapshot> DartSnapshot::IsolateSnapshotFromSettings(
     const Settings& settings) {
   TRACE_EVENT0("flutter", "DartSnapshot::IsolateSnapshotFromSettings");
   auto snapshot =
@@ -179,6 +200,36 @@ fml::RefPtr<DartSnapshot> DartSnapshot::IsolateSnapshotFromSettings(
     return snapshot;
   }
   return nullptr;
+}
+
+fml::RefPtr<DartSnapshot> DartSnapshot::IsolateSnapshotFromMappings(
+    const std::shared_ptr<const fml::Mapping>& snapshot_data,
+    const std::shared_ptr<const fml::Mapping>& snapshot_instructions) {
+  auto snapshot =
+      fml::MakeRefCounted<DartSnapshot>(snapshot_data, snapshot_instructions);
+  if (snapshot->IsValid()) {
+    return snapshot;
+  }
+  return nullptr;
+}
+
+fml::RefPtr<DartSnapshot> DartSnapshot::VMServiceIsolateSnapshotFromSettings(
+    const Settings& settings) {
+#if DART_SNAPSHOT_STATIC_LINK
+  return nullptr;
+#else   // DART_SNAPSHOT_STATIC_LINK
+  if (settings.vmservice_snapshot_library_path.empty()) {
+    return nullptr;
+  }
+
+  std::shared_ptr<const fml::Mapping> snapshot_data =
+      SearchMapping(nullptr, "", settings.vmservice_snapshot_library_path,
+                    DartSnapshot::kIsolateDataSymbol, false);
+  std::shared_ptr<const fml::Mapping> snapshot_instructions =
+      SearchMapping(nullptr, "", settings.vmservice_snapshot_library_path,
+                    DartSnapshot::kIsolateInstructionsSymbol, true);
+  return IsolateSnapshotFromMappings(snapshot_data, snapshot_instructions);
+#endif  // DART_SNAPSHOT_STATIC_LINK
 }
 
 DartSnapshot::DartSnapshot(std::shared_ptr<const fml::Mapping> data,
@@ -201,6 +252,16 @@ const uint8_t* DartSnapshot::GetDataMapping() const {
 
 const uint8_t* DartSnapshot::GetInstructionsMapping() const {
   return instructions_ ? instructions_->GetMapping() : nullptr;
+}
+
+bool DartSnapshot::IsDontNeedSafe() const {
+  if (data_ && !data_->IsDontNeedSafe()) {
+    return false;
+  }
+  if (instructions_ && !instructions_->IsDontNeedSafe()) {
+    return false;
+  }
+  return true;
 }
 
 bool DartSnapshot::IsNullSafetyEnabled(const fml::Mapping* kernel) const {

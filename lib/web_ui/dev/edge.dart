@@ -2,15 +2,43 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 
+import 'package:test_api/src/backend/runtime.dart';
+
 import 'browser.dart';
+import 'browser_process.dart';
 import 'common.dart';
 import 'edge_installation.dart';
+import 'package_lock.dart';
 
-/// A class for running an instance of Edge.
+/// Provides an environment for the desktop Microsoft Edge (Chromium-based).
+class EdgeEnvironment implements BrowserEnvironment {
+  @override
+  final String name = 'Edge';
+
+  @override
+  Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
+    return Edge(url);
+  }
+
+  @override
+  Runtime get packageTestRuntime => Runtime.edge;
+
+  @override
+  Future<void> prepare() async {
+    // Edge doesn't need any special prep.
+  }
+
+  @override
+  Future<void> cleanup() async {}
+
+  @override
+  String get packageTestConfigurationYamlFile => 'dart_test_edge.yaml';
+}
+
+/// Runs desktop Edge.
 ///
 /// Most of the communication with the browser is expected to happen via HTTP,
 /// so this exposes a bare-bones API. The browser starts as soon as the class is
@@ -18,37 +46,38 @@ import 'edge_installation.dart';
 ///
 /// Any errors starting or running the process are reported through [onExit].
 class Edge extends Browser {
-  @override
-  final name = 'Edge';
-
-  static String version;
-
   /// Starts a new instance of Safari open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Edge(Uri url, {bool debug = false}) {
-    version = EdgeArgParser.instance.version;
-
-    assert(version != null);
-    return Edge._(() async {
-      // TODO(nurhan): Configure info log for LUCI.
+  factory Edge(Uri url) {
+    return Edge._(BrowserProcess(() async {
       final BrowserInstallation installation = await getEdgeInstallation(
-        version,
+        packageLock.edgeLock.launcherVersion,
         infoLog: DevNull(),
       );
 
       // Debug is not a valid option for Edge. Remove it.
       String pathToOpen = url.toString();
       if(pathToOpen.contains('debug')) {
-        int index = pathToOpen.indexOf('debug');
+        final int index = pathToOpen.indexOf('debug');
         pathToOpen = pathToOpen.substring(0, index-1);
       }
 
-      var process =
-          await Process.start(installation.executable, ['$pathToOpen','-k']);
+      final Process process = await Process.start(
+        installation.executable,
+        <String>[pathToOpen,'-k'],
+      );
 
       return process;
-    });
+    }));
   }
 
-  Edge._(Future<Process> startBrowser()) : super(startBrowser);
+  Edge._(this._process);
+
+  final BrowserProcess _process;
+
+  @override
+  Future<void> get onExit => _process.onExit;
+
+  @override
+  Future<void> close()  => _process.close();
 }

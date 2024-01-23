@@ -2,11 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:js_interop';
 
-/// A function that receives a benchmark [value] labeleb by [name].
-typedef OnBenchmark = void Function(String name, double value);
+import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
+
+import 'dom.dart';
+import 'platform_dispatcher.dart';
+import 'util.dart';
+
+// TODO(mdebbar): Deprecate this and remove it.
+// https://github.com/flutter/flutter/issues/127395
+@JS('window._flutter_internal_on_benchmark')
+external JSExportedDartFunction? get jsBenchmarkValueCallback;
+
+ui_web.BenchmarkValueCallback? engineBenchmarkValueCallback;
 
 /// A function that computes a value of type [R].
 ///
@@ -63,7 +74,6 @@ class Profiler {
 
   static bool isBenchmarkMode = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_PROFILING',
-    defaultValue: false,
   );
 
   static Profiler ensureInitialized() {
@@ -100,17 +110,26 @@ class Profiler {
   void benchmark(String name, double value) {
     _checkBenchmarkMode();
 
-    final OnBenchmark? onBenchmark =
-        js_util.getProperty(html.window, '_flutter_internal_on_benchmark');
-    if (onBenchmark != null) {
-      onBenchmark(name, value);
+    final ui_web.BenchmarkValueCallback? callback =
+        jsBenchmarkValueCallback?.toDart as ui_web.BenchmarkValueCallback?;
+    if (callback != null) {
+      printWarning(
+        'The JavaScript benchmarking API (i.e. `window._flutter_internal_on_benchmark`) '
+        'is deprecated and will be removed in a future release. Please use '
+        '`benchmarkValueCallback` from `dart:ui_web` instead.',
+      );
+      callback(name, value);
+    }
+
+    if (engineBenchmarkValueCallback != null) {
+      engineBenchmarkValueCallback!(name, value);
     }
   }
 }
 
 /// Whether we are collecting [ui.FrameTiming]s.
 bool get _frameTimingsEnabled {
-  return EnginePlatformDispatcher.instance._onReportTimings != null;
+  return EnginePlatformDispatcher.instance.onReportTimings != null;
 }
 
 /// Collects frame timings from frames.
@@ -134,7 +153,7 @@ int _rasterStartMicros = -1;
 int _rasterFinishMicros = -1;
 
 /// Records the vsync timestamp for this frame.
-void _frameTimingsOnVsync() {
+void frameTimingsOnVsync() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -142,7 +161,7 @@ void _frameTimingsOnVsync() {
 }
 
 /// Records the time when the framework started building the frame.
-void _frameTimingsOnBuildStart() {
+void frameTimingsOnBuildStart() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -150,7 +169,7 @@ void _frameTimingsOnBuildStart() {
 }
 
 /// Records the time when the framework finished building the frame.
-void _frameTimingsOnBuildFinish() {
+void frameTimingsOnBuildFinish() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -171,7 +190,7 @@ void _frameTimingsOnBuildFinish() {
 ///
 /// CanvasKit captures everything because we control the rasterization
 /// process, so we know exactly when rasterization starts and ends.
-void _frameTimingsOnRasterStart() {
+void frameTimingsOnRasterStart() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -182,7 +201,7 @@ void _frameTimingsOnRasterStart() {
 ///
 /// See [_frameTimingsOnRasterStart] for more details on what rasterization
 /// timings mean on the web.
-void _frameTimingsOnRasterFinish() {
+void frameTimingsOnRasterFinish() {
   if (!_frameTimingsEnabled) {
     return;
   }
@@ -194,6 +213,7 @@ void _frameTimingsOnRasterFinish() {
     buildFinish: _buildFinishMicros,
     rasterStart: _rasterStartMicros,
     rasterFinish: _rasterFinishMicros,
+    rasterFinishWallTime: _rasterFinishMicros,
   ));
   _vsyncStartMicros = -1;
   _buildStartMicros = -1;
@@ -216,7 +236,7 @@ void _frameTimingsOnRasterFinish() {
 ///   particularly notes about Firefox rounding to 1ms for security reasons,
 ///   which can be bypassed in tests by setting certain browser options.
 int _nowMicros() {
-  return (html.window.performance.now() * 1000).toInt();
+  return (domWindow.performance.now() * 1000).toInt();
 }
 
 /// Counts various events that take place while the app is running.
@@ -231,9 +251,21 @@ class Instrumentation {
   /// Whether instrumentation is enabled.
   ///
   /// Check this value before calling any other methods in this class.
-  static const bool enabled = const bool.fromEnvironment(
+  static bool get enabled => _enabled;
+  static set enabled(bool value) {
+    if (_enabled == value) {
+      return;
+    }
+
+    if (!value) {
+      _instance._counters.clear();
+      _instance._printTimer = null;
+    }
+
+    _enabled = value;
+  }
+  static bool _enabled = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_INSTRUMENTATION',
-    defaultValue: false,
   );
 
   /// Returns the singleton that provides instrumentation API.
@@ -242,11 +274,11 @@ class Instrumentation {
     return _instance;
   }
 
-  static late final Instrumentation _instance = Instrumentation._();
+  static final Instrumentation _instance = Instrumentation._();
 
   static void _checkInstrumentationEnabled() {
     if (!enabled) {
-      throw Exception(
+      throw StateError(
         'Cannot use Instrumentation unless it is enabled. '
         'You can enable it by setting the `FLUTTER_WEB_ENABLE_INSTRUMENTATION` '
         'environment variable to true, or by passing '
@@ -256,7 +288,10 @@ class Instrumentation {
     }
   }
 
+  Map<String, int> get debugCounters => _counters;
   final Map<String, int> _counters = <String, int>{};
+
+  Timer? get debugPrintTimer => _printTimer;
   Timer? _printTimer;
 
   /// Increments the count of a particular event by one.
@@ -267,12 +302,16 @@ class Instrumentation {
     _printTimer ??= Timer(
       const Duration(seconds: 2),
       () {
+        if (_printTimer == null || !_enabled) {
+          return;
+        }
         final StringBuffer message = StringBuffer('Engine counters:\n');
+        // Entries are sorted for readability and testability.
         final List<MapEntry<String, int>> entries = _counters.entries.toList()
           ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
             return a.key.compareTo(b.key);
           });
-        for (MapEntry<String, int> entry in entries) {
+        for (final MapEntry<String, int> entry in entries) {
           message.writeln('  ${entry.key}: ${entry.value}');
         }
         print(message);

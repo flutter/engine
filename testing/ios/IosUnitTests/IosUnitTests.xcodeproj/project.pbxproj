@@ -14,7 +14,9 @@
 		0D6AB6BE22BB05E200EEE540 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BD22BB05E200EEE540 /* Assets.xcassets */; };
 		0D6AB6C122BB05E200EEE540 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB6BF22BB05E200EEE540 /* LaunchScreen.storyboard */; };
 		0D6AB6C422BB05E200EEE540 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D6AB6C322BB05E200EEE540 /* main.m */; };
-		0D6AB73F22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 0D6AB73E22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig */; };
+		F7521D7826BB68BC005F15C5 /* libios_test_flutter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = F7521D7226BB671E005F15C5 /* libios_test_flutter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F7521D7926BB68BC005F15C5 /* libocmock_shared.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = F7521D7526BB673E005F15C5 /* libocmock_shared.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		F77E081926FA9CE6003E6E4C /* Flutter.framework in Embed Libraries */ = {isa = PBXBuildFile; fileRef = F77E081726FA9CE6003E6E4C /* Flutter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +36,9 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F7521D7826BB68BC005F15C5 /* libios_test_flutter.dylib in Embed Libraries */,
+				F77E081926FA9CE6003E6E4C /* Flutter.framework in Embed Libraries */,
+				F7521D7926BB68BC005F15C5 /* libocmock_shared.dylib in Embed Libraries */,
 			);
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -44,11 +49,11 @@
 		0AC232F424BA71D300A85907 /* SemanticsObjectTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SemanticsObjectTest.mm; sourceTree = "<group>"; };
 		0AC232F724BA71D300A85907 /* FlutterEngineTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterEngineTest.mm; sourceTree = "<group>"; };
 		0AC2330324BA71D300A85907 /* accessibility_bridge_test.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = accessibility_bridge_test.mm; sourceTree = "<group>"; };
-		0AC2330B24BA71D300A85907 /* FlutterTextInputPluginTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FlutterTextInputPluginTest.m; sourceTree = "<group>"; };
+		0AC2330B24BA71D300A85907 /* FlutterTextInputPluginTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterTextInputPluginTest.mm; sourceTree = "<group>"; };
 		0AC2330F24BA71D300A85907 /* FlutterBinaryMessengerRelayTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterBinaryMessengerRelayTest.mm; sourceTree = "<group>"; };
 		0AC2331024BA71D300A85907 /* connection_collection_test.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = connection_collection_test.mm; sourceTree = "<group>"; };
 		0AC2331224BA71D300A85907 /* FlutterEnginePlatformViewTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterEnginePlatformViewTest.mm; sourceTree = "<group>"; };
-		0AC2331924BA71D300A85907 /* FlutterPluginAppLifeCycleDelegateTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FlutterPluginAppLifeCycleDelegateTest.m; sourceTree = "<group>"; };
+		0AC2331924BA71D300A85907 /* FlutterPluginAppLifeCycleDelegateTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterPluginAppLifeCycleDelegateTest.mm; sourceTree = "<group>"; };
 		0AC2332124BA71D300A85907 /* FlutterViewControllerTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterViewControllerTest.mm; sourceTree = "<group>"; };
 		0D1CE5D7233430F400E5D880 /* FlutterChannelsTest.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FlutterChannelsTest.m; sourceTree = "<group>"; };
 		0D6AB6B122BB05E100EEE540 /* IosUnitTests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IosUnitTests.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,6 +69,15 @@
 		0D6AB6C922BB05E200EEE540 /* IosUnitTestsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IosUnitTestsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D6AB6CF22BB05E200EEE540 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0D6AB73E22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = FlutterEngineConfig.xcconfig; sourceTree = "<group>"; };
+		3DD7D38C27D2B81000DA365C /* FlutterUndoManagerPluginTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterUndoManagerPluginTest.mm; sourceTree = "<group>"; };
+		689EC1E2281B30D3008FEB58 /* FlutterSpellCheckPluginTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterSpellCheckPluginTest.mm; sourceTree = "<group>"; };
+		68B6091227F62F990036AC78 /* VsyncWaiterIosTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = VsyncWaiterIosTest.mm; sourceTree = "<group>"; };
+		73F12C22288F92FF00AFC3A6 /* FlutterViewControllerTest_mrc.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterViewControllerTest_mrc.mm; sourceTree = "<group>"; };
+		D2D361A52B234EAC0018964E /* FlutterMetalLayerTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterMetalLayerTest.mm; sourceTree = "<group>"; };
+		F7521D7226BB671E005F15C5 /* libios_test_flutter.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libios_test_flutter.dylib; path = "../../../../out/$(FLUTTER_ENGINE)/libios_test_flutter.dylib"; sourceTree = "<group>"; };
+		F7521D7526BB673E005F15C5 /* libocmock_shared.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libocmock_shared.dylib; path = "../../../../out/$(FLUTTER_ENGINE)/libocmock_shared.dylib"; sourceTree = "<group>"; };
+		F77E081726FA9CE6003E6E4C /* Flutter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Flutter.framework; path = "../../../../out/$(FLUTTER_ENGINE)/Flutter.framework"; sourceTree = "<group>"; };
+		F7A3FDE026B9E0A300EADD61 /* FlutterAppDelegateTest.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterAppDelegateTest.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,15 +101,21 @@
 		0AC232E924BA71D300A85907 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				689EC1E2281B30D3008FEB58 /* FlutterSpellCheckPluginTest.mm */,
+				68B6091227F62F990036AC78 /* VsyncWaiterIosTest.mm */,
+				3DD7D38C27D2B81000DA365C /* FlutterUndoManagerPluginTest.mm */,
+				F7A3FDE026B9E0A300EADD61 /* FlutterAppDelegateTest.mm */,
 				0AC232F424BA71D300A85907 /* SemanticsObjectTest.mm */,
 				0AC232F724BA71D300A85907 /* FlutterEngineTest.mm */,
 				0AC2330324BA71D300A85907 /* accessibility_bridge_test.mm */,
-				0AC2330B24BA71D300A85907 /* FlutterTextInputPluginTest.m */,
+				0AC2330B24BA71D300A85907 /* FlutterTextInputPluginTest.mm */,
 				0AC2330F24BA71D300A85907 /* FlutterBinaryMessengerRelayTest.mm */,
 				0AC2331024BA71D300A85907 /* connection_collection_test.mm */,
 				0AC2331224BA71D300A85907 /* FlutterEnginePlatformViewTest.mm */,
-				0AC2331924BA71D300A85907 /* FlutterPluginAppLifeCycleDelegateTest.m */,
+				0AC2331924BA71D300A85907 /* FlutterPluginAppLifeCycleDelegateTest.mm */,
 				0AC2332124BA71D300A85907 /* FlutterViewControllerTest.mm */,
+				73F12C22288F92FF00AFC3A6 /* FlutterViewControllerTest_mrc.mm */,
+				D2D361A52B234EAC0018964E /* FlutterMetalLayerTest.mm */,
 			);
 			name = Source;
 			path = ../../../shell/platform/darwin/ios/framework/Source;
@@ -159,6 +179,9 @@
 		0D6AB6FC22BC1BC300EEE540 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F77E081726FA9CE6003E6E4C /* Flutter.framework */,
+				F7521D7226BB671E005F15C5 /* libios_test_flutter.dylib */,
+				F7521D7526BB673E005F15C5 /* libocmock_shared.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -171,7 +194,6 @@
 			buildConfigurationList = 0D6AB6D222BB05E200EEE540 /* Build configuration list for PBXNativeTarget "IosUnitTests" */;
 			buildPhases = (
 				0D6AB6AD22BB05E100EEE540 /* Sources */,
-				242904382534E32900F90C97 /* ShellScript */,
 				0D6AB6AE22BB05E100EEE540 /* Frameworks */,
 				0D6AB6AF22BB05E100EEE540 /* Resources */,
 				24EBCE9E2534C400008D1687 /* Embed Libraries */,
@@ -209,8 +231,8 @@
 		0D6AB6A922BB05E100EEE540 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
-				ORGANIZATIONNAME = "Aaron Clarke";
+				LastUpgradeCheck = 1300;
+				ORGANIZATIONNAME = "The Flutter Authors";
 				TargetAttributes = {
 					0D6AB6B022BB05E100EEE540 = {
 						CreatedOnToolsVersion = 10.2.1;
@@ -255,31 +277,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0D6AB73F22BD8F0200EEE540 /* FlutterEngineConfig.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		242904382534E32900F90C97 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -ex\nxcode_frameworks_dir=\"${TARGET_BUILD_DIR}/${PlugIns/IosUnitTestsTests.xctest/Frameworks/}\"\nmkdir -p \"${xcode_frameworks_dir}\"\nflutter_engine_rel_path=\"../../../../out/${FLUTTER_ENGINE}\"\ncp -f \"${flutter_engine_rel_path}/libios_test_flutter.dylib\" \"${xcode_frameworks_dir}\"\ncp -f \"${flutter_engine_rel_path}/libocmock_shared.dylib\" \"${xcode_frameworks_dir}\"\nif [[ -n \"${EXPANDED_CODE_SIGN_IDENTITY:-}\" ]]; then\n  codesign --force --verbose --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" -- \"${xcode_frameworks_dir}/libocmock_shared.dylib\"\n  codesign --force --verbose --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" -- \"${xcode_frameworks_dir}/libios_test_flutter.dylib\"\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		0D6AB6AD22BB05E100EEE540 /* Sources */ = {
@@ -492,7 +493,6 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
-				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = (
 					../../../..,
 					../../../../flutter/shell/platform/darwin/common/framework/Headers,
@@ -504,13 +504,16 @@
 					../../../../third_party/icu/source/common,
 				);
 				INFOPLIST_FILE = Tests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Tests",
 					../../../../out/$FLUTTER_ENGINE,
 					../../../../out/$FLUTTER_ENGINE/obj/flutter/shell/platform/darwin/ios/,
-					../../../../out/$FLUTTER_ENGINE/obj/third_party/ocmock/,
+					../../../../out/$FLUTTER_ENGINE/obj/flutter/third_party/ocmock/,
 					"$(PROJECT_DIR)",
 				);
 				OTHER_LDFLAGS = (
@@ -521,7 +524,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = ../../../../third_party/ocmock/Source/;
+				SYSTEM_HEADER_SEARCH_PATHS = ../../../third_party/ocmock/Source/;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};
@@ -535,7 +538,6 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_OBJC_ARC = NO;
 				CODE_SIGN_STYLE = Automatic;
-				FRAMEWORK_SEARCH_PATHS = "";
 				HEADER_SEARCH_PATHS = (
 					../../../..,
 					../../../../flutter/shell/platform/darwin/common/framework/Headers,
@@ -547,13 +549,16 @@
 					../../../../third_party/icu/source/common,
 				);
 				INFOPLIST_FILE = Tests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path",
+				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Tests",
 					../../../../out/$FLUTTER_ENGINE,
 					../../../../out/$FLUTTER_ENGINE/obj/flutter/shell/platform/darwin/ios/,
-					../../../../out/$FLUTTER_ENGINE/obj/third_party/ocmock/,
+					../../../../out/$FLUTTER_ENGINE/obj/flutter/third_party/ocmock/,
 					"$(PROJECT_DIR)",
 				);
 				OTHER_LDFLAGS = (
@@ -564,7 +569,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.google.flutter.IosUnitTestsTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SYSTEM_HEADER_SEARCH_PATHS = ../../../../third_party/ocmock/Source/;
+				SYSTEM_HEADER_SEARCH_PATHS = ../../../third_party/ocmock/Source/;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/IosUnitTests.app/IosUnitTests";
 			};

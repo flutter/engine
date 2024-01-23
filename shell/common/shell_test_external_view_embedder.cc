@@ -28,45 +28,80 @@ SkISize ShellTestExternalViewEmbedder::GetLastSubmittedFrameSize() {
   return last_submitted_frame_size_;
 }
 
+std::vector<int64_t> ShellTestExternalViewEmbedder::GetVisitedPlatformViews() {
+  return visited_platform_views_;
+}
+
+MutatorsStack ShellTestExternalViewEmbedder::GetStack(int64_t view_id) {
+  return mutators_stacks_[view_id];
+}
+
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::CancelFrame() {}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {}
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
+
+// |ExternalViewEmbedder|
+void ShellTestExternalViewEmbedder::PrepareFlutterView(
+    int64_t flutter_view_id,
+    SkISize frame_size,
+    double device_pixel_ratio) {
+  visited_platform_views_.clear();
+  mutators_stacks_.clear();
+  current_composition_params_.clear();
+}
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
-    std::unique_ptr<EmbeddedViewParams> params) {}
+    int64_t view_id,
+    std::unique_ptr<EmbeddedViewParams> params) {
+  SkRect view_bounds = SkRect::Make(frame_size_);
+  auto view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+  slices_.insert_or_assign(view_id, std::move(view));
+}
 
 // |ExternalViewEmbedder|
 PostPrerollResult ShellTestExternalViewEmbedder::PostPrerollAction(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   FML_DCHECK(raster_thread_merger);
   return post_preroll_result_;
 }
 
 // |ExternalViewEmbedder|
-std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
-  return {};
+void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
+  visited_platform_views_.push_back(view_id);
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return nullptr;
+void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
+    const std::shared_ptr<const DlImageFilter>& filter,
+    const SkRect& filter_rect) {
+  for (int64_t id : visited_platform_views_) {
+    EmbeddedViewParams params = current_composition_params_[id];
+    params.PushImageFilter(filter, filter_rect);
+    current_composition_params_[id] = params;
+    mutators_stacks_[id] = params.mutatorsStack();
+  }
+}
+
+DlCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(
+    int64_t view_id) {
+  return slices_[view_id]->canvas();
 }
 
 // |ExternalViewEmbedder|
-void ShellTestExternalViewEmbedder::SubmitFrame(
+void ShellTestExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
-    std::unique_ptr<SurfaceFrame> frame,
-    const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) {
+    const std::shared_ptr<impeller::AiksContext>& aiks_context,
+    std::unique_ptr<SurfaceFrame> frame) {
+  if (!frame) {
+    return;
+  }
   frame->Submit();
-  if (frame && frame->SkiaSurface()) {
+  if (frame->SkiaSurface()) {
     last_submitted_frame_size_ = SkISize::Make(frame->SkiaSurface()->width(),
                                                frame->SkiaSurface()->height());
   } else {
@@ -78,12 +113,12 @@ void ShellTestExternalViewEmbedder::SubmitFrame(
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   end_frame_call_back_(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
+DlCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
   return nullptr;
 }
 

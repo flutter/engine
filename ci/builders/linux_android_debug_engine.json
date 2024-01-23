@@ -1,0 +1,235 @@
+{
+    "builds": [
+        {
+            "archives": [
+                {
+                    "name": "android_jit_release_x86",
+                    "type": "gcs",
+                    "base_path": "out/android_jit_release_x86/zip_archives/",
+                    "include_paths": [
+                        "out/android_jit_release_x86/zip_archives/android-x86-jit-release/artifacts.zip",
+                        "out/android_jit_release_x86/zip_archives/download.flutter.io"
+                    ],
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--android",
+                "--android-cpu=x86",
+                "--runtime-mode=jit_release"
+            ],
+            "name": "android_jit_release_x86",
+            "ninja": {
+                "config": "android_jit_release_x86",
+                "targets": [
+                    "flutter",
+                    "flutter/shell/platform/android:embedding_jars",
+                    "flutter/shell/platform/android:abi_jars",
+                    "flutter/shell/platform/android:robolectric_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "language": "python3",
+                    "name": "Host Tests for android_jit_release_x86",
+                    "script": "flutter/testing/run_tests.py",
+                    "parameters": [
+                        "--variant",
+                        "android_jit_release_x86",
+                        "--type",
+                        "java",
+                        "--engine-capture-core-dump",
+                        "--android-variant",
+                        "android_jit_release_x86"
+                    ]
+                }
+            ]
+        },
+        {
+            "archives": [
+                {
+                    "name": "android_debug",
+                    "type": "gcs",
+                    "base_path": "out/android_debug/zip_archives/",
+                    "include_paths": [
+                        "out/android_debug/zip_archives/android-arm/artifacts.zip",
+                        "out/android_debug/zip_archives/android-arm/symbols.zip",
+                        "out/android_debug/zip_archives/download.flutter.io",
+                        "out/android_debug/zip_archives/sky_engine.zip",
+                        "out/android_debug/zip_archives/android-javadoc.zip"
+                    ],
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--android",
+                "--android-cpu=arm",
+                "--no-lto"
+            ],
+            "name": "android_debug",
+            "ninja": {
+                "config": "android_debug",
+                "targets": [
+                    "flutter",
+                    "flutter/sky/dist:zip_old_location",
+                    "flutter/shell/platform/android:embedding_jars",
+                    "flutter/shell/platform/android:abi_jars",
+                    "flutter/shell/platform/android:robolectric_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "language": "python3",
+                    "name": "Host Tests for android_debug",
+                    "script": "flutter/testing/run_tests.py",
+                    "parameters": [
+                        "--variant",
+                        "android_debug",
+                        "--type",
+                        "java",
+                        "--engine-capture-core-dump",
+                        "--android-variant",
+                        "android_debug"
+                    ]
+                }
+            ]
+        },
+        {
+            "archives": [
+                {
+                    "name": "android_debug_arm64",
+                    "type": "gcs",
+                    "base_path": "out/android_debug_arm64/zip_archives/",
+                    "include_paths": [
+                        "out/android_debug_arm64/zip_archives/android-arm64/artifacts.zip",
+                        "out/android_debug_arm64/zip_archives/android-arm64/symbols.zip",
+                        "out/android_debug_arm64/zip_archives/download.flutter.io"
+                    ],
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--android",
+                "--android-cpu=arm64",
+                "--no-lto"
+            ],
+            "name": "android_debug_arm64",
+            "ninja": {
+                "config": "android_debug_arm64",
+                "targets": [
+                    "flutter",
+                    "flutter/shell/platform/android:abi_jars"
+                ]
+            }
+        },
+        {
+            "cas_archive": false,
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--android",
+                "--android-cpu=arm64",
+                "--no-lto",
+                "--enable-vulkan-validation-layers"
+            ],
+            "name": "android_debug_arm64_validation_layers",
+            "ninja": {
+                "config": "android_debug_arm64",
+                "targets": [
+                    "flutter",
+                    "flutter/shell/platform/android:abi_jars"
+                ]
+            }
+        },
+        {
+            "archives": [
+                {
+                    "name": "android_debug_x86",
+                    "type": "gcs",
+                    "base_path": "out/android_debug_x86/zip_archives/",
+                    "include_paths": [
+                        "out/android_debug_x86/zip_archives/android-x86/artifacts.zip",
+                        "out/android_debug_x86/zip_archives/android-x86/symbols.zip",
+                        "out/android_debug_x86/zip_archives/download.flutter.io"
+                    ],
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--android",
+                "--android-cpu=x86",
+                "--no-lto"
+            ],
+            "name": "android_debug_x86",
+            "ninja": {
+                "config": "android_debug_x86",
+                "targets": [
+                    "flutter",
+                    "flutter/shell/platform/android:abi_jars"
+                ]
+            }
+        },
+        {
+            "archives": [
+                {
+                    "name": "android_debug_x64",
+                    "type": "gcs",
+                    "base_path": "out/android_debug_x64/zip_archives/",
+                    "include_paths": [
+                        "out/android_debug_x64/zip_archives/android-x64/artifacts.zip",
+                        "out/android_debug_x64/zip_archives/android-x64/symbols.zip",
+                        "out/android_debug_x64/zip_archives/download.flutter.io"
+                    ],
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--android",
+                "--android-cpu=x64",
+                "--no-lto"
+            ],
+            "name": "android_debug_x64",
+            "ninja": {
+                "config": "android_debug_x64",
+                "targets": [
+                    "flutter",
+                    "flutter/shell/platform/android:abi_jars"
+                ]
+            }
+        }
+    ],
+    "generators": {
+        "tasks": [
+            {
+                "name": "Verify-export-symbols-release-binaries",
+                "parameters": [
+                    "src/out"
+                ],
+                "script": "flutter/testing/symbols/verify_exported.dart",
+                "language": "dart"
+            }
+        ]
+    }
+}

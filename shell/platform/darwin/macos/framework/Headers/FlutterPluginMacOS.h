@@ -4,12 +4,12 @@
 
 #import <Foundation/Foundation.h>
 
+#import "FlutterAppLifecycleDelegate.h"
 #import "FlutterChannels.h"
 #import "FlutterCodecs.h"
 #import "FlutterMacros.h"
 
-// TODO: Merge this file and FlutterPluginRegistrarMacOS.h with the iOS FlutterPlugin.h, sharing
-// all but the platform-specific methods.
+NS_ASSUME_NONNULL_BEGIN
 
 @protocol FlutterPluginRegistrar;
 
@@ -22,14 +22,14 @@
  * Currently the macOS version of FlutterPlugin has very limited functionality, but is expected to
  * expand over time to more closely match the functionality of the iOS FlutterPlugin.
  */
-FLUTTER_EXPORT
-@protocol FlutterPlugin <NSObject>
+FLUTTER_DARWIN_EXPORT
+@protocol FlutterPlugin <NSObject, FlutterAppLifecycleDelegate>
 
 /**
  * Creates an instance of the plugin to register with |registrar| using the desired
  * FlutterPluginRegistrar methods.
  */
-+ (void)registerWithRegistrar:(nonnull id<FlutterPluginRegistrar>)registrar;
++ (void)registerWithRegistrar:(id<FlutterPluginRegistrar>)registrar;
 
 @optional
 
@@ -44,6 +44,8 @@ FLUTTER_EXPORT
  * - Any other value (including nil) to indicate success. The value will
  *   be returned to the Flutter caller, and must be serializable to JSON.
  */
-- (void)handleMethodCall:(nonnull FlutterMethodCall*)call result:(nonnull FlutterResult)result;
+- (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+NS_ASSUME_NONNULL_END
 
 @end

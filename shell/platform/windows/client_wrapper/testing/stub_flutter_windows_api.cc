@@ -64,6 +64,13 @@ FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
+void FlutterDesktopViewControllerForceRedraw(
+    FlutterDesktopViewControllerRef controller) {
+  if (s_stub_implementation) {
+    s_stub_implementation->ViewControllerForceRedraw();
+  }
+}
+
 bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
     FlutterDesktopViewControllerRef controller,
     HWND hwnd,
@@ -79,9 +86,9 @@ bool FlutterDesktopViewControllerHandleTopLevelWindowProc(
 }
 
 FlutterDesktopEngineRef FlutterDesktopEngineCreate(
-    const FlutterDesktopEngineProperties& engine_properties) {
+    const FlutterDesktopEngineProperties* engine_properties) {
   if (s_stub_implementation) {
-    return s_stub_implementation->EngineCreate(engine_properties);
+    return s_stub_implementation->EngineCreate(*engine_properties);
   }
   return nullptr;
 }
@@ -108,6 +115,14 @@ uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {
   return 0;
 }
 
+void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
+                                              VoidCallback callback,
+                                              void* user_data) {
+  if (s_stub_implementation) {
+    s_stub_implementation->EngineSetNextFrameCallback(callback, user_data);
+  }
+}
+
 void FlutterDesktopEngineReloadSystemFonts(FlutterDesktopEngineRef engine) {
   if (s_stub_implementation) {
     s_stub_implementation->EngineReloadSystemFonts();
@@ -127,11 +142,38 @@ FlutterDesktopMessengerRef FlutterDesktopEngineGetMessenger(
   return reinterpret_cast<FlutterDesktopMessengerRef>(2);
 }
 
+FlutterDesktopTextureRegistrarRef FlutterDesktopEngineGetTextureRegistrar(
+    FlutterDesktopEngineRef engine) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(3);
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef controller) {
   if (s_stub_implementation) {
     return s_stub_implementation->ViewGetHWND();
   }
   return reinterpret_cast<HWND>(-1);
+}
+
+IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->ViewGetGraphicsAdapter();
+  }
+  return nullptr;
+}
+
+bool FlutterDesktopEngineProcessExternalWindowMessage(
+    FlutterDesktopEngineRef engine,
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam,
+    LRESULT* result) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->EngineProcessExternalWindowMessage(
+        engine, hwnd, message, wparam, lparam, result);
+  }
+  return false;
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(

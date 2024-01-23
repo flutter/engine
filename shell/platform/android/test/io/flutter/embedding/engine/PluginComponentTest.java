@@ -5,44 +5,40 @@
 package test.io.flutter.embedding.engine;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import androidx.annotation.NonNull;
-import io.flutter.FlutterInjector;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class PluginComponentTest {
-  @Before
-  public void setUp() {
-    FlutterInjector.reset();
-  }
+  boolean jniAttached;
 
   @Test
   public void pluginsCanAccessFlutterAssetPaths() {
     // Setup test.
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
-    FlutterInjector.setInstance(
-        new FlutterInjector.Builder().setFlutterLoader(new FlutterLoader(mockFlutterJNI)).build());
     FlutterJNI flutterJNI = mock(FlutterJNI.class);
-    when(flutterJNI.isAttached()).thenReturn(true);
+    jniAttached = false;
+    when(flutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
+    doAnswer(invocation -> jniAttached = true).when(flutterJNI).attachToNative();
 
     FlutterLoader flutterLoader = new FlutterLoader(mockFlutterJNI);
 
     // Execute behavior under test.
     FlutterEngine flutterEngine =
-        new FlutterEngine(RuntimeEnvironment.application, flutterLoader, flutterJNI);
+        new FlutterEngine(ApplicationProvider.getApplicationContext(), flutterLoader, flutterJNI);
 
     // As soon as our plugin is registered it will look up asset paths and store them
     // for our verification.
@@ -58,7 +54,6 @@ public class PluginComponentTest {
     assertEquals(
         "flutter_assets/packages/fakepackage/some/path/fake_asset.jpg",
         plugin.getAssetPathBasedOnSubpathAndPackage());
-    FlutterInjector.reset();
   }
 
   private static class PluginThatAccessesAssets implements FlutterPlugin {

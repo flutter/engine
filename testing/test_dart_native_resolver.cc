@@ -18,18 +18,31 @@ TestDartNativeResolver::TestDartNativeResolver() = default;
 
 TestDartNativeResolver::~TestDartNativeResolver() = default;
 
-void TestDartNativeResolver::AddNativeCallback(std::string name,
+void TestDartNativeResolver::AddNativeCallback(const std::string& name,
                                                Dart_NativeFunction callback) {
   native_callbacks_[name] = callback;
 }
+void TestDartNativeResolver::AddFfiNativeCallback(const std::string& name,
+                                                  void* callback_ptr) {
+  ffi_native_callbacks_[name] = callback_ptr;
+}
 
 Dart_NativeFunction TestDartNativeResolver::ResolveCallback(
-    std::string name) const {
+    const std::string& name) const {
   auto found = native_callbacks_.find(name);
   if (found == native_callbacks_.end()) {
     return nullptr;
   }
 
+  return found->second;
+}
+
+void* TestDartNativeResolver::ResolveFfiCallback(
+    const std::string& name) const {
+  auto found = ffi_native_callbacks_.find(name);
+  if (found == ffi_native_callbacks_.end()) {
+    return nullptr;
+  }
   return found->second;
 }
 
@@ -51,7 +64,7 @@ Dart_NativeFunction TestDartNativeResolver::DartNativeEntryResolverCallback(
   }
 
   if (auto resolver = found->second.lock()) {
-    return resolver->ResolveCallback(std::move(name));
+    return resolver->ResolveCallback(name);
   } else {
     gIsolateResolvers.erase(found);
   }
@@ -65,13 +78,36 @@ static const uint8_t* DartNativeEntrySymbolCallback(
   return reinterpret_cast<const uint8_t*>("¯\\_(ツ)_/¯");
 }
 
+void* TestDartNativeResolver::FfiNativeResolver(const char* name,
+                                                uintptr_t args_n) {
+  std::scoped_lock lock(gIsolateResolversMutex);
+  auto found = gIsolateResolvers.find(Dart_CurrentIsolate());
+  if (found == gIsolateResolvers.end()) {
+    FML_LOG(ERROR) << "Could not resolve native method for :" << name;
+    return nullptr;
+  }
+
+  if (auto resolver = found->second.lock()) {
+    return resolver->ResolveFfiCallback(name);
+  } else {
+    gIsolateResolvers.erase(found);
+  }
+
+  FML_LOG(ERROR) << "Could not resolve native method for :" << name;
+  return nullptr;
+}
+
 void TestDartNativeResolver::SetNativeResolverForIsolate() {
   FML_CHECK(!Dart_IsError(Dart_RootLibrary()));
   auto result = Dart_SetNativeResolver(Dart_RootLibrary(),
                                        DartNativeEntryResolverCallback,
                                        DartNativeEntrySymbolCallback);
-  FML_CHECK(!tonic::LogIfError(result))
+  FML_CHECK(!tonic::CheckAndHandleError(result))
       << "Could not set native resolver in test.";
+
+  result = Dart_SetFfiNativeResolver(Dart_RootLibrary(), &FfiNativeResolver);
+  FML_CHECK(!tonic::CheckAndHandleError(result))
+      << "Could not set FFI native resolver in test.";
 
   std::scoped_lock lock(gIsolateResolversMutex);
   gIsolateResolvers[Dart_CurrentIsolate()] = shared_from_this();

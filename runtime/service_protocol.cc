@@ -37,6 +37,11 @@ const std::string_view ServiceProtocol::kGetSkSLsExtensionName =
 const std::string_view
     ServiceProtocol::kEstimateRasterCacheMemoryExtensionName =
         "_flutter.estimateRasterCacheMemory";
+const std::string_view
+    ServiceProtocol::kRenderFrameWithRasterStatsExtensionName =
+        "_flutter.renderFrameWithRasterStats";
+const std::string_view ServiceProtocol::kReloadAssetFonts =
+    "_flutter.reloadAssetFonts";
 
 static constexpr std::string_view kViewIdPrefx = "_flutterView/";
 static constexpr std::string_view kListViewsExtensionName =
@@ -56,6 +61,8 @@ ServiceProtocol::ServiceProtocol()
           kGetDisplayRefreshRateExtensionName,
           kGetSkSLsExtensionName,
           kEstimateRasterCacheMemoryExtensionName,
+          kRenderFrameWithRasterStatsExtensionName,
+          kReloadAssetFonts,
       }),
       handlers_mutex_(fml::SharedMutex::Create()) {}
 
@@ -64,7 +71,7 @@ ServiceProtocol::~ServiceProtocol() {
 }
 
 void ServiceProtocol::AddHandler(Handler* handler,
-                                 Handler::Description description) {
+                                 const Handler::Description& description) {
   fml::UniqueLock lock(*handlers_mutex_);
   handlers_.emplace(handler, description);
 }
@@ -74,8 +81,9 @@ void ServiceProtocol::RemoveHandler(Handler* handler) {
   handlers_.erase(handler);
 }
 
-void ServiceProtocol::SetHandlerDescription(Handler* handler,
-                                            Handler::Description description) {
+void ServiceProtocol::SetHandlerDescription(
+    Handler* handler,
+    const Handler::Description& description) {
   fml::SharedLock lock(*handlers_mutex_);
   auto it = handlers_.find(handler);
   if (it != handlers_.end()) {
@@ -189,7 +197,7 @@ bool ServiceProtocol::HandleMessage(std::string_view method,
 
   fml::SharedLock lock(*handlers_mutex_);
 
-  if (handlers_.size() == 0) {
+  if (handlers_.empty()) {
     WriteServerErrorResponse(response,
                              "There are no running service protocol handlers.");
     return false;
@@ -260,6 +268,7 @@ bool ServiceProtocol::HandleListViewsMethod(
     rapidjson::Document* response) const {
   fml::SharedLock lock(*handlers_mutex_);
   std::vector<std::pair<intptr_t, Handler::Description>> descriptions;
+  descriptions.reserve(handlers_.size());
   for (const auto& handler : handlers_) {
     descriptions.emplace_back(reinterpret_cast<intptr_t>(handler.first),
                               handler.second.Load());

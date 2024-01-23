@@ -4,56 +4,79 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
+#include <utility>
+
+#include "flutter/common/constants.h"
+#include "flutter/common/settings.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
-#include "flutter/lib/ui/window/window.h"
+#include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/isolate_configuration.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
 
 namespace flutter {
 
-RuntimeController::RuntimeController(RuntimeDelegate& client,
-                                     TaskRunners p_task_runners)
-    : client_(client), vm_(nullptr), task_runners_(p_task_runners) {}
+RuntimeController::RuntimeController(RuntimeDelegate& p_client,
+                                     const TaskRunners& task_runners)
+    : client_(p_client), vm_(nullptr), context_(task_runners) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
     DartVM* p_vm,
     fml::RefPtr<const DartSnapshot> p_isolate_snapshot,
-    TaskRunners p_task_runners,
-    fml::WeakPtr<SnapshotDelegate> p_snapshot_delegate,
-    fml::WeakPtr<HintFreedDelegate> p_hint_freed_delegate,
-    fml::WeakPtr<IOManager> p_io_manager,
-    fml::RefPtr<SkiaUnrefQueue> p_unref_queue,
-    fml::WeakPtr<ImageDecoder> p_image_decoder,
-    std::string p_advisory_script_uri,
-    std::string p_advisory_script_entrypoint,
-    const std::function<void(int64_t)>& idle_notification_callback,
+    const std::function<void(int64_t)>& p_idle_notification_callback,
     const PlatformData& p_platform_data,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data)
+    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    const UIDartState::Context& p_context)
     : client_(p_client),
       vm_(p_vm),
       isolate_snapshot_(std::move(p_isolate_snapshot)),
-      task_runners_(p_task_runners),
-      snapshot_delegate_(p_snapshot_delegate),
-      hint_freed_delegate_(p_hint_freed_delegate),
-      io_manager_(p_io_manager),
-      unref_queue_(p_unref_queue),
-      image_decoder_(p_image_decoder),
-      advisory_script_uri_(p_advisory_script_uri),
-      advisory_script_entrypoint_(p_advisory_script_entrypoint),
-      idle_notification_callback_(idle_notification_callback),
-      platform_data_(std::move(p_platform_data)),
+      idle_notification_callback_(p_idle_notification_callback),
+      platform_data_(p_platform_data),
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
-      persistent_isolate_data_(std::move(p_persistent_isolate_data)) {}
+      persistent_isolate_data_(std::move(p_persistent_isolate_data)),
+      context_(p_context) {}
+
+std::unique_ptr<RuntimeController> RuntimeController::Spawn(
+    RuntimeDelegate& p_client,
+    std::string advisory_script_uri,
+    std::string advisory_script_entrypoint,
+    const std::function<void(int64_t)>& p_idle_notification_callback,
+    const fml::closure& p_isolate_create_callback,
+    const fml::closure& p_isolate_shutdown_callback,
+    const std::shared_ptr<const fml::Mapping>& p_persistent_isolate_data,
+    fml::WeakPtr<IOManager> io_manager,
+    fml::WeakPtr<ImageDecoder> image_decoder,
+    fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
+  UIDartState::Context spawned_context{
+      context_.task_runners,          std::move(snapshot_delegate),
+      std::move(io_manager),          context_.unref_queue,
+      std::move(image_decoder),       std::move(image_generator_registry),
+      std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
+      context_.volatile_path_tracker, context_.concurrent_task_runner,
+      context_.enable_impeller,       context_.runtime_stage_backend};
+  auto result =
+      std::make_unique<RuntimeController>(p_client,                      //
+                                          vm_,                           //
+                                          isolate_snapshot_,             //
+                                          p_idle_notification_callback,  //
+                                          platform_data_,                //
+                                          p_isolate_create_callback,     //
+                                          p_isolate_shutdown_callback,   //
+                                          p_persistent_isolate_data,     //
+                                          spawned_context);              //
+  result->spawning_isolate_ = root_isolate_;
+  return result;
+}
 
 RuntimeController::~RuntimeController() {
   FML_DCHECK(Dart_CurrentIsolate() == nullptr);
@@ -77,42 +100,66 @@ bool RuntimeController::IsRootIsolateRunning() {
 }
 
 std::unique_ptr<RuntimeController> RuntimeController::Clone() const {
-  return std::unique_ptr<RuntimeController>(new RuntimeController(
-      client_,                      //
-      vm_,                          //
-      isolate_snapshot_,            //
-      task_runners_,                //
-      snapshot_delegate_,           //
-      hint_freed_delegate_,         //
-      io_manager_,                  //
-      unref_queue_,                 //
-      image_decoder_,               //
-      advisory_script_uri_,         //
-      advisory_script_entrypoint_,  //
-      idle_notification_callback_,  //
-      platform_data_,               //
-      isolate_create_callback_,     //
-      isolate_shutdown_callback_,   //
-      persistent_isolate_data_      //
-      ));
+  return std::make_unique<RuntimeController>(client_,                      //
+                                             vm_,                          //
+                                             isolate_snapshot_,            //
+                                             idle_notification_callback_,  //
+                                             platform_data_,               //
+                                             isolate_create_callback_,     //
+                                             isolate_shutdown_callback_,   //
+                                             persistent_isolate_data_,     //
+                                             context_                      //
+  );
 }
 
 bool RuntimeController::FlushRuntimeStateToIsolate() {
-  return SetViewportMetrics(platform_data_.viewport_metrics) &&
-         SetLocales(platform_data_.locale_data) &&
+  FML_DCHECK(!has_flushed_runtime_state_)
+      << "FlushRuntimeStateToIsolate is called more than once somehow.";
+  has_flushed_runtime_state_ = true;
+  for (auto const& [view_id, viewport_metrics] :
+       platform_data_.viewport_metrics_for_views) {
+    if (!AddView(view_id, viewport_metrics)) {
+      return false;
+    }
+  }
+  return SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
              platform_data_.accessibility_feature_flags_) &&
          SetUserSettingsData(platform_data_.user_settings_data) &&
-         SetLifecycleState(platform_data_.lifecycle_state);
+         SetInitialLifecycleState(platform_data_.lifecycle_state) &&
+         SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::SetViewportMetrics(const ViewportMetrics& metrics) {
-  platform_data_.viewport_metrics = metrics;
-
+bool RuntimeController::AddView(int64_t view_id,
+                                const ViewportMetrics& view_metrics) {
+  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->get_window(0)->UpdateWindowMetrics(metrics);
+    platform_configuration->AddView(view_id, view_metrics);
+
     return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::RemoveView(int64_t view_id) {
+  platform_data_.viewport_metrics_for_views.erase(view_id);
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->RemoveView(view_id);
+    return true;
+  }
+
+  return false;
+}
+
+bool RuntimeController::SetViewportMetrics(int64_t view_id,
+                                           const ViewportMetrics& metrics) {
+  TRACE_EVENT0("flutter", "SetViewportMetrics");
+
+  platform_data_.viewport_metrics_for_views[view_id] = metrics;
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    return platform_configuration->UpdateViewMetrics(view_id, metrics);
   }
 
   return false;
@@ -142,11 +189,11 @@ bool RuntimeController::SetUserSettingsData(const std::string& data) {
   return false;
 }
 
-bool RuntimeController::SetLifecycleState(const std::string& data) {
+bool RuntimeController::SetInitialLifecycleState(const std::string& data) {
   platform_data_.lifecycle_state = data;
 
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->UpdateLifecycleState(
+    platform_configuration->UpdateInitialLifecycleState(
         platform_data_.lifecycle_state);
     return true;
   }
@@ -177,9 +224,10 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
   return false;
 }
 
-bool RuntimeController::BeginFrame(fml::TimePoint frame_time) {
+bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
+                                   uint64_t frame_number) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->BeginFrame(frame_time);
+    platform_configuration->BeginFrame(frame_time, frame_number);
     return true;
   }
 
@@ -195,7 +243,15 @@ bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
   return false;
 }
 
-bool RuntimeController::NotifyIdle(int64_t deadline, size_t freed_hint) {
+bool RuntimeController::NotifyIdle(fml::TimeDelta deadline) {
+  if (deadline - fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros()) <
+      fml::TimeDelta::FromMilliseconds(1)) {
+    // There's less than 1ms left before the deadline. Upstream callers do not
+    // check to see if the deadline is in the past, and work after this point
+    // will be in vain.
+    return false;
+  }
+
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (!root_isolate) {
     return false;
@@ -203,24 +259,39 @@ bool RuntimeController::NotifyIdle(int64_t deadline, size_t freed_hint) {
 
   tonic::DartState::Scope scope(root_isolate);
 
-  // Dart will use the freed hint at the next idle notification. Make sure to
-  // Update it with our latest value before calling NotifyIdle.
-  Dart_HintFreed(freed_hint);
-  Dart_NotifyIdle(deadline);
+  Dart_PerformanceMode performance_mode =
+      PlatformConfigurationNativeApi::GetDartPerformanceMode();
+  if (performance_mode == Dart_PerformanceMode::Dart_PerformanceMode_Latency) {
+    return false;
+  }
+
+  Dart_NotifyIdle(deadline.ToMicroseconds());
 
   // Idle notifications being in isolate scope are part of the contract.
   if (idle_notification_callback_) {
     TRACE_EVENT0("flutter", "EmbedderIdleNotification");
-    idle_notification_callback_(deadline);
+    idle_notification_callback_(deadline.ToMicroseconds());
   }
   return true;
 }
 
+bool RuntimeController::NotifyDestroyed() {
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
+  if (!root_isolate) {
+    return false;
+  }
+
+  tonic::DartState::Scope scope(root_isolate);
+
+  Dart_NotifyDestroyed();
+
+  return true;
+}
+
 bool RuntimeController::DispatchPlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchPlatformMessage",
-                 "mode", "basic");
+    TRACE_EVENT0("flutter", "RuntimeController::DispatchPlatformMessage");
     platform_configuration->DispatchPlatformMessage(std::move(message));
     return true;
   }
@@ -231,22 +302,21 @@ bool RuntimeController::DispatchPlatformMessage(
 bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    TRACE_EVENT1("flutter", "RuntimeController::DispatchPointerDataPacket",
-                 "mode", "basic");
-    platform_configuration->get_window(0)->DispatchPointerDataPacket(packet);
+    TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
+    platform_configuration->DispatchPointerDataPacket(packet);
     return true;
   }
 
   return false;
 }
 
-bool RuntimeController::DispatchSemanticsAction(int32_t id,
+bool RuntimeController::DispatchSemanticsAction(int32_t node_id,
                                                 SemanticsAction action,
-                                                std::vector<uint8_t> args) {
+                                                fml::MallocMapping args) {
   TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->DispatchSemanticsAction(id, action,
+    platform_configuration->DispatchSemanticsAction(node_id, action,
                                                     std::move(args));
     return true;
   }
@@ -271,8 +341,16 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(Scene* scene) {
-  client_.Render(scene->takeLayerTree());
+void RuntimeController::Render(Scene* scene, double width, double height) {
+  // TODO(dkwingsmt): Currently only supports a single window.
+  int64_t view_id = kFlutterImplicitViewId;
+  const ViewportMetrics* view_metrics =
+      UIDartState::Current()->platform_configuration()->GetMetrics(view_id);
+  if (view_metrics == nullptr) {
+    return;
+  }
+  client_.Render(scene->takeLayerTree(width, height),
+                 view_metrics->device_pixel_ratio);
 }
 
 // |PlatformConfigurationClient|
@@ -284,13 +362,18 @@ void RuntimeController::UpdateSemantics(SemanticsUpdate* update) {
 
 // |PlatformConfigurationClient|
 void RuntimeController::HandlePlatformMessage(
-    fml::RefPtr<PlatformMessage> message) {
+    std::unique_ptr<PlatformMessage> message) {
   client_.HandlePlatformMessage(std::move(message));
 }
 
 // |PlatformConfigurationClient|
 FontCollection& RuntimeController::GetFontCollection() {
   return client_.GetFontCollection();
+}
+
+// |PlatfromConfigurationClient|
+std::shared_ptr<AssetManager> RuntimeController::GetAssetManager() {
+  return client_.GetAssetManager();
 }
 
 // |PlatformConfigurationClient|
@@ -315,6 +398,11 @@ std::unique_ptr<std::vector<std::string>>
 RuntimeController::ComputePlatformResolvedLocale(
     const std::vector<std::string>& supported_locale_data) {
   return client_.ComputePlatformResolvedLocale(supported_locale_data);
+}
+
+// |PlatformConfigurationClient|
+void RuntimeController::SendChannelUpdate(std::string name, bool listening) {
+  client_.SendChannelUpdate(std::move(name), listening);
 }
 
 Dart_Port RuntimeController::GetMainPort() {
@@ -343,8 +431,10 @@ tonic::DartErrorHandleType RuntimeController::GetLastError() {
 
 bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
+    const fml::closure& root_isolate_create_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
+    const std::vector<std::string>& dart_entrypoint_args,
     std::unique_ptr<IsolateConfiguration> isolate_configuration) {
   if (root_isolate_.lock()) {
     FML_LOG(ERROR) << "Root isolate was already running.";
@@ -355,28 +445,28 @@ bool RuntimeController::LaunchRootIsolate(
       DartIsolate::CreateRunningRootIsolate(
           settings,                                       //
           isolate_snapshot_,                              //
-          task_runners_,                                  //
           std::make_unique<PlatformConfiguration>(this),  //
-          snapshot_delegate_,                             //
-          hint_freed_delegate_,                           //
-          io_manager_,                                    //
-          unref_queue_,                                   //
-          image_decoder_,                                 //
-          advisory_script_uri_,                           //
-          advisory_script_entrypoint_,                    //
           DartIsolate::Flags{},                           //
+          root_isolate_create_callback,                   //
           isolate_create_callback_,                       //
           isolate_shutdown_callback_,                     //
-          dart_entrypoint,                                //
-          dart_entrypoint_library,                        //
-          std::move(isolate_configuration)                //
-          )
+          std::move(dart_entrypoint),                     //
+          std::move(dart_entrypoint_library),             //
+          dart_entrypoint_args,                           //
+          std::move(isolate_configuration),               //
+          context_,                                       //
+          spawning_isolate_.lock().get())                 //
           .lock();
 
   if (!strong_root_isolate) {
     FML_LOG(ERROR) << "Could not create root isolate.";
     return false;
   }
+
+  // Enable platform channels for background isolates.
+  strong_root_isolate->GetIsolateGroupData().SetPlatformMessageHandler(
+      strong_root_isolate->GetRootIsolateToken(),
+      client_.GetPlatformMessageHandler());
 
   // The root isolate ivar is weak.
   root_isolate_ = strong_root_isolate;
@@ -391,7 +481,7 @@ bool RuntimeController::LaunchRootIsolate(
     tonic::DartState::Scope scope(strong_root_isolate);
     platform_configuration->DidCreateIsolate();
     if (!FlushRuntimeStateToIsolate()) {
-      FML_DLOG(ERROR) << "Could not setup initial isolate state.";
+      FML_DLOG(ERROR) << "Could not set up initial isolate state.";
     }
   } else {
     FML_DCHECK(false) << "RuntimeController created without window binding.";
@@ -415,14 +505,63 @@ std::optional<uint32_t> RuntimeController::GetRootIsolateReturnCode() {
   return root_isolate_return_code_;
 }
 
+uint64_t RuntimeController::GetRootIsolateGroup() const {
+  auto isolate = root_isolate_.lock();
+  if (isolate) {
+    auto isolate_scope = tonic::DartIsolateScope(isolate->isolate());
+    Dart_IsolateGroup isolate_group = Dart_CurrentIsolateGroup();
+    return reinterpret_cast<uint64_t>(isolate_group);
+  } else {
+    return 0;
+  }
+}
+
+void RuntimeController::LoadDartDeferredLibrary(
+    intptr_t loading_unit_id,
+    std::unique_ptr<const fml::Mapping> snapshot_data,
+    std::unique_ptr<const fml::Mapping> snapshot_instructions) {
+  root_isolate_.lock()->LoadLoadingUnit(loading_unit_id,
+                                        std::move(snapshot_data),
+                                        std::move(snapshot_instructions));
+}
+
+void RuntimeController::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string
+        error_message,  // NOLINT(performance-unnecessary-value-param)
+    bool transient) {
+  root_isolate_.lock()->LoadLoadingUnitError(loading_unit_id, error_message,
+                                             transient);
+}
+
+void RuntimeController::RequestDartDeferredLibrary(intptr_t loading_unit_id) {
+  return client_.RequestDartDeferredLibrary(loading_unit_id);
+}
+
+bool RuntimeController::SetDisplays(const std::vector<DisplayData>& displays) {
+  TRACE_EVENT0("flutter", "SetDisplays");
+  platform_data_.displays = displays;
+
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->UpdateDisplays(displays);
+    return true;
+  }
+  return false;
+}
+
+double RuntimeController::GetScaledFontSize(double unscaled_font_size,
+                                            int configuration_id) const {
+  return client_.GetScaledFontSize(unscaled_font_size, configuration_id);
+}
+
 RuntimeController::Locale::Locale(std::string language_code_,
                                   std::string country_code_,
                                   std::string script_code_,
                                   std::string variant_code_)
-    : language_code(language_code_),
-      country_code(country_code_),
-      script_code(script_code_),
-      variant_code(variant_code_) {}
+    : language_code(std::move(language_code_)),
+      country_code(std::move(country_code_)),
+      script_code(std::move(script_code_)),
+      variant_code(std::move(variant_code_)) {}
 
 RuntimeController::Locale::~Locale() = default;
 

@@ -5,10 +5,10 @@
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 
 #include <filesystem>
-#include <iostream>
 
-#include "flutter/shell/platform/common/cpp/engine_switches.h"
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/fml/logging.h"
+#include "flutter/shell/platform/common/engine_switches.h"  // nogncheck
+#include "flutter/shell/platform/common/path_utils.h"
 
 namespace flutter {
 
@@ -18,6 +18,10 @@ FlutterProjectBundle::FlutterProjectBundle(
       icu_path_(properties.icu_data_path) {
   if (properties.aot_library_path != nullptr) {
     aot_library_path_ = std::filesystem::path(properties.aot_library_path);
+  }
+
+  if (properties.dart_entrypoint && properties.dart_entrypoint[0] != '\0') {
+    dart_entrypoint_ = properties.dart_entrypoint;
   }
 
   for (int i = 0; i < properties.dart_entrypoint_argc; i++) {
@@ -30,9 +34,8 @@ FlutterProjectBundle::FlutterProjectBundle(
       (!aot_library_path_.empty() && aot_library_path_.is_relative())) {
     std::filesystem::path executable_location = GetExecutableDirectory();
     if (executable_location.empty()) {
-      std::cerr
-          << "Unable to find executable location to resolve resource paths."
-          << std::endl;
+      FML_LOG(ERROR)
+          << "Unable to find executable location to resolve resource paths.";
       assets_path_ = std::filesystem::path();
       icu_path_ = std::filesystem::path();
     } else {
@@ -55,14 +58,13 @@ bool FlutterProjectBundle::HasValidPaths() {
 UniqueAotDataPtr FlutterProjectBundle::LoadAotData(
     const FlutterEngineProcTable& engine_procs) {
   if (aot_library_path_.empty()) {
-    std::cerr
-        << "Attempted to load AOT data, but no aot_library_path was provided."
-        << std::endl;
+    FML_LOG(ERROR)
+        << "Attempted to load AOT data, but no aot_library_path was provided.";
     return UniqueAotDataPtr(nullptr, nullptr);
   }
   if (!std::filesystem::exists(aot_library_path_)) {
-    std::cerr << "Can't load AOT data from " << aot_library_path_.u8string()
-              << "; no such file." << std::endl;
+    FML_LOG(ERROR) << "Can't load AOT data from "
+                   << aot_library_path_.u8string() << "; no such file.";
     return UniqueAotDataPtr(nullptr, nullptr);
   }
   std::string path_string = aot_library_path_.u8string();
@@ -72,7 +74,7 @@ UniqueAotDataPtr FlutterProjectBundle::LoadAotData(
   FlutterEngineAOTData data = nullptr;
   auto result = engine_procs.CreateAOTData(&source, &data);
   if (result != kSuccess) {
-    std::cerr << "Failed to load AOT data from: " << path_string << std::endl;
+    FML_LOG(ERROR) << "Failed to load AOT data from: " << path_string;
     return UniqueAotDataPtr(nullptr, nullptr);
   }
   return UniqueAotDataPtr(data, engine_procs.CollectAOTData);
@@ -80,8 +82,23 @@ UniqueAotDataPtr FlutterProjectBundle::LoadAotData(
 
 FlutterProjectBundle::~FlutterProjectBundle() {}
 
+void FlutterProjectBundle::SetSwitches(
+    const std::vector<std::string>& switches) {
+  engine_switches_ = switches;
+}
+
 const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
-  return GetSwitchesFromEnvironment();
+  if (engine_switches_.size() == 0) {
+    return GetSwitchesFromEnvironment();
+  }
+  std::vector<std::string> switches;
+  switches.insert(switches.end(), engine_switches_.begin(),
+                  engine_switches_.end());
+
+  auto env_switches = GetSwitchesFromEnvironment();
+  switches.insert(switches.end(), env_switches.begin(), env_switches.end());
+
+  return switches;
 }
 
 }  // namespace flutter

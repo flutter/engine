@@ -16,7 +16,9 @@
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_renderer.h"
 
-// Checks sending a message without a reponse works.
+// Checks sending a message without a response works.
+// MOCK_ENGINE_PROC is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 TEST(FlBasicMessageChannelTest, SendMessageWithoutResponse) {
   g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
 
@@ -24,11 +26,17 @@ TEST(FlBasicMessageChannelTest, SendMessageWithoutResponse) {
   FlutterEngineProcTable* embedder_api = fl_engine_get_embedder_api(engine);
 
   bool called = false;
+  FlutterEngineSendPlatformMessageFnPtr old_handler =
+      embedder_api->SendPlatformMessage;
   embedder_api->SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage,
-      ([&called](auto engine, const FlutterPlatformMessage* message) {
+      ([&called, old_handler](auto engine,
+                              const FlutterPlatformMessage* message) {
+        if (strcmp(message->channel, "test") != 0) {
+          return old_handler(engine, message);
+        }
+
         called = true;
-        EXPECT_STREQ(message->channel, "test");
         EXPECT_EQ(message->response_handle, nullptr);
 
         g_autoptr(GBytes) message_bytes =
@@ -52,8 +60,10 @@ TEST(FlBasicMessageChannelTest, SendMessageWithoutResponse) {
 
   EXPECT_TRUE(called);
 }
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)
 
-// Called when the message response is received in the SendMessage test.
+// Called when the message response is received in the SendMessageWithResponse
+// test.
 static void echo_response_cb(GObject* object,
                              GAsyncResult* result,
                              gpointer user_data) {
@@ -178,5 +188,37 @@ TEST(FlBasicMessageChannelTest, ReceiveMessage) {
                                 nullptr);
 
   // Blocks here until response_cb is called.
+  g_main_loop_run(loop);
+}
+
+// Called when the message response is received in the
+// SendNullMessageWithResponse test.
+static void null_message_response_cb(GObject* object,
+                                     GAsyncResult* result,
+                                     gpointer user_data) {
+  g_autoptr(GError) error = nullptr;
+  g_autoptr(FlValue) message = fl_basic_message_channel_send_finish(
+      FL_BASIC_MESSAGE_CHANNEL(object), result, &error);
+  EXPECT_NE(message, nullptr);
+  EXPECT_EQ(error, nullptr);
+
+  EXPECT_EQ(fl_value_get_type(message), FL_VALUE_TYPE_NULL);
+
+  g_main_loop_quit(static_cast<GMainLoop*>(user_data));
+}
+
+// Checks sending a null message with a response works.
+TEST(FlBasicMessageChannelTest, SendNullMessageWithResponse) {
+  g_autoptr(GMainLoop) loop = g_main_loop_new(nullptr, 0);
+
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  FlBinaryMessenger* messenger = fl_binary_messenger_new(engine);
+  g_autoptr(FlStandardMessageCodec) codec = fl_standard_message_codec_new();
+  g_autoptr(FlBasicMessageChannel) channel = fl_basic_message_channel_new(
+      messenger, "test/echo", FL_MESSAGE_CODEC(codec));
+  fl_basic_message_channel_send(channel, nullptr, nullptr,
+                                null_message_response_cb, loop);
+
+  // Blocks here until null_message_response_cb is called.
   g_main_loop_run(loop);
 }

@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.common;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -13,7 +15,7 @@ import org.json.JSONObject;
  * A {@link MethodCodec} using UTF-8 encoded JSON method calls and result envelopes.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/JSONMethodCodec-class.html">JSONMethodCodec</a> on
+ * href="https://api.flutter.dev/flutter/services/JSONMethodCodec-class.html">JSONMethodCodec</a> on
  * the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Values supported as methods arguments and result payloads are those supported by {@link
@@ -26,7 +28,8 @@ public final class JSONMethodCodec implements MethodCodec {
   private JSONMethodCodec() {}
 
   @Override
-  public ByteBuffer encodeMethodCall(MethodCall methodCall) {
+  @NonNull
+  public ByteBuffer encodeMethodCall(@NonNull MethodCall methodCall) {
     try {
       final JSONObject map = new JSONObject();
       map.put("method", methodCall.method);
@@ -38,7 +41,8 @@ public final class JSONMethodCodec implements MethodCodec {
   }
 
   @Override
-  public MethodCall decodeMethodCall(ByteBuffer message) {
+  @NonNull
+  public MethodCall decodeMethodCall(@NonNull ByteBuffer message) {
     try {
       final Object json = JSONMessageCodec.INSTANCE.decodeMessage(message);
       if (json instanceof JSONObject) {
@@ -56,13 +60,15 @@ public final class JSONMethodCodec implements MethodCodec {
   }
 
   @Override
-  public ByteBuffer encodeSuccessEnvelope(Object result) {
+  @NonNull
+  public ByteBuffer encodeSuccessEnvelope(@Nullable Object result) {
     return JSONMessageCodec.INSTANCE.encodeMessage(new JSONArray().put(JSONUtil.wrap(result)));
   }
 
   @Override
+  @NonNull
   public ByteBuffer encodeErrorEnvelope(
-      String errorCode, String errorMessage, Object errorDetails) {
+      @NonNull String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails) {
     return JSONMessageCodec.INSTANCE.encodeMessage(
         new JSONArray()
             .put(errorCode)
@@ -71,8 +77,12 @@ public final class JSONMethodCodec implements MethodCodec {
   }
 
   @Override
+  @NonNull
   public ByteBuffer encodeErrorEnvelopeWithStacktrace(
-      String errorCode, String errorMessage, Object errorDetails, String errorStacktrace) {
+      @NonNull String errorCode,
+      @Nullable String errorMessage,
+      @Nullable Object errorDetails,
+      @Nullable String errorStacktrace) {
     return JSONMessageCodec.INSTANCE.encodeMessage(
         new JSONArray()
             .put(errorCode)
@@ -82,7 +92,8 @@ public final class JSONMethodCodec implements MethodCodec {
   }
 
   @Override
-  public Object decodeEnvelope(ByteBuffer envelope) {
+  @NonNull
+  public Object decodeEnvelope(@NonNull ByteBuffer envelope) {
     try {
       final Object json = JSONMessageCodec.INSTANCE.decodeMessage(envelope);
       if (json instanceof JSONArray) {

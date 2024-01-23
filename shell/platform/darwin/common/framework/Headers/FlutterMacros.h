@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERMACROS_H_
-#define FLUTTER_FLUTTERMACROS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERMACROS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERMACROS_H_
 
 #if defined(FLUTTER_FRAMEWORK)
 
-#define FLUTTER_EXPORT __attribute__((visibility("default")))
+#define FLUTTER_DARWIN_EXPORT __attribute__((visibility("default")))
 
 #else  // defined(FLUTTER_SDK)
 
-#define FLUTTER_EXPORT
+#define FLUTTER_DARWIN_EXPORT
 
 #endif  // defined(FLUTTER_SDK)
 
@@ -39,10 +39,10 @@
 
 #if __has_feature(objc_arc)
 #define FLUTTER_ASSERT_ARC
-#define FLUTTER_ASSERT_NOT_ARC #error ARC must be disabled!
+#define FLUTTER_ASSERT_NOT_ARC #error ARC must be disabled !
 #else
-#define FLUTTER_ASSERT_ARC #error ARC must be enabled!
+#define FLUTTER_ASSERT_ARC #error ARC must be enabled !
 #define FLUTTER_ASSERT_NOT_ARC
 #endif
 
-#endif  // FLUTTER_FLUTTERMACROS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERMACROS_H_

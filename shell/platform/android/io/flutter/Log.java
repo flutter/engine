@@ -5,9 +5,10 @@
 package io.flutter;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 /**
- * Port of {@link android.util.Log} that only logs in {@link io.flutter.BuildConfig#DEBUG} mode and
+ * Port of {@link android.util.Log} that only logs in {@value io.flutter.BuildConfig#DEBUG} mode and
  * internally filters logs based on a {@link #logLevel}.
  */
 public class Log {
@@ -94,5 +95,10 @@ public class Log {
 
   public static void wtf(@NonNull String tag, @NonNull String message, @NonNull Throwable tr) {
     android.util.Log.wtf(tag, message, tr);
+  }
+
+  @NonNull
+  public static String getStackTraceString(@Nullable Throwable tr) {
+    return android.util.Log.getStackTraceString(tr);
   }
 }

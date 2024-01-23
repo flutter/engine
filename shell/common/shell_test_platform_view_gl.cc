@@ -4,23 +4,61 @@
 
 #include "flutter/shell/common/shell_test_platform_view_gl.h"
 
-#include "flutter/shell/gpu/gpu_surface_gl.h"
+#include <utility>
+
+#include <EGL/egl.h>
+
+#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
+#include "impeller/entity/gles/entity_shaders_gles.h"
+
+#if IMPELLER_ENABLE_3D
+#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogncheck
+#endif
 
 namespace flutter {
 namespace testing {
 
+static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
+  return {
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_entity_shaders_gles_data,
+          impeller_entity_shaders_gles_length),
+#if IMPELLER_ENABLE_3D
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
+#endif
+  };
+}
+
 ShellTestPlatformViewGL::ShellTestPlatformViewGL(
     PlatformView::Delegate& delegate,
-    TaskRunners task_runners,
+    const TaskRunners& task_runners,
     std::shared_ptr<ShellTestVsyncClock> vsync_clock,
     CreateVsyncWaiter create_vsync_waiter,
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder)
-    : ShellTestPlatformView(delegate, std::move(task_runners)),
+    : ShellTestPlatformView(delegate, task_runners),
       gl_surface_(SkISize::Make(800, 600)),
       create_vsync_waiter_(std::move(create_vsync_waiter)),
-      vsync_clock_(vsync_clock),
-      shell_test_external_view_embedder_(shell_test_external_view_embedder) {}
+      vsync_clock_(std::move(vsync_clock)),
+      shell_test_external_view_embedder_(
+          std::move(shell_test_external_view_embedder)) {
+  if (GetSettings().enable_impeller) {
+    auto resolver = [](const char* name) -> void* {
+      return reinterpret_cast<void*>(::eglGetProcAddress(name));
+    };
+    // ANGLE needs this to initialize version strings checked by
+    // impeller::ProcTableGLES.
+    gl_surface_.MakeCurrent();
+    auto gl = std::make_unique<impeller::ProcTableGLES>(resolver);
+    if (!gl->IsValid()) {
+      FML_LOG(ERROR) << "Proc table when a shell unittests invalid.";
+      return;
+    }
+    impeller_context_ = impeller::ContextGLES::Create(
+        std::move(gl), ShaderLibraryMappings(), true);
+  }
+}
 
 ShellTestPlatformViewGL::~ShellTestPlatformViewGL() = default;
 
@@ -28,13 +66,14 @@ std::unique_ptr<VsyncWaiter> ShellTestPlatformViewGL::CreateVSyncWaiter() {
   return create_vsync_waiter_();
 }
 
+// |ShellTestPlatformView|
 void ShellTestPlatformViewGL::SimulateVSync() {
   vsync_clock_->SimulateVSync();
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGL>(this, true);
+  return std::make_unique<GPUSurfaceGLSkia>(this, true);
 }
 
 // |PlatformView|
@@ -62,13 +101,16 @@ bool ShellTestPlatformViewGL::GLContextClearCurrent() {
 }
 
 // |GPUSurfaceGLDelegate|
-bool ShellTestPlatformViewGL::GLContextPresent(uint32_t fbo_id) {
+bool ShellTestPlatformViewGL::GLContextPresent(
+    const GLPresentInfo& present_info) {
   return gl_surface_.Present();
 }
 
 // |GPUSurfaceGLDelegate|
-intptr_t ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
-  return gl_surface_.GetFramebuffer(frame_info.width, frame_info.height);
+GLFBOInfo ShellTestPlatformViewGL::GLContextFBO(GLFrameInfo frame_info) const {
+  return GLFBOInfo{
+      .fbo_id = gl_surface_.GetFramebuffer(frame_info.width, frame_info.height),
+  };
 }
 
 // |GPUSurfaceGLDelegate|

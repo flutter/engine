@@ -6,9 +6,9 @@
 #define FLUTTER_VULKAN_VULKAN_DEBUG_REPORT_H_
 
 #include "flutter/fml/macros.h"
-#include "vulkan_handle.h"
-#include "vulkan_interface.h"
-#include "vulkan_proc_table.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_interface.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -24,7 +24,7 @@ class VulkanDebugReport {
   bool IsValid() const;
 
  private:
-  const VulkanProcTable& vk;
+  const VulkanProcTable& vk_;
   const VulkanHandle<VkInstance>& application_;
   VulkanHandle<VkDebugReportCallbackEXT> handle_;
   bool valid_;

@@ -1,0 +1,281 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:test/bootstrap/browser.dart';
+import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+
+void main() {
+  internalBootstrapBrowserTest(() => testMain);
+}
+
+void testMain() {
+  ensureFlutterViewEmbedderInitialized();
+
+  group('PlatformDispatcher', () {
+    test('reports at least one display', () {
+      expect(ui.PlatformDispatcher.instance.displays.length, greaterThan(0));
+    });
+
+    test('high contrast in accessibilityFeatures has the correct value', () {
+      final MockHighContrastSupport mockHighContrast =
+          MockHighContrastSupport();
+      HighContrastSupport.instance = mockHighContrast;
+      final EnginePlatformDispatcher engineDispatcher =
+          EnginePlatformDispatcher();
+
+      expect(engineDispatcher.accessibilityFeatures.highContrast, isTrue);
+      mockHighContrast.isEnabled = false;
+      mockHighContrast.invokeListeners(mockHighContrast.isEnabled);
+      expect(engineDispatcher.accessibilityFeatures.highContrast, isFalse);
+
+      engineDispatcher.dispose();
+    });
+
+    test('responds to flutter/skia Skia.setResourceCacheMaxBytes', () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/skia',
+        codec.encodeMethodCall(const MethodCall(
+          'Skia.setResourceCacheMaxBytes',
+          512 * 1000 * 1000,
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        <bool>[true],
+      );
+    });
+
+    test('responds to flutter/platform HapticFeedback.vibrate', () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/platform',
+        codec.encodeMethodCall(const MethodCall(
+          'HapticFeedback.vibrate',
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
+    test('responds to flutter/platform SystemChrome.setSystemUIOverlayStyle',
+        () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/platform',
+        codec.encodeMethodCall(const MethodCall(
+          'SystemChrome.setSystemUIOverlayStyle',
+          <String, dynamic>{},
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
+    test('responds to flutter/contextmenu enable', () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/contextmenu',
+        codec.encodeMethodCall(const MethodCall(
+          'enableContextMenu',
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
+    test('responds to flutter/contextmenu disable', () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/contextmenu',
+        codec.encodeMethodCall(const MethodCall(
+          'disableContextMenu',
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
+    test('can find text scale factor', () async {
+      const double deltaTolerance = 1e-5;
+
+      final DomElement root = domDocument.documentElement!;
+      final String oldFontSize = root.style.fontSize;
+
+      addTearDown(() {
+        root.style.fontSize = oldFontSize;
+      });
+
+      root.style.fontSize = '16px';
+      expect(findBrowserTextScaleFactor(), 1.0);
+
+      root.style.fontSize = '20px';
+      expect(findBrowserTextScaleFactor(), 1.25);
+
+      root.style.fontSize = '24px';
+      expect(findBrowserTextScaleFactor(), 1.5);
+
+      root.style.fontSize = '14.4px';
+      expect(findBrowserTextScaleFactor(), closeTo(0.9, deltaTolerance));
+
+      root.style.fontSize = '12.8px';
+      expect(findBrowserTextScaleFactor(), closeTo(0.8, deltaTolerance));
+
+      root.style.fontSize = '';
+      expect(findBrowserTextScaleFactor(), 1.0);
+    });
+
+    test(
+        "calls onTextScaleFactorChanged when the <html> element's font-size changes",
+        () async {
+      final DomElement root = domDocument.documentElement!;
+      final String oldFontSize = root.style.fontSize;
+      final ui.VoidCallback? oldCallback =
+          ui.PlatformDispatcher.instance.onTextScaleFactorChanged;
+
+      addTearDown(() {
+        root.style.fontSize = oldFontSize;
+        ui.PlatformDispatcher.instance.onTextScaleFactorChanged = oldCallback;
+      });
+
+      root.style.fontSize = '16px';
+
+      bool isCalled = false;
+      ui.PlatformDispatcher.instance.onTextScaleFactorChanged = () {
+        isCalled = true;
+      };
+
+      root.style.fontSize = '20px';
+      await Future<void>.delayed(Duration.zero);
+      expect(root.style.fontSize, '20px');
+      expect(isCalled, isTrue);
+      expect(ui.PlatformDispatcher.instance.textScaleFactor,
+          findBrowserTextScaleFactor());
+
+      isCalled = false;
+
+      root.style.fontSize = '16px';
+      await Future<void>.delayed(Duration.zero);
+      expect(root.style.fontSize, '16px');
+      expect(isCalled, isTrue);
+      expect(ui.PlatformDispatcher.instance.textScaleFactor,
+          findBrowserTextScaleFactor());
+    });
+
+    test('disposes all its views', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view3 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2)
+        ..registerView(view3);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+      expect(view3.isDisposed, isFalse);
+
+      dispatcher.dispose();
+      expect(view1.isDisposed, isTrue);
+      expect(view2.isDisposed, isTrue);
+      expect(view3.isDisposed, isTrue);
+    });
+
+    test('connects view disposal to metrics changed event', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      expect(onMetricsChangedCalled, isFalse);
+
+      dispatcher.viewManager.disposeAndUnregisterView(view2.viewId);
+
+      expect(onMetricsChangedCalled, isTrue, reason: 'onMetricsChanged should have been called.');
+
+      dispatcher.dispose();
+    });
+  });
+}
+
+class MockHighContrastSupport implements HighContrastSupport {
+  bool isEnabled = true;
+
+  final List<HighContrastListener> _listeners = <HighContrastListener>[];
+
+  @override
+  bool get isHighContrastEnabled => isEnabled;
+
+  void invokeListeners(bool val) {
+    for (final HighContrastListener listener in _listeners) {
+      listener(val);
+    }
+  }
+
+  @override
+  void addListener(HighContrastListener listener) {
+    _listeners.add(listener);
+  }
+
+  @override
+  void removeListener(HighContrastListener listener) {
+    _listeners.remove(listener);
+  }
+}

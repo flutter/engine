@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_TEST_EXTERNAL_VIEW_EMBEDDER_H_
-#define FLUTTER_SHELL_TEST_EXTERNAL_VIEW_EMBEDDER_H_
+#ifndef FLUTTER_SHELL_COMMON_SHELL_TEST_EXTERNAL_VIEW_EMBEDDER_H_
+#define FLUTTER_SHELL_COMMON_SHELL_TEST_EXTERNAL_VIEW_EMBEDDER_H_
 
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/raster_thread_merger.h"
@@ -28,52 +28,67 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // returns the new `post_preroll_result`.
   void UpdatePostPrerollResult(PostPrerollResult post_preroll_result);
 
-  // Gets the number of times the SubmitFrame method has been called in
+  // Gets the number of times the SubmitFlutterView method has been called in
   // the external view embedder.
   int GetSubmittedFrameCount();
 
-  // Returns the size of last submitted frame surface
+  // Returns the size of last submitted frame surface.
   SkISize GetLastSubmittedFrameSize();
+
+  // Returns the mutators stack for the given platform view.
+  MutatorsStack GetStack(int64_t);
+
+  // Returns the list of visited platform views.
+  std::vector<int64_t> GetVisitedPlatformViews();
 
  private:
   // |ExternalViewEmbedder|
   void CancelFrame() override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(
-      SkISize frame_size,
-      GrDirectContext* context,
-      double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void BeginFrame(GrDirectContext* context,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  void PrepareFlutterView(int64_t flutter_view_id,
+                          SkISize frame_size,
+                          double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
   PostPrerollResult PostPrerollAction(
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger)
+      override;
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override;
+  void PushVisitedPlatformView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(
+  void PushFilterToVisitedPlatformViews(
+      const std::shared_ptr<const DlImageFilter>& filter,
+      const SkRect& filter_rect) override;
+
+  // |ExternalViewEmbedder|
+  void SubmitFlutterView(
       GrDirectContext* context,
-      std::unique_ptr<SurfaceFrame> frame,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
+      std::unique_ptr<SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
-  void EndFrame(
-      bool should_resubmit_frame,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+  void EndFrame(bool should_resubmit_frame,
+                const fml::RefPtr<fml::RasterThreadMerger>&
+                    raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
+  DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;
@@ -83,7 +98,11 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   PostPrerollResult post_preroll_result_;
 
   bool support_thread_merging_;
-
+  SkISize frame_size_;
+  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
+  std::map<int64_t, MutatorsStack> mutators_stacks_;
+  std::map<int64_t, EmbeddedViewParams> current_composition_params_;
+  std::vector<int64_t> visited_platform_views_;
   std::atomic<int> submitted_frame_count_;
   std::atomic<SkISize> last_submitted_frame_size_;
 
@@ -92,4 +111,4 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_TEST_EXTERNAL_VIEW_EMBEDDER_H_
+#endif  // FLUTTER_SHELL_COMMON_SHELL_TEST_EXTERNAL_VIEW_EMBEDDER_H_

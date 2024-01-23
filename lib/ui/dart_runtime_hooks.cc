@@ -15,6 +15,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/runtime/dart_plugin_registrant.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
@@ -27,38 +28,10 @@
 #include "third_party/tonic/scopes/dart_api_scope.h"
 #include "third_party/tonic/scopes/dart_isolate_scope.h"
 
-#if defined(OS_ANDROID)
-#include <android/log.h>
-#elif defined(OS_IOS)
-extern "C" {
-// Cannot import the syslog.h header directly because of macro collision.
-extern void syslog(int, const char*, ...);
-}
-#endif
-
 using tonic::DartConverter;
-using tonic::LogIfError;
 using tonic::ToDart;
 
 namespace flutter {
-
-#define REGISTER_FUNCTION(name, count) {"" #name, name, count, true},
-#define DECLARE_FUNCTION(name, count) \
-  extern void name(Dart_NativeArguments args);
-
-#define BUILTIN_NATIVE_LIST(V)  \
-  V(Logger_PrintString, 1)      \
-  V(Logger_PrintDebugString, 1) \
-  V(SaveCompilationTrace, 0)    \
-  V(ScheduleMicrotask, 1)       \
-  V(GetCallbackHandle, 1)       \
-  V(GetCallbackFromHandle, 1)
-
-BUILTIN_NATIVE_LIST(DECLARE_FUNCTION);
-
-void DartRuntimeHooks::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({BUILTIN_NATIVE_LIST(REGISTER_FUNCTION)});
-}
 
 static void PropagateIfError(Dart_Handle result) {
   if (Dart_IsError(result)) {
@@ -147,6 +120,7 @@ static void InitDartIO(Dart_Handle builtin_library,
       Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure);
   PropagateIfError(result);
 
+#if !FLUTTER_RELEASE
   // Register dart:io service extensions used for network profiling.
   Dart_Handle network_profiling_type =
       Dart_GetNonNullableType(io_lib, ToDart("_NetworkProfiling"), 0, nullptr);
@@ -154,6 +128,7 @@ static void InitDartIO(Dart_Handle builtin_library,
   result = Dart_Invoke(network_profiling_type,
                        ToDart("_registerServiceExtension"), 0, nullptr);
   PropagateIfError(result);
+#endif  // !FLUTTER_RELEASE
 }
 
 void DartRuntimeHooks::Install(bool is_ui_isolate,
@@ -165,103 +140,34 @@ void DartRuntimeHooks::Install(bool is_ui_isolate,
   InitDartIO(builtin, script_uri);
 }
 
-void Logger_PrintDebugString(Dart_NativeArguments args) {
+void DartRuntimeHooks::Logger_PrintDebugString(const std::string& message) {
 #ifndef NDEBUG
-  Logger_PrintString(args);
+  DartRuntimeHooks::Logger_PrintString(message);
 #endif
 }
 
-// Implementation of native functions which are used for some
-// test/debug functionality in standalone dart mode.
-void Logger_PrintString(Dart_NativeArguments args) {
-  std::stringstream stream;
-  const auto& logger_prefix = UIDartState::Current()->logger_prefix();
-
-#if !OS_ANDROID
-  // Prepend all logs with the isolate debug name except on Android where that
-  // prefix is specified in the log tag.
-  if (logger_prefix.size() > 0) {
-    stream << logger_prefix << ": ";
-  }
-#endif  // !OS_ANDROID
-
-  // Append the log buffer obtained from Dart code.
-  {
-    Dart_Handle str = Dart_GetNativeArgument(args, 0);
-    uint8_t* chars = nullptr;
-    intptr_t length = 0;
-    Dart_Handle result = Dart_StringToUTF8(str, &chars, &length);
-    if (Dart_IsError(result)) {
-      Dart_PropagateError(result);
-      return;
-    }
-    if (length > 0) {
-      stream << std::string{reinterpret_cast<const char*>(chars),
-                            static_cast<size_t>(length)};
-    }
-  }
-
-  const auto log_string = stream.str();
-  const char* chars = log_string.c_str();
-  const size_t length = log_string.size();
-
-  // Log using platform specific mechanisms
-  {
-#if defined(OS_ANDROID)
-    // Write to the logcat on Android.
-    __android_log_print(ANDROID_LOG_INFO, logger_prefix.c_str(), "%.*s",
-                        (int)length, chars);
-#elif defined(OS_IOS)
-    // Write to syslog on iOS.
-    //
-    // TODO(cbracken): replace with dedicated communication channel and bypass
-    // iOS logging APIs altogether.
-    syslog(1 /* LOG_ALERT */, "%.*s", (int)length, chars);
-#else
-    std::cout << log_string << std::endl;
-#endif
-  }
+void DartRuntimeHooks::Logger_PrintString(const std::string& message) {
+  const auto& tag = UIDartState::Current()->logger_prefix();
+  UIDartState::Current()->LogMessage(tag, message);
 
   if (dart::bin::ShouldCaptureStdout()) {
+    std::stringstream stream;
+    if (!tag.empty()) {
+      stream << tag << ": ";
+    }
+    stream << message;
+    std::string log = stream.str();
+
     // For now we report print output on the Stdout stream.
     uint8_t newline[] = {'\n'};
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent",
-                              reinterpret_cast<const uint8_t*>(chars), length);
+                              reinterpret_cast<const uint8_t*>(log.c_str()),
+                              log.size());
     Dart_ServiceSendDataEvent("Stdout", "WriteEvent", newline, sizeof(newline));
   }
 }
 
-void SaveCompilationTrace(Dart_NativeArguments args) {
-  uint8_t* buffer = nullptr;
-  intptr_t length = 0;
-  Dart_Handle result = Dart_SaveCompilationTrace(&buffer, &length);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, result);
-    return;
-  }
-
-  result = Dart_NewTypedData(Dart_TypedData_kUint8, length);
-  if (Dart_IsError(result)) {
-    Dart_SetReturnValue(args, result);
-    return;
-  }
-
-  Dart_TypedData_Type type;
-  void* data = nullptr;
-  intptr_t size = 0;
-  Dart_Handle status = Dart_TypedDataAcquireData(result, &type, &data, &size);
-  if (Dart_IsError(status)) {
-    Dart_SetReturnValue(args, status);
-    return;
-  }
-
-  memcpy(data, buffer, length);
-  Dart_TypedDataReleaseData(result);
-  Dart_SetReturnValue(args, result);
-}
-
-void ScheduleMicrotask(Dart_NativeArguments args) {
-  Dart_Handle closure = Dart_GetNativeArgument(args, 0);
+void DartRuntimeHooks::ScheduleMicrotask(Dart_Handle closure) {
   UIDartState::Current()->ScheduleMicrotask(closure);
 }
 
@@ -338,8 +244,7 @@ static std::string GetFunctionName(Dart_Handle func) {
   return DartConverter<std::string>::FromDart(result);
 }
 
-void GetCallbackHandle(Dart_NativeArguments args) {
-  Dart_Handle func = Dart_GetNativeArgument(args, 0);
+Dart_Handle DartRuntimeHooks::GetCallbackHandle(Dart_Handle func) {
   std::string name = GetFunctionName(func);
   std::string class_name = GetFunctionClassName(func);
   std::string library_path = GetFunctionLibraryUrl(func);
@@ -349,18 +254,21 @@ void GetCallbackHandle(Dart_NativeArguments args) {
   // closures (e.g. `(int a, int b) => a + b;`) also cannot be used as
   // callbacks, so `func` must be a tear-off of a named static function.
   if (!Dart_IsTearOff(func) || name.empty()) {
-    Dart_SetReturnValue(args, Dart_Null());
-    return;
+    return Dart_Null();
   }
-  Dart_SetReturnValue(
-      args, DartConverter<int64_t>::ToDart(DartCallbackCache::GetCallbackHandle(
-                name, class_name, library_path)));
+  return DartConverter<int64_t>::ToDart(
+      DartCallbackCache::GetCallbackHandle(name, class_name, library_path));
 }
 
-void GetCallbackFromHandle(Dart_NativeArguments args) {
-  Dart_Handle h = Dart_GetNativeArgument(args, 0);
-  int64_t handle = DartConverter<int64_t>::FromDart(h);
-  Dart_SetReturnValue(args, DartCallbackCache::GetCallback(handle));
+Dart_Handle DartRuntimeHooks::GetCallbackFromHandle(int64_t handle) {
+  Dart_Handle result = DartCallbackCache::GetCallback(handle);
+  PropagateIfError(result);
+  return result;
+}
+
+void DartPluginRegistrant_EnsureInitialized() {
+  tonic::DartApiScope api_scope;
+  FindAndInvokeDartPluginRegistrant();
 }
 
 }  // namespace flutter

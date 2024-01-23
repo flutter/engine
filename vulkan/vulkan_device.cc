@@ -8,8 +8,8 @@
 #include <map>
 #include <vector>
 
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "vulkan_proc_table.h"
 #include "vulkan_surface.h"
 #include "vulkan_utilities.h"
 
@@ -32,12 +32,11 @@ static uint32_t FindGraphicsQueueIndex(
 VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
                            VulkanHandle<VkPhysicalDevice> physical_device,
                            bool enable_validation_layers)
-    : vk(p_vk),
+    : vk_(p_vk),
       physical_device_(std::move(physical_device)),
       graphics_queue_index_(std::numeric_limits<uint32_t>::max()),
-      valid_(false),
-      enable_validation_layers_(enable_validation_layers) {
-  if (!physical_device_ || !vk.AreInstanceProcsSetup()) {
+      valid_(false) {
+  if (!physical_device_ || !vk_.AreInstanceProcsSetup()) {
     return;
   }
 
@@ -60,25 +59,26 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
   };
 
   const char* extensions[] = {
-#if OS_ANDROID
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+#if FML_OS_ANDROID
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #endif
 #if OS_FUCHSIA
-    VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-    VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME,
-    VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
-    VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
-    VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+      VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+      VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+      VK_FUCHSIA_EXTERNAL_MEMORY_EXTENSION_NAME,
+      VK_FUCHSIA_EXTERNAL_SEMAPHORE_EXTENSION_NAME,
+      VK_FUCHSIA_BUFFER_COLLECTION_EXTENSION_NAME,
 #endif
   };
 
   auto enabled_layers =
-      DeviceLayersToEnable(vk, physical_device_, enable_validation_layers_);
+      DeviceLayersToEnable(vk_, physical_device_, enable_validation_layers);
 
-  const char* layers[enabled_layers.size()];
+  std::vector<const char*> layers;
 
   for (size_t i = 0; i < enabled_layers.size(); i++) {
-    layers[i] = enabled_layers[i].c_str();
+    layers.push_back(enabled_layers[i].c_str());
   }
 
   const VkDeviceCreateInfo create_info = {
@@ -87,8 +87,8 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
       .flags = 0,
       .queueCreateInfoCount = 1,
       .pQueueCreateInfos = &queue_create,
-      .enabledLayerCount = static_cast<uint32_t>(enabled_layers.size()),
-      .ppEnabledLayerNames = layers,
+      .enabledLayerCount = static_cast<uint32_t>(layers.size()),
+      .ppEnabledLayerNames = layers.data(),
       .enabledExtensionCount = sizeof(extensions) / sizeof(const char*),
       .ppEnabledExtensionNames = extensions,
       .pEnabledFeatures = nullptr,
@@ -96,31 +96,61 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
 
   VkDevice device = VK_NULL_HANDLE;
 
-  if (VK_CALL_LOG_ERROR(vk.CreateDevice(physical_device_, &create_info, nullptr,
-                                        &device)) != VK_SUCCESS) {
+  if (VK_CALL_LOG_ERROR(vk_.CreateDevice(physical_device_, &create_info,
+                                         nullptr, &device)) != VK_SUCCESS) {
     FML_DLOG(INFO) << "Could not create device.";
     return;
   }
 
-  device_ = {device,
-             [this](VkDevice device) { vk.DestroyDevice(device, nullptr); }};
+  device_ = VulkanHandle<VkDevice>{
+      device, [this](VkDevice device) { vk_.DestroyDevice(device, nullptr); }};
 
-  if (!vk.SetupDeviceProcAddresses(device_)) {
-    FML_DLOG(INFO) << "Could not setup device proc addresses.";
+  if (!vk_.SetupDeviceProcAddresses(device_)) {
+    FML_DLOG(INFO) << "Could not set up device proc addresses.";
     return;
   }
 
   VkQueue queue = VK_NULL_HANDLE;
 
-  vk.GetDeviceQueue(device_, graphics_queue_index_, 0, &queue);
+  vk_.GetDeviceQueue(device_, graphics_queue_index_, 0, &queue);
 
   if (queue == VK_NULL_HANDLE) {
     FML_DLOG(INFO) << "Could not get the device queue handle.";
     return;
   }
 
-  queue_ = queue;
+  queue_ = VulkanHandle<VkQueue>(queue);
 
+  if (!InitializeCommandPool()) {
+    return;
+  }
+
+  valid_ = true;
+}
+
+VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
+                           VulkanHandle<VkPhysicalDevice> physical_device,
+                           VulkanHandle<VkDevice> device,
+                           uint32_t queue_family_index,
+                           VulkanHandle<VkQueue> queue)
+    : vk_(p_vk),
+      physical_device_(std::move(physical_device)),
+      device_(std::move(device)),
+      queue_(std::move(queue)),
+      graphics_queue_index_(queue_family_index),
+      valid_(false) {
+  if (!physical_device_ || !vk_.AreInstanceProcsSetup()) {
+    return;
+  }
+
+  if (!InitializeCommandPool()) {
+    return;
+  }
+
+  valid_ = true;
+}
+
+bool VulkanDevice::InitializeCommandPool() {
   const VkCommandPoolCreateInfo command_pool_create_info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
       .pNext = nullptr,
@@ -129,18 +159,19 @@ VulkanDevice::VulkanDevice(VulkanProcTable& p_vk,
   };
 
   VkCommandPool command_pool = VK_NULL_HANDLE;
-  if (VK_CALL_LOG_ERROR(vk.CreateCommandPool(device_, &command_pool_create_info,
-                                             nullptr, &command_pool)) !=
+  if (VK_CALL_LOG_ERROR(vk_.CreateCommandPool(
+          device_, &command_pool_create_info, nullptr, &command_pool)) !=
       VK_SUCCESS) {
     FML_DLOG(INFO) << "Could not create the command pool.";
-    return;
+    return false;
   }
 
-  command_pool_ = {command_pool, [this](VkCommandPool pool) {
-                     vk.DestroyCommandPool(device_, pool, nullptr);
-                   }};
+  command_pool_ = VulkanHandle<VkCommandPool>{
+      command_pool, [this](VkCommandPool pool) {
+        vk_.DestroyCommandPool(device_, pool, nullptr);
+      }};
 
-  valid_ = true;
+  return true;
 }
 
 VulkanDevice::~VulkanDevice() {
@@ -152,7 +183,7 @@ bool VulkanDevice::IsValid() const {
 }
 
 bool VulkanDevice::WaitIdle() const {
-  return VK_CALL_LOG_ERROR(vk.DeviceWaitIdle(device_)) == VK_SUCCESS;
+  return VK_CALL_LOG_ERROR(vk_.DeviceWaitIdle(device_)) == VK_SUCCESS;
 }
 
 const VulkanHandle<VkDevice>& VulkanDevice::GetHandle() const {
@@ -183,13 +214,13 @@ uint32_t VulkanDevice::GetGraphicsQueueIndex() const {
 bool VulkanDevice::GetSurfaceCapabilities(
     const VulkanSurface& surface,
     VkSurfaceCapabilitiesKHR* capabilities) const {
-#if OS_ANDROID
+#if FML_OS_ANDROID
   if (!surface.IsValid() || capabilities == nullptr) {
     return false;
   }
 
   bool success =
-      VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceCapabilitiesKHR(
+      VK_CALL_LOG_ERROR(vk_.GetPhysicalDeviceSurfaceCapabilitiesKHR(
           physical_device_, surface.Handle(), capabilities)) == VK_SUCCESS;
 
   if (!success) {
@@ -223,7 +254,7 @@ bool VulkanDevice::GetPhysicalDeviceFeatures(
   if (features == nullptr || !physical_device_) {
     return false;
   }
-  vk.GetPhysicalDeviceFeatures(physical_device_, features);
+  vk_.GetPhysicalDeviceFeatures(physical_device_, features);
   return true;
 }
 
@@ -258,27 +289,28 @@ std::vector<VkQueueFamilyProperties> VulkanDevice::GetQueueFamilyProperties()
     const {
   uint32_t count = 0;
 
-  vk.GetPhysicalDeviceQueueFamilyProperties(physical_device_, &count, nullptr);
+  vk_.GetPhysicalDeviceQueueFamilyProperties(physical_device_, &count, nullptr);
 
   std::vector<VkQueueFamilyProperties> properties;
   properties.resize(count, {});
 
-  vk.GetPhysicalDeviceQueueFamilyProperties(physical_device_, &count,
-                                            properties.data());
+  vk_.GetPhysicalDeviceQueueFamilyProperties(physical_device_, &count,
+                                             properties.data());
 
   return properties;
 }
 
-int VulkanDevice::ChooseSurfaceFormat(const VulkanSurface& surface,
-                                      std::vector<VkFormat> desired_formats,
-                                      VkSurfaceFormatKHR* format) const {
-#if OS_ANDROID
+int VulkanDevice::ChooseSurfaceFormat(
+    const VulkanSurface& surface,
+    const std::vector<VkFormat>& desired_formats,
+    VkSurfaceFormatKHR* format) const {
+#if FML_OS_ANDROID
   if (!surface.IsValid() || format == nullptr) {
     return -1;
   }
 
   uint32_t format_count = 0;
-  if (VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceFormatsKHR(
+  if (VK_CALL_LOG_ERROR(vk_.GetPhysicalDeviceSurfaceFormatsKHR(
           physical_device_, surface.Handle(), &format_count, nullptr)) !=
       VK_SUCCESS) {
     return -1;
@@ -288,9 +320,11 @@ int VulkanDevice::ChooseSurfaceFormat(const VulkanSurface& surface,
     return -1;
   }
 
-  VkSurfaceFormatKHR formats[format_count];
-  if (VK_CALL_LOG_ERROR(vk.GetPhysicalDeviceSurfaceFormatsKHR(
-          physical_device_, surface.Handle(), &format_count, formats)) !=
+  std::vector<VkSurfaceFormatKHR> formats;
+  formats.resize(format_count);
+
+  if (VK_CALL_LOG_ERROR(vk_.GetPhysicalDeviceSurfaceFormatsKHR(
+          physical_device_, surface.Handle(), &format_count, formats.data())) !=
       VK_SUCCESS) {
     return -1;
   }
@@ -323,7 +357,7 @@ bool VulkanDevice::ChoosePresentMode(const VulkanSurface& surface,
   // mentioned in the ticket w.r.t the application being faster that the refresh
   // rate of the screen should not be faced by any Flutter platforms as they are
   // powered by Vsync pulses instead of depending the submit to block.
-  // However, for platforms that don't have VSync providers setup, it is better
+  // However, for platforms that don't have VSync providers set up, it is better
   // to fall back to FIFO. For platforms that do have VSync providers, there
   // should be little difference. In case there is a need for a mode other than
   // FIFO, availability checks must be performed here before returning the
@@ -354,7 +388,7 @@ bool VulkanDevice::QueueSubmit(
       .pSignalSemaphores = signal_semaphores.data(),
   };
 
-  if (VK_CALL_LOG_ERROR(vk.QueueSubmit(queue_, 1, &submit_info, fence)) !=
+  if (VK_CALL_LOG_ERROR(vk_.QueueSubmit(queue_, 1, &submit_info, fence)) !=
       VK_SUCCESS) {
     return false;
   }

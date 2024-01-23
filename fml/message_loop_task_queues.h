@@ -6,7 +6,9 @@
 #define FLUTTER_FML_MESSAGE_LOOP_TASK_QUEUES_H_
 
 #include <map>
+#include <memory>
 #include <mutex>
+#include <set>
 #include <vector>
 
 #include "flutter/fml/closure.h"
@@ -14,41 +16,37 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/shared_mutex.h"
+#include "flutter/fml/task_queue_id.h"
+#include "flutter/fml/task_source.h"
 #include "flutter/fml/wakeable.h"
 
 namespace fml {
 
-class TaskQueueId {
- public:
-  static const size_t kUnmerged;
+static const TaskQueueId kUnmerged = TaskQueueId(TaskQueueId::kUnmerged);
 
-  explicit TaskQueueId(size_t value) : value_(value) {}
-
-  operator int() const { return value_; }
-
- private:
-  size_t value_ = kUnmerged;
-};
-
-static const TaskQueueId _kUnmerged = TaskQueueId(TaskQueueId::kUnmerged);
-
-// This is keyed by the |TaskQueueId| and contains all the queue
-// components that make up a single TaskQueue.
+/// A collection of tasks and observers associated with one TaskQueue.
+///
+/// Often a TaskQueue has a one-to-one relationship with a fml::MessageLoop,
+/// this isn't the case when TaskQueues are merged via
+/// \p fml::MessageLoopTaskQueues::Merge.
 class TaskQueueEntry {
  public:
   using TaskObservers = std::map<intptr_t, fml::closure>;
   Wakeable* wakeable;
   TaskObservers task_observers;
-  DelayedTaskQueue delayed_tasks;
+  std::unique_ptr<TaskSource> task_source;
 
-  // Note: Both of these can be _kUnmerged, which indicates that
-  // this queue has not been merged or subsumed. OR exactly one
-  // of these will be _kUnmerged, if owner_of is _kUnmerged, it means
-  // that the queue has been subsumed or else it owns another queue.
-  TaskQueueId owner_of;
+  /// Set of the TaskQueueIds which is owned by this TaskQueue. If the set is
+  /// empty, this TaskQueue does not own any other TaskQueues.
+  std::set<TaskQueueId> owner_of;
+
+  /// Identifies the TaskQueue that subsumes this TaskQueue. If it is kUnmerged
+  /// it indicates that this TaskQueue is not owned by any other TaskQueue.
   TaskQueueId subsumed_by;
 
-  TaskQueueEntry();
+  TaskQueueId created_for;
+
+  explicit TaskQueueEntry(TaskQueueId created_for);
 
  private:
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(TaskQueueEntry);
@@ -59,15 +57,17 @@ enum class FlushType {
   kAll,
 };
 
-// This class keeps track of all the tasks and observers that
-// need to be run on it's MessageLoopImpl. This also wakes up the
-// loop at the required times.
-class MessageLoopTaskQueues
-    : public fml::RefCountedThreadSafe<MessageLoopTaskQueues> {
+/// A singleton container for all tasks and observers associated with all
+/// fml::MessageLoops.
+///
+/// This also wakes up the loop at the required times.
+/// \see fml::MessageLoop
+/// \see fml::Wakeable
+class MessageLoopTaskQueues {
  public:
   // Lifecycle.
 
-  static fml::RefPtr<MessageLoopTaskQueues> GetInstance();
+  static MessageLoopTaskQueues* GetInstance();
 
   TaskQueueId CreateTaskQueue();
 
@@ -79,13 +79,17 @@ class MessageLoopTaskQueues
 
   void RegisterTask(TaskQueueId queue_id,
                     const fml::closure& task,
-                    fml::TimePoint target_time);
+                    fml::TimePoint target_time,
+                    fml::TaskSourceGrade task_source_grade =
+                        fml::TaskSourceGrade::kUnspecified);
 
   bool HasPendingTasks(TaskQueueId queue_id) const;
 
   fml::closure GetNextTaskToRun(TaskQueueId queue_id, fml::TimePoint from_time);
 
   size_t GetNumPendingTasks(TaskQueueId queue_id) const;
+
+  static TaskSourceGrade GetCurrentTaskSourceGrade();
 
   // Observers methods.
 
@@ -106,21 +110,32 @@ class MessageLoopTaskQueues
   //     to it. It is not aware of whether a queue is merged or not. Same with
   //     task observers.
   //  2. When we get the tasks to run now, we look at both the queue_ids
-  //     for the owner, subsumed will spin.
-  //  3. Each task queue can only be merged and subsumed once.
+  //     for the owner and the subsumed task queues.
+  //  3. One TaskQueue can subsume multiple other TaskQueues. A TaskQueue can be
+  //     in exactly one of the following three states:
+  //     a. Be an owner of multiple other TaskQueues.
+  //     b. Be subsumed by a TaskQueue (an owner can never be subsumed).
+  //     c. Be independent, i.e, neither owner nor be subsumed.
   //
   //  Methods currently aware of the merged state of the queues:
   //  HasPendingTasks, GetNextTaskToRun, GetNumPendingTasks
-
-  // This method returns false if either the owner or subsumed has already been
-  // merged with something else.
   bool Merge(TaskQueueId owner, TaskQueueId subsumed);
 
-  // Will return false if the owner has not been merged before.
-  bool Unmerge(TaskQueueId owner);
+  // Will return false if the owner has not been merged before, or owner was
+  // subsumed by others, or subsumed wasn't subsumed by others, or owner
+  // didn't own the given subsumed queue id.
+  bool Unmerge(TaskQueueId owner, TaskQueueId subsumed);
 
-  // Returns true if owner owns the subsumed task queue.
+  /// Returns \p true if \p owner owns the \p subsumed task queue.
   bool Owns(TaskQueueId owner, TaskQueueId subsumed) const;
+
+  // Returns the subsumed task queue if any or |TaskQueueId::kUnmerged|
+  // otherwise.
+  std::set<TaskQueueId> GetSubsumedTaskQueueId(TaskQueueId owner) const;
+
+  void PauseSecondarySource(TaskQueueId queue_id);
+
+  void ResumeSecondarySource(TaskQueueId queue_id);
 
  private:
   class MergedQueuesRunner;
@@ -133,23 +148,17 @@ class MessageLoopTaskQueues
 
   bool HasPendingTasksUnlocked(TaskQueueId queue_id) const;
 
-  const DelayedTask& PeekNextTaskUnlocked(TaskQueueId owner,
-                                          TaskQueueId& top_queue_id) const;
+  TaskSource::TopTask PeekNextTaskUnlocked(TaskQueueId owner) const;
 
   fml::TimePoint GetNextWakeTimeUnlocked(TaskQueueId queue_id) const;
-
-  static std::mutex creation_mutex_;
-  static fml::RefPtr<MessageLoopTaskQueues> instance_;
 
   mutable std::mutex queue_mutex_;
   std::map<TaskQueueId, std::unique_ptr<TaskQueueEntry>> queue_entries_;
 
-  size_t task_queue_id_counter_;
+  size_t task_queue_id_counter_ = 0;
 
   std::atomic_int order_;
 
-  FML_FRIEND_MAKE_REF_COUNTED(MessageLoopTaskQueues);
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(MessageLoopTaskQueues);
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MessageLoopTaskQueues);
 };
 

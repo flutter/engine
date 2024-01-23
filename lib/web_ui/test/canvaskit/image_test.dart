@@ -2,118 +2,110 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-import 'dart:html' show ProgressEvent;
+import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/canvaskit/image.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../matchers.dart';
 import 'common.dart';
-import 'test_data.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  group('CanvasKit image', () {
-    setUpCanvasKitTest();
+  setUpCanvasKitTest();
 
-    test('CkAnimatedImage can be explicitly disposed of', () {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage);
-      expect(image.debugDisposed, false);
-      image.dispose();
-      expect(image.debugDisposed, true);
+  test('toImage succeeds', () async {
+    final ui.Image image = await _createImage();
+    expect(image.runtimeType.toString(), equals('CkImage'));
+    image.dispose();
+  });
 
-      // Disallow usage after disposal
-      expect(() => image.frameCount, throwsAssertionError);
-      expect(() => image.repetitionCount, throwsAssertionError);
-      expect(() => image.getNextFrame(), throwsAssertionError);
+  test('Image constructor invokes onCreate once', () async {
+    int onCreateInvokedCount = 0;
+    ui.Image? createdImage;
+    ui.Image.onCreate = (ui.Image image) {
+      onCreateInvokedCount++;
+      createdImage = image;
+    };
 
-      // Disallow double-dispose.
-      expect(() => image.dispose(), throwsAssertionError);
-      testCollector.collectNow();
+    final ui.Image  image1 = await _createImage();
+
+    expect(onCreateInvokedCount, 1);
+    expect(createdImage, image1);
+
+    final ui.Image image2 = await _createImage();
+
+    expect(onCreateInvokedCount, 2);
+    expect(createdImage, image2);
+
+    ui.Image.onCreate = null;
+  });
+
+  test('dispose() invokes onDispose once', () async {
+    int onDisposeInvokedCount = 0;
+    ui.Image? disposedImage;
+    ui.Image.onDispose = (ui.Image image) {
+      onDisposeInvokedCount++;
+      disposedImage = image;
+    };
+
+    final ui.Image image1 = await _createImage()..dispose();
+
+    expect(onDisposeInvokedCount, 1);
+    expect(disposedImage, image1);
+
+    final ui.Image image2 = await _createImage()..dispose();
+
+    expect(onDisposeInvokedCount, 2);
+    expect(disposedImage, image2);
+
+    ui.Image.onDispose = null;
+  });
+
+  test('fetchImage fetches image in chunks', () async {
+    final List<int> cumulativeBytesLoadedInvocations = <int>[];
+    final List<int> expectedTotalBytesInvocations = <int>[];
+    final Uint8List result = await fetchImage('/long_test_payload?length=100000&chunk=1000', (int cumulativeBytesLoaded, int expectedTotalBytes) {
+      cumulativeBytesLoadedInvocations.add(cumulativeBytesLoaded);
+      expectedTotalBytesInvocations.add(expectedTotalBytes);
     });
 
-    test('CkImage toString', () {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.toString(), '[1×1]');
-      image.dispose();
-      testCollector.collectNow();
+    // Check that image payload was chunked.
+    expect(cumulativeBytesLoadedInvocations, hasLength(greaterThan(1)));
+
+    // Check that reported total byte count is the same across all invocations.
+    for (final int expectedTotalBytes in expectedTotalBytesInvocations) {
+      expect(expectedTotalBytes, 100000);
+    }
+
+    // Check that cumulative byte count grows with each invocation.
+    cumulativeBytesLoadedInvocations.reduce((int previous, int next) {
+      expect(next, greaterThan(previous));
+      return next;
     });
 
-    test('CkImage can be explicitly disposed of', () {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect(image.debugDisposed, false);
-      expect(image.box.isDeletedPermanently, false);
-      image.dispose();
-      expect(image.debugDisposed, true);
-      expect(image.box.isDeletedPermanently, true);
+    // Check that the last cumulative byte count matches the total byte count.
+    expect(cumulativeBytesLoadedInvocations.last, 100000);
 
-      // Disallow double-dispose.
-      expect(() => image.dispose(), throwsAssertionError);
-      testCollector.collectNow();
-    });
+    // Check the contents of the returned data.
+    expect(
+      result,
+      List<int>.generate(100000, (int i) => i & 0xFF),
+    );
+  });
+}
 
-    test('CkImage can be explicitly disposed of when cloned', () async {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      final SkiaObjectBox<CkImage, SkImage> box = image.box;
-      expect(box.refCount, 1);
-      expect(box.debugGetStackTraces().length, 1);
+Future<ui.Image> _createImage() => _createPicture().toImage(10, 10);
 
-      final CkImage clone = image.clone();
-      expect(box.refCount, 2);
-      expect(box.debugGetStackTraces().length, 2);
-
-      expect(image.isCloneOf(clone), true);
-      expect(box.isDeletedPermanently, false);
-
-      testCollector.collectNow();
-      expect(skImage.isDeleted(), false);
-      image.dispose();
-      expect(box.refCount, 1);
-      expect(box.isDeletedPermanently, false);
-
-      testCollector.collectNow();
-      expect(skImage.isDeleted(), false);
-      clone.dispose();
-      expect(box.refCount, 0);
-      expect(box.isDeletedPermanently, true);
-
-      testCollector.collectNow();
-      expect(skImage.isDeleted(), true);
-      expect(box.debugGetStackTraces().length, 0);
-      testCollector.collectNow();
-    });
-
-    test('skiaInstantiateWebImageCodec throws exception if given invalid URL',
-        () async {
-      expect(skiaInstantiateWebImageCodec('invalid-url', null),
-          throwsA(isA<ProgressEvent>()));
-      testCollector.collectNow();
-    });
-
-    test('CkImage toByteData', () async {
-      final SkImage skImage =
-          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)
-              .getCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      expect((await image.toByteData()).lengthInBytes, greaterThan(0));
-      expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
-      testCollector.collectNow();
-    });
-    // TODO: https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+ui.Picture _createPicture() {
+  final ui.PictureRecorder recorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(recorder);
+  const ui.Rect rect = ui.Rect.fromLTWH(0.0, 0.0, 100.0, 100.0);
+  canvas.clipRect(rect);
+  return recorder.endRecording();
 }

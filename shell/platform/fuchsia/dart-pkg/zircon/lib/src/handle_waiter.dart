@@ -10,10 +10,11 @@ part of zircon;
 typedef AsyncWaitCallback = void Function(int status, int pending);
 
 @pragma('vm:entry-point')
-class HandleWaiter extends NativeFieldWrapperClass2 {
+base class HandleWaiter extends NativeFieldWrapperClass1 {
   // Private constructor.
   @pragma('vm:entry-point')
   HandleWaiter._();
 
-  void cancel() native 'HandleWaiter_Cancel';
+  @pragma('vm:external-name', 'HandleWaiter_Cancel')
+  external void cancel();
 }

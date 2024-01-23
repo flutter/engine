@@ -2,23 +2,28 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_SOFTWARE_H_
-#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_SOFTWARE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_SOFTWARE_H_
+#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_SOFTWARE_H_
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 namespace testing {
 
 class EmbedderTestContextSoftware : public EmbedderTestContext {
  public:
-  EmbedderTestContextSoftware(std::string assets_path = "");
+  explicit EmbedderTestContextSoftware(std::string assets_path = "");
 
   ~EmbedderTestContextSoftware() override;
 
   size_t GetSurfacePresentCount() const override;
 
-  bool Present(sk_sp<SkImage> image);
+  // |EmbedderTestContext|
+  EmbedderTestContextType GetContextType() const override;
+
+  bool Present(const sk_sp<SkImage>& image);
 
  protected:
   virtual void SetupCompositor() override;
@@ -35,4 +40,4 @@ class EmbedderTestContextSoftware : public EmbedderTestContext {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_SOFTWARE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_SOFTWARE_H_

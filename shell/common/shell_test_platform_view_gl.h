@@ -9,6 +9,7 @@
 #include "flutter/shell/common/shell_test_platform_view.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 #include "flutter/testing/test_gl_surface.h"
+#include "impeller/renderer/backend/gles/context_gles.h"
 
 namespace flutter {
 namespace testing {
@@ -17,17 +18,26 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
                                 public GPUSurfaceGLDelegate {
  public:
   ShellTestPlatformViewGL(PlatformView::Delegate& delegate,
-                          TaskRunners task_runners,
+                          const TaskRunners& task_runners,
                           std::shared_ptr<ShellTestVsyncClock> vsync_clock,
                           CreateVsyncWaiter create_vsync_waiter,
                           std::shared_ptr<ShellTestExternalViewEmbedder>
                               shell_test_external_view_embedder);
 
+  // |ShellTestPlatformView|
   virtual ~ShellTestPlatformViewGL() override;
 
+  // |ShellTestPlatformView|
   virtual void SimulateVSync() override;
 
+  // |PlatformView|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const {
+    return impeller_context_;
+  }
+
  private:
+  std::shared_ptr<impeller::ContextGLES> impeller_context_;
+
   TestGLSurface gl_surface_;
 
   CreateVsyncWaiter create_vsync_waiter_;
@@ -56,10 +66,10 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id) override;
+  bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;

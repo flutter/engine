@@ -2,15 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
 
-const ui.Color _defaultTextColor = ui.Color(0xFFFF0000);
+import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-const String _placeholderClass = 'paragraph-placeholder';
+import '../browser_detection.dart';
+import '../dom.dart';
+import '../util.dart';
+import '../view_embedder/style_manager.dart';
+import 'canvas_paragraph.dart';
+import 'layout_fragmenter.dart';
+import 'ruler.dart';
 
 class EngineLineMetrics implements ui.LineMetrics {
-  EngineLineMetrics({
+  const EngineLineMetrics({
     required this.hardBreak,
     required this.ascent,
     required this.descent,
@@ -20,51 +26,7 @@ class EngineLineMetrics implements ui.LineMetrics {
     required this.left,
     required this.baseline,
     required this.lineNumber,
-  })  : displayText = null,
-        startIndex = -1,
-        endIndex = -1,
-        endIndexWithoutNewlines = -1,
-        widthWithTrailingSpaces = width;
-
-  EngineLineMetrics.withText(
-    String this.displayText, {
-    required this.startIndex,
-    required this.endIndex,
-    required this.endIndexWithoutNewlines,
-    required this.hardBreak,
-    required this.width,
-    required this.widthWithTrailingSpaces,
-    required this.left,
-    required this.lineNumber,
-  })  : assert(displayText != null), // ignore: unnecessary_null_comparison
-        assert(startIndex != null), // ignore: unnecessary_null_comparison
-        assert(endIndex != null), // ignore: unnecessary_null_comparison
-        assert(endIndexWithoutNewlines != null), // ignore: unnecessary_null_comparison
-        assert(hardBreak != null), // ignore: unnecessary_null_comparison
-        assert(width != null), // ignore: unnecessary_null_comparison
-        assert(left != null), // ignore: unnecessary_null_comparison
-        assert(lineNumber != null && lineNumber >= 0), // ignore: unnecessary_null_comparison
-        ascent = double.infinity,
-        descent = double.infinity,
-        unscaledAscent = double.infinity,
-        height = double.infinity,
-        baseline = double.infinity;
-
-  /// The text to be rendered on the screen representing this line.
-  final String? displayText;
-
-  /// The index (inclusive) in the text where this line begins.
-  final int startIndex;
-
-  /// The index (exclusive) in the text where this line ends.
-  ///
-  /// When the line contains an overflow, then [endIndex] goes until the end of
-  /// the text and doesn't stop at the overflow cutoff.
-  final int endIndex;
-
-  /// The index (exclusive) in the text where this line ends, ignoring newline
-  /// characters.
-  final int endIndexWithoutNewlines;
+  });
 
   @override
   final bool hardBreak;
@@ -84,18 +46,6 @@ class EngineLineMetrics implements ui.LineMetrics {
   @override
   final double width;
 
-  /// The full width of the line including all trailing space but not new lines.
-  ///
-  /// The difference between [width] and [widthWithTrailingSpaces] is that
-  /// [widthWithTrailingSpaces] includes trailing spaces in the width
-  /// calculation while [width] doesn't.
-  ///
-  /// For alignment purposes for example, the [width] property is the right one
-  /// to use because trailing spaces shouldn't affect the centering of text.
-  /// But for placing cursors in text fields, we do care about trailing
-  /// spaces so [widthWithTrailingSpaces] is more suitable.
-  final double widthWithTrailingSpaces;
-
   @override
   final double left;
 
@@ -106,10 +56,7 @@ class EngineLineMetrics implements ui.LineMetrics {
   final int lineNumber;
 
   @override
-  int get hashCode => ui.hashValues(
-        displayText,
-        startIndex,
-        endIndex,
+  int get hashCode => Object.hash(
         hardBreak,
         ascent,
         descent,
@@ -129,626 +76,354 @@ class EngineLineMetrics implements ui.LineMetrics {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is EngineLineMetrics
-        && other.displayText == displayText
-        && other.startIndex == startIndex
-        && other.endIndex == endIndex
-        && other.hardBreak == hardBreak
-        && other.ascent == ascent
-        && other.descent == descent
-        && other.unscaledAscent == unscaledAscent
-        && other.height == height
-        && other.width == width
-        && other.left == left
-        && other.baseline == baseline
-        && other.lineNumber == lineNumber;
+    return other is EngineLineMetrics &&
+        other.hardBreak == hardBreak &&
+        other.ascent == ascent &&
+        other.descent == descent &&
+        other.unscaledAscent == unscaledAscent &&
+        other.height == height &&
+        other.width == width &&
+        other.left == left &&
+        other.baseline == baseline &&
+        other.lineNumber == lineNumber;
   }
 
   @override
   String toString() {
-    if (assertionsEnabled) {
-      return 'LineMetrics(hardBreak: $hardBreak, '
-                        'ascent: $ascent, '
-                        'descent: $descent, '
-                        'unscaledAscent: $unscaledAscent, '
-                        'height: $height, '
-                        'width: $width, '
-                        'left: $left, '
-                        'baseline: $baseline, '
-                        'lineNumber: $lineNumber)';
-    } else {
-      return super.toString();
-    }
-  }
-}
-
-/// Common interface for all the implementations of [ui.Paragraph] in the web
-/// engine.
-abstract class EngineParagraph implements ui.Paragraph {
-  /// Whether this paragraph has been laid out or not.
-  bool get isLaidOut;
-
-  /// Whether this paragraph can be drawn on a bitmap canvas.
-  bool get drawOnCanvas;
-
-  /// Whether this paragraph is doing arbitrary paint operations that require
-  /// a bitmap canvas, and can't be expressed in a DOM canvas.
-  bool get hasArbitraryPaint;
-
-  void paint(BitmapCanvas canvas, ui.Offset offset);
-
-  /// Generates a flat string computed from all the spans of the paragraph.
-  String toPlainText();
-
-  /// Returns a DOM element that represents the entire paragraph and its
-  /// children.
-  ///
-  /// Generates a new DOM element on every invocation.
-  html.HtmlElement toDomElement();
-}
-
-/// Uses the DOM and hierarchical <span> elements to represent the span of the
-/// paragraph.
-///
-/// This implementation will go away once the new [CanvasParagraph] is
-/// complete and turned on by default.
-class DomParagraph implements EngineParagraph {
-  /// This class is created by the engine, and should not be instantiated
-  /// or extended directly.
-  ///
-  /// To create a [DomParagraph] object, use a [DomParagraphBuilder].
-  DomParagraph({
-    required html.HtmlElement paragraphElement,
-    required ParagraphGeometricStyle geometricStyle,
-    required String? plainText,
-    required ui.Paint? paint,
-    required ui.TextAlign textAlign,
-    required ui.TextDirection textDirection,
-    required ui.Paint? background,
-    required this.placeholderCount,
-  })  : assert((plainText == null && paint == null) ||
-            (plainText != null && paint != null)),
-        _paragraphElement = paragraphElement,
-        _geometricStyle = geometricStyle,
-        _plainText = plainText,
-        _textAlign = textAlign,
-        _textDirection = textDirection,
-        _paint = paint as SurfacePaint?,
-        _background = background as SurfacePaint?;
-
-  final html.HtmlElement _paragraphElement;
-  final ParagraphGeometricStyle _geometricStyle;
-  final String? _plainText;
-  final SurfacePaint? _paint;
-  final ui.TextAlign _textAlign;
-  final ui.TextDirection _textDirection;
-  final SurfacePaint? _background;
-
-  final int placeholderCount;
-
-  @visibleForTesting
-  String? get plainText => _plainText;
-
-  @visibleForTesting
-  html.HtmlElement get paragraphElement => _paragraphElement;
-
-  @visibleForTesting
-  ParagraphGeometricStyle get geometricStyle => _geometricStyle;
-
-  /// The instance of [TextMeasurementService] to be used to measure this
-  /// paragraph.
-  TextMeasurementService get _measurementService =>
-      TextMeasurementService.forParagraph(this);
-
-  /// The measurement result of the last layout operation.
-  MeasurementResult? _measurementResult;
-
-  bool get _hasLineMetrics => _measurementResult?.lines != null;
-
-  // Defaulting to -1 for non-laid-out paragraphs like the native engine does.
-  @override
-  double get width => _measurementResult?.width ?? -1;
-
-  @override
-  double get height => _measurementResult?.height ?? 0;
-
-  /// {@template dart.ui.paragraph.naturalHeight}
-  /// The amount of vertical space the paragraph occupies while ignoring the
-  /// [ParagraphGeometricStyle.maxLines] constraint.
-  /// {@endtemplate}
-  ///
-  /// Valid only after [layout] has been called.
-  double get _naturalHeight => _measurementResult?.naturalHeight ?? 0;
-
-  /// The amount of vertical space one line of this paragraph occupies.
-  ///
-  /// Valid only after [layout] has been called.
-  double get _lineHeight => _measurementResult?.lineHeight ?? 0;
-
-  @override
-  double get longestLine {
-    if (_hasLineMetrics) {
-      double maxWidth = 0.0;
-      for (ui.LineMetrics metrics in _measurementResult!.lines!) {
-        if (maxWidth < metrics.width) {
-          maxWidth = metrics.width;
-        }
-      }
-      return maxWidth;
-    }
-
-    // If we don't have any line metrics information, there's no way to know the
-    // longest line in a multi-line paragraph.
-    return 0.0;
-  }
-
-  @override
-  double get minIntrinsicWidth => _measurementResult?.minIntrinsicWidth ?? 0;
-
-  @override
-  double get maxIntrinsicWidth => _measurementResult?.maxIntrinsicWidth ?? 0;
-
-  @override
-  double get alphabeticBaseline => _measurementResult?.alphabeticBaseline ?? -1;
-
-  @override
-  double get ideographicBaseline =>
-      _measurementResult?.ideographicBaseline ?? -1;
-
-  @override
-  bool get didExceedMaxLines => _didExceedMaxLines;
-  bool _didExceedMaxLines = false;
-
-  ui.ParagraphConstraints? _lastUsedConstraints;
-
-  /// Returns horizontal alignment offset for single line text when rendering
-  /// directly into a canvas without css text alignment styling.
-  double _alignOffset = 0.0;
-
-  @override
-  void layout(ui.ParagraphConstraints constraints) {
-    // When constraint width has a decimal place, we floor it to avoid getting
-    // a layout width that's higher than the constraint width.
-    //
-    // For example, if constraint width is `30.8` and the text has a width of
-    // `30.5` then the TextPainter in the framework will ceil the `30.5` width
-    // which will result in a width of `40.0` that's higher than the constraint
-    // width.
-    constraints = ui.ParagraphConstraints(
-      width: constraints.width.floorToDouble(),
-    );
-
-    if (constraints == _lastUsedConstraints) {
-      return;
-    }
-
-    late Stopwatch stopwatch;
-    if (Profiler.isBenchmarkMode) {
-      stopwatch = Stopwatch()..start();
-    }
-    _measurementResult = _measurementService.measure(this, constraints);
-    if (Profiler.isBenchmarkMode) {
-      stopwatch.stop();
-      Profiler.instance.benchmark('text_layout', stopwatch.elapsedMicroseconds.toDouble());
-    }
-
-    _lastUsedConstraints = constraints;
-
-    if (_geometricStyle.maxLines != null) {
-      _didExceedMaxLines = _naturalHeight > height;
-    } else {
-      _didExceedMaxLines = false;
-    }
-
-    if (_measurementResult!.isSingleLine) {
-      switch (_textAlign) {
-        case ui.TextAlign.center:
-          _alignOffset = (constraints.width - maxIntrinsicWidth) / 2.0;
-          break;
-        case ui.TextAlign.right:
-          _alignOffset = constraints.width - maxIntrinsicWidth;
-          break;
-        case ui.TextAlign.start:
-          _alignOffset = _textDirection == ui.TextDirection.rtl
-              ? constraints.width - maxIntrinsicWidth
-              : 0.0;
-          break;
-        case ui.TextAlign.end:
-          _alignOffset = _textDirection == ui.TextDirection.ltr
-              ? constraints.width - maxIntrinsicWidth
-              : 0.0;
-          break;
-        default:
-          _alignOffset = 0.0;
-          break;
-      }
-    }
-  }
-
-  bool get hasArbitraryPaint => _geometricStyle.ellipsis != null;
-
-  @override
-  void paint(BitmapCanvas canvas, ui.Offset offset) {
-    assert(drawOnCanvas);
-    assert(isLaidOut);
-
-    // Paint the background first.
-    final SurfacePaint? background = _background;
-    if (background != null) {
-      final ui.Rect rect = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-      canvas.drawRect(rect, background.paintData);
-    }
-
-    final List<EngineLineMetrics> lines = _measurementResult!.lines!;
-    canvas.setFontFromParagraphStyle(_geometricStyle);
-
-    // Then paint the text.
-    canvas._setUpPaint(_paint!.paintData, null);
-    double y = offset.dy + alphabeticBaseline;
-    final int len = lines.length;
-    for (int i = 0; i < len; i++) {
-      _paintLine(canvas, lines[i], offset.dx, y);
-      y += _lineHeight;
-    }
-    canvas._tearDownPaint();
-  }
-
-  void _paintLine(
-    BitmapCanvas canvas,
-    EngineLineMetrics line,
-    double x,
-    double y,
-  ) {
-    x += line.left;
-    final double? letterSpacing = _geometricStyle.letterSpacing;
-    if (letterSpacing == null || letterSpacing == 0.0) {
-      canvas.fillText(line.displayText!, x, y);
-    } else {
-      // When letter-spacing is set, we go through a more expensive code path
-      // that renders each character separately with the correct spacing
-      // between them.
-      //
-      // We are drawing letter spacing like the web does it, by adding the
-      // spacing after each letter. This is different from Flutter which puts
-      // the spacing around each letter i.e. for a 10px letter spacing, Flutter
-      // would put 5px before each letter and 5px after it, but on the web, we
-      // put no spacing before the letter and 10px after it. This is how the DOM
-      // does it.
-      //
-      // TODO(mdebbar): Implement letter-spacing on canvas more efficiently:
-      //                https://github.com/flutter/flutter/issues/51234
-      final int len = line.displayText!.length;
-      for (int i = 0; i < len; i++) {
-        final String char = line.displayText![i];
-        canvas.fillText(char, x, y);
-        x += letterSpacing + canvas.measureText(char).width!;
-      }
-    }
-  }
-
-  @override
-  String toPlainText() {
-    return _plainText ??
-        js_util.getProperty(_paragraphElement, 'textContent') as String;
-  }
-
-  @override
-  html.HtmlElement toDomElement() {
-    assert(isLaidOut);
-
-    final html.HtmlElement paragraphElement =
-        _paragraphElement.clone(true) as html.HtmlElement;
-
-    final html.CssStyleDeclaration paragraphStyle = paragraphElement.style;
-    paragraphStyle
-      ..position = 'absolute'
-      ..whiteSpace = 'pre-wrap'
-      ..overflowWrap = 'break-word'
-      ..overflow = 'hidden';
-
-    final ParagraphGeometricStyle style = _geometricStyle;
-
-    // TODO(flutter_web): https://github.com/flutter/flutter/issues/33223
-    if (style.ellipsis != null &&
-        (style.maxLines == null || style.maxLines == 1)) {
-      paragraphStyle
-        ..whiteSpace = 'pre'
-        ..textOverflow = 'ellipsis';
-    }
-    return paragraphElement;
-  }
-
-  @override
-  List<ui.TextBox> getBoxesForPlaceholders() {
-    assert(isLaidOut);
-    return _measurementResult!.placeholderBoxes;
-  }
-
-  /// Returns `true` if this paragraph can be directly painted to the canvas.
-  ///
-  ///
-  /// Examples of paragraphs that can't be drawn directly on the canvas:
-  ///
-  /// - Rich text where there are multiple pieces of text that have different
-  ///   styles.
-  /// - Paragraphs that contain decorations.
-  /// - Paragraphs that have a non-null word-spacing.
-  /// - Paragraphs with a background.
-  bool get drawOnCanvas {
-    if (!_hasLineMetrics) {
-      return false;
-    }
-
-    bool canDrawTextOnCanvas;
-    if (_measurementService.isCanvas) {
-      canDrawTextOnCanvas = true;
-    } else {
-      canDrawTextOnCanvas = _geometricStyle.ellipsis == null;
-    }
-
-    return canDrawTextOnCanvas &&
-        _geometricStyle.decoration == null &&
-        _geometricStyle.wordSpacing == null &&
-        _geometricStyle.shadows == null;
-  }
-
-  /// Whether this paragraph has been laid out.
-  bool get isLaidOut => _measurementResult != null;
-
-  /// Asserts that the properties used to measure paragraph layout are the same
-  /// as the properties of this paragraphs root style.
-  ///
-  /// Ignores properties that do not affect layout, such as
-  /// [ParagraphStyle.textAlign].
-  bool _debugHasSameRootStyle(ParagraphGeometricStyle style) {
+    String result = super.toString();
     assert(() {
-      if (style != _geometricStyle) {
-        throw Exception('Attempted to measure a paragraph whose style is '
-            'different from the style of the ruler used to measure it.');
-      }
+      result = 'LineMetrics(hardBreak: $hardBreak, '
+          'ascent: $ascent, '
+          'descent: $descent, '
+          'unscaledAscent: $unscaledAscent, '
+          'height: $height, '
+          'width: $width, '
+          'left: $left, '
+          'baseline: $baseline, '
+          'lineNumber: $lineNumber)';
       return true;
     }());
-    return true;
+    return result;
+  }
+}
+
+class ParagraphLine {
+  ParagraphLine({
+    required bool hardBreak,
+    required double ascent,
+    required double descent,
+    required double height,
+    required double width,
+    required double left,
+    required double baseline,
+    required int lineNumber,
+    required this.startIndex,
+    required this.endIndex,
+    required this.trailingNewlines,
+    required this.trailingSpaces,
+    required this.spaceCount,
+    required this.widthWithTrailingSpaces,
+    required this.fragments,
+    required this.textDirection,
+    required this.paragraph,
+    this.displayText,
+  }) : assert(trailingNewlines <= endIndex - startIndex),
+       lineMetrics = EngineLineMetrics(
+          hardBreak: hardBreak,
+          ascent: ascent,
+          descent: descent,
+          unscaledAscent: ascent,
+          height: height,
+          width: width,
+          left: left,
+          baseline: baseline,
+          lineNumber: lineNumber,
+        );
+
+  /// Metrics for this line of the paragraph.
+  final EngineLineMetrics lineMetrics;
+
+  /// The index (inclusive) in the text where this line begins.
+  final int startIndex;
+
+  /// The index (exclusive) in the text where this line ends.
+  ///
+  /// When the line contains an overflow, then [endIndex] goes until the end of
+  /// the text and doesn't stop at the overflow cutoff.
+  final int endIndex;
+
+  /// The largest visible index (exclusive) in this line.
+  ///
+  /// When the line contains an overflow, or is ellipsized at the end, this is
+  /// the largest index that remains visible in this line. If the entire line is
+  /// ellipsized, this returns [startIndex];
+  late final int visibleEndIndex = switch (fragments) {
+    [] => startIndex,
+    [...final List<LayoutFragment> rest, EllipsisFragment()]
+    || final List<LayoutFragment> rest => rest.last.end,
+  };
+
+  /// The number of new line characters at the end of the line.
+  final int trailingNewlines;
+
+  /// The number of spaces at the end of the line.
+  final int trailingSpaces;
+
+  /// The number of space characters in the entire line.
+  final int spaceCount;
+
+  /// The full width of the line including all trailing space but not new lines.
+  ///
+  /// The difference between [width] and [widthWithTrailingSpaces] is that
+  /// [widthWithTrailingSpaces] includes trailing spaces in the width
+  /// calculation while [width] doesn't.
+  ///
+  /// For alignment purposes for example, the [width] property is the right one
+  /// to use because trailing spaces shouldn't affect the centering of text.
+  /// But for placing cursors in text fields, we do care about trailing
+  /// spaces so [widthWithTrailingSpaces] is more suitable.
+  final double widthWithTrailingSpaces;
+
+  /// The fragments that make up this line.
+  ///
+  /// The fragments in the [List] are sorted by their logical order in within the
+  /// line. In other words, a [LayoutFragment] in the [List] will have larger
+  /// start and end indices than all [LayoutFragment]s that appear before it.
+  final List<LayoutFragment> fragments;
+
+  /// The text direction of this line, which is the same as the paragraph's.
+  final ui.TextDirection textDirection;
+
+  /// The text to be rendered on the screen representing this line.
+  final String? displayText;
+
+  /// The [CanvasParagraph] this line is part of.
+  final CanvasParagraph paragraph;
+
+  /// The number of space characters in the line excluding trailing spaces.
+  int get nonTrailingSpaces => spaceCount - trailingSpaces;
+
+  // Convenient getters for line metrics properties.
+
+  bool get hardBreak => lineMetrics.hardBreak;
+  double get ascent => lineMetrics.ascent;
+  double get descent => lineMetrics.descent;
+  double get unscaledAscent => lineMetrics.unscaledAscent;
+  double get height => lineMetrics.height;
+  double get width => lineMetrics.width;
+  double get left => lineMetrics.left;
+  double get baseline => lineMetrics.baseline;
+  int get lineNumber => lineMetrics.lineNumber;
+
+  bool overlapsWith(int startIndex, int endIndex) {
+    return startIndex < this.endIndex && this.startIndex < endIndex;
   }
 
-  @override
-  List<ui.TextBox> getBoxesForRange(
-    int start,
-    int end, {
-    ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
-    ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
-  }) {
-    assert(boxHeightStyle != null); // ignore: unnecessary_null_comparison
-    assert(boxWidthStyle != null); // ignore: unnecessary_null_comparison
-    // Zero-length ranges and invalid ranges return an empty list.
-    if (start == end || start < 0 || end < 0) {
-      return <ui.TextBox>[];
+  String getText(CanvasParagraph paragraph) {
+    final StringBuffer buffer = StringBuffer();
+    for (final LayoutFragment fragment in fragments) {
+      buffer.write(fragment.getText(paragraph));
     }
-
-    // For rich text, we can't measure the boxes. So for now, we'll just return
-    // a placeholder box to stop exceptions from being thrown in the framework.
-    // https://github.com/flutter/flutter/issues/55587
-    if (_plainText == null) {
-      return <ui.TextBox>[
-        ui.TextBox.fromLTRBD(0, 0, 0, _lineHeight, _textDirection),
-      ];
-    }
-
-    final int length = _plainText!.length;
-    // Ranges that are out of bounds should return an empty list.
-    if (start > length || end > length) {
-      return <ui.TextBox>[];
-    }
-
-    // Fallback to the old, DOM-based box measurements when there's no line
-    // metrics.
-    if (!_hasLineMetrics) {
-      return _measurementService.measureBoxesForRange(
-        this,
-        _lastUsedConstraints!,
-        start: start,
-        end: end,
-        alignOffset: _alignOffset,
-        textDirection: _textDirection,
-      );
-    }
-
-    final List<EngineLineMetrics> lines = _measurementResult!.lines!;
-    if (start >= lines.last.endIndex) {
-      return <ui.TextBox>[];
-    }
-
-    final EngineLineMetrics startLine = _getLineForIndex(start);
-    EngineLineMetrics endLine = _getLineForIndex(end);
-
-    // If the range end is exactly at the beginning of a line, we shouldn't
-    // include any boxes from that line.
-    if (end == endLine.startIndex) {
-      endLine = lines[endLine.lineNumber - 1];
-    }
-
-    final List<ui.TextBox> boxes = <ui.TextBox>[];
-    for (int i = startLine.lineNumber; i <= endLine.lineNumber; i++) {
-      boxes.add(_getBoxForLine(lines[i], start, end));
-    }
-    return boxes;
+    return buffer.toString();
   }
 
-  ui.TextBox _getBoxForLine(EngineLineMetrics line, int start, int end) {
-    final double widthBeforeBox = start <= line.startIndex
-        ? 0.0
-        : _measurementService.measureSubstringWidth(
-            this, line.startIndex, start);
-    final double widthAfterBox = end >= line.endIndexWithoutNewlines
-        ? 0.0
-        : _measurementService.measureSubstringWidth(
-            this, end, line.endIndexWithoutNewlines);
-
-    final double top = line.lineNumber * _lineHeight;
-
-    //               |<------------------ line.width ------------------>|
-    // |-------------|------------------|-------------|-----------------|
-    // |<-line.left->|<-widthBeforeBox->|<-box width->|<-widthAfterBox->|
-    // |-------------|------------------|-------------|-----------------|
-    //
-    //                                   ^^^^^^^^^^^^^
-    //                          This is the box we want to return.
-    return ui.TextBox.fromLTRBD(
-      line.left + widthBeforeBox,
-      top,
-      line.left + line.widthWithTrailingSpaces - widthAfterBox,
-      top + _lineHeight,
-      _textDirection,
-    );
+  // This is the fallback graphme breaker that is only used if Intl.Segmenter()
+  // is not supported so _fromDomSegmenter can't be called. This implementation
+  // breaks the text into UTF-16 codepoints instead of graphme clusters.
+  List<int> _fallbackGraphemeStartIterable(String lineText) {
+    final List<int> graphemeStarts = <int>[];
+    bool precededByHighSurrogate = false;
+    for (int i = 0; i < lineText.length; i++) {
+      final int maskedCodeUnit = lineText.codeUnitAt(i) & 0xFC00;
+      // Only skip `i` if it points to a low surrogate in a valid surrogate pair.
+      if (maskedCodeUnit != 0xDC00 || !precededByHighSurrogate) {
+        graphemeStarts.add(startIndex + i);
+      }
+      precededByHighSurrogate = maskedCodeUnit == 0xD800;
+    }
+    return graphemeStarts;
   }
 
-  ui.Paragraph _cloneWithText(String plainText) {
-    return DomParagraph(
-      plainText: plainText,
-      paragraphElement: _paragraphElement.clone(true) as html.HtmlElement,
-      geometricStyle: _geometricStyle,
-      paint: _paint,
-      textAlign: _textAlign,
-      textDirection: _textDirection,
-      background: _background,
-      placeholderCount: placeholderCount,
-    );
+  // This will be called at most once to lazily populate _graphemeStarts.
+  List<int> _fromDomSegmenter(String fragmentText) {
+    final DomSegmenter domSegmenter = createIntlSegmenter(granularity: 'grapheme');
+    final List<int> graphemeStarts = <int>[];
+    final Iterator<DomSegment> segments = domSegmenter.segment(fragmentText).iterator();
+    while (segments.moveNext()) {
+      graphemeStarts.add(segments.current.index + startIndex);
+    }
+    assert(graphemeStarts.isEmpty || graphemeStarts.first == startIndex);
+    return graphemeStarts;
   }
 
-  @override
-  ui.TextPosition getPositionForOffset(ui.Offset offset) {
-    final List<EngineLineMetrics>? lines = _measurementResult!.lines;
-    if (!_hasLineMetrics) {
-      return getPositionForMultiSpanOffset(offset);
+  List<int> _breakTextIntoGraphemes(String text) {
+    final List<int> graphemeStarts = domIntl.Segmenter == null ? _fallbackGraphemeStartIterable(text) : _fromDomSegmenter(text);
+    // Add the end index of the fragment to the list if the text is not empty.
+    if (graphemeStarts.isNotEmpty) {
+      graphemeStarts.add(visibleEndIndex);
+    }
+    return graphemeStarts;
+  }
+
+  /// This List contains an ascending sequence of UTF16 offsets that points to
+  /// grapheme starts within the line. Each UTF16 offset is relative to the
+  /// start of the paragraph, instead of the start of the line.
+  ///
+  /// For example, `graphemeStarts[n]` gives the UTF16 offset of the `n`-th
+  /// grapheme in the line.
+  late final List<int> graphemeStarts = visibleEndIndex == startIndex
+    ? const <int>[]
+    : _breakTextIntoGraphemes(paragraph.plainText.substring(startIndex, visibleEndIndex));
+
+  /// Translate a UTF16 code unit in the paragaph (`offset`), to a grapheme
+  /// offset with in the current line.
+  ///
+  /// The `start` and `end` parameters are both grapheme offsets within the
+  /// current line. They are used to limit the search range (so the return value
+  /// that corresponds to the code unit `offset` must be with in [start, end)).
+  int graphemeStartIndexBefore(int offset, int start, int end) {
+    int low = start;
+    int high = end;
+    assert(0 <= low);
+    assert(low < high);
+
+    final List<int> lineGraphemeBreaks = graphemeStarts;
+    assert(offset >= lineGraphemeBreaks[start]);
+    assert(offset < lineGraphemeBreaks.last, '$offset, $lineGraphemeBreaks');
+    assert(end == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[end]);
+    while (low + 2 <= high) {
+      // high >= low + 2, so low + 1 <= mid <= high - 1
+      final int mid = (low + high) ~/ 2;
+      switch (lineGraphemeBreaks[mid] - offset) {
+        case > 0: high = mid;
+        case < 0: low = mid;
+        case == 0: return mid;
+      }
     }
 
-    // [offset] is above all the lines.
-    if (offset.dy < 0) {
-      return ui.TextPosition(
-        offset: 0,
-        affinity: ui.TextAffinity.downstream,
-      );
+    assert(lineGraphemeBreaks[low] <= offset);
+    assert(high == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[high]);
+    return low;
+  }
+
+  /// Returns the UTF-16 range of the character that encloses the code unit at
+  /// the given offset.
+  ui.TextRange? getCharacterRangeAt(int codeUnitOffset) {
+    assert(codeUnitOffset >= this.startIndex);
+    if (codeUnitOffset >= visibleEndIndex || graphemeStarts.isEmpty) {
+      return null;
     }
 
-    final int lineNumber = offset.dy ~/ _measurementResult!.lineHeight!;
+    final int startIndex = graphemeStartIndexBefore(codeUnitOffset, 0, graphemeStarts.length);
+    assert(startIndex < graphemeStarts.length - 1);
+    return ui.TextRange(start: graphemeStarts[startIndex], end: graphemeStarts[startIndex + 1]);
+  }
 
-    // [offset] is below all the lines.
-    if (lineNumber >= lines!.length) {
-      return ui.TextPosition(
-        offset: _plainText!.length,
-        affinity: ui.TextAffinity.upstream,
-      );
+  LayoutFragment? closestFragmentTo(LayoutFragment targetFragment, bool searchLeft) {
+    ({LayoutFragment fragment, double distance})? closestFragment;
+    for (final LayoutFragment fragment in fragments) {
+      assert(fragment is! EllipsisFragment);
+      if (fragment.start >= visibleEndIndex) {
+        break;
+      }
+      if (fragment.graphemeStartIndexRange == null) {
+        continue;
+      }
+      final double distance = searchLeft
+        ? targetFragment.left - fragment.right
+        : fragment.left - targetFragment.right;
+      final double? minDistance = closestFragment?.distance;
+      switch (distance) {
+        case > 0.0 when minDistance == null || minDistance > distance:
+          closestFragment = (fragment: fragment, distance: distance);
+        case == 0.0: return fragment;
+        case _: continue;
+      }
     }
+    return closestFragment?.fragment;
+  }
 
-    final EngineLineMetrics lineMetrics = lines[lineNumber];
-    final double lineLeft = lineMetrics.left;
-    final double lineRight = lineLeft + lineMetrics.width;
-
-    // [offset] is to the left of the line.
-    if (offset.dx <= lineLeft) {
-      return ui.TextPosition(
-        offset: lineMetrics.startIndex,
-        affinity: ui.TextAffinity.downstream,
-      );
+  /// Finds the closest [LayoutFragment] to the given horizontal offset `dx` in
+  /// this line, that is not an [EllipsisFragment] and contains at least one
+  /// grapheme start.
+  LayoutFragment? closestFragmentAtOffset(double dx) {
+    if (graphemeStarts.isEmpty) {
+      return null;
     }
-
-    // [offset] is to the right of the line.
-    if (offset.dx >= lineRight) {
-      return ui.TextPosition(
-        offset: lineMetrics.endIndexWithoutNewlines,
-        affinity: ui.TextAffinity.upstream,
-      );
-    }
-
-    // If we reach here, it means the [offset] is somewhere within the line. The
-    // code below will do a binary search to find where exactly the [offset]
-    // falls within the line.
-
-    final double dx = offset.dx - lineMetrics.left;
-    final TextMeasurementService instance = _measurementService;
-
-    int low = lineMetrics.startIndex;
-    int high = lineMetrics.endIndexWithoutNewlines;
-    do {
-      final int current = (low + high) ~/ 2;
-      final double width =
-          instance.measureSubstringWidth(this, lineMetrics.startIndex, current);
-      if (width < dx) {
-        low = current;
-      } else if (width > dx) {
-        high = current;
+    assert(graphemeStarts.length >= 2);
+    int graphemeIndex = 0;
+    ({LayoutFragment fragment, double distance})? closestFragment;
+    for (final LayoutFragment fragment in fragments) {
+      assert(fragment is! EllipsisFragment);
+      if (fragment.start >= visibleEndIndex) {
+        break;
+      }
+      if (fragment.length == 0) {
+        continue;
+      }
+      while (fragment.start > graphemeStarts[graphemeIndex]) {
+        graphemeIndex += 1;
+      }
+      final int firstGraphemeStartInFragment = graphemeStarts[graphemeIndex];
+      if (firstGraphemeStartInFragment >= fragment.end) {
+        continue;
+      }
+      final double distance;
+      if (dx < fragment.left) {
+        distance = fragment.left - dx;
+      } else if (dx > fragment.right) {
+        distance = dx - fragment.right;
       } else {
-        low = high = current;
+        return fragment;
       }
-    } while (high - low > 1);
+      assert(distance > 0);
 
-    if (low == high) {
-      // The offset falls exactly in between the two letters.
-      return ui.TextPosition(offset: high, affinity: ui.TextAffinity.upstream);
-    }
-
-    final double lowWidth =
-        instance.measureSubstringWidth(this, lineMetrics.startIndex, low);
-    final double highWidth =
-        instance.measureSubstringWidth(this, lineMetrics.startIndex, high);
-
-    if (dx - lowWidth < highWidth - dx) {
-      // The offset is closer to the low index.
-      return ui.TextPosition(offset: low, affinity: ui.TextAffinity.downstream);
-    } else {
-      // The offset is closer to high index.
-      return ui.TextPosition(offset: high, affinity: ui.TextAffinity.upstream);
-    }
-  }
-
-  ui.TextPosition getPositionForMultiSpanOffset(ui.Offset offset) {
-    assert(_lastUsedConstraints != null,
-        'missing call to paragraph layout before reading text position');
-    final TextMeasurementService instance = _measurementService;
-    return instance.getTextPositionForOffset(
-        this, _lastUsedConstraints, offset);
-  }
-
-  @override
-  ui.TextRange getWordBoundary(ui.TextPosition position) {
-    ui.TextPosition textPosition = position;
-    final String? text = _plainText;
-    if (text == null) {
-      return ui.TextRange(start: textPosition.offset, end: textPosition.offset);
-    }
-
-    final int start = WordBreaker.prevBreakIndex(text, textPosition.offset + 1);
-    final int end = WordBreaker.nextBreakIndex(text, textPosition.offset);
-    return ui.TextRange(start: start, end: end);
-  }
-
-  EngineLineMetrics _getLineForIndex(int index) {
-    assert(_hasLineMetrics);
-    final List<EngineLineMetrics> lines = _measurementResult!.lines!;
-    assert(index >= 0);
-
-    for (int i = 0; i < lines.length; i++) {
-      final EngineLineMetrics line = lines[i];
-      if (index >= line.startIndex && index < line.endIndex) {
-        return line;
+      final double? minDistance = closestFragment?.distance;
+      if (minDistance == null || minDistance > distance) {
+        closestFragment = (fragment: fragment, distance: distance);
       }
     }
-
-    return lines.last;
+    return closestFragment?.fragment;
   }
 
   @override
-  ui.TextRange getLineBoundary(ui.TextPosition position) {
-    if (_hasLineMetrics) {
-      final EngineLineMetrics line = _getLineForIndex(position.offset);
-      return ui.TextRange(start: line.startIndex, end: line.endIndex);
+  int get hashCode => Object.hash(
+        lineMetrics,
+        startIndex,
+        endIndex,
+        trailingNewlines,
+        trailingSpaces,
+        spaceCount,
+        widthWithTrailingSpaces,
+        fragments,
+        textDirection,
+        displayText,
+      );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
     }
-    return ui.TextRange.empty;
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is ParagraphLine &&
+        other.lineMetrics == lineMetrics &&
+        other.startIndex == startIndex &&
+        other.endIndex == endIndex &&
+        other.trailingNewlines == trailingNewlines &&
+        other.trailingSpaces == trailingSpaces &&
+        other.spaceCount == spaceCount &&
+        other.widthWithTrailingSpaces == widthWithTrailingSpaces &&
+        other.fragments == fragments &&
+        other.textDirection == textDirection &&
+        other.displayText == displayText;
   }
 
   @override
-  List<ui.LineMetrics> computeLineMetrics() {
-    return _measurementResult!.lines!;
+  String toString() {
+    return '$ParagraphLine($startIndex, $endIndex, $lineMetrics)';
   }
 }
 
@@ -756,80 +431,56 @@ class DomParagraph implements EngineParagraph {
 class EngineParagraphStyle implements ui.ParagraphStyle {
   /// Creates a new instance of [EngineParagraphStyle].
   EngineParagraphStyle({
-    ui.TextAlign? textAlign,
-    ui.TextDirection? textDirection,
-    int? maxLines,
-    String? fontFamily,
-    double? fontSize,
-    double? height,
+    this.textAlign,
+    this.textDirection,
+    this.maxLines,
+    this.fontFamily,
+    this.fontSize,
+    this.height,
     ui.TextHeightBehavior? textHeightBehavior,
-    ui.FontWeight? fontWeight,
-    ui.FontStyle? fontStyle,
+    this.fontWeight,
+    this.fontStyle,
     ui.StrutStyle? strutStyle,
-    String? ellipsis,
-    ui.Locale? locale,
-  })  : _textAlign = textAlign,
-        _textDirection = textDirection,
-        _fontWeight = fontWeight,
-        _fontStyle = fontStyle,
-        _maxLines = maxLines,
-        _fontFamily = fontFamily,
-        _fontSize = fontSize,
-        _height = height,
-        _textHeightBehavior = textHeightBehavior,
-        // TODO(b/128317744): add support for strut style.
-        _strutStyle = strutStyle as EngineStrutStyle?,
-        _ellipsis = ellipsis,
-        _locale = locale;
+    this.ellipsis,
+    this.locale,
+  })  : _textHeightBehavior = textHeightBehavior,
+        // TODO(mdebbar): add support for strut style., b/128317744
+        _strutStyle = strutStyle as EngineStrutStyle?;
 
-  final ui.TextAlign? _textAlign;
-  final ui.TextDirection? _textDirection;
-  final ui.FontWeight? _fontWeight;
-  final ui.FontStyle? _fontStyle;
-  final int? _maxLines;
-  final String? _fontFamily;
-  final double? _fontSize;
-  final double? _height;
+  final ui.TextAlign? textAlign;
+  final ui.TextDirection? textDirection;
+  final ui.FontWeight? fontWeight;
+  final ui.FontStyle? fontStyle;
+  final int? maxLines;
+  final String? fontFamily;
+  final double? fontSize;
+  final double? height;
   final ui.TextHeightBehavior? _textHeightBehavior;
   final EngineStrutStyle? _strutStyle;
-  final String? _ellipsis;
-  final ui.Locale? _locale;
+  final String? ellipsis;
+  final ui.Locale? locale;
 
   // The effective style attributes should be consistent with paragraph_style.h.
-  ui.TextAlign get _effectiveTextAlign => _textAlign ?? ui.TextAlign.start;
-  ui.TextDirection get _effectiveTextDirection => _textDirection ?? ui.TextDirection.ltr;
+  ui.TextAlign get effectiveTextAlign => textAlign ?? ui.TextAlign.start;
+  ui.TextDirection get effectiveTextDirection =>
+      textDirection ?? ui.TextDirection.ltr;
 
-  String get _effectiveFontFamily {
-    if (assertionsEnabled) {
-      // In the flutter tester environment, we use a predictable-size font
-      // "Ahem". This makes widget tests predictable and less flaky.
-      if (ui.debugEmulateFlutterTesterEnvironment) {
-        return 'Ahem';
-      }
-    }
-    final String? fontFamily = _fontFamily;
-    if (fontFamily == null || fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
-    }
-    return fontFamily;
-  }
-
-  double? get _lineHeight {
+  double? get lineHeight {
     // TODO(mdebbar): Implement proper support for strut styles.
     // https://github.com/flutter/flutter/issues/32243
-    if (_strutStyle == null ||
-        _strutStyle!._height == null ||
-        _strutStyle!._height == 0) {
+    final EngineStrutStyle? strutStyle = _strutStyle;
+    final double? strutHeight = strutStyle?._height;
+    if (strutStyle == null || strutHeight == null || strutHeight == 0) {
       // When there's no strut height, always use paragraph style height.
-      return _height;
+      return height;
     }
-    if (_strutStyle!._forceStrutHeight == true) {
+    if (strutStyle._forceStrutHeight ?? false) {
       // When strut height is forced, ignore paragraph style height.
-      return _strutStyle!._height;
+      return strutHeight;
     }
     // In this case, strut height acts as a minimum height for all parts of the
     // paragraph. So we take the max of strut height and paragraph style height.
-    return math.max(_strutStyle!._height!, _height ?? 0.0);
+    return math.max(strutHeight, height ?? 0.0);
   }
 
   @override
@@ -840,55 +491,62 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is EngineParagraphStyle
-        && other._textAlign == _textAlign
-        && other._textDirection == _textDirection
-        && other._fontWeight == _fontWeight
-        && other._fontStyle == _fontStyle
-        && other._maxLines == _maxLines
-        && other._fontFamily == _fontFamily
-        && other._fontSize == _fontSize
-        && other._height == _height
-        && other._textHeightBehavior == _textHeightBehavior
-        && other._ellipsis == _ellipsis
-        && other._locale == _locale;
+    return other is EngineParagraphStyle &&
+        other.textAlign == textAlign &&
+        other.textDirection == textDirection &&
+        other.fontWeight == fontWeight &&
+        other.fontStyle == fontStyle &&
+        other.maxLines == maxLines &&
+        other.fontFamily == fontFamily &&
+        other.fontSize == fontSize &&
+        other.height == height &&
+        other._textHeightBehavior == _textHeightBehavior &&
+        other._strutStyle == _strutStyle &&
+        other.ellipsis == ellipsis &&
+        other.locale == locale;
   }
 
   @override
   int get hashCode {
-    return ui.hashValues(
-        _textAlign,
-        _textDirection,
-        _fontWeight,
-        _fontStyle,
-        _maxLines,
-        _fontFamily,
-        _fontSize,
-        _height,
-        _textHeightBehavior,
-        _ellipsis,
-        _locale);
+    return Object.hash(
+      textAlign,
+      textDirection,
+      fontWeight,
+      fontStyle,
+      maxLines,
+      fontFamily,
+      fontSize,
+      height,
+      _textHeightBehavior,
+      _strutStyle,
+      ellipsis,
+      locale,
+    );
   }
 
   @override
   String toString() {
-    if (assertionsEnabled) {
-      return 'ParagraphStyle('
-          'textAlign: ${_textAlign ?? "unspecified"}, '
-          'textDirection: ${_textDirection ?? "unspecified"}, '
-          'fontWeight: ${_fontWeight ?? "unspecified"}, '
-          'fontStyle: ${_fontStyle ?? "unspecified"}, '
-          'maxLines: ${_maxLines ?? "unspecified"}, '
+    String result = super.toString();
+    assert(() {
+      final double? fontSize = this.fontSize;
+      final double? height = this.height;
+      result = 'ParagraphStyle('
+          'textAlign: ${textAlign ?? "unspecified"}, '
+          'textDirection: ${textDirection ?? "unspecified"}, '
+          'fontWeight: ${fontWeight ?? "unspecified"}, '
+          'fontStyle: ${fontStyle ?? "unspecified"}, '
+          'maxLines: ${maxLines ?? "unspecified"}, '
           'textHeightBehavior: ${_textHeightBehavior ?? "unspecified"}, '
-          'fontFamily: ${_fontFamily ?? "unspecified"}, '
-          'fontSize: ${_fontSize != null ? _fontSize!.toStringAsFixed(1) : "unspecified"}, '
-          'height: ${_height != null ? "${_height!.toStringAsFixed(1)}x" : "unspecified"}, '
-          'ellipsis: ${_ellipsis != null ? "\"$_ellipsis\"" : "unspecified"}, '
-          'locale: ${_locale ?? "unspecified"}'
+          'fontFamily: ${fontFamily ?? "unspecified"}, '
+          'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
+          'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'strutStyle: ${_strutStyle ?? "unspecified"}, '
+          'ellipsis: ${ellipsis != null ? '"$ellipsis"' : "unspecified"}, '
+          'locale: ${locale ?? "unspecified"}'
           ')';
-    } else {
-      return super.toString();
-    }
+      return true;
+    }());
+    return result;
   }
 }
 
@@ -914,11 +572,13 @@ class EngineTextStyle implements ui.TextStyle {
     required double? letterSpacing,
     required double? wordSpacing,
     required double? height,
+    required ui.TextLeadingDistribution? leadingDistribution,
     required ui.Locale? locale,
     required ui.Paint? background,
     required ui.Paint? foreground,
     required List<ui.Shadow>? shadows,
     required List<ui.FontFeature>? fontFeatures,
+    required List<ui.FontVariation>? fontVariations,
   }) = EngineTextStyle.only;
 
   /// Constructs an [EngineTextStyle] with only the given properties.
@@ -926,50 +586,33 @@ class EngineTextStyle implements ui.TextStyle {
   /// This constructor should be used sparingly in tests, for example. Or when
   /// we know for sure that not all properties are needed.
   EngineTextStyle.only({
-    ui.Color? color,
-    ui.TextDecoration? decoration,
-    ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-    ui.FontWeight? fontWeight,
-    ui.FontStyle? fontStyle,
-    ui.TextBaseline? textBaseline,
+    this.color,
+    this.decoration,
+    this.decorationColor,
+    this.decorationStyle,
+    this.decorationThickness,
+    this.fontWeight,
+    this.fontStyle,
+    this.textBaseline,
     String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    ui.Locale? locale,
-    ui.Paint? background,
-    ui.Paint? foreground,
-    List<ui.Shadow>? shadows,
-    List<ui.FontFeature>? fontFeatures,
+    this.fontFamilyFallback,
+    this.fontSize,
+    this.letterSpacing,
+    this.wordSpacing,
+    this.height,
+    this.leadingDistribution,
+    this.locale,
+    this.background,
+    this.foreground,
+    this.shadows,
+    this.fontFeatures,
+    this.fontVariations,
   })  : assert(
             color == null || foreground == null,
             'Cannot provide both a color and a foreground\n'
-            'The color argument is just a shorthand for "foreground: new Paint()..color = color".'),
-        _color = color,
-        _decoration = decoration,
-        _decorationColor = decorationColor,
-        _decorationStyle = decorationStyle,
-        _decorationThickness = decorationThickness,
-        _fontWeight = fontWeight,
-        _fontStyle = fontStyle,
-        _textBaseline = textBaseline,
-        _isFontFamilyProvided = fontFamily != null,
-        _fontFamily = fontFamily ?? '',
-        _fontFamilyFallback = fontFamilyFallback,
-        // TODO: https://github.com/flutter/flutter/issues/56707
-        _fontFeatures = fontFeatures,
-        _fontSize = fontSize,
-        _letterSpacing = letterSpacing,
-        _wordSpacing = wordSpacing,
-        _height = height,
-        _locale = locale,
-        _background = background,
-        _foreground = foreground,
-        _shadows = shadows;
+            'The color argument is just a shorthand for "foreground: Paint()..color = color".'),
+        isFontFamilyProvided = fontFamily != null,
+        fontFamily = fontFamily ?? '';
 
   /// Constructs an [EngineTextStyle] by reading properties from an
   /// [EngineParagraphStyle].
@@ -977,48 +620,51 @@ class EngineTextStyle implements ui.TextStyle {
     EngineParagraphStyle paragraphStyle,
   ) {
     return EngineTextStyle.only(
-      fontWeight: paragraphStyle._fontWeight,
-      fontStyle: paragraphStyle._fontStyle,
-      fontFamily: paragraphStyle._fontFamily,
-      fontSize: paragraphStyle._fontSize,
-      height: paragraphStyle._height,
-      locale: paragraphStyle._locale,
+      fontWeight: paragraphStyle.fontWeight,
+      fontStyle: paragraphStyle.fontStyle,
+      fontFamily: paragraphStyle.fontFamily,
+      fontSize: paragraphStyle.fontSize,
+      height: paragraphStyle.height,
+      locale: paragraphStyle.locale,
     );
   }
 
-  final ui.Color? _color;
-  final ui.TextDecoration? _decoration;
-  final ui.Color? _decorationColor;
-  final ui.TextDecorationStyle? _decorationStyle;
-  final double? _decorationThickness;
-  final ui.FontWeight? _fontWeight;
-  final ui.FontStyle? _fontStyle;
-  final ui.TextBaseline? _textBaseline;
-  final bool _isFontFamilyProvided;
-  final String _fontFamily;
-  final List<String>? _fontFamilyFallback;
-  final List<ui.FontFeature>? _fontFeatures;
-  final double? _fontSize;
-  final double? _letterSpacing;
-  final double? _wordSpacing;
-  final double? _height;
-  final ui.Locale? _locale;
-  final ui.Paint? _background;
-  final ui.Paint? _foreground;
-  final List<ui.Shadow>? _shadows;
+  final ui.Color? color;
+  final ui.TextDecoration? decoration;
+  final ui.Color? decorationColor;
+  final ui.TextDecorationStyle? decorationStyle;
+  final double? decorationThickness;
+  final ui.FontWeight? fontWeight;
+  final ui.FontStyle? fontStyle;
+  final ui.TextBaseline? textBaseline;
+  final bool isFontFamilyProvided;
+  final String fontFamily;
+  final List<String>? fontFamilyFallback;
+  final List<ui.FontFeature>? fontFeatures;
+  final List<ui.FontVariation>? fontVariations;
+  final double? fontSize;
+  final double? letterSpacing;
+  final double? wordSpacing;
+  final double? height;
+  final ui.TextLeadingDistribution? leadingDistribution;
+  final ui.Locale? locale;
+  final ui.Paint? background;
+  final ui.Paint? foreground;
+  final List<ui.Shadow>? shadows;
 
-  String get _effectiveFontFamily {
-    if (assertionsEnabled) {
-      // In the flutter tester environment, we use a predictable-size font
-      // "Ahem". This makes widget tests predictable and less flaky.
-      if (ui.debugEmulateFlutterTesterEnvironment) {
-        return 'Ahem';
+  static final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
+  String get effectiveFontFamily {
+    final String fontFamily = this.fontFamily.isEmpty ? StyleManager.defaultFontFamily : this.fontFamily;
+    // In the flutter tester environment, we use predictable-size test fonts.
+    // This makes widget tests predictable and less flaky.
+    String result = fontFamily;
+    assert(() {
+      if (ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)) {
+        result = _testFonts.first;
       }
-    }
-    if (_fontFamily.isEmpty) {
-      return DomRenderer.defaultFontFamily;
-    }
-    return _fontFamily;
+      return true;
+    }());
+    return result;
   }
 
   String? _cssFontString;
@@ -1027,11 +673,25 @@ class EngineTextStyle implements ui.TextStyle {
   ///
   /// See <https://developer.mozilla.org/en-US/docs/Web/CSS/font>.
   String get cssFontString {
-    return _cssFontString ??= _buildCssFontString(
-      fontStyle: _fontStyle,
-      fontWeight: _fontWeight,
-      fontSize: _fontSize,
-      fontFamily: _effectiveFontFamily,
+    return _cssFontString ??= buildCssFontString(
+      fontStyle: fontStyle,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+      fontFamily: effectiveFontFamily,
+    );
+  }
+
+  late final TextHeightStyle heightStyle = _createHeightStyle();
+
+  TextHeightStyle _createHeightStyle() {
+    return TextHeightStyle(
+      fontFamily: effectiveFontFamily,
+      fontSize: fontSize ?? StyleManager.defaultFontSize,
+      height: height,
+      // TODO(mdebbar): Pass the actual value when font features become supported
+      //                https://github.com/flutter/flutter/issues/64595
+      fontFeatures: null,
+      fontVariations: null,
     );
   }
 
@@ -1040,123 +700,108 @@ class EngineTextStyle implements ui.TextStyle {
     if (identical(this, other)) {
       return true;
     }
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
     return other is EngineTextStyle
-        && other._color == _color
-        && other._decoration == _decoration
-        && other._decorationColor == _decorationColor
-        && other._decorationStyle == _decorationStyle
-        && other._fontWeight == _fontWeight
-        && other._fontStyle == _fontStyle
-        && other._textBaseline == _textBaseline
-        && other._fontFamily == _fontFamily
-        && other._fontSize == _fontSize
-        && other._letterSpacing == _letterSpacing
-        && other._wordSpacing == _wordSpacing
-        && other._height == _height
-        && other._locale == _locale
-        && other._background == _background
-        && other._foreground == _foreground
-        && _listEquals<ui.Shadow>(other._shadows, _shadows)
-        && _listEquals<String>(other._fontFamilyFallback, _fontFamilyFallback);
+        && other.color == color
+        && other.decoration == decoration
+        && other.decorationColor == decorationColor
+        && other.decorationStyle == decorationStyle
+        && other.fontWeight == fontWeight
+        && other.fontStyle == fontStyle
+        && other.textBaseline == textBaseline
+        && other.leadingDistribution == leadingDistribution
+        && other.fontFamily == fontFamily
+        && other.fontSize == fontSize
+        && other.letterSpacing == letterSpacing
+        && other.wordSpacing == wordSpacing
+        && other.height == height
+        && other.decorationThickness == decorationThickness
+        && other.locale == locale
+        && other.background == background
+        && other.foreground == foreground
+        && listEquals<ui.Shadow>(other.shadows, shadows)
+        && listEquals<String>(other.fontFamilyFallback, fontFamilyFallback)
+        && listEquals<ui.FontFeature>(other.fontFeatures, fontFeatures)
+        && listEquals<ui.FontVariation>(other.fontVariations, fontVariations);
   }
 
   @override
-  int get hashCode => ui.hashValues(
-        _color,
-        _decoration,
-        _decorationColor,
-        _decorationStyle,
-        _decorationThickness,
-        _fontWeight,
-        _fontStyle,
-        _textBaseline,
-        _fontFamily,
-        _fontFamilyFallback,
-        _fontSize,
-        _letterSpacing,
-        _wordSpacing,
-        _height,
-        _locale,
-        _background,
-        _foreground,
-        _shadows,
-      );
+  int get hashCode {
+    final List<ui.Shadow>? shadows = this.shadows;
+    final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+    final List<ui.FontVariation>? fontVariations = this.fontVariations;
+    final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+    return Object.hash(
+      color,
+      decoration,
+      decorationColor,
+      decorationStyle,
+      fontWeight,
+      fontStyle,
+      textBaseline,
+      leadingDistribution,
+      fontFamily,
+      fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback),
+      fontSize,
+      letterSpacing,
+      wordSpacing,
+      height,
+      locale,
+      background,
+      foreground,
+      shadows == null ? null : Object.hashAll(shadows),
+      decorationThickness,
+      // Object.hash goes up to 20 arguments, but we have 21
+      Object.hash(
+        fontFeatures == null ? null : Object.hashAll(fontFeatures),
+        fontVariations == null ? null : Object.hashAll(fontVariations),
+      )
+    );
+  }
 
   @override
   String toString() {
-    if (assertionsEnabled) {
-      return 'TextStyle('
-          'color: ${_color != null ? _color : "unspecified"}, '
-          'decoration: ${_decoration ?? "unspecified"}, '
-          'decorationColor: ${_decorationColor ?? "unspecified"}, '
-          'decorationStyle: ${_decorationStyle ?? "unspecified"}, '
-          'decorationThickness: ${_decorationThickness ?? "unspecified"}, '
-          'fontWeight: ${_fontWeight ?? "unspecified"}, '
-          'fontStyle: ${_fontStyle ?? "unspecified"}, '
-          'textBaseline: ${_textBaseline ?? "unspecified"}, '
-          'fontFamily: ${_isFontFamilyProvided && _fontFamily != '' ? _fontFamily : "unspecified"}, '
-          'fontFamilyFallback: ${_isFontFamilyProvided && _fontFamilyFallback != null && _fontFamilyFallback!.isNotEmpty ? _fontFamilyFallback : "unspecified"}, '
-          'fontSize: ${_fontSize != null ? _fontSize!.toStringAsFixed(1) : "unspecified"}, '
-          'letterSpacing: ${_letterSpacing != null ? "${_letterSpacing}x" : "unspecified"}, '
-          'wordSpacing: ${_wordSpacing != null ? "${_wordSpacing}x" : "unspecified"}, '
-          'height: ${_height != null ? "${_height!.toStringAsFixed(1)}x" : "unspecified"}, '
-          'locale: ${_locale ?? "unspecified"}, '
-          'background: ${_background ?? "unspecified"}, '
-          'foreground: ${_foreground ?? "unspecified"}, '
-          'shadows: ${_shadows ?? "unspecified"}, '
-          'fontFeatures: ${_fontFeatures ?? "unspecified"}'
+    String result = super.toString();
+    assert(() {
+      final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+      final double? fontSize = this.fontSize;
+      final double? height = this.height;
+      result = 'TextStyle('
+          'color: ${color ?? "unspecified"}, '
+          'decoration: ${decoration ?? "unspecified"}, '
+          'decorationColor: ${decorationColor ?? "unspecified"}, '
+          'decorationStyle: ${decorationStyle ?? "unspecified"}, '
+          'decorationThickness: ${decorationThickness ?? "unspecified"}, '
+          'fontWeight: ${fontWeight ?? "unspecified"}, '
+          'fontStyle: ${fontStyle ?? "unspecified"}, '
+          'textBaseline: ${textBaseline ?? "unspecified"}, '
+          'fontFamily: ${isFontFamilyProvided && fontFamily != '' ? fontFamily : "unspecified"}, '
+          'fontFamilyFallback: ${isFontFamilyProvided && fontFamilyFallback != null && fontFamilyFallback.isNotEmpty ? fontFamilyFallback : "unspecified"}, '
+          'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
+          'letterSpacing: ${letterSpacing != null ? "${letterSpacing}x" : "unspecified"}, '
+          'wordSpacing: ${wordSpacing != null ? "${wordSpacing}x" : "unspecified"}, '
+          'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
+          'locale: ${locale ?? "unspecified"}, '
+          'background: ${background ?? "unspecified"}, '
+          'foreground: ${foreground ?? "unspecified"}, '
+          'shadows: ${shadows ?? "unspecified"}, '
+          'fontFeatures: ${fontFeatures ?? "unspecified"}, '
+          'fontVariations: ${fontVariations ?? "unspecified"}'
           ')';
-    } else {
-      return super.toString();
-    }
+      return true;
+    }());
+    return result;
   }
 }
 
 /// The web implementation of [ui.StrutStyle].
 class EngineStrutStyle implements ui.StrutStyle {
-  /// Creates a new StrutStyle object.
-  ///
-  /// * `fontFamily`: The name of the font to use when painting the text (e.g.,
-  ///   Roboto).
-  ///
-  /// * `fontFamilyFallback`: An ordered list of font family names that will be searched for when
-  ///    the font in `fontFamily` cannot be found.
-  ///
-  /// * `fontSize`: The size of glyphs (in logical pixels) to use when painting
-  ///   the text.
-  ///
-  /// * `lineHeight`: The minimum height of the line boxes, as a multiple of the
-  ///   font size. The lines of the paragraph will be at least
-  ///   `(lineHeight + leading) * fontSize` tall when fontSize
-  ///   is not null. When fontSize is null, there is no minimum line height. Tall
-  ///   glyphs due to baseline alignment or large [TextStyle.fontSize] may cause
-  ///   the actual line height after layout to be taller than specified here.
-  ///   [fontSize] must be provided for this property to take effect.
-  ///
-  /// * `leading`: The minimum amount of leading between lines as a multiple of
-  ///   the font size. [fontSize] must be provided for this property to take effect.
-  ///
-  /// * `fontWeight`: The typeface thickness to use when painting the text
-  ///   (e.g., bold).
-  ///
-  /// * `fontStyle`: The typeface variant to use when drawing the letters (e.g.,
-  ///   italics).
-  ///
-  /// * `forceStrutHeight`: When true, the paragraph will force all lines to be exactly
-  ///   `(lineHeight + leading) * fontSize` tall from baseline to baseline.
-  ///   [TextStyle] is no longer able to influence the line height, and any tall
-  ///   glyphs may overlap with lines above. If a [fontFamily] is specified, the
-  ///   total ascent of the first line will be the min of the `Ascent + half-leading`
-  ///   of the [fontFamily] and `(lineHeight + leading) * fontSize`. Otherwise, it
-  ///   will be determined by the Ascent + half-leading of the first text.
   EngineStrutStyle({
     String? fontFamily,
     List<String>? fontFamilyFallback,
     double? fontSize,
     double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
     double? leading,
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
@@ -1165,6 +810,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontFamilyFallback = fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
+        _leadingDistribution = leadingDistribution,
         _leading = leading,
         _fontWeight = fontWeight,
         _fontStyle = fontStyle,
@@ -1178,6 +824,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   final ui.FontWeight? _fontWeight;
   final ui.FontStyle? _fontStyle;
   final bool? _forceStrutHeight;
+  final ui.TextLeadingDistribution? _leadingDistribution;
 
   @override
   bool operator ==(Object other) {
@@ -1187,409 +834,39 @@ class EngineStrutStyle implements ui.StrutStyle {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is EngineStrutStyle
-        && other._fontFamily == _fontFamily
-        && other._fontSize == _fontSize
-        && other._height == _height
-        && other._leading == _leading
-        && other._fontWeight == _fontWeight
-        && other._fontStyle == _fontStyle
-        && other._forceStrutHeight == _forceStrutHeight
-        && _listEquals<String>(other._fontFamilyFallback, _fontFamilyFallback);
+    return other is EngineStrutStyle &&
+        other._fontFamily == _fontFamily &&
+        other._fontSize == _fontSize &&
+        other._height == _height &&
+        other._leading == _leading &&
+        other._leadingDistribution == _leadingDistribution &&
+        other._fontWeight == _fontWeight &&
+        other._fontStyle == _fontStyle &&
+        other._forceStrutHeight == _forceStrutHeight &&
+        listEquals<String>(other._fontFamilyFallback, _fontFamilyFallback);
   }
 
   @override
-  int get hashCode => ui.hashValues(
+  int get hashCode {
+    final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    return Object.hash(
         _fontFamily,
-        _fontFamilyFallback,
+        fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
         _fontSize,
         _height,
         _leading,
+        _leadingDistribution,
         _fontWeight,
         _fontStyle,
         _forceStrutHeight,
       );
-}
-
-/// The web implementation of [ui.ParagraphBuilder].
-class DomParagraphBuilder implements ui.ParagraphBuilder {
-  /// Marks a call to the [pop] method in the [_ops] list.
-  static final Object _paragraphBuilderPop = Object();
-
-  final html.HtmlElement _paragraphElement = domRenderer.createElement('p') as html.HtmlElement;
-  final EngineParagraphStyle _paragraphStyle;
-  final List<dynamic> _ops = <dynamic>[];
-
-  /// Creates a [DomParagraphBuilder] object, which is used to create a
-  /// [DomParagraph].
-  DomParagraphBuilder(EngineParagraphStyle style) : _paragraphStyle = style {
-    // TODO(b/128317744): Implement support for strut font families.
-    List<String?> strutFontFamilies;
-    if (style._strutStyle != null) {
-      strutFontFamilies = <String?>[];
-      if (style._strutStyle!._fontFamily != null) {
-        strutFontFamilies.add(style._strutStyle!._fontFamily);
-      }
-      if (style._strutStyle!._fontFamilyFallback != null) {
-        strutFontFamilies.addAll(style._strutStyle!._fontFamilyFallback!);
-      }
-    }
-    _applyParagraphStyleToElement(
-        element: _paragraphElement, style: _paragraphStyle);
-  }
-
-  /// Applies the given style to the added text until [pop] is called.
-  ///
-  /// See [pop] for details.
-  @override
-  void pushStyle(ui.TextStyle style) {
-    _ops.add(style);
-  }
-
-  @override
-  int get placeholderCount => _placeholderCount;
-  int _placeholderCount = 0;
-
-  @override
-  List<double> get placeholderScales => _placeholderScales;
-  final List<double> _placeholderScales = <double>[];
-
-  @override
-  void addPlaceholder(
-    double width,
-    double height,
-    ui.PlaceholderAlignment alignment, {
-    double scale = 1.0,
-    double? baselineOffset,
-    ui.TextBaseline? baseline,
-  }) {
-    // Require a baseline to be specified if using a baseline-based alignment.
-    assert((alignment == ui.PlaceholderAlignment.aboveBaseline ||
-            alignment == ui.PlaceholderAlignment.belowBaseline ||
-            alignment == ui.PlaceholderAlignment.baseline) ? baseline != null : true);
-
-    _placeholderCount++;
-    _placeholderScales.add(scale);
-    _ops.add(ParagraphPlaceholder(
-      width * scale,
-      height * scale,
-      alignment,
-      baselineOffset: (baselineOffset ?? height) * scale,
-      baseline: baseline ?? ui.TextBaseline.alphabetic,
-    ));
-  }
-
-  // TODO(yjbanov): do we need to do this?
-//  static String _encodeLocale(Locale locale) => locale?.toString() ?? '';
-
-  /// Ends the effect of the most recent call to [pushStyle].
-  ///
-  /// Internally, the paragraph builder maintains a stack of text styles. Text
-  /// added to the paragraph is affected by all the styles in the stack. Calling
-  /// [pop] removes the topmost style in the stack, leaving the remaining styles
-  /// in effect.
-  @override
-  void pop() {
-    _ops.add(_paragraphBuilderPop);
-  }
-
-  /// Adds the given text to the paragraph.
-  ///
-  /// The text will be styled according to the current stack of text styles.
-  @override
-  void addText(String text) {
-    _ops.add(text);
-  }
-
-  /// Applies the given paragraph style and returns a [Paragraph] containing the
-  /// added text and associated styling.
-  ///
-  /// After calling this function, the paragraph builder object is invalid and
-  /// cannot be used further.
-  @override
-  EngineParagraph build() {
-    return _tryBuildPlainText() ?? _buildRichText();
-  }
-
-  /// Attempts to build a [Paragraph] assuming it is plain text.
-  ///
-  /// A paragraph is considered plain if it is built using the following
-  /// sequence of ops:
-  ///
-  /// * Zero-or-more calls to [pushStyle].
-  /// * One-or-more calls to [addText].
-  /// * Zero-or-more calls to [pop].
-  ///
-  /// Any other sequence will result in `null` and should be treated as rich
-  /// text.
-  ///
-  /// Plain text is not the same as not having style. The text may be styled
-  /// arbitrarily. However, it may not mix multiple styles in the same
-  /// paragraph. Plain text is more efficient to lay out and measure than rich
-  /// text.
-  EngineParagraph? _tryBuildPlainText() {
-    ui.Color color = _defaultTextColor;
-    ui.TextDecoration? decoration;
-    ui.Color? decorationColor;
-    ui.TextDecorationStyle? decorationStyle;
-    double? decorationThickness;
-    ui.FontWeight? fontWeight = _paragraphStyle._fontWeight;
-    ui.FontStyle? fontStyle = _paragraphStyle._fontStyle;
-    ui.TextBaseline? textBaseline;
-    String fontFamily = _paragraphStyle._fontFamily ?? DomRenderer.defaultFontFamily;
-    List<String>? fontFamilyFallback;
-    List<ui.FontFeature>? fontFeatures;
-    double fontSize = _paragraphStyle._fontSize ?? DomRenderer.defaultFontSize;
-    final ui.TextAlign textAlign = _paragraphStyle._effectiveTextAlign;
-    final ui.TextDirection textDirection = _paragraphStyle._effectiveTextDirection;
-    double? letterSpacing;
-    double? wordSpacing;
-    double? height;
-    ui.Locale? locale = _paragraphStyle._locale;
-    ui.Paint? background;
-    ui.Paint? foreground;
-    List<ui.Shadow>? shadows;
-
-    int i = 0;
-
-    // This loop looks expensive. However, in reality most of plain text
-    // paragraphs will have no calls to [pushStyle], skipping this loop
-    // entirely. Occasionally there will be one [pushStyle], which causes this
-    // loop to run once then move on to aggregating text.
-    while (i < _ops.length && _ops[i] is EngineTextStyle) {
-      final EngineTextStyle style = _ops[i];
-      if (style._color != null) {
-        color = style._color!;
-      }
-      if (style._decoration != null) {
-        decoration = style._decoration;
-      }
-      if (style._decorationColor != null) {
-        decorationColor = style._decorationColor;
-      }
-      if (style._decorationStyle != null) {
-        decorationStyle = style._decorationStyle;
-      }
-      if (style._decorationThickness != null) {
-        decorationThickness = style._decorationThickness;
-      }
-      if (style._fontWeight != null) {
-        fontWeight = style._fontWeight;
-      }
-      if (style._fontStyle != null) {
-        fontStyle = style._fontStyle;
-      }
-      if (style._textBaseline != null) {
-        textBaseline = style._textBaseline;
-      }
-      fontFamily = style._fontFamily;
-      if (style._fontFamilyFallback != null) {
-        fontFamilyFallback = style._fontFamilyFallback;
-      }
-      if (style._fontFeatures != null) {
-        fontFeatures = style._fontFeatures;
-      }
-      if (style._fontSize != null) {
-        fontSize = style._fontSize!;
-      }
-      if (style._letterSpacing != null) {
-        letterSpacing = style._letterSpacing;
-      }
-      if (style._wordSpacing != null) {
-        wordSpacing = style._wordSpacing;
-      }
-      if (style._height != null) {
-        height = style._height;
-      }
-      if (style._locale != null) {
-        locale = style._locale;
-      }
-      if (style._background != null) {
-        background = style._background;
-      }
-      if (style._foreground != null) {
-        foreground = style._foreground;
-      }
-      if (style._shadows != null) {
-        shadows = style._shadows;
-      }
-      i++;
-    }
-
-    final EngineTextStyle cumulativeStyle = EngineTextStyle(
-      color: color,
-      decoration: decoration,
-      decorationColor: decorationColor,
-      decorationStyle: decorationStyle,
-      decorationThickness: decorationThickness,
-      fontWeight: fontWeight,
-      fontStyle: fontStyle,
-      textBaseline: textBaseline,
-      fontFamily: fontFamily,
-      fontFamilyFallback: fontFamilyFallback,
-      fontFeatures: fontFeatures,
-      fontSize: fontSize,
-      letterSpacing: letterSpacing,
-      wordSpacing: wordSpacing,
-      height: height,
-      locale: locale,
-      background: background,
-      foreground: foreground,
-      shadows: shadows,
-    );
-
-    ui.Paint paint;
-    if (foreground != null) {
-      paint = foreground;
-    } else {
-      paint = ui.Paint();
-      paint.color = color;
-    }
-
-    if (i >= _ops.length) {
-      // Empty paragraph.
-      _applyTextStyleToElement(
-          element: _paragraphElement, style: cumulativeStyle);
-      return DomParagraph(
-        paragraphElement: _paragraphElement,
-        geometricStyle: ParagraphGeometricStyle(
-          textDirection: _paragraphStyle._effectiveTextDirection,
-          textAlign: _paragraphStyle._effectiveTextAlign,
-          fontFamily: fontFamily,
-          fontWeight: fontWeight,
-          fontStyle: fontStyle,
-          fontSize: fontSize,
-          lineHeight: height,
-          maxLines: _paragraphStyle._maxLines,
-          letterSpacing: letterSpacing,
-          wordSpacing: wordSpacing,
-          decoration: _textDecorationToCssString(decoration, decorationStyle),
-          ellipsis: _paragraphStyle._ellipsis,
-          shadows: shadows,
-        ),
-        plainText: '',
-        paint: paint,
-        textAlign: textAlign,
-        textDirection: textDirection,
-        background: cumulativeStyle._background,
-        placeholderCount: placeholderCount,
-      );
-    }
-
-    if (_ops[i] is! String) {
-      // After a series of [EngineTextStyle] ops there must be at least one text op.
-      // Otherwise, treat it as rich text.
-      return null;
-    }
-
-    // Accumulate text into one contiguous string.
-    final StringBuffer plainTextBuffer = StringBuffer();
-    while (i < _ops.length && _ops[i] is String) {
-      plainTextBuffer.write(_ops[i]);
-      i++;
-    }
-
-    // After a series of [addText] ops there should only be a tail of [pop]s and
-    // nothing else. Otherwise it's rich text and we return null;
-    for (; i < _ops.length; i++) {
-      if (_ops[i] != _paragraphBuilderPop) {
-        return null;
-      }
-    }
-
-    final String plainText = plainTextBuffer.toString();
-    domRenderer.appendText(_paragraphElement, plainText);
-    _applyTextStyleToElement(
-        element: _paragraphElement, style: cumulativeStyle);
-    // Since this is a plain paragraph apply background color to paragraph tag
-    // instead of individual spans.
-    if (cumulativeStyle._background != null) {
-      _applyTextBackgroundToElement(
-          element: _paragraphElement, style: cumulativeStyle);
-    }
-    return DomParagraph(
-      paragraphElement: _paragraphElement,
-      geometricStyle: ParagraphGeometricStyle(
-        textDirection: _paragraphStyle._effectiveTextDirection,
-        textAlign: _paragraphStyle._effectiveTextAlign,
-        fontFamily: fontFamily,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        fontSize: fontSize,
-        lineHeight: height,
-        maxLines: _paragraphStyle._maxLines,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        decoration: _textDecorationToCssString(decoration, decorationStyle),
-        ellipsis: _paragraphStyle._ellipsis,
-        shadows: shadows,
-      ),
-      plainText: plainText,
-      paint: paint,
-      textAlign: textAlign,
-      textDirection: textDirection,
-      background: cumulativeStyle._background,
-      placeholderCount: placeholderCount,
-    );
-  }
-
-  /// Builds a [Paragraph] as rich text.
-  EngineParagraph _buildRichText() {
-    final List<dynamic> elementStack = <dynamic>[];
-    dynamic currentElement() =>
-        elementStack.isNotEmpty ? elementStack.last : _paragraphElement;
-
-    for (int i = 0; i < _ops.length; i++) {
-      final dynamic op = _ops[i];
-      if (op is EngineTextStyle) {
-        final html.SpanElement span = domRenderer.createElement('span') as html.SpanElement;
-        _applyTextStyleToElement(element: span, style: op, isSpan: true);
-        if (op._background != null) {
-          _applyTextBackgroundToElement(element: span, style: op);
-        }
-        domRenderer.append(currentElement(), span);
-        elementStack.add(span);
-      } else if (op is String) {
-        domRenderer.appendText(currentElement(), op);
-      } else if (op is ParagraphPlaceholder) {
-        domRenderer.append(
-          currentElement(),
-          _createPlaceholderElement(placeholder: op),
-        );
-      } else if (identical(op, _paragraphBuilderPop)) {
-        elementStack.removeLast();
-      } else {
-        throw UnsupportedError('Unsupported ParagraphBuilder operation: $op');
-      }
-    }
-
-    return DomParagraph(
-      paragraphElement: _paragraphElement,
-      geometricStyle: ParagraphGeometricStyle(
-        textDirection: _paragraphStyle._effectiveTextDirection,
-        textAlign: _paragraphStyle._effectiveTextAlign,
-        fontFamily: _paragraphStyle._fontFamily,
-        fontWeight: _paragraphStyle._fontWeight,
-        fontStyle: _paragraphStyle._fontStyle,
-        fontSize: _paragraphStyle._fontSize,
-        lineHeight: _paragraphStyle._height,
-        maxLines: _paragraphStyle._maxLines,
-        ellipsis: _paragraphStyle._ellipsis,
-      ),
-      plainText: null,
-      paint: null,
-      textAlign: _paragraphStyle._effectiveTextAlign,
-      textDirection: _paragraphStyle._effectiveTextDirection,
-      background: null,
-      placeholderCount: placeholderCount,
-    );
   }
 }
 
 /// Holds information for a placeholder in a paragraph.
 ///
 /// [width], [height] and [baselineOffset] are expected to be already scaled.
-class ParagraphPlaceholder extends ParagraphSpan {
+class ParagraphPlaceholder {
   ParagraphPlaceholder(
     this.width,
     this.height,
@@ -1617,12 +894,18 @@ class ParagraphPlaceholder extends ParagraphSpan {
   final ui.TextBaseline baseline;
 }
 
-/// Converts [fontWeight] to its CSS equivalent value.
-String? fontWeightToCss(ui.FontWeight? fontWeight) {
-  if (fontWeight == null) {
-    return null;
+extension FontStyleExtension on ui.FontStyle {
+  /// Converts a [ui.FontStyle] value to its CSS equivalent.
+  String toCssString() {
+    return this == ui.FontStyle.normal ? 'normal' : 'italic';
   }
-  return fontWeightIndexToCss(fontWeightIndex: fontWeight.index);
+}
+
+extension FontWeightExtension on ui.FontWeight {
+  /// Converts a [ui.FontWeight] value to its CSS equivalent.
+  String toCssString() {
+    return fontWeightIndexToCss(fontWeightIndex: index);
+  }
 }
 
 String fontWeightIndexToCss({int fontWeightIndex = 3}) {
@@ -1656,153 +939,95 @@ String fontWeightIndexToCss({int fontWeightIndex = 3}) {
   return '';
 }
 
-/// Applies a paragraph [style] to an [element], translating the properties to
-/// their corresponding CSS equivalents.
-void _applyParagraphStyleToElement({
-  required html.HtmlElement element,
-  required EngineParagraphStyle style,
-}) {
-  assert(element != null); // ignore: unnecessary_null_comparison
-  assert(style != null); // ignore: unnecessary_null_comparison
-  // TODO(yjbanov): What do we do about ParagraphStyle._locale and ellipsis?
-  final html.CssStyleDeclaration cssStyle = element.style;
-
-  if (style._textAlign != null) {
-    cssStyle.textAlign = textAlignToCssValue(
-        style._textAlign, style._textDirection ?? ui.TextDirection.ltr);
-  }
-  if (style._lineHeight != null) {
-    cssStyle.lineHeight = '${style._lineHeight}';
-  }
-  if (style._textDirection != null) {
-    cssStyle.direction = _textDirectionToCss(style._textDirection);
-  }
-  if (style._fontSize != null) {
-    cssStyle.fontSize = '${style._fontSize!.floor()}px';
-  }
-  if (style._fontWeight != null) {
-    cssStyle.fontWeight = fontWeightToCss(style._fontWeight);
-  }
-  if (style._fontStyle != null) {
-    cssStyle.fontStyle =
-        style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
-  }
-  cssStyle.fontFamily = canonicalizeFontFamily(style._effectiveFontFamily);
-}
-
 /// Applies a text [style] to an [element], translating the properties to their
 /// corresponding CSS equivalents.
-///
-/// If [isSpan] is true, the text element is a span within richtext and
-/// should not assign effectiveFontFamily if fontFamily was not specified.
-void _applyTextStyleToElement({
-  required html.HtmlElement element,
+void applyTextStyleToElement({
+  required DomElement element,
   required EngineTextStyle style,
-  bool isSpan = false,
 }) {
-  assert(element != null); // ignore: unnecessary_null_comparison
-  assert(style != null); // ignore: unnecessary_null_comparison
   bool updateDecoration = false;
-  final html.CssStyleDeclaration cssStyle = element.style;
+  final DomCSSStyleDeclaration cssStyle = element.style;
 
-  final ui.Color? color = style._foreground?.color ?? style._color;
-  if (color != null) {
-    cssStyle.color = colorToCssString(color);
+  final ui.Color? color = style.foreground?.color ?? style.color;
+  if (style.foreground?.style == ui.PaintingStyle.stroke) {
+    // When comparing the outputs of the Bitmap Canvas and the DOM
+    // implementation, we have found, that we need to set the background color
+    // of the text to transparent to achieve the same effect as in the Bitmap
+    // Canvas and the Skia Engine where only the text stroke is painted.
+    // If we don't set it here to transparent, the text will inherit the color
+    // of it's parent element.
+    cssStyle.color = 'transparent';
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double? strokeWidth = style.foreground?.strokeWidth;
+    final double adaptedWidth = strokeWidth != null && strokeWidth > 0
+        ? strokeWidth
+        : 1.0 / ui.window.devicePixelRatio;
+    cssStyle.textStroke = '${adaptedWidth}px ${color?.toCssString()}';
+  } else if (color != null) {
+    cssStyle.color = color.toCssString();
   }
-  if (style._fontSize != null) {
-    cssStyle.fontSize = '${style._fontSize!.floor()}px';
+  final ui.Color? background = style.background?.color;
+  if (background != null) {
+    cssStyle.backgroundColor = background.toCssString();
   }
-  if (style._fontWeight != null) {
-    cssStyle.fontWeight = fontWeightToCss(style._fontWeight);
+  final double? fontSize = style.fontSize;
+  if (fontSize != null) {
+    cssStyle.fontSize = '${fontSize.floor()}px';
   }
-  if (style._fontStyle != null) {
-    cssStyle.fontStyle =
-        style._fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
+  if (style.fontWeight != null) {
+    cssStyle.fontWeight = style.fontWeight!.toCssString();
+  }
+  if (style.fontStyle != null) {
+    cssStyle.fontStyle = style.fontStyle!.toCssString();
   }
   // For test environment use effectiveFontFamily since we need to
-  // consistently use Ahem font.
-  if (isSpan && !ui.debugEmulateFlutterTesterEnvironment) {
-    cssStyle.fontFamily = canonicalizeFontFamily(style._fontFamily);
+  // consistently use the correct test font.
+  if (ui_web.debugEmulateFlutterTesterEnvironment) {
+    cssStyle.fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)!;
   } else {
-    cssStyle.fontFamily =
-        canonicalizeFontFamily(style._effectiveFontFamily);
+    cssStyle.fontFamily = canonicalizeFontFamily(style.fontFamily)!;
   }
-  if (style._letterSpacing != null) {
-    cssStyle.letterSpacing = '${style._letterSpacing}px';
+  if (style.letterSpacing != null) {
+    cssStyle.letterSpacing = '${style.letterSpacing}px';
   }
-  if (style._wordSpacing != null) {
-    cssStyle.wordSpacing = '${style._wordSpacing}px';
+  if (style.wordSpacing != null) {
+    cssStyle.wordSpacing = '${style.wordSpacing}px';
   }
-  if (style._decoration != null) {
+  if (style.decoration != null) {
     updateDecoration = true;
   }
-  if (style._shadows != null) {
-    cssStyle.textShadow = _shadowListToCss(style._shadows!);
+  final List<ui.Shadow>? shadows = style.shadows;
+  if (shadows != null) {
+    cssStyle.textShadow = _shadowListToCss(shadows);
   }
 
   if (updateDecoration) {
-    if (style._decoration != null) {
+    if (style.decoration != null) {
       final String? textDecoration =
-          _textDecorationToCssString(style._decoration, style._decorationStyle);
+          _textDecorationToCssString(style.decoration, style.decorationStyle);
       if (textDecoration != null) {
         if (browserEngine == BrowserEngine.webkit) {
-          DomRenderer.setElementStyle(
-              element, '-webkit-text-decoration', textDecoration);
+          setElementStyle(element, '-webkit-text-decoration', textDecoration);
         } else {
           cssStyle.textDecoration = textDecoration;
         }
-        final ui.Color? decorationColor = style._decorationColor;
+        final ui.Color? decorationColor = style.decorationColor;
         if (decorationColor != null) {
-          cssStyle.textDecorationColor = colorToCssString(decorationColor)!;
+          cssStyle.textDecorationColor = decorationColor.toCssString();
         }
       }
     }
   }
-}
 
-html.Element _createPlaceholderElement({
-  required ParagraphPlaceholder placeholder,
-}) {
-  final html.Element element = domRenderer.createElement('span');
-  element.className = _placeholderClass;
-  final html.CssStyleDeclaration style = element.style;
-  style
-    ..display = 'inline-block'
-    ..width = '${placeholder.width}px'
-    ..height = '${placeholder.height}px'
-    ..verticalAlign = _placeholderAlignmentToCssVerticalAlign(placeholder);
+  final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
+  if (fontFeatures != null && fontFeatures.isNotEmpty) {
+    cssStyle.fontFeatureSettings = _fontFeatureListToCss(fontFeatures);
+  }
 
-  return element;
-}
-
-String _placeholderAlignmentToCssVerticalAlign(
-  ParagraphPlaceholder placeholder,
-) {
-  // For more details about the vertical-align CSS property, see:
-  // - https://developer.mozilla.org/en-US/docs/Web/CSS/vertical-align
-  switch (placeholder.alignment) {
-    case ui.PlaceholderAlignment.top:
-      return 'top';
-
-    case ui.PlaceholderAlignment.middle:
-      return 'middle';
-
-    case ui.PlaceholderAlignment.bottom:
-      return 'bottom';
-
-    case ui.PlaceholderAlignment.aboveBaseline:
-      return 'baseline';
-
-    case ui.PlaceholderAlignment.belowBaseline:
-      return '-${placeholder.height}px';
-
-    case ui.PlaceholderAlignment.baseline:
-      // In CSS, the placeholder is already placed above the baseline. But
-      // Flutter's `baselineOffset` assumes the placeholder is placed below the
-      // baseline. That's why we need to subtract the placeholder's height from
-      // `baselineOffset`.
-      final double offset = placeholder.baselineOffset - placeholder.height;
-      return '${offset}px';
+  final List<ui.FontVariation>? fontVariations = style.fontVariations;
+  if (fontVariations != null && fontVariations.isNotEmpty) {
+    cssStyle.setProperty(
+        'font-variation-settings', _fontVariationListToCss(fontVariations));
   }
 }
 
@@ -1815,29 +1040,49 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
   // Shadows are applied front-to-back with first shadow on top.
   // Color is optional. offsetx,y are required. blur-radius is optional as well
   // and defaults to 0.
-  StringBuffer sb = new StringBuffer();
-  for (int i = 0, len = shadows.length; i < len; i++) {
+  final StringBuffer sb = StringBuffer();
+  final int len = shadows.length;
+  for (int i = 0; i < len; i++) {
     if (i != 0) {
       sb.write(',');
     }
-    ui.Shadow shadow = shadows[i];
+    final ui.Shadow shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
-        '${shadow.blurRadius}px ${colorToCssString(shadow.color)}');
+        '${shadow.blurRadius}px ${shadow.color.toCssString()}');
   }
   return sb.toString();
 }
 
-/// Applies background color properties in text style to paragraph or span
-/// elements.
-void _applyTextBackgroundToElement({
-  required html.HtmlElement element,
-  required EngineTextStyle style,
-}) {
-  final ui.Paint? newBackground = style._background;
-  if (newBackground != null) {
-    DomRenderer.setElementStyle(
-        element, 'background-color', colorToCssString(newBackground.color));
+String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
+  assert(fontFeatures.isNotEmpty);
+
+  // For more details, see:
+  // * https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings
+  final StringBuffer sb = StringBuffer();
+  final int len = fontFeatures.length;
+  for (int i = 0; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    final ui.FontFeature fontFeature = fontFeatures[i];
+    sb.write('"${fontFeature.feature}" ${fontFeature.value}');
   }
+  return sb.toString();
+}
+
+String _fontVariationListToCss(List<ui.FontVariation> fontVariations) {
+  assert(fontVariations.isNotEmpty);
+
+  final StringBuffer sb = StringBuffer();
+  final int len = fontVariations.length;
+  for (int i = 0; i < len; i++) {
+    if (i != 0) {
+      sb.write(',');
+    }
+    final ui.FontVariation fontVariation = fontVariations[i];
+    sb.write('"${fontVariation.axis}" ${fontVariation.value}');
+  }
+  return sb.toString();
 }
 
 /// Converts text decoration style to CSS text-decoration-style value.
@@ -1878,37 +1123,6 @@ String? _decorationStyleToCssString(ui.TextDecorationStyle decorationStyle) {
   }
 }
 
-/// Converts [textDirection] to its corresponding CSS value.
-///
-/// This value is used for the "direction" CSS property, e.g.:
-///
-/// ```css
-/// direction: rtl;
-/// ```
-String? _textDirectionToCss(ui.TextDirection? textDirection) {
-  if (textDirection == null) {
-    return null;
-  }
-  return textDirectionIndexToCss(textDirection.index);
-}
-
-String? textDirectionIndexToCss(int textDirectionIndex) {
-  switch (textDirectionIndex) {
-    case 0:
-      return 'rtl';
-    case 1:
-      return null; // ltr is the default
-  }
-
-  assert(() {
-    throw AssertionError(
-      'Failed to convert text direction $textDirectionIndex to CSS',
-    );
-  }());
-
-  return null;
-}
-
 /// Converts [align] to its corresponding CSS value.
 ///
 /// This value is used as the "text-align" CSS property, e.g.:
@@ -1916,7 +1130,8 @@ String? textDirectionIndexToCss(int textDirectionIndex) {
 /// ```css
 /// text-align: right;
 /// ```
-String textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection) {
+String textAlignToCssValue(
+    ui.TextAlign? align, ui.TextDirection textDirection) {
   switch (align) {
     case ui.TextAlign.left:
       return 'left';
@@ -1944,24 +1159,4 @@ String textAlignToCssValue(ui.TextAlign? align, ui.TextDirection textDirection) 
       // If align is not specified return default.
       return '';
   }
-}
-
-/// Determines if lists [a] and [b] are deep equivalent.
-///
-/// Returns true if the lists are both null, or if they are both non-null, have
-/// the same length, and contain the same elements in the same order. Returns
-/// false otherwise.
-bool _listEquals<T>(List<T>? a, List<T>? b) {
-  if (a == null) {
-    return b == null;
-  }
-  if (b == null || a.length != b.length) {
-    return false;
-  }
-  for (int index = 0; index < a.length; index += 1) {
-    if (a[index] != b[index]) {
-      return false;
-    }
-  }
-  return true;
 }

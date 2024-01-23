@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-import 'dart:typed_data';
 import 'dart:ui';
 
 /// A scenario to run for testing.
 abstract class Scenario {
-  /// Creates a new scenario using a specific FlutterWindow instance.
-  Scenario(this.dispatcher);
+  /// Creates a new scenario using a specific FlutterView instance.
+  Scenario(this.view);
 
-  /// The window used by this scenario. May be mocked.
-  final PlatformDispatcher dispatcher;
+  /// The FlutterView used by this scenario. May be mocked.
+  final FlutterView view;
 
   /// [true] if a screenshot is taken in the next frame.
   bool _didScheduleScreenshot = false;
@@ -27,13 +25,13 @@ abstract class Scenario {
   ///
   /// See [PlatformDispatcher.onDrawFrame] for more details.
   void onDrawFrame() {
-    Future<void>.delayed(const Duration(seconds: 1), () {
-      if (_didScheduleScreenshot) {
-        dispatcher.sendPlatformMessage('take_screenshot', null, null);
-      } else {
-        _didScheduleScreenshot = true;
-        dispatcher.scheduleFrame();
-      }
+    if (_didScheduleScreenshot) {
+      view.platformDispatcher.sendPlatformMessage('take_screenshot', null, null);
+      return;
+    }
+    Future<void>.delayed(const Duration(seconds: 2), () {
+      _didScheduleScreenshot = true;
+      view.platformDispatcher.scheduleFrame();
     });
   }
 
@@ -52,14 +50,4 @@ abstract class Scenario {
   ///
   /// See [PlatformDispatcher.onPointerDataPacket].
   void onPointerDataPacket(PointerDataPacket packet) {}
-
-  /// Called by the program when an engine side platform channel message is
-  /// received.
-  ///
-  /// See [PlatformDispatcher.onPlatformMessage].
-  void onPlatformMessage(
-    String name,
-    ByteData data,
-    PlatformMessageResponseCallback callback,
-  ) {}
 }

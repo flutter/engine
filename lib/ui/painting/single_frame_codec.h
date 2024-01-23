@@ -15,7 +15,7 @@ namespace flutter {
 
 class SingleFrameCodec : public Codec {
  public:
-  SingleFrameCodec(fml::RefPtr<ImageDescriptor> descriptor,
+  SingleFrameCodec(const fml::RefPtr<ImageDescriptor>& descriptor,
                    uint32_t target_width,
                    uint32_t target_height);
 
@@ -30,17 +30,14 @@ class SingleFrameCodec : public Codec {
   // |Codec|
   Dart_Handle getNextFrame(Dart_Handle args) override;
 
-  // |DartWrappable|
-  size_t GetAllocationSize() const override;
-
  private:
   enum class Status { kNew, kInProgress, kComplete };
-  Status status_;
+  Status status_ = Status::kNew;
   fml::RefPtr<ImageDescriptor> descriptor_;
   uint32_t target_width_;
   uint32_t target_height_;
   fml::RefPtr<CanvasImage> cached_image_;
-  std::vector<DartPersistentValue> pending_callbacks_;
+  std::vector<tonic::DartPersistentValue> pending_callbacks_;
 
   FML_FRIEND_MAKE_REF_COUNTED(SingleFrameCodec);
   FML_FRIEND_REF_COUNTED_THREAD_SAFE(SingleFrameCodec);

@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_EXTERNAL_VIEW_EMBEDDER_SURFACE_POOL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_EXTERNAL_VIEW_EMBEDDER_SURFACE_POOL_H_
 
+#include <mutex>
+
 #include "flutter/flow/surface.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
@@ -41,7 +43,6 @@ struct OverlayLayer {
   intptr_t gr_context_key;
 };
 
-// This class isn't thread safe.
 class SurfacePool {
  public:
   SurfacePool();
@@ -54,8 +55,8 @@ class SurfacePool {
   std::shared_ptr<OverlayLayer> GetLayer(
       GrDirectContext* gr_context,
       const AndroidContext& android_context,
-      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-      std::shared_ptr<AndroidSurfaceFactory> surface_factory);
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      const std::shared_ptr<AndroidSurfaceFactory>& surface_factory);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -65,12 +66,15 @@ class SurfacePool {
   void RecycleLayers();
 
   // Destroys all the layers in the pool.
-  void DestroyLayers(std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  void DestroyLayers(const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
 
   // Sets the frame size used by the layers in the pool.
   // If the current layers in the pool have a different frame size,
   // then they are deallocated as soon as |GetLayer| is called.
   void SetFrameSize(SkISize frame_size);
+
+  // Returns true if the current pool has layers in use.
+  bool HasLayers();
 
  private:
   // The index of the entry in the layers_ vector that determines the beginning
@@ -95,6 +99,12 @@ class SurfacePool {
 
   // The frame size to be used by future layers.
   SkISize requested_frame_size_;
+
+  // Used to guard public methods.
+  std::mutex mutex_;
+
+  void DestroyLayersLocked(
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade);
 };
 
 }  // namespace flutter

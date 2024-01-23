@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_
-#define FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_
+#ifndef FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_H_
+#define FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_H_
 
 #include <string>
 #include <vector>
@@ -14,33 +14,32 @@
 
 namespace flutter {
 
-class PlatformMessage : public fml::RefCountedThreadSafe<PlatformMessage> {
-  FML_FRIEND_REF_COUNTED_THREAD_SAFE(PlatformMessage);
-  FML_FRIEND_MAKE_REF_COUNTED(PlatformMessage);
-
+class PlatformMessage {
  public:
-  const std::string& channel() const { return channel_; }
-  const std::vector<uint8_t>& data() const { return data_; }
-  bool hasData() { return hasData_; }
-
-  const fml::RefPtr<PlatformMessageResponse>& response() const {
-    return response_;
-  }
-
- private:
   PlatformMessage(std::string channel,
-                  std::vector<uint8_t> data,
+                  fml::MallocMapping data,
                   fml::RefPtr<PlatformMessageResponse> response);
   PlatformMessage(std::string channel,
                   fml::RefPtr<PlatformMessageResponse> response);
   ~PlatformMessage();
 
+  const std::string& channel() const { return channel_; }
+  const fml::MallocMapping& data() const { return data_; }
+  bool hasData() { return has_data_; }
+
+  const fml::RefPtr<PlatformMessageResponse>& response() const {
+    return response_;
+  }
+
+  fml::MallocMapping releaseData() { return std::move(data_); }
+
+ private:
   std::string channel_;
-  std::vector<uint8_t> data_;
-  bool hasData_;
+  fml::MallocMapping data_;
+  bool has_data_;
   fml::RefPtr<PlatformMessageResponse> response_;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_
+#endif  // FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_H_

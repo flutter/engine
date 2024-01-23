@@ -12,16 +12,19 @@
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <string>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/plugin_registrar.h"
-#include "flutter/shell/platform/common/cpp/incoming_message_dispatcher.h"
-#include "flutter/shell/platform/common/cpp/path_utils.h"
+#include "flutter/common/constants.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
+#include "flutter/shell/platform/common/incoming_message_dispatcher.h"
+#include "flutter/shell/platform/common/path_utils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/glfw/glfw_event_loop.h"
 #include "flutter/shell/platform/glfw/headless_event_loop.h"
 #include "flutter/shell/platform/glfw/key_event_handler.h"
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
 #include "flutter/shell/platform/glfw/platform_handler.h"
+#include "flutter/shell/platform/glfw/system_utils.h"
 #include "flutter/shell/platform/glfw/text_input_plugin.h"
 
 // GLFW_TRUE & GLFW_FALSE are introduced since libglfw-3.3,
@@ -64,6 +67,12 @@ struct FlutterDesktopWindowControllerState {
   // has been added since it was last removed).
   bool pointer_currently_added = false;
 
+  // Whether or not the pointer is down.
+  bool pointer_currently_down = false;
+
+  // The currently pressed buttons, as represented in FlutterPointerEvent.
+  int64_t buttons = 0;
+
   // The screen coordinates per inch on the primary monitor. Defaults to a sane
   // value based on pixel_ratio 1.0.
   double monitor_screen_coordinates_per_inch = kDpPerInch;
@@ -99,6 +108,10 @@ struct AOTDataDeleter {
 };
 
 using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
+/// Maintains one ref on the FlutterDesktopMessenger's internal reference count.
+using FlutterDesktopMessengerReferenceOwner =
+    std::unique_ptr<FlutterDesktopMessenger,
+                    decltype(&FlutterDesktopMessengerRelease)>;
 
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
@@ -109,7 +122,8 @@ struct FlutterDesktopEngineState {
   std::unique_ptr<flutter::EventLoop> event_loop;
 
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterDesktopMessenger> messenger;
+  FlutterDesktopMessengerReferenceOwner messenger = {
+      nullptr, [](FlutterDesktopMessengerRef ref) {}};
 
   // Message dispatch manager for messages from the Flutter engine.
   std::unique_ptr<flutter::IncomingMessageDispatcher> message_dispatcher;
@@ -142,9 +156,74 @@ struct FlutterDesktopPluginRegistrar {
 
 // State associated with the messenger used to communicate with the engine.
 struct FlutterDesktopMessenger {
+  FlutterDesktopMessenger() = default;
+
+  /// Increments the reference count.
+  ///
+  /// Thread-safe.
+  void AddRef() { ref_count_.fetch_add(1); }
+
+  /// Decrements the reference count and deletes the object if the count has
+  /// gone to zero.
+  ///
+  /// Thread-safe.
+  void Release() {
+    int32_t old_count = ref_count_.fetch_sub(1);
+    if (old_count <= 1) {
+      delete this;
+    }
+  }
+
+  /// Getter for the engine field.
+  FlutterDesktopEngineState* GetEngine() const { return engine_; }
+
+  /// Setter for the engine field.
+  /// Thread-safe.
+  void SetEngine(FlutterDesktopEngineState* engine) {
+    std::scoped_lock lock(mutex_);
+    engine_ = engine;
+  }
+
+  /// Returns the mutex associated with the |FlutterDesktopMessenger|.
+  ///
+  /// This mutex is used to synchronize reading or writing state inside the
+  /// |FlutterDesktopMessenger| (ie |engine_|).
+  std::mutex& GetMutex() { return mutex_; }
+
+  FlutterDesktopMessenger(const FlutterDesktopMessenger& value) = delete;
+  FlutterDesktopMessenger& operator=(const FlutterDesktopMessenger& value) =
+      delete;
+
+ private:
   // The engine that backs this messenger.
-  FlutterDesktopEngineState* engine;
+  FlutterDesktopEngineState* engine_;
+  std::atomic<int32_t> ref_count_ = 0;
+  std::mutex mutex_;
 };
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(
+    FlutterDesktopMessengerRef messenger) {
+  messenger->AddRef();
+  return messenger;
+}
+
+void FlutterDesktopMessengerRelease(FlutterDesktopMessengerRef messenger) {
+  messenger->Release();
+}
+
+bool FlutterDesktopMessengerIsAvailable(FlutterDesktopMessengerRef messenger) {
+  return messenger->GetEngine() != nullptr;
+}
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
+    FlutterDesktopMessengerRef messenger) {
+  messenger->GetMutex().lock();
+  return messenger;
+}
+
+void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
+  messenger->GetMutex().unlock();
+}
 
 // Retrieves state bag for the window in question from the GLFWWindow.
 static FlutterDesktopWindowControllerState* GetWindowController(
@@ -160,6 +239,8 @@ static UniqueGLFWwindowPtr CreateShareWindowForWindow(GLFWwindow* window) {
   glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 #if defined(__linux__)
   glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+  glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
 #endif
   GLFWwindow* share_window = glfwCreateWindow(1, 1, "", NULL, window);
   glfwDefaultWindowHints();
@@ -300,6 +381,10 @@ static void SendPointerEventWithData(GLFWwindow* window,
       std::chrono::duration_cast<std::chrono::microseconds>(
           std::chrono::high_resolution_clock::now().time_since_epoch())
           .count();
+  event.device_kind = FlutterPointerDeviceKind::kFlutterPointerDeviceKindMouse;
+  event.buttons =
+      (event.phase == FlutterPointerPhase::kAdd) ? 0 : controller->buttons;
+
   // Convert all screen coordinates to pixel coordinates.
   double pixels_per_coordinate =
       controller->window_wrapper->pixels_per_screen_coordinate;
@@ -307,6 +392,9 @@ static void SendPointerEventWithData(GLFWwindow* window,
   event.y *= pixels_per_coordinate;
   event.scroll_delta_x *= pixels_per_coordinate;
   event.scroll_delta_y *= pixels_per_coordinate;
+  // The GLFW embedder doesn't support multiple views. We assume all pointer
+  // events come from the only view, the implicit view.
+  event.view_id = flutter::kFlutterImplicitViewId;
 
   FlutterEngineSendPointerEvent(controller->engine->flutter_engine, &event, 1);
 
@@ -314,6 +402,10 @@ static void SendPointerEventWithData(GLFWwindow* window,
     controller->pointer_currently_added = true;
   } else if (event_data.phase == FlutterPointerPhase::kRemove) {
     controller->pointer_currently_added = false;
+  } else if (event_data.phase == FlutterPointerPhase::kDown) {
+    controller->pointer_currently_down = true;
+  } else if (event_data.phase == FlutterPointerPhase::kUp) {
+    controller->pointer_currently_down = false;
   }
 }
 
@@ -324,15 +416,20 @@ static void SetEventLocationFromCursorPosition(
   glfwGetCursorPos(window, &event_data->x, &event_data->y);
 }
 
-// Set's |event_data|'s phase to either kMove or kHover depending on the current
-// primary mouse button state.
-static void SetEventPhaseFromCursorButtonState(
-    GLFWwindow* window,
-    FlutterPointerEvent* event_data) {
+// Set's |event_data|'s phase depending on the current mouse state.
+// If a kUp or kDown event is triggered while the current state is already
+// up/down, a hover/move will be called instead to avoid a crash in the Flutter
+// engine.
+static void SetEventPhaseFromCursorButtonState(GLFWwindow* window,
+                                               FlutterPointerEvent* event_data,
+                                               int64_t buttons) {
+  auto* controller = GetWindowController(window);
   event_data->phase =
-      glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS
-          ? FlutterPointerPhase::kMove
-          : FlutterPointerPhase::kHover;
+      (buttons == 0)
+          ? (controller->pointer_currently_down ? FlutterPointerPhase::kUp
+                                                : FlutterPointerPhase::kHover)
+          : (controller->pointer_currently_down ? FlutterPointerPhase::kMove
+                                                : FlutterPointerPhase::kDown);
 }
 
 // Reports the mouse entering or leaving the Flutter view.
@@ -349,7 +446,8 @@ static void GLFWCursorPositionCallback(GLFWwindow* window, double x, double y) {
   FlutterPointerEvent event = {};
   event.x = x;
   event.y = y;
-  SetEventPhaseFromCursorButtonState(window, &event);
+  auto* controller = GetWindowController(window);
+  SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   SendPointerEventWithData(window, event);
 }
 
@@ -358,15 +456,21 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
                                     int key,
                                     int action,
                                     int mods) {
-  // Flutter currently doesn't understand other buttons, so ignore anything
-  // other than left.
-  if (key != GLFW_MOUSE_BUTTON_LEFT) {
+  int64_t button;
+  if (key == GLFW_MOUSE_BUTTON_LEFT) {
+    button = FlutterPointerMouseButtons::kFlutterPointerButtonMousePrimary;
+  } else if (key == GLFW_MOUSE_BUTTON_RIGHT) {
+    button = FlutterPointerMouseButtons::kFlutterPointerButtonMouseSecondary;
+  } else {
     return;
   }
 
+  auto* controller = GetWindowController(window);
+  controller->buttons = (action == GLFW_PRESS) ? controller->buttons | button
+                                               : controller->buttons & ~button;
+
   FlutterPointerEvent event = {};
-  event.phase = (action == GLFW_PRESS) ? FlutterPointerPhase::kDown
-                                       : FlutterPointerPhase::kUp;
+  SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   SetEventLocationFromCursorPosition(window, &event);
   SendPointerEventWithData(window, event);
 
@@ -375,15 +479,16 @@ static void GLFWMouseButtonCallback(GLFWwindow* window,
   bool hover_enabled =
       GetWindowController(window)->window_wrapper->hover_tracking_enabled;
   if (!hover_enabled) {
-    glfwSetCursorPosCallback(
-        window, (action == GLFW_PRESS) ? GLFWCursorPositionCallback : nullptr);
+    glfwSetCursorPosCallback(window, (controller->buttons != 0)
+                                         ? GLFWCursorPositionCallback
+                                         : nullptr);
   }
   // Disable enter/exit events while the mouse button is down; GLFW will send
   // an exit event when the mouse button is released, and the pointer should
   // stay valid until then.
   if (hover_enabled) {
     glfwSetCursorEnterCallback(
-        window, (action == GLFW_PRESS) ? nullptr : GLFWCursorEnterCallback);
+        window, (controller->buttons != 0) ? nullptr : GLFWCursorEnterCallback);
   }
 }
 
@@ -393,10 +498,11 @@ static void GLFWScrollCallback(GLFWwindow* window,
                                double delta_y) {
   FlutterPointerEvent event = {};
   SetEventLocationFromCursorPosition(window, &event);
-  SetEventPhaseFromCursorButtonState(window, &event);
+  auto* controller = GetWindowController(window);
+  SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
-  // TODO: See if this can be queried from the OS; this value is chosen
-  // arbitrarily to get something that feels reasonable.
+  // TODO(chrome-bot): See if this can be queried from the OS; this value is
+  // chosen arbitrarily to get something that feels reasonable.
   const int kScrollOffsetMultiplier = 20;
   event.scroll_delta_x = delta_x * kScrollOffsetMultiplier;
   event.scroll_delta_y = -delta_y * kScrollOffsetMultiplier;
@@ -567,19 +673,19 @@ static void GLFWErrorCallback(int error_code, const char* description) {
 
 // Attempts to load AOT data from the given path, which must be absolute and
 // non-empty. Logs and returns nullptr on failure.
-UniqueAotDataPtr LoadAotData(std::filesystem::path aot_data_path) {
+UniqueAotDataPtr LoadAotData(const std::filesystem::path& aot_data_path) {
   if (aot_data_path.empty()) {
     std::cerr
         << "Attempted to load AOT data, but no aot_data_path was provided."
         << std::endl;
     return nullptr;
   }
+  std::string path_string = aot_data_path.string();
   if (!std::filesystem::exists(aot_data_path)) {
-    std::cerr << "Can't load AOT data from " << aot_data_path.u8string()
-              << "; no such file." << std::endl;
+    std::cerr << "Can't load AOT data from " << path_string << "; no such file."
+              << std::endl;
     return nullptr;
   }
-  std::string path_string = aot_data_path.u8string();
   FlutterEngineAOTDataSource source = {};
   source.type = kFlutterEngineAOTDataSourceTypeElfPath;
   source.elf_path = path_string.c_str();
@@ -635,10 +741,6 @@ static bool RunFlutterEngine(
           std::filesystem::path(executable_location) / aot_library_path;
     }
   }
-  std::string assets_path_string = assets_path.u8string();
-  std::string icu_path_string = icu_path.u8string();
-  std::string lib_path_string = aot_library_path.u8string();
-
   // Configure a task runner using the event loop.
   engine_state->event_loop = std::move(event_loop);
   FlutterTaskRunnerDescription platform_task_runner = {};
@@ -660,6 +762,8 @@ static bool RunFlutterEngine(
   if (engine_state->window_controller != nullptr) {
     config.open_gl.gl_proc_resolver = EngineProcResolver;
   }
+  const std::string assets_path_string = assets_path.string();
+  const std::string icu_path_string = icu_path.string();
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
   args.assets_path = assets_path_string.c_str();
@@ -670,7 +774,7 @@ static bool RunFlutterEngine(
   args.custom_task_runners = &task_runners;
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
-    engine_state->aot_data = LoadAotData(lib_path_string);
+    engine_state->aot_data = LoadAotData(aot_library_path);
     if (!engine_state->aot_data) {
       std::cerr << "Unable to start engine without AOT data." << std::endl;
       return false;
@@ -690,6 +794,26 @@ static bool RunFlutterEngine(
   return true;
 }
 
+// Passes locale information to the Flutter engine.
+static void SetUpLocales(FlutterDesktopEngineState* state) {
+  std::vector<flutter::LanguageInfo> languages =
+      flutter::GetPreferredLanguageInfo();
+  std::vector<FlutterLocale> flutter_locales =
+      flutter::ConvertToFlutterLocale(languages);
+  // Convert the locale list to the locale pointer list that must be provided.
+  std::vector<const FlutterLocale*> flutter_locale_list;
+  flutter_locale_list.reserve(flutter_locales.size());
+  std::transform(flutter_locales.begin(), flutter_locales.end(),
+                 std::back_inserter(flutter_locale_list),
+                 [](const auto& arg) -> const auto* { return &arg; });
+  FlutterEngineResult result = FlutterEngineUpdateLocales(
+      state->flutter_engine, flutter_locale_list.data(),
+      flutter_locale_list.size());
+  if (result != kSuccess) {
+    std::cerr << "Failed to set up Flutter locales." << std::endl;
+  }
+}
+
 // Populates |state|'s helper object fields that are common to normal and
 // headless mode.
 //
@@ -698,8 +822,10 @@ static bool RunFlutterEngine(
 static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
                                    GLFWwindow* window) {
   // Messaging.
-  state->messenger = std::make_unique<FlutterDesktopMessenger>();
-  state->messenger->engine = state;
+  state->messenger = FlutterDesktopMessengerReferenceOwner(
+      FlutterDesktopMessengerAddRef(new FlutterDesktopMessenger()),
+      &FlutterDesktopMessengerRelease);
+  state->messenger->SetEngine(state);
   state->message_dispatcher =
       std::make_unique<flutter::IncomingMessageDispatcher>(
           state->messenger.get());
@@ -713,6 +839,8 @@ static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
   // System channel handler.
   state->platform_handler = std::make_unique<flutter::PlatformHandler>(
       state->internal_plugin_registrar->messenger(), window);
+
+  SetUpLocales(state);
 }
 
 bool FlutterDesktopInit() {
@@ -799,6 +927,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
 }
 
 void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  controller->engine->messenger->SetEngine(nullptr);
   FlutterDesktopPluginRegistrarRef registrar =
       controller->engine->plugin_registrar.get();
   if (registrar->destruction_handler) {
@@ -998,7 +1127,8 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
   FlutterPlatformMessageResponseHandle* response_handle = nullptr;
   if (reply != nullptr && user_data != nullptr) {
     FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
-        messenger->engine->flutter_engine, reply, user_data, &response_handle);
+        messenger->GetEngine()->flutter_engine, reply, user_data,
+        &response_handle);
     if (result != kSuccess) {
       std::cout << "Failed to create response handle\n";
       return false;
@@ -1014,11 +1144,11 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
   };
 
   FlutterEngineResult message_result = FlutterEngineSendPlatformMessage(
-      messenger->engine->flutter_engine, &platform_message);
+      messenger->GetEngine()->flutter_engine, &platform_message);
 
   if (response_handle != nullptr) {
     FlutterPlatformMessageReleaseResponseHandle(
-        messenger->engine->flutter_engine, response_handle);
+        messenger->GetEngine()->flutter_engine, response_handle);
   }
 
   return message_result == kSuccess;
@@ -1037,14 +1167,42 @@ void FlutterDesktopMessengerSendResponse(
     const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
-  FlutterEngineSendPlatformMessageResponse(messenger->engine->flutter_engine,
-                                           handle, data, data_length);
+  FlutterEngineSendPlatformMessageResponse(
+      messenger->GetEngine()->flutter_engine, handle, data, data_length);
 }
 
 void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         const char* channel,
                                         FlutterDesktopMessageCallback callback,
                                         void* user_data) {
-  messenger->engine->message_dispatcher->SetMessageCallback(channel, callback,
-                                                            user_data);
+  messenger->GetEngine()->message_dispatcher->SetMessageCallback(
+      channel, callback, user_data);
+}
+
+FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(
+    FlutterDesktopPluginRegistrarRef registrar) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return nullptr;
+}
+
+int64_t FlutterDesktopTextureRegistrarRegisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    const FlutterDesktopTextureInfo* texture_info) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return -1;
+}
+
+void FlutterDesktopTextureRegistrarUnregisterExternalTexture(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id,
+    void (*callback)(void* user_data),
+    void* user_data) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+}
+
+bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
+    FlutterDesktopTextureRegistrarRef texture_registrar,
+    int64_t texture_id) {
+  std::cerr << "GLFW Texture support is not implemented yet." << std::endl;
+  return false;
 }

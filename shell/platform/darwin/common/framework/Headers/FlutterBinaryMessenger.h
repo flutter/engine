@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERBINARYMESSENGER_H_
-#define FLUTTER_FLUTTERBINARYMESSENGER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERBINARYMESSENGER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERBINARYMESSENGER_H_
 
 #import <Foundation/Foundation.h>
 
@@ -31,6 +31,9 @@ typedef void (^FlutterBinaryMessageHandler)(NSData* _Nullable message, FlutterBi
 
 typedef int64_t FlutterBinaryMessengerConnection;
 
+@protocol FlutterTaskQueue <NSObject>
+@end
+
 /**
  * A facility for communicating with the Flutter side using asynchronous message
  * passing with binary messages.
@@ -42,8 +45,18 @@ typedef int64_t FlutterBinaryMessengerConnection;
  * method calls.
  * - `FlutterEventChannel`, which supports commuication using event streams.
  */
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
 @protocol FlutterBinaryMessenger <NSObject>
+/// TODO(gaaclarke): Remove optional when macos supports Background Platform Channels.
+@optional
+- (NSObject<FlutterTaskQueue>*)makeBackgroundTaskQueue;
+
+- (FlutterBinaryMessengerConnection)
+    setMessageHandlerOnChannel:(NSString*)channel
+          binaryMessageHandler:(FlutterBinaryMessageHandler _Nullable)handler
+                     taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue;
+
+@required
 /**
  * Sends a binary message to the Flutter side on the specified channel, expecting
  * no reply.
@@ -87,7 +100,7 @@ FLUTTER_EXPORT
  *
  * @param connection The result from `setMessageHandlerOnChannel:binaryMessageHandler:`.
  */
-- (void)cleanupConnection:(FlutterBinaryMessengerConnection)connection;
+- (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection;
 @end
 NS_ASSUME_NONNULL_END
-#endif  // FLUTTER_FLUTTERBINARYMESSENGER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERBINARYMESSENGER_H_

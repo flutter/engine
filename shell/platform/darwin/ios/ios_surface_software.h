@@ -12,13 +12,16 @@
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
+#include "third_party/skia/include/core/SkSurface.h"
+
 @class CALayer;
 
 namespace flutter {
 
 class IOSSurfaceSoftware final : public IOSSurface, public GPUSurfaceSoftwareDelegate {
  public:
-  IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer, std::shared_ptr<IOSContext> context);
+  IOSSurfaceSoftware(const fml::scoped_nsobject<CALayer>& layer,
+                     std::shared_ptr<IOSContext> context);
 
   ~IOSSurfaceSoftware() override;
 

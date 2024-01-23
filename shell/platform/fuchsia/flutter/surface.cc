@@ -30,11 +30,13 @@ bool Surface::IsValid() {
 // |flutter::Surface|
 std::unique_ptr<flutter::SurfaceFrame> Surface::AcquireFrame(
     const SkISize& size) {
+  flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
+  framebuffer_info.supports_readback = true;
   return std::make_unique<flutter::SurfaceFrame>(
-      nullptr, true,
-      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) {
-        return true;
-      });
+      nullptr, std::move(framebuffer_info),
+      [](const flutter::SurfaceFrame& surface_frame,
+         flutter::DlCanvas* canvas) { return true; },
+      size);
 }
 
 // |flutter::Surface|

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_
-#define SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_
 
 #include <jni.h>
 
@@ -25,9 +25,9 @@ class FlutterMain {
 
  private:
   const flutter::Settings settings_;
-  DartServiceIsolate::CallbackHandle observatory_uri_callback_;
+  DartServiceIsolate::CallbackHandle vm_service_uri_callback_ = 0;
 
-  FlutterMain(flutter::Settings settings);
+  explicit FlutterMain(const flutter::Settings& settings);
 
   static void Init(JNIEnv* env,
                    jclass clazz,
@@ -38,11 +38,11 @@ class FlutterMain {
                    jstring engineCachesPath,
                    jlong initTimeMillis);
 
-  void SetupObservatoryUriCallback(JNIEnv* env);
+  void SetupDartVMServiceUriCallback(JNIEnv* env);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterMain);
 };
 
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_FLUTTER_MAIN_H_

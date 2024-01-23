@@ -1,16 +1,26 @@
-CURRENT_DIRECTORY="$(pwd)/$(dirname "$0")"
+TESTING_DIRECTORY=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd -P)
+ENGINE_BUILDROOT=$(cd $TESTING_DIRECTORY/../..; pwd -P)
 
-TSAN_SUPPRESSIONS_FILE="${CURRENT_DIRECTORY}/tsan_suppressions.txt"
+case "$(uname -s)" in
+  Linux)
+    BUILDTOOLS_DIRECTORY="${ENGINE_BUILDROOT}/buildtools/linux-x64"
+    ;;
+  Darwin)
+    BUILDTOOLS_DIRECTORY="${ENGINE_BUILDROOT}/buildtools/mac-x64"
+    ;;
+esac
+
+TSAN_SUPPRESSIONS_FILE="${TESTING_DIRECTORY}/tsan_suppressions.txt"
 export TSAN_OPTIONS="suppressions=${TSAN_SUPPRESSIONS_FILE}"
 echo "Using Thread Sanitizer suppressions in ${TSAN_SUPPRESSIONS_FILE}"
 
-LSAN_SUPPRESSIONS_FILE="${CURRENT_DIRECTORY}/lsan_suppressions.txt"
+LSAN_SUPPRESSIONS_FILE="${TESTING_DIRECTORY}/lsan_suppressions.txt"
 export LSAN_OPTIONS="suppressions=${LSAN_SUPPRESSIONS_FILE}"
 echo "Using Leak Sanitizer suppressions in ${LSAN_SUPPRESSIONS_FILE}"
 
-UBSAN_SUPPRESSIONS_FILE="${CURRENT_DIRECTORY}/ubsan_suppressions.txt"
+UBSAN_SUPPRESSIONS_FILE="${TESTING_DIRECTORY}/ubsan_suppressions.txt"
 export UBSAN_OPTIONS="suppressions=${UBSAN_SUPPRESSIONS_FILE}"
 echo "Using Undefined Behavior suppressions in ${UBSAN_SUPPRESSIONS_FILE}"
 
-
-export ASAN_OPTIONS="detect_leaks=1"
+export ASAN_OPTIONS="symbolize=1:detect_leaks=1:intercept_tls_get_addr=0"
+export ASAN_SYMBOLIZER_PATH="${BUILDTOOLS_DIRECTORY}/clang/bin/llvm-symbolizer"

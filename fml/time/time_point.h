@@ -6,6 +6,7 @@
 #define FLUTTER_FML_TIME_TIME_POINT_H_
 
 #include <cstdint>
+#include <functional>
 #include <iosfwd>
 
 #include "flutter/fml/time/time_delta.h"
@@ -20,10 +21,16 @@ namespace fml {
 // reboots.
 class TimePoint {
  public:
+  using ClockSource = TimePoint (*)();
+
   // Default TimePoint with internal value 0 (epoch).
   constexpr TimePoint() = default;
 
+  static void SetClockSource(ClockSource source);
+
   static TimePoint Now();
+
+  static TimePoint CurrentWallTime();
 
   static constexpr TimePoint Min() {
     return TimePoint(std::numeric_limits<int64_t>::min());
@@ -35,6 +42,11 @@ class TimePoint {
 
   static constexpr TimePoint FromEpochDelta(TimeDelta ticks) {
     return TimePoint(ticks.ToNanoseconds());
+  }
+
+  // Expects ticks in nanos.
+  static constexpr TimePoint FromTicks(int64_t ticks) {
+    return TimePoint(ticks);
   }
 
   TimeDelta ToEpochDelta() const { return TimeDelta::FromNanoseconds(ticks_); }

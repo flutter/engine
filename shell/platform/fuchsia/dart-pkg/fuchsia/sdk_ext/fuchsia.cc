@@ -93,23 +93,22 @@ void SetReturnCode(Dart_NativeArguments arguments) {
   int64_t return_code;
   Dart_Handle status =
       Dart_GetNativeIntegerArgument(arguments, 0, &return_code);
-  if (!tonic::LogIfError(status)) {
+  if (!tonic::CheckAndHandleError(status)) {
     tonic::DartState::Current()->SetReturnCode(return_code);
   }
 }
 
 }  // namespace
 
-void Initialize(fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
-                zx::channel directory_request,
+void Initialize(zx::channel directory_request,
                 std::optional<zx::eventpair> view_ref) {
   zircon::dart::Initialize();
 
   Dart_Handle library = Dart_LookupLibrary(ToDart("dart:fuchsia"));
-  FML_CHECK(!tonic::LogIfError(library));
+  FML_CHECK(!tonic::CheckAndHandleError(library));
   Dart_Handle result = Dart_SetNativeResolver(
       library, fuchsia::dart::NativeLookup, fuchsia::dart::NativeSymbol);
-  FML_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::CheckAndHandleError(result));
 
   auto dart_state = tonic::DartState::Current();
   std::unique_ptr<tonic::DartClassProvider> fuchsia_class_provider(
@@ -117,23 +116,18 @@ void Initialize(fidl::InterfaceHandle<fuchsia::sys::Environment> environment,
   dart_state->class_library().add_provider("fuchsia",
                                            std::move(fuchsia_class_provider));
 
-  result = Dart_SetField(
-      library, ToDart("_environment"),
-      ToDart(zircon::dart::Handle::Create(environment.TakeChannel())));
-  FML_CHECK(!tonic::LogIfError(result));
-
   if (directory_request) {
     result = Dart_SetField(
         library, ToDart("_outgoingServices"),
         ToDart(zircon::dart::Handle::Create(std::move(directory_request))));
-    FML_CHECK(!tonic::LogIfError(result));
+    FML_CHECK(!tonic::CheckAndHandleError(result));
   }
 
   if (view_ref) {
     result = Dart_SetField(
         library, ToDart("_viewRef"),
         ToDart(zircon::dart::Handle::Create((*view_ref).release())));
-    FML_CHECK(!tonic::LogIfError(result));
+    FML_CHECK(!tonic::CheckAndHandleError(result));
   }
 }
 

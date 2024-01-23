@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:isolate';
 import 'dart:ui';
 
-void main() {
-}
+import 'split_lib_test.dart' deferred as splitlib;
+
+void main() {}
 
 @pragma('vm:entry-point')
 void sayHi() {
@@ -25,18 +27,33 @@ void canRegisterNativeCallback() async {
   print('Called native method from canRegisterNativeCallback');
 }
 
-void notifyNative() native 'NotifyNative';
+Future<void>? splitLoadFuture = null;
+
+@pragma('vm:entry-point')
+void canCallDeferredLibrary() {
+  print('In function canCallDeferredLibrary');
+  splitLoadFuture = splitlib.loadLibrary()
+    .then((_) {
+        print('Deferred load complete');
+        notifySuccess(splitlib.splitAdd(10, 23) == 33);
+      })
+    .catchError((_) {
+        print('Deferred load error');
+        notifySuccess(false);
+      });
+  notifyNative();
+}
+
+@pragma('vm:external-name', 'NotifyNative')
+external void notifyNative();
 
 @pragma('vm:entry-point')
 void testIsolateShutdown() {  }
 
-@pragma('vm:entry-point')
-void testCanSaveCompilationTrace() {
-  notifyResult(saveCompilationTrace().isNotEmpty);
-}
-
-void notifyResult(bool success) native 'NotifyNative';
-void passMessage(String message) native 'PassMessage';
+@pragma('vm:external-name', 'NotifyNative')
+external void notifyResult(bool success);
+@pragma('vm:external-name', 'PassMessage')
+external void passMessage(String message);
 
 void secondaryIsolateMain(String message) {
   print('Secondary isolate got message: ' + message);
@@ -50,8 +67,59 @@ void testCanLaunchSecondaryIsolate() {
   Isolate.spawn(secondaryIsolateMain, 'Hello from root isolate.', onExit: onExit.sendPort);
 }
 
+
 @pragma('vm:entry-point')
-void testCanRecieveArguments(List<String> args) {
+void testIsolateStartupFailure() async {
+  Future mainTest(dynamic _) async {
+    Future testSuccessfullIsolateLaunch() async {
+      final onMessage = ReceivePort();
+      final onExit = ReceivePort();
+
+      final messages = StreamIterator<dynamic>(onMessage);
+      final exits = StreamIterator<dynamic>(onExit);
+
+      await Isolate.spawn((SendPort port) => port.send('good'),
+          onMessage.sendPort, onExit: onExit.sendPort);
+      if (!await messages.moveNext()) {
+        throw 'Failed to receive message';
+      }
+      if (messages.current != 'good') {
+        throw 'Failed to receive correct message';
+      }
+      if (!await exits.moveNext()) {
+        throw 'Failed to receive onExit';
+      }
+      messages.cancel();
+      exits.cancel();
+    }
+
+    Future testUnsuccessfullIsolateLaunch() async {
+      IsolateSpawnException? error;
+      try {
+        await Isolate.spawn((_) {}, null);
+      } on IsolateSpawnException catch (e) {
+        error = e;
+      }
+      if (error == null) {
+        throw 'Expected isolate spawn to fail.';
+      }
+    }
+
+    await testSuccessfullIsolateLaunch();
+    makeNextIsolateSpawnFail();
+    await testUnsuccessfullIsolateLaunch();
+    notifyNative();
+  }
+
+  // The root isolate will not run an eventloop, so we have to run the actual
+  // test in an isolate.
+  Isolate.spawn(mainTest, null);
+}
+@pragma('vm:external-name', 'MakeNextIsolateSpawnFail')
+external void makeNextIsolateSpawnFail();
+
+@pragma('vm:entry-point')
+void testCanReceiveArguments(List<String> args) {
   notifyResult(args.length == 1 && args[0] == 'arg1');
 }
 
@@ -60,7 +128,8 @@ void trampoline() {
   notifyNative();
 }
 
-void notifySuccess(bool success) native 'NotifySuccess';
+@pragma('vm:external-name', 'NotifySuccess')
+external void notifySuccess(bool success);
 
 @pragma('vm:entry-point')
 void testCanConvertEmptyList(List<int> args){
@@ -92,4 +161,30 @@ void testCanConvertListOfInts(List<int> args){
                 args[1] == 2 &&
                 args[2] == 3 &&
                 args[3] == 4);
+}
+
+bool didCallRegistrantBeforeEntrypoint = false;
+
+// Test the Dart plugin registrant.
+@pragma('vm:entry-point')
+class _PluginRegistrant {
+
+  @pragma('vm:entry-point')
+  static void register() {
+    if (didCallRegistrantBeforeEntrypoint) {
+      throw '_registerPlugins is being called twice';
+    }
+    didCallRegistrantBeforeEntrypoint = true;
+  }
+
+}
+
+
+@pragma('vm:entry-point')
+void mainForPluginRegistrantTest() {
+  if (didCallRegistrantBeforeEntrypoint) {
+    passMessage('_PluginRegistrant.register() was called');
+  } else {
+    passMessage('_PluginRegistrant.register() was not called');
+  }
 }

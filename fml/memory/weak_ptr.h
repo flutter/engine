@@ -49,22 +49,21 @@ class WeakPtr {
   WeakPtr() : ptr_(nullptr) {}
 
   // Copy constructor.
-  explicit WeakPtr(const WeakPtr<T>& r) = default;
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  WeakPtr(const WeakPtr<T>& r) = default;
 
   template <typename U>
-  WeakPtr(const WeakPtr<U>& r)
+  WeakPtr(const WeakPtr<U>& r)  // NOLINT(google-explicit-constructor)
       : ptr_(static_cast<T*>(r.ptr_)), flag_(r.flag_), checker_(r.checker_) {}
 
   // Move constructor.
   WeakPtr(WeakPtr<T>&& r) = default;
 
   template <typename U>
-  WeakPtr(WeakPtr<U>&& r)
+  WeakPtr(WeakPtr<U>&& r)  // NOLINT(google-explicit-constructor)
       : ptr_(static_cast<T*>(r.ptr_)),
         flag_(std::move(r.flag_)),
         checker_(r.checker_) {}
-
-  virtual ~WeakPtr() = default;
 
   // The following methods are thread-friendly, in the sense that they may be
   // called subject to additional synchronization.
@@ -90,18 +89,6 @@ class WeakPtr {
     return *this ? ptr_ : nullptr;
   }
 
-  // TODO(gw280): Remove all remaining usages of getUnsafe().
-  // No new usages of getUnsafe() are allowed.
-  //
-  // https://github.com/flutter/flutter/issues/42949
-  T* getUnsafe() const {
-    // This is an unsafe method to get access to the raw pointer.
-    // We still check the flag_ to determine if the pointer is valid
-    // but callees should note that this WeakPtr could have been
-    // invalidated on another thread.
-    return flag_ && flag_->is_valid() ? ptr_ : nullptr;
-  }
-
   T& operator*() const {
     CheckThreadSafety();
     FML_DCHECK(*this);
@@ -118,7 +105,7 @@ class WeakPtr {
   explicit WeakPtr(T* ptr, fml::RefPtr<fml::internal::WeakPtrFlag>&& flag)
       : ptr_(ptr), flag_(std::move(flag)) {}
 
-  virtual void CheckThreadSafety() const {
+  void CheckThreadSafety() const {
     FML_DCHECK_CREATION_THREAD_IS_CURRENT(checker_.checker);
   }
 
@@ -130,7 +117,7 @@ class WeakPtr {
 
   explicit WeakPtr(T* ptr,
                    fml::RefPtr<fml::internal::WeakPtrFlag>&& flag,
-                   DebugThreadChecker checker)
+                   const DebugThreadChecker& checker)
       : ptr_(ptr), flag_(std::move(flag)), checker_(checker) {}
   T* ptr_;
   fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
@@ -148,21 +135,25 @@ class TaskRunnerAffineWeakPtrFactory;
 //
 // It is still not in general thread safe as |WeakPtr|.
 template <typename T>
-class TaskRunnerAffineWeakPtr : public WeakPtr<T> {
+class TaskRunnerAffineWeakPtr {
  public:
-  TaskRunnerAffineWeakPtr() : WeakPtr<T>() {}
+  TaskRunnerAffineWeakPtr() : ptr_(nullptr) {}
 
   TaskRunnerAffineWeakPtr(const TaskRunnerAffineWeakPtr<T>& r) = default;
 
   template <typename U>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   TaskRunnerAffineWeakPtr(const TaskRunnerAffineWeakPtr<U>& r)
-      : WeakPtr<T>(r), checker_(r.checker_) {}
+      : ptr_(static_cast<T*>(r.ptr_)), flag_(r.flag_), checker_(r.checker_) {}
 
   TaskRunnerAffineWeakPtr(TaskRunnerAffineWeakPtr<T>&& r) = default;
 
   template <typename U>
+  // NOLINTNEXTLINE(google-explicit-constructor)
   TaskRunnerAffineWeakPtr(TaskRunnerAffineWeakPtr<U>&& r)
-      : WeakPtr<T>(r), checker_(r.checker_) {}
+      : ptr_(static_cast<T*>(r.ptr_)),
+        flag_(std::move(r.flag_)),
+        checker_(r.checker_) {}
 
   ~TaskRunnerAffineWeakPtr() = default;
 
@@ -172,8 +163,35 @@ class TaskRunnerAffineWeakPtr : public WeakPtr<T> {
   TaskRunnerAffineWeakPtr<T>& operator=(TaskRunnerAffineWeakPtr<T>&& r) =
       default;
 
+  void reset() { flag_ = nullptr; }
+
+  // The following methods should only be called on the same thread as the
+  // "originating" |TaskRunnerAffineWeakPtrFactory|.
+
+  explicit operator bool() const {
+    CheckThreadSafety();
+    return flag_ && flag_->is_valid();
+  }
+
+  T* get() const {
+    CheckThreadSafety();
+    return *this ? ptr_ : nullptr;
+  }
+
+  T& operator*() const {
+    CheckThreadSafety();
+    FML_DCHECK(*this);
+    return *get();
+  }
+
+  T* operator->() const {
+    CheckThreadSafety();
+    FML_DCHECK(*this);
+    return get();
+  }
+
  protected:
-  void CheckThreadSafety() const override {
+  void CheckThreadSafety() const {
     FML_DCHECK_TASK_RUNNER_IS_CURRENT(checker_.checker);
   }
 
@@ -185,9 +203,11 @@ class TaskRunnerAffineWeakPtr : public WeakPtr<T> {
   explicit TaskRunnerAffineWeakPtr(
       T* ptr,
       fml::RefPtr<fml::internal::WeakPtrFlag>&& flag,
-      DebugTaskRunnerChecker checker)
-      : WeakPtr<T>(ptr, std::move(flag)), checker_(checker) {}
+      const DebugTaskRunnerChecker& checker)
+      : ptr_(ptr), flag_(std::move(flag)), checker_(checker) {}
 
+  T* ptr_;
+  fml::RefPtr<fml::internal::WeakPtrFlag> flag_;
   DebugTaskRunnerChecker checker_;
 };
 
@@ -246,8 +266,8 @@ class WeakPtrFactory {
     flag_->Invalidate();
   }
 
-  // Gets a new weak pointer, which will be valid until either
-  // |InvalidateWeakPtrs()| is called or this object is destroyed.
+  // Gets a new weak pointer, which will be valid until this object is
+  // destroyed.
   WeakPtr<T> GetWeakPtr() const {
     return WeakPtr<T>(ptr_, flag_.Clone(), checker_);
   }
@@ -282,8 +302,8 @@ class TaskRunnerAffineWeakPtrFactory {
     flag_->Invalidate();
   }
 
-  // Gets a new weak pointer, which will be valid until either
-  // |InvalidateWeakPtrs()| is called or this object is destroyed.
+  // Gets a new weak pointer, which will be valid until this object is
+  // destroyed.
   TaskRunnerAffineWeakPtr<T> GetWeakPtr() const {
     return TaskRunnerAffineWeakPtr<T>(ptr_, flag_.Clone(), checker_);
   }

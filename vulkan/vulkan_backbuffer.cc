@@ -6,16 +6,16 @@
 
 #include <limits>
 
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
 #include "vulkan/vulkan.h"
-#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
 VulkanBackbuffer::VulkanBackbuffer(const VulkanProcTable& p_vk,
                                    const VulkanHandle<VkDevice>& device,
                                    const VulkanHandle<VkCommandPool>& pool)
-    : vk(p_vk),
+    : vk_(p_vk),
       device_(device),
       usage_command_buffer_(p_vk, device, pool),
       render_command_buffer_(p_vk, device, pool),
@@ -54,18 +54,18 @@ bool VulkanBackbuffer::CreateSemaphores() {
   };
 
   auto semaphore_collect = [this](VkSemaphore semaphore) {
-    vk.DestroySemaphore(device_, semaphore, nullptr);
+    vk_.DestroySemaphore(device_, semaphore, nullptr);
   };
 
   for (size_t i = 0; i < semaphores_.size(); i++) {
     VkSemaphore semaphore = VK_NULL_HANDLE;
 
-    if (VK_CALL_LOG_ERROR(vk.CreateSemaphore(device_, &create_info, nullptr,
-                                             &semaphore)) != VK_SUCCESS) {
+    if (VK_CALL_LOG_ERROR(vk_.CreateSemaphore(device_, &create_info, nullptr,
+                                              &semaphore)) != VK_SUCCESS) {
       return false;
     }
 
-    semaphores_[i] = {semaphore, semaphore_collect};
+    semaphores_[i] = VulkanHandle<VkSemaphore>{semaphore, semaphore_collect};
   }
 
   return true;
@@ -79,43 +79,43 @@ bool VulkanBackbuffer::CreateFences() {
   };
 
   auto fence_collect = [this](VkFence fence) {
-    vk.DestroyFence(device_, fence, nullptr);
+    vk_.DestroyFence(device_, fence, nullptr);
   };
 
   for (size_t i = 0; i < use_fences_.size(); i++) {
     VkFence fence = VK_NULL_HANDLE;
 
-    if (VK_CALL_LOG_ERROR(vk.CreateFence(device_, &create_info, nullptr,
-                                         &fence)) != VK_SUCCESS) {
+    if (VK_CALL_LOG_ERROR(vk_.CreateFence(device_, &create_info, nullptr,
+                                          &fence)) != VK_SUCCESS) {
       return false;
     }
 
-    use_fences_[i] = {fence, fence_collect};
+    use_fences_[i] = VulkanHandle<VkFence>{fence, fence_collect};
   }
 
   return true;
 }
 
 bool VulkanBackbuffer::WaitFences() {
-  VkFence fences[use_fences_.size()];
+  VkFence fences[std::tuple_size_v<decltype(use_fences_)>];
 
   for (size_t i = 0; i < use_fences_.size(); i++) {
     fences[i] = use_fences_[i];
   }
 
-  return VK_CALL_LOG_ERROR(vk.WaitForFences(
+  return VK_CALL_LOG_ERROR(vk_.WaitForFences(
              device_, static_cast<uint32_t>(use_fences_.size()), fences, true,
              std::numeric_limits<uint64_t>::max())) == VK_SUCCESS;
 }
 
 bool VulkanBackbuffer::ResetFences() {
-  VkFence fences[use_fences_.size()];
+  VkFence fences[std::tuple_size_v<decltype(use_fences_)>];
 
   for (size_t i = 0; i < use_fences_.size(); i++) {
     fences[i] = use_fences_[i];
   }
 
-  return VK_CALL_LOG_ERROR(vk.ResetFences(
+  return VK_CALL_LOG_ERROR(vk_.ResetFences(
              device_, static_cast<uint32_t>(use_fences_.size()), fences)) ==
          VK_SUCCESS;
 }

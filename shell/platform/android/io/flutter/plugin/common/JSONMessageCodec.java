@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.common;
 
+import androidx.annotation.Nullable;
 import java.nio.ByteBuffer;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,7 +14,7 @@ import org.json.JSONTokener;
  * A {@link MessageCodec} using UTF-8 encoded JSON messages.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/JSONMessageCodec-class.html">JSONMessageCodec</a>
+ * href="https://api.flutter.dev/flutter/services/JSONMessageCodec-class.html">JSONMessageCodec</a>
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Supports the same Java values as {@link JSONObject#wrap(Object)}.
@@ -28,7 +29,8 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
   private JSONMessageCodec() {}
 
   @Override
-  public ByteBuffer encodeMessage(Object message) {
+  @Nullable
+  public ByteBuffer encodeMessage(@Nullable Object message) {
     if (message == null) {
       return null;
     }
@@ -41,7 +43,8 @@ public final class JSONMessageCodec implements MessageCodec<Object> {
   }
 
   @Override
-  public Object decodeMessage(ByteBuffer message) {
+  @Nullable
+  public Object decodeMessage(@Nullable ByteBuffer message) {
     if (message == null) {
       return null;
     }

@@ -1,0 +1,444 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "impeller/renderer/render_target.h"
+
+#include <sstream>
+
+#include "impeller/base/strings.h"
+#include "impeller/base/validation.h"
+#include "impeller/core/allocator.h"
+#include "impeller/core/formats.h"
+#include "impeller/core/texture.h"
+#include "impeller/renderer/context.h"
+
+namespace impeller {
+
+RenderTargetAllocator::RenderTargetAllocator(
+    std::shared_ptr<Allocator> allocator)
+    : allocator_(std::move(allocator)) {}
+
+void RenderTargetAllocator::Start() {}
+
+void RenderTargetAllocator::End() {}
+
+std::shared_ptr<Texture> RenderTargetAllocator::CreateTexture(
+    const TextureDescriptor& desc) {
+  return allocator_->CreateTexture(desc);
+}
+
+RenderTarget::RenderTarget() = default;
+
+RenderTarget::~RenderTarget() = default;
+
+bool RenderTarget::IsValid() const {
+  // Validate that there is a color attachment at zero index.
+  if (!HasColorAttachment(0u)) {
+    VALIDATION_LOG
+        << "Render target does not have color attachment at index 0.";
+    return false;
+  }
+
+  // Validate that all attachments are of the same size.
+  {
+    std::optional<ISize> size;
+    bool sizes_are_same = true;
+    auto iterator = [&](const Attachment& attachment) -> bool {
+      if (!size.has_value()) {
+        size = attachment.texture->GetSize();
+      }
+      if (size != attachment.texture->GetSize()) {
+        sizes_are_same = false;
+        return false;
+      }
+      return true;
+    };
+    IterateAllAttachments(iterator);
+    if (!sizes_are_same) {
+      VALIDATION_LOG
+          << "Sizes of all render target attachments are not the same.";
+      return false;
+    }
+  }
+
+  // Validate that all attachments are of the same type and sample counts.
+  {
+    std::optional<TextureType> texture_type;
+    std::optional<SampleCount> sample_count;
+    bool passes_type_validation = true;
+    auto iterator = [&](const Attachment& attachment) -> bool {
+      if (!texture_type.has_value() || !sample_count.has_value()) {
+        texture_type = attachment.texture->GetTextureDescriptor().type;
+        sample_count = attachment.texture->GetTextureDescriptor().sample_count;
+      }
+
+      if (texture_type != attachment.texture->GetTextureDescriptor().type) {
+        passes_type_validation = false;
+        VALIDATION_LOG << "Render target has incompatible texture types: "
+                       << TextureTypeToString(texture_type.value()) << " != "
+                       << TextureTypeToString(
+                              attachment.texture->GetTextureDescriptor().type)
+                       << " on target " << ToString();
+        return false;
+      }
+
+      if (sample_count !=
+          attachment.texture->GetTextureDescriptor().sample_count) {
+        passes_type_validation = false;
+        VALIDATION_LOG << "Render target (" << ToString()
+                       << ") has incompatible sample counts.";
+
+        return false;
+      }
+
+      return true;
+    };
+    IterateAllAttachments(iterator);
+    if (!passes_type_validation) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void RenderTarget::IterateAllAttachments(
+    const std::function<bool(const Attachment& attachment)>& iterator) const {
+  for (const auto& color : colors_) {
+    if (!iterator(color.second)) {
+      return;
+    }
+  }
+
+  if (depth_.has_value()) {
+    if (!iterator(depth_.value())) {
+      return;
+    }
+  }
+
+  if (stencil_.has_value()) {
+    if (!iterator(stencil_.value())) {
+      return;
+    }
+  }
+}
+
+SampleCount RenderTarget::GetSampleCount() const {
+  if (auto found = colors_.find(0u); found != colors_.end()) {
+    return found->second.texture->GetTextureDescriptor().sample_count;
+  }
+  return SampleCount::kCount1;
+}
+
+bool RenderTarget::HasColorAttachment(size_t index) const {
+  if (auto found = colors_.find(index); found != colors_.end()) {
+    return true;
+  }
+  return false;
+}
+
+std::optional<ISize> RenderTarget::GetColorAttachmentSize(size_t index) const {
+  auto found = colors_.find(index);
+
+  if (found == colors_.end()) {
+    return std::nullopt;
+  }
+
+  return found->second.texture->GetSize();
+}
+
+ISize RenderTarget::GetRenderTargetSize() const {
+  auto size = GetColorAttachmentSize(0u);
+  return size.has_value() ? size.value() : ISize{};
+}
+
+std::shared_ptr<Texture> RenderTarget::GetRenderTargetTexture() const {
+  auto found = colors_.find(0u);
+  if (found == colors_.end()) {
+    return nullptr;
+  }
+  return found->second.resolve_texture ? found->second.resolve_texture
+                                       : found->second.texture;
+}
+
+PixelFormat RenderTarget::GetRenderTargetPixelFormat() const {
+  if (auto texture = GetRenderTargetTexture(); texture != nullptr) {
+    return texture->GetTextureDescriptor().format;
+  }
+
+  return PixelFormat::kUnknown;
+}
+
+size_t RenderTarget::GetMaxColorAttacmentBindIndex() const {
+  size_t max = 0;
+  for (const auto& color : colors_) {
+    max = std::max(color.first, max);
+  }
+  return max;
+}
+
+RenderTarget& RenderTarget::SetColorAttachment(
+    const ColorAttachment& attachment,
+    size_t index) {
+  if (attachment.IsValid()) {
+    colors_[index] = attachment;
+  }
+  return *this;
+}
+
+RenderTarget& RenderTarget::SetDepthAttachment(
+    std::optional<DepthAttachment> attachment) {
+  if (!attachment.has_value()) {
+    depth_ = std::nullopt;
+  } else if (attachment->IsValid()) {
+    depth_ = std::move(attachment);
+  }
+  return *this;
+}
+
+RenderTarget& RenderTarget::SetStencilAttachment(
+    std::optional<StencilAttachment> attachment) {
+  if (!attachment.has_value()) {
+    stencil_ = std::nullopt;
+  } else if (attachment->IsValid()) {
+    stencil_ = std::move(attachment);
+  }
+  return *this;
+}
+
+const std::map<size_t, ColorAttachment>& RenderTarget::GetColorAttachments()
+    const {
+  return colors_;
+}
+
+const std::optional<DepthAttachment>& RenderTarget::GetDepthAttachment() const {
+  return depth_;
+}
+
+const std::optional<StencilAttachment>& RenderTarget::GetStencilAttachment()
+    const {
+  return stencil_;
+}
+
+RenderTarget RenderTarget::CreateOffscreen(
+    const Context& context,
+    RenderTargetAllocator& allocator,
+    ISize size,
+    int mip_count,
+    const std::string& label,
+    AttachmentConfig color_attachment_config,
+    std::optional<AttachmentConfig> stencil_attachment_config) {
+  if (size.IsEmpty()) {
+    return {};
+  }
+
+  RenderTarget target;
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
+  TextureDescriptor color_tex0;
+  color_tex0.storage_mode = color_attachment_config.storage_mode;
+  color_tex0.format = pixel_format;
+  color_tex0.size = size;
+  color_tex0.mip_count = mip_count;
+  color_tex0.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
+                     static_cast<uint64_t>(TextureUsage::kShaderRead);
+
+  ColorAttachment color0;
+  color0.clear_color = color_attachment_config.clear_color;
+  color0.load_action = color_attachment_config.load_action;
+  color0.store_action = color_attachment_config.store_action;
+  color0.texture = allocator.CreateTexture(color_tex0);
+
+  if (!color0.texture) {
+    return {};
+  }
+  color0.texture->SetLabel(SPrintF("%s Color Texture", label.c_str()));
+  target.SetColorAttachment(color0, 0u);
+
+  if (stencil_attachment_config.has_value()) {
+    target.SetupDepthStencilAttachments(context, allocator, size, false, label,
+                                        stencil_attachment_config.value());
+  } else {
+    target.SetStencilAttachment(std::nullopt);
+  }
+
+  return target;
+}
+
+RenderTarget RenderTarget::CreateOffscreenMSAA(
+    const Context& context,
+    RenderTargetAllocator& allocator,
+    ISize size,
+    int mip_count,
+    const std::string& label,
+    AttachmentConfigMSAA color_attachment_config,
+    std::optional<AttachmentConfig> stencil_attachment_config) {
+  if (size.IsEmpty()) {
+    return {};
+  }
+
+  RenderTarget target;
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
+
+  // Create MSAA color texture.
+
+  TextureDescriptor color0_tex_desc;
+  color0_tex_desc.storage_mode = color_attachment_config.storage_mode;
+  color0_tex_desc.type = TextureType::kTexture2DMultisample;
+  color0_tex_desc.sample_count = SampleCount::kCount4;
+  color0_tex_desc.format = pixel_format;
+  color0_tex_desc.size = size;
+  color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+
+  if (context.GetCapabilities()->SupportsImplicitResolvingMSAA()) {
+    // See below ("SupportsImplicitResolvingMSAA") for more details.
+    color0_tex_desc.storage_mode = StorageMode::kDevicePrivate;
+  }
+
+  auto color0_msaa_tex = allocator.CreateTexture(color0_tex_desc);
+  if (!color0_msaa_tex) {
+    VALIDATION_LOG << "Could not create multisample color texture.";
+    return {};
+  }
+  color0_msaa_tex->SetLabel(
+      SPrintF("%s Color Texture (Multisample)", label.c_str()));
+
+  // Create color resolve texture.
+
+  TextureDescriptor color0_resolve_tex_desc;
+  color0_resolve_tex_desc.storage_mode =
+      color_attachment_config.resolve_storage_mode;
+  color0_resolve_tex_desc.format = pixel_format;
+  color0_resolve_tex_desc.size = size;
+  color0_resolve_tex_desc.compression_type = CompressionType::kLossy;
+  color0_resolve_tex_desc.usage =
+      static_cast<uint64_t>(TextureUsage::kRenderTarget) |
+      static_cast<uint64_t>(TextureUsage::kShaderRead);
+  color0_resolve_tex_desc.mip_count = mip_count;
+
+  auto color0_resolve_tex = allocator.CreateTexture(color0_resolve_tex_desc);
+  if (!color0_resolve_tex) {
+    VALIDATION_LOG << "Could not create color texture.";
+    return {};
+  }
+  color0_resolve_tex->SetLabel(SPrintF("%s Color Texture", label.c_str()));
+
+  // Color attachment.
+
+  ColorAttachment color0;
+  color0.clear_color = color_attachment_config.clear_color;
+  color0.load_action = color_attachment_config.load_action;
+  color0.store_action = color_attachment_config.store_action;
+  color0.texture = color0_msaa_tex;
+  color0.resolve_texture = color0_resolve_tex;
+
+  if (context.GetCapabilities()->SupportsImplicitResolvingMSAA()) {
+    // If implicit MSAA is supported, then the resolve texture is not needed
+    // because the multisample texture is automatically resolved. We instead
+    // provide a view of the multisample texture as the resolve texture (because
+    // the HAL does expect a resolve texture).
+    //
+    // In practice, this is used for GLES 2.0 EXT_multisampled_render_to_texture
+    // https://registry.khronos.org/OpenGL/extensions/EXT/EXT_multisampled_render_to_texture.txt
+    color0.resolve_texture = color0_msaa_tex;
+  }
+
+  target.SetColorAttachment(color0, 0u);
+
+  // Create MSAA stencil texture.
+
+  if (stencil_attachment_config.has_value()) {
+    target.SetupDepthStencilAttachments(context, allocator, size, true, label,
+                                        stencil_attachment_config.value());
+  } else {
+    target.SetDepthAttachment(std::nullopt);
+    target.SetStencilAttachment(std::nullopt);
+  }
+
+  return target;
+}
+
+void RenderTarget::SetupDepthStencilAttachments(
+    const Context& context,
+    RenderTargetAllocator& allocator,
+    ISize size,
+    bool msaa,
+    const std::string& label,
+    AttachmentConfig stencil_attachment_config) {
+  TextureDescriptor depth_stencil_texture_desc;
+  depth_stencil_texture_desc.storage_mode =
+      stencil_attachment_config.storage_mode;
+  if (msaa) {
+    depth_stencil_texture_desc.type = TextureType::kTexture2DMultisample;
+    depth_stencil_texture_desc.sample_count = SampleCount::kCount4;
+  }
+  depth_stencil_texture_desc.format =
+      context.GetCapabilities()->GetDefaultDepthStencilFormat();
+  depth_stencil_texture_desc.size = size;
+  depth_stencil_texture_desc.usage =
+      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+
+  auto depth_stencil_texture =
+      allocator.CreateTexture(depth_stencil_texture_desc);
+  if (!depth_stencil_texture) {
+    return;  // Error messages are handled by `Allocator::CreateTexture`.
+  }
+
+  DepthAttachment depth0;
+  depth0.load_action = stencil_attachment_config.load_action;
+  depth0.store_action = stencil_attachment_config.store_action;
+  depth0.clear_depth = 0u;
+  depth0.texture = depth_stencil_texture;
+
+  StencilAttachment stencil0;
+  stencil0.load_action = stencil_attachment_config.load_action;
+  stencil0.store_action = stencil_attachment_config.store_action;
+  stencil0.clear_stencil = 0u;
+  stencil0.texture = depth_stencil_texture;
+
+  stencil0.texture->SetLabel(
+      SPrintF("%s Depth+Stencil Texture", label.c_str()));
+  SetDepthAttachment(std::move(depth0));
+  SetStencilAttachment(std::move(stencil0));
+}
+
+size_t RenderTarget::GetTotalAttachmentCount() const {
+  size_t count = 0u;
+  for (const auto& [_, color] : colors_) {
+    if (color.texture) {
+      count++;
+    }
+    if (color.resolve_texture) {
+      count++;
+    }
+  }
+  if (depth_.has_value()) {
+    count++;
+  }
+  if (stencil_.has_value()) {
+    count++;
+  }
+  return count;
+}
+
+std::string RenderTarget::ToString() const {
+  std::stringstream stream;
+
+  for (const auto& [index, color] : colors_) {
+    stream << SPrintF("Color[%zu]=(%s)", index,
+                      ColorAttachmentToString(color).c_str());
+  }
+  if (depth_) {
+    stream << ",";
+    stream << SPrintF("Depth=(%s)",
+                      DepthAttachmentToString(depth_.value()).c_str());
+  }
+  if (stencil_) {
+    stream << ",";
+    stream << SPrintF("Stencil=(%s)",
+                      StencilAttachmentToString(stencil_.value()).c_str());
+  }
+  return stream.str();
+}
+
+}  // namespace impeller

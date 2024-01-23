@@ -17,9 +17,11 @@
 #ifndef LIB_TXT_SRC_TEXT_STYLE_H_
 #define LIB_TXT_SRC_TEXT_STYLE_H_
 
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "flutter/display_list/dl_paint.h"
 #include "font_features.h"
 #include "font_style.h"
 #include "font_weight.h"
@@ -44,6 +46,7 @@ class TextStyle {
   FontWeight font_weight = FontWeight::w400;
   FontStyle font_style = FontStyle::normal;
   TextBaseline text_baseline = TextBaseline::kAlphabetic;
+  bool half_leading = false;
   // An ordered list of fonts in order of priority. The first font is more
   // highly preferred than the last font.
   std::vector<std::string> font_families;
@@ -53,14 +56,13 @@ class TextStyle {
   double height = 1.0;
   bool has_height_override = false;
   std::string locale;
-  bool has_background = false;
-  SkPaint background;
-  bool has_foreground = false;
-  SkPaint foreground;
+  std::optional<flutter::DlPaint> background;
+  std::optional<flutter::DlPaint> foreground;
   // An ordered list of shadows where the first shadow will be drawn first (at
   // the bottom).
   std::vector<TextShadow> text_shadows;
   FontFeatures font_features;
+  FontVariations font_variations;
 
   TextStyle();
 

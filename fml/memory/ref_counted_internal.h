@@ -76,8 +76,8 @@ class RefCountedThreadSafeBase {
   mutable std::atomic_uint_fast32_t ref_count_;
 
 #ifndef NDEBUG
-  mutable bool adoption_required_;
-  mutable bool destruction_started_;
+  mutable bool adoption_required_ = false;
+  mutable bool destruction_started_ = false;
 #endif
 
   FML_DISALLOW_COPY_AND_ASSIGN(RefCountedThreadSafeBase);
@@ -87,8 +87,7 @@ inline RefCountedThreadSafeBase::RefCountedThreadSafeBase()
     : ref_count_(1u)
 #ifndef NDEBUG
       ,
-      adoption_required_(true),
-      destruction_started_(false)
+      adoption_required_(true)
 #endif
 {
 }

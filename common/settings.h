@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/time/time_point.h"
@@ -29,19 +30,44 @@ class FrameTiming {
     kBuildFinish,
     kRasterStart,
     kRasterFinish,
+    kRasterFinishWallTime,
     kCount
   };
 
   static constexpr Phase kPhases[kCount] = {
-      kVsyncStart, kBuildStart, kBuildFinish, kRasterStart, kRasterFinish};
+      kVsyncStart,  kBuildStart,   kBuildFinish,
+      kRasterStart, kRasterFinish, kRasterFinishWallTime};
+
+  static constexpr int kStatisticsCount = kCount + 5;
 
   fml::TimePoint Get(Phase phase) const { return data_[phase]; }
   fml::TimePoint Set(Phase phase, fml::TimePoint value) {
     return data_[phase] = value;
   }
 
+  uint64_t GetFrameNumber() const { return frame_number_; }
+  void SetFrameNumber(uint64_t frame_number) { frame_number_ = frame_number; }
+  uint64_t GetLayerCacheCount() const { return layer_cache_count_; }
+  uint64_t GetLayerCacheBytes() const { return layer_cache_bytes_; }
+  uint64_t GetPictureCacheCount() const { return picture_cache_count_; }
+  uint64_t GetPictureCacheBytes() const { return picture_cache_bytes_; }
+  void SetRasterCacheStatistics(size_t layer_cache_count,
+                                size_t layer_cache_bytes,
+                                size_t picture_cache_count,
+                                size_t picture_cache_bytes) {
+    layer_cache_count_ = layer_cache_count;
+    layer_cache_bytes_ = layer_cache_bytes;
+    picture_cache_count_ = picture_cache_count;
+    picture_cache_bytes_ = picture_cache_bytes;
+  }
+
  private:
   fml::TimePoint data_[kCount];
+  uint64_t frame_number_;
+  size_t layer_cache_count_;
+  size_t layer_cache_bytes_;
+  size_t picture_cache_count_;
+  size_t picture_cache_bytes_;
 };
 
 using TaskObserverAdd =
@@ -50,6 +76,9 @@ using TaskObserverRemove = std::function<void(intptr_t /* key */)>;
 using UnhandledExceptionCallback =
     std::function<bool(const std::string& /* error */,
                        const std::string& /* stack trace */)>;
+using LogMessageCallback =
+    std::function<void(const std::string& /* tag */,
+                       const std::string& /* message */)>;
 
 // TODO(26783): Deprecate all the "path" struct members in favor of the
 // callback that generates the mapping from these paths.
@@ -61,12 +90,24 @@ using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
 class DartIsolate;
 
+// TODO(https://github.com/flutter/flutter/issues/138750): Re-order fields to
+// reduce padding.
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 struct Settings {
   Settings();
 
   Settings(const Settings& other);
 
   ~Settings();
+
+  /// Determines if attempts at grabbing the Surface's SurfaceData can be
+  /// attempted.
+  static constexpr bool kSurfaceDataAccessible =
+#ifdef _NDEBUG
+      false;
+#else
+      true;
+#endif
 
   // VM settings
   std::string vm_snapshot_data_path;  // deprecated
@@ -79,6 +120,8 @@ struct Settings {
   std::string isolate_snapshot_instr_path;  // deprecated
   MappingCallback isolate_snapshot_instr;
 
+  std::string route;
+
   // Returns the Mapping to a kernel buffer which contains sources for dart:*
   // libraries.
   MappingCallback dart_library_sources_kernel;
@@ -88,28 +131,33 @@ struct Settings {
   // case the primary path to the library can not be loaded.
   std::vector<std::string> application_library_path;
 
+  // Path to a library containing compiled Dart code usable for launching
+  // the VM service isolate.
+  std::vector<std::string> vmservice_snapshot_library_path;
+
   std::string application_kernel_asset;       // deprecated
   std::string application_kernel_list_asset;  // deprecated
   MappingsCallback application_kernels;
 
   std::string temp_directory_path;
   std::vector<std::string> dart_flags;
-  // Arguments passed as a List<String> to Dart's entrypoint function.
-  std::vector<std::string> dart_entrypoint_args;
-
   // Isolate settings
   bool enable_checked_mode = false;
   bool start_paused = false;
   bool trace_skia = false;
-  std::string trace_allowlist;
+  std::vector<std::string> trace_allowlist;
+  std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  std::string trace_to_file;
+  bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
   bool purge_persistent_cache = false;
   bool endless_trace_buffer = false;
   bool enable_dart_profiling = false;
   bool disable_dart_asserts = false;
+  bool enable_serial_gc = false;
 
   // Whether embedder only allows secure connections.
   bool may_insecurely_connect_to_all_domains = true;
@@ -123,23 +171,27 @@ struct Settings {
   // Dart code is executed.
   std::string advisory_script_entrypoint = "main";
 
-  // Observatory settings
+  // The executable path associated with this process. This is returned by
+  // Platform.executable from dart:io. If unknown, defaults to "Flutter".
+  std::string executable_name = "Flutter";
+
+  // VM Service settings
 
   // Whether the Dart VM service should be enabled.
-  bool enable_observatory = false;
+  bool enable_vm_service = false;
 
-  // Whether to publish the observatory URL over mDNS.
+  // Whether to publish the VM Service URL over mDNS.
   // On iOS 14 this prompts a local network permission dialog,
   // which cannot be accepted or dismissed in a CI environment.
-  bool enable_observatory_publication = true;
+  bool enable_vm_service_publication = true;
 
   // The IP address to which the Dart VM service is bound.
-  std::string observatory_host;
+  std::string vm_service_host;
 
   // The port to which the Dart VM service is bound. When set to `0`, a free
   // port will be automatically selected by the OS. A message is logged on the
   // target indicating the URL at which the VM service can be accessed.
-  uint32_t observatory_port = 0;
+  uint32_t vm_service_port = 0;
 
   // Determines whether an authentication code is required to communicate with
   // the VM service.
@@ -151,6 +203,37 @@ struct Settings {
 
   // Font settings
   bool use_test_fonts = false;
+
+  bool use_asset_fonts = true;
+
+  // Indicates whether the embedding started a prefetch of the default font
+  // manager before creating the engine.
+  bool prefetched_default_font_manager = false;
+
+  // Enable the rendering of colors outside of the sRGB gamut.
+  bool enable_wide_gamut = false;
+
+  // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
+  // not supported on the platform.
+#if FML_OS_IOS || FML_OS_IOS_SIMULATOR
+  bool enable_impeller = true;
+#else
+  bool enable_impeller = false;
+#endif
+
+  // Requests a particular backend to be used (ex "opengles" or "vulkan")
+  std::optional<std::string> impeller_backend;
+
+  // Enable Vulkan validation on backends that support it. The validation layers
+  // must be available to the application.
+  bool enable_vulkan_validation = false;
+
+  // Enable GPU tracing in GLES backends.
+  // Some devices claim to support the required APIs but crash on their usage.
+  bool enable_opengl_gpu_tracing = false;
+
+  // Data set by platform-specific embedders for use in font initialization.
+  uint32_t font_initialization_data = 0;
 
   // All shells in the process share the same VM. The last shell to shutdown
   // should typically shut down the VM as well. However, applications depend on
@@ -164,6 +247,10 @@ struct Settings {
   // shells in the platform (via their embedding APIs) should cooperate to make
   // sure this flag is never set if they want the VM to shutdown and free all
   // associated resources.
+  // It can be customized by application, more detail:
+  // https://github.com/flutter/flutter/issues/95903
+  // TODO(eggfly): Should it be set to false by default?
+  // https://github.com/flutter/flutter/issues/96843
   bool leak_vm = true;
 
   // Engine settings
@@ -198,6 +285,11 @@ struct Settings {
   // managed thread and embedders must re-thread as necessary. Performing
   // blocking calls in this callback will cause applications to jank.
   UnhandledExceptionCallback unhandled_exception_callback;
+  // A callback given to the embedder to log print messages from the running
+  // Flutter application. This callback is made on an internal engine managed
+  // thread and embedders must re-thread if necessary. Performing blocking
+  // calls in this callback will cause applications to jank.
+  LogMessageCallback log_message_callback;
   bool enable_software_rendering = false;
   bool skia_deterministic_rendering_on_cpu = false;
   bool verbose_logging = false;
@@ -235,12 +327,20 @@ struct Settings {
   /// https://github.com/dart-lang/sdk/blob/ca64509108b3e7219c50d6c52877c85ab6a35ff2/runtime/vm/flag_list.h#L150
   int64_t old_gen_heap_size = -1;
 
-  /// A timestamp representing when the engine started. The value is based
-  /// on the clock used by the Dart timeline APIs. This timestamp is used
-  /// to log a timeline event that tracks the latency of engine startup.
-  std::chrono::microseconds engine_start_timestamp = {};
+  // Max bytes threshold of resource cache, or 0 for unlimited.
+  size_t resource_cache_max_bytes_threshold = 0;
 
-  std::string ToString() const;
+  /// The minimum number of samples to require in multipsampled anti-aliasing.
+  ///
+  /// Setting this value to 0 or 1 disables MSAA.
+  /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
+  /// GPU does not support the requested sampling value, MSAA will be disabled.
+  uint8_t msaa_samples = 0;
+
+  /// Enable embedder api on the embedder.
+  ///
+  /// This is currently only used by iOS.
+  bool enable_embedder_api = false;
 };
 
 }  // namespace flutter

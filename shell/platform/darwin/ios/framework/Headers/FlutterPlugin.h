@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERPLUGIN_H_
-#define FLUTTER_FLUTTERPLUGIN_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGIN_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGIN_H_
 
 #import <UIKit/UIKit.h>
 #import <UserNotifications/UNUserNotificationCenter.h>
@@ -22,15 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Protocol for listener of events from the UIApplication, typically a FlutterPlugin.
  */
-@protocol FlutterApplicationLifeCycleDelegate
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-    <UNUserNotificationCenterDelegate>
-#endif
+@protocol FlutterApplicationLifeCycleDelegate <UNUserNotificationCenterDelegate>
+
 @optional
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
  *
- * @return `NO` if this vetoes application launch.
+ * @return `NO` if this vetos application launch.
  */
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
@@ -38,7 +36,7 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
  *
- * @return `NO` if this vetoes application launch.
+ * @return `NO` if this vetos application launch.
  */
 - (BOOL)application:(UIApplication*)application
     willFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
@@ -82,6 +80,12 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+
+/**
+ * Called if this has been registered for `UIApplicationDelegate` callbacks.
+ */
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 
 /**
  * Called if this has been registered for `UIApplicationDelegate` callbacks.
@@ -246,6 +250,7 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * Flutter Framework (e.g. When an interact-able widget is covering the platform view).
  */
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   /**
    * Flutter blocks all the UIGestureRecognizers on the platform view as soon as it
    * decides they should be blocked.
@@ -262,6 +267,7 @@ typedef enum {
    * but never recognizing the gesture (and never invoking actions).
    */
   FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded,
+  // NOLINTEND(readability-identifier-naming)
 } FlutterPlatformViewGestureRecognizersBlockingPolicy;
 
 #pragma mark -
@@ -349,7 +355,8 @@ typedef enum {
  *
  * @param delegate The receiving object, such as the plugin's main class.
  */
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate;
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions");
 
 /**
  * Returns the file name for the given asset.
@@ -426,10 +433,7 @@ typedef enum {
  * For plugins to receive events from `UNUserNotificationCenter`, register this as the
  * `UNUserNotificationCenterDelegate`.
  */
-@protocol FlutterAppLifeCycleProvider
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-    <UNUserNotificationCenterDelegate>
-#endif
+@protocol FlutterAppLifeCycleProvider <UNUserNotificationCenterDelegate>
 
 /**
  * Called when registering a new `FlutterApplicaitonLifeCycleDelegate`.
@@ -441,4 +445,4 @@ typedef enum {
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERPLUGIN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGIN_H_

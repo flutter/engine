@@ -2,8 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+
+import 'dart:async';
+import 'dart:collection';
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
+import 'package:ui/ui.dart' as ui;
+
+import 'browser_detection.dart';
+import 'dom.dart';
+import 'safe_browser_api.dart';
+import 'services.dart';
+import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
 typedef Callback<T> = void Function(T result);
@@ -28,22 +40,32 @@ typedef Callbacker<T> = String? Function(Callback<T> callback);
 /// typedef IntCallback = void Function(int result);
 ///
 /// String _doSomethingAndCallback(IntCallback callback) {
-///   new Timer(new Duration(seconds: 1), () { callback(1); });
+///   Timer(const Duration(seconds: 1), () { callback(1); });
 /// }
 ///
 /// Future<int> doSomething() {
-///   return _futurize(_doSomethingAndCallback);
+///   return futurize(_doSomethingAndCallback);
 /// }
 /// ```
+// Keep this in sync with _futurize in lib/ui/fixtures/ui_test.dart.
 Future<T> futurize<T>(Callbacker<T> callbacker) {
   final Completer<T> completer = Completer<T>.sync();
-  final String? error = callbacker((T t) {
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool isSync = true;
+  final String? error = callbacker((T? t) {
     if (t == null) {
-      completer.completeError(Exception('operation failed'));
+      if (isSync) {
+        throw Exception('operation failed');
+      } else {
+        completer.completeError(Exception('operation failed'));
+      }
     } else {
       completer.complete(t);
     }
   });
+  isSync = false;
   if (error != null) {
     throw Exception(error);
   }
@@ -58,7 +80,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float32List matrix4) {
+void setElementTransform(DomElement element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -73,7 +95,7 @@ void setElementTransform(html.Element element, Float32List matrix4) {
 /// See also:
 ///  * https://github.com/flutter/flutter/issues/32274
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
-String float64ListToCssTransform(Float32List matrix) {
+String float64ListToCssTransform(List<double> matrix) {
   assert(matrix.length == 16);
   final TransformKind transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d) {
@@ -105,9 +127,9 @@ enum TransformKind {
 }
 
 /// Detects the kind of transform the [matrix] performs.
-TransformKind transformKindOf(Float32List matrix) {
+TransformKind transformKindOf(List<double> matrix) {
   assert(matrix.length == 16);
-  final Float32List m = matrix;
+  final List<double> m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
@@ -163,15 +185,15 @@ bool isIdentityFloat32ListTransform(Float32List matrix) {
 /// permitted. However, it is inefficient to construct a matrix for an identity
 /// transform. Consider removing the CSS `transform` property from elements
 /// that apply identity transform.
-String float64ListToCssTransform2d(Float32List matrix) {
+String float64ListToCssTransform2d(List<double> matrix) {
   assert(transformKindOf(matrix) != TransformKind.complex);
   return 'matrix(${matrix[0]},${matrix[1]},${matrix[4]},${matrix[5]},${matrix[12]},${matrix[13]})';
 }
 
 /// Converts [matrix] to a 3D CSS transform value.
-String float64ListToCssTransform3d(Float32List matrix) {
+String float64ListToCssTransform3d(List<double> matrix) {
   assert(matrix.length == 16);
-  final Float32List m = matrix;
+  final List<double> m = matrix;
   if (m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
@@ -196,12 +218,6 @@ String float64ListToCssTransform3d(Float32List matrix) {
   }
 }
 
-bool get assertionsEnabled {
-  bool k = false;
-  assert(k = true);
-  return k;
-}
-
 final Float32List _tempRectData = Float32List(4);
 
 /// Transforms a [ui.Rect] given the effective [transform].
@@ -209,7 +225,7 @@ final Float32List _tempRectData = Float32List(4);
 /// The resulting rect is aligned to the pixel grid, i.e. two of
 /// its sides are vertical and two are horizontal. In the presence of rotations
 /// the rectangle is inflated such that it fits the rotated rectangle.
-ui.Rect transformRect(Matrix4 transform, ui.Rect rect) {
+ui.Rect transformRectWithMatrix(Matrix4 transform, ui.Rect rect) {
   _tempRectData[0] = rect.left;
   _tempRectData[1] = rect.top;
   _tempRectData[2] = rect.right;
@@ -278,22 +294,32 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
 
   _tempPointMatrix.multiplyTranspose(transform);
 
+  // Handle non-homogenous matrices.
+  double w = transform[15];
+  if (w == 0.0) {
+    w = 1.0;
+  }
+
   ltrb[0] = math.min(
-      math.min(
-          math.min(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
-      _tempPointData[3]);
+          math.min(math.min(_tempPointData[0], _tempPointData[1]),
+              _tempPointData[2]),
+          _tempPointData[3]) /
+      w;
   ltrb[1] = math.min(
-      math.min(
-          math.min(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
-      _tempPointData[7]);
+          math.min(math.min(_tempPointData[4], _tempPointData[5]),
+              _tempPointData[6]),
+          _tempPointData[7]) /
+      w;
   ltrb[2] = math.max(
-      math.max(
-          math.max(_tempPointData[0], _tempPointData[1]), _tempPointData[2]),
-      _tempPointData[3]);
+          math.max(math.max(_tempPointData[0], _tempPointData[1]),
+              _tempPointData[2]),
+          _tempPointData[3]) /
+      w;
   ltrb[3] = math.max(
-      math.max(
-          math.max(_tempPointData[4], _tempPointData[5]), _tempPointData[6]),
-      _tempPointData[7]);
+          math.max(math.max(_tempPointData[4], _tempPointData[5]),
+              _tempPointData[6]),
+          _tempPointData[7]) /
+      w;
 }
 
 /// Returns true if [rect] contains every point that is also contained by the
@@ -308,53 +334,18 @@ bool rectContainsOther(ui.Rect rect, ui.Rect other) {
       rect.bottom >= other.bottom;
 }
 
-/// Counter used for generating clip path id inside an svg <defs> tag.
-int _clipIdCounter = 0;
-
-/// Used for clipping and filter svg resources.
-///
-/// Position needs to be absolute since these svgs are sandwiched between
-/// canvas elements and can cause layout shifts otherwise.
-const String kSvgResourceHeader = '<svg width="0" height="0" '
-    'style="position:absolute">';
-
-/// Converts Path to svg element that contains a clip-path definition.
-///
-/// Calling this method updates [_clipIdCounter]. The HTML id of the generated
-/// clip is set to "svgClip${_clipIdCounter}", e.g. "svgClip123".
-String _pathToSvgClipPath(ui.Path path,
-    {double offsetX = 0,
-    double offsetY = 0,
-    double scaleX = 1.0,
-    double scaleY = 1.0}) {
-  _clipIdCounter += 1;
-  final StringBuffer sb = StringBuffer();
-  sb.write(kSvgResourceHeader);
-  sb.write('<defs>');
-
-  final String clipId = 'svgClip$_clipIdCounter';
-
-  if (browserEngine == BrowserEngine.firefox) {
-    // Firefox objectBoundingBox fails to scale to 1x1 units, instead use
-    // no clipPathUnits but write the path in target units.
-    sb.write('<clipPath id=$clipId>');
-    sb.write('<path fill="#FFFFFF" d="');
-  } else {
-    sb.write('<clipPath id=$clipId clipPathUnits="objectBoundingBox">');
-    sb.write('<path transform="scale($scaleX, $scaleY)" fill="#FFFFFF" d="');
+extension CssColor on ui.Color {
+  /// Converts color to a css compatible attribute value.
+  String toCssString() {
+    return colorValueToCssString(value);
   }
-
-  pathToSvg(path as SurfacePath, sb, offsetX: offsetX, offsetY: offsetY);
-  sb.write('"></path></clipPath></defs></svg');
-  return sb.toString();
 }
 
-/// Converts color to a css compatible attribute value.
-String? colorToCssString(ui.Color? color) {
-  if (color == null) {
-    return null;
+// Converts a color value (as an int) into a CSS-compatible value.
+String colorValueToCssString(int value) {
+  if (value == 0xFF000000) {
+    return '#000000';
   }
-  final int value = color.value;
   if ((0xff000000 & value) == 0xff000000) {
     final String hexValue = (value & 0xFFFFFF).toRadixString(16);
     final int hexValueLength = hexValue.length;
@@ -413,8 +404,8 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// We need this in [BitmapCanvas] and [RecordingCanvas] to swallow this
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
-bool _isNsErrorFailureException(dynamic e) {
-  return js_util.getProperty(e, 'name') == 'NS_ERROR_FAILURE';
+bool isNsErrorFailureException(Object e) {
+  return getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
 /// From: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
@@ -445,12 +436,20 @@ const Set<String> _genericFontFamilies = <String>{
 ///
 /// For iOS, default to -apple-system, where it should be available, otherwise
 /// default to Arial. BlinkMacSystemFont is used for Chrome on iOS.
-final String _fallbackFontFamily =
-    _isMacOrIOS ? '-apple-system, BlinkMacSystemFont' : 'Arial';
-
-bool get _isMacOrIOS =>
-    operatingSystem == OperatingSystem.iOs ||
-    operatingSystem == OperatingSystem.macOs;
+String get _fallbackFontFamily {
+  if (isIOS15) {
+    // Remove the "-apple-system" fallback font because it causes a crash in
+    // iOS 15.
+    //
+    // See github issue: https://github.com/flutter/flutter/issues/90705
+    // See webkit bug: https://bugs.webkit.org/show_bug.cgi?id=231686
+    return 'BlinkMacSystemFont';
+  }
+  if (isMacOrIOS) {
+    return '-apple-system, BlinkMacSystemFont';
+  }
+  return 'Arial';
+}
 
 /// Create a font-family string appropriate for CSS.
 ///
@@ -460,7 +459,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
   if (_genericFontFamilies.contains(fontFamily)) {
     return fontFamily;
   }
-  if (_isMacOrIOS) {
+  if (isMacOrIOS) {
     // Unlike Safari, Chrome on iOS does not correctly fallback to cupertino
     // on sans-serif.
     // Map to San Francisco Text/Display fonts, use -apple-system,
@@ -478,7 +477,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
 /// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   final int length = offsetList.length;
-  final floatList = Float32List(length * 2);
+  final Float32List floatList = Float32List(length * 2);
   for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
     floatList[destIndex] = offsetList[i].dx;
     floatList[destIndex + 1] = offsetList[i].dy;
@@ -496,51 +495,10 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
-}
-
-final ByteData? _fontChangeMessage =
-    JSONMessageCodec().encodeMessage(<String, dynamic>{'type': 'fontsChange'});
-
-// Font load callbacks will typically arrive in sequence, we want to prevent
-// sendFontChangeMessage of causing multiple synchronous rebuilds.
-// This flag ensures we properly schedule a single call to framework.
-bool _fontChangeScheduled = false;
-
-FutureOr<void> sendFontChangeMessage() async {
-  if (!_fontChangeScheduled) {
-    _fontChangeScheduled = true;
-    // Batch updates into next animationframe.
-    html.window.requestAnimationFrame((num _) {
-      _fontChangeScheduled = false;
-      EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
-        'flutter/system',
-        _fontChangeMessage,
-        (_) {},
-      );
-    });
-  }
-}
-
-// Stores matrix in a form that allows zero allocation transforms.
-class _FastMatrix32 {
-  final Float32List matrix;
-  double transformedX = 0, transformedY = 0;
-  _FastMatrix32(this.matrix);
-
-  void transform(double x, double y) {
-    transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
-    transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
-  }
-
-  String debugToString() =>
-      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
-      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
-      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
-      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
 }
 
 /// Roughly the inverse of [ui.Shadow.convertRadiusToSigma].
@@ -550,39 +508,6 @@ class _FastMatrix32 {
 /// Flutter mobile.
 double convertSigmaToRadius(double sigma) {
   return sigma * 2.0;
-}
-
-/// Used to check for null values that are non-nullable.
-///
-/// This is useful when some external API (e.g. HTML DOM) disagrees with
-/// Dart type declarations (e.g. `dart:html`). Where `dart:html` may believe
-/// something to be non-null, it may actually be null (e.g. old browsers do
-/// not implement a feature, such as clipboard).
-bool isUnsoundNull(dynamic object) {
-  return object == null;
-}
-
-bool _offsetIsValid(ui.Offset offset) {
-  assert(!offset.dx.isNaN && !offset.dy.isNaN,
-      'Offset argument contained a NaN value.');
-  return true;
-}
-
-bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
-  return true;
-}
-
-void _validateColorStops(List<ui.Color> colors, List<double>? colorStops) {
-  if (colorStops == null) {
-    if (colors.length != 2)
-      throw ArgumentError(
-          '"colors" must have length 2 if "colorStops" is omitted.');
-  } else {
-    if (colors.length != colorStops.length)
-      throw ArgumentError(
-          '"colors" and "colorStops" arguments must have equal length.');
-  }
 }
 
 int clampInt(int value, int min, int max) {
@@ -596,46 +521,350 @@ int clampInt(int value, int min, int max) {
   }
 }
 
-ui.Rect computeBoundingRectangleFromMatrix(Matrix4 transform, ui.Rect rect) {
-    final Float32List m = transform.storage;
-    // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
-    // right since for example rotating 45 degrees would yield inaccurate size.
-    double x = rect.left;
-    double y = rect.top;
-    double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    double minX = xp, maxX = xp;
-    double minY =yp, maxY = yp;
-    x = rect.right;
-    y = rect.bottom;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+/// Prints a warning message to the console.
+///
+/// This function can be overridden in tests. This could be useful, for example,
+/// to verify that warnings are printed under certain circumstances.
+void Function(String) printWarning = domWindow.console.warn;
 
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-
-    x = rect.left;
-    y = rect.bottom;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-
-    x = rect.right;
-    y = rect.top;
-    wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-    xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-    yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
-    minX = math.min(minX, xp);
-    maxX = math.max(maxX, xp);
-    minY = math.min(minY, yp);
-    maxY = math.max(maxY, yp);
-    return ui.Rect.fromLTWH(minX, minY, maxX-minX, maxY-minY);
+/// Determines if lists [a] and [b] are deep equivalent.
+///
+/// Returns true if the lists are both null, or if they are both non-null, have
+/// the same length, and contain the same elements in the same order. Returns
+/// false otherwise.
+bool listEquals<T>(List<T>? a, List<T>? b) {
+  if (a == null) {
+    return b == null;
   }
+  if (b == null || a.length != b.length) {
+    return false;
+  }
+  for (int index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// HTML only supports a single radius, but Flutter ImageFilter supports separate
+// horizontal and vertical radii. The best approximation we can provide is to
+// average the two radii together for a single compromise value.
+String blurSigmasToCssString(double sigmaX, double sigmaY) {
+  return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
+}
+
+/// Extensions to [Map] that make it easier to treat it as a JSON object. The
+/// keys are `dynamic` because when JSON is deserialized from method channels
+/// it arrives as `Map<dynamic, dynamic>`.
+// TODO(yjbanov): use Json typedef when type aliases are shipped
+extension JsonExtensions on Map<dynamic, dynamic> {
+  Map<String, dynamic> readJson(String propertyName) {
+    return this[propertyName] as Map<String, dynamic>;
+  }
+
+  Map<String, dynamic>? tryJson(String propertyName) {
+    return this[propertyName] as Map<String, dynamic>?;
+  }
+
+  Map<dynamic, dynamic> readDynamicJson(String propertyName) {
+    return this[propertyName] as Map<dynamic, dynamic>;
+  }
+
+  Map<dynamic, dynamic>? tryDynamicJson(String propertyName) {
+    return this[propertyName] as Map<dynamic, dynamic>?;
+  }
+
+  List<dynamic> readList(String propertyName) {
+    return this[propertyName] as List<dynamic>;
+  }
+
+  List<dynamic>? tryList(String propertyName) {
+    return this[propertyName] as List<dynamic>?;
+  }
+
+  List<T> castList<T>(String propertyName) {
+    return (this[propertyName] as List<dynamic>).cast<T>();
+  }
+
+  List<T>? tryCastList<T>(String propertyName) {
+    final List<dynamic>? rawList = tryList(propertyName);
+    if (rawList == null) {
+      return null;
+    }
+    return rawList.cast<T>();
+  }
+
+  String readString(String propertyName) {
+    return this[propertyName] as String;
+  }
+
+  String? tryString(String propertyName) {
+    return this[propertyName] as String?;
+  }
+
+  bool readBool(String propertyName) {
+    return this[propertyName] as bool;
+  }
+
+  bool? tryBool(String propertyName) {
+    return this[propertyName] as bool?;
+  }
+
+  int readInt(String propertyName) {
+    return (this[propertyName] as num).toInt();
+  }
+
+  int? tryInt(String propertyName) {
+    return (this[propertyName] as num?)?.toInt();
+  }
+
+  double readDouble(String propertyName) {
+    return (this[propertyName] as num).toDouble();
+  }
+
+  double? tryDouble(String propertyName) {
+    return (this[propertyName] as num?)?.toDouble();
+  }
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Throws if the view ID is not present or if [arguments] is not a map.
+int readViewId(Object? arguments) {
+  final int? viewId = tryViewId(arguments);
+  if (viewId == null) {
+    throw Exception('Could not find a `viewId` in the arguments: $arguments');
+  }
+  return viewId;
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Returns null if the view ID is not present or if [arguments] is not a map.
+int? tryViewId(Object? arguments) {
+  if (arguments is Map) {
+    return arguments.tryInt('viewId');
+  }
+  return null;
+}
+
+/// Prints a list of bytes in hex format.
+///
+/// Bytes are separated by one space and are padded on the left to always show
+/// two digits.
+///
+/// Example:
+///
+///     Input: [0, 1, 2, 3]
+///     Output: 0x00 0x01 0x02 0x03
+String bytesToHexString(List<int> data) {
+  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
+}
+
+/// Sets a style property on [element].
+///
+/// [name] is the name of the property. [value] is the value of the property.
+/// If [value] is null, removes the style property.
+void setElementStyle(
+    DomElement element, String name, String? value) {
+  if (value == null) {
+    element.style.removeProperty(name);
+  } else {
+    element.style.setProperty(name, value);
+  }
+}
+
+void setClipPath(DomElement element, String? value) {
+  if (browserEngine == BrowserEngine.webkit) {
+    if (value == null) {
+      element.style.removeProperty('-webkit-clip-path');
+    } else {
+      element.style.setProperty('-webkit-clip-path', value);
+    }
+  }
+  if (value == null) {
+    element.style.removeProperty('clip-path');
+  } else {
+    element.style.setProperty('clip-path', value);
+  }
+}
+
+void setThemeColor(ui.Color? color) {
+  DomHTMLMetaElement? theme =
+      domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
+
+  if (color != null) {
+    if (theme == null) {
+      theme = createDomHTMLMetaElement()
+        ..id = 'flutterweb-theme'
+        ..name = 'theme-color';
+      domDocument.head!.append(theme);
+    }
+    theme.content = color.toCssString();
+  } else {
+    theme?.remove();
+  }
+}
+
+bool? _ellipseFeatureDetected;
+
+/// Draws CanvasElement ellipse with fallback.
+void drawEllipse(
+    DomCanvasRenderingContext2D context,
+    double centerX,
+    double centerY,
+    double radiusX,
+    double radiusY,
+    double rotation,
+    double startAngle,
+    double endAngle,
+    bool antiClockwise) {
+  _ellipseFeatureDetected ??= getJsProperty<Object?>(context, 'ellipse') != null;
+  if (_ellipseFeatureDetected!) {
+    context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+        endAngle, antiClockwise);
+  } else {
+    context.save();
+    context.translate(centerX, centerY);
+    context.rotate(rotation);
+    context.scale(radiusX, radiusY);
+    context.arc(0, 0, 1, startAngle, endAngle, antiClockwise);
+    context.restore();
+  }
+}
+
+/// Removes all children of a DOM node.
+void removeAllChildren(DomNode node) {
+  while (node.lastChild != null) {
+    node.lastChild!.remove();
+  }
+}
+
+/// A helper that finds an element in an iterable that satisfy a predicate, or
+/// returns null otherwise.
+///
+/// This is mostly useful for iterables containing non-null elements.
+extension FirstWhereOrNull<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final T element in this) {
+      if (test(element)) {
+        return element;
+      }
+    }
+    return null;
+  }
+}
+
+typedef _LruCacheEntry<K extends Object, V extends Object> = ({K key, V value});
+
+/// Caches up to a [maximumSize] key-value pairs.
+///
+/// Call [cache] to cache a key-value pair.
+class LruCache<K extends Object, V extends Object> {
+  LruCache(this.maximumSize);
+
+  /// The maximum number of key/value pairs this cache can contain.
+  ///
+  /// To avoid exceeding this limit the cache remove least recently used items.
+  final int maximumSize;
+
+  /// A doubly linked list of the objects in the cache.
+  ///
+  /// This makes it fast to move a recently used object to the front.
+  final DoubleLinkedQueue<_LruCacheEntry<K, V>> _itemQueue = DoubleLinkedQueue<_LruCacheEntry<K, V>>();
+
+  @visibleForTesting
+  DoubleLinkedQueue<_LruCacheEntry<K, V>> get debugItemQueue => _itemQueue;
+
+  /// A map of objects to their associated node in the [_itemQueue].
+  ///
+  /// This makes it fast to find the node in the queue when we need to
+  /// move the object to the front of the queue.
+  final Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> _itemMap = <K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>>{};
+
+  @visibleForTesting
+  Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> get itemMap => _itemMap;
+
+  /// The number of objects in the cache.
+  int get length => _itemQueue.length;
+
+  /// Whether or not [object] is in the cache.
+  ///
+  /// This is only for testing.
+  @visibleForTesting
+  bool debugContainsValue(V object) {
+    return _itemMap.containsValue(object);
+  }
+
+  @visibleForTesting
+  bool debugContainsKey(K key) {
+    return _itemMap.containsKey(key);
+  }
+
+  /// Returns the cached value associated with the [key].
+  ///
+  /// If the value is not in the cache, returns null.
+  V? operator[](K key) {
+    return _itemMap[key]?.element.value;
+  }
+
+  /// Caches the given [key]/[value] pair in this cache.
+  ///
+  /// If the pair is not already in the cache, adds it to the cache as the most
+  /// recently used pair.
+  ///
+  /// If the [key] is already in the cache, moves it to the most recently used
+  /// position. If the [value] corresponding to the [key] is different from
+  /// what's in the cache, updates the value.
+  void cache(K key, V value) {
+    final DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>? item = _itemMap[key];
+    if (item == null) {
+      // New key-value pair, just add.
+      _add(key, value);
+    } else if (item.element.value != value) {
+      // Key already in the cache, but value is new. Re-add.
+      item.remove();
+      _add(key, value);
+    } else {
+      // Key-value pair already in the cache, move to most recently used.
+      item.remove();
+      _itemQueue.addFirst(item.element);
+      _itemMap[key] = _itemQueue.firstEntry()!;
+    }
+  }
+
+  void clear() {
+    _itemQueue.clear();
+    _itemMap.clear();
+  }
+
+  void _add(K key, V value) {
+    _itemQueue.addFirst((key: key, value: value));
+    _itemMap[key] = _itemQueue.firstEntry()!;
+
+    if (_itemQueue.length > maximumSize) {
+      _removeLeastRecentlyUsedValue();
+    }
+  }
+
+  void _removeLeastRecentlyUsedValue() {
+    final bool didRemove = _itemMap.remove(_itemQueue.last.key) != null;
+    assert(didRemove);
+    _itemQueue.removeLast();
+  }
+}
+
+/// Returns the VM-compatible string for the tile mode.
+String tileModeString(ui.TileMode tileMode) {
+  switch (tileMode) {
+    case ui.TileMode.clamp:
+      return 'clamp';
+    case ui.TileMode.mirror:
+      return 'mirror';
+    case ui.TileMode.repeated:
+      return 'repeated';
+    case ui.TileMode.decal:
+      return 'decal';
+  }
+}

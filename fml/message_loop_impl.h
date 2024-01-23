@@ -23,6 +23,11 @@
 
 namespace fml {
 
+/// An abstract class that represents the differences in implementation of a \p
+/// fml::MessageLoop depending on the platform.
+/// \see fml::MessageLoop
+/// \see fml::MessageLoopAndroid
+/// \see fml::MessageLoopDarwin
 class MessageLoopImpl : public Wakeable,
                         public fml::RefCountedThreadSafe<MessageLoopImpl> {
  public:
@@ -59,7 +64,7 @@ class MessageLoopImpl : public Wakeable,
   MessageLoopImpl();
 
  private:
-  fml::RefPtr<MessageLoopTaskQueues> task_queue_;
+  fml::MessageLoopTaskQueues* task_queue_;
   TaskQueueId queue_id_;
 
   std::atomic_bool terminated_;

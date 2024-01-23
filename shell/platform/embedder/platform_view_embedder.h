@@ -17,38 +17,49 @@
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+#include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #endif
 
 namespace flutter {
 
 class PlatformViewEmbedder final : public PlatformView {
  public:
-  using UpdateSemanticsNodesCallback =
-      std::function<void(flutter::SemanticsNodeUpdates update)>;
-  using UpdateSemanticsCustomActionsCallback =
-      std::function<void(flutter::CustomAccessibilityActionUpdates actions)>;
+  using UpdateSemanticsCallback =
+      std::function<void(flutter::SemanticsNodeUpdates update,
+                         flutter::CustomAccessibilityActionUpdates actions)>;
   using PlatformMessageResponseCallback =
-      std::function<void(fml::RefPtr<flutter::PlatformMessage>)>;
+      std::function<void(std::unique_ptr<PlatformMessage>)>;
   using ComputePlatformResolvedLocaleCallback =
       std::function<std::unique_ptr<std::vector<std::string>>(
           const std::vector<std::string>& supported_locale_data)>;
+  using OnPreEngineRestartCallback = std::function<void()>;
+  using ChanneUpdateCallback = std::function<void(const std::string&, bool)>;
 
   struct PlatformDispatchTable {
-    UpdateSemanticsNodesCallback update_semantics_nodes_callback;  // optional
-    UpdateSemanticsCustomActionsCallback
-        update_semantics_custom_actions_callback;  // optional
+    UpdateSemanticsCallback update_semantics_callback;  // optional
     PlatformMessageResponseCallback
         platform_message_response_callback;             // optional
     VsyncWaiterEmbedder::VsyncCallback vsync_callback;  // optional
     ComputePlatformResolvedLocaleCallback
         compute_platform_resolved_locale_callback;
+    OnPreEngineRestartCallback on_pre_engine_restart_callback;  // optional
+    ChanneUpdateCallback on_channel_update;                     // optional
   };
 
   // Create a platform view that sets up a software rasterizer.
   PlatformViewEmbedder(
       PlatformView::Delegate& delegate,
-      flutter::TaskRunners task_runners,
-      EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table,
+      const flutter::TaskRunners& task_runners,
+      const EmbedderSurfaceSoftware::SoftwareDispatchTable&
+          software_dispatch_table,
       PlatformDispatchTable platform_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
@@ -56,9 +67,28 @@ class PlatformViewEmbedder final : public PlatformView {
   // Creates a platform view that sets up an OpenGL rasterizer.
   PlatformViewEmbedder(
       PlatformView::Delegate& delegate,
-      flutter::TaskRunners task_runners,
-      EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table,
-      bool fbo_reset_after_present,
+      const flutter::TaskRunners& task_runners,
+      std::unique_ptr<EmbedderSurface> embedder_surface,
+      PlatformDispatchTable platform_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+  // Creates a platform view that sets up an metal rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      const flutter::TaskRunners& task_runners,
+      std::unique_ptr<EmbedderSurface> embedder_surface,
+      PlatformDispatchTable platform_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+  // Creates a platform view that sets up an Vulkan rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      const flutter::TaskRunners& task_runners,
+      std::unique_ptr<EmbedderSurfaceVulkan> embedder_surface,
       PlatformDispatchTable platform_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 #endif
@@ -71,12 +101,17 @@ class PlatformViewEmbedder final : public PlatformView {
       flutter::CustomAccessibilityActionUpdates actions) override;
 
   // |PlatformView|
-  void HandlePlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
+
+  // |PlatformView|
+  std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const override;
 
  private:
+  class EmbedderPlatformMessageHandler;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<EmbedderSurface> embedder_surface_;
+  std::shared_ptr<EmbedderPlatformMessageHandler> platform_message_handler_;
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
@@ -86,14 +121,23 @@ class PlatformViewEmbedder final : public PlatformView {
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override;
+
+  // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |PlatformView|
+  void OnPreEngineRestart() const override;
+
+  // |PlatformView|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
+
+  // |PlatformView|
+  void SendChannelUpdate(const std::string& name, bool listening) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };

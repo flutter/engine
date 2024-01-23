@@ -2,59 +2,60 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 
-import 'exceptions.dart';
-
 /// Contains various environment variables, such as common file paths and command-line options.
 Environment get environment {
-  _environment ??= Environment();
-  return _environment;
+  return _environment ??= Environment();
 }
 
-Environment _environment;
+Environment? _environment;
 
 /// Contains various environment variables, such as common file paths and command-line options.
 class Environment {
+  /// Creates an environment deduced from the path of the main Dart script.
   factory Environment() {
-    final io.File self = io.File.fromUri(io.Platform.script);
-    final io.Directory engineSrcDir = self.parent.parent.parent.parent.parent;
-    return _prepareEnvironmentFromEngineDir(self, engineSrcDir);
+    final io.File script = io.File.fromUri(io.Platform.script);
+    io.Directory directory = script.parent;
+    bool foundEngineRepoRoot = false;
+    while (!foundEngineRepoRoot) {
+      foundEngineRepoRoot = directory
+        .listSync()
+        .whereType<io.File>()
+        .map((io.File file) => pathlib.basename(file.path))
+        .contains('DEPS');
+      final io.Directory parent = directory.parent;
+      if (parent.path == directory.path) {
+        throw Exception(
+          'Failed to locate the root of the engine repository starting from ${script.path}',
+        );
+      }
+      directory = parent;
+    }
+    return _prepareEnvironmentFromEngineDir(script, directory);
   }
 
-  factory Environment.forIntegrationTests() {
-    final io.File self = io.File.fromUri(io.Platform.script);
-    final io.Directory engineSrcDir =
-        self.parent.parent.parent.parent.parent.parent;
-    return _prepareEnvironmentFromEngineDir(self, engineSrcDir);
-  }
+  Environment._({
+    required this.self,
+    required this.webUiRootDir,
+    required this.engineSrcDir,
+    required this.engineToolsDir,
+  });
 
   static Environment _prepareEnvironmentFromEngineDir(
       io.File self, io.Directory engineSrcDir) {
     final io.Directory engineToolsDir =
         io.Directory(pathlib.join(engineSrcDir.path, 'flutter', 'tools'));
-    final io.Directory outDir =
-        io.Directory(pathlib.join(engineSrcDir.path, 'out'));
-    final io.Directory hostDebugUnoptDir =
-        io.Directory(pathlib.join(outDir.path, 'host_debug_unopt'));
-    final io.Directory dartSdkDir =
-        io.Directory(pathlib.join(hostDebugUnoptDir.path, 'dart-sdk'));
     final io.Directory webUiRootDir = io.Directory(
         pathlib.join(engineSrcDir.path, 'flutter', 'lib', 'web_ui'));
-    final io.Directory integrationTestsDir = io.Directory(
-        pathlib.join(engineSrcDir.path, 'flutter', 'e2etests', 'web'));
 
-    for (io.Directory expectedDirectory in <io.Directory>[
+    for (final io.Directory expectedDirectory in <io.Directory>[
       engineSrcDir,
-      outDir,
-      hostDebugUnoptDir,
-      dartSdkDir,
       webUiRootDir
     ]) {
       if (!expectedDirectory.existsSync()) {
-        throw ToolException('$expectedDirectory does not exist.');
+        throw Exception('$expectedDirectory does not exist.');
       }
     }
 
@@ -63,23 +64,8 @@ class Environment {
       webUiRootDir: webUiRootDir,
       engineSrcDir: engineSrcDir,
       engineToolsDir: engineToolsDir,
-      integrationTestsDir: integrationTestsDir,
-      outDir: outDir,
-      hostDebugUnoptDir: hostDebugUnoptDir,
-      dartSdkDir: dartSdkDir,
     );
   }
-
-  Environment._({
-    this.self,
-    this.webUiRootDir,
-    this.engineSrcDir,
-    this.engineToolsDir,
-    this.integrationTestsDir,
-    this.outDir,
-    this.hostDebugUnoptDir,
-    this.dartSdkDir,
-  });
 
   /// The Dart script that's currently running.
   final io.File self;
@@ -93,33 +79,11 @@ class Environment {
   /// Path to the engine's "tools" directory.
   final io.Directory engineToolsDir;
 
-  /// Path to the web integration tests.
-  final io.Directory integrationTestsDir;
-
-  /// Path to the engine's "out" directory.
-  ///
-  /// This is where you'll find the ninja output, such as the Dart SDK.
-  final io.Directory outDir;
-
-  /// The "host_debug_unopt" build of the Dart SDK.
-  final io.Directory hostDebugUnoptDir;
-
-  /// The root of the Dart SDK.
-  final io.Directory dartSdkDir;
-
-  /// The "dart" executable file.
-  String get dartExecutable => pathlib.join(dartSdkDir.path, 'bin', 'dart');
-
-  /// The "pub" executable file.
-  String get pubExecutable => pathlib.join(dartSdkDir.path, 'bin', 'pub');
-
-  /// The "dart2js" executable file.
-  String get dart2jsExecutable =>
-      pathlib.join(dartSdkDir.path, 'bin', 'dart2js');
-
   /// Path to where github.com/flutter/engine is checked out inside the engine workspace.
   io.Directory get flutterDirectory =>
       io.Directory(pathlib.join(engineSrcDir.path, 'flutter'));
+
+  /// Path to the "web_sdk" directory in the engine source tree.
   io.Directory get webSdkRootDir => io.Directory(pathlib.join(
         flutterDirectory.path,
         'web_sdk',
@@ -135,8 +99,9 @@ class Environment {
   ///
   /// This is where compiled output goes.
   io.Directory get webUiBuildDir => io.Directory(pathlib.join(
-        webUiRootDir.path,
-        'build',
+        engineSrcDir.path,
+        'out',
+        'web_tests',
       ));
 
   /// Path to the ".dart_tool" directory, generated by various Dart tools.
@@ -174,10 +139,10 @@ class Environment {
         'lib',
       ));
 
-  /// Path to the clone of the flutter/goldens repository.
-  io.Directory get webUiGoldensRepositoryDirectory => io.Directory(pathlib.join(
+  /// Path to the base directory to be used by Skia Gold.
+  io.Directory get webUiSkiaGoldDirectory => io.Directory(pathlib.join(
         webUiDartToolDir.path,
-        'goldens',
+        'skia_gold',
       ));
 
   /// Directory to add test results which would later be uploaded to a gcs

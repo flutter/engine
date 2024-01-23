@@ -5,6 +5,8 @@
 #ifndef FLUTTER_FML_TRACE_EVENT_H_
 #define FLUTTER_FML_TRACE_EVENT_H_
 
+#include <functional>
+
 #include "flutter/fml/build_config.h"
 
 #if defined(OS_FUCHSIA)
@@ -19,11 +21,27 @@
   ::fml::tracing::TraceCounterNopHACK((a), (b), (c), (arg1), __VA_ARGS__);
 
 #define FML_TRACE_EVENT(a, b, args...) TRACE_DURATION(a, b)
+// On Fuchsia, the flow_id arguments to this macro are ignored.
+#define FML_TRACE_EVENT_WITH_FLOW_IDS(category_group, name, flow_id_count, \
+                                      flow_ids, ...)                       \
+  FML_TRACE_EVENT(category_group, name)
 
 #define TRACE_EVENT0(a, b) TRACE_DURATION(a, b)
+// On Fuchsia, the flow_id arguments to this macro are ignored.
+#define TRACE_EVENT0_WITH_FLOW_IDS(category_group, name, flow_id_count, \
+                                   flow_ids)                            \
+  TRACE_EVENT0(category_group, name)
 #define TRACE_EVENT1(a, b, c, d) TRACE_DURATION(a, b, c, d)
+// On Fuchsia, the flow_id arguments to this macro are ignored.
+#define TRACE_EVENT1_WITH_FLOW_IDS(category_group, name, flow_id_count, \
+                                   flow_ids, arg1_name, arg1_val)       \
+  TRACE_EVENT1(category_group, name, arg1_name, arg1_val)
 #define TRACE_EVENT2(a, b, c, d, e, f) TRACE_DURATION(a, b, c, d, e, f)
 #define TRACE_EVENT_ASYNC_BEGIN0(a, b, c) TRACE_ASYNC_BEGIN(a, b, c)
+// On Fuchsia, the flow_id arguments to this macro are ignored.
+#define TRACE_EVENT_ASYNC_BEGIN0_WITH_FLOW_IDS(category_group, name, id, \
+                                               flow_id_count, flow_ids)  \
+  TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id)
 #define TRACE_EVENT_ASYNC_END0(a, b, c) TRACE_ASYNC_END(a, b, c)
 #define TRACE_EVENT_ASYNC_BEGIN1(a, b, c, d, e) TRACE_ASYNC_BEGIN(a, b, c, d, e)
 #define TRACE_EVENT_ASYNC_END1(a, b, c, d, e) TRACE_ASYNC_END(a, b, c, d, e)
@@ -45,7 +63,7 @@
 #include "flutter/fml/time/time_point.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
-#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA))
+#if (FLUTTER_RELEASE && !defined(OS_FUCHSIA) && !defined(FML_OS_ANDROID))
 #define FLUTTER_TIMELINE_ENABLED 0
 #else
 #define FLUTTER_TIMELINE_ENABLED 1
@@ -68,49 +86,106 @@
   ::fml::tracing::TraceCounter((category_group), (name), (counter_id), (arg1), \
                                __VA_ARGS__);
 
-#define FML_TRACE_EVENT(category_group, name, ...)                   \
-  ::fml::tracing::TraceEvent((category_group), (name), __VA_ARGS__); \
+// Avoid using the same `name` and `argX_name` for nested traces, which can
+// lead to double free errors. E.g. the following code should be avoided:
+//
+// ```cpp
+// {
+//    TRACE_EVENT1("flutter", "Foo::Bar", "count", "initial_count_value");
+//    ...
+//    TRACE_EVENT_INSTANT1("flutter", "Foo::Bar",
+//                         "count", "updated_count_value");
+// }
+// ```
+//
+// Instead, either use different `name` or `arg1` parameter names.
+#define FML_TRACE_EVENT_WITH_FLOW_IDS(category_group, name, flow_id_count, \
+                                      flow_ids, ...)                       \
+  ::fml::tracing::TraceEvent((category_group), (name), (flow_id_count),    \
+                             (flow_ids), __VA_ARGS__);                     \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT0(category_group, name)           \
-  ::fml::tracing::TraceEvent0(category_group, name); \
+// Avoid using the same `name` and `argX_name` for nested traces, which can
+// lead to double free errors. E.g. the following code should be avoided:
+//
+// ```cpp
+// {
+//    TRACE_EVENT1("flutter", "Foo::Bar", "count", "initial_count_value");
+//    ...
+//    TRACE_EVENT_INSTANT1("flutter", "Foo::Bar",
+//                         "count", "updated_count_value");
+// }
+// ```
+//
+// Instead, either use different `name` or `arg1` parameter names.
+#define FML_TRACE_EVENT(category_group, name, ...)                             \
+  FML_TRACE_EVENT_WITH_FLOW_IDS((category_group), (name),                      \
+                                /*flow_id_count=*/(0), /*flow_ids=*/(nullptr), \
+                                __VA_ARGS__)
+
+#define TRACE_EVENT0_WITH_FLOW_IDS(category_group, name, flow_id_count,       \
+                                   flow_ids)                                  \
+  ::fml::tracing::TraceEvent0(category_group, name, flow_id_count, flow_ids); \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val)           \
-  ::fml::tracing::TraceEvent1(category_group, name, arg1_name, arg1_val); \
+#define TRACE_EVENT0(category_group, name)                              \
+  TRACE_EVENT0_WITH_FLOW_IDS(category_group, name, /*flow_id_count=*/0, \
+                             /*flow_ids=*/nullptr)
+
+#define TRACE_EVENT1_WITH_FLOW_IDS(category_group, name, flow_id_count,      \
+                                   flow_ids, arg1_name, arg1_val)            \
+  ::fml::tracing::TraceEvent1(category_group, name, flow_id_count, flow_ids, \
+                              arg1_name, arg1_val);                          \
   __FML__AUTO_TRACE_END(name)
+
+#define TRACE_EVENT1(category_group, name, arg1_name, arg1_val)         \
+  TRACE_EVENT1_WITH_FLOW_IDS(category_group, name, /*flow_id_count=*/0, \
+                             /*flow_ids=*/nullptr, arg1_name, arg1_val)
 
 #define TRACE_EVENT2(category_group, name, arg1_name, arg1_val, arg2_name, \
                      arg2_val)                                             \
-  ::fml::tracing::TraceEvent2(category_group, name, arg1_name, arg1_val,   \
+  ::fml::tracing::TraceEvent2(category_group, name, /*flow_id_count=*/0,   \
+                              /*flow_ids=*/nullptr, arg1_name, arg1_val,   \
                               arg2_name, arg2_val);                        \
   __FML__AUTO_TRACE_END(name)
 
+#define TRACE_EVENT_ASYNC_BEGIN0_WITH_FLOW_IDS(category_group, name, id, \
+                                               flow_id_count, flow_ids)  \
+  ::fml::tracing::TraceEventAsyncBegin0(category_group, name, id,        \
+                                        flow_id_count, flow_ids);
+
 #define TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
-  ::fml::tracing::TraceEventAsyncBegin0(category_group, name, id);
+  TRACE_EVENT_ASYNC_BEGIN0_WITH_FLOW_IDS(                  \
+      category_group, name, id, /*flow_id_count=*/0, /*flow_ids=*/nullptr)
 
 #define TRACE_EVENT_ASYNC_END0(category_group, name, id) \
   ::fml::tracing::TraceEventAsyncEnd0(category_group, name, id);
 
-#define TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name,        \
-                                 arg1_val)                                   \
-  ::fml::tracing::TraceEventAsyncBegin1(category_group, name, id, arg1_name, \
-                                        arg1_val);
+#define TRACE_EVENT_ASYNC_BEGIN1(category_group, name, id, arg1_name,      \
+                                 arg1_val)                                 \
+  ::fml::tracing::TraceEventAsyncBegin1(                                   \
+      category_group, name, id, /*flow_id_count=*/0, /*flow_ids=*/nullptr, \
+      arg1_name, arg1_val);
 
 #define TRACE_EVENT_ASYNC_END1(category_group, name, id, arg1_name, arg1_val) \
-  ::fml::tracing::TraceEventAsyncEnd1(category_group, name, id, arg1_name,    \
-                                      arg1_val);
+  ::fml::tracing::TraceEventAsyncEnd1(                                        \
+      category_group, name, id, /*flow_id_count=*/0, /*flow_ids=*/nullptr,    \
+      arg1_name, arg1_val);
 
 #define TRACE_EVENT_INSTANT0(category_group, name) \
-  ::fml::tracing::TraceEventInstant0(category_group, name);
+  ::fml::tracing::TraceEventInstant0(              \
+      category_group, name, /*flow_id_count=*/0, /*flow_ids=*/nullptr);
 
 #define TRACE_EVENT_INSTANT1(category_group, name, arg1_name, arg1_val) \
-  ::fml::tracing::TraceEventInstant1(category_group, name, arg1_name, arg1_val);
+  ::fml::tracing::TraceEventInstant1(                                   \
+      category_group, name, /*flow_id_count=*/0, /*flow_ids=*/nullptr,  \
+      arg1_name, arg1_val);
 
 #define TRACE_EVENT_INSTANT2(category_group, name, arg1_name, arg1_val, \
                              arg2_name, arg2_val)                       \
-  ::fml::tracing::TraceEventInstant2(category_group, name, arg1_name,   \
-                                     arg1_val, arg2_name, arg2_val);
+  ::fml::tracing::TraceEventInstant2(                                   \
+      category_group, name, /*flow_id_count=*/0, /*flow_ids=*/nullptr,  \
+      arg1_name, arg1_val, arg2_name, arg2_val);
 
 #define TRACE_FLOW_BEGIN(category, name, id) \
   ::fml::tracing::TraceEventFlowBegin0(category, name, id);
@@ -124,6 +199,13 @@
 #endif  // TRACE_EVENT_HIDE_MACROS
 #endif  // !defined(OS_FUCHSIA)
 
+#define TRACE_EVENT2_INT(category_group, name, arg1_name, arg1_val, arg2_name, \
+                         arg2_val)                                             \
+  const auto __arg1_val_str = std::to_string(arg1_val);                        \
+  const auto __arg2_val_str = std::to_string(arg2_val);                        \
+  TRACE_EVENT2(category_group, name, arg1_name, __arg1_val_str.c_str(),        \
+               arg2_name, __arg2_val_str.c_str());
+
 namespace fml {
 namespace tracing {
 
@@ -132,10 +214,32 @@ using TraceIDArg = int64_t;
 
 void TraceSetAllowlist(const std::vector<std::string>& allowlist);
 
+typedef void (*TimelineEventHandler)(const char*,
+                                     int64_t,
+                                     int64_t,
+                                     intptr_t,
+                                     const int64_t*,
+                                     Dart_Timeline_Event_Type,
+                                     intptr_t,
+                                     const char**,
+                                     const char**);
+
+using TimelineMicrosSource = int64_t (*)();
+
+void TraceSetTimelineEventHandler(TimelineEventHandler handler);
+
+bool TraceHasTimelineEventHandler();
+
+void TraceSetTimelineMicrosSource(TimelineMicrosSource source);
+
+int64_t TraceGetTimelineMicros();
+
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,
                         int64_t timestamp_micros,
                         TraceIDArg id,
+                        size_t flow_id_count,
+                        const uint64_t* flow_ids,
                         Dart_Timeline_Event_Type type,
                         const std::vector<const char*>& names,
                         const std::vector<std::string>& values);
@@ -143,6 +247,8 @@ void TraceTimelineEvent(TraceArg category_group,
 void TraceTimelineEvent(TraceArg category_group,
                         TraceArg name,
                         TraceIDArg id,
+                        size_t flow_id_count,
+                        const uint64_t* flow_ids,
                         Dart_Timeline_Event_Type type,
                         const std::vector<const char*>& names,
                         const std::vector<std::string>& values);
@@ -201,7 +307,8 @@ void TraceCounter(TraceArg category,
                   Args... args) {
 #if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
-  TraceTimelineEvent(category, name, identifier, Dart_Timeline_Event_Counter,
+  TraceTimelineEvent(category, name, identifier, /*flow_id_count=*/0,
+                     /*flow_ids=*/nullptr, Dart_Timeline_Event_Counter,
                      split.first, split.second);
 #endif  // FLUTTER_TIMELINE_ENABLED
 }
@@ -215,23 +322,34 @@ void TraceCounterNopHACK(TraceArg category,
                          Args... args) {}
 
 template <typename... Args>
-void TraceEvent(TraceArg category, TraceArg name, Args... args) {
+void TraceEvent(TraceArg category,
+                TraceArg name,
+                size_t flow_id_count,
+                const uint64_t* flow_ids,
+                Args... args) {
 #if FLUTTER_TIMELINE_ENABLED
   auto split = SplitArguments(args...);
-  TraceTimelineEvent(category, name, 0, Dart_Timeline_Event_Begin, split.first,
-                     split.second);
+  TraceTimelineEvent(category, name, 0, flow_id_count, flow_ids,
+                     Dart_Timeline_Event_Begin, split.first, split.second);
 #endif  // FLUTTER_TIMELINE_ENABLED
 }
 
-void TraceEvent0(TraceArg category_group, TraceArg name);
+void TraceEvent0(TraceArg category_group,
+                 TraceArg name,
+                 size_t flow_id_count,
+                 const uint64_t* flow_ids);
 
 void TraceEvent1(TraceArg category_group,
                  TraceArg name,
+                 size_t flow_id_count,
+                 const uint64_t* flow_ids,
                  TraceArg arg1_name,
                  TraceArg arg1_val);
 
 void TraceEvent2(TraceArg category_group,
                  TraceArg name,
+                 size_t flow_id_count,
+                 const uint64_t* flow_ids,
                  TraceArg arg1_name,
                  TraceArg arg1_val,
                  TraceArg arg2_name,
@@ -260,6 +378,8 @@ void TraceEventAsyncComplete(TraceArg category_group,
                      name,                             // name
                      begin_micros,                     // timestamp_micros
                      identifier,                       // identifier
+                     0,                                // flow_id_count
+                     nullptr,                          // flow_ids
                      Dart_Timeline_Event_Async_Begin,  // type
                      split.first,                      // names
                      split.second                      // values
@@ -269,6 +389,8 @@ void TraceEventAsyncComplete(TraceArg category_group,
                      name,                           // name
                      end_micros,                     // timestamp_micros
                      identifier,                     // identifier
+                     0,                              // flow_id_count
+                     nullptr,                        // flow_ids
                      Dart_Timeline_Event_Async_End,  // type
                      split.first,                    // names
                      split.second                    // values
@@ -278,13 +400,17 @@ void TraceEventAsyncComplete(TraceArg category_group,
 
 void TraceEventAsyncBegin0(TraceArg category_group,
                            TraceArg name,
-                           TraceIDArg id);
+                           TraceIDArg id,
+                           size_t flow_id_count,
+                           const uint64_t* flow_ids);
 
 void TraceEventAsyncEnd0(TraceArg category_group, TraceArg name, TraceIDArg id);
 
 void TraceEventAsyncBegin1(TraceArg category_group,
                            TraceArg name,
                            TraceIDArg id,
+                           size_t flow_id_count,
+                           const uint64_t* flow_ids,
                            TraceArg arg1_name,
                            TraceArg arg1_val);
 
@@ -294,15 +420,22 @@ void TraceEventAsyncEnd1(TraceArg category_group,
                          TraceArg arg1_name,
                          TraceArg arg1_val);
 
-void TraceEventInstant0(TraceArg category_group, TraceArg name);
+void TraceEventInstant0(TraceArg category_group,
+                        TraceArg name,
+                        size_t flow_id_count,
+                        const uint64_t* flow_ids);
 
 void TraceEventInstant1(TraceArg category_group,
                         TraceArg name,
+                        size_t flow_id_count,
+                        const uint64_t* flow_ids,
                         TraceArg arg1_name,
                         TraceArg arg1_val);
 
 void TraceEventInstant2(TraceArg category_group,
                         TraceArg name,
+                        size_t flow_id_count,
+                        const uint64_t* flow_ids,
                         TraceArg arg1_name,
                         TraceArg arg1_val,
                         TraceArg arg2_name,
@@ -318,7 +451,7 @@ void TraceEventFlowEnd0(TraceArg category_group, TraceArg name, TraceIDArg id);
 
 class ScopedInstantEnd {
  public:
-  ScopedInstantEnd(const char* str) : label_(str) {}
+  explicit ScopedInstantEnd(const char* str) : label_(str) {}
 
   ~ScopedInstantEnd() { TraceEventEnd(label_); }
 
@@ -335,8 +468,11 @@ class ScopedInstantEnd {
 // leads to corrupted or missing traces in the UI.
 class TraceFlow {
  public:
-  TraceFlow(const char* label) : label_(label), nonce_(TraceNonce()) {
+  explicit TraceFlow(const char* label) : label_(label), nonce_(TraceNonce()) {
+    TraceEvent0("flutter", label_, /*flow_id_count=*/1,
+                /*flow_ids=*/&nonce_);
     TraceEventFlowBegin0("flutter", label_, nonce_);
+    TraceEventEnd(label_);
   }
 
   ~TraceFlow() { End(label_); }
@@ -345,20 +481,26 @@ class TraceFlow {
     other.nonce_ = 0;
   }
 
-  void Step(const char* label) const {
-    TraceEventFlowStep0("flutter", label, nonce_);
+  void Step(const char* label = nullptr) const {
+    TraceEvent0("flutter", label ? label : label_, /*flow_id_count=*/1,
+                /*flow_ids=*/&nonce_);
+    TraceEventFlowStep0("flutter", label ? label : label_, nonce_);
+    TraceEventEnd(label ? label : label_);
   }
 
   void End(const char* label = nullptr) {
     if (nonce_ != 0) {
-      TraceEventFlowEnd0("flutter", label == nullptr ? label_ : label, nonce_);
+      TraceEvent0("flutter", label ? label : label_, /*flow_id_count=*/1,
+                  /*flow_ids=*/&nonce_);
+      TraceEventFlowEnd0("flutter", label ? label : label_, nonce_);
+      TraceEventEnd(label ? label : label_);
       nonce_ = 0;
     }
   }
 
  private:
   const char* label_;
-  size_t nonce_;
+  uint64_t nonce_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TraceFlow);
 };

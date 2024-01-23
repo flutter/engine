@@ -25,14 +25,15 @@ static void StartupAndShutdownShell(benchmark::State& state,
   {
     benchmarking::ScopedPauseTiming pause(state, !measure_startup);
     Settings settings = {};
-    settings.task_observer_add = [](intptr_t, fml::closure) {};
+    settings.task_observer_add = [](intptr_t, const fml::closure&) {};
     settings.task_observer_remove = [](intptr_t) {};
 
     if (DartVM::IsRunningPrecompiledCode()) {
-      aot_symbols = testing::LoadELFSymbolFromFixturesIfNeccessary();
+      aot_symbols = testing::LoadELFSymbolFromFixturesIfNeccessary(
+          testing::kDefaultAOTAppELFFileName);
       FML_CHECK(
           testing::PrepareSettingsForAOTWithSymbols(settings, aot_symbols))
-          << "Could not setup settings with AOT symbols.";
+          << "Could not set up settings with AOT symbols.";
     } else {
       settings.application_kernels = [&]() {
         std::vector<std::unique_ptr<const fml::Mapping>> kernel_mappings;
@@ -42,10 +43,10 @@ static void StartupAndShutdownShell(benchmark::State& state,
       };
     }
 
-    thread_host = std::make_unique<ThreadHost>(
-        "io.flutter.bench.", ThreadHost::Type::Platform |
-                                 ThreadHost::Type::GPU | ThreadHost::Type::IO |
-                                 ThreadHost::Type::UI);
+    thread_host = std::make_unique<ThreadHost>(ThreadHost::ThreadHostConfig(
+        "io.flutter.bench.",
+        ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+            ThreadHost::Type::kIo | ThreadHost::Type::kUi));
 
     TaskRunners task_runners("test",
                              thread_host->platform_thread->GetTaskRunner(),
@@ -54,7 +55,7 @@ static void StartupAndShutdownShell(benchmark::State& state,
                              thread_host->io_thread->GetTaskRunner());
 
     shell = Shell::Create(
-        std::move(task_runners), settings,
+        flutter::PlatformData(), task_runners, settings,
         [](Shell& shell) {
           return std::make_unique<PlatformView>(shell, shell.GetTaskRunners());
         },

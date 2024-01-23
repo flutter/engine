@@ -2,8 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+
+/// Sets the "button" ARIA role.
+class Button extends PrimaryRoleManager {
+  Button(SemanticsObject semanticsObject) : super.withBasics(PrimaryRole.button, semanticsObject) {
+    setAriaRole('button');
+  }
+
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
+
+  @override
+  void update() {
+    super.update();
+
+    if (semanticsObject.enabledState() == EnabledState.disabled) {
+      setAttribute('aria-disabled', 'true');
+    } else {
+      removeAttribute('aria-disabled');
+    }
+  }
+}
 
 /// Listens to HTML "click" gestures detected by the browser.
 ///
@@ -12,57 +33,46 @@ part of engine;
 /// the browser may not send us pointer events. In that mode we forward HTML
 /// click as [ui.SemanticsAction.tap].
 class Tappable extends RoleManager {
-  Tappable(SemanticsObject semanticsObject)
-      : super(Role.tappable, semanticsObject);
+  Tappable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
+      : super(Role.tappable, semanticsObject, owner) {
+    _clickListener = createDomEventListener((DomEvent click) {
+      PointerBinding.clickDebouncer.onClick(
+        click,
+        semanticsObject.id,
+        _isListening,
+      );
+    });
+    owner.element.addEventListener('click', _clickListener);
+  }
 
-  html.EventListener? _clickListener;
+  DomEventListener? _clickListener;
+  bool _isListening = false;
 
   @override
   void update() {
-    final html.Element element = semanticsObject.element;
-
-    semanticsObject.setAriaRole(
-        'button', semanticsObject.hasFlag(ui.SemanticsFlag.isButton));
-
-    // Add `aria-disabled` for disabled buttons.
-    if (semanticsObject.enabledState() == EnabledState.disabled &&
-        semanticsObject.hasFlag(ui.SemanticsFlag.isButton)) {
-      semanticsObject.element.setAttribute('aria-disabled', 'true');
-      _stopListening();
-    } else {
-      // Excluding text fields because text fields have browser-specific logic
-      // for recognizing taps and activating the keyboard.
-      if (semanticsObject.hasAction(ui.SemanticsAction.tap) &&
-          !semanticsObject.hasFlag(ui.SemanticsFlag.isTextField)) {
-        if (_clickListener == null) {
-          _clickListener = (_) {
-            if (semanticsObject.owner.gestureMode !=
-                GestureMode.browserGestures) {
-              return;
-            }
-            EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-                semanticsObject.id, ui.SemanticsAction.tap, null);
-          };
-          element.addEventListener('click', _clickListener);
-        }
-      } else {
-        _stopListening();
-      }
+    final bool wasListening = _isListening;
+    _isListening = semanticsObject.enabledState() != EnabledState.disabled && semanticsObject.isTappable;
+    if (wasListening != _isListening) {
+      _updateAttribute();
     }
   }
 
-  void _stopListening() {
-    if (_clickListener == null) {
-      return;
+  void _updateAttribute() {
+    // The `flt-tappable` attribute marks the element for the ClickDebouncer to
+    // to know that it should debounce click events on this element. The
+    // contract is that the element that has this attribute is also the element
+    // that receives pointer and "click" events.
+    if (_isListening) {
+      owner.element.setAttribute('flt-tappable', '');
+    } else {
+      owner.element.removeAttribute('flt-tappable');
     }
-
-    semanticsObject.element.removeEventListener('click', _clickListener);
-    _clickListener = null;
   }
 
   @override
   void dispose() {
-    _stopListening();
-    semanticsObject.setAriaRole('button', false);
+    owner.removeEventListener('click', _clickListener);
+    _clickListener = null;
+    super.dispose();
   }
 }

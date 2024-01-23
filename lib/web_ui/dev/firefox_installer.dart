@@ -1,54 +1,17 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-// @dart = 2.6
+
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
 import 'package:http/http.dart';
-import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
-import 'package:yaml/yaml.dart';
 
 import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 
-class FirefoxArgParser extends BrowserArgParser {
-  static final FirefoxArgParser _singletonInstance = FirefoxArgParser._();
-
-  /// The [FirefoxArgParser] singleton.
-  static FirefoxArgParser get instance => _singletonInstance;
-
-  String _version;
-
-  FirefoxArgParser._();
-
-  @override
-  void populateOptions(ArgParser argParser) {
-    final YamlMap browserLock = BrowserLock.instance.configuration;
-    String firefoxVersion = browserLock['firefox']['version'] as String;
-
-    argParser
-      ..addOption(
-        'firefox-version',
-        defaultsTo: '$firefoxVersion',
-        help: 'The Firefox version to use while running tests. If the requested '
-            'version has not been installed, it will be downloaded and installed '
-            'automatically. Value "latest" will use the latest '
-            'stable build of Firefox, installing it if necessary. Value "system" '
-            'will use the manually installed version of Firefox on this computer.',
-      );
-  }
-
-  @override
-  void parseOptions(ArgResults argResults) {
-    _version = argResults['firefox-version'] as String;
-  }
-
-  @override
-  String get version => _version;
-}
+const String _firefoxExecutableVar = 'FIREFOX_EXECUTABLE';
 
 /// Returns the installation of Firefox, installing it if necessary.
 ///
@@ -64,7 +27,7 @@ class FirefoxArgParser extends BrowserArgParser {
 /// https://download-installer.cdn.mozilla.net/pub/firefox/releases/
 Future<BrowserInstallation> getOrInstallFirefox(
   String requestedVersion, {
-  StringSink infoLog,
+  StringSink? infoLog,
 }) async {
   // These tests are aimed to run only on the Linux containers in Cirrus.
   // Therefore Firefox installation is implemented only for Linux now.
@@ -75,6 +38,18 @@ Future<BrowserInstallation> getOrInstallFirefox(
 
   infoLog ??= io.stdout;
 
+  // When running on LUCI, if we specify the "firefox" dependency, then the
+  // bot will download Firefox from CIPD and place it in a cache and set the
+  // environment variable FIREFOX_EXECUTABLE.
+  if (io.Platform.environment.containsKey(_firefoxExecutableVar)) {
+    infoLog.writeln('Using Firefox from $_firefoxExecutableVar variable: '
+      '${io.Platform.environment[_firefoxExecutableVar]}');
+    return BrowserInstallation(
+      version: 'cipd',
+      executable: io.Platform.environment[_firefoxExecutableVar]!,
+    );
+  }
+
   if (requestedVersion == 'system') {
     return BrowserInstallation(
       version: 'system',
@@ -82,7 +57,7 @@ Future<BrowserInstallation> getOrInstallFirefox(
     );
   }
 
-  FirefoxInstaller installer;
+  FirefoxInstaller? installer;
   try {
     installer = requestedVersion == 'latest'
         ? await FirefoxInstaller.latest()
@@ -94,11 +69,11 @@ Future<BrowserInstallation> getOrInstallFirefox(
     } else {
       infoLog.writeln('Installing Firefox version: ${installer.version}');
       await installer.install();
-      final BrowserInstallation installation = installer.getInstallation();
+      final BrowserInstallation installation = installer.getInstallation()!;
       infoLog.writeln(
           'Installations complete. To launch it run ${installation.executable}');
     }
-    return installer.getInstallation();
+    return installer.getInstallation()!;
   } finally {
     installer?.close();
   }
@@ -107,7 +82,7 @@ Future<BrowserInstallation> getOrInstallFirefox(
 /// Manages the installation of a particular [version] of Firefox.
 class FirefoxInstaller {
   factory FirefoxInstaller({
-    @required String version,
+    required String version,
   }) {
     if (version == 'system') {
       throw BrowserInstallerException(
@@ -130,18 +105,18 @@ class FirefoxInstaller {
     );
   }
 
+  FirefoxInstaller._({
+    required this.version,
+    required this.firefoxInstallationDir,
+    required this.versionDir,
+  });
+
   static Future<FirefoxInstaller> latest() async {
     final String latestVersion = io.Platform.isLinux
         ? await fetchLatestFirefoxVersionLinux()
         : await fetchLatestFirefoxVersionMacOS();
     return FirefoxInstaller(version: latestVersion);
   }
-
-  FirefoxInstaller._({
-    @required this.version,
-    @required this.firefoxInstallationDir,
-    @required this.versionDir,
-  });
 
   /// Firefox version managed by this installer.
   final String version;
@@ -159,7 +134,7 @@ class FirefoxInstaller {
     return versionDir.existsSync();
   }
 
-  BrowserInstallation getInstallation() {
+  BrowserInstallation? getInstallation() {
     if (!isInstalled) {
       return null;
     }
@@ -197,7 +172,7 @@ class FirefoxInstaller {
 
     final io.File downloadedFile =
         io.File(path.join(versionDir.path, PlatformBinding.instance.getFirefoxDownloadFilename(version)));
-    io.IOSink sink = downloadedFile.openWrite();
+    final io.IOSink sink = downloadedFile.openWrite();
     await download.stream.pipe(sink);
     await sink.flush();
     await sink.close();
@@ -227,12 +202,12 @@ class FirefoxInstaller {
   /// Mounts the dmg file using hdiutil, copies content of the volume to
   /// target path and then unmounts dmg ready for deletion.
   Future<void> _mountDmgAndCopy(io.File dmgFile) async {
-    String volumeName = await _hdiUtilMount(dmgFile);
+    final String volumeName = await _hdiUtilMount(dmgFile);
 
     final String sourcePath = '$volumeName/Firefox.app';
     final String targetPath = path.dirname(dmgFile.path);
     try {
-      io.ProcessResult installResult = await io.Process.run('cp', <String>[
+      final io.ProcessResult installResult = await io.Process.run('cp', <String>[
         '-r',
         sourcePath,
         targetPath,
@@ -250,10 +225,10 @@ class FirefoxInstaller {
   }
 
   Future<String> _hdiUtilMount(io.File dmgFile) async {
-    io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
+    final io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
       'attach',
       '-readonly',
-      '${dmgFile.path}',
+      dmgFile.path,
     ]);
     if (mountResult.exitCode != 0) {
       throw BrowserInstallerException(
@@ -261,8 +236,8 @@ class FirefoxInstaller {
               'Exit code ${mountResult.exitCode}.\n${mountResult.stderr}');
     }
 
-    List<String> processOutput = (mountResult.stdout as String).split('\n');
-    String volumePath = _volumeFromMountResult(processOutput);
+    final List<String> processOutput = (mountResult.stdout as String).split('\n');
+    final String? volumePath = _volumeFromMountResult(processOutput);
     if (volumePath == null) {
       throw BrowserInstallerException(
           'Failed to parse mount dmg result ${processOutput.join('\n')}.\n'
@@ -273,9 +248,9 @@ class FirefoxInstaller {
 
   // Parses volume from mount result.
   // Output is of form: {devicename} /Volumes/{name}.
-  String _volumeFromMountResult(List<String> lines) {
-    for (String line in lines) {
-      int pos = line.indexOf('/Volumes');
+  String? _volumeFromMountResult(List<String> lines) {
+    for (final String line in lines) {
+      final int pos = line.indexOf('/Volumes');
       if (pos != -1) {
         return line.substring(pos);
       }
@@ -284,13 +259,13 @@ class FirefoxInstaller {
   }
 
   Future<void> _hdiUtilUnmount(String volumeName) async {
-    io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
+    final io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
       'unmount',
-      '$volumeName',
+      volumeName,
     ]);
     if (unmountResult.exitCode != 0) {
       throw BrowserInstallerException(
-          'Failed to unmount Firefox disk image ${volumeName}.\n'
+          'Failed to unmount Firefox disk image $volumeName.\n'
               'Exit code ${unmountResult.exitCode}. ${unmountResult.stderr}');
     }
   }
@@ -303,13 +278,13 @@ class FirefoxInstaller {
 Future<String> _findSystemFirefoxExecutable() async {
   final io.ProcessResult which =
       await io.Process.run('which', <String>['firefox']);
-  bool found = which.exitCode != 0;
+  final bool found = which.exitCode != 0;
   const String fireFoxDefaultInstallPath =
       '/Applications/Firefox.app/Contents/MacOS/firefox';
   if (!found) {
     if (io.Platform.isMacOS &&
         io.File(fireFoxDefaultInstallPath).existsSync()) {
-      return Future.value(fireFoxDefaultInstallPath);
+      return Future<String>.value(fireFoxDefaultInstallPath);
     }
     throw BrowserInstallerException(
         'Failed to locate system Firefox installation.');
@@ -319,35 +294,35 @@ Future<String> _findSystemFirefoxExecutable() async {
 
 /// Fetches the latest available Firefox build version on Linux.
 Future<String> fetchLatestFirefoxVersionLinux() async {
-  final RegExp forFirefoxVersion = RegExp("firefox-[0-9.]\+[0-9]");
+  final RegExp forFirefoxVersion = RegExp('firefox-[0-9.]+[0-9]');
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;
   // We will parse the HttpHeaders to find the redirect location.
   final io.HttpClientResponse response = await request.close();
 
-  final String location = response.headers.value('location');
-  final String version = forFirefoxVersion.stringMatch(location);
+  final String location = response.headers.value('location')!;
+  final String version = forFirefoxVersion.stringMatch(location)!;
 
   return version.substring(version.lastIndexOf('-') + 1);
 }
 
 /// Fetches the latest available Firefox build version on Mac OS.
 Future<String> fetchLatestFirefoxVersionMacOS() async {
-  final RegExp forFirefoxVersion = RegExp("firefox\/releases\/[0-9.]\+[0-9]");
+  final RegExp forFirefoxVersion = RegExp('firefox/releases/[0-9.]+[0-9]');
   final io.HttpClientRequest request = await io.HttpClient()
       .getUrl(Uri.parse(PlatformBinding.instance.getFirefoxLatestVersionUrl()));
   request.followRedirects = false;
   // We will parse the HttpHeaders to find the redirect location.
   final io.HttpClientResponse response = await request.close();
 
-  final String location = response.headers.value('location');
-  final String version = forFirefoxVersion.stringMatch(location);
+  final String location = response.headers.value('location')!;
+  final String version = forFirefoxVersion.stringMatch(location)!;
   return version.substring(version.lastIndexOf('/') + 1);
 }
 
 Future<BrowserInstallation> getInstaller({String requestedVersion = 'latest'}) async {
-  FirefoxInstaller installer;
+  FirefoxInstaller? installer;
   try {
     installer = requestedVersion == 'latest'
         ? await FirefoxInstaller.latest()
@@ -359,11 +334,11 @@ Future<BrowserInstallation> getInstaller({String requestedVersion = 'latest'}) a
     } else {
       print('Installing Firefox version: ${installer.version}');
       await installer.install();
-      final BrowserInstallation installation = installer.getInstallation();
+      final BrowserInstallation installation = installer.getInstallation()!;
       print(
           'Installations complete. To launch it run ${installation.executable}');
     }
-    return installer.getInstallation();
+    return installer.getInstallation()!;
   } finally {
     installer?.close();
   }

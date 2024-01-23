@@ -2,21 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_
-#define SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_
 
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include <android/hardware_buffer_jni.h>
 #include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/common/platform_view.h"
+#include "flutter/shell/common/snapshot_surface_producer.h"
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
+#include "flutter/shell/platform/android/platform_message_handler_android.h"
 #include "flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate.h"
 #include "flutter/shell/platform/android/surface/android_native_window.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
@@ -25,33 +27,38 @@ namespace flutter {
 
 class AndroidSurfaceFactoryImpl : public AndroidSurfaceFactory {
  public:
-  AndroidSurfaceFactoryImpl(const AndroidContext& context,
-                            std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+  AndroidSurfaceFactoryImpl(const std::shared_ptr<AndroidContext>& context,
+                            bool enable_impeller);
 
   ~AndroidSurfaceFactoryImpl() override;
 
   std::unique_ptr<AndroidSurface> CreateSurface() override;
 
  private:
-  const AndroidContext& android_context_;
-  std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
+  const std::shared_ptr<AndroidContext>& android_context_;
+  const bool enable_impeller_;
 };
 
 class PlatformViewAndroid final : public PlatformView {
  public:
   static bool Register(JNIEnv* env);
 
-  // Creates a PlatformViewAndroid with no rendering surface for use with
-  // background execution.
   PlatformViewAndroid(PlatformView::Delegate& delegate,
-                      flutter::TaskRunners task_runners,
-                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade);
+                      const flutter::TaskRunners& task_runners,
+                      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+                      bool use_software_rendering,
+                      uint8_t msaa_samples);
 
-  // Creates a PlatformViewAndroid with a rendering surface.
-  PlatformViewAndroid(PlatformView::Delegate& delegate,
-                      flutter::TaskRunners task_runners,
-                      std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-                      bool use_software_rendering);
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new PlatformViewAndroid but using an existing
+  ///             Android GPU context to create new surfaces. This maximizes
+  ///             resource sharing between 2 PlatformViewAndroids of 2 Shells.
+  ///
+  PlatformViewAndroid(
+      PlatformView::Delegate& delegate,
+      const flutter::TaskRunners& task_runners,
+      const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+      const std::shared_ptr<flutter::AndroidContext>& android_context);
 
   ~PlatformViewAndroid() override;
 
@@ -75,14 +82,6 @@ class PlatformViewAndroid final : public PlatformView {
                                     std::string name,
                                     jint response_id);
 
-  void InvokePlatformMessageResponseCallback(JNIEnv* env,
-                                             jint response_id,
-                                             jobject java_response_data,
-                                             jint java_response_position);
-
-  void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
-                                                  jint response_id);
-
   void DispatchSemanticsAction(JNIEnv* env,
                                jint id,
                                jint action,
@@ -91,28 +90,51 @@ class PlatformViewAndroid final : public PlatformView {
 
   void RegisterExternalTexture(
       int64_t texture_id,
-      const fml::jni::JavaObjectWeakGlobalRef& surface_texture);
+      const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture);
+
+  void RegisterImageTexture(
+      int64_t texture_id,
+      const fml::jni::ScopedJavaGlobalRef<jobject>& image_texture_entry);
 
   // |PlatformView|
-  void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                               const uint8_t* snapshot_data,
-                               const uint8_t* snapshot_instructions) override;
+  void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions) override;
+
+  void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                    const std::string error_message,
+                                    bool transient) override;
 
   // |PlatformView|
-  void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager) override;
+  void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type) override;
+
+  const std::shared_ptr<AndroidContext>& GetAndroidContext() {
+    return android_context_;
+  }
+
+  std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const override {
+    return platform_message_handler_;
+  }
+
+  void SetIsRenderingToImageView(bool value) {
+    if (GetImpellerContext()) {
+      GetImpellerContext()->SetSyncPresentation(value);
+    }
+  }
 
  private:
   const std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
-  std::unique_ptr<AndroidContext> android_context_;
+  std::shared_ptr<AndroidContext> android_context_;
   std::shared_ptr<AndroidSurfaceFactoryImpl> surface_factory_;
 
   PlatformViewAndroidDelegate platform_view_android_delegate_;
 
   std::unique_ptr<AndroidSurface> android_surface_;
-  // We use id 0 to mean that no response is expected.
-  int next_response_id_ = 1;
-  std::unordered_map<int, fml::RefPtr<flutter::PlatformMessageResponse>>
-      pending_responses_;
+  std::shared_ptr<PlatformMessageHandlerAndroid> platform_message_handler_;
 
   // |PlatformView|
   void UpdateSemantics(
@@ -121,7 +143,7 @@ class PlatformViewAndroid final : public PlatformView {
 
   // |PlatformView|
   void HandlePlatformMessage(
-      fml::RefPtr<flutter::PlatformMessage> message) override;
+      std::unique_ptr<flutter::PlatformMessage> message) override;
 
   // |PlatformView|
   void OnPreEngineRestart() const override;
@@ -136,10 +158,17 @@ class PlatformViewAndroid final : public PlatformView {
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
+  std::unique_ptr<SnapshotSurfaceProducer> CreateSnapshotSurfaceProducer()
+      override;
+
+  // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
 
   // |PlatformView|
   void ReleaseResourceContext() const override;
+
+  // |PlatformView|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override;
 
   // |PlatformView|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
@@ -152,8 +181,11 @@ class PlatformViewAndroid final : public PlatformView {
 
   void FireFirstFrameCallback();
 
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewAndroid);
 };
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_PLATFORM_VIEW_ANDROID_H_

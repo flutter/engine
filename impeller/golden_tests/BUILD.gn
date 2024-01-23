@@ -1,0 +1,87 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("golden_playground_test") {
+  testonly = true
+
+  sources = [ "golden_playground_test.h" ]
+
+  deps = [
+    ":digest",
+    "//flutter/fml",
+    "//flutter/impeller/aiks",
+    "//flutter/impeller/playground",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    "//flutter/testing:testing_lib",
+  ]
+
+  if (is_mac) {
+    sources += [ "golden_playground_test_mac.cc" ]
+    deps += [ ":metal_screenshot" ]
+  } else {
+    sources += [ "golden_playground_test_stub.cc" ]
+  }
+}
+
+impeller_component("digest") {
+  testonly = true
+
+  sources = [
+    "golden_digest.cc",
+    "golden_digest.h",
+    "working_directory.cc",
+    "working_directory.h",
+  ]
+
+  deps = [ "//flutter/fml" ]
+}
+
+if (is_mac) {
+  impeller_component("metal_screenshot") {
+    testonly = true
+
+    sources = [
+      "metal_screenshot.h",
+      "metal_screenshot.mm",
+      "metal_screenshotter.h",
+      "metal_screenshotter.mm",
+      "screenshot.h",
+      "screenshotter.h",
+      "vulkan_screenshotter.h",
+      "vulkan_screenshotter.mm",
+    ]
+
+    deps = [
+      "//flutter/impeller/aiks",
+      "//flutter/impeller/display_list",
+      "//flutter/impeller/playground",
+      "//flutter/impeller/renderer/backend/metal:metal",
+      "//flutter/impeller/renderer/backend/vulkan",
+    ]
+  }
+
+  impeller_component("impeller_golden_tests") {
+    target_type = "executable"
+
+    testonly = true
+
+    sources = [
+      "golden_tests.cc",
+      "main.cc",
+    ]
+
+    deps = [
+      ":digest",
+      ":metal_screenshot",
+      "//flutter/impeller/aiks",
+      "//flutter/impeller/aiks:aiks_unittests_golden",
+      "//flutter/impeller/fixtures",
+      "//flutter/third_party/swiftshader",
+      "//third_party/googletest:gtest",
+    ]
+  }
+}

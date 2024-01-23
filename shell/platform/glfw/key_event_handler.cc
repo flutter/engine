@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/json_message_codec.h"
+#include "flutter/shell/platform/common/json_message_codec.h"
 
 static constexpr char kChannelName[] = "flutter/keyevent";
 
@@ -117,8 +117,9 @@ void KeyEventHandler::KeyboardHook(GLFWwindow* window,
                                    int scancode,
                                    int action,
                                    int mods) {
-  // TODO: Translate to a cross-platform key code system rather than passing
-  // the native key code.
+  // TODO(chrome-bot): Translate to a cross-platform key code system rather than
+  // passing the native key code.
+  // NOLINTNEXTLINE(clang-analyzer-core.NullDereference)
   rapidjson::Document event(rapidjson::kObjectType);
   auto& allocator = event.GetAllocator();
   event.AddMember(kKeyCodeKey, key, allocator);

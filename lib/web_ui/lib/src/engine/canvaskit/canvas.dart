@@ -2,30 +2,51 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../color_filter.dart';
+import '../display.dart';
+import 'canvaskit_api.dart';
+import 'color_filter.dart';
+import 'image.dart';
+import 'image_filter.dart';
+import 'painting.dart';
+import 'path.dart';
+import 'picture.dart';
+import 'text.dart';
+import 'util.dart';
+import 'vertices.dart';
+
+/// Memoized value for ClipOp.Intersect, so we don't have to hit JS-interop
+/// every time we need it.
+final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
 
 /// A Dart wrapper around Skia's [SkCanvas].
 ///
 /// This is intentionally not memory-managing the underlying [SkCanvas]. See
 /// the docs on [SkCanvas], which explain the reason.
 class CkCanvas {
-  final SkCanvas skCanvas;
-
   CkCanvas(this.skCanvas);
 
-  int? get saveCount => skCanvas.getSaveCount();
+  // Cubic equation coefficients recommended by Mitchell & Netravali
+  // in their paper on cubic interpolation.
+  static const double _kMitchellNetravali_B = 1.0 / 3.0;
+  static const double _kMitchellNetravali_C = 1.0 / 3.0;
+
+  final SkCanvas skCanvas;
+
+  int? get saveCount => skCanvas.getSaveCount().toInt();
 
   void clear(ui.Color color) {
     skCanvas.clear(toSharedSkColor1(color));
   }
 
-  static final SkClipOp _clipOpIntersect = canvasKit.ClipOp.Intersect;
-
-  void clipPath(ui.Path path, bool doAntiAlias) {
-    final CkPath ckPath = path as CkPath;
+  void clipPath(CkPath path, bool doAntiAlias) {
     skCanvas.clipPath(
-      ckPath.skiaObject,
+      path.skiaObject,
       _clipOpIntersect,
       doAntiAlias,
     );
@@ -47,6 +68,10 @@ class CkCanvas {
     );
   }
 
+  ui.Rect getDeviceClipBounds() {
+    return rectFromSkIRect(skCanvas.getDeviceClipBounds());
+  }
+
   void drawArc(
     ui.Rect oval,
     double startAngle,
@@ -64,17 +89,17 @@ class CkCanvas {
     );
   }
 
+  // TODO(flar): CanvasKit does not expose sampling options available on SkCanvas.drawAtlas
   void drawAtlasRaw(
     CkPaint paint,
-    ui.Image atlas,
+    CkImage atlas,
     Float32List rstTransforms,
     Float32List rects,
-    List<Float32List>? colors,
+    Uint32List? colors,
     ui.BlendMode blendMode,
   ) {
-    final CkImage skAtlas = atlas as CkImage;
     skCanvas.drawAtlas(
-      skAtlas.skImage,
+      atlas.skImage,
       rects,
       rstTransforms,
       paint.skiaObject,
@@ -94,7 +119,7 @@ class CkCanvas {
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     skCanvas.drawColorInt(
-      color.value,
+      color.value.toDouble(),
       toSkBlendMode(blendMode),
     );
   }
@@ -107,34 +132,59 @@ class CkCanvas {
     );
   }
 
-  void drawImage(ui.Image image, ui.Offset offset, CkPaint paint) {
-    final CkImage skImage = image as CkImage;
-    skCanvas.drawImage(
-      skImage.skImage,
-      offset.dx,
-      offset.dy,
-      paint.skiaObject,
-    );
+  void drawImage(CkImage image, ui.Offset offset, CkPaint paint) {
+    final ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      skCanvas.drawImageCubic(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        _kMitchellNetravali_B,
+        _kMitchellNetravali_C,
+        paint.skiaObject,
+      );
+    } else {
+      skCanvas.drawImageOptions(
+        image.skImage,
+        offset.dx,
+        offset.dy,
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
-  void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, CkPaint paint) {
-    final CkImage skImage = image as CkImage;
-    skCanvas.drawImageRect(
-      skImage.skImage,
-      toSkRect(src),
-      toSkRect(dst),
-      paint.skiaObject,
-      false,
-    );
+  void drawImageRect(CkImage image, ui.Rect src, ui.Rect dst, CkPaint paint) {
+    final ui.FilterQuality filterQuality = paint.filterQuality;
+    if (filterQuality == ui.FilterQuality.high) {
+      skCanvas.drawImageRectCubic(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        _kMitchellNetravali_B,
+        _kMitchellNetravali_C,
+        paint.skiaObject,
+      );
+    } else {
+      skCanvas.drawImageRectOptions(
+        image.skImage,
+        toSkRect(src),
+        toSkRect(dst),
+        toSkFilterMode(filterQuality),
+        toSkMipmapMode(filterQuality),
+        paint.skiaObject,
+      );
+    }
   }
 
   void drawImageNine(
-      ui.Image image, ui.Rect center, ui.Rect dst, CkPaint paint) {
-    final CkImage skImage = image as CkImage;
+      CkImage image, ui.Rect center, ui.Rect dst, CkPaint paint) {
     skCanvas.drawImageNine(
-      skImage.skImage,
+      image.skImage,
       toSkRect(center),
       toSkRect(dst),
+      toSkFilterMode(paint.filterQuality),
       paint.skiaObject,
     );
   }
@@ -173,7 +223,8 @@ class CkCanvas {
   }
 
   void drawPicture(CkPicture picture) {
-    skCanvas.drawPicture(picture.skiaObject.skiaObject);
+    assert(picture.debugCheckNotDisposed('Failed to draw picture.'));
+    skCanvas.drawPicture(picture.skiaObject);
   }
 
   void drawPoints(CkPaint paint, ui.PointMode pointMode, Float32List points) {
@@ -195,17 +246,16 @@ class CkCanvas {
     skCanvas.drawRect(toSkRect(rect), paint.skiaObject);
   }
 
-  void drawShadow(ui.Path path, ui.Color color, double elevation,
-      bool transparentOccluder) {
-    drawSkShadow(skCanvas, path as CkPath, color, elevation,
-        transparentOccluder, ui.window.devicePixelRatio);
+  void drawShadow(
+      CkPath path, ui.Color color, double elevation, bool transparentOccluder) {
+    drawSkShadow(skCanvas, path, color, elevation, transparentOccluder,
+        EngineFlutterDisplay.instance.devicePixelRatio);
   }
 
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, CkPaint paint) {
-    CkVertices skVertices = vertices as CkVertices;
+      CkVertices vertices, ui.BlendMode blendMode, CkPaint paint) {
     skCanvas.drawVertices(
-      skVertices.skiaObject,
+      vertices.skiaObject,
       toSkBlendMode(blendMode),
       paint.skiaObject,
     );
@@ -216,7 +266,7 @@ class CkCanvas {
   }
 
   void restoreToCount(int count) {
-    skCanvas.restoreToCount(count);
+    skCanvas.restoreToCount(count.toDouble());
   }
 
   void rotate(double radians) {
@@ -224,30 +274,38 @@ class CkCanvas {
   }
 
   int save() {
-    return skCanvas.save();
+    return skCanvas.save().toInt();
   }
 
-  void saveLayer(ui.Rect bounds, CkPaint paint) {
+  void saveLayer(ui.Rect bounds, CkPaint? paint) {
     skCanvas.saveLayer(
-      paint.skiaObject,
+      paint?.skiaObject,
       toSkRect(bounds),
       null,
       null,
     );
   }
 
-  void saveLayerWithoutBounds(CkPaint paint) {
-    skCanvas.saveLayer(paint.skiaObject, null, null, null);
+  void saveLayerWithoutBounds(CkPaint? paint) {
+    skCanvas.saveLayer(paint?.skiaObject, null, null, null);
   }
 
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter) {
-    final _CkManagedSkImageFilterConvertible convertible = filter as _CkManagedSkImageFilterConvertible;
-    return skCanvas.saveLayer(
-      null,
-      toSkRect(bounds),
-      convertible._imageFilter.skiaObject,
-      0,
-    );
+  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter,
+      [CkPaint? paint]) {
+    final CkManagedSkImageFilterConvertible convertible;
+    if (filter is ui.ColorFilter) {
+      convertible = createCkColorFilter(filter as EngineColorFilter)!;
+    } else {
+      convertible = filter as CkManagedSkImageFilterConvertible;
+    }
+    convertible.imageFilter((SkImageFilter filter) {
+      skCanvas.saveLayer(
+        paint?.skiaObject,
+        toSkRect(bounds),
+        filter,
+        0,
+      );
+    });
   }
 
   void scale(double sx, double sy) {
@@ -259,14 +317,21 @@ class CkCanvas {
   }
 
   void transform(Float32List matrix4) {
-    skCanvas.concat(toSkMatrixFromFloat32(matrix4));
+    skCanvas.concat(toSkM44FromFloat32(matrix4));
   }
 
   void translate(double dx, double dy) {
     skCanvas.translate(dx, dy);
   }
 
-  void flush() {
-    skCanvas.flush();
+  Float32List getLocalToDevice() {
+    final List<dynamic> list = skCanvas.getLocalToDevice();
+    final Float32List matrix4 = Float32List(16);
+    for (int r = 0; r < 4; r++) {
+      for (int c = 0; c < 4; c++) {
+        matrix4[c * 4 + r] = (list[r * 4 + c] as num).toDouble();
+      }
+    }
+    return matrix4;
   }
 }

@@ -7,7 +7,7 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
-#include "vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
 
 namespace vulkan {
 
@@ -41,7 +41,7 @@ class VulkanCommandBuffer {
       const VkImageMemoryBarrier* image_memory_barriers) const;
 
  private:
-  const VulkanProcTable& vk;
+  const VulkanProcTable& vk_;
   const VulkanHandle<VkDevice>& device_;
   const VulkanHandle<VkCommandPool>& pool_;
   VulkanHandle<VkCommandBuffer> handle_;

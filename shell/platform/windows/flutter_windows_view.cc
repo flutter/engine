@@ -6,43 +6,99 @@
 
 #include <chrono>
 
+#include "flutter/common/constants.h"
+#include "flutter/fml/platform/win/wstring_conversion.h"
+#include "flutter/shell/platform/common/accessibility_bridge.h"
+#include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
+
 namespace flutter {
 
+namespace {
+// The maximum duration to block the platform thread for while waiting
+// for a window resize operation to complete.
+constexpr std::chrono::milliseconds kWindowResizeTimeout{100};
+
+/// Returns true if the surface will be updated as part of the resize process.
+///
+/// This is called on window resize to determine if the platform thread needs
+/// to be blocked until the frame with the right size has been rendered. It
+/// should be kept in-sync with how the engine deals with a new surface request
+/// as seen in `CreateOrUpdateSurface` in `GPUSurfaceGL`.
+bool SurfaceWillUpdate(size_t cur_width,
+                       size_t cur_height,
+                       size_t target_width,
+                       size_t target_height) {
+  // TODO (https://github.com/flutter/flutter/issues/65061) : Avoid special
+  // handling for zero dimensions.
+  bool non_zero_target_dims = target_height > 0 && target_width > 0;
+  bool not_same_size =
+      (cur_height != target_height) || (cur_width != target_width);
+  return non_zero_target_dims && not_same_size;
+}
+
+/// Update the surface's swap interval to block until the v-blank iff
+/// the system compositor is disabled.
+void UpdateVsync(const FlutterWindowsEngine& engine, bool needs_vsync) {
+  egl::Manager* egl_manager = engine.egl_manager();
+  if (!egl_manager) {
+    return;
+  }
+
+  // Updating the vsync makes the EGL context and render surface current.
+  // If the engine is running, the render surface should only be made current on
+  // the raster thread. If the engine is initializing, the raster thread doesn't
+  // exist yet and the render surface can be made current on the platform
+  // thread.
+  if (engine.running()) {
+    engine.PostRasterThreadTask([egl_manager, needs_vsync]() {
+      egl_manager->SetVSyncEnabled(needs_vsync);
+    });
+  } else {
+    egl_manager->SetVSyncEnabled(needs_vsync);
+
+    // Release the EGL context so that the raster thread can use it.
+    if (!egl_manager->render_context()->ClearCurrent()) {
+      FML_LOG(ERROR)
+          << "Unable to clear current surface after updating the swap interval";
+      return;
+    }
+  }
+}
+
+}  // namespace
+
 FlutterWindowsView::FlutterWindowsView(
-    std::unique_ptr<WindowBindingHandler> window_binding) {
-  surface_manager_ = std::make_unique<AngleSurfaceManager>();
+    std::unique_ptr<WindowBindingHandler> window_binding,
+    std::shared_ptr<WindowsProcTable> windows_proc_table)
+    : windows_proc_table_(std::move(windows_proc_table)) {
+  if (windows_proc_table_ == nullptr) {
+    windows_proc_table_ = std::make_shared<WindowsProcTable>();
+  }
 
   // Take the binding handler, and give it a pointer back to self.
   binding_handler_ = std::move(window_binding);
   binding_handler_->SetView(this);
-
-  render_target_ = std::make_unique<WindowsRenderTarget>(
-      binding_handler_->GetRenderTarget());
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
+  // The engine renders into the view's surface. The engine must be
+  // shutdown before the view's resources can be destroyed.
+  if (engine_) {
+    engine_->Stop();
+  }
+
   DestroyRenderSurface();
 }
 
-void FlutterWindowsView::SetEngine(
-    std::unique_ptr<FlutterWindowsEngine> engine) {
-  engine_ = std::move(engine);
+void FlutterWindowsView::SetEngine(FlutterWindowsEngine* engine) {
+  FML_DCHECK(engine_ == nullptr);
+  FML_DCHECK(engine != nullptr);
+
+  engine_ = engine;
 
   engine_->SetView(this);
-
-  internal_plugin_registrar_ =
-      std::make_unique<flutter::PluginRegistrar>(engine_->GetRegistrar());
-
-  // Set up the system channel handlers.
-  auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  keyboard_hook_handlers_.push_back(
-      std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
-  keyboard_hook_handlers_.push_back(
-      std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
-  platform_handler_ = std::make_unique<flutter::PlatformHandler>(
-      internal_plugin_messenger, this);
-  cursor_handler_ = std::make_unique<flutter::CursorHandler>(
-      internal_plugin_messenger, binding_handler_.get());
 
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
@@ -50,40 +106,153 @@ void FlutterWindowsView::SetEngine(
                     binding_handler_->GetDpiScale());
 }
 
-void FlutterWindowsView::OnWindowSizeChanged(size_t width,
-                                             size_t height) const {
-  surface_manager_->ResizeSurface(GetRenderTarget(), width, height);
-  SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+void FlutterWindowsView::OnEmptyFrameGenerated() {
+  // Called on the raster thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (resize_status_ != ResizeState::kResizeStarted) {
+    return;
+  }
+
+  // Platform thread is blocked for the entire duration until the
+  // resize_status_ is set to kDone.
+  engine_->egl_manager()->ResizeSurface(GetWindowHandle(), resize_target_width_,
+                                        resize_target_height_, NeedsVsync());
+  resize_status_ = ResizeState::kFrameGenerated;
 }
 
-void FlutterWindowsView::OnPointerMove(double x, double y) {
-  SendPointerMove(x, y);
+bool FlutterWindowsView::OnFrameGenerated(size_t width, size_t height) {
+  // Called on the raster thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (resize_status_ != ResizeState::kResizeStarted) {
+    return true;
+  }
+
+  if (resize_target_width_ == width && resize_target_height_ == height) {
+    // Platform thread is blocked for the entire duration until the
+    // resize_status_ is set to kDone.
+    engine_->egl_manager()->ResizeSurface(GetWindowHandle(), width, height,
+                                          NeedsVsync());
+    resize_status_ = ResizeState::kFrameGenerated;
+    return true;
+  }
+
+  return false;
+}
+
+void FlutterWindowsView::UpdateFlutterCursor(const std::string& cursor_name) {
+  binding_handler_->UpdateFlutterCursor(cursor_name);
+}
+
+void FlutterWindowsView::SetFlutterCursor(HCURSOR cursor) {
+  binding_handler_->SetFlutterCursor(cursor);
+}
+
+void FlutterWindowsView::ForceRedraw() {
+  if (resize_status_ == ResizeState::kDone) {
+    // Request new frame.
+    engine_->ScheduleFrame();
+  }
+}
+
+bool FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
+  // Called on the platform thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  if (!engine_->egl_manager()) {
+    SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+    return true;
+  }
+
+  // We're using OpenGL rendering. Resizing the surface must happen on the
+  // raster thread.
+  EGLint surface_width, surface_height;
+  engine_->egl_manager()->GetSurfaceDimensions(&surface_width, &surface_height);
+
+  bool surface_will_update =
+      SurfaceWillUpdate(surface_width, surface_height, width, height);
+  if (!surface_will_update) {
+    SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+    return true;
+  }
+
+  resize_status_ = ResizeState::kResizeStarted;
+  resize_target_width_ = width;
+  resize_target_height_ = height;
+
+  SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+
+  // Block the platform thread until a frame is presented with the target
+  // size. See |OnFrameGenerated|, |OnEmptyFrameGenerated|, and
+  // |OnFramePresented|.
+  return resize_cv_.wait_for(lock, kWindowResizeTimeout,
+                             [&resize_status = resize_status_] {
+                               return resize_status == ResizeState::kDone;
+                             });
+}
+
+void FlutterWindowsView::OnWindowRepaint() {
+  ForceRedraw();
+}
+
+void FlutterWindowsView::OnPointerMove(double x,
+                                       double y,
+                                       FlutterPointerDeviceKind device_kind,
+                                       int32_t device_id,
+                                       int modifiers_state) {
+  engine_->keyboard_key_handler()->SyncModifiersIfNeeded(modifiers_state);
+  SendPointerMove(x, y, GetOrCreatePointerState(device_kind, device_id));
 }
 
 void FlutterWindowsView::OnPointerDown(
     double x,
     double y,
+    FlutterPointerDeviceKind device_kind,
+    int32_t device_id,
     FlutterPointerMouseButtons flutter_button) {
   if (flutter_button != 0) {
-    uint64_t mouse_buttons = mouse_state_.buttons | flutter_button;
-    SetMouseButtons(mouse_buttons);
-    SendPointerDown(x, y);
+    auto state = GetOrCreatePointerState(device_kind, device_id);
+    state->buttons |= flutter_button;
+    SendPointerDown(x, y, state);
   }
 }
 
 void FlutterWindowsView::OnPointerUp(
     double x,
     double y,
+    FlutterPointerDeviceKind device_kind,
+    int32_t device_id,
     FlutterPointerMouseButtons flutter_button) {
   if (flutter_button != 0) {
-    uint64_t mouse_buttons = mouse_state_.buttons & ~flutter_button;
-    SetMouseButtons(mouse_buttons);
-    SendPointerUp(x, y);
+    auto state = GetOrCreatePointerState(device_kind, device_id);
+    state->buttons &= ~flutter_button;
+    SendPointerUp(x, y, state);
   }
 }
 
-void FlutterWindowsView::OnPointerLeave() {
-  SendPointerLeave();
+void FlutterWindowsView::OnPointerLeave(double x,
+                                        double y,
+                                        FlutterPointerDeviceKind device_kind,
+                                        int32_t device_id) {
+  SendPointerLeave(x, y, GetOrCreatePointerState(device_kind, device_id));
+}
+
+void FlutterWindowsView::OnPointerPanZoomStart(int32_t device_id) {
+  PointerLocation point = binding_handler_->GetPrimaryPointerLocation();
+  SendPointerPanZoomStart(device_id, point.x, point.y);
+}
+
+void FlutterWindowsView::OnPointerPanZoomUpdate(int32_t device_id,
+                                                double pan_x,
+                                                double pan_y,
+                                                double scale,
+                                                double rotation) {
+  SendPointerPanZoomUpdate(device_id, pan_x, pan_y, scale, rotation);
+}
+
+void FlutterWindowsView::OnPointerPanZoomEnd(int32_t device_id) {
+  SendPointerPanZoomEnd(device_id);
 }
 
 void FlutterWindowsView::OnText(const std::u16string& text) {
@@ -93,16 +262,64 @@ void FlutterWindowsView::OnText(const std::u16string& text) {
 void FlutterWindowsView::OnKey(int key,
                                int scancode,
                                int action,
-                               char32_t character) {
-  SendKey(key, scancode, action, character);
+                               char32_t character,
+                               bool extended,
+                               bool was_down,
+                               KeyEventCallback callback) {
+  SendKey(key, scancode, action, character, extended, was_down, callback);
+}
+
+void FlutterWindowsView::OnComposeBegin() {
+  SendComposeBegin();
+}
+
+void FlutterWindowsView::OnComposeCommit() {
+  SendComposeCommit();
+}
+
+void FlutterWindowsView::OnComposeEnd() {
+  SendComposeEnd();
+}
+
+void FlutterWindowsView::OnComposeChange(const std::u16string& text,
+                                         int cursor_pos) {
+  SendComposeChange(text, cursor_pos);
 }
 
 void FlutterWindowsView::OnScroll(double x,
                                   double y,
                                   double delta_x,
                                   double delta_y,
-                                  int scroll_offset_multiplier) {
-  SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
+                                  int scroll_offset_multiplier,
+                                  FlutterPointerDeviceKind device_kind,
+                                  int32_t device_id) {
+  SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier, device_kind,
+             device_id);
+}
+
+void FlutterWindowsView::OnScrollInertiaCancel(int32_t device_id) {
+  PointerLocation point = binding_handler_->GetPrimaryPointerLocation();
+  SendScrollInertiaCancel(device_id, point.x, point.y);
+}
+
+void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
+  engine_->UpdateSemanticsEnabled(enabled);
+}
+
+gfx::NativeViewAccessible FlutterWindowsView::GetNativeViewAccessible() {
+  if (!accessibility_bridge_) {
+    return nullptr;
+  }
+
+  return accessibility_bridge_->GetChildOfAXFragmentRoot();
+}
+
+void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {
+  binding_handler_->OnCursorRectUpdated(rect);
+}
+
+void FlutterWindowsView::OnResetImeComposing() {
+  binding_handler_->OnResetImeComposing();
 }
 
 // Sends new size  information to FlutterEngine.
@@ -124,107 +341,236 @@ void FlutterWindowsView::SendInitialBounds() {
                     binding_handler_->GetDpiScale());
 }
 
+FlutterWindowsView::PointerState* FlutterWindowsView::GetOrCreatePointerState(
+    FlutterPointerDeviceKind device_kind,
+    int32_t device_id) {
+  // Create a virtual pointer ID that is unique across all device types
+  // to prevent pointers from clashing in the engine's converter
+  // (lib/ui/window/pointer_data_packet_converter.cc)
+  int32_t pointer_id = (static_cast<int32_t>(device_kind) << 28) | device_id;
+
+  auto [it, added] = pointer_states_.try_emplace(pointer_id, nullptr);
+  if (added) {
+    auto state = std::make_unique<PointerState>();
+    state->device_kind = device_kind;
+    state->pointer_id = pointer_id;
+    it->second = std::move(state);
+  }
+
+  return it->second.get();
+}
+
 // Set's |event_data|'s phase to either kMove or kHover depending on the current
 // primary mouse button state.
 void FlutterWindowsView::SetEventPhaseFromCursorButtonState(
-    FlutterPointerEvent* event_data) const {
+    FlutterPointerEvent* event_data,
+    const PointerState* state) const {
   // For details about this logic, see FlutterPointerPhase in the embedder.h
   // file.
-  event_data->phase =
-      mouse_state_.buttons == 0
-          ? mouse_state_.flutter_state_is_down ? FlutterPointerPhase::kUp
-                                               : FlutterPointerPhase::kHover
-          : mouse_state_.flutter_state_is_down ? FlutterPointerPhase::kMove
-                                               : FlutterPointerPhase::kDown;
-}
-
-void FlutterWindowsView::SendPointerMove(double x, double y) {
-  FlutterPointerEvent event = {};
-  event.x = x;
-  event.y = y;
-  SetEventPhaseFromCursorButtonState(&event);
-  SendPointerEventWithData(event);
-}
-
-void FlutterWindowsView::SendPointerDown(double x, double y) {
-  FlutterPointerEvent event = {};
-  SetEventPhaseFromCursorButtonState(&event);
-  event.x = x;
-  event.y = y;
-  SendPointerEventWithData(event);
-  SetMouseFlutterStateDown(true);
-}
-
-void FlutterWindowsView::SendPointerUp(double x, double y) {
-  FlutterPointerEvent event = {};
-  SetEventPhaseFromCursorButtonState(&event);
-  event.x = x;
-  event.y = y;
-  SendPointerEventWithData(event);
-  if (event.phase == FlutterPointerPhase::kUp) {
-    SetMouseFlutterStateDown(false);
+  if (state->buttons == 0) {
+    event_data->phase = state->flutter_state_is_down
+                            ? FlutterPointerPhase::kUp
+                            : FlutterPointerPhase::kHover;
+  } else {
+    event_data->phase = state->flutter_state_is_down
+                            ? FlutterPointerPhase::kMove
+                            : FlutterPointerPhase::kDown;
   }
 }
 
-void FlutterWindowsView::SendPointerLeave() {
+void FlutterWindowsView::SendPointerMove(double x,
+                                         double y,
+                                         PointerState* state) {
   FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerDown(double x,
+                                         double y,
+                                         PointerState* state) {
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
+
+  state->flutter_state_is_down = true;
+}
+
+void FlutterWindowsView::SendPointerUp(double x,
+                                       double y,
+                                       PointerState* state) {
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
+  if (event.phase == FlutterPointerPhase::kUp) {
+    state->flutter_state_is_down = false;
+  }
+}
+
+void FlutterWindowsView::SendPointerLeave(double x,
+                                          double y,
+                                          PointerState* state) {
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
   event.phase = FlutterPointerPhase::kRemove;
-  SendPointerEventWithData(event);
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerPanZoomStart(int32_t device_id,
+                                                 double x,
+                                                 double y) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+  state->pan_zoom_start_x = x;
+  state->pan_zoom_start_y = y;
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+  event.phase = FlutterPointerPhase::kPanZoomStart;
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerPanZoomUpdate(int32_t device_id,
+                                                  double pan_x,
+                                                  double pan_y,
+                                                  double scale,
+                                                  double rotation) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+  FlutterPointerEvent event = {};
+  event.x = state->pan_zoom_start_x;
+  event.y = state->pan_zoom_start_y;
+  event.pan_x = pan_x;
+  event.pan_y = pan_y;
+  event.scale = scale;
+  event.rotation = rotation;
+  event.phase = FlutterPointerPhase::kPanZoomUpdate;
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerPanZoomEnd(int32_t device_id) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+  FlutterPointerEvent event = {};
+  event.x = state->pan_zoom_start_x;
+  event.y = state->pan_zoom_start_y;
+  event.phase = FlutterPointerPhase::kPanZoomEnd;
+  SendPointerEventWithData(event, state);
 }
 
 void FlutterWindowsView::SendText(const std::u16string& text) {
-  for (const auto& handler : keyboard_hook_handlers_) {
-    handler->TextHook(this, text);
-  }
+  engine_->text_input_plugin()->TextHook(text);
 }
 
 void FlutterWindowsView::SendKey(int key,
                                  int scancode,
                                  int action,
-                                 char32_t character) {
-  for (const auto& handler : keyboard_hook_handlers_) {
-    handler->KeyboardHook(this, key, scancode, action, character);
-  }
+                                 char32_t character,
+                                 bool extended,
+                                 bool was_down,
+                                 KeyEventCallback callback) {
+  engine_->keyboard_key_handler()->KeyboardHook(
+      key, scancode, action, character, extended, was_down,
+      [=, callback = std::move(callback)](bool handled) {
+        if (!handled) {
+          engine_->text_input_plugin()->KeyboardHook(
+              key, scancode, action, character, extended, was_down);
+        }
+        callback(handled);
+      });
+}
+
+void FlutterWindowsView::SendComposeBegin() {
+  engine_->text_input_plugin()->ComposeBeginHook();
+}
+
+void FlutterWindowsView::SendComposeCommit() {
+  engine_->text_input_plugin()->ComposeCommitHook();
+}
+
+void FlutterWindowsView::SendComposeEnd() {
+  engine_->text_input_plugin()->ComposeEndHook();
+}
+
+void FlutterWindowsView::SendComposeChange(const std::u16string& text,
+                                           int cursor_pos) {
+  engine_->text_input_plugin()->ComposeChangeHook(text, cursor_pos);
 }
 
 void FlutterWindowsView::SendScroll(double x,
                                     double y,
                                     double delta_x,
                                     double delta_y,
-                                    int scroll_offset_multiplier) {
+                                    int scroll_offset_multiplier,
+                                    FlutterPointerDeviceKind device_kind,
+                                    int32_t device_id) {
+  auto state = GetOrCreatePointerState(device_kind, device_id);
+
   FlutterPointerEvent event = {};
-  SetEventPhaseFromCursorButtonState(&event);
-  event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
   event.x = x;
   event.y = y;
+  event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
   event.scroll_delta_x = delta_x * scroll_offset_multiplier;
   event.scroll_delta_y = delta_y * scroll_offset_multiplier;
-  SendPointerEventWithData(event);
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendScrollInertiaCancel(int32_t device_id,
+                                                 double x,
+                                                 double y) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+  event.signal_kind =
+      FlutterPointerSignalKind::kFlutterPointerSignalKindScrollInertiaCancel;
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
 }
 
 void FlutterWindowsView::SendPointerEventWithData(
-    const FlutterPointerEvent& event_data) {
+    const FlutterPointerEvent& event_data,
+    PointerState* state) {
   // If sending anything other than an add, and the pointer isn't already added,
   // synthesize an add to satisfy Flutter's expectations about events.
-  if (!mouse_state_.flutter_state_is_added &&
+  if (!state->flutter_state_is_added &&
       event_data.phase != FlutterPointerPhase::kAdd) {
     FlutterPointerEvent event = {};
     event.phase = FlutterPointerPhase::kAdd;
     event.x = event_data.x;
     event.y = event_data.y;
     event.buttons = 0;
-    SendPointerEventWithData(event);
+    SendPointerEventWithData(event, state);
   }
+
   // Don't double-add (e.g., if events are delivered out of order, so an add has
   // already been synthesized).
-  if (mouse_state_.flutter_state_is_added &&
+  if (state->flutter_state_is_added &&
       event_data.phase == FlutterPointerPhase::kAdd) {
     return;
   }
 
   FlutterPointerEvent event = event_data;
-  event.device_kind = kFlutterPointerDeviceKindMouse;
-  event.buttons = mouse_state_.buttons;
+  event.device_kind = state->device_kind;
+  event.device = state->pointer_id;
+  event.buttons = state->buttons;
+  // TODO(dkwingsmt): Use the correct view ID for pointer events once the
+  // Windows embedder supports multiple views.
+  // https://github.com/flutter/flutter/issues/138179
+  event.view_id = flutter::kFlutterImplicitViewId;
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
@@ -236,47 +582,146 @@ void FlutterWindowsView::SendPointerEventWithData(
   engine_->SendPointerEvent(event);
 
   if (event_data.phase == FlutterPointerPhase::kAdd) {
-    SetMouseFlutterStateAdded(true);
+    state->flutter_state_is_added = true;
   } else if (event_data.phase == FlutterPointerPhase::kRemove) {
-    SetMouseFlutterStateAdded(false);
-    ResetMouseState();
+    auto it = pointer_states_.find(state->pointer_id);
+    if (it != pointer_states_.end()) {
+      pointer_states_.erase(it);
+    }
   }
 }
 
-bool FlutterWindowsView::MakeCurrent() {
-  return surface_manager_->MakeCurrent();
+void FlutterWindowsView::OnFramePresented() {
+  // Called on the engine's raster thread.
+  std::unique_lock<std::mutex> lock(resize_mutex_);
+
+  switch (resize_status_) {
+    case ResizeState::kResizeStarted:
+      // The caller must first call |OnFrameGenerated| or
+      // |OnEmptyFrameGenerated| before calling this method. This
+      // indicates one of the following:
+      //
+      // 1. The caller did not call these methods.
+      // 2. The caller ignored these methods' result.
+      // 3. The platform thread started a resize after the caller called these
+      //    methods. We might have presented a frame of the wrong size to the
+      //    view.
+      return;
+    case ResizeState::kFrameGenerated: {
+      // A frame was generated for a pending resize.
+      // Unblock the platform thread.
+      resize_status_ = ResizeState::kDone;
+      lock.unlock();
+      resize_cv_.notify_all();
+
+      // Blocking the raster thread until DWM flushes alleviates glitches where
+      // previous size surface is stretched over current size view.
+      windows_proc_table_->DwmFlush();
+    }
+    case ResizeState::kDone:
+      return;
+  }
 }
 
-bool FlutterWindowsView::MakeResourceCurrent() {
-  return surface_manager_->MakeResourceCurrent();
+bool FlutterWindowsView::ClearSoftwareBitmap() {
+  return binding_handler_->OnBitmapSurfaceCleared();
 }
 
-bool FlutterWindowsView::ClearContext() {
-  return surface_manager_->ClearContext();
-}
-
-bool FlutterWindowsView::SwapBuffers() {
-  return surface_manager_->SwapBuffers();
+bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
+                                               size_t row_bytes,
+                                               size_t height) {
+  return binding_handler_->OnBitmapSurfaceUpdated(allocation, row_bytes,
+                                                  height);
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
-  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-  surface_manager_->CreateSurface(GetRenderTarget(), bounds.width,
-                                  bounds.height);
-}
+  if (engine_ && engine_->egl_manager()) {
+    PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+    engine_->egl_manager()->CreateSurface(GetWindowHandle(), bounds.width,
+                                          bounds.height);
 
-void FlutterWindowsView::DestroyRenderSurface() {
-  if (surface_manager_) {
-    surface_manager_->DestroySurface();
+    UpdateVsync(*engine_, NeedsVsync());
+
+    resize_target_width_ = bounds.width;
+    resize_target_height_ = bounds.height;
   }
 }
 
-WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
-  return render_target_.get();
+void FlutterWindowsView::DestroyRenderSurface() {
+  if (engine_ && engine_->egl_manager()) {
+    engine_->egl_manager()->DestroySurface();
+  }
+}
+
+void FlutterWindowsView::OnHighContrastChanged() {
+  engine_->UpdateHighContrastMode();
+}
+
+HWND FlutterWindowsView::GetWindowHandle() const {
+  return binding_handler_->GetWindowHandle();
 }
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
-  return engine_.get();
+  return engine_;
+}
+
+void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
+  auto alert_delegate = binding_handler_->GetAlertDelegate();
+  if (!alert_delegate) {
+    return;
+  }
+  alert_delegate->SetText(fml::WideStringToUtf16(text));
+  ui::AXPlatformNodeWin* alert_node = binding_handler_->GetAlert();
+  NotifyWinEventWrapper(alert_node, ax::mojom::Event::kAlert);
+}
+
+void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
+                                               ax::mojom::Event event) {
+  if (node) {
+    node->NotifyAccessibilityEvent(event);
+  }
+}
+
+ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
+  return accessibility_bridge_.get();
+}
+
+ui::AXPlatformNodeWin* FlutterWindowsView::AlertNode() const {
+  return binding_handler_->GetAlert();
+}
+
+std::shared_ptr<AccessibilityBridgeWindows>
+FlutterWindowsView::CreateAccessibilityBridge() {
+  return std::make_shared<AccessibilityBridgeWindows>(this);
+}
+
+void FlutterWindowsView::UpdateSemanticsEnabled(bool enabled) {
+  if (semantics_enabled_ != enabled) {
+    semantics_enabled_ = enabled;
+
+    if (!semantics_enabled_ && accessibility_bridge_) {
+      accessibility_bridge_.reset();
+    } else if (semantics_enabled_ && !accessibility_bridge_) {
+      accessibility_bridge_ = CreateAccessibilityBridge();
+    }
+  }
+}
+
+void FlutterWindowsView::OnDwmCompositionChanged() {
+  UpdateVsync(*engine_, NeedsVsync());
+}
+
+void FlutterWindowsView::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
+  if (engine_) {
+    engine_->OnWindowStateEvent(hwnd, event);
+  }
+}
+
+bool FlutterWindowsView::NeedsVsync() const {
+  // If the Desktop Window Manager composition is enabled,
+  // the system itself synchronizes with vsync.
+  // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw
+  return !windows_proc_table_->DwmIsCompositionEnabled();
 }
 
 }  // namespace flutter

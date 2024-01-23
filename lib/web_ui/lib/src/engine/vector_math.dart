@@ -2,10 +2,100 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import 'util.dart';
 
 class Matrix4 {
+  /// Constructs a new mat4.
+  factory Matrix4(
+          double arg0,
+          double arg1,
+          double arg2,
+          double arg3,
+          double arg4,
+          double arg5,
+          double arg6,
+          double arg7,
+          double arg8,
+          double arg9,
+          double arg10,
+          double arg11,
+          double arg12,
+          double arg13,
+          double arg14,
+          double arg15) =>
+      Matrix4.zero()
+        ..setValues(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,
+            arg10, arg11, arg12, arg13, arg14, arg15);
+
+  /// Zero matrix.
+  Matrix4.zero() : _m4storage = Float32List(16);
+
+  /// Identity matrix.
+  Matrix4.identity() : _m4storage = Float32List(16) {
+    _m4storage[15] = 1.0;
+    _m4storage[0] = 1.0;
+    _m4storage[5] = 1.0;
+    _m4storage[10] = 1.0;
+  }
+
+  /// Copies values from [other].
+  factory Matrix4.copy(Matrix4 other) => Matrix4.zero()..setFrom(other);
+
+  /// Constructs a matrix that is the inverse of [other].
+  factory Matrix4.inverted(Matrix4 other) {
+    final Matrix4 r = Matrix4.zero();
+    final double determinant = r.copyInverse(other);
+    if (determinant == 0.0) {
+      throw ArgumentError.value(other, 'other', 'Matrix cannot be inverted');
+    }
+    return r;
+  }
+
+  /// Rotation of [radians_] around X.
+  factory Matrix4.rotationX(double radians) => Matrix4.zero()
+    .._m4storage[15] = 1.0
+    ..setRotationX(radians);
+
+  /// Rotation of [radians_] around Y.
+  factory Matrix4.rotationY(double radians) => Matrix4.zero()
+    .._m4storage[15] = 1.0
+    ..setRotationY(radians);
+
+  /// Rotation of [radians_] around Z.
+  factory Matrix4.rotationZ(double radians) => Matrix4.zero()
+    .._m4storage[15] = 1.0
+    ..setRotationZ(radians);
+
+  /// Translation matrix.
+  factory Matrix4.translation(Vector3 translation) => Matrix4.identity()
+    ..setTranslation(translation);
+
+  /// Translation matrix.
+  factory Matrix4.translationValues(double x, double y, double z) =>
+      Matrix4.identity()
+        ..setTranslationRaw(x, y, z);
+
+  /// Scale matrix.
+  factory Matrix4.diagonal3Values(double x, double y, double z) =>
+      Matrix4.zero()
+        .._m4storage[15] = 1.0
+        .._m4storage[10] = z
+        .._m4storage[5] = y
+        .._m4storage[0] = x;
+
+  /// Constructs Matrix4 with given [Float32List] as [storage].
+  Matrix4.fromFloat32List(this._m4storage);
+
+  /// Constructs Matrix4 with a [storage] that views given [buffer] starting at
+  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
+  Matrix4.fromBuffer(ByteBuffer buffer, int offset)
+      : _m4storage = Float32List.view(buffer, offset, 16);
+
   final Float32List _m4storage;
 
   /// The components of the matrix.
@@ -40,89 +130,6 @@ class Matrix4 {
 
     _m4storage[index(row, col)] = v;
   }
-
-  /// Constructs a new mat4.
-  factory Matrix4(
-          double arg0,
-          double arg1,
-          double arg2,
-          double arg3,
-          double arg4,
-          double arg5,
-          double arg6,
-          double arg7,
-          double arg8,
-          double arg9,
-          double arg10,
-          double arg11,
-          double arg12,
-          double arg13,
-          double arg14,
-          double arg15) =>
-      Matrix4.zero()
-        ..setValues(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,
-            arg10, arg11, arg12, arg13, arg14, arg15);
-
-  /// Zero matrix.
-  Matrix4.zero() : _m4storage = Float32List(16);
-
-  /// Identity matrix.
-  factory Matrix4.identity() => Matrix4.zero()..setIdentity();
-
-  /// Copies values from [other].
-  factory Matrix4.copy(Matrix4 other) => Matrix4.zero()..setFrom(other);
-
-  /// Constructs a matrix that is the inverse of [other].
-  factory Matrix4.inverted(Matrix4 other) {
-    final Matrix4 r = Matrix4.zero();
-    final double determinant = r.copyInverse(other);
-    if (determinant == 0.0) {
-      throw ArgumentError.value(other, 'other', 'Matrix cannot be inverted');
-    }
-    return r;
-  }
-
-  /// Rotation of [radians_] around X.
-  factory Matrix4.rotationX(double radians) => Matrix4.zero()
-    .._m4storage[15] = 1.0
-    ..setRotationX(radians);
-
-  /// Rotation of [radians_] around Y.
-  factory Matrix4.rotationY(double radians) => Matrix4.zero()
-    .._m4storage[15] = 1.0
-    ..setRotationY(radians);
-
-  /// Rotation of [radians_] around Z.
-  factory Matrix4.rotationZ(double radians) => Matrix4.zero()
-    .._m4storage[15] = 1.0
-    ..setRotationZ(radians);
-
-  /// Translation matrix.
-  factory Matrix4.translation(Vector3 translation) => Matrix4.zero()
-    ..setIdentity()
-    ..setTranslation(translation);
-
-  /// Translation matrix.
-  factory Matrix4.translationValues(double x, double y, double z) =>
-      Matrix4.zero()
-        ..setIdentity()
-        ..setTranslationRaw(x, y, z);
-
-  /// Scale matrix.
-  factory Matrix4.diagonal3Values(double x, double y, double z) =>
-      Matrix4.zero()
-        .._m4storage[15] = 1.0
-        .._m4storage[10] = z
-        .._m4storage[5] = y
-        .._m4storage[0] = x;
-
-  /// Constructs Matrix4 with given [Float32List] as [storage].
-  Matrix4.fromFloat32List(this._m4storage);
-
-  /// Constructs Matrix4 with a [storage] that views given [buffer] starting at
-  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
-  Matrix4.fromBuffer(ByteBuffer buffer, int offset)
-      : _m4storage = Float32List.view(buffer, offset, 16);
 
   /// Sets the matrix with specified values.
   void setValues(
@@ -198,6 +205,9 @@ class Matrix4 {
   /// Copy into [arg].
   Matrix4 copyInto(Matrix4 arg) {
     final Float32List argStorage = arg._m4storage;
+    // Start reading from the last element to eliminate range checks
+    // in subsequent reads.
+    argStorage[15] = _m4storage[15];
     argStorage[0] = _m4storage[0];
     argStorage[1] = _m4storage[1];
     argStorage[2] = _m4storage[2];
@@ -213,7 +223,6 @@ class Matrix4 {
     argStorage[12] = _m4storage[12];
     argStorage[13] = _m4storage[13];
     argStorage[14] = _m4storage[14];
-    argStorage[15] = _m4storage[15];
     return arg;
   }
 
@@ -248,6 +257,7 @@ class Matrix4 {
     final double sy = y ?? x;
     final double sz = z ?? x;
     const double sw = 1.0;
+    _m4storage[15] *= sw;
     _m4storage[0] *= sx;
     _m4storage[1] *= sx;
     _m4storage[2] *= sx;
@@ -263,7 +273,6 @@ class Matrix4 {
     _m4storage[12] *= sw;
     _m4storage[13] *= sw;
     _m4storage[14] *= sw;
-    _m4storage[15] *= sw;
   }
 
   /// Create a copy of [this] scaled by a [Vector3], [Vector4] or [x],[y], and
@@ -272,6 +281,7 @@ class Matrix4 {
 
   /// Zeros [this].
   void setZero() {
+    _m4storage[15] = 0.0;
     _m4storage[0] = 0.0;
     _m4storage[1] = 0.0;
     _m4storage[2] = 0.0;
@@ -287,11 +297,11 @@ class Matrix4 {
     _m4storage[12] = 0.0;
     _m4storage[13] = 0.0;
     _m4storage[14] = 0.0;
-    _m4storage[15] = 0.0;
   }
 
   /// Makes [this] into the identity matrix.
   void setIdentity() {
+    _m4storage[15] = 1.0;
     _m4storage[0] = 1.0;
     _m4storage[1] = 0.0;
     _m4storage[2] = 0.0;
@@ -307,7 +317,6 @@ class Matrix4 {
     _m4storage[12] = 0.0;
     _m4storage[13] = 0.0;
     _m4storage[14] = 0.0;
-    _m4storage[15] = 1.0;
   }
 
   /// Returns the tranpose of this.
@@ -337,77 +346,67 @@ class Matrix4 {
 
   /// Returns the determinant of this matrix.
   double determinant() {
+    final Float32List m = _m4storage;
     final double det2_01_01 =
-        _m4storage[0] * _m4storage[5] - _m4storage[1] * _m4storage[4];
+        m[0] * m[5] - m[1] * m[4];
     final double det2_01_02 =
-        _m4storage[0] * _m4storage[6] - _m4storage[2] * _m4storage[4];
+        m[0] * m[6] - m[2] * m[4];
     final double det2_01_03 =
-        _m4storage[0] * _m4storage[7] - _m4storage[3] * _m4storage[4];
+        m[0] * m[7] - m[3] * m[4];
     final double det2_01_12 =
-        _m4storage[1] * _m4storage[6] - _m4storage[2] * _m4storage[5];
+        m[1] * m[6] - m[2] * m[5];
     final double det2_01_13 =
-        _m4storage[1] * _m4storage[7] - _m4storage[3] * _m4storage[5];
+        m[1] * m[7] - m[3] * m[5];
     final double det2_01_23 =
-        _m4storage[2] * _m4storage[7] - _m4storage[3] * _m4storage[6];
-    final double det3_201_012 = _m4storage[8] * det2_01_12 -
-        _m4storage[9] * det2_01_02 +
-        _m4storage[10] * det2_01_01;
-    final double det3_201_013 = _m4storage[8] * det2_01_13 -
-        _m4storage[9] * det2_01_03 +
-        _m4storage[11] * det2_01_01;
-    final double det3_201_023 = _m4storage[8] * det2_01_23 -
-        _m4storage[10] * det2_01_03 +
-        _m4storage[11] * det2_01_02;
-    final double det3_201_123 = _m4storage[9] * det2_01_23 -
-        _m4storage[10] * det2_01_13 +
-        _m4storage[11] * det2_01_12;
-    return -det3_201_123 * _m4storage[12] +
-        det3_201_023 * _m4storage[13] -
-        det3_201_013 * _m4storage[14] +
-        det3_201_012 * _m4storage[15];
-  }
-
-  /// Returns a new vector or matrix by multiplying [this] with [arg].
-  dynamic operator *(dynamic arg) {
-    if (arg is double) {
-      return scaled(arg);
-    }
-    if (arg is Vector3) {
-      final Vector3 copy = arg.clone();
-      transform3(copy.storage);
-      return copy;
-    }
-    if (arg is Matrix4) {
-      return multiplied(arg);
-    }
-    throw ArgumentError(arg);
+        m[2] * m[7] - m[3] * m[6];
+    final double det3_201_012 = m[8] * det2_01_12 -
+        m[9] * det2_01_02 +
+        m[10] * det2_01_01;
+    final double det3_201_013 = m[8] * det2_01_13 -
+        m[9] * det2_01_03 +
+        m[11] * det2_01_01;
+    final double det3_201_023 = m[8] * det2_01_23 -
+        m[10] * det2_01_03 +
+        m[11] * det2_01_02;
+    final double det3_201_123 = m[9] * det2_01_23 -
+        m[10] * det2_01_13 +
+        m[11] * det2_01_12;
+    return -det3_201_123 * m[12] +
+        det3_201_023 * m[13] -
+        det3_201_013 * m[14] +
+        det3_201_012 * m[15];
   }
 
   /// Transform [arg] of type [Vector3] using the perspective transformation
   /// defined by [this].
-  Vector3 perspectiveTransform(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    final double x = (_m4storage[0] * argStorage[0]) +
-        (_m4storage[4] * argStorage[1]) +
-        (_m4storage[8] * argStorage[2]) +
+  Vector3 perspectiveTransform({
+    required double x,
+    required double y,
+    required double z,
+  }) {
+    final double transformedX = (_m4storage[0] * x) +
+        (_m4storage[4] * y) +
+        (_m4storage[8] * z) +
         _m4storage[12];
-    final double y = (_m4storage[1] * argStorage[0]) +
-        (_m4storage[5] * argStorage[1]) +
-        (_m4storage[9] * argStorage[2]) +
+    final double transformedY = (_m4storage[1] * x) +
+        (_m4storage[5] * y) +
+        (_m4storage[9] * z) +
         _m4storage[13];
-    final double z = (_m4storage[2] * argStorage[0]) +
-        (_m4storage[6] * argStorage[1]) +
-        (_m4storage[10] * argStorage[2]) +
+    final double transformedZ = (_m4storage[2] * x) +
+        (_m4storage[6] * y) +
+        (_m4storage[10] * z) +
         _m4storage[14];
     final double w = 1.0 /
-        ((_m4storage[3] * argStorage[0]) +
-            (_m4storage[7] * argStorage[1]) +
-            (_m4storage[11] * argStorage[2]) +
+        ((_m4storage[3] * x) +
+            (_m4storage[7] * y) +
+            (_m4storage[11] * z) +
             _m4storage[15]);
-    argStorage[0] = x * w;
-    argStorage[1] = y * w;
-    argStorage[2] = z * w;
-    return arg;
+
+    return (
+      x: transformedX * w,
+      y: transformedY * w,
+      z: transformedZ * w,
+    );
   }
 
   bool isIdentity() =>
@@ -448,18 +447,18 @@ class Matrix4 {
 
   /// Returns the translation vector from this homogeneous transformation matrix.
   Vector3 getTranslation() {
-    final double z = _m4storage[14];
-    final double y = _m4storage[13];
-    final double x = _m4storage[12];
-    return Vector3(x, y, z);
+    return (
+      x: _m4storage[12],
+      y: _m4storage[13],
+      z: _m4storage[14],
+    );
   }
 
   void rotate(Vector3 axis, double angle) {
     final double len = axis.length;
-    final Float32List axisStorage = axis._v3storage;
-    final double x = axisStorage[0] / len;
-    final double y = axisStorage[1] / len;
-    final double z = axisStorage[2] / len;
+    final double x = axis.x / len;
+    final double y = axis.y / len;
+    final double z = axis.z / len;
     final double c = math.cos(angle);
     final double s = math.sin(angle);
     final double C = 1.0 - c;
@@ -533,13 +532,9 @@ class Matrix4 {
 
   /// Sets the translation vector in this homogeneous transformation matrix.
   void setTranslation(Vector3 t) {
-    final Float32List tStorage = t._v3storage;
-    final double z = tStorage[2];
-    final double y = tStorage[1];
-    final double x = tStorage[0];
-    _m4storage[14] = z;
-    _m4storage[13] = y;
-    _m4storage[12] = x;
+    _m4storage[14] = t.z;
+    _m4storage[13] = t.y;
+    _m4storage[12] = t.x;
   }
 
   /// Sets the translation vector in this homogeneous transformation matrix.
@@ -733,6 +728,7 @@ class Matrix4 {
 
   /// Multiply [this] by [arg].
   void multiply(Matrix4 arg) {
+    final double m33 = _m4storage[15];
     final double m00 = _m4storage[0];
     final double m01 = _m4storage[4];
     final double m02 = _m4storage[8];
@@ -748,8 +744,8 @@ class Matrix4 {
     final double m30 = _m4storage[3];
     final double m31 = _m4storage[7];
     final double m32 = _m4storage[11];
-    final double m33 = _m4storage[15];
     final Float32List argStorage = arg._m4storage;
+    final double n33 = argStorage[15];
     final double n00 = argStorage[0];
     final double n01 = argStorage[4];
     final double n02 = argStorage[8];
@@ -765,7 +761,6 @@ class Matrix4 {
     final double n30 = argStorage[3];
     final double n31 = argStorage[7];
     final double n32 = argStorage[11];
-    final double n33 = argStorage[15];
     _m4storage[0] = (m00 * n00) + (m01 * n10) + (m02 * n20) + (m03 * n30);
     _m4storage[4] = (m00 * n01) + (m01 * n11) + (m02 * n21) + (m03 * n31);
     _m4storage[8] = (m00 * n02) + (m01 * n12) + (m02 * n22) + (m03 * n32);
@@ -789,6 +784,7 @@ class Matrix4 {
 
   /// Multiply a transposed [this] with [arg].
   void transposeMultiply(Matrix4 arg) {
+    final double m33 = _m4storage[15];
     final double m00 = _m4storage[0];
     final double m01 = _m4storage[1];
     final double m02 = _m4storage[2];
@@ -804,7 +800,7 @@ class Matrix4 {
     final double m30 = _m4storage[12];
     final double m31 = _m4storage[13];
     final double m32 = _m4storage[14];
-    final double m33 = _m4storage[15];
+
     final Float32List argStorage = arg._m4storage;
     _m4storage[0] = (m00 * argStorage[0]) +
         (m01 * argStorage[1]) +
@@ -957,35 +953,6 @@ class Matrix4 {
         (m33 * argStorage[15]);
   }
 
-  /// Rotate [arg] of type [Vector3] using the rotation defined by [this].
-  Vector3 rotate3(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    final double x = (_m4storage[0] * argStorage[0]) +
-        (_m4storage[4] * argStorage[1]) +
-        (_m4storage[8] * argStorage[2]);
-    final double y = (_m4storage[1] * argStorage[0]) +
-        (_m4storage[5] * argStorage[1]) +
-        (_m4storage[9] * argStorage[2]);
-    final double z = (_m4storage[2] * argStorage[0]) +
-        (_m4storage[6] * argStorage[1]) +
-        (_m4storage[10] * argStorage[2]);
-    argStorage[0] = x;
-    argStorage[1] = y;
-    argStorage[2] = z;
-    return arg;
-  }
-
-  /// Rotate a copy of [arg] of type [Vector3] using the rotation defined by
-  /// [this]. If a [out] parameter is supplied, the copy is stored in [out].
-  Vector3 rotated3(Vector3 arg, [Vector3? out]) {
-    if (out == null) {
-      out = Vector3.copy(arg);
-    } else {
-      out.setFrom(arg);
-    }
-    return rotate3(out);
-  }
-
   /// Transforms a 3-component vector in-place.
   void transform3(Float32List vector) {
     final double x = (_m4storage[0] * vector[0]) +
@@ -1010,8 +977,8 @@ class Matrix4 {
   /// This transformation forgets the final Z component. If you need the
   /// Z component, see [transform3].
   void transform2(Float32List vector) {
-    double x = vector[0];
-    double y = vector[1];
+    final double x = vector[0];
+    final double y = vector[1];
     vector[0] = (_m4storage[0] * x) +
         (_m4storage[4] * y) +
         _m4storage[12];
@@ -1019,6 +986,10 @@ class Matrix4 {
         (_m4storage[5] * y) +
         _m4storage[13];
   }
+
+  /// Transforms the input rect and calculates the bounding box of the rect
+  /// after the transform.
+  ui.Rect transformRect(ui.Rect rect) => transformRectWithMatrix(this, rect);
 
   /// Copies [this] into [array] starting at [offset].
   void copyIntoArray(List<num> array, [int offset = 0]) {
@@ -1076,328 +1047,131 @@ class Matrix4 {
 
   @override
   String toString() {
-    if (assertionsEnabled) {
+    String result = super.toString();
+    assert(() {
       String fmt(int index) {
         return storage[index].toStringAsFixed(2);
       }
 
-      return '[${fmt(0)}, ${fmt(4)}, ${fmt(8)}, ${fmt(12)}]\n'
-             '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
-             '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
-             '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
-    } else {
-      return super.toString();
-    }
+      result = '[${fmt(0)}, ${fmt(4)}, ${fmt(8)}, ${fmt(12)}]\n'
+               '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
+               '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
+               '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
+      return true;
+    }());
+    return result;
   }
 }
 
+const Vector3 kUnitX = (x: 1.0, y: 0.0, z: 0.0);
+const Vector3 kUnitY = (x: 0.0, y: 1.0, z: 0.0);
+const Vector3 kUnitZ = (x: 0.0, y: 0.0, z: 1.0);
+
 /// 3D column vector.
-class Vector3 {
-  final Float32List _v3storage;
+typedef Vector3 = ({double x, double y, double z});
 
-  /// The components of the vector.
-  Float32List get storage => _v3storage;
-
-  /// Set the values of [result] to the minimum of [a] and [b] for each line.
-  static void min(Vector3 a, Vector3 b, Vector3 result) {
-    result
-      ..x = math.min(a.x, b.x)
-      ..y = math.min(a.y, b.y)
-      ..z = math.min(a.z, b.z);
-  }
-
-  /// Set the values of [result] to the maximum of [a] and [b] for each line.
-  static void max(Vector3 a, Vector3 b, Vector3 result) {
-    result
-      ..x = math.max(a.x, b.x)
-      ..y = math.max(a.y, b.y)
-      ..z = math.max(a.z, b.z);
-  }
-
-  /// Interpolate between [min] and [max] with the amount of [a] using a linear
-  /// interpolation and store the values in [result].
-  static void mix(Vector3 min, Vector3 max, double a, Vector3 result) {
-    result
-      ..x = min.x + a * (max.x - min.x)
-      ..y = min.y + a * (max.y - min.y)
-      ..z = min.z + a * (max.z - min.z);
-  }
-
-  /// Construct a new vector with the specified values.
-  factory Vector3(double x, double y, double z) =>
-      Vector3.zero()..setValues(x, y, z);
-
-  /// Zero vector.
-  Vector3.zero() : _v3storage = Float32List(3);
-
-  /// Splat [value] into all lanes of the vector.
-  factory Vector3.all(double value) => Vector3.zero()..splat(value);
-
-  /// Copy of [other].
-  factory Vector3.copy(Vector3 other) => Vector3.zero()..setFrom(other);
-
-  /// Constructs Vector3 with given Float32List as [storage].
-  Vector3.fromFloat32List(this._v3storage);
-
-  /// Constructs Vector3 with a [storage] that views given [buffer] starting at
-  /// [offset]. [offset] has to be multiple of [Float32List.bytesPerElement].
-  Vector3.fromBuffer(ByteBuffer buffer, int offset)
-      : _v3storage = Float32List.view(buffer, offset, 3);
-
-  /// Generate random vector in the range (0, 0, 0) to (1, 1, 1). You can
-  /// optionally pass your own random number generator.
-  factory Vector3.random([math.Random? rng]) {
-    rng ??= math.Random();
-    return Vector3(rng.nextDouble(), rng.nextDouble(), rng.nextDouble());
-  }
-
-  /// Set the values of the vector.
-  void setValues(double x, double y, double z) {
-    _v3storage[0] = x;
-    _v3storage[1] = y;
-    _v3storage[2] = z;
-  }
-
-  /// Zero vector.
-  void setZero() {
-    _v3storage[2] = 0.0;
-    _v3storage[1] = 0.0;
-    _v3storage[0] = 0.0;
-  }
-
-  /// Set the values by copying them from [other].
-  void setFrom(Vector3 other) {
-    final Float32List otherStorage = other._v3storage;
-    _v3storage[0] = otherStorage[0];
-    _v3storage[1] = otherStorage[1];
-    _v3storage[2] = otherStorage[2];
-  }
-
-  /// Splat [arg] into all lanes of the vector.
-  void splat(double arg) {
-    _v3storage[2] = arg;
-    _v3storage[1] = arg;
-    _v3storage[0] = arg;
-  }
-
-  /// Access the component of the vector at the index [i].
-  double operator [](int i) => _v3storage[i];
-
-  /// Set the component of the vector at the index [i].
-  void operator []=(int i, double v) {
-    _v3storage[i] = v;
-  }
-
-  /// Set the length of the vector. A negative [value] will change the vectors
-  /// orientation and a [value] of zero will set the vector to zero.
-  set length(double value) {
-    if (value == 0.0) {
-      setZero();
-    } else {
-      double l = length;
-      if (l == 0.0) {
-        return;
-      }
-      l = value / l;
-      _v3storage[0] *= l;
-      _v3storage[1] *= l;
-      _v3storage[2] *= l;
-    }
-  }
-
+extension Vector3Extension on Vector3 {
   /// Length.
   double get length => math.sqrt(length2);
 
   /// Length squared.
   double get length2 {
-    double sum;
-    sum = _v3storage[0] * _v3storage[0];
-    sum += _v3storage[1] * _v3storage[1];
-    sum += _v3storage[2] * _v3storage[2];
-    return sum;
+    return (x * x) + (y * y) + (z * z);
+  }
+}
+
+/// Converts a matrix represented using [Float64List] to one represented using
+/// [Float32List].
+///
+/// 32-bit precision is sufficient because Flutter Engine itself (as well as
+/// Skia) use 32-bit precision under the hood anyway.
+///
+/// 32-bit matrices require 2x less memory and in V8 they are allocated on the
+/// JavaScript heap, thus avoiding a malloc.
+///
+/// See also:
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=9199
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=2022
+Float32List toMatrix32(Float64List matrix64) {
+  final Float32List matrix32 = Float32List(16);
+  matrix32[15] = matrix64[15];
+  matrix32[14] = matrix64[14];
+  matrix32[13] = matrix64[13];
+  matrix32[12] = matrix64[12];
+  matrix32[11] = matrix64[11];
+  matrix32[10] = matrix64[10];
+  matrix32[9] = matrix64[9];
+  matrix32[8] = matrix64[8];
+  matrix32[7] = matrix64[7];
+  matrix32[6] = matrix64[6];
+  matrix32[5] = matrix64[5];
+  matrix32[4] = matrix64[4];
+  matrix32[3] = matrix64[3];
+  matrix32[2] = matrix64[2];
+  matrix32[1] = matrix64[1];
+  matrix32[0] = matrix64[0];
+  return matrix32;
+}
+
+/// Converts a matrix represented using [Float32List] to one represented using
+/// [Float64List].
+///
+/// 32-bit precision is sufficient because Flutter Engine itself (as well as
+/// Skia) use 32-bit precision under the hood anyway.
+///
+/// 32-bit matrices require 2x less memory and in V8 they are allocated on the
+/// JavaScript heap, thus avoiding a malloc.
+///
+/// See also:
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=9199
+/// * https://bugs.chromium.org/p/v8/issues/detail?id=2022
+Float64List toMatrix64(Float32List matrix32) {
+  final Float64List matrix64 = Float64List(16);
+  matrix64[15] = matrix32[15];
+  matrix64[14] = matrix32[14];
+  matrix64[13] = matrix32[13];
+  matrix64[12] = matrix32[12];
+  matrix64[11] = matrix32[11];
+  matrix64[10] = matrix32[10];
+  matrix64[9] = matrix32[9];
+  matrix64[8] = matrix32[8];
+  matrix64[7] = matrix32[7];
+  matrix64[6] = matrix32[6];
+  matrix64[5] = matrix32[5];
+  matrix64[4] = matrix32[4];
+  matrix64[3] = matrix32[3];
+  matrix64[2] = matrix32[2];
+  matrix64[1] = matrix32[1];
+  matrix64[0] = matrix32[0];
+  return matrix64;
+}
+
+// Stores matrix in a form that allows zero allocation transforms.
+// TODO(yjbanov): re-evaluate the need for this class. It may be an
+//                over-optimization. It is only used by `GradientLinear` in the
+//                HTML renderer. However that class creates a whole new WebGL
+//                context to render the gradient, then copies the resulting
+//                bitmap back into the destination canvas. This is multiple
+//                orders of magnitude more computation and data copying. Saving
+//                an allocation of one point is unlikely to save anything, but
+//                is guaranteed to add complexity (e.g. it's stateful).
+class FastMatrix32 {
+  FastMatrix32(this.matrix);
+
+  final Float32List matrix;
+  double transformedX = 0;
+  double transformedY = 0;
+
+  /// Transforms the point defined by [x] and [y] using the [matrix] and stores
+  /// the results in [transformedX] and [transformedY].
+  void transform(double x, double y) {
+    transformedX = matrix[12] + (matrix[0] * x) + (matrix[4] * y);
+    transformedY = matrix[13] + (matrix[1] * x) + (matrix[5] * y);
   }
 
-  /// Normalizes [this].
-  double normalize() {
-    final double l = length;
-    if (l == 0.0) {
-      return 0.0;
-    }
-    final double d = 1.0 / l;
-    _v3storage[0] *= d;
-    _v3storage[1] *= d;
-    _v3storage[2] *= d;
-    return l;
-  }
-
-  /// Normalizes copy of [this].
-  Vector3 normalized() => Vector3.copy(this)..normalize();
-
-  /// Normalize vector into [out].
-  Vector3 normalizeInto(Vector3 out) {
-    out
-      ..setFrom(this)
-      ..normalize();
-    return out;
-  }
-
-  /// Distance from [this] to [arg]
-  double distanceTo(Vector3 arg) => math.sqrt(distanceToSquared(arg));
-
-  /// Squared distance from [this] to [arg]
-  double distanceToSquared(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    final double dx = _v3storage[0] - argStorage[0];
-    final double dy = _v3storage[1] - argStorage[1];
-    final double dz = _v3storage[2] - argStorage[2];
-
-    return dx * dx + dy * dy + dz * dz;
-  }
-
-  /// Returns the angle between [this] vector and [other] in radians.
-  double angleTo(Vector3 other) {
-    final Float32List otherStorage = other._v3storage;
-    if (_v3storage[0] == otherStorage[0] &&
-        _v3storage[1] == otherStorage[1] &&
-        _v3storage[2] == otherStorage[2]) {
-      return 0.0;
-    }
-
-    final double d = dot(other) / (length * other.length);
-
-    return math.acos(d.clamp(-1.0, 1.0));
-  }
-
-  /// Inner product.
-  double dot(Vector3 other) {
-    final Float32List otherStorage = other._v3storage;
-    double sum;
-    sum = _v3storage[0] * otherStorage[0];
-    sum += _v3storage[1] * otherStorage[1];
-    sum += _v3storage[2] * otherStorage[2];
-    return sum;
-  }
-
-  /// Projects [this] using the projection matrix [arg]
-  void applyProjection(Matrix4 arg) {
-    final Float32List argStorage = arg.storage;
-    final double x = _v3storage[0];
-    final double y = _v3storage[1];
-    final double z = _v3storage[2];
-    final double d = 1.0 /
-        (argStorage[3] * x +
-            argStorage[7] * y +
-            argStorage[11] * z +
-            argStorage[15]);
-    _v3storage[0] = (argStorage[0] * x +
-            argStorage[4] * y +
-            argStorage[8] * z +
-            argStorage[12]) *
-        d;
-    _v3storage[1] = (argStorage[1] * x +
-            argStorage[5] * y +
-            argStorage[9] * z +
-            argStorage[13]) *
-        d;
-    _v3storage[2] = (argStorage[2] * x +
-            argStorage[6] * y +
-            argStorage[10] * z +
-            argStorage[14]) *
-        d;
-  }
-
-  /// True if any component is infinite.
-  bool get isInfinite {
-    bool isInfinite = false;
-    isInfinite = isInfinite || _v3storage[0].isInfinite;
-    isInfinite = isInfinite || _v3storage[1].isInfinite;
-    isInfinite = isInfinite || _v3storage[2].isInfinite;
-    return isInfinite;
-  }
-
-  /// True if any component is NaN.
-  bool get isNaN {
-    bool isNan = false;
-    isNan = isNan || _v3storage[0].isNaN;
-    isNan = isNan || _v3storage[1].isNaN;
-    isNan = isNan || _v3storage[2].isNaN;
-    return isNan;
-  }
-
-  /// Add [arg] to [this].
-  void add(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] + argStorage[0];
-    _v3storage[1] = _v3storage[1] + argStorage[1];
-    _v3storage[2] = _v3storage[2] + argStorage[2];
-  }
-
-  /// Add [arg] scaled by [factor] to [this].
-  void addScaled(Vector3 arg, double factor) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] + argStorage[0] * factor;
-    _v3storage[1] = _v3storage[1] + argStorage[1] * factor;
-    _v3storage[2] = _v3storage[2] + argStorage[2] * factor;
-  }
-
-  /// Subtract [arg] from [this].
-  void sub(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] - argStorage[0];
-    _v3storage[1] = _v3storage[1] - argStorage[1];
-    _v3storage[2] = _v3storage[2] - argStorage[2];
-  }
-
-  /// Multiply entries in [this] with entries in [arg].
-  void multiply(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] * argStorage[0];
-    _v3storage[1] = _v3storage[1] * argStorage[1];
-    _v3storage[2] = _v3storage[2] * argStorage[2];
-  }
-
-  /// Divide entries in [this] with entries in [arg].
-  void divide(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    _v3storage[0] = _v3storage[0] / argStorage[0];
-    _v3storage[1] = _v3storage[1] / argStorage[1];
-    _v3storage[2] = _v3storage[2] / argStorage[2];
-  }
-
-  /// Scale [this].
-  void scale(double arg) {
-    _v3storage[2] = _v3storage[2] * arg;
-    _v3storage[1] = _v3storage[1] * arg;
-    _v3storage[0] = _v3storage[0] * arg;
-  }
-
-  /// Create a copy of [this] and scale it by [arg].
-  Vector3 scaled(double arg) => clone()..scale(arg);
-
-  /// Clone of [this].
-  Vector3 clone() => Vector3.copy(this);
-
-  /// Copy [this] into [arg].
-  Vector3 copyInto(Vector3 arg) {
-    final Float32List argStorage = arg._v3storage;
-    argStorage[0] = _v3storage[0];
-    argStorage[1] = _v3storage[1];
-    argStorage[2] = _v3storage[2];
-    return arg;
-  }
-
-  /// Copies [this] into [array] starting at [offset].
-  void copyIntoArray(List<double> array, [int offset = 0]) {
-    array[offset + 2] = _v3storage[2];
-    array[offset + 1] = _v3storage[1];
-    array[offset + 0] = _v3storage[0];
-  }
-
-  set x(double arg) => _v3storage[0] = arg;
-  set y(double arg) => _v3storage[1] = arg;
-  set z(double arg) => _v3storage[2] = arg;
-
-  double get x => _v3storage[0];
-  double get y => _v3storage[1];
-  double get z => _v3storage[2];
+  String debugToString() =>
+      '${matrix[0].toStringAsFixed(3)}, ${matrix[4].toStringAsFixed(3)}, ${matrix[8].toStringAsFixed(3)}, ${matrix[12].toStringAsFixed(3)}\n'
+      '${matrix[1].toStringAsFixed(3)}, ${matrix[5].toStringAsFixed(3)}, ${matrix[9].toStringAsFixed(3)}, ${matrix[13].toStringAsFixed(3)}\n'
+      '${matrix[2].toStringAsFixed(3)}, ${matrix[6].toStringAsFixed(3)}, ${matrix[10].toStringAsFixed(3)}, ${matrix[14].toStringAsFixed(3)}\n'
+      '${matrix[3].toStringAsFixed(3)}, ${matrix[7].toStringAsFixed(3)}, ${matrix[11].toStringAsFixed(3)}, ${matrix[15].toStringAsFixed(3)}\n';
 }

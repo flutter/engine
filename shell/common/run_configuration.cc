@@ -5,18 +5,21 @@
 #include "flutter/shell/common/run_configuration.h"
 
 #include <sstream>
+#include <utility>
 
 #include "flutter/assets/directory_asset_bundle.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/runtime/isolate_configuration.h"
 
 namespace flutter {
 
 RunConfiguration RunConfiguration::InferFromSettings(
     const Settings& settings,
-    fml::RefPtr<fml::TaskRunner> io_worker) {
+    const fml::RefPtr<fml::TaskRunner>& io_worker,
+    IsolateLaunchType launch_type) {
   auto asset_manager = std::make_shared<AssetManager>();
 
   if (fml::UniqueFD::traits_type::IsValid(settings.assets_dir)) {
@@ -30,7 +33,7 @@ RunConfiguration RunConfiguration::InferFromSettings(
       true));
 
   return {IsolateConfiguration::InferFromSettings(settings, asset_manager,
-                                                  io_worker),
+                                                  io_worker, launch_type),
           asset_manager};
 }
 
@@ -73,8 +76,13 @@ void RunConfiguration::SetEntrypoint(std::string entrypoint) {
 
 void RunConfiguration::SetEntrypointAndLibrary(std::string entrypoint,
                                                std::string library) {
-  SetEntrypoint(entrypoint);
+  SetEntrypoint(std::move(entrypoint));
   entrypoint_library_ = std::move(library);
+}
+
+void RunConfiguration::SetEntrypointArgs(
+    std::vector<std::string> entrypoint_args) {
+  entrypoint_args_ = std::move(entrypoint_args);
 }
 
 std::shared_ptr<AssetManager> RunConfiguration::GetAssetManager() const {
@@ -87,6 +95,10 @@ const std::string& RunConfiguration::GetEntrypoint() const {
 
 const std::string& RunConfiguration::GetEntrypointLibrary() const {
   return entrypoint_library_;
+}
+
+const std::vector<std::string>& RunConfiguration::GetEntrypointArgs() const {
+  return entrypoint_args_;
 }
 
 std::unique_ptr<IsolateConfiguration>

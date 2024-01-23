@@ -21,11 +21,15 @@ struct UniqueLooperTraits {
   static void Free(ALooper* value) { ::ALooper_release(value); }
 };
 
+/// Android implementation of \p MessageLoopImpl.
+///
+/// This implemenation wraps usage of Android's \p looper.
+/// \see https://developer.android.com/ndk/reference/group/looper
 class MessageLoopAndroid : public MessageLoopImpl {
  private:
   fml::UniqueObject<ALooper*, UniqueLooperTraits> looper_;
   fml::UniqueFD timer_fd_;
-  bool running_;
+  bool running_ = false;
 
   MessageLoopAndroid();
 

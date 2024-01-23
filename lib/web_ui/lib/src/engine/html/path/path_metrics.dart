@@ -2,8 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:collection' show IterableBase;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import 'conic.dart';
+import 'cubic.dart';
+import 'path_iterator.dart';
+import 'path_ref.dart';
+import 'path_utils.dart';
 
 const double kEpsilon = 0.000000001;
 
@@ -23,9 +32,9 @@ const double kEpsilon = 0.000000001;
 /// are only valid until the next one is obtained.
 class SurfacePathMetrics extends IterableBase<ui.PathMetric>
     implements ui.PathMetrics {
-  SurfacePathMetrics._(SurfacePath path, bool forceClosed)
+  SurfacePathMetrics(PathRef path, bool forceClosed)
       : _iterator =
-            SurfacePathMetricIterator._(_SurfacePathMeasure(path, forceClosed));
+            SurfacePathMetricIterator._(_SurfacePathMeasure(PathRef.shallowCopy(path), forceClosed));
 
   final SurfacePathMetricIterator _iterator;
 
@@ -35,19 +44,16 @@ class SurfacePathMetrics extends IterableBase<ui.PathMetric>
 
 /// Maintains a single instance of computed segments for set of PathMetric
 /// objects exposed through iterator.
-///
-/// [resScale] controls the precision of measure when values > 1.
 class _SurfacePathMeasure {
-  _SurfacePathMeasure(this._path, this.forceClosed, {this.resScale = 1.0})
+  _SurfacePathMeasure(this._path, this.forceClosed)
       :
         // nextContour will increment this to the zero based index.
         _currentContourIndex = -1,
-        _pathIterator = PathIterator(_path.pathRef, forceClosed);
+        _pathIterator = PathIterator(_path, forceClosed);
 
-  final double resScale;
-  final SurfacePath _path;
-  PathIterator _pathIterator;
-  final List<_PathContourMeasure> _contours = [];
+  final PathRef _path;
+  final PathIterator _pathIterator;
+  final List<_PathContourMeasure> _contours = <_PathContourMeasure>[];
 
   // If the contour ends with a call to [Path.close] (which may
   // have been implied when using [Path.addRect])
@@ -104,11 +110,11 @@ class _SurfacePathMeasure {
   // calling `_moveNext` - `_moveNext` should be called after the first
   // iteration is done instead of before.
   bool _nativeNextContour() {
-    if (_verbIterIndex == _path.pathRef.countVerbs()) {
+    if (_verbIterIndex == _path.countVerbs()) {
       return false;
     }
-    _PathContourMeasure measure =
-        _PathContourMeasure(_path.pathRef, _pathIterator, forceClosed);
+    final _PathContourMeasure measure =
+        _PathContourMeasure(_path, _pathIterator, forceClosed);
     _verbIterIndex = measure.verbEndIndex;
     _contours.add(measure);
     return true;
@@ -129,7 +135,7 @@ class _PathContourMeasure {
 
   final PathRef pathRef;
   int _verbEndIndex = 0;
-  final List<_PathSegment> _segments = [];
+  final List<_PathSegment> _segments = <_PathSegment>[];
   // Allocate buffer large enough for returning cubic curve chop result.
   // 2 floats for each coordinate x (start, end & control point 1 & 2).
   static final Float32List _buffer = Float32List(8);
@@ -143,7 +149,7 @@ class _PathContourMeasure {
   bool _isClosed = false;
 
   ui.Tangent? getTangentForOffset(double distance) {
-    final segmentIndex = _segmentIndexAtDistance(distance);
+    final int segmentIndex = _segmentIndexAtDistance(distance);
     if (segmentIndex == -1) {
       return null;
     }
@@ -169,7 +175,7 @@ class _PathContourMeasure {
     int lo = 0;
     int hi = _segments.length - 1;
     while (lo < hi) {
-      int mid = (lo + hi) >> 1;
+      final int mid = (lo + hi) >> 1;
       if (_segments[mid].distance < distance) {
         lo = mid + 1;
       } else {
@@ -183,7 +189,7 @@ class _PathContourMeasure {
   }
 
   _SurfaceTangent _getPosTan(int segmentIndex, double distance) {
-    _PathSegment segment = _segments[segmentIndex];
+    final _PathSegment segment = _segments[segmentIndex];
     // Compute distance to segment. Since distance is cumulative to find
     // t = 0..1 on the segment, we need to calculate start distance using prior
     // segment.
@@ -208,8 +214,8 @@ class _PathContourMeasure {
     if (startDistance > stopDistance || _segments.isEmpty) {
       return path;
     }
-    int startSegmentIndex = _segmentIndexAtDistance(startDistance);
-    int stopSegmentIndex = _segmentIndexAtDistance(stopDistance);
+    final int startSegmentIndex = _segmentIndexAtDistance(startDistance);
+    final int stopSegmentIndex = _segmentIndexAtDistance(stopDistance);
     if (startSegmentIndex == -1 || stopSegmentIndex == -1) {
       return path;
     }
@@ -252,16 +258,13 @@ class _PathContourMeasure {
         final double toX = (points[2] * stopT) + (points[0] * (1.0 - stopT));
         final double toY = (points[3] * stopT) + (points[1] * (1.0 - stopT));
         path.lineTo(toX, toY);
-        break;
       case SPath.kCubicVerb:
-        _chopCubicBetweenT(points, startT, stopT, _buffer);
+        chopCubicBetweenT(points, startT, stopT, _buffer);
         path.cubicTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5], _buffer[6],
             _buffer[7]);
-        break;
       case SPath.kQuadVerb:
         _chopQuadBetweenT(points, startT, stopT, _buffer);
         path.quadraticBezierTo(_buffer[2], _buffer[3], _buffer[4], _buffer[5]);
-        break;
       case SPath.kConicVerb:
         // Implement this once we start writing out conic segments.
         throw UnimplementedError();
@@ -278,8 +281,7 @@ class _PathContourMeasure {
     double distance = 0.0;
     bool haveSeenMoveTo = false;
 
-    final Function lineToHandler =
-        (double fromX, double fromY, double x, double y) {
+    void lineToHandler(double fromX, double fromY, double x, double y) {
       final double dx = fromX - x;
       final double dy = fromY - y;
       final double prevDistance = distance;
@@ -288,10 +290,12 @@ class _PathContourMeasure {
       // actually made it larger, since a very small delta might be > 0, but
       // still have no effect on distance (if distance >>> delta).
       if (distance > prevDistance) {
-        _segments
-            .add(_PathSegment(SPath.kLineVerb, distance, [fromX, fromY, x, y]));
+        _segments.add(
+          _PathSegment(SPath.kLineVerb, distance, <double>[fromX, fromY, x, y]),
+        );
       }
-    };
+    }
+
     int verb = 0;
     final Float32List points = Float32List(PathRefIterator.kMaxBufferSize);
     do {
@@ -302,11 +306,9 @@ class _PathContourMeasure {
       switch (verb) {
         case SPath.kMoveVerb:
           haveSeenMoveTo = true;
-          break;
         case SPath.kLineVerb:
           assert(haveSeenMoveTo);
           lineToHandler(points[0], points[1], points[2], points[3]);
-          break;
         case SPath.kCubicVerb:
           assert(haveSeenMoveTo);
           // Compute cubic curve distance.
@@ -323,13 +325,12 @@ class _PathContourMeasure {
               0,
               _kMaxTValue,
               _segments);
-          break;
         case SPath.kConicVerb:
           assert(haveSeenMoveTo);
           final double w = iter.conicWeight;
-          Conic conic = Conic(points[0], points[1], points[2], points[3],
+          final Conic conic = Conic(points[0], points[1], points[2], points[3],
               points[4], points[5], w);
-          List<ui.Offset> conicPoints = conic.toQuads();
+          final List<ui.Offset> conicPoints = conic.toQuads();
           final int len = conicPoints.length;
           double startX = conicPoints[0].dx;
           double startY = conicPoints[0].dy;
@@ -343,22 +344,20 @@ class _PathContourMeasure {
             startX = p2x;
             startY = p2y;
           }
-          break;
         case SPath.kQuadVerb:
           assert(haveSeenMoveTo);
           // Compute quad curve distance.
           distance = _computeQuadSegments(points[0], points[1], points[2],
               points[3], points[4], points[5], distance, 0, _kMaxTValue);
-          break;
         case SPath.kCloseVerb:
           _contourLength = distance;
-          return iter._verbIndex;
+          return iter.pathVerbIndex;
         default:
           break;
       }
     } while (verb != SPath.kDoneVerb);
     _contourLength = distance;
-    return iter._verbIndex;
+    return iter.pathVerbIndex;
   }
 
   static bool _tspanBigEnough(int tSpan) => (tSpan >> 10) != 0;
@@ -487,10 +486,18 @@ class SurfacePathMetricIterator implements Iterator<ui.PathMetric> {
   SurfacePathMetricIterator._(this._pathMeasure);
 
   SurfacePathMetric? _pathMetric;
-  _SurfacePathMeasure _pathMeasure;
+  final _SurfacePathMeasure _pathMeasure;
 
   @override
-  SurfacePathMetric get current => _pathMetric!;
+  SurfacePathMetric get current {
+    if (_pathMetric == null) {
+      throw RangeError(
+          'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
+          '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
+    }
+    return _pathMetric!;
+  }
 
   @override
   bool moveNext() {
@@ -523,7 +530,7 @@ const double _fTolerance = 0.5;
 /// the path.
 ///
 /// Implementation is based on
-/// https://github.com/google/skia/blob/master/src/core/SkContourMeasure.cpp
+/// https://github.com/google/skia/blob/main/src/core/SkContourMeasure.cpp
 /// to maintain consistency with native platforms.
 class SurfacePathMetric implements ui.PathMetric {
   SurfacePathMetric._(this._measure)
@@ -541,6 +548,7 @@ class SurfacePathMetric implements ui.PathMetric {
   /// have been implied when using methods like [Path.addRect]) or if
   /// `forceClosed` was specified as true in the call to [Path.computeMetrics].
   /// Returns false otherwise.
+  @override
   final bool isClosed;
 
   /// The zero-based index of the contour.
@@ -555,6 +563,7 @@ class SurfacePathMetric implements ui.PathMetric {
   /// the contours of the path at the time the path's metrics were computed. If
   /// additional contours were added or existing contours updated, this metric
   /// will be invalid for the current state of the path.
+  @override
   final int contourIndex;
 
   final _SurfacePathMeasure _measure;
@@ -578,6 +587,7 @@ class SurfacePathMetric implements ui.PathMetric {
   ///
   /// `start` and `end` are pinned to legal values (0..[length])
   /// Begin the segment with a moveTo if `startWithMoveTo` is true.
+  @override
   ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return _measure.extractPath(contourIndex, start, end,
         startWithMoveTo: startWithMoveTo);
@@ -591,13 +601,12 @@ class SurfacePathMetric implements ui.PathMetric {
 ui.Offset _normalizeSlope(double dx, double dy) {
   final double length = math.sqrt(dx * dx + dy * dy);
   return length < kEpsilon
-      ? ui.Offset(0.0, 0.0)
+      ? ui.Offset.zero
       : ui.Offset(dx / length, dy / length);
 }
 
 class _SurfaceTangent extends ui.Tangent {
-  const _SurfaceTangent(ui.Offset position, ui.Offset vector, this.t)
-      : super(position, vector);
+  const _SurfaceTangent(super.position, super.vector, this.t);
 
   // Normalized distance of tangent point from start of a contour.
   final double t;
@@ -632,9 +641,9 @@ class _PathSegment {
   _SurfaceTangent tangentForQuadAt(double t, double x0, double y0, double x1,
       double y1, double x2, double y2) {
     assert(t >= 0 && t <= 1);
-    final _SkQuadCoefficients _quadEval =
-        _SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
-    final ui.Offset pos = ui.Offset(_quadEval.evalX(t), _quadEval.evalY(t));
+    final SkQuadCoefficients quadEval =
+        SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
+    final ui.Offset pos = ui.Offset(quadEval.evalX(t), quadEval.evalY(t));
     // Derivative of quad curve is 2(b - a + (a - 2b + c)t).
     // If control point is at start or end point, this yields 0 for t = 0 and
     // t = 1. In that case use the quad end points to compute tangent instead
@@ -650,9 +659,9 @@ class _PathSegment {
   _SurfaceTangent tangentForCubicAt(double t, double x0, double y0, double x1,
       double y1, double x2, double y2, double x3, double y3) {
     assert(t >= 0 && t <= 1);
-    final _SkCubicCoefficients _cubicEval =
+    final _SkCubicCoefficients cubicEval =
         _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
-    final ui.Offset pos = ui.Offset(_cubicEval.evalX(t), _cubicEval.evalY(t));
+    final ui.Offset pos = ui.Offset(cubicEval.evalX(t), cubicEval.evalY(t));
     // Derivative of cubic is zero when t = 0 or 1 and adjacent control point
     // is on the start or end point of curve. Use the other control point
     // to compute the tangent or if both control points are on end points
@@ -682,26 +691,8 @@ class _PathSegment {
   }
 }
 
-/// Evaluates A * t^2 + B * t + C = 0 for quadratic curve.
-class _SkQuadCoefficients {
-  _SkQuadCoefficients(
-      double x0, double y0, double x1, double y1, double x2, double y2)
-      : cx = x0,
-        cy = y0,
-        bx = 2 * (x1 - x0),
-        by = 2 * (y1 - y0),
-        ax = x2 - (2 * x1) + x0,
-        ay = y2 - (2 * y1) + y0;
-  final double ax, ay, bx, by, cx, cy;
-
-  double evalX(double t) => (ax * t + bx) * t + cx;
-
-  double evalY(double t) => (ay * t + by) * t + cy;
-}
-
 // Evaluates A * t^3 + B * t^2 + Ct + D = 0 for cubic curve.
 class _SkCubicCoefficients {
-  final double ax, ay, bx, by, cx, cy, dx, dy;
   _SkCubicCoefficients(double x0, double y0, double x1, double y1, double x2,
       double y2, double x3, double y3)
       : ax = x3 + (3 * (x1 - x2)) - x0,
@@ -712,6 +703,8 @@ class _SkCubicCoefficients {
         cy = 3 * (y1 - y0),
         dx = x0,
         dy = y0;
+
+  final double ax, ay, bx, by, cx, cy, dx, dy;
 
   double evalX(double t) => (((ax * t + bx) * t) + cx) * t + dx;
 
@@ -733,12 +726,12 @@ void _chopQuadBetweenT(
   final bool chopStart = startT != 0;
   final double t = chopStart ? startT : stopT;
 
-  final double ab1x = _interpolate(p0x, p1x, t);
-  final double ab1y = _interpolate(p0y, p1y, t);
-  final double bc1x = _interpolate(p1x, p2x, t);
-  final double bc1y = _interpolate(p1y, p2y, t);
-  final double abc1x = _interpolate(ab1x, bc1x, t);
-  final double abc1y = _interpolate(ab1y, bc1y, t);
+  final double ab1x = interpolate(p0x, p1x, t);
+  final double ab1y = interpolate(p0y, p1y, t);
+  final double bc1x = interpolate(p1x, p2x, t);
+  final double bc1y = interpolate(p1y, p2y, t);
+  final double abc1x = interpolate(ab1x, bc1x, t);
+  final double abc1y = interpolate(ab1y, bc1y, t);
   if (!chopStart) {
     // Return left side of curve.
     buffer[0] = p0x;
@@ -762,12 +755,12 @@ void _chopQuadBetweenT(
   // We chopped at startT, now the right hand side of curve is at
   // abc1x, abc1y, bc1x, bc1y, p2x, p2y
   final double endT = (stopT - startT) / (1 - startT);
-  final double ab2x = _interpolate(abc1x, bc1x, endT);
-  final double ab2y = _interpolate(abc1y, bc1y, endT);
-  final double bc2x = _interpolate(bc1x, p2x, endT);
-  final double bc2y = _interpolate(bc1y, p2y, endT);
-  final double abc2x = _interpolate(ab2x, bc2x, endT);
-  final double abc2y = _interpolate(ab2y, bc2y, endT);
+  final double ab2x = interpolate(abc1x, bc1x, endT);
+  final double ab2y = interpolate(abc1y, bc1y, endT);
+  final double bc2x = interpolate(bc1x, p2x, endT);
+  final double bc2y = interpolate(bc1y, p2y, endT);
+  final double abc2x = interpolate(ab2x, bc2x, endT);
+  final double abc2y = interpolate(ab2y, bc2y, endT);
 
   buffer[0] = abc1x;
   buffer[1] = abc1y;

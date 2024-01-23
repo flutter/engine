@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'message_codec.dart';
+import 'serialization.dart';
 
 /// [MessageCodec] with unencoded binary messages represented using [ByteData].
 ///
@@ -36,7 +39,7 @@ class StringCodec implements MessageCodec<String> {
 
   @override
   ByteData encodeMessage(String message) {
-    final Uint8List encoded = utf8.encoder.convert(message);
+    final Uint8List encoded = utf8.encode(message);
     return encoded.buffer.asByteData();
   }
 }
@@ -141,8 +144,8 @@ class JSONMethodCodec implements MethodCodec {
         decoded[0] is String &&
         (decoded[1] == null || decoded[1] is String)) {
       throw PlatformException(
-        code: decoded[0],
-        message: decoded[1],
+        code: decoded[0] as String,
+        message: decoded[1] as String?,
         details: decoded[2],
       );
     }
@@ -157,7 +160,6 @@ class JSONMethodCodec implements MethodCodec {
   @override
   ByteData? encodeErrorEnvelope(
       {required String code, String? message, dynamic details}) {
-    assert(code != null); // ignore: unnecessary_null_comparison
     return const JSONMessageCodec()
         .encodeMessage(<dynamic>[code, message, details]);
   }
@@ -209,6 +211,9 @@ class JSONMethodCodec implements MethodCodec {
 /// The codec is extensible by subclasses overriding [writeValue] and
 /// [readValueOfType].
 class StandardMessageCodec implements MessageCodec<dynamic> {
+  /// Creates a [MessageCodec] using the Flutter standard binary encoding.
+  const StandardMessageCodec();
+
   // The codec serializes messages as outlined below. This format must
   // match the Android and iOS counterparts.
   //
@@ -261,9 +266,6 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
   static const int _valueList = 12;
   static const int _valueMap = 13;
 
-  /// Creates a [MessageCodec] using the Flutter standard binary encoding.
-  const StandardMessageCodec();
-
   @override
   ByteData? encodeMessage(dynamic message) {
     if (message == null) {
@@ -304,11 +306,11 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
       buffer.putUint8(_valueNull);
     } else if (value is bool) {
       buffer.putUint8(value ? _valueTrue : _valueFalse);
-      // TODO(flutter_web): upstream double/int if/else swap.
+      // TODO(hterkelsen): upstream double/int if/else swap.
     } else if (value is double) {
       buffer.putUint8(_valueFloat64);
       buffer.putFloat64(value);
-    } else if (value is int) {
+    } else if (value is int) { // ignore: avoid_double_and_int_checks
       if (-0x7fffffff - 1 <= value && value <= 0x7fffffff) {
         buffer.putUint8(_valueInt32);
         buffer.putInt32(value);
@@ -318,7 +320,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
       }
     } else if (value is String) {
       buffer.putUint8(_valueString);
-      final List<int> bytes = utf8.encoder.convert(value);
+      final List<int> bytes = utf8.encode(value);
       writeSize(buffer, bytes.length);
       buffer.putUint8List(bytes as Uint8List);
     } else if (value is Uint8List) {
@@ -376,19 +378,14 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
     switch (type) {
       case _valueNull:
         result = null;
-        break;
       case _valueTrue:
         result = true;
-        break;
       case _valueFalse:
         result = false;
-        break;
       case _valueInt32:
         result = buffer.getInt32();
-        break;
       case _valueInt64:
         result = buffer.getInt64();
-        break;
       case _valueLargeInt:
         // Flutter Engine APIs to use large ints have been deprecated on
         // 2018-01-09 and will be made unavailable.
@@ -396,44 +393,35 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
         final int length = readSize(buffer);
         final String hex = utf8.decoder.convert(buffer.getUint8List(length));
         result = int.parse(hex, radix: 16);
-        break;
       case _valueFloat64:
         result = buffer.getFloat64();
-        break;
       case _valueString:
         final int length = readSize(buffer);
         result = utf8.decoder.convert(buffer.getUint8List(length));
-        break;
       case _valueUint8List:
         final int length = readSize(buffer);
         result = buffer.getUint8List(length);
-        break;
       case _valueInt32List:
         final int length = readSize(buffer);
         result = buffer.getInt32List(length);
-        break;
       case _valueInt64List:
         final int length = readSize(buffer);
         result = buffer.getInt64List(length);
-        break;
       case _valueFloat64List:
         final int length = readSize(buffer);
         result = buffer.getFloat64List(length);
-        break;
       case _valueList:
         final int length = readSize(buffer);
         result = <dynamic>[];
         for (int i = 0; i < length; i++) {
           result.add(readValue(buffer));
         }
-        break;
       case _valueMap:
         final int length = readSize(buffer);
         result = <dynamic, dynamic>{};
         for (int i = 0; i < length; i++) {
           result[readValue(buffer)] = readValue(buffer);
         }
-        break;
       default:
         throw const FormatException('Message corrupted');
     }
@@ -515,10 +503,11 @@ class StandardMethodCodec implements MethodCodec {
     final ReadBuffer buffer = ReadBuffer(methodCall!);
     final dynamic method = messageCodec.readValue(buffer);
     final dynamic arguments = messageCodec.readValue(buffer);
-    if (method is String && !buffer.hasRemaining)
+    if (method is String && !buffer.hasRemaining) {
       return MethodCall(method, arguments);
-    else
+    } else {
       throw const FormatException('Invalid method call');
+    }
   }
 
   @override
@@ -543,8 +532,9 @@ class StandardMethodCodec implements MethodCodec {
   @override
   dynamic decodeEnvelope(ByteData envelope) {
     // First byte is zero in success case, and non-zero otherwise.
-    if (envelope.lengthInBytes == 0)
+    if (envelope.lengthInBytes == 0) {
       throw const FormatException('Expected envelope, got nothing');
+    }
     final ReadBuffer buffer = ReadBuffer(envelope);
     if (buffer.getUint8() == 0) {
       return messageCodec.readValue(buffer);
@@ -554,10 +544,14 @@ class StandardMethodCodec implements MethodCodec {
     final dynamic errorDetails = messageCodec.readValue(buffer);
     if (errorCode is String &&
         (errorMessage == null || errorMessage is String) &&
-        !buffer.hasRemaining)
+        !buffer.hasRemaining) {
       throw PlatformException(
-          code: errorCode, message: errorMessage, details: errorDetails);
-    else
+        code: errorCode,
+        message: errorMessage as String?,
+        details: errorDetails,
+      );
+    } else {
       throw const FormatException('Invalid envelope');
+    }
   }
 }

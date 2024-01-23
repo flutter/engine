@@ -28,7 +28,7 @@ TEST(WeakPtrTest, CopyConstruction) {
   int data = 0;
   WeakPtrFactory<int> factory(&data);
   WeakPtr<int> ptr = factory.GetWeakPtr();
-  WeakPtr<int> ptr2(ptr);
+  const WeakPtr<int>& ptr2(ptr);
   EXPECT_EQ(&data, ptr.get());
   EXPECT_EQ(&data, ptr2.get());
 }
@@ -146,7 +146,9 @@ TEST(WeakPtrTest, UpcastMoveConstruction) {
   WeakPtrFactory<Derived> factory(&data);
   WeakPtr<Derived> ptr = factory.GetWeakPtr();
   WeakPtr<Base> ptr2(std::move(ptr));
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -168,7 +170,9 @@ TEST(WeakPtrTest, UpcastMoveAssignment) {
   WeakPtr<Base> ptr2;
   EXPECT_EQ(nullptr, ptr2.get());
   ptr2 = std::move(ptr);
-  EXPECT_EQ(nullptr, ptr.get());
+  // The clang linter flags the method called on the moved-from reference, but
+  // this is testing the move implementation, so it is marked NOLINT.
+  EXPECT_EQ(nullptr, ptr.get());  // NOLINT
   EXPECT_EQ(&data, ptr2.get());
 }
 
@@ -210,21 +214,21 @@ TEST(TaskRunnerAffineWeakPtrTest, ShouldNotCrashIfRunningOnTheSameTaskRunner) {
   latch2.Wait();
   fml::TaskQueueId qid1 = loop1->GetTaskRunner()->GetTaskQueueId();
   fml::TaskQueueId qid2 = loop2->GetTaskRunner()->GetTaskQueueId();
-  const auto raster_thread_merger_ =
+  const auto raster_thread_merger =
       fml::MakeRefCounted<fml::RasterThreadMerger>(qid1, qid2);
-  const int kNumFramesMerged = 5;
+  const size_t kNumFramesMerged = 5;
 
-  raster_thread_merger_->MergeWithLease(kNumFramesMerged);
+  raster_thread_merger->MergeWithLease(kNumFramesMerged);
 
   loop2_task_start_latch.Signal();
   loop2_task_finish_latch.Wait();
 
-  for (int i = 0; i < kNumFramesMerged; i++) {
-    ASSERT_TRUE(raster_thread_merger_->IsMerged());
-    raster_thread_merger_->DecrementLease();
+  for (size_t i = 0; i < kNumFramesMerged; i++) {
+    ASSERT_TRUE(raster_thread_merger->IsMerged());
+    raster_thread_merger->DecrementLease();
   }
 
-  ASSERT_FALSE(raster_thread_merger_->IsMerged());
+  ASSERT_FALSE(raster_thread_merger->IsMerged());
   loop2->Terminate();
 
   term1.Signal();

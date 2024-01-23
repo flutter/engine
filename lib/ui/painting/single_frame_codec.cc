@@ -9,11 +9,11 @@
 
 namespace flutter {
 
-SingleFrameCodec::SingleFrameCodec(fml::RefPtr<ImageDescriptor> descriptor,
-                                   uint32_t target_width,
-                                   uint32_t target_height)
-    : status_(Status::kNew),
-      descriptor_(std::move(descriptor)),
+SingleFrameCodec::SingleFrameCodec(
+    const fml::RefPtr<ImageDescriptor>& descriptor,
+    uint32_t target_width,
+    uint32_t target_height)
+    : descriptor_(descriptor),
       target_width_(target_width),
       target_height_(target_height) {}
 
@@ -33,8 +33,11 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   }
 
   if (status_ == Status::kComplete) {
-    tonic::DartInvoke(callback_handle,
-                      {tonic::ToDart(cached_image_), tonic::ToDart(0)});
+    if (!cached_image_->image()) {
+      return tonic::ToDart("Decoded image has been disposed");
+    }
+    tonic::DartInvoke(callback_handle, {tonic::ToDart(cached_image_),
+                                        tonic::ToDart(0), tonic::ToDart("")});
     return Dart_Null();
   }
 
@@ -52,7 +55,10 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   auto decoder = dart_state->GetImageDecoder();
 
   if (!decoder) {
-    return tonic::ToDart("Image decoder not available.");
+    return tonic::ToDart(
+        "Failed to access the internal image decoder "
+        "registry on this isolate. Please file a bug on "
+        "https://github.com/flutter/flutter/issues.");
   }
 
   // The SingleFrameCodec must be deleted on the UI thread.  Allocate a RefPtr
@@ -63,7 +69,8 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
       new fml::RefPtr<SingleFrameCodec>(this);
 
   decoder->Decode(
-      descriptor_, target_width_, target_height_, [raw_codec_ref](auto image) {
+      descriptor_, target_width_, target_height_,
+      [raw_codec_ref](auto image, auto decode_error) {
         std::unique_ptr<fml::RefPtr<SingleFrameCodec>> codec_ref(raw_codec_ref);
         fml::RefPtr<SingleFrameCodec> codec(std::move(*codec_ref));
 
@@ -78,7 +85,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 
         tonic::DartState::Scope scope(state.get());
 
-        if (image.get()) {
+        if (image) {
           auto canvas_image = fml::MakeRefCounted<CanvasImage>();
           canvas_image->set_image(std::move(image));
 
@@ -90,10 +97,11 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
         codec->status_ = Status::kComplete;
 
         // Invoke any callbacks that were provided before the frame was decoded.
-        for (const DartPersistentValue& callback : codec->pending_callbacks_) {
-          tonic::DartInvoke(
-              callback.value(),
-              {tonic::ToDart(codec->cached_image_), tonic::ToDart(0)});
+        for (const tonic::DartPersistentValue& callback :
+             codec->pending_callbacks_) {
+          tonic::DartInvoke(callback.value(),
+                            {tonic::ToDart(codec->cached_image_),
+                             tonic::ToDart(0), tonic::ToDart(decode_error)});
         }
         codec->pending_callbacks_.clear();
       });
@@ -105,13 +113,6 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   status_ = Status::kInProgress;
 
   return Dart_Null();
-}
-
-size_t SingleFrameCodec::GetAllocationSize() const {
-  const auto& data_size = descriptor_->GetAllocationSize();
-  const auto frame_byte_size =
-      cached_image_ ? cached_image_->GetAllocationSize() : 0;
-  return data_size + frame_byte_size + sizeof(this);
 }
 
 }  // namespace flutter

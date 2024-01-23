@@ -2,13 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'surface.dart';
 
 /// A surface that translates its children using CSS transform and translate.
 class PersistedOffset extends PersistedContainerSurface
     implements ui.OffsetEngineLayer {
-  PersistedOffset(PersistedOffset? oldLayer, this.dx, this.dy) : super(oldLayer);
+  PersistedOffset(PersistedOffset? super.oldLayer, this.dx, this.dy);
 
   /// Horizontal displacement.
   final double dx;
@@ -18,30 +22,33 @@ class PersistedOffset extends PersistedContainerSurface
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
+    transform = parent!.transform;
     if (dx != 0.0 || dy != 0.0) {
-      _transform = _transform!.clone();
-      _transform!.translate(dx, dy);
+      transform = transform!.clone();
+      transform!.translate(dx, dy);
     }
-    _projectedClip = null;
-    _localTransformInverse = null;
+    projectedClip = null;
   }
+
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
 
   @override
   Matrix4 get localTransformInverse =>
       _localTransformInverse ??= Matrix4.translationValues(-dx, -dy, 0);
 
   @override
-  html.Element createElement() {
-    html.Element element = html.document.createElement('flt-offset');
-    DomRenderer.setElementStyle(element, 'position', 'absolute');
-    DomRenderer.setElementStyle(element, 'transform-origin', '0 0 0');
+  DomElement createElement() {
+    final DomElement element = domDocument.createElement('flt-offset');
+    setElementStyle(element, 'position', 'absolute');
+    setElementStyle(element, 'transform-origin', '0 0 0');
     return element;
   }
 
   @override
   void apply() {
-    DomRenderer.setElementTransform(rootElement!, 'translate(${dx}px, ${dy}px)');
+    rootElement!.style.transform = 'translate(${dx}px, ${dy}px)';
   }
 
   @override

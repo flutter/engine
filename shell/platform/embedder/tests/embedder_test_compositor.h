@@ -64,11 +64,11 @@ class EmbedderTestCompositor {
 
   size_t GetBackingStoresCollectedCount() const;
 
-  void AddOnCreateRenderTargetCallback(fml::closure callback);
+  void AddOnCreateRenderTargetCallback(const fml::closure& callback);
 
-  void AddOnCollectRenderTargetCallback(fml::closure callback);
+  void AddOnCollectRenderTargetCallback(const fml::closure& callback);
 
-  void AddOnPresentCallback(fml::closure callback);
+  void AddOnPresentCallback(const fml::closure& callback);
 
   sk_sp<GrDirectContext> GetGrContext();
 
@@ -98,4 +98,4 @@ class EmbedderTestCompositor {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_GL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_COMPOSITOR_H_

@@ -4,6 +4,8 @@
 
 #include "flutter/testing/dart_isolate_runner.h"
 
+#include <utility>
+
 #include "flutter/runtime/isolate_configuration.h"
 
 namespace flutter {
@@ -13,12 +15,25 @@ AutoIsolateShutdown::AutoIsolateShutdown(std::shared_ptr<DartIsolate> isolate,
     : isolate_(std::move(isolate)), runner_(std::move(runner)) {}
 
 AutoIsolateShutdown::~AutoIsolateShutdown() {
+  if (!isolate_->IsShuttingDown()) {
+    Shutdown();
+  }
+  fml::AutoResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(runner_, [this, &latch]() {
+    // Delete isolate on thread.
+    isolate_.reset();
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+void AutoIsolateShutdown::Shutdown() {
   if (!IsValid()) {
     return;
   }
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      runner_, [isolate = std::move(isolate_), &latch]() {
+      runner_, [isolate = isolate_.get(), &latch]() {
         if (!isolate->Shutdown()) {
           FML_LOG(ERROR) << "Could not shutdown isolate.";
           FML_CHECK(false);
@@ -29,7 +44,7 @@ AutoIsolateShutdown::~AutoIsolateShutdown() {
 }
 
 [[nodiscard]] bool AutoIsolateShutdown::RunInIsolateScope(
-    std::function<bool(void)> closure) {
+    const std::function<bool(void)>& closure) {
   if (!IsValid()) {
     return false;
   }
@@ -46,7 +61,7 @@ AutoIsolateShutdown::~AutoIsolateShutdown() {
         latch.Signal();
       });
   latch.Wait();
-  return true;
+  return result;
 }
 
 std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
@@ -55,8 +70,9 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     const TaskRunners& task_runners,
     std::string entrypoint,
     const std::vector<std::string>& args,
-    const std::string& fixtures_path,
-    fml::WeakPtr<IOManager> io_manager) {
+    const std::string& kernel_file_path,
+    fml::WeakPtr<IOManager> io_manager,
+    const std::shared_ptr<VolatilePathTracker>& volatile_path_tracker) {
   FML_CHECK(task_runners.GetUITaskRunner()->RunsTasksOnCurrentThread());
 
   if (!vm_ref) {
@@ -71,12 +87,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
 
   auto settings = p_settings;
 
-  settings.dart_entrypoint_args = args;
-
   if (!DartVM::IsRunningPrecompiledCode()) {
-    auto kernel_file_path =
-        fml::paths::JoinPaths({fixtures_path, "kernel_blob.bin"});
-
     if (!fml::IsFile(kernel_file_path)) {
       FML_LOG(ERROR) << "Could not locate kernel file.";
       return nullptr;
@@ -93,7 +104,7 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     auto kernel_mapping = std::make_unique<fml::FileMapping>(kernel_file);
 
     if (kernel_mapping->GetMapping() == nullptr) {
-      FML_LOG(ERROR) << "Could not setup kernel mapping.";
+      FML_LOG(ERROR) << "Could not set up kernel mapping.";
       return nullptr;
     }
 
@@ -108,25 +119,26 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
+  UIDartState::Context context(task_runners);
+  context.io_manager = std::move(io_manager);
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = entrypoint.c_str();
+  context.enable_impeller = p_settings.enable_impeller;
+
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
           settings,                            // settings
           vm_data->GetIsolateSnapshot(),       // isolate snapshot
-          std::move(task_runners),             // task runners
-          nullptr,                             // window
-          {},                                  // snapshot delegate
-          {},                                  // hint freed delegate
-          io_manager,                          // io manager
-          {},                                  // unref queue
-          {},                                  // image decoder
-          "main.dart",                         // advisory uri
-          entrypoint.c_str(),                  // advisory entrypoint
+          nullptr,                             // platform configuration
           DartIsolate::Flags{},                // flags
+          nullptr,                             // root isolate create callback
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback
           entrypoint,                          // entrypoint
           std::nullopt,                        // library
-          std::move(isolate_configuration)     // isolate configuration
+          args,                                // args
+          std::move(isolate_configuration),    // isolate configuration
+          context                              // engine context
           )
           .lock();
 
@@ -135,8 +147,8 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolateOnUITaskRunner(
     return nullptr;
   }
 
-  return std::make_unique<AutoIsolateShutdown>(isolate,
-                                               task_runners.GetUITaskRunner());
+  return std::make_unique<AutoIsolateShutdown>(
+      isolate, context.task_runners.GetUITaskRunner());
 }
 
 std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
@@ -145,15 +157,16 @@ std::unique_ptr<AutoIsolateShutdown> RunDartCodeInIsolate(
     const TaskRunners& task_runners,
     std::string entrypoint,
     const std::vector<std::string>& args,
-    const std::string& fixtures_path,
-    fml::WeakPtr<IOManager> io_manager) {
+    const std::string& kernel_file_path,
+    fml::WeakPtr<IOManager> io_manager,
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker) {
   std::unique_ptr<AutoIsolateShutdown> result;
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners.GetUITaskRunner(), fml::MakeCopyable([&]() mutable {
         result = RunDartCodeInIsolateOnUITaskRunner(
-            vm_ref, settings, task_runners, entrypoint, args, fixtures_path,
-            io_manager);
+            vm_ref, settings, task_runners, entrypoint, args, kernel_file_path,
+            io_manager, volatile_path_tracker);
         latch.Signal();
       }));
   latch.Wait();

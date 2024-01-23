@@ -4,8 +4,10 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_D
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -13,14 +15,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
@@ -31,39 +39,100 @@ import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding.OnSaveInstanceStateListener;
 import io.flutter.plugins.GeneratedPluginRegistrant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterActivityTest {
+  private final Context ctx = ApplicationProvider.getApplicationContext();
+  boolean isDelegateAttached;
+
   @Before
   public void setUp() {
+    FlutterInjector.reset();
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
+    when(mockFlutterJNI.isAttached()).thenReturn(true);
+    FlutterJNI.Factory mockFlutterJNIFactory = mock(FlutterJNI.Factory.class);
+    when(mockFlutterJNIFactory.provideFlutterJNI()).thenReturn(mockFlutterJNI);
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterJNIFactory(mockFlutterJNIFactory).build());
   }
 
   @After
   public void tearDown() {
     GeneratedPluginRegistrant.clearRegisteredEngines();
+    FlutterInjector.reset();
+  }
+
+  @Test
+  public void flutterViewHasId() {
+    Intent intent = FlutterActivity.createDefaultIntent(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity activity = activityController.get();
+
+    activity.onCreate(null);
+    assertNotNull(activity.findViewById(FlutterActivity.FLUTTER_VIEW_ID));
+    assertTrue(activity.findViewById(FlutterActivity.FLUTTER_VIEW_ID) instanceof FlutterView);
+  }
+
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itRegistersOnBackInvokedCallbackOnChangingFrameworkHandlesBack() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.onCreate(null);
+
+    verify(activity, times(0)).registerOnBackInvokedCallback();
+
+    activity.setFrameworkHandlesBack(false);
+    verify(activity, times(0)).registerOnBackInvokedCallback();
+
+    activity.setFrameworkHandlesBack(true);
+    verify(activity, times(1)).registerOnBackInvokedCallback();
+  }
+
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itUnregistersOnBackInvokedCallbackOnRelease() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.release();
+
+    verify(activity, times(1)).unregisterOnBackInvokedCallback();
   }
 
   @Test
   public void itCreatesDefaultIntentWithExpectedDefaults() {
-    Intent intent = FlutterActivity.createDefaultIntent(RuntimeEnvironment.application);
+    Intent intent = FlutterActivity.createDefaultIntent(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
     flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
 
     assertEquals("main", flutterActivity.getDartEntrypointFunctionName());
+    assertNull(flutterActivity.getDartEntrypointLibraryUri());
+    assertNull(flutterActivity.getDartEntrypointArgs());
     assertEquals("/", flutterActivity.getInitialRoute());
     assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
@@ -82,7 +151,7 @@ public class FlutterActivityTest {
     // launching Intent, so this test explicitly verifies that even illegal Intents
     // result in the automatic destruction of a non-cached FlutterEngine, which prevents
     // the breakage of memory usage benchmark tests.
-    Intent intent = new Intent(RuntimeEnvironment.application, FlutterActivity.class);
+    Intent intent = new Intent(ctx, FlutterActivity.class);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -93,8 +162,7 @@ public class FlutterActivityTest {
 
   @Test
   public void itDoesNotDestroyFlutterEngineWhenProvidedByHost() {
-    Intent intent =
-        new Intent(RuntimeEnvironment.application, FlutterActivityWithProvidedEngine.class);
+    Intent intent = new Intent(ctx, FlutterActivityWithProvidedEngine.class);
     ActivityController<FlutterActivityWithProvidedEngine> activityController =
         Robolectric.buildActivity(FlutterActivityWithProvidedEngine.class, intent);
     activityController.create();
@@ -108,14 +176,17 @@ public class FlutterActivityTest {
     Intent intent =
         FlutterActivity.withNewEngine()
             .initialRoute("/custom/route")
+            .dartEntrypointArgs(new ArrayList<String>(Arrays.asList("foo", "bar")))
             .backgroundMode(BackgroundMode.transparent)
-            .build(RuntimeEnvironment.application);
+            .build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
     flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
 
     assertEquals("/custom/route", flutterActivity.getInitialRoute());
+    assertArrayEquals(
+        new String[] {"foo", "bar"}, flutterActivity.getDartEntrypointArgs().toArray());
     assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
@@ -126,12 +197,35 @@ public class FlutterActivityTest {
   }
 
   @Test
+  public void itCreatesNewEngineInGroupIntentWithRequestedSettings() {
+    Intent intent =
+        FlutterActivity.withNewEngineInGroup("my_cached_engine_group")
+            .dartEntrypoint("custom_entrypoint")
+            .initialRoute("/custom/route")
+            .backgroundMode(BackgroundMode.transparent)
+            .build(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
+
+    assertEquals("my_cached_engine_group", flutterActivity.getCachedEngineGroupId());
+    assertEquals("custom_entrypoint", flutterActivity.getDartEntrypointFunctionName());
+    assertEquals("/custom/route", flutterActivity.getInitialRoute());
+    assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
+    assertTrue(flutterActivity.shouldAttachEngineToActivity());
+    assertTrue(flutterActivity.shouldDestroyEngineWithHost());
+    assertNull(flutterActivity.getCachedEngineId());
+    assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
+    assertEquals(RenderMode.texture, flutterActivity.getRenderMode());
+    assertEquals(TransparencyMode.transparent, flutterActivity.getTransparencyMode());
+  }
+
+  @Test
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase1()
       throws PackageManager.NameNotFoundException {
     Intent intent =
-        FlutterActivity.withNewEngine()
-            .backgroundMode(BackgroundMode.transparent)
-            .build(RuntimeEnvironment.application);
+        FlutterActivity.withNewEngine().backgroundMode(BackgroundMode.transparent).build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -146,9 +240,7 @@ public class FlutterActivityTest {
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase2()
       throws PackageManager.NameNotFoundException {
     Intent intent =
-        FlutterActivity.withNewEngine()
-            .backgroundMode(BackgroundMode.transparent)
-            .build(RuntimeEnvironment.application);
+        FlutterActivity.withNewEngine().backgroundMode(BackgroundMode.transparent).build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -163,9 +255,7 @@ public class FlutterActivityTest {
   public void itReturnsValueFromMetaDataWhenCallsShouldHandleDeepLinkingCase3()
       throws PackageManager.NameNotFoundException {
     Intent intent =
-        FlutterActivity.withNewEngine()
-            .backgroundMode(BackgroundMode.transparent)
-            .build(RuntimeEnvironment.application);
+        FlutterActivity.withNewEngine().backgroundMode(BackgroundMode.transparent).build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -182,7 +272,7 @@ public class FlutterActivityTest {
     Intent intent =
         FlutterActivity.withCachedEngine("my_cached_engine")
             .destroyEngineWithActivity(false)
-            .build(RuntimeEnvironment.application);
+            .build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -198,7 +288,7 @@ public class FlutterActivityTest {
     Intent intent =
         FlutterActivity.withCachedEngine("my_cached_engine")
             .destroyEngineWithActivity(true)
-            .build(RuntimeEnvironment.application);
+            .build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
@@ -211,12 +301,14 @@ public class FlutterActivityTest {
 
   @Test
   public void itRegistersPluginsAtConfigurationTime() {
-    FlutterActivity activity =
-        Robolectric.buildActivity(FlutterActivityWithProvidedEngine.class).get();
-    activity.onCreate(null);
+    Intent intent = FlutterActivity.createDefaultIntent(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity activity = activityController.get();
 
-    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
-    activity.configureFlutterEngine(activity.getFlutterEngine());
+    // This calls onAttach on FlutterActivityAndFragmentDelegate and subsequently
+    // configureFlutterEngine which registers the plugins.
+    activity.onCreate(null);
 
     List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
@@ -230,11 +322,15 @@ public class FlutterActivityTest {
     FlutterEngine mockEngine = mock(FlutterEngine.class);
     FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
 
-    Intent intent =
-        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
+    Intent intent = FlutterActivity.withCachedEngine("my_cached_engine").build(ctx);
     ActivityController<FlutterActivity> activityController =
         Robolectric.buildActivity(FlutterActivity.class, intent);
     FlutterActivity flutterActivity = activityController.get();
+
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+
     flutterActivity.setDelegate(mockDelegate);
     flutterActivity.onStart();
     flutterActivity.onResume();
@@ -249,12 +345,57 @@ public class FlutterActivityTest {
     verify(mockDelegate, times(1)).onDetach();
 
     flutterActivity.onStop();
-    flutterActivity.onDestroy();
-
     verify(mockDelegate, never()).onStop();
+
+    // Simulate the disconnected activity resuming again.
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    // Shouldn't send more events to the delegates as before and shouldn't crash.
+    verify(mockDelegate, times(1)).onStart();
+    verify(mockDelegate, times(1)).onResume();
+
+    flutterActivity.onDestroy();
     // 1 time same as before.
     verify(mockDelegate, times(1)).onDestroyView();
     verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, times(1)).release();
+  }
+
+  @Test
+  public void itReturnsExclusiveAppComponent() {
+    Intent intent = FlutterActivity.createDefaultIntent(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    FlutterActivityAndFragmentDelegate delegate =
+        new FlutterActivityAndFragmentDelegate(flutterActivity);
+    flutterActivity.setDelegate(delegate);
+
+    assertEquals(flutterActivity.getExclusiveAppComponent(), delegate);
+  }
+
+  @Test
+  public void itDelaysDrawing() {
+    Intent intent = FlutterActivity.createDefaultIntent(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    flutterActivity.onCreate(null);
+
+    assertNotNull(flutterActivity.delegate.activePreDrawListener);
+  }
+
+  @Test
+  public void itDoesNotDelayDrawingwhenUsingTextureRendering() {
+    Intent intent = FlutterActivityWithTextureRendering.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithTextureRendering> activityController =
+        Robolectric.buildActivity(FlutterActivityWithTextureRendering.class, intent);
+    FlutterActivityWithTextureRendering flutterActivity = activityController.get();
+
+    flutterActivity.onCreate(null);
+
+    assertNull(flutterActivity.delegate.activePreDrawListener);
   }
 
   @Test
@@ -262,34 +403,131 @@ public class FlutterActivityTest {
     FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     when(mockFlutterJni.isAttached()).thenReturn(true);
-    FlutterEngine cachedEngine =
-        new FlutterEngine(RuntimeEnvironment.application, mockFlutterLoader, mockFlutterJni);
+    FlutterEngine cachedEngine = new FlutterEngine(ctx, mockFlutterLoader, mockFlutterJni);
     FakeFlutterPlugin fakeFlutterPlugin = new FakeFlutterPlugin();
     cachedEngine.getPlugins().add(fakeFlutterPlugin);
     FlutterEngineCache.getInstance().put("my_cached_engine", cachedEngine);
 
-    Intent intent =
-        FlutterActivity.withCachedEngine("my_cached_engine").build(RuntimeEnvironment.application);
+    Intent intent = FlutterActivity.withCachedEngine("my_cached_engine").build(ctx);
     Robolectric.buildActivity(FlutterActivity.class, intent).setup();
     assertTrue(
         "Expected FakeFlutterPlugin onCreateCalled to be true", fakeFlutterPlugin.onCreateCalled);
   }
 
+  @Test
+  public void itDoesNotRegisterPluginsTwiceWhenUsingACachedEngine() {
+    Intent intent = new Intent(ctx, FlutterActivityWithProvidedEngine.class);
+    ActivityController<FlutterActivityWithProvidedEngine> activityController =
+        Robolectric.buildActivity(FlutterActivityWithProvidedEngine.class, intent);
+    activityController.create();
+    FlutterActivityWithProvidedEngine flutterActivity = activityController.get();
+    flutterActivity.configureFlutterEngine(flutterActivity.getFlutterEngine());
+
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
+    // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
+    // and once by the default FlutterActivity.configureFlutterEngine implementation.
+    // Test that it doesn't happen.
+    assertEquals(1, registeredEngines.size());
+  }
+
+  @Test
+  public void itDoesNotReleaseEnginewhenDetachFromFlutterEngine() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+    FlutterEngine mockEngine = mock(FlutterEngine.class);
+    FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
+
+    Intent intent = FlutterActivity.withCachedEngine("my_cached_engine").build(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    flutterActivity.setDelegate(mockDelegate);
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    flutterActivity.onPause();
+
+    assertTrue(mockDelegate.isAttached());
+    flutterActivity.detachFromFlutterEngine();
+    verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, never()).release();
+    assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
+  public void itReleaseEngineWhenOnDestroy() {
+    FlutterActivityAndFragmentDelegate mockDelegate =
+        mock(FlutterActivityAndFragmentDelegate.class);
+    isDelegateAttached = true;
+    when(mockDelegate.isAttached()).thenAnswer(invocation -> isDelegateAttached);
+    doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
+    FlutterEngine mockEngine = mock(FlutterEngine.class);
+    FlutterEngineCache.getInstance().put("my_cached_engine", mockEngine);
+
+    Intent intent = FlutterActivity.withCachedEngine("my_cached_engine").build(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+
+    flutterActivity.setDelegate(mockDelegate);
+    flutterActivity.onStart();
+    flutterActivity.onResume();
+    flutterActivity.onPause();
+
+    assertTrue(mockDelegate.isAttached());
+    flutterActivity.onDestroy();
+    verify(mockDelegate, times(1)).onDetach();
+    verify(mockDelegate, times(1)).release();
+    assertFalse(mockDelegate.isAttached());
+  }
+
+  @Test
+  @Config(minSdk = Build.VERSION_CODES.KITKAT, maxSdk = Build.VERSION_CODES.P)
+  public void fullyDrawn_beforeAndroidQ() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn flutterActivity = activityController.get();
+
+    // See https://github.com/flutter/flutter/issues/46172, and
+    // https://github.com/flutter/flutter/issues/88767.
+    flutterActivity.onFlutterUiDisplayed();
+    assertFalse("reportFullyDrawn isn't used", flutterActivity.isFullyDrawn());
+  }
+
+  @Test
+  @Config(minSdk = Build.VERSION_CODES.Q)
+  public void fullyDrawn_fromAndroidQ() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn flutterActivity = activityController.get();
+
+    flutterActivity.onFlutterUiDisplayed();
+    assertTrue("reportFullyDrawn is used", flutterActivity.isFullyDrawn());
+    flutterActivity.resetFullyDrawn();
+  }
+
   static class FlutterActivityWithProvidedEngine extends FlutterActivity {
     @Override
+    @SuppressLint("MissingSuperCall")
     protected void onCreate(@Nullable Bundle savedInstanceState) {
       super.delegate = new FlutterActivityAndFragmentDelegate(this);
-      super.delegate.setupFlutterEngine();
+      super.delegate.setUpFlutterEngine();
     }
 
     @Nullable
     @Override
     public FlutterEngine provideFlutterEngine(@NonNull Context context) {
       FlutterJNI flutterJNI = mock(FlutterJNI.class);
+      FlutterLoader flutterLoader = mock(FlutterLoader.class);
       when(flutterJNI.isAttached()).thenReturn(true);
+      when(flutterLoader.automaticallyRegisterPlugins()).thenReturn(true);
 
-      return new FlutterEngine(
-          context, mock(FlutterLoader.class), flutterJNI, new String[] {}, false);
+      return new FlutterEngine(context, flutterLoader, flutterJNI, new String[] {}, true);
     }
   }
 
@@ -304,6 +542,38 @@ public class FlutterActivityTest {
     public static CachedEngineIntentBuilder withCachedEngine(@NonNull String cachedEngineId) {
       return new CachedEngineIntentBuilder(FlutterActivityWithIntentBuilders.class, cachedEngineId);
     }
+  }
+
+  private static class FlutterActivityWithTextureRendering extends FlutterActivity {
+    @Override
+    public RenderMode getRenderMode() {
+      return RenderMode.texture;
+    }
+  }
+
+  private static class FlutterActivityWithReportFullyDrawn extends FlutterActivity {
+    private boolean fullyDrawn = false;
+
+    @Override
+    public void reportFullyDrawn() {
+      fullyDrawn = true;
+    }
+
+    public boolean isFullyDrawn() {
+      return fullyDrawn;
+    }
+
+    public void resetFullyDrawn() {
+      fullyDrawn = false;
+    }
+  }
+
+  private class FlutterActivityWithMockBackInvokedHandling extends FlutterActivity {
+    @Override
+    public void registerOnBackInvokedCallback() {}
+
+    @Override
+    public void unregisterOnBackInvokedCallback() {}
   }
 
   private static final class FakeFlutterPlugin

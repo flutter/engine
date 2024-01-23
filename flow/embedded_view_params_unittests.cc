@@ -36,7 +36,7 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithScale) {
 
 TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithTranslate) {
   MutatorsStack stack;
-  SkMatrix matrix = SkMatrix::MakeTrans(1, 1);
+  SkMatrix matrix = SkMatrix::Translate(1, 1);
   stack.PushTransform(matrix);
 
   EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
@@ -56,7 +56,6 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation90) {
   EmbeddedViewParams params(matrix, SkSize::Make(1, 1), stack);
   const SkRect& rect = params.finalBoundingRect();
 
-  FML_DLOG(ERROR) << rect.x();
   ASSERT_TRUE(SkScalarNearlyEqual(rect.x(), -1));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.y(), 0));
   ASSERT_TRUE(SkScalarNearlyEqual(rect.width(), 1));
@@ -79,7 +78,7 @@ TEST(EmbeddedViewParams, GetBoundingRectAfterMutationsWithRotation45) {
 
 TEST(EmbeddedViewParams,
      GetBoundingRectAfterMutationsWithTranslateScaleAndRotation) {
-  SkMatrix matrix = SkMatrix::MakeTrans(2, 2);
+  SkMatrix matrix = SkMatrix::Translate(2, 2);
   matrix.preScale(3, 3);
   matrix.preRotate(90);
 

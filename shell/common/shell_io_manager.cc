@@ -4,57 +4,43 @@
 
 #include "flutter/shell/common/shell_io_manager.h"
 
-#include "flutter/common/graphics/persistent_cache.h"
-#include "flutter/fml/build_config.h"
+#include <utility>
+
 #include "flutter/fml/message_loop.h"
+#include "flutter/shell/common/context_options.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLDirectContext.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 
 namespace flutter {
 
 sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
-    GrBackend backend,
-    sk_sp<const GrGLInterface> gl_interface) {
-  if (backend != GrBackend::kOpenGL_GrBackend) {
+    GrBackendApi backend,
+    const sk_sp<const GrGLInterface>& gl_interface) {
+#if SK_GL
+  if (backend != GrBackendApi::kOpenGL) {
     return nullptr;
   }
 
-  GrContextOptions options = {};
+  const auto options = MakeDefaultContextOptions(ContextType::kResource);
 
-  if (PersistentCache::cache_sksl()) {
-    FML_LOG(INFO) << "Cache SkSL";
-    options.fShaderCacheStrategy = GrContextOptions::ShaderCacheStrategy::kSkSL;
-  }
-  PersistentCache::MarkStrategySet();
-
-  options.fPersistentCache = PersistentCache::GetCacheForProcess();
-
-  // There is currently a bug with doing GPU YUV to RGB conversions on the IO
-  // thread. The necessary work isn't being flushed or synchronized with the
-  // other threads correctly, so the textures end up blank.  For now, suppress
-  // that feature, which will cause texture uploads to do CPU YUV conversion.
-  // A similar work-around is also used in shell/gpu/gpu_surface_gl.cc.
-  options.fDisableGpuYUVConversion = true;
-
-  // To get video playback on the widest range of devices, we limit Skia to
-  // ES2 shading language when the ES3 external image extension is missing.
-  options.fPreferExternalImagesOverES3 = true;
-
-#if !OS_FUCHSIA
-  if (auto context = GrDirectContext::MakeGL(gl_interface, options)) {
+  if (auto context = GrDirectContexts::MakeGL(gl_interface, options)) {
     // Do not cache textures created by the image decoder.  These textures
     // should be deleted when they are no longer referenced by an SkImage.
-    context->setResourceCacheLimits(0, 0);
+    context->setResourceCacheLimit(0);
     return context;
   }
-#endif
+#endif  // SK_GL
 
   return nullptr;
 }
 
 ShellIOManager::ShellIOManager(
     sk_sp<GrDirectContext> resource_context,
-    std::shared_ptr<fml::SyncSwitch> is_gpu_disabled_sync_switch,
-    fml::RefPtr<fml::TaskRunner> unref_queue_task_runner)
+    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
+    fml::RefPtr<fml::TaskRunner> unref_queue_task_runner,
+    std::shared_ptr<impeller::Context> impeller_context,
+    fml::TimeDelta unref_queue_drain_delay)
     : resource_context_(std::move(resource_context)),
       resource_context_weak_factory_(
           resource_context_
@@ -63,9 +49,11 @@ ShellIOManager::ShellIOManager(
               : nullptr),
       unref_queue_(fml::MakeRefCounted<flutter::SkiaUnrefQueue>(
           std::move(unref_queue_task_runner),
-          fml::TimeDelta::FromMilliseconds(8),
-          GetResourceContext())),
-      is_gpu_disabled_sync_switch_(is_gpu_disabled_sync_switch),
+          unref_queue_drain_delay,
+          resource_context_,
+          /*drain_immediate=*/!!impeller_context)),
+      is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)),
+      impeller_context_(std::move(impeller_context)),
       weak_factory_(this) {
   if (!resource_context_) {
 #ifndef OS_FUCHSIA
@@ -101,6 +89,7 @@ void ShellIOManager::UpdateResourceContext(
           ? std::make_unique<fml::WeakPtrFactory<GrDirectContext>>(
                 resource_context_.get())
           : nullptr;
+  unref_queue_->UpdateResourceContext(resource_context_);
 }
 
 fml::WeakPtr<ShellIOManager> ShellIOManager::GetWeakPtr() {
@@ -125,8 +114,14 @@ fml::WeakPtr<IOManager> ShellIOManager::GetWeakIOManager() const {
 }
 
 // |IOManager|
-std::shared_ptr<fml::SyncSwitch> ShellIOManager::GetIsGpuDisabledSyncSwitch() {
+std::shared_ptr<const fml::SyncSwitch>
+ShellIOManager::GetIsGpuDisabledSyncSwitch() {
   return is_gpu_disabled_sync_switch_;
+}
+
+// |IOManager|
+std::shared_ptr<impeller::Context> ShellIOManager::GetImpellerContext() const {
+  return impeller_context_;
 }
 
 }  // namespace flutter

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: prefer_const_constructors, depend_on_referenced_packages
 import 'package:const_finder_fixtures/target.dart';
 
 void createTargetInPackage() {
@@ -10,7 +11,6 @@ void createTargetInPackage() {
 }
 
 void createNonConstTargetInPackage() {
-  // ignore: prefer_const_constructors
   final Target target = Target('package_non', -2, null);
   target.hit();
 }

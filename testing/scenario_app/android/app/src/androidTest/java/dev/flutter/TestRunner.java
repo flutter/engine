@@ -5,19 +5,20 @@
 package dev.flutter;
 
 import android.os.Bundle;
+import androidx.annotation.Nullable;
 import androidx.test.runner.AndroidJUnitRunner;
 import dev.flutter.scenariosui.ScreenshotUtil;
 
 public class TestRunner extends AndroidJUnitRunner {
   @Override
-  public void onCreate(Bundle arguments) {
-    ScreenshotUtil.onCreate(this, arguments);
+  public void onCreate(@Nullable Bundle arguments) {
+    ScreenshotUtil.onCreate();
     super.onCreate(arguments);
   }
 
   @Override
-  public void finish(int resultCode, Bundle results) {
-    ScreenshotUtil.onDestroy();
+  public void finish(int resultCode, @Nullable Bundle results) {
+    ScreenshotUtil.finish();
     super.finish(resultCode, results);
   }
 }

@@ -20,7 +20,6 @@ compile_platform("kernel_platform_files") {
   ]
 
   args = [
-    "--enable-experiment=non-nullable",
     "--nnbd-agnostic",
     "--target=dart_runner",
     "dart:core",
@@ -38,25 +37,14 @@ template("create_kernel_core_snapshot") {
     deps = [ ":kernel_platform_files" ]
 
     platform_dill = "$root_out_dir/dart_runner_patched_sdk/platform_strong.dill"
-    compilation_trace =
-        "//flutter/shell/platform/fuchsia/flutter/compilation_trace.txt"
-    inputs = [
-      platform_dill,
-      compilation_trace,
-    ]
+    inputs = [ platform_dill ]
 
     vm_snapshot_data = "$target_gen_dir/vm_data${product_suffix}.bin"
-    vm_snapshot_instructions =
-        "$target_gen_dir/vm_instructions${product_suffix}.bin"
     isolate_snapshot_data = "$target_gen_dir/isolate_data${product_suffix}.bin"
-    isolate_snapshot_instructions =
-        "$target_gen_dir/isolate_instructions${product_suffix}.bin"
     snapshot_profile = "$target_gen_dir/snapshot_profile${product_suffix}.json"
     outputs = [
       vm_snapshot_data,
-      vm_snapshot_instructions,
       isolate_snapshot_data,
-      isolate_snapshot_instructions,
       snapshot_profile,
     ]
 
@@ -68,20 +56,12 @@ template("create_kernel_core_snapshot") {
     tool = gen_snapshot_to_use
 
     args = [
-      "--no_causal_async_stacks",
-      "--lazy_async_stacks",
       "--enable_mirrors=false",
       "--deterministic",
-      "--snapshot_kind=core-jit",
-      "--load_compilation_trace=" +
-          rebase_path(compilation_trace, root_build_dir),
+      "--snapshot_kind=core",
       "--vm_snapshot_data=" + rebase_path(vm_snapshot_data, root_build_dir),
-      "--vm_snapshot_instructions=" +
-          rebase_path(vm_snapshot_instructions, root_build_dir),
       "--isolate_snapshot_data=" +
           rebase_path(isolate_snapshot_data, root_build_dir),
-      "--isolate_snapshot_instructions=" +
-          rebase_path(isolate_snapshot_instructions, root_build_dir),
       "--write_v8_snapshot_profile_to=" +
           rebase_path(snapshot_profile, root_build_dir),
     ]

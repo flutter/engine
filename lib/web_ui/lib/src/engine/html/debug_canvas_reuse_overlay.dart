@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import '../dom.dart';
 
-html.HtmlElement _createContainer() {
-  final html.HtmlElement container = html.DivElement();
+DomHTMLElement _createContainer() {
+  final DomHTMLElement container = createDomHTMLDivElement();
   container.style
     ..position = 'fixed'
     ..top = '0'
@@ -25,47 +24,48 @@ html.HtmlElement _createContainer() {
 /// release builds.
 class DebugCanvasReuseOverlay {
   DebugCanvasReuseOverlay._() {
-    final html.HtmlElement container = _createContainer();
-    final html.HtmlElement title = html.DivElement();
+    final DomHTMLElement container = _createContainer();
+    final DomHTMLElement title = createDomHTMLDivElement();
     title.style
       ..fontWeight = 'bold'
       ..textDecoration = 'underline';
     title.text = 'Canvas Reuse';
 
-    html.document.body!.append(
+    domDocument.body!.append(
       container
         ..append(title)
         ..append(
-          html.DivElement()
+          createDomHTMLDivElement()
             ..appendText('Created: ')
             ..append(_created),
         )
         ..append(
-          html.DivElement()
+          createDomHTMLDivElement()
             ..appendText('Kept: ')
             ..append(_kept),
         )
         ..append(
-          html.DivElement()
+          createDomHTMLDivElement()
             ..appendText('Reused: ')
             ..append(_reused),
         )
         ..append(
-          html.DivElement()
+          createDomHTMLDivElement()
             ..appendText('Disposed: ')
             ..append(_disposed),
         )
         ..append(
-          html.DivElement()
+          createDomHTMLDivElement()
             ..appendText('In Recycle List: ')
             ..append(_inRecycle),
         )
         ..append(
-          html.DivElement()
+          createDomHTMLDivElement()
             ..append(
-              html.ButtonElement()
+              createDomHTMLButtonElement()
                 ..text = 'Reset'
-                ..addEventListener('click', (_) => _reset()),
+                ..addEventListener('click',
+                    createDomEventListener((_) => _reset())),
             ),
         ),
     );
@@ -76,18 +76,19 @@ class DebugCanvasReuseOverlay {
     if (_instance == null) {
       // Only call the constructor when assertions are enabled to guard against
       // mistakingly including this class in a release build.
-      if (assertionsEnabled) {
+      assert(() {
         _instance = DebugCanvasReuseOverlay._();
-      }
+        return true;
+      }());
     }
     return _instance!;
   }
 
-  final html.Text _created = html.Text('0');
-  final html.Text _kept = html.Text('0');
-  final html.Text _reused = html.Text('0');
-  final html.Text _disposed = html.Text('0');
-  final html.Text _inRecycle = html.Text('0');
+  final DomText _created = createDomText('0');
+  final DomText _kept = createDomText('0');
+  final DomText _reused = createDomText('0');
+  final DomText _disposed = createDomText('0');
+  final DomText _inRecycle = createDomText('0');
 
   int _createdCount = 0;
   int get createdCount => _createdCount;

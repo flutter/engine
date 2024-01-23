@@ -2,16 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
-
-const int _kChar_0 = 48;
-const int _kChar_9 = 57;
-const int _kChar_A = 65;
-const int _kChar_Z = 90;
-const int _kChar_a = 97;
-const int _kChar_z = 122;
-const int _kCharBang = 33;
+const int kChar_0 = 48;
+const int kChar_9 = kChar_0 + 9;
+const int kChar_A = 65;
+const int kChar_Z = 90;
+const int kChar_a = 97;
+const int kChar_z = 122;
+const int kCharBang = 33;
+const int kMashriqi_0 = 0x660;
+const int kMashriqi_9 = kMashriqi_0 + 9;
 
 enum _ComparisonResult {
   inside,
@@ -75,9 +74,9 @@ int combineSurrogatePair(String text, int index) {
   final int hi = text.codeUnitAt(index);
   final int lo = text.codeUnitAt(index + 1);
 
-  int x = (hi & ((1 << 6) - 1)) << 10 | lo & ((1 << 10) - 1);
-  int w = (hi >> 6) & ((1 << 5) - 1);
-  int u = w + 1;
+  final int x = (hi & ((1 << 6) - 1)) << 10 | lo & ((1 << 10) - 1);
+  final int w = (hi >> 6) & ((1 << 5) - 1);
+  final int u = w + 1;
   return u << 16 | x;
 }
 
@@ -171,10 +170,8 @@ class UnicodePropertyLookup<P> {
       switch (range.compare(value)) {
         case _ComparisonResult.higher:
           min = mid + 1;
-          break;
         case _ComparisonResult.lower:
           max = mid;
-          break;
         case _ComparisonResult.inside:
           return mid;
       }
@@ -213,7 +210,7 @@ List<UnicodeRange<P>> _unpackProperties<P>(
     i += 4;
 
     int rangeEnd;
-    if (packedData.codeUnitAt(i) == _kCharBang) {
+    if (packedData.codeUnitAt(i) == kCharBang) {
       rangeEnd = rangeStart;
       i++;
     } else {
@@ -234,15 +231,15 @@ int _getEnumIndexFromPackedValue(int charCode) {
   // This has to stay in sync with [EnumValue.serialized] in
   // `tool/unicode_sync_script.dart`.
 
-  assert((charCode >= _kChar_A && charCode <= _kChar_Z) ||
-      (charCode >= _kChar_a && charCode <= _kChar_z));
+  assert((charCode >= kChar_A && charCode <= kChar_Z) ||
+      (charCode >= kChar_a && charCode <= kChar_z));
 
   // Uppercase letters were assigned to the first 26 enum values.
-  if (charCode <= _kChar_Z) {
-    return charCode - _kChar_A;
+  if (charCode <= kChar_Z) {
+    return charCode - kChar_A;
   }
   // Lowercase letters were assigned to enum values above 26.
-  return 26 + charCode - _kChar_a;
+  return 26 + charCode - kChar_a;
 }
 
 int _consumeInt(String packedData, int index) {
@@ -254,22 +251,22 @@ int _consumeInt(String packedData, int index) {
   //
   // But using substring is slow when called too many times. This custom
   // implementation makes the unpacking 25%-45% faster than using substring.
-  final int digit0 = _getIntFromCharCode(packedData.codeUnitAt(index + 3));
-  final int digit1 = _getIntFromCharCode(packedData.codeUnitAt(index + 2));
-  final int digit2 = _getIntFromCharCode(packedData.codeUnitAt(index + 1));
-  final int digit3 = _getIntFromCharCode(packedData.codeUnitAt(index));
+  final int digit0 = getIntFromCharCode(packedData.codeUnitAt(index + 3));
+  final int digit1 = getIntFromCharCode(packedData.codeUnitAt(index + 2));
+  final int digit2 = getIntFromCharCode(packedData.codeUnitAt(index + 1));
+  final int digit3 = getIntFromCharCode(packedData.codeUnitAt(index));
   return digit0 + (digit1 * 36) + (digit2 * 36 * 36) + (digit3 * 36 * 36 * 36);
 }
 
 /// Does the same thing as [int.parse(str, 36)] but takes only a single
 /// character as a [charCode] integer.
-int _getIntFromCharCode(int charCode) {
-  assert((charCode >= _kChar_0 && charCode <= _kChar_9) ||
-      (charCode >= _kChar_a && charCode <= _kChar_z));
+int getIntFromCharCode(int charCode) {
+  assert((charCode >= kChar_0 && charCode <= kChar_9) ||
+      (charCode >= kChar_a && charCode <= kChar_z));
 
-  if (charCode <= _kChar_9) {
-    return charCode - _kChar_0;
+  if (charCode <= kChar_9) {
+    return charCode - kChar_0;
   }
   // "a" starts from 10 and remaining letters go up from there.
-  return charCode - _kChar_a + 10;
+  return charCode - kChar_a + 10;
 }

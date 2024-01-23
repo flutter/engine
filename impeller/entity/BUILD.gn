@@ -1,0 +1,295 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_shaders("entity_shaders") {
+  name = "entity"
+
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
+  }
+
+  use_half_textures = true
+
+  shaders = [
+    "shaders/blending/advanced_blend.vert",
+    "shaders/blending/advanced_blend.frag",
+    "shaders/blending/blend.frag",
+    "shaders/blending/blend.vert",
+    "shaders/border_mask_blur.frag",
+    "shaders/border_mask_blur.vert",
+    "shaders/clip.frag",
+    "shaders/clip.vert",
+    "shaders/color_matrix_color_filter.frag",
+    "shaders/color_matrix_color_filter.vert",
+    "shaders/conical_gradient_fill.frag",
+    "shaders/gaussian_blur/gaussian_blur.vert",
+    "shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag",
+    "shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag",
+    "shaders/gaussian_blur/kernel_decal.frag",
+    "shaders/gaussian_blur/kernel_nodecal.frag",
+    "shaders/glyph_atlas.frag",
+    "shaders/glyph_atlas_color.frag",
+    "shaders/glyph_atlas.vert",
+    "shaders/gradient_fill.vert",
+    "shaders/linear_to_srgb_filter.frag",
+    "shaders/linear_to_srgb_filter.vert",
+    "shaders/linear_gradient_fill.frag",
+    "shaders/morphology_filter.frag",
+    "shaders/morphology_filter.vert",
+    "shaders/position_color.vert",
+    "shaders/radial_gradient_fill.frag",
+    "shaders/rrect_blur.vert",
+    "shaders/rrect_blur.frag",
+    "shaders/runtime_effect.vert",
+    "shaders/solid_fill.frag",
+    "shaders/solid_fill.vert",
+    "shaders/srgb_to_linear_filter.frag",
+    "shaders/srgb_to_linear_filter.vert",
+    "shaders/sweep_gradient_fill.frag",
+    "shaders/texture_fill.frag",
+    "shaders/texture_fill.vert",
+    "shaders/texture_fill_external.frag",
+    "shaders/texture_fill_strict_src.frag",
+    "shaders/tiled_texture_fill.frag",
+    "shaders/tiled_texture_fill_external.frag",
+    "shaders/vertices.frag",
+    "shaders/yuv_to_rgb_filter.frag",
+    "shaders/yuv_to_rgb_filter.vert",
+    "shaders/blending/porter_duff_blend.frag",
+    "shaders/blending/porter_duff_blend.vert",
+  ]
+
+  if (impeller_debug) {
+    shaders += [
+      "shaders/debug/checkerboard.frag",
+      "shaders/debug/checkerboard.vert",
+    ]
+  }
+}
+
+impeller_shaders("modern_entity_shaders") {
+  name = "modern"
+
+  if (impeller_enable_opengles) {
+    gles_language_version = 460
+  }
+
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
+  }
+
+  shaders = [
+    "shaders/conical_gradient_ssbo_fill.frag",
+    "shaders/linear_gradient_ssbo_fill.frag",
+    "shaders/radial_gradient_ssbo_fill.frag",
+    "shaders/sweep_gradient_ssbo_fill.frag",
+    "shaders/geometry/points.comp",
+    "shaders/geometry/uv.comp",
+  ]
+}
+
+impeller_shaders("framebuffer_blend_entity_shaders") {
+  name = "framebuffer_blend"
+  require_framebuffer_fetch = true
+
+  # malioc does not support analyzing shaders that use the framebuffer fetch extension on some GPUs.
+  analyze = false
+
+  if (is_mac && !is_ios) {
+    # Note: this needs to correspond to the Apple7 Support family
+    # for M1 and M2.
+    metal_version = "2.3"
+  }
+
+  shaders = [
+    "shaders/blending/framebuffer_blend.vert",
+    "shaders/blending/framebuffer_blend.frag",
+  ]
+}
+
+impeller_component("entity") {
+  sources = [
+    "contents/anonymous_contents.cc",
+    "contents/anonymous_contents.h",
+    "contents/atlas_contents.cc",
+    "contents/atlas_contents.h",
+    "contents/clip_contents.cc",
+    "contents/clip_contents.h",
+    "contents/color_source_contents.cc",
+    "contents/color_source_contents.h",
+    "contents/conical_gradient_contents.cc",
+    "contents/conical_gradient_contents.h",
+    "contents/content_context.cc",
+    "contents/content_context.h",
+    "contents/contents.cc",
+    "contents/contents.h",
+    "contents/filters/blend_filter_contents.cc",
+    "contents/filters/blend_filter_contents.h",
+    "contents/filters/border_mask_blur_filter_contents.cc",
+    "contents/filters/border_mask_blur_filter_contents.h",
+    "contents/filters/color_filter_contents.cc",
+    "contents/filters/color_filter_contents.h",
+    "contents/filters/color_matrix_filter_contents.cc",
+    "contents/filters/color_matrix_filter_contents.h",
+    "contents/filters/directional_gaussian_blur_filter_contents.cc",
+    "contents/filters/directional_gaussian_blur_filter_contents.h",
+    "contents/filters/filter_contents.cc",
+    "contents/filters/filter_contents.h",
+    "contents/filters/gaussian_blur_filter_contents.cc",
+    "contents/filters/gaussian_blur_filter_contents.h",
+    "contents/filters/inputs/contents_filter_input.cc",
+    "contents/filters/inputs/contents_filter_input.h",
+    "contents/filters/inputs/filter_contents_filter_input.cc",
+    "contents/filters/inputs/filter_contents_filter_input.h",
+    "contents/filters/inputs/filter_input.cc",
+    "contents/filters/inputs/filter_input.h",
+    "contents/filters/inputs/placeholder_filter_input.cc",
+    "contents/filters/inputs/placeholder_filter_input.h",
+    "contents/filters/inputs/texture_filter_input.cc",
+    "contents/filters/inputs/texture_filter_input.h",
+    "contents/filters/linear_to_srgb_filter_contents.cc",
+    "contents/filters/linear_to_srgb_filter_contents.h",
+    "contents/filters/local_matrix_filter_contents.cc",
+    "contents/filters/local_matrix_filter_contents.h",
+    "contents/filters/matrix_filter_contents.cc",
+    "contents/filters/matrix_filter_contents.h",
+    "contents/filters/morphology_filter_contents.cc",
+    "contents/filters/morphology_filter_contents.h",
+    "contents/filters/srgb_to_linear_filter_contents.cc",
+    "contents/filters/srgb_to_linear_filter_contents.h",
+    "contents/filters/yuv_to_rgb_filter_contents.cc",
+    "contents/filters/yuv_to_rgb_filter_contents.h",
+    "contents/framebuffer_blend_contents.cc",
+    "contents/framebuffer_blend_contents.h",
+    "contents/gradient_generator.cc",
+    "contents/gradient_generator.h",
+    "contents/linear_gradient_contents.cc",
+    "contents/linear_gradient_contents.h",
+    "contents/radial_gradient_contents.cc",
+    "contents/radial_gradient_contents.h",
+    "contents/runtime_effect_contents.cc",
+    "contents/runtime_effect_contents.h",
+    "contents/solid_color_contents.cc",
+    "contents/solid_color_contents.h",
+    "contents/solid_rrect_blur_contents.cc",
+    "contents/solid_rrect_blur_contents.h",
+    "contents/sweep_gradient_contents.cc",
+    "contents/sweep_gradient_contents.h",
+    "contents/text_contents.cc",
+    "contents/text_contents.h",
+    "contents/texture_contents.cc",
+    "contents/texture_contents.h",
+    "contents/tiled_texture_contents.cc",
+    "contents/tiled_texture_contents.h",
+    "contents/vertices_contents.cc",
+    "contents/vertices_contents.h",
+    "entity.cc",
+    "entity.h",
+    "entity_pass.cc",
+    "entity_pass.h",
+    "entity_pass_delegate.cc",
+    "entity_pass_delegate.h",
+    "entity_pass_target.cc",
+    "entity_pass_target.h",
+    "geometry/circle_geometry.cc",
+    "geometry/circle_geometry.h",
+    "geometry/cover_geometry.cc",
+    "geometry/cover_geometry.h",
+    "geometry/ellipse_geometry.cc",
+    "geometry/ellipse_geometry.h",
+    "geometry/fill_path_geometry.cc",
+    "geometry/fill_path_geometry.h",
+    "geometry/geometry.cc",
+    "geometry/geometry.h",
+    "geometry/line_geometry.cc",
+    "geometry/line_geometry.h",
+    "geometry/point_field_geometry.cc",
+    "geometry/point_field_geometry.h",
+    "geometry/rect_geometry.cc",
+    "geometry/rect_geometry.h",
+    "geometry/round_rect_geometry.cc",
+    "geometry/round_rect_geometry.h",
+    "geometry/stroke_path_geometry.cc",
+    "geometry/stroke_path_geometry.h",
+    "geometry/vertices_geometry.cc",
+    "geometry/vertices_geometry.h",
+    "inline_pass_context.cc",
+    "inline_pass_context.h",
+    "render_target_cache.cc",
+    "render_target_cache.h",
+  ]
+
+  if (impeller_debug) {
+    sources += [
+      "contents/checkerboard_contents.cc",
+      "contents/checkerboard_contents.h",
+    ]
+  }
+
+  public_deps = [
+    ":entity_shaders",
+    ":framebuffer_blend_entity_shaders",
+    ":modern_entity_shaders",
+    "../archivist",
+    "../image:image_skia_backend",
+    "../renderer",
+    "../typographer",
+  ]
+
+  if (impeller_enable_3d) {
+    sources += [
+      "contents/scene_contents.cc",
+      "contents/scene_contents.h",
+    ]
+    public_deps += [ "../scene" ]
+  }
+
+  deps = [ "//flutter/fml" ]
+  defines = [ "_USE_MATH_DEFINES" ]
+}
+
+impeller_component("entity_test_helpers") {
+  testonly = true
+
+  sources = [
+    "contents/test/contents_test_helpers.cc",
+    "contents/test/contents_test_helpers.h",
+    "contents/test/recording_render_pass.cc",
+    "contents/test/recording_render_pass.h",
+  ]
+
+  deps = [ ":entity" ]
+}
+
+impeller_component("entity_unittests") {
+  testonly = true
+
+  sources = [
+    "contents/checkerboard_contents_unittests.cc",
+    "contents/content_context_unittests.cc",
+    "contents/filters/directional_gaussian_blur_filter_contents_unittests.cc",
+    "contents/filters/gaussian_blur_filter_contents_unittests.cc",
+    "contents/filters/inputs/filter_input_unittests.cc",
+    "contents/host_buffer_unittests.cc",
+    "contents/tiled_texture_contents_unittests.cc",
+    "contents/vertices_contents_unittests.cc",
+    "entity_pass_target_unittests.cc",
+    "entity_playground.cc",
+    "entity_playground.h",
+    "entity_unittests.cc",
+    "geometry/geometry_unittests.cc",
+    "render_target_cache_unittests.cc",
+  ]
+
+  deps = [
+    ":entity",
+    ":entity_test_helpers",
+    "../geometry:geometry_asserts",
+    "../playground:playground_test",
+    "//flutter/display_list/testing:display_list_testing",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+  ]
+}

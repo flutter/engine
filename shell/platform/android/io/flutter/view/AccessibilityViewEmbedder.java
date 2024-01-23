@@ -194,7 +194,7 @@ class AccessibilityViewEmbedder {
     flutterIdToOrigin.put(flutterId, origin);
   }
 
-  // Supressing deprecation warning for AccessibilityNodeInfo#getBoundsinParent and
+  // Suppressing deprecation warning for AccessibilityNodeInfo#getBoundsinParent and
   // AccessibilityNodeInfo#getBoundsinParent as we are copying the platform view's
   // accessibility node and we should not lose any available bounds information.
   @SuppressWarnings("deprecation")
@@ -434,7 +434,7 @@ class AccessibilityViewEmbedder {
     private @Nullable final Field childNodeIdsField;
     private @Nullable final Method longArrayGetIndex;
 
-    @SuppressLint("PrivateApi")
+    @SuppressLint("DiscouragedPrivateApi,PrivateApi")
     private ReflectionAccessors() {
       Method getSourceNodeId = null;
       Method getParentNodeId = null;

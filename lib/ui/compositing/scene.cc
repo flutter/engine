@@ -5,11 +5,14 @@
 #include "flutter/lib/ui/compositing/scene.h"
 
 #include "flutter/fml/trace_event.h"
+#include "flutter/lib/ui/painting/display_list_deferred_image_gpu_skia.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
-#include "flutter/lib/ui/window/window.h"
+#if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/lib/ui/painting/display_list_deferred_image_gpu_impeller.h"
+#endif  // IMPELLER_SUPPORTS_RENDERING
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -20,12 +23,6 @@
 namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
-
-#define FOR_EACH_BINDING(V) \
-  V(Scene, toImage)         \
-  V(Scene, dispose)
-
-DART_BIND_ALL(Scene, FOR_EACH_BINDING)
 
 void Scene::create(Dart_Handle scene_handle,
                    std::shared_ptr<flutter::Layer> rootLayer,
@@ -42,27 +39,36 @@ Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  // Currently only supports a single window.
-  auto viewport_metrics = UIDartState::Current()
-                              ->platform_configuration()
-                              ->get_window(0)
-                              ->viewport_metrics();
-
-  layer_tree_ = std::make_unique<LayerTree>(
-      SkISize::Make(viewport_metrics.physical_width,
-                    viewport_metrics.physical_height),
-      static_cast<float>(viewport_metrics.device_pixel_ratio));
-  layer_tree_->set_root_layer(std::move(rootLayer));
-  layer_tree_->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);
-  layer_tree_->set_checkerboard_raster_cache_images(
-      checkerboardRasterCacheImages);
-  layer_tree_->set_checkerboard_offscreen_layers(checkerboardOffscreenLayers);
+  layer_tree_config_.root_layer = std::move(rootLayer);
+  layer_tree_config_.rasterizer_tracing_threshold = rasterizerTracingThreshold;
+  layer_tree_config_.checkerboard_raster_cache_images =
+      checkerboardRasterCacheImages;
+  layer_tree_config_.checkerboard_offscreen_layers =
+      checkerboardOffscreenLayers;
 }
 
 Scene::~Scene() {}
 
+bool Scene::valid() {
+  return layer_tree_config_.root_layer != nullptr;
+}
+
 void Scene::dispose() {
+  layer_tree_config_.root_layer.reset();
   ClearDartWrapper();
+}
+
+Dart_Handle Scene::toImageSync(uint32_t width,
+                               uint32_t height,
+                               Dart_Handle raw_image_handle) {
+  TRACE_EVENT0("flutter", "Scene::toImageSync");
+
+  if (!valid()) {
+    return tonic::ToDart("Scene has been disposed.");
+  }
+
+  Scene::RasterizeToImage(width, height, raw_image_handle);
+  return Dart_Null();
 }
 
 Dart_Handle Scene::toImage(uint32_t width,
@@ -70,20 +76,69 @@ Dart_Handle Scene::toImage(uint32_t width,
                            Dart_Handle raw_image_callback) {
   TRACE_EVENT0("flutter", "Scene::toImage");
 
-  if (!layer_tree_) {
-    return tonic::ToDart("Scene did not contain a layer tree.");
+  if (!valid()) {
+    return tonic::ToDart("Scene has been disposed.");
   }
 
-  auto picture = layer_tree_->Flatten(SkRect::MakeWH(width, height));
-  if (!picture) {
-    return tonic::ToDart("Could not flatten scene into a layer tree.");
-  }
-
-  return Picture::RasterizeToImage(picture, width, height, raw_image_callback);
+  return Picture::RasterizeLayerTreeToImage(BuildLayerTree(width, height),
+                                            raw_image_callback);
 }
 
-std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree() {
-  return std::move(layer_tree_);
+static sk_sp<DlImage> CreateDeferredImage(
+    bool impeller,
+    std::unique_ptr<LayerTree> layer_tree,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::RefPtr<fml::TaskRunner> raster_task_runner,
+    fml::RefPtr<SkiaUnrefQueue> unref_queue) {
+#if IMPELLER_SUPPORTS_RENDERING
+  if (impeller) {
+    return DlDeferredImageGPUImpeller::Make(std::move(layer_tree),
+                                            std::move(snapshot_delegate),
+                                            std::move(raster_task_runner));
+  }
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
+  const auto& frame_size = layer_tree->frame_size();
+  const SkImageInfo image_info =
+      SkImageInfo::Make(frame_size.width(), frame_size.height(),
+                        kRGBA_8888_SkColorType, kPremul_SkAlphaType);
+  return DlDeferredImageGPUSkia::MakeFromLayerTree(
+      image_info, std::move(layer_tree), std::move(snapshot_delegate),
+      raster_task_runner, std::move(unref_queue));
+}
+
+void Scene::RasterizeToImage(uint32_t width,
+                             uint32_t height,
+                             Dart_Handle raw_image_handle) {
+  auto* dart_state = UIDartState::Current();
+  if (!dart_state) {
+    return;
+  }
+  auto unref_queue = dart_state->GetSkiaUnrefQueue();
+  auto snapshot_delegate = dart_state->GetSnapshotDelegate();
+  auto raster_task_runner = dart_state->GetTaskRunners().GetRasterTaskRunner();
+
+  auto image = CanvasImage::Create();
+  auto dl_image = CreateDeferredImage(
+      dart_state->IsImpellerEnabled(), BuildLayerTree(width, height),
+      std::move(snapshot_delegate), std::move(raster_task_runner),
+      std::move(unref_queue));
+  image->set_image(dl_image);
+  image->AssociateWithDartWrapper(raw_image_handle);
+}
+
+std::unique_ptr<flutter::LayerTree> Scene::takeLayerTree(uint64_t width,
+                                                         uint64_t height) {
+  return BuildLayerTree(width, height);
+}
+
+std::unique_ptr<LayerTree> Scene::BuildLayerTree(uint32_t width,
+                                                 uint32_t height) {
+  if (!valid()) {
+    return nullptr;
+  }
+  return std::make_unique<LayerTree>(layer_tree_config_,
+                                     SkISize::Make(width, height));
 }
 
 }  // namespace flutter

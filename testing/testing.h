@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TESTING_TESTING_H_
-#define TESTING_TESTING_H_
+#ifndef FLUTTER_TESTING_TESTING_H_
+#define FLUTTER_TESTING_TESTING_H_
 
 #include <string>
 #include <vector>
@@ -12,9 +12,12 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/testing/assertions.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/core/SkData.h"
 
 namespace flutter {
 namespace testing {
+
+const char* GetSourcePath();
 
 //------------------------------------------------------------------------------
 /// @brief      Returns the directory containing the test fixture for the target
@@ -26,6 +29,21 @@ namespace testing {
 /// @return     The fixtures path.
 ///
 const char* GetFixturesPath();
+
+//------------------------------------------------------------------------------
+/// @brief      Returns the directory containing assets shared across all tests.
+///
+/// @return     The testing assets path.
+///
+const char* GetTestingAssetsPath();
+
+//------------------------------------------------------------------------------
+/// @brief      Returns the default path to kernel_blob.bin. This file is within
+///             the directory returned by `GetFixturesPath()`.
+///
+/// @return     The kernel file path.
+///
+std::string GetDefaultKernelFilePath();
 
 //------------------------------------------------------------------------------
 /// @brief      Opens the fixtures directory for the unit-test harness.
@@ -42,7 +60,7 @@ fml::UniqueFD OpenFixturesDirectory();
 /// @return     The file descriptor of the given fixture. An invalid file
 ///             descriptor is returned in case the fixture is not found.
 ///
-fml::UniqueFD OpenFixture(std::string fixture_name);
+fml::UniqueFD OpenFixture(const std::string& fixture_name);
 
 //------------------------------------------------------------------------------
 /// @brief      Opens a fixture of the given file name and returns a mapping to
@@ -53,7 +71,19 @@ fml::UniqueFD OpenFixture(std::string fixture_name);
 /// @return     A mapping to the contents of fixture or null if the fixture does
 ///             not exist or its contents cannot be mapped in.
 ///
-std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(std::string fixture_name);
+std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(
+    const std::string& fixture_name);
+
+//------------------------------------------------------------------------------
+/// @brief      Opens a fixture of the given file name and returns a Skia SkData
+///             holding its contents.
+///
+/// @param[in]  fixture_name  The fixture name
+///
+/// @return     An SkData, or null if the fixture does not exist or its contents
+///             cannot be mapped in.
+///
+sk_sp<SkData> OpenFixtureAsSkData(const std::string& fixture_name);
 
 //------------------------------------------------------------------------------
 /// @brief      Gets the name of the currently running test. This is useful in
@@ -88,4 +118,4 @@ bool MemsetPatternSetOrCheck(std::vector<uint8_t>& buffer, MemsetPatternOp op);
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // TESTING_TESTING_H_
+#endif  // FLUTTER_TESTING_TESTING_H_

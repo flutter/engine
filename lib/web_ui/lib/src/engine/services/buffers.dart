@@ -2,10 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:collection';
+import 'dart:typed_data';
 
 abstract class _TypedDataBuffer<E> extends ListBase<E> {
+  _TypedDataBuffer(List<E> buffer)
+      : _buffer = buffer,
+        _length = buffer.length;
+
   static const int _initialLength = 8;
 
   /// The underlying data buffer.
@@ -19,10 +23,6 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
   /// The length of the list being built.
   int _length;
-
-  _TypedDataBuffer(List<E> buffer)
-      : _buffer = buffer,
-        _length = buffer.length;
 
   @override
   int get length => _length;
@@ -108,7 +108,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// or equal to [start] and [values] must have at least [end] elements.
   @override
   void insertAll(int index, Iterable<E> values, [int start = 0, int? end]) {
-    RangeError.checkValidIndex(index, this, 'index', _length + 1);
+    IndexError.check(index, _length + 1, indexable: this, name: 'index');
     RangeError.checkNotNegative(start, 'start');
     if (end != null) {
       if (start > end) {
@@ -140,7 +140,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
     // position [index] using flip-by-double-reverse.
     int writeIndex = _length;
     int skipCount = start;
-    for (E value in values) {
+    for (final E value in values) {
       if (skipCount > 0) {
         skipCount--;
         continue;
@@ -199,7 +199,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
     // Otherwise, just add values one at a time.
     int i = 0;
-    for (E value in values) {
+    for (final E value in values) {
       if (i >= start) {
         add(value);
       }
@@ -212,8 +212,6 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
   /// Like [insertAll], but with a guaranteed non-`null` [start] and [end].
   void _insertKnownLength(int index, Iterable<E> values, int start, int end) {
-    assert(values != null); // ignore: unnecessary_null_comparison
-    assert(end != null); // ignore: unnecessary_null_comparison
     if (start > values.length || end > values.length) {
       throw StateError('Too few elements');
     }
@@ -326,7 +324,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 }
 
 abstract class _IntBuffer extends _TypedDataBuffer<int> {
-  _IntBuffer(List<int> buffer) : super(buffer);
+  _IntBuffer(super.buffer);
 
   @override
   int get _defaultValue => 0;

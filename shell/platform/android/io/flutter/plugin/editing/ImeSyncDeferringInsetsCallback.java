@@ -14,10 +14,12 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import java.util.List;
 
 // Loosely based off of
-// https://github.com/android/user-interface-samples/blob/master/WindowInsetsAnimation/app/src/main/java/com/google/android/samples/insetsanimation/RootViewDeferringInsetsCallback.kt
+// https://github.com/android/user-interface-samples/blob/main/WindowInsetsAnimation/app/src/main/java/com/google/android/samples/insetsanimation/RootViewDeferringInsetsCallback.kt
 //
 // When the IME is shown or hidden, it immediately sends an onApplyWindowInsets call
 // with the final state of the IME. This initial call disrupts the animation, which
@@ -41,18 +43,21 @@ import java.util.List;
 // a no-op. When onEnd indicates the end of the animation, the deferred call is
 // dispatched again, this time avoiding any flicker since the animation is now
 // complete.
-@VisibleForTesting
+
+// This class should have "package private" visibility cause it's called from TextInputPlugin.
+@VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
 @TargetApi(30)
 @RequiresApi(30)
 @SuppressLint({"NewApi", "Override"})
 @Keep
-class ImeSyncDeferringInsetsCallback extends WindowInsetsAnimation.Callback
-    implements View.OnApplyWindowInsetsListener {
-  private int overlayInsetTypes;
-  private int deferredInsetTypes;
-
+class ImeSyncDeferringInsetsCallback {
+  private final int deferredInsetTypes = WindowInsets.Type.ime();
   private View view;
   private WindowInsets lastWindowInsets;
+  private AnimationCallback animationCallback;
+  private InsetsListener insetsListener;
+  private ImeVisibleListener imeVisibleListener;
+
   // True when an animation that matches deferredInsetTypes is active.
   //
   // While this is active, this class will capture the initial window inset
@@ -63,20 +68,24 @@ class ImeSyncDeferringInsetsCallback extends WindowInsetsAnimation.Callback
   // When an animation begins, android sends a WindowInset with the final
   // state of the animation. When needsSave is true, we know to capture this
   // initial WindowInset.
+  //
+  // Certain actions, like dismissing the keyboard, can trigger multiple
+  // animations that are slightly offset in start time. To capture the
+  // correct final insets in these situations we update needsSave to true
+  // in each onPrepare callback, so that we save the latest final state
+  // to apply in onEnd.
   private boolean needsSave = false;
 
-  ImeSyncDeferringInsetsCallback(
-      @NonNull View view, int overlayInsetTypes, int deferredInsetTypes) {
-    super(WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE);
-    this.overlayInsetTypes = overlayInsetTypes;
-    this.deferredInsetTypes = deferredInsetTypes;
+  ImeSyncDeferringInsetsCallback(@NonNull View view) {
     this.view = view;
+    this.animationCallback = new AnimationCallback();
+    this.insetsListener = new InsetsListener();
   }
 
   // Add this object's event listeners to its view.
   void install() {
-    view.setWindowInsetsAnimationCallback(this);
-    view.setOnApplyWindowInsetsListener(this);
+    view.setWindowInsetsAnimationCallback(animationCallback);
+    view.setOnApplyWindowInsetsListener(insetsListener);
   }
 
   // Remove this object's event listeners from its view.
@@ -85,93 +94,144 @@ class ImeSyncDeferringInsetsCallback extends WindowInsetsAnimation.Callback
     view.setOnApplyWindowInsetsListener(null);
   }
 
-  @Override
-  public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
-    this.view = view;
-    if (needsSave) {
-      // Store the view and insets for us in onEnd() below. This captured inset
-      // is not part of the animation and instead, represents the final state
-      // of the inset after the animation is completed. Thus, we defer the processing
-      // of this WindowInset until the animation completes.
-      lastWindowInsets = windowInsets;
-      needsSave = false;
-    }
-    if (animating) {
-      // While animation is running, we consume the insets to prevent disrupting
-      // the animation, which skips this implementation and calls the view's
-      // onApplyWindowInsets directly to avoid being consumed here.
-      return WindowInsets.CONSUMED;
-    }
-
-    // If no animation is happening, pass the insets on to the view's own
-    // inset handling.
-    return view.onApplyWindowInsets(windowInsets);
+  // Set a listener to be notified when the IME visibility changes.
+  void setImeVisibleListener(ImeVisibleListener imeVisibleListener) {
+    this.imeVisibleListener = imeVisibleListener;
   }
 
-  @Override
-  public void onPrepare(WindowInsetsAnimation animation) {
-    if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
-      animating = true;
+  @VisibleForTesting
+  View.OnApplyWindowInsetsListener getInsetsListener() {
+    return insetsListener;
+  }
+
+  @VisibleForTesting
+  WindowInsetsAnimation.Callback getAnimationCallback() {
+    return animationCallback;
+  }
+
+  @VisibleForTesting
+  ImeVisibleListener getImeVisibleListener() {
+    return imeVisibleListener;
+  }
+
+  // WindowInsetsAnimation.Callback was introduced in API level 30.  The callback
+  // subclass is separated into an inner class in order to avoid warnings from
+  // the Android class loader on older platforms.
+  @Keep
+  private class AnimationCallback extends WindowInsetsAnimation.Callback {
+    AnimationCallback() {
+      super(WindowInsetsAnimation.Callback.DISPATCH_MODE_CONTINUE_ON_SUBTREE);
+    }
+
+    @Override
+    public void onPrepare(WindowInsetsAnimation animation) {
       needsSave = true;
-    }
-  }
-
-  @Override
-  public WindowInsets onProgress(
-      WindowInsets insets, List<WindowInsetsAnimation> runningAnimations) {
-    if (!animating || needsSave) {
-      return insets;
-    }
-    boolean matching = false;
-    for (WindowInsetsAnimation animation : runningAnimations) {
       if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
-        matching = true;
-        continue;
+        animating = true;
       }
     }
-    if (!matching) {
+
+    @NonNull
+    @Override
+    public WindowInsetsAnimation.Bounds onStart(
+        @NonNull WindowInsetsAnimation animation, @NonNull WindowInsetsAnimation.Bounds bounds) {
+      // Observe changes to software keyboard visibility and notify listener when animation start.
+      // See https://developer.android.com/develop/ui/views/layout/sw-keyboard.
+      WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(view);
+      if (insets != null && imeVisibleListener != null) {
+        boolean imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime());
+        imeVisibleListener.onImeVisibleChanged(imeVisible);
+      }
+      return super.onStart(animation, bounds);
+    }
+
+    @Override
+    public WindowInsets onProgress(
+        WindowInsets insets, List<WindowInsetsAnimation> runningAnimations) {
+      if (!animating || needsSave) {
+        return insets;
+      }
+      boolean matching = false;
+      for (WindowInsetsAnimation animation : runningAnimations) {
+        if ((animation.getTypeMask() & deferredInsetTypes) != 0) {
+          matching = true;
+          continue;
+        }
+      }
+      if (!matching) {
+        return insets;
+      }
+
+      // The IME insets include the height of the navigation bar. If the app isn't laid out behind
+      // the navigation bar, this causes the IME insets to be too large during the animation.
+      // To fix this, we subtract the navigationBars bottom inset if the system UI flags for laying
+      // out behind the navigation bar aren't present.
+      int excludedInsets = 0;
+      int systemUiFlags = view.getWindowSystemUiVisibility();
+      if ((systemUiFlags & View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION) == 0
+          && (systemUiFlags & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0) {
+        excludedInsets = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+      }
+
+      WindowInsets.Builder builder = new WindowInsets.Builder(lastWindowInsets);
+      Insets newImeInsets =
+          Insets.of(
+              0, 0, 0, Math.max(insets.getInsets(deferredInsetTypes).bottom - excludedInsets, 0));
+      builder.setInsets(deferredInsetTypes, newImeInsets);
+
+      // Directly call onApplyWindowInsets of the view as we do not want to pass through
+      // the onApplyWindowInsets defined in this class, which would consume the insets
+      // as if they were a non-animation inset change and cache it for re-dispatch in
+      // onEnd instead.
+      view.onApplyWindowInsets(builder.build());
       return insets;
     }
-    WindowInsets.Builder builder = new WindowInsets.Builder(lastWindowInsets);
-    // Overlay the ime-only insets with the full insets.
-    //
-    // The IME insets passed in by onProgress assumes that the entire animation
-    // occurs above any present navigation and status bars. This causes the
-    // IME inset to be too large for the animation. To remedy this, we merge the
-    // IME inset with other insets present via a subtract + reLu, which causes the
-    // IME inset to be overlaid with any bars present.
-    Insets newImeInsets =
-        Insets.of(
-            0,
-            0,
-            0,
-            Math.max(
-                insets.getInsets(deferredInsetTypes).bottom
-                    - insets.getInsets(overlayInsetTypes).bottom,
-                0));
-    builder.setInsets(deferredInsetTypes, newImeInsets);
-    // Directly call onApplyWindowInsets of the view as we do not want to pass through
-    // the onApplyWindowInsets defined in this class, which would consume the insets
-    // as if they were a non-animation inset change and cache it for re-dispatch in
-    // onEnd instead.
-    view.onApplyWindowInsets(builder.build());
-    return insets;
-  }
 
-  @Override
-  public void onEnd(WindowInsetsAnimation animation) {
-    if (animating && (animation.getTypeMask() & deferredInsetTypes) != 0) {
-      // If we deferred the IME insets and an IME animation has finished, we need to reset
-      // the flags
-      animating = false;
+    @Override
+    public void onEnd(WindowInsetsAnimation animation) {
+      if (animating && (animation.getTypeMask() & deferredInsetTypes) != 0) {
+        // If we deferred the IME insets and an IME animation has finished, we need to reset
+        // the flags
+        animating = false;
 
-      // And finally dispatch the deferred insets to the view now.
-      // Ideally we would just call view.requestApplyInsets() and let the normal dispatch
-      // cycle happen, but this happens too late resulting in a visual flicker.
-      // Instead we manually dispatch the most recent WindowInsets to the view.
-      if (lastWindowInsets != null && view != null) {
-        view.dispatchApplyWindowInsets(lastWindowInsets);
+        // And finally dispatch the deferred insets to the view now.
+        // Ideally we would just call view.requestApplyInsets() and let the normal dispatch
+        // cycle happen, but this happens too late resulting in a visual flicker.
+        // Instead we manually dispatch the most recent WindowInsets to the view.
+        if (lastWindowInsets != null && view != null) {
+          view.dispatchApplyWindowInsets(lastWindowInsets);
+        }
       }
     }
+  }
+
+  private class InsetsListener implements View.OnApplyWindowInsetsListener {
+    @Override
+    public WindowInsets onApplyWindowInsets(View view, WindowInsets windowInsets) {
+      ImeSyncDeferringInsetsCallback.this.view = view;
+      if (needsSave) {
+        // Store the view and insets for us in onEnd() below. This captured inset
+        // is not part of the animation and instead, represents the final state
+        // of the inset after the animation is completed. Thus, we defer the processing
+        // of this WindowInset until the animation completes.
+        lastWindowInsets = windowInsets;
+        needsSave = false;
+      }
+      if (animating) {
+        // While animation is running, we consume the insets to prevent disrupting
+        // the animation, which skips this implementation and calls the view's
+        // onApplyWindowInsets directly to avoid being consumed here.
+        return WindowInsets.CONSUMED;
+      }
+
+      // If no animation is happening, pass the insets on to the view's own
+      // inset handling.
+      return view.onApplyWindowInsets(windowInsets);
+    }
+  }
+
+  // Listener for IME visibility changes.
+  public interface ImeVisibleListener {
+    void onImeVisibleChanged(boolean visible);
   }
 }

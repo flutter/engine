@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+#
 # Copyright (c) 2012 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 """
-This script is based on chromium/chromium/master/tools/clang/scripts/update.py.
+This script is based on chromium/chromium/main/tools/clang/scripts/update.py.
 
 It is used on Windows platforms to copy the correct msdia*.dll to the
 clang folder, as a "gclient hook".
@@ -15,11 +16,11 @@ import shutil
 import stat
 import sys
 
-
 # Path constants. (All of these should be absolute paths.)
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-LLVM_BUILD_DIR = os.path.abspath(os.path.join(THIS_DIR, '..', '..', 'third_party',
-                                              'llvm-build', 'Release+Asserts'))
+LLVM_BUILD_DIR = os.path.abspath(
+    os.path.join(THIS_DIR, '..', '..', 'buildtools', 'windows-x64', 'clang')
+)
 
 
 def GetDiaDll():
@@ -27,10 +28,11 @@ def GetDiaDll():
 
   # Bump after VC updates.
   DIA_DLL = {
-    '2013': 'msdia120.dll',
-    '2015': 'msdia140.dll',
-    '2017': 'msdia140.dll',
-    '2019': 'msdia140.dll',
+      '2013': 'msdia120.dll',
+      '2015': 'msdia140.dll',
+      '2017': 'msdia140.dll',
+      '2019': 'msdia140.dll',
+      '2022': 'msdia140.dll',
   }
 
   # Don't let vs_toolchain overwrite our environment.
@@ -42,7 +44,12 @@ def GetDiaDll():
   msvs_version = vs_toolchain.GetVisualStudioVersion()
 
   if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1'))):
-    dia_path = os.path.join(win_sdk_dir, '..', 'DIA SDK', 'bin', 'amd64')
+    # Depot tools .zip layout:
+    # \- DIA SDK
+    # \- Windows Kits
+    #   \- 10
+    #     \- ... # Location of `DEPOT_TOOLS_WIN_TOOLCHAIN`
+    dia_path = os.path.join(win_sdk_dir, '..', '..', 'DIA SDK', 'bin', 'amd64')
   else:
     if 'GYP_MSVS_OVERRIDE_PATH' in os.environ:
       vs_path = os.environ['GYP_MSVS_OVERRIDE_PATH']

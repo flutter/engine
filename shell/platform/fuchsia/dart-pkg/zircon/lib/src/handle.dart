@@ -8,7 +8,7 @@ part of zircon;
 // ignore_for_file: public_member_api_docs
 
 @pragma('vm:entry-point')
-class Handle extends NativeFieldWrapperClass2 {
+base class Handle extends NativeFieldWrapperClass1 {
   // No public constructor - this can only be created from native code.
   @pragma('vm:entry-point')
   Handle._();
@@ -17,11 +17,14 @@ class Handle extends NativeFieldWrapperClass2 {
   factory Handle.invalid() {
     return _createInvalid();
   }
-  static Handle _createInvalid() native 'Handle_CreateInvalid';
+  @pragma('vm:external-name', 'Handle_CreateInvalid')
+  external static Handle _createInvalid();
 
-  int get handle native 'Handle_handle';
+  @pragma('vm:external-name', 'Handle_handle')
+  external int get handle;
 
-  int get koid native 'Handle_koid';
+  @pragma('vm:external-name', 'Handle_koid')
+  external int get koid;
 
   @override
   String toString() => 'Handle($handle)';
@@ -36,16 +39,22 @@ class Handle extends NativeFieldWrapperClass2 {
   int get hashCode => handle.hashCode;
 
   // Common handle operations.
-  bool get isValid native 'Handle_is_valid';
-  int close() native 'Handle_Close';
-  HandleWaiter asyncWait(int signals, AsyncWaitCallback callback)
-      native 'Handle_AsyncWait';
+  @pragma('vm:external-name', 'Handle_is_valid')
+  external bool get isValid;
+  @pragma('vm:external-name', 'Handle_Close')
+  external int close();
+  @pragma('vm:external-name', 'Handle_AsyncWait')
+  external HandleWaiter asyncWait(int signals, AsyncWaitCallback callback);
 
-  Handle duplicate(int rights) native 'Handle_Duplicate';
+  @pragma('vm:external-name', 'Handle_Duplicate')
+  external Handle duplicate(int rights);
+
+  @pragma('vm:external-name', 'Handle_Replace')
+  external Handle replace(int rights);
 }
 
 @pragma('vm:entry-point')
-class _OnWaitCompleteClosure {  // ignore: unused_element
+class _OnWaitCompleteClosure {
   // No public constructor - this can only be created from native code.
   @pragma('vm:entry-point')
   _OnWaitCompleteClosure(this._callback, this._arg1, this._arg2);
@@ -55,5 +64,5 @@ class _OnWaitCompleteClosure {  // ignore: unused_element
   Object _arg2;
 
   @pragma('vm:entry-point')
-  Function get _closure => () => _callback(_arg1, _arg2); // ignore: unused_element
+  Function get _closure => () => _callback(_arg1, _arg2);
 }

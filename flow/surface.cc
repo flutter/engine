@@ -18,4 +18,20 @@ bool Surface::ClearRenderContext() {
   return false;
 }
 
+bool Surface::AllowsDrawingWhenGpuDisabled() const {
+  return true;
+}
+
+bool Surface::EnableRasterCache() const {
+  return true;
+}
+
+std::shared_ptr<impeller::AiksContext> Surface::GetAiksContext() const {
+  return nullptr;
+}
+
+Surface::SurfaceData Surface::GetSurfaceData() const {
+  return {};
+}
+
 }  // namespace flutter

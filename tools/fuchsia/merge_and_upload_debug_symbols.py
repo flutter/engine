@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
+
 """ Merges the debug symbols and uploads them to cipd.
 """
 
@@ -16,6 +17,13 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
+
+# Path to the engine root checkout. This is used to calculate absolute
+# paths if relative ones are passed to the script.
+BUILD_ROOT_DIR = os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
+)
 
 
 def IsLinux():
@@ -23,7 +31,7 @@ def IsLinux():
 
 
 # out_dir here is of the format "/b/s/w/ir/k/recipe_cleanup/tmpIbWDdp"
-# we need to palce the cipd definition in this directory.
+# we need to place the cipd definition in this directory.
 def GetPackagingDir(out_dir):
   return os.path.abspath(out_dir)
 
@@ -56,13 +64,14 @@ def WriteCIPDDefinition(target_arch, out_dir, symbol_dirs):
 def CheckCIPDPackageExists(package_name, tag):
   '''Check to see if the current package/tag combo has been published'''
   command = [
-    'cipd',
-    'search',
-    package_name,
-    '-tag',
-    tag,
+      'cipd',
+      'search',
+      package_name,
+      '-tag',
+      tag,
   ]
   stdout = subprocess.check_output(command)
+  stdout = stdout if isinstance(stdout, str) else stdout.decode('UTF-8')
   match = re.search(r'No matching instances\.', stdout)
   if match:
     return False
@@ -74,22 +83,29 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   _packaging_dir = GetPackagingDir(out_dir)
   tag = 'git_revision:%s' % engine_version
   package_name = 'flutter/fuchsia-debug-symbols-%s' % target_arch
-  already_exists = CheckCIPDPackageExists(
-    package_name,
-    tag)
+  already_exists = CheckCIPDPackageExists(package_name, tag)
   if already_exists:
     print('CIPD package %s tag %s already exists!' % (package_name, tag))
 
   if upload and IsLinux() and not already_exists:
     command = [
-        'cipd', 'create', '-pkg-def', cipd_yaml, '-ref', 'latest', '-tag',
+        'cipd',
+        'create',
+        '-pkg-def',
+        cipd_yaml,
+        '-ref',
+        'latest',
+        '-tag',
         tag,
+        '-verification-timeout',
+        '10m0s',
     ]
   else:
     command = [
         'cipd', 'pkg-build', '-pkg-def', cipd_yaml, '-out',
-        os.path.join(_packaging_dir,
-                     'fuchsia-debug-symbols-%s.cipd' % target_arch)
+        os.path.join(
+            _packaging_dir, 'fuchsia-debug-symbols-%s.cipd' % target_arch
+        )
     ]
 
   # Retry up to three times.  We've seen CIPD fail on verification in some
@@ -104,6 +120,7 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
       print('Failed %s times.\nError was: %s' % (tries + 1, error))
       if tries == num_tries - 1:
         raise
+
 
 # Recursively hardlinks contents from one directory to another,
 # skipping over collisions.
@@ -134,6 +151,17 @@ def HardlinkContents(dirA, dirB):
       os.link(src, dest)
   return internal_symbol_dirs
 
+
+def CalculateAbsoluteDirs(dirs):
+  results = []
+  for directory in dirs:
+    if os.path.isabs(directory):
+      results.append(directory)
+    else:
+      results.append(os.path.join(BUILD_ROOT_DIR, directory))
+  return results
+
+
 def main():
   parser = argparse.ArgumentParser()
 
@@ -145,29 +173,35 @@ def main():
   )
   parser.add_argument(
       '--out-dir',
-      required=True,
       action='store',
       dest='out_dir',
-      help='Output directory where the executables will be placed.')
+      default=tempfile.mkdtemp(),
+      help=(
+          'Output directory where the executables will be placed defaults to an '
+          'empty temp directory'
+      )
+  )
   parser.add_argument(
-      '--target-arch', type=str, choices=['x64', 'arm64'], required=True)
+      '--target-arch', type=str, choices=['x64', 'arm64'], required=True
+  )
   parser.add_argument(
       '--engine-version',
       required=True,
-      help='Specifies the flutter engine SHA.')
+      help='Specifies the flutter engine SHA.'
+  )
 
   parser.add_argument('--upload', default=False, action='store_true')
 
   args = parser.parse_args()
 
-  symbol_dirs = args.symbol_dirs
+  symbol_dirs = CalculateAbsoluteDirs(args.symbol_dirs)
   for symbol_dir in symbol_dirs:
     assert os.path.exists(symbol_dir) and os.path.isdir(symbol_dir)
 
   out_dir = args.out_dir
 
   if os.path.exists(out_dir):
-    print 'Directory: %s is not empty, deleting it.' % out_dir
+    print('Directory: %s is not empty, deleting it.' % out_dir)
     shutil.rmtree(out_dir)
   os.makedirs(out_dir)
 
@@ -180,7 +214,17 @@ def main():
 
   arch = args.target_arch
   cipd_def = WriteCIPDDefinition(arch, out_dir, internal_symbol_dirs)
-  ProcessCIPDPackage(args.upload, cipd_def, args.engine_version, out_dir, arch)
+
+  # Set revision to HEAD if empty and remove upload. This is to support
+  # presubmit workflows. An empty engine_version means this script is running
+  # on presubmit.
+  should_upload = args.upload
+  engine_version = args.engine_version
+  if not engine_version:
+    engine_version = 'HEAD'
+    should_upload = False
+
+  ProcessCIPDPackage(should_upload, cipd_def, engine_version, out_dir, arch)
   return 0
 
 

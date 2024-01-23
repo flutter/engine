@@ -7,23 +7,23 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if OS_MACOSX
+#if FML_OS_MACOSX
 #include <assert.h>
 #include <stdbool.h>
 #include <sys/sysctl.h>
 #include <sys/types.h>
 #include <unistd.h>
-#endif  // OS_MACOSX
+#endif  // FML_OS_MACOSX
 
-#if OS_WIN
+#if FML_OS_WIN
 #include <windows.h>
-#endif  // OS_WIN
+#endif  // FML_OS_WIN
 
 namespace flutter {
 namespace testing {
 
 DebuggerStatus GetDebuggerStatus() {
-#if OS_MACOSX
+#if FML_OS_MACOSX
   // From Technical Q&A QA1361 Detecting the Debugger
   // https://developer.apple.com/library/archive/qa/qa1361/_index.html
   int management_info_base[4];
@@ -54,7 +54,7 @@ DebuggerStatus GetDebuggerStatus() {
   return ((info.kp_proc.p_flag & P_TRACED) != 0) ? DebuggerStatus::kAttached
                                                  : DebuggerStatus::kDontKnow;
 
-#elif OS_WIN
+#elif FML_OS_WIN
   return ::IsDebuggerPresent() ? DebuggerStatus::kAttached
                                : DebuggerStatus::kDontKnow;
 

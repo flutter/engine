@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_
 
 #import <UIKit/UIKit.h>
 
@@ -13,12 +13,19 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge_ios.h"
 
 constexpr int32_t kRootNodeId = 0;
+// This can be arbitrary number as long as it is bigger than 0.
+constexpr float kScrollExtentMaxForInf = 1000;
 
 @class FlutterCustomAccessibilityAction;
 @class FlutterPlatformViewSemanticsContainer;
+@class FlutterTouchInterceptingView;
 
 /**
- * A node in the iOS semantics tree.
+ * A node in the iOS semantics tree. This object is a wrapper over a native accessibiliy
+ * object, which is stored in the property `nativeAccessibility`. In the most case, the
+ * `nativeAccessibility` directly returns this object. Some subclasses such as the
+ * `FlutterScrollableSemanticsObject` creates a native `UIScrollView` as its `nativeAccessibility`
+ * so that it can interact with iOS.
  */
 @interface SemanticsObject : UIAccessibilityElement
 
@@ -31,7 +38,7 @@ constexpr int32_t kRootNodeId = 0;
  * The parent of this node in the node tree. Will be nil for the root node and
  * during transient state changes.
  */
-@property(nonatomic, readonly) SemanticsObject* parent;
+@property(nonatomic, assign) SemanticsObject* parent;
 
 /**
  * The accessibility bridge that this semantics object is attached to. This
@@ -44,25 +51,9 @@ constexpr int32_t kRootNodeId = 0;
 @property(nonatomic, readonly) fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge;
 
 /**
- * Due to the fact that VoiceOver may hold onto SemanticObjects even after it shuts down,
- * there can be situations where the AccessibilityBridge is shutdown, but the SemanticObject
- * will still be alive. If VoiceOver is turned on again, it may try to access this orphaned
- * SemanticObject. Methods that are called from the accessiblity framework should use
- * this to guard against this case by just returning early if its bridge has been shutdown.
- *
- * See https://github.com/flutter/flutter/issues/43795 for more information.
- */
-- (BOOL)isAccessibilityBridgeAlive;
-
-/**
  * The semantics node used to produce this semantics object.
  */
 @property(nonatomic, readonly) flutter::SemanticsNode node;
-
-/**
- * Updates this semantics object using data from the `node` argument.
- */
-- (void)setSemanticsNode:(const flutter::SemanticsNode*)node NS_REQUIRES_SUPER;
 
 /**
  * Whether this semantics object has child semantics objects.
@@ -76,25 +67,63 @@ constexpr int32_t kRootNodeId = 0;
 @property(nonatomic, strong) NSArray<SemanticsObject*>* children;
 
 /**
- * Used if this SemanticsObject is for a platform view.
+ * Direct children of this semantics object in hit test order. Each child's `parent` property
+ * must be equal to this object.
  */
-@property(strong, nonatomic) FlutterPlatformViewSemanticsContainer* platformViewSemanticsContainer;
+@property(nonatomic, strong) NSArray<SemanticsObject*>* childrenInHitTestOrder;
+
+/**
+ * The UIAccessibility that represents this object.
+ *
+ * By default, this return self. Subclasses can override to return different
+ * objects to represent them. For example, FlutterScrollableSemanticsObject[s]
+ * maintain UIScrollView[s] to represent their UIAccessibility[s].
+ */
+@property(nonatomic, readonly) id nativeAccessibility;
+
+/**
+ * Due to the fact that VoiceOver may hold onto SemanticObjects even after it shuts down,
+ * there can be situations where the AccessibilityBridge is shutdown, but the SemanticObject
+ * will still be alive. If VoiceOver is turned on again, it may try to access this orphaned
+ * SemanticObject. Methods that are called from the accessiblity framework should use
+ * this to guard against this case by just returning early if its bridge has been shutdown.
+ *
+ * See https://github.com/flutter/flutter/issues/43795 for more information.
+ */
+- (BOOL)isAccessibilityBridgeAlive;
+
+/**
+ * Updates this semantics object using data from the `node` argument.
+ */
+- (void)setSemanticsNode:(const flutter::SemanticsNode*)node NS_REQUIRES_SUPER;
 
 - (void)replaceChildAtIndex:(NSInteger)index withChild:(SemanticsObject*)child;
 
 - (BOOL)nodeWillCauseLayoutChange:(const flutter::SemanticsNode*)node;
+
+- (BOOL)nodeWillCauseScroll:(const flutter::SemanticsNode*)node;
+
+- (BOOL)nodeShouldTriggerAnnouncement:(const flutter::SemanticsNode*)node;
+
+- (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges;
+
+- (NSString*)routeName;
+
+- (BOOL)onCustomAccessibilityAction:(FlutterCustomAccessibilityAction*)action;
+
+/**
+ * Called after accessibility bridge finishes a semantics update.
+ *
+ * Subclasses can override this method if they contain states that can only be
+ * updated once every node in the accessibility tree has finished updating.
+ */
+- (void)accessibilityBridgeDidFinishUpdate;
 
 #pragma mark - Designated initializers
 
 - (instancetype)init __attribute__((unavailable("Use initWithBridge instead")));
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid NS_DESIGNATED_INITIALIZER;
-
-- (BOOL)nodeWillCauseScroll:(const flutter::SemanticsNode*)node;
-- (BOOL)nodeShouldTriggerAnnouncement:(const flutter::SemanticsNode*)node;
-- (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges;
-- (NSString*)routeName;
-- (BOOL)onCustomAccessibilityAction:(FlutterCustomAccessibilityAction*)action;
 
 @end
 
@@ -136,24 +165,28 @@ constexpr int32_t kRootNodeId = 0;
  * * `SemanticsObject` for the other type of semantics objects.
  * * `FlutterSemanticsObject` for default implementation of `SemanticsObject`.
  */
-@interface FlutterPlatformViewSemanticsContainer : UIAccessibilityElement
+@interface FlutterPlatformViewSemanticsContainer : SemanticsObject
 
-/**
- * The position inside an accessibility container.
- */
-@property(nonatomic) NSInteger index;
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid NS_UNAVAILABLE;
 
-- (instancetype)init __attribute__((unavailable("Use initWithAccessibilityContainer: instead")));
-
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)object;
+- (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
+                           uid:(int32_t)uid
+                  platformView:(FlutterTouchInterceptingView*)platformView
+    NS_DESIGNATED_INITIALIZER;
 
 @end
 
-/// A proxy class for SemanticsObject and UISwitch.  For most Accessibility and
-/// SemanticsObject methods it delegates to the semantics object, otherwise it
-/// sends messages to the UISwitch.
-@interface FlutterSwitchSemanticsObject : UISwitch
-- (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject;
+/// The semantics object for switch buttons. This class creates an UISwitch to interact with the
+/// iOS.
+@interface FlutterSwitchSemanticsObject : SemanticsObject
+
+@end
+
+/// The semantics object for scrollable. This class creates an UIScrollView to interact with the
+/// iOS.
+@interface FlutterScrollableSemanticsObject : SemanticsObject
+
 @end
 
 /**
@@ -202,4 +235,4 @@ constexpr int32_t kRootNodeId = 0;
 
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_

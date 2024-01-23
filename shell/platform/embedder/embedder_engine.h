@@ -12,12 +12,8 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
-
-#ifdef SHELL_ENABLE_GL
-#include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
-#endif
-
 namespace flutter {
 
 struct ShellArgs;
@@ -26,18 +22,15 @@ struct ShellArgs;
 // instance of the Flutter engine.
 class EmbedderEngine {
  public:
-  EmbedderEngine(std::unique_ptr<EmbedderThreadHost> thread_host,
-                 TaskRunners task_runners,
-                 Settings settings,
-                 RunConfiguration run_configuration,
-                 Shell::CreateCallback<PlatformView> on_create_platform_view,
-                 Shell::CreateCallback<Rasterizer> on_create_rasterizer
-#ifdef SHELL_ENABLE_GL
-                 ,
-                 EmbedderExternalTextureGL::ExternalTextureCallback
-                     external_texture_callback
-#endif
-  );
+  EmbedderEngine(
+      std::unique_ptr<EmbedderThreadHost> thread_host,
+      const TaskRunners& task_runners,
+      const Settings& settings,
+      RunConfiguration run_configuration,
+      const Shell::CreateCallback<PlatformView>& on_create_platform_view,
+      const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
+      std::unique_ptr<EmbedderExternalTextureResolver>
+          external_texture_resolver);
 
   ~EmbedderEngine();
 
@@ -55,12 +48,13 @@ class EmbedderEngine {
 
   bool IsValid() const;
 
-  bool SetViewportMetrics(flutter::ViewportMetrics metrics);
+  bool SetViewportMetrics(int64_t view_id,
+                          const flutter::ViewportMetrics& metrics);
 
   bool DispatchPointerDataPacket(
       std::unique_ptr<flutter::PointerDataPacket> packet);
 
-  bool SendPlatformMessage(fml::RefPtr<flutter::PlatformMessage> message);
+  bool SendPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   bool RegisterTexture(int64_t texture);
 
@@ -72,9 +66,9 @@ class EmbedderEngine {
 
   bool SetAccessibilityFeatures(int32_t flags);
 
-  bool DispatchSemanticsAction(int id,
+  bool DispatchSemanticsAction(int node_id,
                                flutter::SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   bool OnVsyncEvent(intptr_t baton,
                     fml::TimePoint frame_start_time,
@@ -87,7 +81,9 @@ class EmbedderEngine {
   bool RunTask(const FlutterTask* task);
 
   bool PostTaskOnEngineManagedNativeThreads(
-      std::function<void(FlutterNativeThreadType)> closure) const;
+      const std::function<void(FlutterNativeThreadType)>& closure) const;
+
+  bool ScheduleFrame();
 
   Shell& GetShell();
 
@@ -97,10 +93,7 @@ class EmbedderEngine {
   RunConfiguration run_configuration_;
   std::unique_ptr<ShellArgs> shell_args_;
   std::unique_ptr<Shell> shell_;
-#ifdef SHELL_ENABLE_GL
-  const EmbedderExternalTextureGL::ExternalTextureCallback
-      external_texture_callback_;
-#endif
+  std::unique_ptr<EmbedderExternalTextureResolver> external_texture_resolver_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderEngine);
 };

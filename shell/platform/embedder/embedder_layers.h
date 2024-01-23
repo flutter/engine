@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_FLUTTER_LAYERS_H_
-#define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_FLUTTER_LAYERS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_LAYERS_H_
+#define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_LAYERS_H_
 
 #include <memory>
 #include <vector>
@@ -24,7 +24,8 @@ class EmbedderLayers {
 
   ~EmbedderLayers();
 
-  void PushBackingStoreLayer(const FlutterBackingStore* store);
+  void PushBackingStoreLayer(const FlutterBackingStore* store,
+                             const std::vector<SkIRect>& drawn_region);
 
   void PushPlatformViewLayer(FlutterPlatformViewIdentifier identifier,
                              const EmbeddedViewParams& params);
@@ -42,6 +43,10 @@ class EmbedderLayers {
       mutations_referenced_;
   std::vector<std::unique_ptr<std::vector<const FlutterPlatformViewMutation*>>>
       mutations_arrays_referenced_;
+  std::vector<std::unique_ptr<FlutterBackingStorePresentInfo>>
+      present_info_referenced_;
+  std::vector<std::unique_ptr<FlutterRegion>> regions_referenced_;
+  std::vector<std::unique_ptr<std::vector<FlutterRect>>> rects_referenced_;
   std::vector<FlutterLayer> presented_layers_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderLayers);
@@ -49,4 +54,4 @@ class EmbedderLayers {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_FLUTTER_LAYERS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_LAYERS_H_

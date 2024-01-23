@@ -1,0 +1,86 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+impeller_component("skia_conversions") {
+  sources = [
+    "skia_conversions.cc",
+    "skia_conversions.h",
+  ]
+
+  public_deps = [
+    "../core",
+    "../geometry",
+    "//flutter/display_list",
+    "//flutter/fml",
+    "//flutter/skia",
+    "//flutter/skia/modules/skparagraph",
+  ]
+}
+
+impeller_component("display_list") {
+  sources = [
+    "dl_dispatcher.cc",
+    "dl_dispatcher.h",
+    "dl_image_impeller.cc",
+    "dl_image_impeller.h",
+    "dl_vertices_geometry.cc",
+    "dl_vertices_geometry.h",
+    "nine_patch_converter.cc",
+    "nine_patch_converter.h",
+  ]
+
+  public_deps = [
+    ":skia_conversions",
+    "../aiks",
+    "//flutter/display_list",
+    "//flutter/fml",
+    "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    "//flutter/skia",
+  ]
+
+  if (!defined(defines)) {
+    defines = []
+  }
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+  }
+}
+
+impeller_component("display_list_unittests") {
+  testonly = true
+
+  sources = [
+    "dl_playground.cc",
+    "dl_playground.h",
+    "dl_unittests.cc",
+  ]
+
+  deps = [
+    ":display_list",
+    "../playground:playground_test",
+    "//flutter/impeller/scene",
+    "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
+    "//flutter/third_party/txt",
+  ]
+
+  if (!defined(defines)) {
+    defines = []
+  }
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+  }
+}
+
+impeller_component("skia_conversions_unittests") {
+  testonly = true
+
+  sources = [ "skia_conversions_unittests.cc" ]
+
+  deps = [
+    ":skia_conversions",
+    "//flutter/testing:testing_lib",
+  ]
+}

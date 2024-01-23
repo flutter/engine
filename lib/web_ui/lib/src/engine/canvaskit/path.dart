@@ -2,24 +2,44 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import '../vector_math.dart';
+import 'canvaskit_api.dart';
+import 'native_memory.dart';
+import 'path_metrics.dart';
 
 /// An implementation of [ui.Path] which is backed by an `SkPath`.
 ///
 /// The `SkPath` is required for `CkCanvas` methods which take a path.
-class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
-  CkPath() : _fillType = ui.PathFillType.nonZero;
-
-  CkPath.from(CkPath other)
-      : _fillType = other.fillType,
-        super(SkPath(other.skiaObject)) {
-    skiaObject.setFillType(toSkFillType(_fillType));
+class CkPath implements ui.Path {
+  factory CkPath() {
+    final SkPath skPath = SkPath();
+    skPath.setFillType(toSkFillType(ui.PathFillType.nonZero));
+    return CkPath._(skPath, ui.PathFillType.nonZero);
   }
 
-  CkPath._fromSkPath(SkPath skPath, this._fillType) : super(skPath) {
-    skiaObject.setFillType(toSkFillType(_fillType));
+  factory CkPath.from(CkPath other) {
+    final SkPath skPath = other.skiaObject.copy();
+    skPath.setFillType(toSkFillType(other._fillType));
+    return CkPath._(skPath, other._fillType);
   }
+
+  factory CkPath.fromSkPath(SkPath skPath, ui.PathFillType fillType) {
+    skPath.setFillType(toSkFillType(fillType));
+    return CkPath._(skPath, fillType);
+  }
+
+  CkPath._(SkPath nativeObject, this._fillType) {
+    _ref = UniqueRef<SkPath>(this, nativeObject, 'Path');
+  }
+
+  late final UniqueRef<SkPath> _ref;
+
+  SkPath get skiaObject => _ref.nativeObject;
 
   ui.PathFillType _fillType;
 
@@ -79,10 +99,9 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
 
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
-    assert(points != null); // ignore: unnecessary_null_comparison
     final SkFloat32List encodedPoints = toMallocedSkPoints(points);
     skiaObject.addPoly(encodedPoints.toTypedArray(), close);
-    freeFloat32List(encodedPoints);
+    free(encodedPoints);
   }
 
   @override
@@ -250,12 +269,16 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
   }
 
   @override
-  ui.Path shift(ui.Offset offset) {
-    // Since CanvasKit does not expose `SkPath.offset`, create a copy of this
-    // path and call `transform` on it.
-    final SkPath newPath = skiaObject.copy();
-    newPath.transform(1.0, 0.0, offset.dx, 0.0, 1.0, offset.dy, 0.0, 0.0, 0.0);
-    return CkPath._fromSkPath(newPath, _fillType);
+  CkPath shift(ui.Offset offset) {
+    // `SkPath.transform` mutates the existing path, so create a copy and call
+    // `transform` on the copy.
+    final SkPath shiftedPath = skiaObject.copy();
+    shiftedPath.transform(
+      1.0, 0.0, offset.dx,
+      0.0, 1.0, offset.dy,
+      0.0, 0.0, 1.0,
+    );
+    return CkPath.fromSkPath(shiftedPath, _fillType);
   }
 
   static CkPath combine(
@@ -265,12 +288,12 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
   ) {
     final CkPath path1 = uiPath1 as CkPath;
     final CkPath path2 = uiPath2 as CkPath;
-    final SkPath newPath = canvasKit.MakePathFromOp(
+    final SkPath newPath = canvasKit.Path.MakeFromOp(
       path1.skiaObject,
       path2.skiaObject,
       toSkPathOp(operation),
     );
-    return CkPath._fromSkPath(newPath, path1._fillType);
+    return CkPath.fromSkPath(newPath, path1._fillType);
   }
 
   @override
@@ -288,7 +311,7 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
       m[7],
       m[8],
     );
-    return CkPath._fromSkPath(newPath, _fillType);
+    return CkPath.fromSkPath(newPath, _fillType);
   }
 
   String? toSvgString() {
@@ -298,30 +321,5 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
   /// Return `true` if this path contains no segments.
   bool get isEmpty {
     return skiaObject.isEmpty();
-  }
-
-  @override
-  bool get isResurrectionExpensive => true;
-
-  @override
-  SkPath createDefault() {
-    final SkPath path = SkPath();
-    path.setFillType(toSkFillType(_fillType));
-    return path;
-  }
-
-  List<dynamic>? _cachedCommands;
-
-  @override
-  void delete() {
-    _cachedCommands = skiaObject.toCmds();
-    rawSkiaObject?.delete();
-  }
-
-  @override
-  SkPath resurrect() {
-    final SkPath path = canvasKit.MakePathFromCmds(_cachedCommands!);
-    path.setFillType(toSkFillType(_fillType));
-    return path;
   }
 }

@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dom.dart';
 
-html.Element? _logElement;
-late html.Element _logContainer;
+DomElement? _logElement;
+late DomElement _logContainer;
 List<_LogMessage> _logBuffer = <_LogMessage>[];
 
 class _LogMessage {
@@ -52,7 +51,7 @@ void printOnScreen(Object object) {
 }
 
 void _initialize() {
-  _logElement = html.Element.tag('flt-onscreen-log');
+  _logElement = createDomElement('flt-onscreen-log');
   _logElement!.setAttribute('aria-hidden', 'true');
   _logElement!.style
     ..position = 'fixed'
@@ -67,14 +66,14 @@ void _initialize() {
     ..overflow = 'hidden'
     ..zIndex = '1000';
 
-  _logContainer = html.Element.tag('flt-log-container');
+  _logContainer = createDomElement('flt-log-container');
   _logContainer.setAttribute('aria-hidden', 'true');
   _logContainer.style
     ..position = 'absolute'
     ..bottom = '0';
   _logElement!.append(_logContainer);
 
-  html.document.body!.append(_logElement!);
+  domDocument.body!.append(_logElement!);
 }
 
 /// Dump the current stack to the console using [print] and
@@ -116,7 +115,7 @@ Iterable<String> defaultStackFilter(Iterable<String> frames) {
   final RegExp packageParser = RegExp(r'^([^:]+):(.+)$');
   final List<String> result = <String>[];
   final List<String> skipped = <String>[];
-  for (String line in frames) {
+  for (final String line in frames) {
     final Match? match = stackParser.firstMatch(line);
     if (match != null) {
       assert(match.groupCount == 2);

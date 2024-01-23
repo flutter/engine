@@ -10,12 +10,11 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
 #include "vulkan_debug_report.h"
-#include "vulkan_handle.h"
 
 namespace vulkan {
 
-static const int kGrCacheMaxCount = 8192;
 static const size_t kGrCacheMaxByteSize = 512 * (1 << 20);
 
 class VulkanDevice;
@@ -45,7 +44,7 @@ class VulkanApplication {
   std::unique_ptr<VulkanDevice> AcquireFirstCompatibleLogicalDevice() const;
 
  private:
-  VulkanProcTable& vk;
+  VulkanProcTable& vk_;
   VulkanHandle<VkInstance> instance_;
   uint32_t api_version_;
   std::unique_ptr<VulkanDebugReport> debug_report_;
@@ -57,7 +56,7 @@ class VulkanApplication {
       const VulkanProcTable& vk) const;
   bool ExtensionSupported(
       const std::vector<VkExtensionProperties>& supported_extensions,
-      std::string extension_name);
+      const std::string& extension_name);
 
   FML_DISALLOW_COPY_AND_ASSIGN(VulkanApplication);
 };

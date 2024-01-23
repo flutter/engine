@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERENGINE_H_
-#define FLUTTER_FLUTTERENGINE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERENGINE_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERENGINE_H_
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
@@ -22,11 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
  * The dart entrypoint that is associated with `main()`.  This is to be used as an argument to the
  * `runWithEntrypoint*` methods.
  */
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSString* const FlutterDefaultDartEntrypoint;
 
 /**
  * The default Flutter initial route ("/").
  */
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSString* const FlutterDefaultInitialRoute;
 
 /**
@@ -55,8 +57,8 @@ extern NSString* const FlutterDefaultInitialRoute;
  * either `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI` is invoked.
  * One of these methods must be invoked before calling `-setViewController:`.
  */
-FLUTTER_EXPORT
-@interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
+FLUTTER_DARWIN_EXPORT
+@interface FlutterEngine : NSObject <FlutterPluginRegistry>
 
 /**
  * Default initializer for a FlutterEngine.
@@ -135,9 +137,31 @@ FLUTTER_EXPORT
  */
 - (instancetype)initWithName:(NSString*)labelPrefix
                      project:(nullable FlutterDartProject*)project
-      allowHeadlessExecution:(BOOL)allowHeadlessExecution NS_DESIGNATED_INITIALIZER;
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution;
 
-+ (instancetype)new NS_UNAVAILABLE;
+/**
+ * Initialize this FlutterEngine with a `FlutterDartProject`.
+ *
+ * If the FlutterDartProject is not specified, the FlutterEngine will attempt to locate
+ * the project in a default location (the flutter_assets folder in the iOS application
+ * bundle).
+ *
+ * A newly initialized engine will not run the `FlutterDartProject` until either
+ * `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI:` is called.
+ *
+ * @param labelPrefix The label prefix used to identify threads for this instance. Should
+ *   be unique across FlutterEngine instances, and is used in instrumentation to label
+ *   the threads used by this FlutterEngine.
+ * @param project The `FlutterDartProject` to run.
+ * @param allowHeadlessExecution Whether or not to allow this instance to continue
+ *   running after passing a nil `FlutterViewController` to `-setViewController:`.
+ * @param restorationEnabled Whether state restoration is enabled. When true, the framework will
+ *   wait for the attached view controller to provide restoration data.
+ */
+- (instancetype)initWithName:(NSString*)labelPrefix
+                     project:(nullable FlutterDartProject*)project
+      allowHeadlessExecution:(BOOL)allowHeadlessExecution
+          restorationEnabled:(BOOL)restorationEnabled NS_DESIGNATED_INITIALIZER;
 
 /**
  * Runs a Dart program on an Isolate from the main Dart library (i.e. the library that
@@ -197,11 +221,58 @@ FLUTTER_EXPORT
  *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
  *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
  *   method is not tree-shaken by the Dart compiler.
- * @param uri The URI of the Dart library which contains the entrypoint method.  IF nil,
- *   this will default to the same library as the `main()` function in the Dart program.
+ * @param uri The URI of the Dart library which contains the entrypoint method
+ *   (example "package:foo_package/main.dart").  If nil, this will default to
+ *   the same library as the `main()` function in the Dart program.
  * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
  */
 - (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint libraryURI:(nullable NSString*)uri;
+
+/**
+ * Runs a Dart program on an Isolate using the specified entrypoint and Dart library,
+ * which may not be the same as the library containing the Dart program's `main()` function.
+ *
+ * The first call to this method will create a new Isolate. Subsequent calls will return
+ * immediately and have no effect.
+ *
+ * @param entrypoint The name of a top-level function from a Dart library.  If this is
+ *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
+ *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
+ *   method is not tree-shaken by the Dart compiler.
+ * @param libraryURI The URI of the Dart library which contains the entrypoint
+ *   method (example "package:foo_package/main.dart").  If nil, this will
+ *   default to the same library as the `main()` function in the Dart program.
+ * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
+ *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
+ * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
+ */
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint
+               libraryURI:(nullable NSString*)libraryURI
+             initialRoute:(nullable NSString*)initialRoute;
+
+/**
+ * Runs a Dart program on an Isolate using the specified entrypoint and Dart library,
+ * which may not be the same as the library containing the Dart program's `main()` function.
+ *
+ * The first call to this method will create a new Isolate. Subsequent calls will return
+ * immediately and have no effect.
+ *
+ * @param entrypoint The name of a top-level function from a Dart library.  If this is
+ *   FlutterDefaultDartEntrypoint (or nil); this will default to `main()`.  If it is not the app's
+ *   main() function, that function must be decorated with `@pragma(vm:entry-point)` to ensure the
+ *   method is not tree-shaken by the Dart compiler.
+ * @param libraryURI The URI of the Dart library which contains the entrypoint
+ *   method (example "package:foo_package/main.dart").  If nil, this will
+ *   default to the same library as the `main()` function in the Dart program.
+ * @param initialRoute The name of the initial Flutter `Navigator` `Route` to load. If this is
+ *   FlutterDefaultInitialRoute (or nil), it will default to the "/" route.
+ * @param entrypointArgs Arguments passed as a list of string to Dart's entrypoint function.
+ * @return YES if the call succeeds in creating and running a Flutter Engine instance; NO otherwise.
+ */
+- (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint
+               libraryURI:(nullable NSString*)libraryURI
+             initialRoute:(nullable NSString*)initialRoute
+           entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
 
 /**
  * Destroy running context for an engine.
@@ -268,10 +339,20 @@ FLUTTER_EXPORT
  * Can be nil after `destroyContext` is called.
  *
  * @see [Navigation
- * Channel](https://docs.flutter.io/flutter/services/SystemChannels/navigation-constant.html)
- * @see [Navigator Widget](https://docs.flutter.io/flutter/widgets/Navigator-class.html)
+ * Channel](https://api.flutter.dev/flutter/services/SystemChannels/navigation-constant.html)
+ * @see [Navigator Widget](https://api.flutter.dev/flutter/widgets/Navigator-class.html)
  */
 @property(nonatomic, readonly) FlutterMethodChannel* navigationChannel;
+
+/**
+ * The `FlutterMethodChannel` used for restoration related platform messages.
+ *
+ * Can be nil after `destroyContext` is called.
+ *
+ * @see [Restoration
+ * Channel](https://api.flutter.dev/flutter/services/SystemChannels/restoration-constant.html)
+ */
+@property(nonatomic, readonly) FlutterMethodChannel* restorationChannel;
 
 /**
  * The `FlutterMethodChannel` used for core platform messages, such as
@@ -288,7 +369,7 @@ FLUTTER_EXPORT
  * Can be nil after `destroyContext` is called.
  *
  * @see [Text Input
- * Channel](https://docs.flutter.io/flutter/services/SystemChannels/textInput-constant.html)
+ * Channel](https://api.flutter.dev/flutter/services/SystemChannels/textInput-constant.html)
  */
 @property(nonatomic, readonly) FlutterMethodChannel* textInputChannel;
 
@@ -299,7 +380,7 @@ FLUTTER_EXPORT
  * Can be nil after `destroyContext` is called.
  *
  * @see [Lifecycle
- * Channel](https://docs.flutter.io/flutter/services/SystemChannels/lifecycle-constant.html)
+ * Channel](https://api.flutter.dev/flutter/services/SystemChannels/lifecycle-constant.html)
  */
 @property(nonatomic, readonly) FlutterBasicMessageChannel* lifecycleChannel;
 
@@ -310,7 +391,7 @@ FLUTTER_EXPORT
  * Can be nil after `destroyContext` is called.
  *
  * @see [System
- * Channel](https://docs.flutter.io/flutter/services/SystemChannels/system-constant.html)
+ * Channel](https://api.flutter.dev/flutter/services/SystemChannels/system-constant.html)
  */
 @property(nonatomic, readonly) FlutterBasicMessageChannel* systemChannel;
 
@@ -331,19 +412,34 @@ FLUTTER_EXPORT
 @property(nonatomic, readonly) FlutterBasicMessageChannel* keyEventChannel;
 
 /**
- * The `NSURL` of the observatory for the service isolate.
+ * The depcreated `NSURL` of the Dart VM Service for the service isolate.
  *
  * This is only set in debug and profile runtime modes, and only after the
- * observatory service is ready. In release mode or before the observatory has
+ * Dart VM Service is ready. In release mode or before the Dart VM Service has
  * started, it returns `nil`.
  */
-@property(nonatomic, readonly, nullable) NSURL* observatoryUrl;
+@property(nonatomic, readonly, nullable)
+    NSURL* observatoryUrl FLUTTER_DEPRECATED("Use vmServiceUrl instead");
+
+/**
+ * The `NSURL` of the Dart VM Service for the service isolate.
+ *
+ * This is only set in debug and profile runtime modes, and only after the
+ * Dart VM Service is ready. In release mode or before the Dart VM Service has
+ * started, it returns `nil`.
+ */
+@property(nonatomic, readonly, nullable) NSURL* vmServiceUrl;
 
 /**
  * The `FlutterBinaryMessenger` associated with this FlutterEngine (used for communicating with
  * channels).
  */
 @property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
+
+/**
+ * The `FlutterTextureRegistry` associated with this FlutterEngine (used to register textures).
+ */
+@property(nonatomic, readonly) NSObject<FlutterTextureRegistry>* textureRegistry;
 
 /**
  * The UI Isolate ID of the engine.
@@ -363,4 +459,4 @@ FLUTTER_EXPORT
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERENGINE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERENGINE_H_

@@ -27,15 +27,13 @@ function follow_links() (
   echo "$file"
 )
 
-
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 DART_SDK_DIR="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk"
 DART="${DART_SDK_DIR}/bin/dart"
-PUB="${DART_SDK_DIR}/bin/pub"
 
 cd "$SCRIPT_DIR"
-"$PUB" get && "$DART" \
+"$DART" \
   --disable-dart-dev \
   bin/format.dart \
   "$@"

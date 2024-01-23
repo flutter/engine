@@ -4,6 +4,7 @@
 
 #include "flutter/fml/base32.h"
 
+#include <cstdint>  // uint8_t
 #include <limits>
 #include <string>
 
@@ -25,7 +26,7 @@ std::pair<bool, std::string> Base32Encode(std::string_view input) {
   output.reserve(encoded_length);
 
   Base32EncodeConverter converter;
-  converter.Append(input[0]);
+  converter.Append(static_cast<uint8_t>(input[0]));
   size_t next_byte_index = 1;
 
   while (converter.CanExtract()) {

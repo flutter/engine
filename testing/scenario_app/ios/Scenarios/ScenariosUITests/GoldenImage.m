@@ -8,8 +8,6 @@
 #import <os/log.h>
 #include <sys/sysctl.h>
 
-static const double kRmseThreshold = 0.5;
-
 @interface GoldenImage ()
 
 @end
@@ -28,7 +26,7 @@ static const double kRmseThreshold = 0.5;
   return self;
 }
 
-- (BOOL)compareGoldenToImage:(UIImage*)image {
+- (BOOL)compareGoldenToImage:(UIImage*)image rmesThreshold:(double)rmesThreshold {
   if (!self.image || !image) {
     os_log_error(OS_LOG_DEFAULT, "GOLDEN DIFF FAILED: image does not exists.");
     return NO;
@@ -91,21 +89,22 @@ static const double kRmseThreshold = 0.5;
     }
   }
   double rmse = sqrt(sum / size);
-  if (rmse > kRmseThreshold) {
+  if (rmse > rmesThreshold) {
     os_log_error(
         OS_LOG_DEFAULT,
         "GOLDEN DIFF FAILED: image diff greater than threshold. Current diff: %@, threshold: %@",
-        @(rmse), @(kRmseThreshold));
+        @(rmse), @(rmesThreshold));
     return NO;
   }
   return YES;
 }
 
 NS_INLINE NSString* _platformName() {
+  NSString* systemVersion = UIDevice.currentDevice.systemVersion;
   NSString* simulatorName =
       [[NSProcessInfo processInfo].environment objectForKey:@"SIMULATOR_DEVICE_NAME"];
   if (simulatorName) {
-    return [NSString stringWithFormat:@"%@_simulator", simulatorName];
+    return [NSString stringWithFormat:@"%@_%@_simulator", simulatorName, systemVersion];
   }
 
   size_t size;
@@ -113,7 +112,7 @@ NS_INLINE NSString* _platformName() {
   char* answer = malloc(size);
   sysctlbyname("hw.model", answer, &size, NULL, 0);
 
-  NSString* results = [NSString stringWithCString:answer encoding:NSUTF8StringEncoding];
+  NSString* results = [NSString stringWithUTF8String:answer];
   free(answer);
   return results;
 }

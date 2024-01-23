@@ -8,28 +8,42 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
-import io.flutter.embedding.engine.dynamicfeatures.PlayStoreDynamicFeatureManager;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class FlutterInjectorTest {
   @Mock FlutterLoader mockFlutterLoader;
-  @Mock PlayStoreDynamicFeatureManager mockDynamicFeatureManager;
+  @Mock PlayStoreDeferredComponentManager mockDeferredComponentManager;
+  @Mock ExecutorService mockExecutorService;
 
   @Before
   public void setUp() {
     // Since the intent is to have a convenient static class to use for production.
     FlutterInjector.reset();
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
+  }
+
+  @After
+  public void tearDown() {
+    FlutterInjector.reset();
   }
 
   @Test
@@ -37,7 +51,32 @@ public class FlutterInjectorTest {
     // Implicitly builds when first accessed.
     FlutterInjector injector = FlutterInjector.instance();
     assertNotNull(injector.flutterLoader());
-    assertNull(injector.dynamicFeatureManager());
+    assertNull(injector.deferredComponentManager());
+    assertNotNull(injector.executorService());
+  }
+
+  @Test
+  public void executorCreatesAndNamesNewThreadsByDefault()
+      throws InterruptedException, ExecutionException {
+    // Implicitly builds when first accessed.
+    FlutterInjector injector = FlutterInjector.instance();
+
+    List<Callable<String>> callables =
+        Arrays.asList(
+            () -> {
+              return Thread.currentThread().getName();
+            },
+            () -> {
+              return Thread.currentThread().getName();
+            });
+
+    List<Future<String>> threadNames;
+    threadNames = injector.executorService().invokeAll(callables);
+
+    assertEquals(threadNames.size(), 2);
+    for (Future<String> name : threadNames) {
+      assertTrue(name.get().startsWith("flutter-worker-"));
+    }
   }
 
   @Test
@@ -49,11 +88,21 @@ public class FlutterInjectorTest {
   }
 
   @Test
-  public void canInjectDynamicFeatureManager() {
+  public void canInjectDeferredComponentManager() {
     FlutterInjector.setInstance(
-        new FlutterInjector.Builder().setDynamicFeatureManager(mockDynamicFeatureManager).build());
+        new FlutterInjector.Builder()
+            .setDeferredComponentManager(mockDeferredComponentManager)
+            .build());
     FlutterInjector injector = FlutterInjector.instance();
-    assertEquals(injector.dynamicFeatureManager(), mockDynamicFeatureManager);
+    assertEquals(injector.deferredComponentManager(), mockDeferredComponentManager);
+  }
+
+  @Test
+  public void canInjectExecutorService() {
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setExecutorService(mockExecutorService).build());
+    FlutterInjector injector = FlutterInjector.instance();
+    assertEquals(injector.executorService(), mockExecutorService);
   }
 
   @Test()

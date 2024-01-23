@@ -2,17 +2,17 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/dart/utils/application_snapshot.gni")
+import("//flutter/build/dart/rules.gni")
 
 application_snapshot("const_finder") {
   main_dart = "bin/main.dart"
-  dot_packages = ".dart_tool/package_config.json"
+  package_config = ".dart_tool/package_config.json"
+  snapshot_kind = "kernel"
 
   training_args = [ "--help" ]
 
   inputs = [
     "bin/main.dart",
-    "lib/const_finder.dart",
     ".dart_tool/package_config.json",
   ]
 

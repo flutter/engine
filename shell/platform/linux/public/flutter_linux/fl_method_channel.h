@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_CHANNEL_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_CHANNEL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_CHANNEL_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_CHANNEL_H_
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
@@ -11,6 +11,7 @@
 
 #include <gio/gio.h>
 #include <glib-object.h>
+#include <gmodule.h>
 
 #include "fl_binary_messenger.h"
 #include "fl_method_call.h"
@@ -19,6 +20,7 @@
 
 G_BEGIN_DECLS
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlMethodChannel,
                      fl_method_channel,
                      FL,
@@ -44,17 +46,22 @@ G_DECLARE_FINAL_TYPE(FlMethodChannel,
  *     g_autoptr(GError) bar_error = NULL;
  *     g_autoptr(FlValue) result =
  *         do_bar (fl_method_call_get_args (method_call), &bar_error);
- *     if (result == NULL)
+ *     if (result == NULL) {
  *       response =
  *         FL_METHOD_RESPONSE (fl_method_error_response_new ("bar error",
- *                                                           bar_error->message));
- *     else
- *       response = FL_METHOD_RESPONSE (fl_method_success_response_new
- * (result)); } else response = FL_METHOD_RESPONSE
- * (fl_method_not_implemented_response_new ());
+ *                                                           bar_error->message,
+ *                                                           nullptr);
+ *     } else {
+ *       response =
+ *         FL_METHOD_RESPONSE (fl_method_success_response_new (result));
+ *     }
+ *   } else {
+ *     response =
+ *       FL_METHOD_RESPONSE (fl_method_not_implemented_response_new ());
+ *   }
  *
  *   g_autoptr(GError) error = NULL;
- *   if (!fl_method_call_respond(method_call, response))
+ *   if (!fl_method_call_respond(method_call, response, &error))
  *     g_warning ("Failed to send response: %s", error->message);
  * }
  *
@@ -187,4 +194,4 @@ FlMethodResponse* fl_method_channel_invoke_method_finish(
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_CHANNEL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_CHANNEL_H_

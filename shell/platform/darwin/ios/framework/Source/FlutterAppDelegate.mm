@@ -11,9 +11,10 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPluginAppLifeCycleDelegate_internal.h"
 
-static NSString* kUIBackgroundMode = @"UIBackgroundModes";
-static NSString* kRemoteNotificationCapabitiliy = @"remote-notification";
-static NSString* kBackgroundFetchCapatibility = @"fetch";
+static NSString* const kUIBackgroundMode = @"UIBackgroundModes";
+static NSString* const kRemoteNotificationCapabitiliy = @"remote-notification";
+static NSString* const kBackgroundFetchCapatibility = @"fetch";
+static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 
 @interface FlutterAppDelegate ()
 @property(nonatomic, copy) FlutterViewController* (^rootFlutterViewControllerGetter)(void);
@@ -33,6 +34,7 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 - (void)dealloc {
   [_lifeCycleDelegate release];
   [_rootFlutterViewControllerGetter release];
+  [_window release];
   [super dealloc];
 }
 
@@ -94,6 +96,12 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
       didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
 
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error {
+  [_lifeCycleDelegate application:application
+      didFailToRegisterForRemoteNotificationsWithError:error];
+}
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 - (void)application:(UIApplication*)application
@@ -105,14 +113,11 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center
        willPresentNotification:(UNNotification*)notification
          withCompletionHandler:
-             (void (^)(UNNotificationPresentationOptions options))completionHandler
-    NS_AVAILABLE_IOS(10_0) {
-  if (@available(iOS 10.0, *)) {
-    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
-      [_lifeCycleDelegate userNotificationCenter:center
-                         willPresentNotification:notification
-                           withCompletionHandler:completionHandler];
-    }
+             (void (^)(UNNotificationPresentationOptions options))completionHandler {
+  if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+    [_lifeCycleDelegate userNotificationCenter:center
+                       willPresentNotification:notification
+                         withCompletionHandler:completionHandler];
   }
 }
 
@@ -121,32 +126,19 @@ static NSString* kBackgroundFetchCapatibility = @"fetch";
  */
 - (void)userNotificationCenter:(UNUserNotificationCenter*)center
     didReceiveNotificationResponse:(UNNotificationResponse*)response
-             withCompletionHandler:(void (^)(void))completionHandler NS_AVAILABLE_IOS(10_0) {
-  if (@available(iOS 10.0, *)) {
-    if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
-      [_lifeCycleDelegate userNotificationCenter:center
-                  didReceiveNotificationResponse:response
-                           withCompletionHandler:completionHandler];
-    }
+             withCompletionHandler:(void (^)(void))completionHandler {
+  if ([_lifeCycleDelegate respondsToSelector:_cmd]) {
+    [_lifeCycleDelegate userNotificationCenter:center
+                didReceiveNotificationResponse:response
+                         withCompletionHandler:completionHandler];
   }
 }
 
-static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
-  NSNumber* isEnabled = [infoDictionary objectForKey:@"FlutterDeepLinkingEnabled"];
-  if (isEnabled) {
-    return [isEnabled boolValue];
-  } else {
-    return NO;
-  }
-}
-
-- (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
-    infoPlistGetter:(NSDictionary* (^)())infoPlistGetter {
-  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
-    return YES;
-  } else if (!IsDeepLinkingEnabled(infoPlistGetter())) {
+- (BOOL)openURL:(NSURL*)url {
+  NSNumber* isDeepLinkingEnabled =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"];
+  if (!isDeepLinkingEnabled.boolValue) {
+    // Not set or NO.
     return NO;
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
@@ -158,8 +150,11 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
                        FML_LOG(ERROR)
                            << "Timeout waiting for the first frame when launching an URL.";
                      } else {
-                       [flutterViewController.engine.navigationChannel invokeMethod:@"pushRoute"
-                                                                          arguments:url.path];
+                       [flutterViewController.engine.navigationChannel
+                           invokeMethod:@"pushRouteInformation"
+                              arguments:@{
+                                @"location" : url.absoluteString ?: [NSNull null],
+                              }];
                      }
                    }];
       return YES;
@@ -173,12 +168,10 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  return [self application:application
-                   openURL:url
-                   options:options
-           infoPlistGetter:^NSDictionary*() {
-             return [[NSBundle mainBundle] infoDictionary];
-           }];
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  }
+  return [self openURL:url];
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -197,7 +190,7 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
 
 - (void)application:(UIApplication*)application
     performActionForShortcutItem:(UIApplicationShortcutItem*)shortcutItem
-               completionHandler:(void (^)(BOOL succeeded))completionHandler NS_AVAILABLE_IOS(9_0) {
+               completionHandler:(void (^)(BOOL succeeded))completionHandler {
   [_lifeCycleDelegate application:application
       performActionForShortcutItem:shortcutItem
                  completionHandler:completionHandler];
@@ -211,19 +204,16 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
                         completionHandler:completionHandler];
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 120000
 - (BOOL)application:(UIApplication*)application
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>>* __nullable
                                        restorableObjects))restorationHandler {
-#else
-- (BOOL)application:(UIApplication*)application
-    continueUserActivity:(NSUserActivity*)userActivity
-      restorationHandler:(void (^)(NSArray* __nullable restorableObjects))restorationHandler {
-#endif
-  return [_lifeCycleDelegate application:application
-                    continueUserActivity:userActivity
-                      restorationHandler:restorationHandler];
+  if ([_lifeCycleDelegate application:application
+                 continueUserActivity:userActivity
+                   restorationHandler:restorationHandler]) {
+    return YES;
+  }
+  return [self openURL:userActivity.webpageURL];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
@@ -306,6 +296,39 @@ static BOOL IsDeepLinkingEnabled(NSDictionary* infoDictionary) {
             @"to the list of your supported UIBackgroundModes in your Info.plist.");
     }
   }
+}
+
+#pragma mark - State Restoration
+
+- (BOOL)application:(UIApplication*)application shouldSaveApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application shouldRestoreApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
+  return self.lastAppModificationTime == stateDate;
+}
+
+- (BOOL)application:(UIApplication*)application shouldSaveSecureApplicationState:(NSCoder*)coder {
+  [coder encodeInt64:self.lastAppModificationTime forKey:kRestorationStateAppModificationKey];
+  return YES;
+}
+
+- (BOOL)application:(UIApplication*)application
+    shouldRestoreSecureApplicationState:(NSCoder*)coder {
+  int64_t stateDate = [coder decodeInt64ForKey:kRestorationStateAppModificationKey];
+  return self.lastAppModificationTime == stateDate;
+}
+
+- (int64_t)lastAppModificationTime {
+  NSDate* fileDate;
+  NSError* error = nil;
+  [[[NSBundle mainBundle] executableURL] getResourceValue:&fileDate
+                                                   forKey:NSURLContentModificationDateKey
+                                                    error:&error];
+  NSAssert(error == nil, @"Cannot obtain modification date of main bundle: %@", error);
+  return [fileDate timeIntervalSince1970];
 }
 
 @end

@@ -1,18 +1,51 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 name: scenario_app
 publish_to: none
 environment:
-  sdk: '>=2.12.0-0 <3.0.0'
+  sdk: '>=3.2.0-0 <4.0.0'
 
+# Do not add any dependencies that require more than what is provided in
+# //third_party/dart/pkg, //third_party/dart/third_party/pkg, or
+# //third_party/pkg. In particular, package:test is not usable here.
 
-# These are for convenience during local development. Changing them will not
-# impact the build.
+# If you do add packages here, make sure you can run `pub get --offline`, and
+# check the .packages and .package_config to make sure all the paths are
+# relative to this directory into //third_party/dart, or //third_party/pkg
 dependencies:
-  sky_engine:
-    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_engine
-  sky_services:
-    path: ../../../out/host_debug_unopt/gen/dart-pkg/sky_services
-  vector_math: ^2.0.8
+  args: any
+  path: any
+  process: any
+  sky_engine: any
+  vector_math: any
+  skia_gold_client: any
 
 dependency_overrides:
+  args:
+    path: ../../../third_party/dart/third_party/pkg/args
+  collection:
+    path: ../../../third_party/dart/third_party/pkg/collection
+  crypto:
+    path: ../../../third_party/dart/third_party/pkg/crypto
+  engine_repo_tools:
+    path: ../../tools/pkg/engine_repo_tools
+  file:
+    path: ../../../third_party/dart/third_party/pkg/file/packages/file
   meta:
     path: ../../../third_party/dart/pkg/meta
+  path:
+    path: ../../../third_party/dart/third_party/pkg/path
+  platform:
+    path: ../../third_party/pkg/platform
+  process:
+    path: ../../third_party/pkg/process
+  skia_gold_client:
+    path: ../../testing/skia_gold_client
+  sky_engine:
+    path: ../../sky/packages/sky_engine
+  typed_data:
+    path: ../../../third_party/dart/third_party/pkg/typed_data
+  vector_math:
+    path: ../../third_party/pkg/vector_math

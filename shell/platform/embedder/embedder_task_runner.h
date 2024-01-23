@@ -34,7 +34,7 @@ class EmbedderTaskRunner final : public fml::TaskRunner {
                        fml::TimePoint target_time)>
         post_task_callback;
     //--------------------------------------------------------------------------
-    /// Asks the embedder if tasks posted to it on this task task runner via the
+    /// Asks the embedder if tasks posted to it on this task runner via the
     /// `post_task_callback` will be executed (after task expiry) on the calling
     /// thread.
     ///
@@ -75,7 +75,7 @@ class EmbedderTaskRunner final : public fml::TaskRunner {
   const size_t embedder_identifier_;
   DispatchTable dispatch_table_;
   std::mutex tasks_mutex_;
-  uint64_t last_baton_;
+  uint64_t last_baton_ = 0;
   std::unordered_map<uint64_t, fml::closure> pending_tasks_;
   fml::TaskQueueId placeholder_id_;
 

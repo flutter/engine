@@ -4,13 +4,20 @@
 
 #include "testing.h"
 
+#include <utility>
+
 #include "flutter/fml/file.h"
+#include "flutter/fml/paths.h"
 
 namespace flutter {
 namespace testing {
 
 std::string GetCurrentTestName() {
   return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+}
+
+std::string GetDefaultKernelFilePath() {
+  return fml::paths::JoinPaths({GetFixturesPath(), "kernel_blob.bin"});
 }
 
 fml::UniqueFD OpenFixturesDirectory() {
@@ -27,7 +34,7 @@ fml::UniqueFD OpenFixturesDirectory() {
   return fixtures_directory;
 }
 
-fml::UniqueFD OpenFixture(std::string fixture_name) {
+fml::UniqueFD OpenFixture(const std::string& fixture_name) {
   if (fixture_name.size() == 0) {
     FML_LOG(ERROR) << "Invalid fixture name.";
     return {};
@@ -49,8 +56,24 @@ fml::UniqueFD OpenFixture(std::string fixture_name) {
   return fixture_fd;
 }
 
-std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(std::string fixture_name) {
+std::unique_ptr<fml::Mapping> OpenFixtureAsMapping(
+    const std::string& fixture_name) {
   return fml::FileMapping::CreateReadOnly(OpenFixture(fixture_name));
+}
+
+sk_sp<SkData> OpenFixtureAsSkData(const std::string& fixture_name) {
+  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
+  if (!mapping) {
+    return nullptr;
+  }
+  auto data = SkData::MakeWithProc(
+      mapping->GetMapping(), mapping->GetSize(),
+      [](const void* ptr, void* context) {
+        delete reinterpret_cast<fml::Mapping*>(context);
+      },
+      mapping.get());
+  mapping.release();
+  return data;
 }
 
 bool MemsetPatternSetOrCheck(uint8_t* buffer, size_t size, MemsetPatternOp op) {

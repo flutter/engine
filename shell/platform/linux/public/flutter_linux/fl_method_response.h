@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_RESPONSE_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_RESPONSE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_RESPONSE_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_RESPONSE_H_
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
 #endif
 
 #include <glib-object.h>
+#include <gmodule.h>
 
 #include "fl_value.h"
 
@@ -29,13 +30,16 @@ G_BEGIN_DECLS
 #define FL_METHOD_RESPONSE_ERROR fl_method_response_error_quark()
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_METHOD_RESPONSE_ERROR_FAILED,
   FL_METHOD_RESPONSE_ERROR_REMOTE_ERROR,
   FL_METHOD_RESPONSE_ERROR_NOT_IMPLEMENTED,
+  // NOLINTEND(readability-identifier-naming)
 } FlMethodResponseError;
 
 GQuark fl_method_response_error_quark(void) G_GNUC_CONST;
 
+G_MODULE_EXPORT
 G_DECLARE_DERIVABLE_TYPE(FlMethodResponse,
                          fl_method_response,
                          FL,
@@ -46,18 +50,21 @@ struct _FlMethodResponseClass {
   GObjectClass parent_class;
 };
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlMethodSuccessResponse,
                      fl_method_success_response,
                      FL,
                      METHOD_SUCCESS_RESPONSE,
                      FlMethodResponse)
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlMethodErrorResponse,
                      fl_method_error_response,
                      FL,
                      METHOD_ERROR_RESPONSE,
                      FlMethodResponse)
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlMethodNotImplementedResponse,
                      fl_method_not_implemented_response,
                      FL,
@@ -85,7 +92,7 @@ G_DECLARE_FINAL_TYPE(FlMethodNotImplementedResponse,
  *                   fl_method_error_response_get_message (error_response),
  *                   fl_method_error_response_get_details (error_response));
  *   }
- *   else if (FL_IS_METHOD_ERROR_RESPONSE (response)) {
+ *   else if (FL_IS_METHOD_NOT_IMPLEMENTED_RESPONSE (response)) {
  *     handle_not_implemented ();
  *   }
  * }
@@ -209,4 +216,4 @@ FlMethodNotImplementedResponse* fl_method_not_implemented_response_new();
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_METHOD_RESPONSE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_METHOD_RESPONSE_H_

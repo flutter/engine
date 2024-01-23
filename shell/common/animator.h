@@ -8,6 +8,7 @@
 #include <deque>
 
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/frame_timings.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/synchronization/semaphore.h"
@@ -30,26 +31,39 @@ class Animator final {
  public:
   class Delegate {
    public:
-    virtual void OnAnimatorBeginFrame(fml::TimePoint frame_target_time) = 0;
+    virtual void OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
+                                      uint64_t frame_number) = 0;
 
-    virtual void OnAnimatorNotifyIdle(int64_t deadline) = 0;
+    virtual void OnAnimatorNotifyIdle(fml::TimeDelta deadline) = 0;
 
-    virtual void OnAnimatorDraw(
-        fml::RefPtr<Pipeline<flutter::LayerTree>> pipeline,
+    virtual void OnAnimatorUpdateLatestFrameTargetTime(
         fml::TimePoint frame_target_time) = 0;
 
-    virtual void OnAnimatorDrawLastLayerTree() = 0;
+    virtual void OnAnimatorDraw(std::shared_ptr<FramePipeline> pipeline) = 0;
+
+    virtual void OnAnimatorDrawLastLayerTrees(
+        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
   };
 
   Animator(Delegate& delegate,
-           TaskRunners task_runners,
+           const TaskRunners& task_runners,
            std::unique_ptr<VsyncWaiter> waiter);
 
   ~Animator();
 
-  void RequestFrame(bool regenerate_layer_tree = true);
+  void RequestFrame(bool regenerate_layer_trees = true);
 
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
+  //--------------------------------------------------------------------------
+  /// @brief    Tells the Animator that this frame needs to render another view.
+  ///
+  ///           This method must be called during a vsync callback, or
+  ///           technically, between Animator::BeginFrame and Animator::EndFrame
+  ///           (both private methods). Otherwise, this call will be ignored.
+  ///
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+              float device_pixel_ratio);
+
+  const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
   //--------------------------------------------------------------------------
   /// @brief    Schedule a secondary callback to be executed right after the
@@ -63,53 +77,44 @@ class Animator final {
   ///           secondary callback will still be executed at vsync.
   ///
   ///           This callback is used to provide the vsync signal needed by
-  ///           `SmoothPointerDataDispatcher`.
+  ///           `SmoothPointerDataDispatcher`, and for our own flow events.
   ///
   /// @see      `PointerDataDispatcher::ScheduleSecondaryVsyncCallback`.
-  void ScheduleSecondaryVsyncCallback(const fml::closure& callback);
+  void ScheduleSecondaryVsyncCallback(uintptr_t id,
+                                      const fml::closure& callback);
 
-  void Start();
-
-  void Stop();
-
-  void SetDimensionChangePending();
-
-  // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The corresponding flow
-  // will be ended during the next |BeginFrame|.
+  // Enqueue |trace_flow_id| into |trace_flow_ids_|.  The flow event will be
+  // ended at either the next frame, or the next vsync interval with no active
+  // rendering.
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
  private:
-  using LayerTreePipeline = Pipeline<flutter::LayerTree>;
+  void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
-  void BeginFrame(fml::TimePoint frame_start_time,
-                  fml::TimePoint frame_target_time);
+  bool CanReuseLastLayerTrees();
 
-  bool CanReuseLastLayerTree();
-  void DrawLastLayerTree();
+  void DrawLastLayerTrees(
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   void AwaitVSync();
 
-  const char* FrameParity();
+  // Clear |trace_flow_ids_| if |frame_scheduled_| is false.
+  void ScheduleMaybeClearTraceFlowIds();
 
   Delegate& delegate_;
   TaskRunners task_runners_;
   std::shared_ptr<VsyncWaiter> waiter_;
 
-  fml::TimePoint last_frame_begin_time_;
-  fml::TimePoint last_vsync_start_time_;
-  fml::TimePoint last_frame_target_time_;
-  int64_t dart_frame_deadline_;
-  fml::RefPtr<LayerTreePipeline> layer_tree_pipeline_;
+  std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
+  uint64_t frame_request_number_ = 1;
+  fml::TimeDelta dart_frame_deadline_;
+  std::shared_ptr<FramePipeline> layer_tree_pipeline_;
   fml::Semaphore pending_frame_semaphore_;
-  LayerTreePipeline::ProducerContinuation producer_continuation_;
-  int64_t frame_number_;
-  bool paused_;
-  bool regenerate_layer_tree_;
-  bool frame_scheduled_;
-  int notify_idle_task_id_;
-  bool dimension_change_pending_;
-  SkISize last_layer_tree_size_ = {0, 0};
+  FramePipeline::ProducerContinuation producer_continuation_;
+  bool regenerate_layer_trees_ = false;
+  bool frame_scheduled_ = false;
   std::deque<uint64_t> trace_flow_ids_;
+  bool has_rendered_ = false;
 
   fml::WeakPtrFactory<Animator> weak_factory_;
 

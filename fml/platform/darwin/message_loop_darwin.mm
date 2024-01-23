@@ -13,6 +13,8 @@ namespace fml {
 
 static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 
+CFStringRef MessageLoopDarwin::kMessageLoopCFRunLoopMode = CFSTR("fmlMessageLoop");
+
 MessageLoopDarwin::MessageLoopDarwin()
     : running_(false), loop_((CFRunLoopRef)CFRetain(CFRunLoopGetCurrent())) {
   FML_DCHECK(loop_ != nullptr);
@@ -29,11 +31,14 @@ MessageLoopDarwin::MessageLoopDarwin()
                            &timer_context /* context */));
   FML_DCHECK(delayed_wake_timer_ != nullptr);
   CFRunLoopAddTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
+  // This mode will be used by FlutterKeyboardManager.
+  CFRunLoopAddTimer(loop_, delayed_wake_timer_, kMessageLoopCFRunLoopMode);
 }
 
 MessageLoopDarwin::~MessageLoopDarwin() {
   CFRunLoopTimerInvalidate(delayed_wake_timer_);
   CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, kCFRunLoopCommonModes);
+  CFRunLoopRemoveTimer(loop_, delayed_wake_timer_, kMessageLoopCFRunLoopMode);
 }
 
 void MessageLoopDarwin::Run() {
@@ -58,7 +63,12 @@ void MessageLoopDarwin::Run() {
 
 void MessageLoopDarwin::Terminate() {
   running_ = false;
-  CFRunLoopStop(loop_);
+
+  // Ensure that the CFRunLoop remains alive through the end of this function
+  // even if the loop's thread exits and drops its reference to the loop.
+  CFRef<CFRunLoopRef> local_loop(loop_);
+
+  CFRunLoopStop(local_loop);
 }
 
 void MessageLoopDarwin::WakeUp(fml::TimePoint time_point) {

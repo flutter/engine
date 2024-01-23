@@ -5,6 +5,9 @@
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/testing/testing.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 namespace testing {
 
@@ -51,7 +54,12 @@ static void TestSimulatedInputEvents(
     bool restart_engine = false) {
   ///// Begin constructing shell ///////////////////////////////////////////////
   auto settings = fixture->CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = fixture->CreateShell(settings, true);
+  std::unique_ptr<Shell> shell = fixture->CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
+  });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");
@@ -275,7 +283,9 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
   // We don't use `constexpr int frame_time` here because MSVC doesn't handle
   // it well with lambda capture.
   UnitlessTime frame_time = 10000;
-  for (double base_latency_f = 0; base_latency_f < 1; base_latency_f += 0.1) {
+  double base_latency_f = 0.0;
+  for (int i = 0; i < 10; i++) {
+    base_latency_f += 0.1;
     // Everything is converted to int to avoid floating point error in
     // TestSimulatedInputEvents.
     UnitlessTime base_latency =
@@ -295,7 +305,12 @@ TEST_F(ShellTest, HandlesActualIphoneXsInputEvents) {
 TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
   // Sets up shell with test fixture.
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings, true);
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
+  });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");
@@ -356,7 +371,12 @@ TEST_F(ShellTest, CanCorrectlyPipePointerPacket) {
 TEST_F(ShellTest, CanCorrectlySynthesizePointerPacket) {
   // Sets up shell with test fixture.
   auto settings = CreateSettingsForFixture();
-  std::unique_ptr<Shell> shell = CreateShell(settings, true);
+  std::unique_ptr<Shell> shell = CreateShell({
+      .settings = settings,
+      .platform_view_create_callback = ShellTestPlatformViewBuilder({
+          .simulate_vsync = true,
+      }),
+  });
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("onPointerDataPacketMain");
@@ -414,3 +434,5 @@ TEST_F(ShellTest, CanCorrectlySynthesizePointerPacket) {
 
 }  // namespace testing
 }  // namespace flutter
+
+// NOLINTEND(clang-analyzer-core.StackAddressEscape)

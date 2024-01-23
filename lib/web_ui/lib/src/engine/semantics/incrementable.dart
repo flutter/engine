@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import '../platform_dispatcher.dart';
+import 'focusable.dart';
+import 'semantics.dart';
 
 /// Adds increment/decrement event handling to a semantics object.
 ///
@@ -14,38 +18,22 @@ part of engine;
 /// The input element is disabled whenever the gesture mode switches to pointer
 /// events. This is to prevent the browser from taking over drag gestures. Drag
 /// gestures must be interpreted by the Flutter framework.
-class Incrementable extends RoleManager {
-  /// The HTML element used to render semantics to the browser.
-  final html.InputElement _element = html.InputElement();
-
-  /// The value used by the input element.
-  ///
-  /// Flutter values are strings, and are not necessarily numbers. In order to
-  /// convey to the browser what the available "range" of values is we
-  /// substitute the framework value with a generated `int` surrogate.
-  /// "aria-valuetext" attribute is used to cause the browser to announce the
-  /// framework value to the user.
-  int _currentSurrogateValue = 1;
-
-  /// Disables the input [_element] when the gesture mode switches to
-  /// [GestureMode.pointerEvents], and enables it when the mode switches back to
-  /// [GestureMode.browserGestures].
-  GestureModeCallback? _gestureModeListener;
-
-  /// Whether we forwarded a semantics action to the framework and awaiting an
-  /// update.
-  ///
-  /// This field is used to determine whether the HTML DOM of the semantics
-  /// tree should be updated.
-  bool _pendingResync = false;
-
+class Incrementable extends PrimaryRoleManager {
   Incrementable(SemanticsObject semanticsObject)
-      : super(Role.incrementable, semanticsObject) {
-    semanticsObject.element.append(_element);
+      : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
+        super.blank(PrimaryRole.incrementable, semanticsObject) {
+    // The following generic roles can coexist with incrementables. Generic focus
+    // management is not used by this role because the root DOM element is not
+    // the one being focused on, but the internal `<input>` element.
+    addLiveRegion();
+    addRouteName();
+    addLabelAndValue();
+
+    append(_element);
     _element.type = 'range';
     _element.setAttribute('role', 'slider');
 
-    _element.addEventListener('change', (_) {
+    _element.addEventListener('change', createDomEventListener((_) {
       if (_element.disabled!) {
         return;
       }
@@ -60,31 +48,65 @@ class Incrementable extends RoleManager {
         EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
             semanticsObject.id, ui.SemanticsAction.decrease, null);
       }
-    });
+    }));
 
     // Store the callback as a closure because Dart does not guarantee that
     // tear-offs produce the same function object.
     _gestureModeListener = (GestureMode mode) {
       update();
     };
-    semanticsObject.owner.addGestureModeListener(_gestureModeListener);
+    EngineSemantics.instance.addGestureModeListener(_gestureModeListener);
+    _focusManager.manage(semanticsObject.id, _element);
   }
 
   @override
+  bool focusAsRouteDefault() {
+    _element.focus();
+    return true;
+  }
+
+  /// The HTML element used to render semantics to the browser.
+  final DomHTMLInputElement _element = createDomHTMLInputElement();
+
+  final AccessibilityFocusManager _focusManager;
+
+  /// The value used by the input element.
+  ///
+  /// Flutter values are strings, and are not necessarily numbers. In order to
+  /// convey to the browser what the available "range" of values is we
+  /// substitute the framework value with a generated `int` surrogate.
+  /// "aria-valuetext" attribute is used to cause the browser to announce the
+  /// framework value to the user.
+  int _currentSurrogateValue = 1;
+
+  /// Disables the input [_element] when the gesture mode switches to
+  /// [GestureMode.pointerEvents], and enables it when the mode switches back to
+  /// [GestureMode.browserGestures].
+  late final GestureModeCallback _gestureModeListener;
+
+  /// Whether we forwarded a semantics action to the framework and awaiting an
+  /// update.
+  ///
+  /// This field is used to determine whether the HTML DOM of the semantics
+  /// tree should be updated.
+  bool _pendingResync = false;
+
+  @override
   void update() {
-    switch (semanticsObject.owner.gestureMode) {
+    super.update();
+
+    switch (EngineSemantics.instance.gestureMode) {
       case GestureMode.browserGestures:
         _enableBrowserGestureHandling();
         _updateInputValues();
-        break;
       case GestureMode.pointerEvents:
         _disableBrowserGestureHandling();
-        break;
     }
+    _focusManager.changeFocus(semanticsObject.hasFocus);
   }
 
   void _enableBrowserGestureHandling() {
-    assert(semanticsObject.owner.gestureMode == GestureMode.browserGestures);
+    assert(EngineSemantics.instance.gestureMode == GestureMode.browserGestures);
     if (!_element.disabled!) {
       return;
     }
@@ -92,7 +114,7 @@ class Incrementable extends RoleManager {
   }
 
   void _updateInputValues() {
-    assert(semanticsObject.owner.gestureMode == GestureMode.browserGestures);
+    assert(EngineSemantics.instance.gestureMode == GestureMode.browserGestures);
 
     final bool updateNeeded = _pendingResync ||
         semanticsObject.isValueDirty ||
@@ -132,9 +154,9 @@ class Incrementable extends RoleManager {
 
   @override
   void dispose() {
-    assert(_gestureModeListener != null);
-    semanticsObject.owner.removeGestureModeListener(_gestureModeListener);
-    _gestureModeListener = null;
+    super.dispose();
+    _focusManager.stopManaging();
+    EngineSemantics.instance.removeGestureModeListener(_gestureModeListener);
     _disableBrowserGestureHandling();
     _element.remove();
   }

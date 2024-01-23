@@ -4,9 +4,18 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 
 @implementation FlutterCallbackInformation
+
+- (void)dealloc {
+  [_callbackName release];
+  [_callbackClassName release];
+  [_callbackLibraryPath release];
+  [super dealloc];
+}
+
 @end
 
 @implementation FlutterCallbackCache
@@ -24,7 +33,7 @@
 }
 
 + (void)setCachePath:(NSString*)path {
-  assert(path != nil);
+  FML_DCHECK(path != nil);
   flutter::DartCallbackCache::SetCachePath([path UTF8String]);
   NSString* cache_path =
       [NSString stringWithUTF8String:flutter::DartCallbackCache::GetCachePath().c_str()];

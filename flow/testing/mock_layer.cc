@@ -4,38 +4,81 @@
 
 #include "flutter/flow/testing/mock_layer.h"
 
+#include <utility>
+
+#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/layer.h"
+#include "flutter/flow/testing/mock_raster_cache.h"
 namespace flutter {
 namespace testing {
 
-MockLayer::MockLayer(SkPath path,
-                     SkPaint paint,
-                     bool fake_has_platform_view,
-                     bool fake_needs_system_composite,
-                     bool fake_reads_surface)
-    : fake_paint_path_(path),
-      fake_paint_(paint),
-      fake_has_platform_view_(fake_has_platform_view),
-      fake_needs_system_composite_(fake_needs_system_composite),
-      fake_reads_surface_(fake_reads_surface) {}
+MockLayer::MockLayer(const SkPath& path, DlPaint paint)
+    : fake_paint_path_(path), fake_paint_(std::move(paint)) {}
 
-void MockLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  parent_mutators_ = context->mutators_stack;
-  parent_matrix_ = matrix;
-  parent_cull_rect_ = context->cull_rect;
-  parent_has_platform_view_ = context->has_platform_view;
+bool MockLayer::IsReplacing(DiffContext* context, const Layer* layer) const {
+  // Similar to PictureLayer, only return true for identical mock layers;
+  // That way ContainerLayer::DiffChildren can properly detect mock layer
+  // insertion
+  auto mock_layer = layer->as_mock_layer();
+  return mock_layer && mock_layer->fake_paint_ == fake_paint_ &&
+         mock_layer->fake_paint_path_ == fake_paint_path_;
+}
 
-  context->has_platform_view = fake_has_platform_view_;
+void MockLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  context->AddLayerBounds(fake_paint_path_.getBounds());
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+void MockLayer::Preroll(PrerollContext* context) {
+  context->state_stack.fill(&parent_mutators_);
+  parent_matrix_ = context->state_stack.transform_3x3();
+  parent_cull_rect_ = context->state_stack.local_cull_rect();
+
+  set_parent_has_platform_view(context->has_platform_view);
+  set_parent_has_texture_layer(context->has_texture_layer);
+
+  context->has_platform_view = fake_has_platform_view();
+  context->has_texture_layer = fake_has_texture_layer();
   set_paint_bounds(fake_paint_path_.getBounds());
-  set_needs_system_composite(fake_needs_system_composite_);
-  if (fake_reads_surface_) {
+  if (fake_reads_surface()) {
     context->surface_needs_readback = true;
+  }
+  if (fake_opacity_compatible()) {
+    context->renderable_state_flags = LayerStateStack::kCallerCanApplyOpacity;
   }
 }
 
 void MockLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
-  context.leaf_nodes_canvas->drawPath(fake_paint_path_, fake_paint_);
+  if (expected_paint_matrix_.has_value()) {
+    SkMatrix matrix = context.canvas->GetTransform();
+
+    EXPECT_EQ(matrix, expected_paint_matrix_.value());
+  }
+
+  DlPaint paint = fake_paint_;
+  context.state_stack.fill(paint);
+  context.canvas->DrawPath(fake_paint_path_, paint);
+}
+
+void MockCacheableContainerLayer::Preroll(PrerollContext* context) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
+  auto cache = AutoCache(layer_raster_cache_item_.get(), context,
+                         context->state_stack.transform_3x3());
+
+  ContainerLayer::Preroll(context);
+}
+
+void MockCacheableLayer::Preroll(PrerollContext* context) {
+  Layer::AutoPrerollSaveLayerState save =
+      Layer::AutoPrerollSaveLayerState::Create(context);
+  auto cache = AutoCache(raster_cache_item_.get(), context,
+                         context->state_stack.transform_3x3());
+
+  MockLayer::Preroll(context);
 }
 
 }  // namespace testing

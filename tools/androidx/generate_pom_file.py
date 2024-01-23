@@ -1,9 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+#
 # Copyright 2019 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import argparse
+import datetime
 import os
 import sys
 import json
@@ -34,19 +36,68 @@ POM_DEPENDENCY = '''
     </dependency>
 '''
 
+MAVEN_METADATA_CONTENT = '''
+<metadata xmlns="http://maven.apache.org/METADATA/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/METADATA/1.1.0 http://maven.apache.org/xsd/metadata-1.1.0.xsd" modelVersion="1.1.0">
+  <groupId>io.flutter</groupId>
+  <artifactId>{0}</artifactId>
+  <version>{1}</version>
+  <versioning>
+    <versions>
+      <version>{1}</version>
+    </versions>
+    <snapshot>
+      <timestamp>{2}</timestamp>
+      <buildNumber>0</buildNumber>
+    </snapshot>
+    <snapshotVersions>
+      <snapshotVersion>
+        <extension>jar</extension>
+        <value>{1}</value>
+      </snapshotVersion>
+      <snapshotVersion>
+        <extension>pom</extension>
+        <value>{1}</value>
+      </snapshotVersion>
+    </snapshotVersions>
+  </versioning>
+</metadata>
+'''
+
+
+def utf8(s):
+  return str(s, 'utf-8') if isinstance(s, (bytes, bytearray)) else s
+
+
 def main():
-  with open (os.path.join(THIS_DIR, 'files.json')) as f:
+  with open(os.path.join(THIS_DIR, 'files.json')) as f:
     dependencies = json.load(f)
 
-  parser = argparse.ArgumentParser(description='Generate the POM file for the engine artifacts')
-  parser.add_argument('--engine-artifact-id', type=str, required=True,
-                      help='The artifact id. e.g. android_arm_release')
-  parser.add_argument('--engine-version', type=str, required=True,
-                      help='The engine commit hash')
-  parser.add_argument('--destination', type=str, required=True,
-                      help='The destination directory absolute path')
-  parser.add_argument('--include-embedding-dependencies', type=bool,
-                      help='Include the dependencies for the embedding')
+  parser = argparse.ArgumentParser(
+      description='Generate the POM file for the engine artifacts'
+  )
+  parser.add_argument(
+      '--engine-artifact-id',
+      type=utf8,
+      required=True,
+      help='The artifact id. e.g. android_arm_release'
+  )
+  parser.add_argument(
+      '--engine-version',
+      type=utf8,
+      required=True,
+      help='The engine commit hash'
+  )
+  parser.add_argument(
+      '--destination',
+      type=utf8,
+      required=True,
+      help='The destination directory absolute path'
+  )
+  parser.add_argument(
+      '--include-embedding-dependencies',
+      type=bool,
+      help='Include the dependencies for the embedding'
+  )
 
   args = parser.parse_args()
   engine_artifact_id = args.engine_artifact_id
@@ -65,7 +116,23 @@ def main():
 
   # Write the POM file.
   with open(os.path.join(args.destination, out_file_name), 'w') as f:
-    f.write(POM_FILE_CONTENT.format(engine_artifact_id, artifact_version, pom_dependencies))
+    f.write(
+        POM_FILE_CONTENT.format(
+            engine_artifact_id, artifact_version, pom_dependencies
+        )
+    )
+
+  # Write the Maven metadata file.
+  with open(os.path.join(args.destination,
+                         '%s.maven-metadata.xml' % engine_artifact_id),
+            'w') as f:
+    timestamp = datetime.datetime.utcnow().strftime("%Y%m%d.%H%M%S")
+    f.write(
+        MAVEN_METADATA_CONTENT.format(
+            engine_artifact_id, artifact_version, timestamp
+        )
+    )
+
 
 if __name__ == '__main__':
   sys.exit(main())

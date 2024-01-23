@@ -25,7 +25,8 @@ import java.util.Set;
  *
  * <pre>
  * // Create the FlutterEngine that will back the Flutter UI.
- * FlutterEngine flutterEngine = new FlutterEngine(context);
+ * FlutterEngineGroup group = new FlutterEngineGroup(context);
+ * FlutterEngine flutterEngine = group.createAndRunDefaultEngine(context);
  *
  * // Create a ShimPluginRegistry and wrap the FlutterEngine with the shim.
  * ShimPluginRegistry shimPluginRegistry = new ShimPluginRegistry(flutterEngine, platformViewsController);
@@ -48,7 +49,8 @@ public class ShimPluginRegistry implements PluginRegistry {
   }
 
   @Override
-  public Registrar registrarFor(String pluginKey) {
+  @NonNull
+  public Registrar registrarFor(@NonNull String pluginKey) {
     Log.v(TAG, "Creating plugin Registrar for '" + pluginKey + "'");
     if (pluginMap.containsKey(pluginKey)) {
       throw new IllegalStateException("Plugin key " + pluginKey + " is already in use");
@@ -60,13 +62,13 @@ public class ShimPluginRegistry implements PluginRegistry {
   }
 
   @Override
-  public boolean hasPlugin(String pluginKey) {
+  public boolean hasPlugin(@NonNull String pluginKey) {
     return pluginMap.containsKey(pluginKey);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T valuePublishedByPlugin(String pluginKey) {
+  public <T> T valuePublishedByPlugin(@NonNull String pluginKey) {
     return (T) pluginMap.get(pluginKey);
   }
 

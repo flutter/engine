@@ -43,5 +43,22 @@ TEST_F(DartVMTest, OldGenHeapSize) {
   ASSERT_TRUE(vm);
 }
 
+TEST_F(DartVMTest, DisableTimelineEventHandler) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  fml::tracing::TraceSetTimelineEventHandler(nullptr);
+  auto settings = CreateSettingsForFixture();
+  settings.enable_timeline_event_handler = false;
+  auto vm = DartVMRef::Create(settings);
+  ASSERT_FALSE(fml::tracing::TraceHasTimelineEventHandler());
+}
+
+TEST_F(DartVMTest, TraceGetTimelineMicrosDoesNotGetClockWhenSystraceIsEnabled) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  auto settings = CreateSettingsForFixture();
+  settings.trace_systrace = true;
+  auto vm = DartVMRef::Create(settings);
+  ASSERT_EQ(-1, fml::tracing::TraceGetTimelineMicros());
+}
+
 }  // namespace testing
 }  // namespace flutter

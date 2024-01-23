@@ -111,13 +111,15 @@ static int OpenFdExec(const std::string& path, int dirfd) {
     dart_utils::Check(path[0] == '/', LOG_TAG);
     result = fdio_open_fd(
         path.c_str(),
-        fuchsia::io::OPEN_RIGHT_READABLE | fuchsia::io::OPEN_RIGHT_EXECUTABLE,
+        static_cast<uint32_t>(fuchsia::io::OpenFlags::RIGHT_READABLE |
+                              fuchsia::io::OpenFlags::RIGHT_EXECUTABLE),
         &fd);
   } else {
     dart_utils::Check(path[0] != '/', LOG_TAG);
     result = fdio_open_fd_at(
         dirfd, path.c_str(),
-        fuchsia::io::OPEN_RIGHT_READABLE | fuchsia::io::OPEN_RIGHT_EXECUTABLE,
+        static_cast<uint32_t>(fuchsia::io::OpenFlags::RIGHT_READABLE |
+                              fuchsia::io::OpenFlags::RIGHT_EXECUTABLE),
         &fd);
   }
   if (result != ZX_OK) {

@@ -6,11 +6,13 @@
 
 #include <cstring>
 
+FLUTTER_ASSERT_ARC
+
 @implementation FlutterBinaryCodec
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance = [FlutterBinaryCodec new];
+    _sharedInstance = [[FlutterBinaryCodec alloc] init];
   }
   return _sharedInstance;
 }
@@ -29,14 +31,15 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance = [FlutterStringCodec new];
+    _sharedInstance = [[FlutterStringCodec alloc] init];
   }
   return _sharedInstance;
 }
 
 - (NSData*)encode:(id)message {
-  if (message == nil)
+  if (message == nil) {
     return nil;
+  }
   NSAssert([message isKindOfClass:[NSString class]], @"");
   NSString* stringMessage = message;
   const char* utf8 = stringMessage.UTF8String;
@@ -44,9 +47,10 @@
 }
 
 - (NSString*)decode:(NSData*)message {
-  if (message == nil)
+  if (message == nil) {
     return nil;
-  return [[[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding] autorelease];
+  }
+  return [[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding];
 }
 @end
 
@@ -54,32 +58,35 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance = [FlutterJSONMessageCodec new];
+    _sharedInstance = [[FlutterJSONMessageCodec alloc] init];
   }
   return _sharedInstance;
 }
 
 - (NSData*)encode:(id)message {
-  if (message == nil)
+  if (message == nil) {
     return nil;
+  }
   NSData* encoding;
+  NSError* error;
   if ([message isKindOfClass:[NSArray class]] || [message isKindOfClass:[NSDictionary class]]) {
-    encoding = [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
+    encoding = [NSJSONSerialization dataWithJSONObject:message options:0 error:&error];
   } else {
     // NSJSONSerialization does not support top-level simple values.
     // We encode as singleton array, then extract the relevant bytes.
-    encoding = [NSJSONSerialization dataWithJSONObject:@[ message ] options:0 error:nil];
+    encoding = [NSJSONSerialization dataWithJSONObject:@[ message ] options:0 error:&error];
     if (encoding) {
       encoding = [encoding subdataWithRange:NSMakeRange(1, encoding.length - 2)];
     }
   }
-  NSAssert(encoding, @"Invalid JSON message, encoding failed");
+  NSAssert(encoding, @"Invalid JSON message, encoding failed: %@", error);
   return encoding;
 }
 
 - (id)decode:(NSData*)message {
-  if (message == nil)
+  if ([message length] == 0) {
     return nil;
+  }
   BOOL isSimpleValue = NO;
   id decoded = nil;
   if (0 < message.length) {
@@ -109,7 +116,7 @@
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
   if (!_sharedInstance) {
-    _sharedInstance = [FlutterJSONMethodCodec new];
+    _sharedInstance = [[FlutterJSONMethodCodec alloc] init];
   }
   return _sharedInstance;
 }
@@ -143,8 +150,9 @@
 
 - (id)decodeEnvelope:(NSData*)envelope {
   NSArray* array = [[FlutterJSONMessageCodec sharedInstance] decode:envelope];
-  if (array.count == 1)
+  if (array.count == 1) {
     return [self unwrapNil:array[0]];
+  }
   NSAssert(array.count == 3, @"Invalid JSON envelope");
   id code = array[0];
   id message = [self unwrapNil:array[1]];

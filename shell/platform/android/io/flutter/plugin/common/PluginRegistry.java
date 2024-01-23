@@ -7,6 +7,8 @@ package io.flutter.plugin.common;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -23,8 +25,8 @@ import io.flutter.view.TextureRegistry;
  * <p>In v1 Android applications, an auto-generated and auto-updated plugin registrant class
  * (GeneratedPluginRegistrant) makes use of a {@link PluginRegistry} to register contributions from
  * each plugin mentioned in the application's pubspec file. The generated registrant class is, again
- * by default, called from the application's main {@link Activity}, which defaults to an instance of
- * {@link io.flutter.app.FlutterActivity}, itself a {@link PluginRegistry}.
+ * by default, called from the application's main {@link android.app.Activity}, which defaults to an
+ * instance of {@link io.flutter.app.FlutterActivity}, itself a {@link PluginRegistry}.
  */
 public interface PluginRegistry {
   /**
@@ -32,10 +34,12 @@ public interface PluginRegistry {
    *
    * @param pluginKey a unique String identifying the plugin; typically the fully qualified name of
    *     the plugin's main class.
+   * @return A {@link Registrar} for receiving the registrations pertianing to the specified plugin.
    * @deprecated See https://flutter.dev/go/android-project-migration for migration details.
    */
   @Deprecated
-  Registrar registrarFor(String pluginKey);
+  @NonNull
+  Registrar registrarFor(@NonNull String pluginKey);
 
   /**
    * Returns whether the specified plugin is known to this registry.
@@ -46,7 +50,7 @@ public interface PluginRegistry {
    * @deprecated See https://flutter.dev/go/android-project-migration for migration details.
    */
   @Deprecated
-  boolean hasPlugin(String pluginKey);
+  boolean hasPlugin(@NonNull String pluginKey);
 
   /**
    * Returns the value published by the specified plugin, if any.
@@ -55,13 +59,15 @@ public interface PluginRegistry {
    * situations where external control or interaction is needed. Clients are expected to know the
    * value's type.
    *
+   * @param <T> The type of the value.
    * @param pluginKey a unique String identifying the plugin; typically the fully qualified name of
    *     the plugin's main class.
    * @return the published value, possibly null.
    * @deprecated See https://flutter.dev/go/android-project-migration for migration details.
    */
   @Deprecated
-  <T> T valuePublishedByPlugin(String pluginKey);
+  @Nullable
+  <T> T valuePublishedByPlugin(@NonNull String pluginKey);
 
   /**
    * Receiver of registrations from a single plugin.
@@ -73,7 +79,7 @@ public interface PluginRegistry {
   @Deprecated
   interface Registrar {
     /**
-     * Returns the {@link Activity} that forms the plugin's operating context.
+     * Returns the {@link android.app.Activity} that forms the plugin's operating context.
      *
      * <p>Plugin authors should not assume the type returned by this method is any specific subclass
      * of {@code Activity} (such as {@link io.flutter.app.FlutterActivity} or {@link
@@ -93,6 +99,7 @@ public interface PluginRegistry {
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
      */
+    @Nullable
     Activity activity();
 
     /**
@@ -105,6 +112,7 @@ public interface PluginRegistry {
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
      */
+    @NonNull
     Context context();
 
     /**
@@ -120,6 +128,7 @@ public interface PluginRegistry {
      * @return the current {@link #activity() Activity}, if not null, otherwise the {@link
      *     #context() Application}.
      */
+    @NonNull
     Context activeContext();
 
     /**
@@ -133,6 +142,7 @@ public interface PluginRegistry {
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
      */
+    @NonNull
     BinaryMessenger messenger();
 
     /**
@@ -145,6 +155,7 @@ public interface PluginRegistry {
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
      */
+    @NonNull
     TextureRegistry textures();
 
     /**
@@ -159,6 +170,7 @@ public interface PluginRegistry {
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
      */
+    @NonNull
     PlatformViewRegistry platformViewRegistry();
 
     /**
@@ -174,6 +186,7 @@ public interface PluginRegistry {
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
      */
+    @NonNull
     FlutterView view();
 
     /**
@@ -185,7 +198,8 @@ public interface PluginRegistry {
      * @param asset the name of the asset. The name can be hierarchical
      * @return the filename to be used with {@link android.content.res.AssetManager}
      */
-    String lookupKeyForAsset(String asset);
+    @NonNull
+    String lookupKeyForAsset(@NonNull String asset);
 
     /**
      * Returns the file name for the given asset which originates from the specified packageName.
@@ -198,7 +212,8 @@ public interface PluginRegistry {
      * @param packageName the name of the package from which the asset originates
      * @return the file name to be used with {@link android.content.res.AssetManager}
      */
-    String lookupKeyForAsset(String asset, String packageName);
+    @NonNull
+    String lookupKeyForAsset(@NonNull String asset, @NonNull String packageName);
 
     /**
      * Publishes a value associated with the plugin being registered.
@@ -220,7 +235,8 @@ public interface PluginRegistry {
      * @param value the value, possibly null.
      * @return this {@link Registrar}.
      */
-    Registrar publish(Object value);
+    @NonNull
+    Registrar publish(@Nullable Object value);
 
     /**
      * Adds a callback allowing the plugin to take part in handling incoming calls to {@code
@@ -230,7 +246,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for permission results in the v2
      * embedding, use {@link
-     * ActivityPluginBinding#addRequestPermissionsResultListener(RequestPermissionsResultListener)}.
+     * ActivityPluginBinding#addRequestPermissionsResultListener(PluginRegistry.RequestPermissionsResultListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -238,7 +254,9 @@ public interface PluginRegistry {
      * @param listener a {@link RequestPermissionsResultListener} callback.
      * @return this {@link Registrar}.
      */
-    Registrar addRequestPermissionsResultListener(RequestPermissionsResultListener listener);
+    @NonNull
+    Registrar addRequestPermissionsResultListener(
+        @NonNull RequestPermissionsResultListener listener);
 
     /**
      * Adds a callback allowing the plugin to take part in handling incoming calls to {@link
@@ -246,7 +264,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for {@code Activity} results in
      * the v2 embedding, use {@link
-     * ActivityPluginBinding#addActivityResultListener(ActivityResultListener)}.
+     * ActivityPluginBinding#addActivityResultListener(PluginRegistry.ActivityResultListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -254,14 +272,16 @@ public interface PluginRegistry {
      * @param listener an {@link ActivityResultListener} callback.
      * @return this {@link Registrar}.
      */
-    Registrar addActivityResultListener(ActivityResultListener listener);
+    @NonNull
+    Registrar addActivityResultListener(@NonNull ActivityResultListener listener);
 
     /**
      * Adds a callback allowing the plugin to take part in handling incoming calls to {@link
      * Activity#onNewIntent(Intent)}.
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for new {@code Intent}s in the v2
-     * embedding, use {@link ActivityPluginBinding#addOnNewIntentListener(NewIntentListener)}.
+     * embedding, use {@link
+     * ActivityPluginBinding#addOnNewIntentListener(PluginRegistry.NewIntentListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -269,7 +289,8 @@ public interface PluginRegistry {
      * @param listener a {@link NewIntentListener} callback.
      * @return this {@link Registrar}.
      */
-    Registrar addNewIntentListener(NewIntentListener listener);
+    @NonNull
+    Registrar addNewIntentListener(@NonNull NewIntentListener listener);
 
     /**
      * Adds a callback allowing the plugin to take part in handling incoming calls to {@link
@@ -277,7 +298,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for leave hints in the v2
      * embedding, use {@link
-     * ActivityPluginBinding#addOnUserLeaveHintListener(UserLeaveHintListener)}.
+     * ActivityPluginBinding#addOnUserLeaveHintListener(PluginRegistry.UserLeaveHintListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -285,7 +306,25 @@ public interface PluginRegistry {
      * @param listener a {@link UserLeaveHintListener} callback.
      * @return this {@link Registrar}.
      */
-    Registrar addUserLeaveHintListener(UserLeaveHintListener listener);
+    @NonNull
+    Registrar addUserLeaveHintListener(@NonNull UserLeaveHintListener listener);
+
+    /**
+     * Adds a callback allowing the plugin to take part in handling incoming calls to {@link
+     * Activity#onWindowFocusChanged(boolean)}.
+     *
+     * <p>This registrar is for Flutter's v1 embedding. To listen for leave hints in the v2
+     * embedding, use {@link
+     * ActivityPluginBinding#addOnWindowFocusChangedListener(PluginRegistry.WindowFocusChangedListener)}.
+     *
+     * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
+     * http://flutter.dev/go/android-plugin-migration
+     *
+     * @param listener a {@link WindowFocusChangedListener} callback.
+     * @return this {@link Registrar}.
+     */
+    @NonNull
+    Registrar addWindowFocusChangedListener(@NonNull WindowFocusChangedListener listener);
 
     /**
      * Adds a callback allowing the plugin to take part in handling incoming calls to {@link
@@ -309,7 +348,8 @@ public interface PluginRegistry {
      */
     // TODO(amirh): Add a line in the javadoc above that points to a Platform Views website guide
     // when one is available (but not a website API doc)
-    Registrar addViewDestroyListener(ViewDestroyListener listener);
+    @NonNull
+    Registrar addViewDestroyListener(@NonNull ViewDestroyListener listener);
   }
 
   /**
@@ -317,37 +357,72 @@ public interface PluginRegistry {
    * Activity}.
    */
   interface RequestPermissionsResultListener {
-    /** @return true if the result has been handled. */
-    boolean onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults);
+    /**
+     * @param requestCode The request code passed in {@code
+     *     ActivityCompat.requestPermissions(android.app.Activity, String[], int)}.
+     * @param permissions The requested permissions.
+     * @param grantResults The grant results for the corresponding permissions which is either
+     *     {@code PackageManager.PERMISSION_GRANTED} or {@code PackageManager.PERMISSION_DENIED}.
+     * @return true if the result has been handled.
+     */
+    boolean onRequestPermissionsResult(
+        int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults);
   }
 
-  /** Delegate interface for handling activity results on behalf of the main {@link Activity}. */
+  /**
+   * Delegate interface for handling activity results on behalf of the main {@link
+   * android.app.Activity}.
+   */
   interface ActivityResultListener {
-    /** @return true if the result has been handled. */
-    boolean onActivityResult(int requestCode, int resultCode, Intent data);
+    /**
+     * @param requestCode The integer request code originally supplied to {@code
+     *     startActivityForResult()}, allowing you to identify who this result came from.
+     * @param resultCode The integer result code returned by the child activity through its {@code
+     *     setResult()}.
+     * @param data An Intent, which can return result data to the caller (various data can be
+     *     attached to Intent "extras").
+     * @return true if the result has been handled.
+     */
+    boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data);
   }
 
-  /** Delegate interface for handling new intents on behalf of the main {@link Activity}. */
+  /**
+   * Delegate interface for handling new intents on behalf of the main {@link android.app.Activity}.
+   */
   interface NewIntentListener {
-    /** @return true if the new intent has been handled. */
-    boolean onNewIntent(Intent intent);
+    /**
+     * @param intent The new intent that was started for the activity.
+     * @return true if the new intent has been handled.
+     */
+    boolean onNewIntent(@NonNull Intent intent);
   }
 
-  /** Delegate interface for handling user leave hints on behalf of the main {@link Activity}. */
+  /**
+   * Delegate interface for handling user leave hints on behalf of the main {@link
+   * android.app.Activity}.
+   */
   interface UserLeaveHintListener {
     void onUserLeaveHint();
   }
 
   /**
-   * Delegate interface for handling an {@link Activity}'s onDestroy method being called. A plugin
-   * that implements this interface can adopt the FlutterNativeView by retaining a reference and
-   * returning true.
+   * Delegate interface for handling window focus changes on behalf of the main {@link
+   * android.app.Activity}.
+   */
+  interface WindowFocusChangedListener {
+    void onWindowFocusChanged(boolean hasFocus);
+  }
+
+  /**
+   * Delegate interface for handling an {@link android.app.Activity}'s onDestroy method being
+   * called. A plugin that implements this interface can adopt the {@link FlutterNativeView} by
+   * retaining a reference and returning true.
    *
    * @deprecated See https://flutter.dev/go/android-project-migration for migration details.
    */
   @Deprecated
   interface ViewDestroyListener {
-    boolean onViewDestroy(FlutterNativeView view);
+    boolean onViewDestroy(@NonNull FlutterNativeView view);
   }
 
   /**
@@ -360,6 +435,6 @@ public interface PluginRegistry {
    */
   @Deprecated
   interface PluginRegistrantCallback {
-    void registerWith(PluginRegistry registry);
+    void registerWith(@NonNull PluginRegistry registry);
   }
 }

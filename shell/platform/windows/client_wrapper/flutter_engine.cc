@@ -16,6 +16,7 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
   c_engine_properties.assets_path = project.assets_path().c_str();
   c_engine_properties.icu_data_path = project.icu_data_path().c_str();
   c_engine_properties.aot_library_path = project.aot_library_path().c_str();
+  c_engine_properties.dart_entrypoint = project.dart_entrypoint().c_str();
 
   const std::vector<std::string>& entrypoint_args =
       project.dart_entrypoint_arguments();
@@ -28,9 +29,9 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
   c_engine_properties.dart_entrypoint_argc =
       static_cast<int>(entrypoint_argv.size());
   c_engine_properties.dart_entrypoint_argv =
-      entrypoint_argv.size() > 0 ? entrypoint_argv.data() : nullptr;
+      entrypoint_argv.empty() ? nullptr : entrypoint_argv.data();
 
-  engine_ = FlutterDesktopEngineCreate(c_engine_properties);
+  engine_ = FlutterDesktopEngineCreate(&c_engine_properties);
 
   auto core_messenger = FlutterDesktopEngineGetMessenger(engine_);
   messenger_ = std::make_unique<BinaryMessengerImpl>(core_messenger);
@@ -38,6 +39,10 @@ FlutterEngine::FlutterEngine(const DartProject& project) {
 
 FlutterEngine::~FlutterEngine() {
   ShutDown();
+}
+
+bool FlutterEngine::Run() {
+  return Run(nullptr);
 }
 
 bool FlutterEngine::Run(const char* entry_point) {
@@ -81,6 +86,31 @@ FlutterDesktopPluginRegistrarRef FlutterEngine::GetRegistrarForPlugin(
     return nullptr;
   }
   return FlutterDesktopEngineGetPluginRegistrar(engine_, plugin_name.c_str());
+}
+
+void FlutterEngine::SetNextFrameCallback(std::function<void()> callback) {
+  next_frame_callback_ = std::move(callback);
+  FlutterDesktopEngineSetNextFrameCallback(
+      engine_,
+      [](void* user_data) {
+        FlutterEngine* self = static_cast<FlutterEngine*>(user_data);
+        self->next_frame_callback_();
+        self->next_frame_callback_ = nullptr;
+      },
+      this);
+}
+
+std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  LRESULT result;
+  if (FlutterDesktopEngineProcessExternalWindowMessage(
+          engine_, hwnd, message, wparam, lparam, &result)) {
+    return result;
+  }
+  return std::nullopt;
 }
 
 FlutterDesktopEngineRef FlutterEngine::RelinquishEngine() {

@@ -2,50 +2,56 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../dom.dart';
+import '../util.dart';
+import '../vector_math.dart';
+import 'surface.dart';
 
 /// A surface that makes its children transparent.
 class PersistedOpacity extends PersistedContainerSurface
     implements ui.OpacityEngineLayer {
-  PersistedOpacity(PersistedOpacity? oldLayer, this.alpha, this.offset)
-      : super(oldLayer);
+  PersistedOpacity(PersistedOpacity? super.oldLayer, this.alpha, this.offset);
 
   final int alpha;
   final ui.Offset offset;
 
   @override
   void recomputeTransformAndClip() {
-    _transform = parent!._transform;
+    transform = parent!.transform;
 
     final double dx = offset.dx;
     final double dy = offset.dy;
 
     if (dx != 0.0 || dy != 0.0) {
-      _transform = _transform!.clone();
-      _transform!.translate(dx, dy);
+      transform = transform!.clone();
+      transform!.translate(dx, dy);
     }
-    _localTransformInverse = null;
-    _projectedClip = null;
+    projectedClip = null;
   }
+
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
 
   @override
   Matrix4 get localTransformInverse => _localTransformInverse ??=
       Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   @override
-  html.Element createElement() {
-    html.Element element = domRenderer.createElement('flt-opacity');
-    DomRenderer.setElementStyle(element, 'position', 'absolute');
-    DomRenderer.setElementStyle(element, 'transform-origin', '0 0 0');
+  DomElement createElement() {
+    final DomElement element = domDocument.createElement('flt-opacity');
+    setElementStyle(element, 'position', 'absolute');
+    setElementStyle(element, 'transform-origin', '0 0 0');
     return element;
   }
 
   @override
   void apply() {
-    html.Element element = rootElement!;
-    DomRenderer.setElementStyle(element, 'opacity', '${alpha / 255}');
-    DomRenderer.setElementTransform(element, 'translate(${offset.dx}px, ${offset.dy}px)');
+    final DomElement element = rootElement!;
+    setElementStyle(element, 'opacity', '${alpha / 255}');
+    element.style.transform = 'translate(${offset.dx}px, ${offset.dy}px)';
   }
 
   @override

@@ -5,11 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_RENDERER_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_RENDERER_H_
 
-#include <EGL/egl.h>
 #include <gtk/gtk.h>
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_dart_project.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
+
+#include "flutter/shell/platform/embedder/embedder.h"
 
 G_BEGIN_DECLS
 
@@ -19,7 +20,9 @@ G_BEGIN_DECLS
  */
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_RENDERER_ERROR_FAILED,
+  // NOLINTEND(readability-identifier-naming)
 } FlRendererError;
 
 GQuark fl_renderer_error_quark(void) G_GNUC_CONST;
@@ -36,66 +39,72 @@ struct _FlRendererClass {
   GObjectClass parent_class;
 
   /**
-   * Virtual method called before creating a GdkWindow for the widget.
-   * Does not need to be implemented.
+   * Virtual method called when Flutter needs #GdkGLContext to render.
    * @renderer: an #FlRenderer.
    * @widget: the widget being rendered on.
-   * @display: display to create surfaces on.
-   * @config: EGL configuration.
-   * @window_attributes: window attributes to modify.
-   * @mask: (out): the window mask to use.
+   * @visible: (out): the GL context for visible surface.
+   * @resource: (out): the GL context for resource loading.
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL to ignore.
    *
-   * Returns: %TRUE if the window is successfully set up.
+   * Returns: %TRUE if both contexts were created, %FALSE if there was an error.
    */
-  gboolean (*setup_window_attr)(FlRenderer* renderer,
-                                GtkWidget* widget,
-                                EGLDisplay display,
-                                EGLConfig config,
-                                GdkWindowAttr* window_attributes,
-                                gint* mask,
-                                GError** error);
-
-  /**
-   * Virtual method to create a new EGL display.
-   */
-  EGLDisplay (*create_display)(FlRenderer* renderer);
-
-  /**
-   * Virtual method called when Flutter needs surfaces to render to.
-   * @renderer: an #FlRenderer.
-   * @widget: the widget being rendered on.
-   * @display: display to create surfaces on.
-   * @config: EGL configuration.
-   * @visible: (out): the visible surface that is created.
-   * @resource: (out): the resource surface that is created.
-   * @error: (allow-none): #GError location to store the error occurring, or
-   * %NULL to ignore.
-   *
-   * Returns: %TRUE if both surfaces were created, %FALSE if there was an error.
-   */
-  gboolean (*create_surfaces)(FlRenderer* renderer,
+  gboolean (*create_contexts)(FlRenderer* renderer,
                               GtkWidget* widget,
-                              EGLDisplay display,
-                              EGLConfig config,
-                              EGLSurface* visible,
-                              EGLSurface* resource,
+                              GdkGLContext** visible,
+                              GdkGLContext** resource,
                               GError** error);
 
   /**
-   * Virtual method called when the EGL window needs to be resized.
-   * Does not need to be implemented.
+   * Virtual method called when Flutter needs OpenGL proc address.
+   * @renderer: an #FlRenderer.
+   * @name: proc name.
+   *
+   * Returns: OpenGL proc address.
    */
-  void (*set_geometry)(FlRenderer* renderer,
-                       GdkRectangle* geometry,
-                       gint scale);
+  void* (*get_proc_address)();
+
+  /**
+   * Virtual method called when Flutter needs a backing store for a specific
+   * #FlutterLayer.
+   * @renderer: an #FlRenderer.
+   * @config: backing store config.
+   * @backing_store_out: saves created backing store.
+   *
+   * Returns %TRUE if successful.
+   */
+  gboolean (*create_backing_store)(FlRenderer* renderer,
+                                   const FlutterBackingStoreConfig* config,
+                                   FlutterBackingStore* backing_store_out);
+
+  /**
+   * Virtual method called when Flutter wants to release the backing store.
+   * @renderer: an #FlRenderer.
+   * @backing_store: backing store to be released.
+   *
+   * Returns %TRUE if successful.
+   */
+  gboolean (*collect_backing_store)(FlRenderer* renderer,
+                                    const FlutterBackingStore* backing_store);
+
+  /**
+   * Virtual method called when Flutter wants to composite layers onto the
+   * screen.
+   * @renderer: an #FlRenderer.
+   * @layers: layers to be composited.
+   * @layers_count: number of layers.
+   *
+   * Returns %TRUE if successful.
+   */
+  gboolean (*present_layers)(FlRenderer* renderer,
+                             const FlutterLayer** layers,
+                             size_t layers_count);
 };
 
 /**
  * fl_renderer_start:
  * @renderer: an #FlRenderer.
- * @widget: the widget Flutter is renderering to.
+ * @view: the view Flutter is renderering to.
  * @error: (allow-none): #GError location to store the error occurring, or %NULL
  * to ignore.
  *
@@ -103,19 +112,23 @@ struct _FlRendererClass {
  *
  * Returns: %TRUE if successfully started.
  */
-gboolean fl_renderer_start(FlRenderer* renderer,
-                           GtkWidget* widget,
-                           GError** error);
+gboolean fl_renderer_start(FlRenderer* renderer, FlView* view, GError** error);
 
 /**
- * fl_renderer_set_geometry:
+ * fl_renderer_get_view:
  * @renderer: an #FlRenderer.
- * @geometry: New size and position (unscaled) of the EGL window.
- * @scale: Scale of the window.
+ *
+ * Returns: targeted #FlView or %NULL if headless.
  */
-void fl_renderer_set_geometry(FlRenderer* renderer,
-                              GdkRectangle* geometry,
-                              gint scale);
+FlView* fl_renderer_get_view(FlRenderer* renderer);
+
+/**
+ * fl_renderer_get_context:
+ * @renderer: an #FlRenderer.
+ *
+ * Returns: GL context for GLAreas or %NULL if headless.
+ */
+GdkGLContext* fl_renderer_get_context(FlRenderer* renderer);
 
 /**
  * fl_renderer_get_proc_address:
@@ -176,16 +189,62 @@ gboolean fl_renderer_clear_current(FlRenderer* renderer, GError** error);
 guint32 fl_renderer_get_fbo(FlRenderer* renderer);
 
 /**
- * fl_renderer_present:
+ * fl_renderer_create_backing_store:
  * @renderer: an #FlRenderer.
- * @error: (allow-none): #GError location to store the error occurring, or %NULL
- * to ignore.
+ * @config: backing store config.
+ * @backing_store_out: saves created backing store.
  *
- * Presents the current frame.
+ * Obtain a backing store for a specific #FlutterLayer.
  *
  * Returns %TRUE if successful.
  */
-gboolean fl_renderer_present(FlRenderer* renderer, GError** error);
+gboolean fl_renderer_create_backing_store(
+    FlRenderer* renderer,
+    const FlutterBackingStoreConfig* config,
+    FlutterBackingStore* backing_store_out);
+
+/**
+ * fl_renderer_collect_backing_store:
+ * @renderer: an #FlRenderer.
+ * @backing_store: backing store to be released.
+ *
+ * A callback invoked by the engine to release the backing store. The
+ * embedder may collect any resources associated with the backing store.
+ *
+ * Returns %TRUE if successful.
+ */
+gboolean fl_renderer_collect_backing_store(
+    FlRenderer* renderer,
+    const FlutterBackingStore* backing_store);
+
+/**
+ * fl_renderer_present_layers:
+ * @renderer: an #FlRenderer.
+ * @layers: layers to be composited.
+ * @layers_count: number of layers.
+ *
+ * Callback invoked by the engine to composite the contents of each layer
+ * onto the screen.
+ *
+ * Returns %TRUE if successful.
+ */
+gboolean fl_renderer_present_layers(FlRenderer* renderer,
+                                    const FlutterLayer** layers,
+                                    size_t layers_count);
+
+/**
+ * fl_renderer_wait_for_frame:
+ * @renderer: an #FlRenderer.
+ * @target_width: width of frame being waited for
+ * @target_height: height of frame being waited for
+ *
+ * Holds the thread until frame with requested dimensions is presented.
+ * While waiting for frame Flutter platform and raster tasks are being
+ * processed.
+ */
+void fl_renderer_wait_for_frame(FlRenderer* renderer,
+                                int target_width,
+                                int target_height);
 
 G_END_DECLS
 

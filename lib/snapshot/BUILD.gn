@@ -4,19 +4,62 @@
 
 import("//build/compiled_action.gni")
 import("//build/fuchsia/sdk.gni")
+import("//flutter/build/bin_to_obj.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
-bindings_output_dir = "$root_gen_dir/sky/bindings"
+# Generates the Dart/Flutter core platform files and tools.
+#
+# This target generates the platform-specific snapshots and snapshot-related
+# tooling for a given target CPU.
+#
+# Outputs:
+#   * Core platform compiled to kernel bytecode
+#   * Core platform compiled to target_cpu-specific binary snapshot
+#   * target_cpu-specific gen_snapshot
+#   * target_cpu-specific analyze_snapshot
+group("generate_snapshot_bins") {
+  deps = [
+    ":generate_snapshot_bin",
+    ":kernel_platform_files",
+  ]
 
-copy("generate_dart_ui") {
-  visibility = [ ":*" ]
-  sources = dart_ui_files
+  # Build gen_snapshot for the currently specified target_cpu.
+  #
+  # For macOS target builds: needed for both target CPUs (arm64, x64).
+  # For iOS, Android target builds: all AOT target CPUs are arm/arm64.
+  if (host_os == "mac" && target_os == "mac") {
+    deps += [ ":create_macos_gen_snapshots" ]
+  } else if (host_os == "mac" &&
+             (target_cpu == "arm" || target_cpu == "arm64")) {
+    deps += [ ":create_arm_gen_snapshot" ]
+  }
 
-  outputs = [ "$bindings_output_dir/dart_ui/{{source_file_part}}" ]
+  # Build analyze_snapshot for 64-bit target CPUs.
+  if (host_os == "linux" && (target_cpu == "x64" || target_cpu == "arm64")) {
+    deps +=
+        [ "//third_party/dart/runtime/bin:analyze_snapshot($host_toolchain)" ]
+  }
 }
 
+# Compiles a binary snapshot of the core Dart/Flutter platform.
+#
+# Inputs:
+#   * platform_strong.dill
+#
+# Tools:
+#   * gen_snapshot
+#
+# Outputs:
+#   * vm_snapshot_data.bin
+#   * vm_snapshot_instructions.bin
+#   * isolate_snapshot_data.bin
+#   * isolate_snapshot_instructions.bin
+#
+# See: `bin_to_linkable` rules below that build these outputs into linkable form
+# See: https://github.com/flutter/flutter/wiki/Flutter-engine-operation-in-AOT-Mode
 compiled_action("generate_snapshot_bin") {
   if (target_cpu == "x86" && host_os == "linux") {
     # By default Dart will create a 32-bit gen_snapshot host binary if the target
@@ -46,7 +89,6 @@ compiled_action("generate_snapshot_bin") {
   ]
 
   args = [
-    "--enable-experiment=non-nullable",
     "--snapshot_kind=core",
     "--enable_mirrors=false",
     "--vm_snapshot_data=" + rebase_path(vm_snapshot_data),
@@ -63,101 +105,9 @@ compiled_action("generate_snapshot_bin") {
   }
 
   args += [ rebase_path(platform_kernel) ]
-}
 
-# Generates an assembly file defining a given symbol with the bytes from a
-# binary file. Places the symbol in a text section if 'executable' is true,
-# otherwise places the symbol in a read-only data section.
-template("bin_to_assembly") {
-  assert(defined(invoker.deps), "Must define deps")
-  assert(defined(invoker.input), "Must define input binary file")
-  assert(defined(invoker.symbol), "Must define symbol name")
-  assert(defined(invoker.executable), "Must define boolean executable")
-
-  action(target_name) {
-    deps = invoker.deps
-    script = "//third_party/dart/runtime/tools/bin_to_assembly.py"
-    output = invoker.input + ".S"
-    args = [
-      "--input",
-      rebase_path(invoker.input),
-      "--output",
-      rebase_path(output),
-      "--symbol_name",
-      invoker.symbol,
-      "--target_os",
-      current_os,
-    ]
-    if (defined(invoker.size_symbol)) {
-      args += [
-        "--size_symbol_name",
-        invoker.size_symbol,
-        "--target_arch",
-        current_cpu,
-      ]
-    }
-    if (invoker.executable) {
-      args += [ "--executable" ]
-    }
-    inputs = [
-      script,
-      invoker.input,
-    ]
-    outputs = [ output ]
-  }
-}
-
-# Generates an object file defining a given symbol with the bytes from a
-# binary file. Places the symbol in the read-only data section.
-template("bin_to_coff") {
-  assert(defined(invoker.deps), "Must define deps")
-  assert(defined(invoker.input), "Must define input binary file")
-  assert(defined(invoker.symbol), "Must define symbol name")
-  assert(defined(invoker.executable), "Must define executable")
-
-  action(target_name) {
-    deps = invoker.deps
-    script = "//third_party/dart/runtime/tools/bin_to_coff.py"
-    output = invoker.input + ".o"
-    args = [
-      "--input",
-      rebase_path(invoker.input),
-      "--output",
-      rebase_path(output),
-      "--symbol_name",
-      invoker.symbol,
-    ]
-
-    if (defined(invoker.size_symbol)) {
-      args += [
-        "--size_symbol_name",
-        invoker.size_symbol,
-      ]
-    }
-
-    if (invoker.executable) {
-      args += [ "--executable" ]
-    }
-
-    if (current_cpu == "x64") {
-      args += [ "--64-bit" ]
-    }
-    inputs = [ invoker.input ]
-    outputs = [ output ]
-  }
-}
-
-template("bin_to_linkable") {
-  assert(defined(invoker.deps), "Must define deps")
-  assert(defined(invoker.input), "Must define input binary file")
-  assert(defined(invoker.symbol), "Must define symbol name")
-  target_type = "bin_to_assembly"
-  if (is_win) {
-    target_type = "bin_to_coff"
-  }
-
-  target(target_type, target_name) {
-    forward_variables_from(invoker, "*")
+  metadata = {
+    entitlement_file_path = [ "gen_snapshot" ]
   }
 }
 
@@ -197,6 +147,56 @@ bin_to_linkable("platform_strong_dill_linkable") {
   executable = false
 }
 
+# Creates a `gen_snapshot` binary suffixed with the target CPU architecture.
+#
+# Builds gen_snapshot using the host toolchain then copies the resulting binary
+# to `gen_snapshot_armv7` or `gen_snapshot_arm64` depending on the target
+# platform.
+#
+# This target is used for builds targeting iOS/Android OS.
+if (host_os == "mac" && target_os != "mac" &&
+    (target_cpu == "arm" || target_cpu == "arm64")) {
+  copy("create_arm_gen_snapshot") {
+    # The toolchain-specific output directory. For cross-compiles, this is a
+    # clang-x64 or clang-arm64 subdirectory of the top-level build directory.
+    host_output_dir = get_label_info(
+            "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+            "root_out_dir")
+
+    # Determine suffixed output gen_snapshot name.
+    target_cpu_suffix = target_cpu
+    if (target_cpu == "arm") {
+      target_cpu_suffix = "armv7"
+    }
+
+    sources = [ "${host_output_dir}/gen_snapshot" ]
+    outputs = [ "${host_output_dir}/gen_snapshot_${target_cpu_suffix}" ]
+    deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+    visibility = [ ":*" ]
+  }
+}
+
+# Creates a `gen_snapshot` binary suffixed with the target CPU architecture.
+#
+# Builds gen_snapshot using the host toolchain then copies the resulting binary
+# to `gen_snapshot_arm64` or `gen_snapshot_x64` depending on the target
+# platform.
+#
+# This target is used for builds targeting macOS.
+if (host_os == "mac" && target_os == "mac") {
+  copy("create_macos_gen_snapshots") {
+    # The toolchain-specific output directory. For cross-compiles, this is a
+    # clang-x64 or clang-arm64 subdirectory of the top-level build directory.
+    host_output_dir = get_label_info(
+            "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
+            "root_out_dir")
+
+    sources = [ "${host_output_dir}/gen_snapshot" ]
+    outputs = [ "${root_out_dir}/gen_snapshot_${target_cpu}" ]
+    deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+  }
+}
+
 source_set("snapshot") {
   deps = [
     ":isolate_snapshot_data_linkable",
@@ -205,6 +205,7 @@ source_set("snapshot") {
     ":vm_snapshot_data_linkable",
     ":vm_snapshot_instructions_linkable",
   ]
+
   sources = get_target_outputs(":isolate_snapshot_data_linkable") +
             get_target_outputs(":isolate_snapshot_instructions_linkable") +
             get_target_outputs(":vm_snapshot_data_linkable") +
@@ -212,26 +213,32 @@ source_set("snapshot") {
             get_target_outputs(":platform_strong_dill_linkable")
 }
 
+# Compiles the Dart/Flutter core libraries to kernel bytecode.
 compile_platform("strong_platform") {
   single_root_scheme = "org-dartlang-sdk"
   single_root_base = rebase_path("../../../")
-  libraries_specification_uri =
-      "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
+  if (impeller_enable_3d) {
+    libraries_specification_uri =
+        "org-dartlang-sdk:///flutter/lib/snapshot/libraries_experimental.json"
+  } else {
+    libraries_specification_uri =
+        "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
+  }
 
   outputs = [
     "$root_out_dir/flutter_patched_sdk/platform_strong.dill",
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
+  pool = "//flutter/build/dart:dart_pool"
+
   is_runtime_mode_release =
       flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"
-  allow_causal_async_stacks = !is_runtime_mode_release
   args = [
-    "--enable-experiment=non-nullable",
+    "--enable-experiment=generic-metadata",
     "--nnbd-agnostic",
     "--target=flutter",
     "-Ddart.vm.product=$is_runtime_mode_release",
-    "-Ddart.developer.causal_async_stacks=$allow_causal_async_stacks",
     "-Ddart.isVM=true",
     "dart:core",
   ]

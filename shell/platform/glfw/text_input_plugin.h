@@ -8,9 +8,9 @@
 #include <map>
 #include <memory>
 
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/binary_messenger.h"
-#include "flutter/shell/platform/common/cpp/client_wrapper/include/flutter/method_channel.h"
-#include "flutter/shell/platform/common/cpp/text_input_model.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
+#include "flutter/shell/platform/common/text_input_model.h"
 #include "flutter/shell/platform/glfw/keyboard_hook_handler.h"
 #include "flutter/shell/platform/glfw/public/flutter_glfw.h"
 
@@ -53,17 +53,17 @@ class TextInputPlugin : public KeyboardHookHandler {
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
 
   // The active client id.
-  int client_id_;
+  int client_id_ = 0;
 
   // The active model. nullptr if not set.
   std::unique_ptr<TextInputModel> active_model_;
 
   // Keyboard type of the client. See available options:
-  // https://docs.flutter.io/flutter/services/TextInputType-class.html
+  // https://api.flutter.dev/flutter/services/TextInputType-class.html
   std::string input_type_;
 
   // An action requested by the user on the input client. See available options:
-  // https://docs.flutter.io/flutter/services/TextInputAction-class.html
+  // https://api.flutter.dev/flutter/services/TextInputAction-class.html
   std::string input_action_;
 };
 

@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -20,10 +21,11 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Log;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.RenderSurface;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.nio.ByteBuffer;
+import java.util.Locale;
 
 /**
  * Paints a Flutter UI provided by an {@link android.media.ImageReader} onto a {@link
@@ -39,11 +41,16 @@ import java.util.Queue;
  */
 @TargetApi(19)
 public class FlutterImageView extends View implements RenderSurface {
+  private static final String TAG = "FlutterImageView";
+
   @NonNull private ImageReader imageReader;
-  @Nullable private Queue<Image> imageQueue;
   @Nullable private Image currentImage;
   @Nullable private Bitmap currentBitmap;
   @Nullable private FlutterRenderer flutterRenderer;
+
+  public ImageReader getImageReader() {
+    return imageReader;
+  }
 
   public enum SurfaceKind {
     /** Displays the background canvas. */
@@ -55,13 +62,6 @@ public class FlutterImageView extends View implements RenderSurface {
 
   /** The kind of surface. */
   private SurfaceKind kind;
-
-  /**
-   * The number of images acquired from the current {@link android.media.ImageReader} that are
-   * waiting to be painted. This counter is decreased after calling {@link
-   * android.media.Image#close()}.
-   */
-  private int pendingImages = 0;
 
   /** Whether the view is attached to the Flutter render. */
   private boolean isAttachedToFlutterRenderer = false;
@@ -88,7 +88,6 @@ public class FlutterImageView extends View implements RenderSurface {
     super(context, null);
     this.imageReader = imageReader;
     this.kind = kind;
-    this.imageQueue = new LinkedList<>();
     init();
   }
 
@@ -96,9 +95,22 @@ public class FlutterImageView extends View implements RenderSurface {
     setAlpha(0.0f);
   }
 
+  private static void logW(String format, Object... args) {
+    Log.w(TAG, String.format(Locale.US, format, args));
+  }
+
   @TargetApi(19)
+  @SuppressLint("WrongConstant") // RGBA_8888 is a valid constant.
   @NonNull
   private static ImageReader createImageReader(int width, int height) {
+    if (width <= 0) {
+      logW("ImageReader width must be greater than 0, but given width=%d, set width=1", width);
+      width = 1;
+    }
+    if (height <= 0) {
+      logW("ImageReader height must be greater than 0, but given height=%d, set height=1", height);
+      height = 1;
+    }
     if (android.os.Build.VERSION.SDK_INT >= 29) {
       return ImageReader.newInstance(
           width,
@@ -128,12 +140,10 @@ public class FlutterImageView extends View implements RenderSurface {
    */
   @Override
   public void attachToRenderer(@NonNull FlutterRenderer flutterRenderer) {
-    if (isAttachedToFlutterRenderer) {
-      return;
-    }
     switch (kind) {
       case background:
         flutterRenderer.swapSurface(imageReader.getSurface());
+        flutterRenderer.SetRenderingToImageView(true);
         break;
       case overlay:
         // Do nothing since the attachment is done by the handler of
@@ -154,27 +164,29 @@ public class FlutterImageView extends View implements RenderSurface {
       return;
     }
     setAlpha(0.0f);
-    // Drop the lastest image as it shouldn't render this image if this view is
+    // Drop the latest image as it shouldn't render this image if this view is
     // attached to the renderer again.
     acquireLatestImage();
     // Clear drawings.
     currentBitmap = null;
 
-    // Close the images in the queue and clear the queue.
-    for (final Image image : imageQueue) {
-      image.close();
-    }
-    imageQueue.clear();
     // Close and clear the current image if any.
-    if (currentImage != null) {
-      currentImage.close();
-      currentImage = null;
-    }
+    closeCurrentImage();
     invalidate();
     isAttachedToFlutterRenderer = false;
+    if (kind == SurfaceKind.background) {
+      // The overlay FlutterImageViews seem to be constructed per frame and not
+      // always used; An overlay FlutterImageView always seems to imply
+      // a background FlutterImageView.
+      flutterRenderer.SetRenderingToImageView(false);
+    }
   }
 
   public void pause() {
+    // Not supported.
+  }
+
+  public void resume() {
     // Not supported.
   }
 
@@ -187,26 +199,20 @@ public class FlutterImageView extends View implements RenderSurface {
     if (!isAttachedToFlutterRenderer) {
       return false;
     }
-    // There's no guarantee that the image will be closed before the next call to
-    // `acquireLatestImage()`. For example, the device may not produce new frames if
-    // it's in sleep mode, so the calls to `invalidate()` will be queued up
+    // 1. `acquireLatestImage()` may return null if no new image is available.
+    // 2. There's no guarantee that `onDraw()` is called after `invalidate()`.
+    // For example, the device may not produce new frames if it's in sleep mode
+    // or some special Android devices so the calls to `invalidate()` queued up
     // until the device produces a new frame.
-    //
-    // While the engine will also stop producing frames, there is a race condition.
-    //
-    // To avoid exceptions, check if a new image can be acquired.
-    int imageOpenedCount = imageQueue.size();
-    if (currentImage != null) {
-      imageOpenedCount++;
+    // 3. While the engine will also stop producing frames, there is a race condition.
+    final Image newImage = imageReader.acquireLatestImage();
+    if (newImage != null) {
+      // Only close current image after acquiring valid new image
+      closeCurrentImage();
+      currentImage = newImage;
+      invalidate();
     }
-    if (imageOpenedCount < imageReader.getMaxImages()) {
-      final Image image = imageReader.acquireLatestImage();
-      if (image != null) {
-        imageQueue.add(image);
-      }
-    }
-    invalidate();
-    return !imageQueue.isEmpty();
+    return newImage != null;
   }
 
   /** Creates a new image reader with the provided size. */
@@ -217,29 +223,41 @@ public class FlutterImageView extends View implements RenderSurface {
     if (width == imageReader.getWidth() && height == imageReader.getHeight()) {
       return;
     }
-    imageQueue.clear();
-    currentImage = null;
-    // Close all the resources associated with the image reader,
-    // including the images.
-    imageReader.close();
+
+    // Close resources.
+    closeCurrentImage();
+    // Close the current image reader, then create a new one with the new size.
     // Image readers cannot be resized once created.
+    closeImageReader();
     imageReader = createImageReader(width, height);
-    pendingImages = 0;
+  }
+
+  /**
+   * Closes the image reader associated with the current {@code FlutterImageView}.
+   *
+   * <p>Once the image reader is closed, calling {@code acquireLatestImage} will result in an {@code
+   * IllegalStateException}.
+   */
+  public void closeImageReader() {
+    imageReader.close();
   }
 
   @Override
   protected void onDraw(Canvas canvas) {
     super.onDraw(canvas);
-
-    if (!imageQueue.isEmpty()) {
-      if (currentImage != null) {
-        currentImage.close();
-      }
-      currentImage = imageQueue.poll();
+    if (currentImage != null) {
       updateCurrentBitmap();
     }
     if (currentBitmap != null) {
       canvas.drawBitmap(currentBitmap, 0, 0, null);
+    }
+  }
+
+  private void closeCurrentImage() {
+    // Close and clear the current image if any.
+    if (currentImage != null) {
+      currentImage.close();
+      currentImage = null;
     }
   }
 
@@ -266,7 +284,9 @@ public class FlutterImageView extends View implements RenderSurface {
             Bitmap.createBitmap(
                 desiredWidth, desiredHeight, android.graphics.Bitmap.Config.ARGB_8888);
       }
-      currentBitmap.copyPixelsFromBuffer(imagePlane.getBuffer());
+      ByteBuffer buffer = imagePlane.getBuffer();
+      buffer.rewind();
+      currentBitmap.copyPixelsFromBuffer(buffer);
     }
   }
 

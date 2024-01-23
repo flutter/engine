@@ -15,11 +15,13 @@
 #include "flutter/fml/unique_fd.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
+class GrDirectContext;
+
+namespace flutter {
+
 namespace testing {
 class ShellTest;
 }
-
-namespace flutter {
 
 /// A cache of SkData that gets stored to disk.
 ///
@@ -45,13 +47,32 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   //
   // This is used to specify persistent cache filenames and service protocol
   // json keys.
-  static std::string SkKeyToFilePath(const SkData& data);
+  static std::string SkKeyToFilePath(const SkData& key);
+
+  // Allocate a MallocMapping containing the given key and value in the file
+  // format used by the cache.
+  static std::unique_ptr<fml::MallocMapping> BuildCacheObject(
+      const SkData& key,
+      const SkData& data);
+
+  // Header written into the files used to store cached Skia objects.
+  struct CacheObjectHeader {
+    // A prefix used to identify the cache object file format.
+    static const uint32_t kSignature = 0xA869593F;
+    static const uint32_t kVersion1 = 1;
+
+    explicit CacheObjectHeader(uint32_t p_key_size) : key_size(p_key_size) {}
+
+    uint32_t signature = kSignature;
+    uint32_t version = kVersion1;
+    uint32_t key_size;
+  };
 
   ~PersistentCache() override;
 
-  void AddWorkerTaskRunner(fml::RefPtr<fml::TaskRunner> task_runner);
+  void AddWorkerTaskRunner(const fml::RefPtr<fml::TaskRunner>& task_runner);
 
-  void RemoveWorkerTaskRunner(fml::RefPtr<fml::TaskRunner> task_runner);
+  void RemoveWorkerTaskRunner(const fml::RefPtr<fml::TaskRunner>& task_runner);
 
   // Whether Skia tries to store any shader into this persistent cache after
   // |ResetStoredNewShaders| is called. This flag is usually reset before each
@@ -69,10 +90,28 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   // |GrContextOptions::PersistentCache|
   sk_sp<SkData> load(const SkData& key) override;
 
-  using SkSLCache = std::pair<sk_sp<SkData>, sk_sp<SkData>>;
+  struct SkSLCache {
+    sk_sp<SkData> key;
+    sk_sp<SkData> value;
+  };
 
   /// Load all the SkSL shader caches in the right directory.
-  std::vector<SkSLCache> LoadSkSLs();
+  std::vector<SkSLCache> LoadSkSLs() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Precompile SkSLs packaged with the application and gathered
+  ///             during previous runs in the given context.
+  ///
+  /// @warning    The context must be the rendering context. This context may be
+  ///             destroyed during application suspension and subsequently
+  ///             recreated. The SkSLs must be precompiled again in the new
+  ///             context.
+  ///
+  /// @param      context  The rendering context to precompile shaders in.
+  ///
+  /// @return     The number of SkSLs precompiled.
+  ///
+  size_t PrecompileKnownSkSLs(GrDirectContext* context) const;
 
   // Return mappings for all skp's accessible through the AssetManager
   std::vector<std::unique_ptr<fml::Mapping>> GetSkpsFromAssetManager() const;
@@ -80,9 +119,14 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   /// Set the asset manager from which PersistentCache can load SkLSs. A nullptr
   /// can be provided to clear the asset manager.
   static void SetAssetManager(std::shared_ptr<AssetManager> value);
+  static std::shared_ptr<AssetManager> asset_manager() {
+    return asset_manager_;
+  }
 
   static bool cache_sksl() { return cache_sksl_; }
+
   static void SetCacheSkSL(bool value);
+
   static void MarkStrategySet() { strategy_set_ = true; }
 
   static constexpr char kSkSLSubdirName[] = "sksl";
@@ -115,12 +159,13 @@ class PersistentCache : public GrContextOptions::PersistentCache {
   bool stored_new_shaders_ = false;
   bool is_dumping_skp_ = false;
 
-  static sk_sp<SkData> LoadFile(const fml::UniqueFD& dir,
-                                const std::string& filen_ame);
+  static SkSLCache LoadFile(const fml::UniqueFD& dir,
+                            const std::string& file_name,
+                            bool need_key);
 
   bool IsValid() const;
 
-  PersistentCache(bool read_only = false);
+  explicit PersistentCache(bool read_only = false);
 
   // |GrContextOptions::PersistentCache|
   void store(const SkData& key, const SkData& data) override;

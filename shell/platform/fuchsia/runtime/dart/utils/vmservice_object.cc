@@ -37,11 +37,11 @@ namespace dart_utils {
 
 void VMServiceObject::GetContents(LazyEntryVector* out_vector) const {
   // List /tmp/dart.services if it exists, and push its contents as
-  // as the conrtents of this directory.
+  // the contents of this directory.
   std::vector<std::string> files;
   if (!ReadDirContents(kPortDir, &files)) {
     FX_LOGF(ERROR, LOG_TAG,
-            "Failed to read Dart VM Service port directory '%s': %s", kPortDir,
+            "Failed to read Dart VM service port directory '%s': %s", kPortDir,
             strerror(errno));
     return;
   }

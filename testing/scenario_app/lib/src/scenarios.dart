@@ -2,72 +2,98 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:ui';
 
 import 'animated_color_square.dart';
+import 'bogus_font_text.dart';
+import 'darwin_app_extension_scenario.dart';
+import 'darwin_system_font.dart';
+import 'get_bitmap_scenario.dart';
 import 'initial_route_reply.dart';
 import 'locale_initialization.dart';
 import 'platform_view.dart';
 import 'poppable_screen.dart';
 import 'scenario.dart';
-import 'send_text_focus_semantics.dart';
+import 'texture.dart';
 import 'touches_scenario.dart';
 
-typedef ScenarioFactory = Scenario Function(); // ignore: public_member_api_docs
+typedef _ScenarioFactory = Scenario Function(FlutterView view);
 
 int _viewId = 0;
 
-Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
-  'animated_color_square': () => AnimatedColorSquareScenario(PlatformDispatcher.instance),
-  'locale_initialization': () => LocaleInitialization(PlatformDispatcher.instance),
-  'platform_view': () => PlatformViewScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
-  'platform_view_no_overlay_intersection': () => PlatformViewNoOverlayIntersectionScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
-  'platform_view_partial_intersection': () => PlatformViewPartialIntersectionScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
-  'platform_view_two_intersecting_overlays': () => PlatformViewTwoIntersectingOverlaysScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
-  'platform_view_one_overlay_two_intersecting_overlays': () => PlatformViewOneOverlayTwoIntersectingOverlaysScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
-  'platform_view_multiple_without_overlays': () => MultiPlatformViewWithoutOverlaysScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', firstId: _viewId++, secondId: _viewId++),
-  'platform_view_max_overlays': () => PlatformViewMaxOverlaysScenario(PlatformDispatcher.instance, 'Hello from Scenarios (Platform View)', id: _viewId++),
-  'platform_view_cliprect': () => PlatformViewClipRectScenario(PlatformDispatcher.instance, 'PlatformViewClipRect', id: _viewId++),
-  'platform_view_cliprrect': () => PlatformViewClipRRectScenario(PlatformDispatcher.instance, 'PlatformViewClipRRect', id: _viewId++),
-  'platform_view_clippath': () => PlatformViewClipPathScenario(PlatformDispatcher.instance, 'PlatformViewClipPath', id: _viewId++),
-  'platform_view_transform': () => PlatformViewTransformScenario(PlatformDispatcher.instance, 'PlatformViewTransform', id: _viewId++),
-  'platform_view_opacity': () => PlatformViewOpacityScenario(PlatformDispatcher.instance, 'PlatformViewOpacity', id: _viewId++),
-  'platform_view_multiple': () => MultiPlatformViewScenario(PlatformDispatcher.instance, firstId: 6, secondId: _viewId++),
-  'platform_view_multiple_background_foreground': () => MultiPlatformViewBackgroundForegroundScenario(PlatformDispatcher.instance, firstId: _viewId++, secondId: _viewId++),
-  'poppable_screen': () => PoppableScreenScenario(PlatformDispatcher.instance),
-  'platform_view_rotate': () => PlatformViewScenario(PlatformDispatcher.instance, 'Rotate Platform View', id: _viewId++),
-  'platform_view_gesture_reject_eager': () => PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: _viewId++, accept: false),
-  'platform_view_gesture_accept': () => PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: _viewId++, accept: true),
-  'platform_view_gesture_reject_after_touches_ended': () => PlatformViewForTouchIOSScenario(PlatformDispatcher.instance, 'platform view touch', id: _viewId++, accept: false, rejectUntilTouchesEnded: true),
-  'tap_status_bar': () => TouchesScenario(PlatformDispatcher.instance),
-  'text_semantics_focus': () => SendTextFocusSemantics(PlatformDispatcher.instance),
-  'initial_route_reply': () => InitialRouteReply(PlatformDispatcher.instance),
-  'platform_view_with_continuous_texture': () => PlatformViewWithContinuousTexture(PlatformDispatcher.instance, 'Platform View', id: _viewId++),
+Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
+  'animated_color_square': (FlutterView view) => AnimatedColorSquareScenario(view),
+  'locale_initialization': (FlutterView view) => LocaleInitialization(view),
+  'platform_view': (FlutterView view) => PlatformViewScenario(view, id: _viewId++),
+  'platform_view_no_overlay_intersection': (FlutterView view) => PlatformViewNoOverlayIntersectionScenario(view, id: _viewId++),
+  'platform_view_larger_than_display_size': (FlutterView view) => PlatformViewLargerThanDisplaySize(view, id: _viewId++),
+  'platform_view_partial_intersection': (FlutterView view) => PlatformViewPartialIntersectionScenario(view, id: _viewId++),
+  'platform_view_two_intersecting_overlays': (FlutterView view) => PlatformViewTwoIntersectingOverlaysScenario(view, id: _viewId++),
+  'platform_view_one_overlay_two_intersecting_overlays': (FlutterView view) => PlatformViewOneOverlayTwoIntersectingOverlaysScenario(view, id: _viewId++),
+  'platform_view_multiple_without_overlays': (FlutterView view) => MultiPlatformViewWithoutOverlaysScenario(view, firstId: _viewId++, secondId: _viewId++),
+  'platform_view_max_overlays': (FlutterView view) => PlatformViewMaxOverlaysScenario(view, id: _viewId++),
+  'platform_view_cliprect': (FlutterView view) => PlatformViewClipRectScenario(view, id: _viewId++),
+  'platform_view_cliprect_with_transform': (FlutterView view) => PlatformViewClipRectWithTransformScenario(view, id: _viewId++),
+  'platform_view_cliprect_after_moved': (FlutterView view) => PlatformViewClipRectAfterMovedScenario(view, id: _viewId++),
+  'platform_view_cliprrect': (FlutterView view) => PlatformViewClipRRectScenario(view, id: _viewId++),
+  'platform_view_large_cliprrect': (FlutterView view) => PlatformViewLargeClipRRectScenario(view, id: _viewId++),
+  'platform_view_cliprrect_with_transform': (FlutterView view) => PlatformViewClipRRectWithTransformScenario(view, id: _viewId++),
+  'platform_view_large_cliprrect_with_transform': (FlutterView view) => PlatformViewLargeClipRRectWithTransformScenario(view, id: _viewId++),
+  'platform_view_clippath': (FlutterView view) => PlatformViewClipPathScenario(view, id: _viewId++),
+  'platform_view_clippath_with_transform': (FlutterView view) => PlatformViewClipPathWithTransformScenario(view, id: _viewId++),
+  'platform_view_transform': (FlutterView view) => PlatformViewTransformScenario(view, id: _viewId++),
+  'platform_view_opacity': (FlutterView view) => PlatformViewOpacityScenario(view, id: _viewId++),
+  'platform_view_with_other_backdrop_filter': (FlutterView view) => PlatformViewWithOtherBackDropFilter(view, id: _viewId++),
+  'two_platform_views_with_other_backdrop_filter': (FlutterView view) => TwoPlatformViewsWithOtherBackDropFilter(view, firstId: _viewId++, secondId: _viewId++),
+  'platform_view_with_negative_backdrop_filter': (FlutterView view) => PlatformViewWithNegativeBackDropFilter(view, id: _viewId++),
+  'platform_view_multiple': (FlutterView view) => MultiPlatformViewScenario(view, firstId: _viewId++, secondId: _viewId++),
+  'platform_view_multiple_background_foreground': (FlutterView view) => MultiPlatformViewBackgroundForegroundScenario(view, firstId: _viewId++, secondId: _viewId++),
+  'non_full_screen_flutter_view_platform_view': (FlutterView view) => NonFullScreenFlutterViewPlatformViewScenario(view, id: _viewId++),
+  'poppable_screen': (FlutterView view) => PoppableScreenScenario(view),
+  'platform_view_rotate': (FlutterView view) => PlatformViewScenario(view, id: _viewId++),
+  'platform_view_gesture_reject_eager': (FlutterView view) => PlatformViewForTouchIOSScenario(view,  id: _viewId++, accept: false),
+  'platform_view_gesture_accept': (FlutterView view) => PlatformViewForTouchIOSScenario(view, id: _viewId++, accept: true),
+  'platform_view_gesture_reject_after_touches_ended': (FlutterView view) => PlatformViewForTouchIOSScenario(view, id: _viewId++, accept: false, rejectUntilTouchesEnded: true),
+  'platform_view_gesture_accept_with_overlapping_platform_views': (FlutterView view) => PlatformViewForOverlappingPlatformViewsScenario(view, foregroundId: _viewId++, backgroundId: _viewId++),
+  'platform_view_scrolling_under_widget':(FlutterView view) => PlatformViewScrollingUnderWidget(view, firstPlatformViewId: _viewId++, lastPlatformViewId: _viewId+=16),
+  'platform_views_with_clips_scrolling':(FlutterView view) => PlatformViewsWithClipsScrolling(view, firstPlatformViewId: _viewId++, lastPlatformViewId: _viewId+=16),
+  'two_platform_view_clip_rect': (FlutterView view) => TwoPlatformViewClipRect(view, firstId: _viewId++, secondId: _viewId++),
+  'two_platform_view_clip_rrect': (FlutterView view) => TwoPlatformViewClipRRect(view, firstId: _viewId++, secondId: _viewId++),
+  'two_platform_view_clip_path': (FlutterView view) => TwoPlatformViewClipPath(view, firstId: _viewId++, secondId: _viewId++),
+  'tap_status_bar': (FlutterView view) => TouchesScenario(view),
+  'initial_route_reply': (FlutterView view) => InitialRouteReply(view),
+  'platform_view_with_continuous_texture': (FlutterView view) => PlatformViewWithContinuousTexture(view, id: _viewId++),
+  'bogus_font_text': (FlutterView view) => BogusFontText(view),
+  'spawn_engine_works' : (FlutterView view) => BogusFontText(view),
+  'pointer_events': (FlutterView view) => TouchesScenario(view),
+  'display_texture': (FlutterView view) => DisplayTexture(view),
+  'get_bitmap': (FlutterView view) => GetBitmapScenario(view),
+  'app_extension': (FlutterView view) => DarwinAppExtensionScenario(view),
+  'darwin_system_font': (FlutterView view) => DarwinSystemFont(view),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};
 
-Scenario _currentScenarioInstance;
+Scenario? _currentScenarioInstance;
 
 /// Loads an scenario.
 /// The map must contain a `name` entry, which equals to the name of the scenario.
-void loadScenario(Map<String, dynamic> scenario) {
+void loadScenario(Map<String, dynamic> scenario, FlutterView view) {
   final String scenarioName = scenario['name'] as String;
   assert(_scenarios[scenarioName] != null);
   _currentScenarioParams = scenario;
 
   if (_currentScenarioInstance != null) {
-    _currentScenarioInstance.unmount();
+    _currentScenarioInstance!.unmount();
   }
 
-  _currentScenarioInstance = _scenarios[scenario['name']]();
-  window.scheduleFrame();
+  _currentScenarioInstance = _scenarios[scenario['name']]!(view);
+  view.platformDispatcher.scheduleFrame();
   print('Loading scenario $scenarioName');
 }
 
 /// Gets the loaded [Scenario].
-Scenario get currentScenario {
+Scenario? get currentScenario {
   return _currentScenarioInstance;
 }
 

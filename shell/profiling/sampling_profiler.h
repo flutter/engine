@@ -10,6 +10,7 @@
 #include <optional>
 #include <string>
 
+#include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
 
@@ -30,10 +31,10 @@ struct CpuUsageInfo {
 };
 
 /**
- * @brief Memory usage stats. `dirty_memory_usage` is the the memory usage (in
+ * @brief Memory usage stats. `dirty_memory_usage` is the memory usage (in
  * MB) such that the app uses its physical memory for dirty memory. Dirty memory
  * is the memory data that cannot be paged to disk. `owned_shared_memory_usage`
- * is the memory usage (in MB) such that the app uses its physicaal memory for
+ * is the memory usage (in MB) such that the app uses its physical memory for
  * shared memory, including loaded frameworks and executables. On iOS, it's
  * `physical memory - dirty memory`.
  */
@@ -75,7 +76,7 @@ using Sampler = std::function<ProfileSample(void)>;
  * @brief a Sampling Profiler that runs peridically and calls the `Sampler`
  * which servers as a value function to gather various profiling metrics as
  * represented by `ProfileSample`. These profiling metrics are then posted to
- * the observatory timeline.
+ * the Dart VM Service timeline.
  *
  */
 class SamplingProfiler {
@@ -83,7 +84,7 @@ class SamplingProfiler {
   /**
    * @brief Construct a new Sampling Profiler object
    *
-   * @param thread_label observatory prefix to be set for the profiling task
+   * @param thread_label Dart VM Service prefix to be set for the profiling task
    * runner.
    * @param profiler_task_runner the task runner to service sampling requests.
    * @param sampler the value function to collect the profiling metrics.
@@ -97,27 +98,33 @@ class SamplingProfiler {
                    Sampler sampler,
                    int num_samples_per_sec);
 
+  ~SamplingProfiler();
+
   /**
    * @brief Starts the SamplingProfiler by triggering `SampleRepeatedly`.
    *
    */
-  void Start() const;
+  void Start();
+
+  void Stop();
 
  private:
   const std::string thread_label_;
   const fml::RefPtr<fml::TaskRunner> profiler_task_runner_;
   const Sampler sampler_;
   const uint32_t num_samples_per_sec_;
+  bool is_running_ = false;
+  std::atomic<fml::AutoResetWaitableEvent*> shutdown_latch_ = nullptr;
 
   void SampleRepeatedly(fml::TimeDelta task_delay) const;
 
   /**
    * @brief This doesn't update the underlying OS thread name for the thread
    * backing `profiler_task_runner_`. Instead, this is just additional metadata
-   * for the Observatory to show the thread name of the isolate.
+   * for the VM Service to show the thread name of the isolate.
    *
    */
-  void UpdateObservatoryThreadName() const;
+  void UpdateDartVMServiceThreadName() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SamplingProfiler);
 };

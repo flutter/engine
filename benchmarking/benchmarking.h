@@ -5,13 +5,13 @@
 #ifndef FLUTTER_BENCHMARKING_BENCHMARKING_H_
 #define FLUTTER_BENCHMARKING_BENCHMARKING_H_
 
-#include "benchmark/benchmark_api.h"
+#include "benchmark/benchmark.h"
 
 namespace benchmarking {
 
 class ScopedPauseTiming {
  public:
-  ScopedPauseTiming(::benchmark::State& state, bool enabled = true)
+  explicit ScopedPauseTiming(::benchmark::State& state, bool enabled = true)
       : state_(state), enabled_(enabled) {
     if (enabled_) {
       state_.PauseTiming();

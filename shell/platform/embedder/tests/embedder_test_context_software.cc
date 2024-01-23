@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_software.h"
 
+#include <utility>
+
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
@@ -18,11 +20,11 @@ namespace testing {
 
 EmbedderTestContextSoftware::EmbedderTestContextSoftware(
     std::string assets_path)
-    : EmbedderTestContext(assets_path) {}
+    : EmbedderTestContext(std::move(assets_path)) {}
 
 EmbedderTestContextSoftware::~EmbedderTestContextSoftware() = default;
 
-bool EmbedderTestContextSoftware::Present(sk_sp<SkImage> image) {
+bool EmbedderTestContextSoftware::Present(const sk_sp<SkImage>& image) {
   software_surface_present_count_++;
 
   FireRootSurfacePresentCallbackIfPresent([image] { return image; });
@@ -34,12 +36,16 @@ size_t EmbedderTestContextSoftware::GetSurfacePresentCount() const {
   return software_surface_present_count_;
 }
 
+EmbedderTestContextType EmbedderTestContextSoftware::GetContextType() const {
+  return EmbedderTestContextType::kSoftwareContext;
+}
+
 void EmbedderTestContextSoftware::SetupSurface(SkISize surface_size) {
   surface_size_ = surface_size;
 }
 
 void EmbedderTestContextSoftware::SetupCompositor() {
-  FML_CHECK(!compositor_) << "Already setup a compositor in this context.";
+  FML_CHECK(!compositor_) << "Already set up a compositor in this context.";
   compositor_ = std::make_unique<EmbedderTestCompositorSoftware>(surface_size_);
 }
 

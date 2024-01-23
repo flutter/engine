@@ -2,24 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_
-#define SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_VIEW_IOS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_VIEW_IOS_H_
 
 #include <memory>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_router.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_view_embedder.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
+#import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 
 @class FlutterViewController;
@@ -40,32 +40,33 @@ namespace flutter {
  */
 class PlatformViewIOS final : public PlatformView {
  public:
+  PlatformViewIOS(PlatformView::Delegate& delegate,
+                  const std::shared_ptr<IOSContext>& context,
+                  const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+                  const flutter::TaskRunners& task_runners);
+
   explicit PlatformViewIOS(
       PlatformView::Delegate& delegate,
       IOSRenderingAPI rendering_api,
       const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-      flutter::TaskRunners task_runners);
+      const flutter::TaskRunners& task_runners,
+      const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch);
 
   ~PlatformViewIOS() override;
-
-  /**
-   * The `PlatformMessageRouter` is the iOS bridge connecting the shell's
-   * platform agnostic `PlatformMessage` to iOS's channel message handler.
-   */
-  PlatformMessageRouter& GetPlatformMessageRouter();
 
   /**
    * Returns the `FlutterViewController` currently attached to the `FlutterEngine` owning
    * this PlatformViewIOS.
    */
-  fml::WeakPtr<FlutterViewController> GetOwnerViewController() const;
+  fml::WeakNSObject<FlutterViewController> GetOwnerViewController() const;
 
   /**
    * Updates the `FlutterViewController` currently attached to the `FlutterEngine` owning
    * this PlatformViewIOS. This should be updated when the `FlutterEngine`
    * is given a new `FlutterViewController`.
    */
-  void SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller);
+  void SetOwnerViewController(const fml::WeakNSObject<FlutterViewController>& owner_controller);
 
   /**
    * Called one time per `FlutterViewController` when the `FlutterViewController`'s
@@ -88,9 +89,20 @@ class PlatformViewIOS final : public PlatformView {
   // |PlatformView|
   void SetSemanticsEnabled(bool enabled) override;
 
+  /** Accessor for the `IOSContext` associated with the platform view. */
+  const std::shared_ptr<IOSContext>& GetIosContext() { return ios_context_; }
+
+  std::shared_ptr<PlatformMessageHandlerIos> GetPlatformMessageHandlerIos() const {
+    return platform_message_handler_;
+  }
+
+  std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler() const override {
+    return platform_message_handler_;
+  }
+
  private:
   /// Smart pointer for use with objective-c observers.
-  /// This guarentees we remove the observer.
+  /// This guarantees we remove the observer.
   class ScopedObserver {
    public:
     ScopedObserver();
@@ -100,43 +112,42 @@ class PlatformViewIOS final : public PlatformView {
     ScopedObserver& operator=(const ScopedObserver&) = delete;
 
    private:
-    id<NSObject> observer_;
+    id<NSObject> observer_ = nil;
   };
 
-  /// Smart pointer that guarentees we communicate clearing Accessibility
+  /// Wrapper that guarantees we communicate clearing Accessibility
   /// information to Dart.
-  class AccessibilityBridgePtr {
+  class AccessibilityBridgeManager {
    public:
-    explicit AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled);
-    AccessibilityBridgePtr(const std::function<void(bool)>& set_semantics_enabled,
-                           AccessibilityBridge* bridge);
-    ~AccessibilityBridgePtr();
+    explicit AccessibilityBridgeManager(const std::function<void(bool)>& set_semantics_enabled);
+    AccessibilityBridgeManager(const std::function<void(bool)>& set_semantics_enabled,
+                               AccessibilityBridge* bridge);
     explicit operator bool() const noexcept { return static_cast<bool>(accessibility_bridge_); }
-    AccessibilityBridge* operator->() const noexcept { return accessibility_bridge_.get(); }
-    void reset(AccessibilityBridge* bridge = nullptr);
+    AccessibilityBridge* get() const noexcept { return accessibility_bridge_.get(); }
+    void Set(std::unique_ptr<AccessibilityBridge> bridge);
+    void Clear();
 
    private:
-    FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgePtr);
+    FML_DISALLOW_COPY_AND_ASSIGN(AccessibilityBridgeManager);
     std::unique_ptr<AccessibilityBridge> accessibility_bridge_;
     std::function<void(bool)> set_semantics_enabled_;
   };
 
-  fml::WeakPtr<FlutterViewController> owner_controller_;
+  fml::WeakNSObject<FlutterViewController> owner_controller_;
   // Since the `ios_surface_` is created on the platform thread but
   // used on the raster thread we need to protect it with a mutex.
   std::mutex ios_surface_mutex_;
   std::unique_ptr<IOSSurface> ios_surface_;
   std::shared_ptr<IOSContext> ios_context_;
   const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
-  PlatformMessageRouter platform_message_router_;
-  AccessibilityBridgePtr accessibility_bridge_;
+  AccessibilityBridgeManager accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
-  fml::closure firstFrameCallback_;
   ScopedObserver dealloc_view_controller_observer_;
   std::vector<std::string> platform_resolved_locale_;
+  std::shared_ptr<PlatformMessageHandlerIos> platform_message_handler_;
 
   // |PlatformView|
-  void HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) override;
+  void HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) override;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
@@ -146,6 +157,9 @@ class PlatformViewIOS final : public PlatformView {
 
   // |PlatformView|
   sk_sp<GrDirectContext> CreateResourceContext() const override;
+
+  // |PlatformView|
+  std::shared_ptr<impeller::Context> GetImpellerContext() const override;
 
   // |PlatformView|
   void SetAccessibilityFeatures(int32_t flags) override;
@@ -169,4 +183,4 @@ class PlatformViewIOS final : public PlatformView {
 
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_VIEW_IOS_H_

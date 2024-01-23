@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_GLFW_WRAPPER_TESTING_STUB_FLUTTER_GLFW_API_H_
-#define FLUTTER_SHELL_PLATFORM_GLFW_WRAPPER_TESTING_STUB_FLUTTER_GLFW_API_H_
+#ifndef FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_GLFW_API_H_
+#define FLUTTER_SHELL_PLATFORM_GLFW_CLIENT_WRAPPER_TESTING_STUB_FLUTTER_GLFW_API_H_
 
 #include <memory>
 
@@ -16,7 +16,7 @@ namespace testing {
 // the headers in platform/glfw/public/.
 
 // Linking this class into a test binary will provide dummy forwarding
-// implementantions of that C API, so that the wrapper can be tested separately
+// implementations of that C API, so that the wrapper can be tested separately
 // from the actual library.
 class StubFlutterGlfwApi {
  public:
@@ -24,7 +24,7 @@ class StubFlutterGlfwApi {
   // will be forwarded.
   static void SetTestStub(StubFlutterGlfwApi* stub);
 
-  // Returns the current stub, as last set by SetTestFluttterStub.
+  // Returns the current stub, as last set by SetTestFlutterStub.
   static StubFlutterGlfwApi* GetTestStub();
 
   virtual ~StubFlutterGlfwApi() {}
@@ -98,7 +98,7 @@ class StubFlutterGlfwApi {
 class ScopedStubFlutterGlfwApi {
  public:
   // Calls SetTestFlutterStub with |stub|.
-  ScopedStubFlutterGlfwApi(std::unique_ptr<StubFlutterGlfwApi> stub);
+  explicit ScopedStubFlutterGlfwApi(std::unique_ptr<StubFlutterGlfwApi> stub);
 
   // Restores the previous test stub.
   ~ScopedStubFlutterGlfwApi();

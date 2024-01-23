@@ -3,16 +3,22 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/ios_context_software.h"
+#include "ios_context.h"
 
 namespace flutter {
 
-IOSContextSoftware::IOSContextSoftware() = default;
+IOSContextSoftware::IOSContextSoftware() : IOSContext(MsaaSampleCount::kNone) {}
 
 // |IOSContext|
 IOSContextSoftware::~IOSContextSoftware() = default;
 
 // |IOSContext|
 sk_sp<GrDirectContext> IOSContextSoftware::CreateResourceContext() {
+  return nullptr;
+}
+
+// |IOSContext|
+sk_sp<GrDirectContext> IOSContextSoftware::GetMainContext() const {
   return nullptr;
 }
 

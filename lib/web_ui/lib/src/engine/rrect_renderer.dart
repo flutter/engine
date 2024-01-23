@@ -2,11 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'dom.dart';
+import 'util.dart';
 
 /// Renders an RRect using path primitives.
-abstract class _RRectRenderer {
+abstract class RRectRenderer {
   // To draw the rounded rectangle, perform the following steps:
   //   0. Ensure border radius don't overlap
   //   1. Flip left,right top,bottom since web doesn't support flipped
@@ -178,41 +182,50 @@ abstract class _RRectRenderer {
 }
 
 /// Renders RRect to a 2d canvas.
-class _RRectToCanvasRenderer extends _RRectRenderer {
-  final html.CanvasRenderingContext2D context;
-  _RRectToCanvasRenderer(this.context);
+class RRectToCanvasRenderer extends RRectRenderer {
+  RRectToCanvasRenderer(this.context);
+  final DomCanvasRenderingContext2D context;
+  @override
   void beginPath() {
     context.beginPath();
   }
 
+  @override
   void moveTo(double x, double y) {
     context.moveTo(x, y);
   }
 
+  @override
   void lineTo(double x, double y) {
     context.lineTo(x, y);
   }
 
+  @override
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
-    DomRenderer.ellipse(context, centerX, centerY, radiusX, radiusY, rotation, startAngle,
+    drawEllipse(context, centerX, centerY, radiusX, radiusY, rotation, startAngle,
         endAngle, antiClockwise);
   }
 }
 
 /// Renders RRect to a path.
-class _RRectToPathRenderer extends _RRectRenderer {
+class RRectToPathRenderer extends RRectRenderer {
+  RRectToPathRenderer(this.path);
   final ui.Path path;
-  _RRectToPathRenderer(this.path);
+  @override
   void beginPath() {}
+
+  @override
   void moveTo(double x, double y) {
     path.moveTo(x, y);
   }
 
+  @override
   void lineTo(double x, double y) {
     path.lineTo(x, y);
   }
 
+  @override
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
     path.addArc(
@@ -227,7 +240,7 @@ typedef RRectRendererEllipseCallback = void Function(double centerX, double cent
 typedef RRectRendererCallback = void Function(double x, double y);
 
 /// Converts RRect to path primitives with callbacks.
-class RRectMetricsRenderer extends _RRectRenderer {
+class RRectMetricsRenderer extends RRectRenderer {
   RRectMetricsRenderer({this.moveToCallback, this.lineToCallback, this.ellipseCallback});
 
   final RRectRendererEllipseCallback? ellipseCallback;

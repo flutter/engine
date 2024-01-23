@@ -13,13 +13,30 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewUITests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view"];
+  GoldenTestManager* manager = [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface NonFullScreenFlutterViewPlatformViewUITests : GoldenPlatformViewTests
+
+@end
+
+@implementation NonFullScreenFlutterViewPlatformViewUITests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--non-full-screen-flutter-view-platform-view"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -31,13 +48,13 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation MultiplePlatformViewsTest
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-multiple"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-multiple"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -49,7 +66,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation MultiplePlatformViewsBackgroundForegroundTest
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager = [[PlatformViewGoldenTestManager alloc]
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
       initWithLaunchArg:@"--platform-view-multiple-background-foreground"];
   return [super initWithManager:manager invocation:invocation];
 }
@@ -57,7 +74,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 - (void)testPlatformView {
   [[XCUIDevice sharedDevice] pressButton:XCUIDeviceButtonHome];
   [self.application activate];
-  [self checkGolden];
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -70,13 +87,43 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipRectTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipRectAfterMovedTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRectAfterMovedTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-after-moved"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  // This test needs to wait for several frames for the PlatformView to settle to
+  // the correct position. The PlatformView accessiblity is set to platform_view[10000] when it is
+  // ready.
+  XCUIElement* element = self.application.otherElements[@"platform_view[10000]"];
+  BOOL exists = [element waitForExistenceWithTimeout:kSecondsToWaitForPlatformView];
+  if (!exists) {
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -88,13 +135,31 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipRRectTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationLargeClipRRectTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationLargeClipRRectTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-large-cliprrect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -106,13 +171,139 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationClipPathTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipRectWithTransformTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRectWithTransformTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprect-with-transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipRRectWithTransformTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipRRectWithTransformTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-cliprrect-with-transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationLargeClipRRectWithTransformTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationLargeClipRRectWithTransformTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-large-cliprrect-with-transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewMutationClipPathWithTransformTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewMutationClipPathWithTransformTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-clippath-with-transform"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewClipRectTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewClipRectTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-rect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewClipRRectTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewClipRRectTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-rrect"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewClipPathTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewClipPathTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--two-platform-view-clip-path"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -124,13 +315,13 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationTransformTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-transform"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-transform"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -142,13 +333,72 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 @implementation PlatformViewMutationOpacityTests
 
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-opacity"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-opacity"];
   return [super initWithManager:manager invocation:invocation];
 }
 
 - (void)testPlatformView {
-  [self checkGolden];
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewWithOtherBackdropFilterTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewWithOtherBackdropFilterTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-with-other-backdrop-filter"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface TwoPlatformViewsWithOtherBackDropFilterTests : GoldenPlatformViewTests
+
+@end
+
+@implementation TwoPlatformViewsWithOtherBackDropFilterTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--two-platform-views-with-other-backdrop-filter"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  // (TODO)cyanglaz: remove the threshold adjustment after all the ci migrates to macOS13.
+  // https://github.com/flutter/flutter/issues/133207
+  if ([NSProcessInfo processInfo].operatingSystemVersion.majorVersion >= 13) {
+    self.rmseThreadhold = 0.7;
+  }
+  [self checkPlatformViewGolden];
+}
+
+@end
+
+@interface PlatformViewWithNegativeOtherBackDropFilterTests : GoldenPlatformViewTests
+
+@end
+
+@implementation PlatformViewWithNegativeOtherBackDropFilterTests
+
+- (instancetype)initWithInvocation:(NSInvocation*)invocation {
+  GoldenTestManager* manager = [[GoldenTestManager alloc]
+      initWithLaunchArg:@"--platform-view-with-negative-backdrop-filter"];
+  return [super initWithManager:manager invocation:invocation];
+}
+
+- (void)testPlatformView {
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -158,8 +408,8 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 @implementation PlatformViewRotation
 - (instancetype)initWithInvocation:(NSInvocation*)invocation {
-  PlatformViewGoldenTestManager* manager =
-      [[PlatformViewGoldenTestManager alloc] initWithLaunchArg:@"--platform-view-rotate"];
+  GoldenTestManager* manager =
+      [[GoldenTestManager alloc] initWithLaunchArg:@"--platform-view-rotate"];
   return [super initWithManager:manager invocation:invocation];
 }
 
@@ -170,7 +420,7 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
 
 - (void)testPlatformView {
   XCUIDevice.sharedDevice.orientation = UIDeviceOrientationLandscapeLeft;
-  [self checkGolden];
+  [self checkPlatformViewGolden];
 }
 
 @end
@@ -201,6 +451,80 @@ static const NSInteger kSecondsToWaitForPlatformView = 30;
   }
 
   XCTAssertNotNil(platformView);
+}
+
+@end
+
+@interface PlatformViewScrollingUnderWidget : XCTestCase
+
+@end
+
+@implementation PlatformViewScrollingUnderWidget
+
+- (void)setUp {
+  [super setUp];
+  self.continueAfterFailure = NO;
+}
+
+- (void)testPlatformViewScrollingUnderWidget {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments =
+      @[ @"--platform-view-scrolling-under-widget", @"--with-continuous-texture" ];
+  [app launch];
+
+  XCUIElement* platformView = app.textViews.firstMatch;
+  BOOL exists = [platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView];
+  if (!exists) {
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  // Wait and let the scenario app scroll a bit.
+  XCTWaiterResult waitResult = [XCTWaiter
+      waitForExpectations:@[ [[XCTestExpectation alloc] initWithDescription:@"Wait for 5 seconds"] ]
+                  timeout:5];
+  // If the waiter is not interrupted, we know the app is in a valid state after timeout, thus the
+  // test passes.
+  XCTAssert(waitResult != XCTWaiterResultInterrupted);
+}
+
+@end
+
+@interface PlatformViewWithClipsScrolling : XCTestCase
+
+@end
+
+@implementation PlatformViewWithClipsScrolling
+
+- (void)setUp {
+  [super setUp];
+  self.continueAfterFailure = NO;
+}
+
+- (void)testPlatformViewsWithClipsScrolling {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments =
+      @[ @"--platform-views-with-clips-scrolling", @"platform_views_with_clips_scrolling" ];
+  [app launch];
+
+  XCUIElement* platformView = app.textViews.firstMatch;
+  BOOL exists = [platformView waitForExistenceWithTimeout:kSecondsToWaitForPlatformView];
+  if (!exists) {
+    XCTFail(@"It took longer than %@ second to find the platform view."
+            @"There might be issues with the platform view's construction,"
+            @"or with how the scenario is built.",
+            @(kSecondsToWaitForPlatformView));
+  }
+
+  // Wait and let the scenario app scroll a bit.
+  XCTWaiterResult waitResult = [XCTWaiter
+      waitForExpectations:@[ [[XCTestExpectation alloc] initWithDescription:@"Wait for 5 seconds"] ]
+                  timeout:5];
+  // If the waiter is not interrupted, we know the app is in a valid state after timeout, thus the
+  // test passes.
+  XCTAssert(waitResult != XCTWaiterResultInterrupted);
 }
 
 @end

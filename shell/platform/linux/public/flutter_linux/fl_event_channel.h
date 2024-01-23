@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_EVENT_CHANNEL_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_EVENT_CHANNEL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_EVENT_CHANNEL_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_EVENT_CHANNEL_H_
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
@@ -11,6 +11,7 @@
 
 #include <gio/gio.h>
 #include <glib-object.h>
+#include <gmodule.h>
 
 #include "fl_binary_messenger.h"
 #include "fl_method_channel.h"
@@ -18,6 +19,7 @@
 
 G_BEGIN_DECLS
 
+G_MODULE_EXPORT
 G_DECLARE_FINAL_TYPE(FlEventChannel,
                      fl_event_channel,
                      FL,
@@ -184,4 +186,4 @@ gboolean fl_event_channel_send_end_of_stream(FlEventChannel* channel,
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_EVENT_CHANNEL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_EVENT_CHANNEL_H_

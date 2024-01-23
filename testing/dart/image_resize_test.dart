@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
 
 void main() {
   bool assertsEnabled = false;
@@ -50,7 +49,7 @@ void main() {
 
   test('upscale image by 5x', () async {
     final Uint8List bytes = await readFile('2x2.png');
-    final Codec codec = await instantiateImageCodec(bytes, targetWidth: 10, allowUpscaling: true);
+    final Codec codec = await instantiateImageCodec(bytes, targetWidth: 10);
     final FrameInfo frame = await codec.getNextFrame();
     final int codecHeight = frame.image.height;
     final int codecWidth = frame.image.width;
@@ -71,7 +70,7 @@ void main() {
   test('upscale image varying width and height', () async {
     final Uint8List bytes = await readFile('2x2.png');
     final Codec codec =
-        await instantiateImageCodec(bytes, targetWidth: 10, targetHeight: 1, allowUpscaling: true);
+        await instantiateImageCodec(bytes, targetWidth: 10, targetHeight: 1);
     final FrameInfo frame = await codec.getNextFrame();
     final int codecHeight = frame.image.height;
     final int codecWidth = frame.image.width;
@@ -127,7 +126,7 @@ void main() {
         blackSquare.width,
         blackSquare.height,
         PixelFormat.rgba8888,
-        (Image image) => null,
+        (Image image) {},
         targetHeight: 10,
         allowUpscaling: false,
       );
@@ -155,7 +154,7 @@ void main() {
         blackSquare.width,
         blackSquare.height,
         PixelFormat.rgba8888,
-        (Image image) => null,
+        (Image image) {},
         targetHeight: 10,
         targetWidth: 1,
         allowUpscaling: false,
@@ -184,7 +183,7 @@ class BlackSquare {
     return BlackSquare._(width, height, pixels);
   }
 
-  Future<Image> resize({int targetWidth, int targetHeight, bool allowUpscaling = false}) async {
+  Future<Image> resize({int? targetWidth, int? targetHeight, bool allowUpscaling = false}) async {
     final Completer<Image> imageCompleter = Completer<Image>();
     decodeImageFromPixels(
       pixels,
@@ -196,7 +195,7 @@ class BlackSquare {
       targetWidth: targetWidth,
       allowUpscaling: allowUpscaling,
     );
-    return await imageCompleter.future;
+    return imageCompleter.future;
   }
 
   final int width;
@@ -207,5 +206,5 @@ class BlackSquare {
 Future<Uint8List> readFile(String fileName) async {
   final File file =
       File(path.join('flutter', 'testing', 'resources', fileName));
-  return await file.readAsBytes();
+  return file.readAsBytes();
 }

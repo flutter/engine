@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
-#define FLUTTER_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
 
 #import "FlutterPlugin.h"
 
@@ -12,24 +12,21 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Propagates `UIAppDelegate` callbacks to registered plugins.
  */
-FLUTTER_EXPORT
-@interface FlutterPluginAppLifeCycleDelegate : NSObject
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_10_0
-                                               <UNUserNotificationCenterDelegate>
-#endif
+FLUTTER_DARWIN_EXPORT
+@interface FlutterPluginAppLifeCycleDelegate : NSObject <UNUserNotificationCenterDelegate>
 
 /**
- * Registers `delegate` to receive life cycle callbacks via this FlutterPluginAppLifecycleDelegate
+ * Registers `delegate` to receive life cycle callbacks via this FlutterPluginAppLifeCycleDelegate
  * as long as it is alive.
  *
- * `delegate` will only referenced weakly.
+ * `delegate` will only be referenced weakly.
  */
 - (void)addDelegate:(NSObject<FlutterApplicationLifeCycleDelegate>*)delegate;
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  *
- * @return `NO` if any plugin vetoes application launch.
+ * @return `NO` if any plugin vetos application launch.
  */
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
@@ -37,7 +34,7 @@ FLUTTER_EXPORT
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
  *
- * @return `NO` if any plugin vetoes application launch.
+ * @return `NO` if any plugin vetos application launch.
  */
 - (BOOL)application:(UIApplication*)application
     willFinishLaunchingWithOptions:(NSDictionary*)launchOptions;
@@ -56,6 +53,12 @@ FLUTTER_EXPORT
  */
 - (void)application:(UIApplication*)application
     didRegisterForRemoteNotificationsWithDeviceToken:(NSData*)deviceToken;
+
+/**
+ * Calls all plugins registered for `UIApplicationDelegate` callbacks.
+ */
+- (void)application:(UIApplication*)application
+    didFailToRegisterForRemoteNotificationsWithError:(NSError*)error;
 
 /**
  * Calls all plugins registered for `UIApplicationDelegate` callbacks.
@@ -142,4 +145,4 @@ FLUTTER_EXPORT
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGINAPPLIFECYCLEDELEGATE_H_

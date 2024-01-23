@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/android/external_view_embedder/surface_pool.h"
 
+#include <utility>
+
 namespace flutter {
 
 OverlayLayer::OverlayLayer(int id,
@@ -22,13 +24,13 @@ SurfacePool::~SurfacePool() = default;
 std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
     GrDirectContext* gr_context,
     const AndroidContext& android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::shared_ptr<AndroidSurfaceFactory> surface_factory) {
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+    const std::shared_ptr<AndroidSurfaceFactory>& surface_factory) {
+  std::lock_guard lock(mutex_);
   // Destroy current layers in the pool if the frame size has changed.
   if (requested_frame_size_ != current_frame_size_) {
-    DestroyLayers(jni_facade);
+    DestroyLayersLocked(jni_facade);
   }
-
   intptr_t gr_context_key = reinterpret_cast<intptr_t>(gr_context);
   // Allocate a new surface if there isn't one available.
   if (available_layer_index_ >= layers_.size()) {
@@ -36,7 +38,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
         surface_factory->CreateSurface();
 
     FML_CHECK(android_surface && android_surface->IsValid())
-        << "Could not create an OpenGL, Vulkan or Software surface to setup "
+        << "Could not create an OpenGL, Vulkan or Software surface to set up "
            "rendering.";
 
     std::unique_ptr<PlatformViewAndroidJNI::OverlayMetadata> java_metadata =
@@ -56,6 +58,7 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
     layer->gr_context_key = gr_context_key;
     layers_.push_back(layer);
   }
+
   std::shared_ptr<OverlayLayer> layer = layers_[available_layer_index_];
   // Since the surfaces are recycled, it's possible that the GrContext is
   // different.
@@ -73,19 +76,33 @@ std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
 }
 
 void SurfacePool::RecycleLayers() {
+  std::lock_guard lock(mutex_);
   available_layer_index_ = 0;
 }
 
+bool SurfacePool::HasLayers() {
+  std::lock_guard lock(mutex_);
+  return !layers_.empty();
+}
+
 void SurfacePool::DestroyLayers(
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-  if (layers_.size() > 0) {
-    jni_facade->FlutterViewDestroyOverlaySurfaces();
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
+  std::lock_guard lock(mutex_);
+  DestroyLayersLocked(jni_facade);
+}
+
+void SurfacePool::DestroyLayersLocked(
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
+  if (layers_.empty()) {
+    return;
   }
+  jni_facade->FlutterViewDestroyOverlaySurfaces();
   layers_.clear();
   available_layer_index_ = 0;
 }
 
 std::vector<std::shared_ptr<OverlayLayer>> SurfacePool::GetUnusedLayers() {
+  std::lock_guard lock(mutex_);
   std::vector<std::shared_ptr<OverlayLayer>> results;
   for (size_t i = available_layer_index_; i < layers_.size(); i++) {
     results.push_back(layers_[i]);
@@ -94,6 +111,7 @@ std::vector<std::shared_ptr<OverlayLayer>> SurfacePool::GetUnusedLayers() {
 }
 
 void SurfacePool::SetFrameSize(SkISize frame_size) {
+  std::lock_guard lock(mutex_);
   requested_frame_size_ = frame_size;
 }
 

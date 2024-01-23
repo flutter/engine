@@ -4,6 +4,13 @@
 
 #include "flutter/lib/ui/painting/image.h"
 
+#include <algorithm>
+#include <limits>
+#include "tonic/logging/dart_invoke.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/lib/ui/painting/image_encoding_impeller.h"
+#endif
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -15,52 +22,38 @@ namespace flutter {
 typedef CanvasImage Image;
 
 // Since _Image is a private class, we can't use IMPLEMENT_WRAPPERTYPEINFO
-static const tonic::DartWrapperInfo kDartWrapperInfo_ui_Image = {
-    "ui",
-    "_Image",
-    sizeof(Image),
-};
+static const tonic::DartWrapperInfo kDartWrapperInfoUIImage("ui", "_Image");
 const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
-    kDartWrapperInfo_ui_Image;
-
-#define FOR_EACH_BINDING(V) \
-  V(Image, width)           \
-  V(Image, height)          \
-  V(Image, toByteData)      \
-  V(Image, dispose)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void CanvasImage::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
+    kDartWrapperInfoUIImage;
 
 CanvasImage::CanvasImage() = default;
 
 CanvasImage::~CanvasImage() = default;
+
+Dart_Handle CanvasImage::CreateOuterWrapping() {
+  Dart_Handle ui_lib = Dart_LookupLibrary(tonic::ToDart("dart:ui"));
+  return tonic::DartInvokeField(ui_lib, "_wrapImage", {ToDart(this)});
+}
 
 Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
   return EncodeImage(this, format, callback);
 }
 
 void CanvasImage::dispose() {
-  auto hint_freed_delegate = UIDartState::Current()->GetHintFreedDelegate();
-  if (hint_freed_delegate) {
-    hint_freed_delegate->HintFreed(GetAllocationSize());
-  }
   image_.reset();
   ClearDartWrapper();
 }
 
-size_t CanvasImage::GetAllocationSize() const {
-  if (auto image = image_.get()) {
-    const auto& info = image->imageInfo();
-    const auto kMipmapOverhead = 4.0 / 3.0;
-    const size_t image_byte_size = info.computeMinByteSize() * kMipmapOverhead;
-    return image_byte_size + sizeof(this);
-  } else {
-    return sizeof(CanvasImage);
+int CanvasImage::colorSpace() {
+  if (image_->skia_image()) {
+    return ColorSpace::kSRGB;
+  } else if (image_->impeller_texture()) {
+#if IMPELLER_SUPPORTS_RENDERING
+    return ImageEncodingImpeller::GetColorSpace(image_->impeller_texture());
+#endif  // IMPELLER_SUPPORTS_RENDERING
   }
+
+  return -1;
 }
 
 }  // namespace flutter

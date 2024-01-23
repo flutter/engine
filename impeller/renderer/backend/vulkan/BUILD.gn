@@ -1,0 +1,125 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/vulkan/config.gni")
+import("../../../tools/impeller.gni")
+
+impeller_component("vulkan_unittests") {
+  testonly = true
+  sources = [
+    "blit_command_vk_unittests.cc",
+    "command_encoder_vk_unittests.cc",
+    "command_pool_vk_unittests.cc",
+    "context_vk_unittests.cc",
+    "descriptor_pool_vk_unittests.cc",
+    "fence_waiter_vk_unittests.cc",
+    "resource_manager_vk_unittests.cc",
+    "test/gpu_tracer_unittests.cc",
+    "test/mock_vulkan.cc",
+    "test/mock_vulkan.h",
+    "test/mock_vulkan_unittests.cc",
+  ]
+  deps = [
+    ":vulkan",
+    "//flutter/testing:testing_lib",
+  ]
+}
+
+impeller_component("vulkan") {
+  sources = [
+    "allocator_vk.cc",
+    "allocator_vk.h",
+    "android_hardware_buffer_texture_source_vk.cc",
+    "android_hardware_buffer_texture_source_vk.h",
+    "barrier_vk.cc",
+    "barrier_vk.h",
+    "blit_command_vk.cc",
+    "blit_command_vk.h",
+    "blit_pass_vk.cc",
+    "blit_pass_vk.h",
+    "capabilities_vk.cc",
+    "capabilities_vk.h",
+    "command_buffer_vk.cc",
+    "command_buffer_vk.h",
+    "command_encoder_vk.cc",
+    "command_encoder_vk.h",
+    "command_pool_vk.cc",
+    "command_pool_vk.h",
+    "compute_pass_vk.cc",
+    "compute_pass_vk.h",
+    "compute_pipeline_vk.cc",
+    "compute_pipeline_vk.h",
+    "context_vk.cc",
+    "context_vk.h",
+    "debug_report_vk.cc",
+    "debug_report_vk.h",
+    "descriptor_pool_vk.cc",
+    "descriptor_pool_vk.h",
+    "device_buffer_vk.cc",
+    "device_buffer_vk.h",
+    "fence_waiter_vk.cc",
+    "fence_waiter_vk.h",
+    "formats_vk.cc",
+    "formats_vk.h",
+    "gpu_tracer_vk.cc",
+    "gpu_tracer_vk.h",
+    "limits_vk.h",
+    "pipeline_cache_vk.cc",
+    "pipeline_cache_vk.h",
+    "pipeline_library_vk.cc",
+    "pipeline_library_vk.h",
+    "pipeline_vk.cc",
+    "pipeline_vk.h",
+    "queue_vk.cc",
+    "queue_vk.h",
+    "render_pass_vk.cc",
+    "render_pass_vk.h",
+    "resource_manager_vk.cc",
+    "resource_manager_vk.h",
+    "sampler_library_vk.cc",
+    "sampler_library_vk.h",
+    "sampler_vk.cc",
+    "sampler_vk.h",
+    "shader_function_vk.cc",
+    "shader_function_vk.h",
+    "shader_library_vk.cc",
+    "shader_library_vk.h",
+    "shared_object_vk.cc",
+    "shared_object_vk.h",
+    "surface_context_vk.cc",
+    "surface_context_vk.h",
+    "surface_vk.cc",
+    "surface_vk.h",
+    "swapchain_image_vk.cc",
+    "swapchain_image_vk.h",
+    "swapchain_impl_vk.cc",
+    "swapchain_impl_vk.h",
+    "swapchain_vk.cc",
+    "swapchain_vk.h",
+    "texture_source_vk.cc",
+    "texture_source_vk.h",
+    "texture_vk.cc",
+    "texture_vk.h",
+    "tracked_objects_vk.cc",
+    "tracked_objects_vk.h",
+    "vertex_descriptor_vk.cc",
+    "vertex_descriptor_vk.h",
+    "vk.h",
+    "vma.cc",
+    "vma.h",
+  ]
+
+  public_deps = [
+    "../../:renderer",
+    "../../../shader_archive",
+    "//flutter/flutter_vma",
+    "//flutter/fml",
+    "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
+    "//third_party/vulkan_memory_allocator",
+  ]
+
+  if (impeller_enable_vulkan_validation_layers) {
+    defines = [ "IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS" ]
+  }
+}

@@ -23,7 +23,7 @@ template("_copy_debug_symbols") {
 
     sources = [ binary_path ]
 
-    _dest_base = "${root_out_dir}/flutter-debug-symbols-${flutter_runtime_mode}-${target_os}-${target_cpu}"
+    _dest_base = "${root_out_dir}/.build-id"
 
     args = [
       "--executable-name",
@@ -33,7 +33,7 @@ template("_copy_debug_symbols") {
       "--destination-base",
       rebase_path(_dest_base),
       "--read-elf",
-      rebase_path("//fuchsia/toolchain/$host_os/bin/llvm-readelf"),
+      rebase_path("//buildtools/${host_os}-${host_cpu}/clang/bin/llvm-readelf"),
     ]
 
     if (unstripped) {

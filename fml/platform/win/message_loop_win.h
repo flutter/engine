@@ -25,6 +25,7 @@ class MessageLoopWin : public MessageLoopImpl {
 
   bool running_;
   fml::UniqueObject<HANDLE, UniqueHandleTraits> timer_;
+  uint32_t timer_resolution_;
 
   MessageLoopWin();
 
@@ -43,4 +44,4 @@ class MessageLoopWin : public MessageLoopImpl {
 
 }  // namespace fml
 
-#endif  // FLUTTER_FML_PLATFORM_GENERIC_MESSAGE_LOOP_GENERIC_H_
+#endif  // FLUTTER_FML_PLATFORM_WIN_MESSAGE_LOOP_WIN_H_

@@ -1,0 +1,142 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/third_party/glfw/glfw_args.gni")
+import("tools/impeller.gni")
+
+config("impeller_public_config") {
+  include_dirs = [ ".." ]
+
+  defines = []
+
+  if (impeller_debug) {
+    defines += [ "IMPELLER_DEBUG=1" ]
+  }
+
+  if (impeller_capture) {
+    defines += [ "IMPELLER_ENABLE_CAPTURE=1" ]
+  }
+
+  if (impeller_supports_rendering) {
+    defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
+  }
+
+  if (impeller_enable_metal) {
+    defines += [ "IMPELLER_ENABLE_METAL=1" ]
+  }
+
+  if (impeller_enable_opengles) {
+    defines += [ "IMPELLER_ENABLE_OPENGLES=1" ]
+  }
+
+  if (impeller_enable_vulkan) {
+    defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
+  }
+
+  if (impeller_enable_vulkan_playgrounds) {
+    defines += [ "IMPELLER_ENABLE_VULKAN_PLAYGROUNDS=1" ]
+  }
+
+  if (impeller_trace_all_gl_calls) {
+    defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
+  }
+
+  if (is_win) {
+    defines += [
+      # TODO(dnfield): https://github.com/flutter/flutter/issues/50053
+      "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+    ]
+  }
+
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+  }
+}
+
+group("impeller") {
+  public_deps = [
+    "archivist",
+    "base",
+    "geometry",
+    "tessellator",
+  ]
+
+  if (impeller_supports_rendering) {
+    public_deps += [
+      "aiks",
+      "display_list",
+      "entity",
+      "image:image_skia_backend",
+      "renderer",
+      "renderer/backend",
+      "typographer/backends/skia:typographer_skia_backend",
+    ]
+  }
+}
+
+impeller_component("impeller_unittests") {
+  target_type = "executable"
+
+  testonly = true
+
+  deps = [
+    "archivist:archivist_unittests",
+    "base:base_unittests",
+    "compiler:compiler_unittests",
+    "core:allocator_unittests",
+    "display_list:skia_conversions_unittests",
+    "geometry:geometry_unittests",
+    "renderer/backend/metal:metal_unittests",
+    "runtime_stage:runtime_stage_unittests",
+    "scene/importer:importer_unittests",
+    "shader_archive:shader_archive_unittests",
+    "tessellator:tessellator_unittests",
+  ]
+
+  if (impeller_supports_rendering) {
+    deps += [
+      "aiks:aiks_unittests",
+      "display_list:display_list_unittests",
+      "entity:entity_unittests",
+      "fixtures",
+      "geometry:geometry_unittests",
+      "image:image_unittests",
+      "playground",
+      "renderer:renderer_unittests",
+      "scene:scene_unittests",
+      "typographer:typographer_unittests",
+    ]
+  }
+
+  if (impeller_enable_vulkan) {
+    deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
+  }
+
+  if (impeller_enable_opengles) {
+    deps += [ "//flutter/impeller/renderer/backend/gles:gles_unittests" ]
+  }
+
+  if (glfw_vulkan_library != "") {
+    deps += [
+      "//flutter/third_party/swiftshader",
+      "//third_party/vulkan-deps/vulkan-loader/src:libvulkan",
+      "//third_party/vulkan_validation_layers",
+      "//third_party/vulkan_validation_layers:vulkan_gen_json_files",
+    ]
+  }
+
+  if (impeller_enable_compute) {
+    deps += [ "renderer:compute_tessellation_unittests" ]
+  }
+}
+
+if (impeller_supports_rendering) {
+  impeller_component("impeller_dart_unittests") {
+    target_type = "executable"
+
+    testonly = true
+
+    deps = [ "renderer:renderer_dart_unittests" ]
+  }
+}

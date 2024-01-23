@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../color_filter.dart';
+import '../util.dart';
 
 /// Implementation of [ui.Paint] used by the HTML rendering backend.
 class SurfacePaint implements ui.Paint {
@@ -82,7 +84,7 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.Color get color => _paintData.color ?? _defaultPaintColor;
+  ui.Color get color => ui.Color(_paintData.color);
 
   @override
   set color(ui.Color value) {
@@ -90,19 +92,11 @@ class SurfacePaint implements ui.Paint {
       _paintData = _paintData.clone();
       _frozen = false;
     }
-    _paintData.color =
-        value.runtimeType == ui.Color ? value : ui.Color(value.value);
+    _paintData.color = value.value;
   }
 
   @override
-  bool get invertColors {
-    return false;
-  }
-
-  @override
-  set invertColors(bool value) {}
-
-  static const ui.Color _defaultPaintColor = ui.Color(0xFF000000);
+  bool invertColors = false;
 
   @override
   ui.Shader? get shader => _paintData.shader;
@@ -149,30 +143,16 @@ class SurfacePaint implements ui.Paint {
       _paintData = _paintData.clone();
       _frozen = false;
     }
-    _paintData.colorFilter = value;
+    _paintData.colorFilter = value as EngineColorFilter?;
   }
 
-  // TODO(flutter_web): see https://github.com/flutter/flutter/issues/33605
+  // TODO(ferhat): see https://github.com/flutter/flutter/issues/33605
   @override
-  double get strokeMiterLimit {
-    throw UnsupportedError('SurfacePaint.strokeMiterLimit');
-  }
+  double strokeMiterLimit = 0;
 
+  // TODO(ferhat): Implement ImageFilter, flutter/flutter#35156.
   @override
-  set strokeMiterLimit(double value) {
-    assert(value != null); // ignore: unnecessary_null_comparison
-  }
-
-  @override
-  ui.ImageFilter? get imageFilter {
-    // TODO(flutter/flutter#35156): Implement ImageFilter.
-    return null;
-  }
-
-  @override
-  set imageFilter(ui.ImageFilter? value) {
-    // TODO(flutter/flutter#35156): Implement ImageFilter.
-  }
+  ui.ImageFilter? imageFilter;
 
   // True if Paint instance has used in RecordingCanvas.
   bool _frozen = false;
@@ -185,31 +165,83 @@ class SurfacePaint implements ui.Paint {
     return _paintData;
   }
 
+  // Must be kept in sync with the default in paint.cc.
+  static const double _kStrokeMiterLimitDefault = 4.0;
+
+  // Must be kept in sync with the default in paint.cc.
+  static const int _kColorDefault = 0xFF000000;
+
+  // Must be kept in sync with the default in paint.cc.
+  static final int _kBlendModeDefault = ui.BlendMode.srcOver.index;
+
   @override
   String toString() {
-    final StringBuffer result = StringBuffer();
-    String semicolon = '';
-    result.write('Paint(');
-    if (style == ui.PaintingStyle.stroke) {
-      result.write('$style');
-      if (strokeWidth != 0.0)
-        result.write(' $strokeWidth');
-      else
-        result.write(' hairline');
-      if (strokeCap != ui.StrokeCap.butt)
-        result.write(' $strokeCap');
-      semicolon = '; ';
-    }
-    if (isAntiAlias != true) {
-      result.write('${semicolon}antialias off');
-      semicolon = '; ';
-    }
-    if (color != _defaultPaintColor) {
-      result.write('$semicolon$color');
-      semicolon = '; ';
-    }
-    result.write(')');
-    return result.toString();
+    String resultString = 'Paint()';
+
+    assert(() {
+      final StringBuffer result = StringBuffer();
+      String semicolon = '';
+      result.write('Paint(');
+      if (style == ui.PaintingStyle.stroke) {
+        result.write('$style');
+        if (strokeWidth != 0.0) {
+          result.write(' ${strokeWidth.toStringAsFixed(1)}');
+        } else {
+          result.write(' hairline');
+        }
+        if (strokeCap != ui.StrokeCap.butt) {
+          result.write(' $strokeCap');
+        }
+        if (strokeJoin == ui.StrokeJoin.miter) {
+          if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
+            result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+          }
+        } else {
+          result.write(' $strokeJoin');
+        }
+        semicolon = '; ';
+      }
+      if (!isAntiAlias) {
+        result.write('${semicolon}antialias off');
+        semicolon = '; ';
+      }
+      if (color != const ui.Color(_kColorDefault)) {
+        result.write('$semicolon$color');
+        semicolon = '; ';
+      }
+      if (blendMode.index != _kBlendModeDefault) {
+        result.write('$semicolon$blendMode');
+        semicolon = '; ';
+      }
+      if (colorFilter != null) {
+        result.write('${semicolon}colorFilter: $colorFilter');
+        semicolon = '; ';
+      }
+      if (maskFilter != null) {
+        result.write('${semicolon}maskFilter: $maskFilter');
+        semicolon = '; ';
+      }
+      if (filterQuality != ui.FilterQuality.none) {
+        result.write('${semicolon}filterQuality: $filterQuality');
+        semicolon = '; ';
+      }
+      if (shader != null) {
+        result.write('${semicolon}shader: $shader');
+        semicolon = '; ';
+      }
+      if (imageFilter != null) {
+        result.write('${semicolon}imageFilter: $imageFilter');
+        semicolon = '; ';
+      }
+      if (invertColors) {
+        result.write('${semicolon}invert: $invertColors');
+      }
+      result.write(')');
+      resultString = result.toString();
+      return true;
+    }());
+
+    return resultString;
   }
 }
 
@@ -222,11 +254,11 @@ class SurfacePaintData {
   ui.StrokeCap? strokeCap;
   ui.StrokeJoin? strokeJoin;
   bool isAntiAlias = true;
-  ui.Color? color;
+  int color = 0xFF000000;
   ui.Shader? shader;
   ui.MaskFilter? maskFilter;
   ui.FilterQuality? filterQuality;
-  ui.ColorFilter? colorFilter;
+  EngineColorFilter? colorFilter;
 
   // Internal for recording canvas use.
   SurfacePaintData clone() {
@@ -246,9 +278,8 @@ class SurfacePaintData {
 
   @override
   String toString() {
-    if (!assertionsEnabled) {
-      return super.toString();
-    } else {
+    String result = super.toString();
+    assert(() {
       final StringBuffer buffer = StringBuffer('SurfacePaintData(');
       if (blendMode != null) {
         buffer.write('blendMode = $blendMode; ');
@@ -265,9 +296,7 @@ class SurfacePaintData {
       if (strokeJoin != null) {
         buffer.write('strokeJoin = $strokeJoin; ');
       }
-      if (color != null) {
-        buffer.write('color = ${colorToCssString(color)}; ');
-      }
+      buffer.write('color = ${ui.Color(color).toCssString()}; ');
       if (shader != null) {
         buffer.write('shader = $shader; ');
       }
@@ -281,7 +310,40 @@ class SurfacePaintData {
         buffer.write('colorFilter = $colorFilter; ');
       }
       buffer.write('isAntiAlias = $isAntiAlias)');
-      return buffer.toString();
-    }
+      result = buffer.toString();
+
+      return true;
+    }());
+
+    return result;
+  }
+}
+
+class HtmlFragmentProgram implements ui.FragmentProgram {
+  @override
+  ui.FragmentShader fragmentShader() {
+    throw UnsupportedError('FragmentProgram is not supported for the HTML renderer.');
+  }
+}
+
+class HtmlFragmentShader implements ui.FragmentShader {
+  @override
+  void setFloat(int index, double value) {
+    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+  }
+
+  @override
+  void setImageSampler(int index, ui.Image image) {
+    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+  }
+
+  @override
+  void dispose() {
+    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+  }
+
+  @override
+  bool get debugDisposed {
+    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
   }
 }

@@ -2,16 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import 'canvas.dart';
+import 'canvaskit_api.dart';
+import 'picture.dart';
 
 class CkPictureRecorder implements ui.PictureRecorder {
-  ui.Rect? _cullRect;
   SkPictureRecorder? _skRecorder;
   CkCanvas? _recordingCanvas;
 
   CkCanvas beginRecording(ui.Rect bounds) {
-    _cullRect = bounds;
     final SkPictureRecorder recorder = _skRecorder = SkPictureRecorder();
     final Float32List skRect = toSkRect(bounds);
     final SkCanvas skCanvas = recorder.beginRecording(skRect);
@@ -21,7 +24,7 @@ class CkPictureRecorder implements ui.PictureRecorder {
   CkCanvas? get recordingCanvas => _recordingCanvas;
 
   @override
-  ui.Picture endRecording() {
+  CkPicture endRecording() {
     final SkPictureRecorder? recorder = _skRecorder;
 
     if (recorder == null) {
@@ -31,7 +34,11 @@ class CkPictureRecorder implements ui.PictureRecorder {
     final SkPicture skPicture = recorder.finishRecordingAsPicture();
     recorder.delete();
     _skRecorder = null;
-    return CkPicture(skPicture, _cullRect);
+    final CkPicture result = CkPicture(skPicture);
+    // We invoke the handler here, not in the picture constructor, because we want
+    // [result.approximateBytesUsed] to be available for the handler.
+    ui.Picture.onCreate?.call(result);
+    return result;
   }
 
   @override

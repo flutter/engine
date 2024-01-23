@@ -6,11 +6,23 @@
 
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
+#include "flutter/vulkan/vulkan_device.h"  // nogncheck
+#include "vulkan/vulkan_core.h"            // nogncheck
+#endif
+
+#ifdef SHELL_ENABLE_METAL
+#include "flutter/shell/platform/embedder/tests/embedder_test_context_metal.h"
 #endif
 
 namespace flutter {
@@ -41,13 +53,14 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   opengl_renderer_config_.present_with_info =
       [](void* context, const FlutterPresentInfo* present_info) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
-        present_info->fbo_id);
+        *present_info);
   };
   opengl_renderer_config_.fbo_with_frame_info_callback =
       [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
+  opengl_renderer_config_.populate_existing_damage = nullptr;
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
         ->GLMakeResourceCurrent();
@@ -65,6 +78,14 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   };
 #endif
 
+#ifdef SHELL_ENABLE_METAL
+  InitializeMetalRendererConfig();
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+  InitializeVulkanRendererConfig();
+#endif
+
   software_renderer_config_.struct_size = sizeof(FlutterSoftwareRendererConfig);
   software_renderer_config_.surface_present_callback =
       [](void* context, const void* allocation, size_t row_bytes,
@@ -80,19 +101,21 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
         }
         bitmap.setImmutable();
         return reinterpret_cast<EmbedderTestContextSoftware*>(context)->Present(
-            SkImage::MakeFromBitmap(bitmap));
+            SkImages::RasterFromBitmap(bitmap));
       };
 
-  // The first argument is treated as the executable name. Don't make tests have
-  // to do this manually.
+  // The first argument is always the executable name. Don't make tests have to
+  // do this manually.
   AddCommandLineArgument("embedder_unittest");
 
   if (preference != InitializationPreference::kNoInitialize) {
     SetAssetsPath();
     SetIsolateCreateCallbackHook();
     SetSemanticsCallbackHooks();
+    SetLogMessageCallbackHook();
     SetLocalizationCallbackHooks();
-    AddCommandLineArgument("--disable-observatory");
+    SetChannelUpdateCallbackHook();
+    AddCommandLineArgument("--disable-vm-service");
 
     if (preference == InitializationPreference::kSnapshotsInitialize ||
         preference == InitializationPreference::kMultiAOTInitialize) {
@@ -140,15 +163,60 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
-    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
+    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
+        FlutterPresentInfo{
+            .fbo_id = 0,
+        });
   };
 #endif
+}
+
+void EmbedderConfigBuilder::SetRendererConfig(EmbedderTestContextType type,
+                                              SkISize surface_size) {
+  switch (type) {
+    case EmbedderTestContextType::kOpenGLContext:
+      SetOpenGLRendererConfig(surface_size);
+      break;
+    case EmbedderTestContextType::kMetalContext:
+      SetMetalRendererConfig(surface_size);
+      break;
+    case EmbedderTestContextType::kVulkanContext:
+      SetVulkanRendererConfig(surface_size);
+      break;
+    case EmbedderTestContextType::kSoftwareContext:
+      SetSoftwareRendererConfig(surface_size);
+      break;
+  }
 }
 
 void EmbedderConfigBuilder::SetOpenGLRendererConfig(SkISize surface_size) {
 #ifdef SHELL_ENABLE_GL
   renderer_config_.type = FlutterRendererType::kOpenGL;
   renderer_config_.open_gl = opengl_renderer_config_;
+  context_.SetupSurface(surface_size);
+#endif
+}
+
+void EmbedderConfigBuilder::SetMetalRendererConfig(SkISize surface_size) {
+#ifdef SHELL_ENABLE_METAL
+  renderer_config_.type = FlutterRendererType::kMetal;
+  renderer_config_.metal = metal_renderer_config_;
+  context_.SetupSurface(surface_size);
+#endif
+}
+
+void EmbedderConfigBuilder::SetVulkanRendererConfig(
+    SkISize surface_size,
+    std::optional<FlutterVulkanInstanceProcAddressCallback>
+        instance_proc_address_callback) {
+#ifdef SHELL_ENABLE_VULKAN
+  renderer_config_.type = FlutterRendererType::kVulkan;
+  FlutterVulkanRendererConfig vulkan_renderer_config = vulkan_renderer_config_;
+  if (instance_proc_address_callback.has_value()) {
+    vulkan_renderer_config.get_instance_proc_address_callback =
+        instance_proc_address_callback.value();
+  }
+  renderer_config_.vulkan = vulkan_renderer_config;
   context_.SetupSurface(surface_size);
 #endif
 }
@@ -189,10 +257,29 @@ void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
 }
 
 void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
+  project_args_.update_semantics_callback2 =
+      context_.GetUpdateSemanticsCallback2Hook();
+  project_args_.update_semantics_callback =
+      context_.GetUpdateSemanticsCallbackHook();
   project_args_.update_semantics_node_callback =
-      EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
+      context_.GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
-      EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
+      context_.GetUpdateSemanticsCustomActionCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
+  project_args_.log_message_callback =
+      EmbedderTestContext::GetLogMessageCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetChannelUpdateCallbackHook() {
+  project_args_.channel_update_callback =
+      context_.GetChannelUpdateCallbackHook();
+}
+
+void EmbedderConfigBuilder::SetLogTag(std::string tag) {
+  log_tag_ = std::move(tag);
+  project_args_.log_tag = log_tag_.c_str();
 }
 
 void EmbedderConfigBuilder::SetLocalizationCallbackHooks() {
@@ -200,8 +287,15 @@ void EmbedderConfigBuilder::SetLocalizationCallbackHooks() {
       EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook();
 }
 
+void EmbedderConfigBuilder::SetExecutableName(std::string executable_name) {
+  if (executable_name.empty()) {
+    return;
+  }
+  command_line_arguments_[0] = std::move(executable_name);
+}
+
 void EmbedderConfigBuilder::SetDartEntrypoint(std::string entrypoint) {
-  if (entrypoint.size() == 0) {
+  if (entrypoint.empty()) {
     return;
   }
 
@@ -210,7 +304,7 @@ void EmbedderConfigBuilder::SetDartEntrypoint(std::string entrypoint) {
 }
 
 void EmbedderConfigBuilder::AddCommandLineArgument(std::string arg) {
-  if (arg.size() == 0) {
+  if (arg.empty()) {
     return;
   }
 
@@ -218,7 +312,7 @@ void EmbedderConfigBuilder::AddCommandLineArgument(std::string arg) {
 }
 
 void EmbedderConfigBuilder::AddDartEntrypointArgument(std::string arg) {
-  if (arg.size() == 0) {
+  if (arg.empty()) {
     return;
   }
 
@@ -232,6 +326,17 @@ void EmbedderConfigBuilder::SetPlatformTaskRunner(
   }
   custom_task_runners_.platform_task_runner = runner;
   project_args_.custom_task_runners = &custom_task_runners_;
+}
+
+void EmbedderConfigBuilder::SetupVsyncCallback() {
+  project_args_.vsync_callback = [](void* user_data, intptr_t baton) {
+    auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
+    context->RunVsyncCallback(baton);
+  };
+}
+
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
 }
 
 void EmbedderConfigBuilder::SetRenderTaskRunner(
@@ -249,7 +354,7 @@ void EmbedderConfigBuilder::SetPlatformMessageCallback(
   context_.SetPlatformMessageCallback(callback);
 }
 
-void EmbedderConfigBuilder::SetCompositor() {
+void EmbedderConfigBuilder::SetCompositor(bool avoid_backing_store_cache) {
   context_.SetupCompositor();
   auto& compositor = context_.GetCompositor();
   compositor_.struct_size = sizeof(compositor_);
@@ -279,6 +384,7 @@ void EmbedderConfigBuilder::SetCompositor() {
 
     );
   };
+  compositor_.avoid_backing_store_cache = avoid_backing_store_cache;
   project_args_.compositor = &compositor_;
 }
 
@@ -287,13 +393,14 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
 }
 
 void EmbedderConfigBuilder::SetRenderTargetType(
-    EmbedderTestBackingStoreProducer::RenderTargetType type) {
+    EmbedderTestBackingStoreProducer::RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt) {
   auto& compositor = context_.GetCompositor();
   // TODO(wrightgeorge): figure out a better way of plumbing through the
   // GrDirectContext
   compositor.SetBackingStoreProducer(
       std::make_unique<EmbedderTestBackingStoreProducer>(
-          compositor.GetGrContext(), type));
+          compositor.GetGrContext(), type, software_pixfmt));
 }
 
 UniqueEngine EmbedderConfigBuilder::LaunchEngine() const {
@@ -315,7 +422,7 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
     args.push_back(arg.c_str());
   }
 
-  if (args.size() > 0) {
+  if (!args.empty()) {
     project_args.command_line_argv = args.data();
     project_args.command_line_argc = args.size();
   } else {
@@ -332,7 +439,7 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
     dart_args.push_back(arg.c_str());
   }
 
-  if (dart_args.size() > 0) {
+  if (!dart_args.empty()) {
     project_args.dart_entrypoint_argv = dart_args.data();
     project_args.dart_entrypoint_argc = dart_args.size();
   } else {
@@ -354,6 +461,94 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
 
   return UniqueEngine{engine};
 }
+
+#ifdef SHELL_ENABLE_METAL
+
+void EmbedderConfigBuilder::InitializeMetalRendererConfig() {
+  if (context_.GetContextType() != EmbedderTestContextType::kMetalContext) {
+    return;
+  }
+
+  metal_renderer_config_.struct_size = sizeof(metal_renderer_config_);
+  EmbedderTestContextMetal& metal_context =
+      reinterpret_cast<EmbedderTestContextMetal&>(context_);
+
+  metal_renderer_config_.device =
+      metal_context.GetTestMetalContext()->GetMetalDevice();
+  metal_renderer_config_.present_command_queue =
+      metal_context.GetTestMetalContext()->GetMetalCommandQueue();
+  metal_renderer_config_.get_next_drawable_callback =
+      [](void* user_data, const FlutterFrameInfo* frame_info) {
+        return reinterpret_cast<EmbedderTestContextMetal*>(user_data)
+            ->GetNextDrawable(frame_info);
+      };
+  metal_renderer_config_.present_drawable_callback =
+      [](void* user_data, const FlutterMetalTexture* texture) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->Present(texture->texture_id);
+  };
+  metal_renderer_config_.external_texture_frame_callback =
+      [](void* user_data, int64_t texture_id, size_t width, size_t height,
+         FlutterMetalExternalTexture* texture_out) -> bool {
+    EmbedderTestContextMetal* metal_context =
+        reinterpret_cast<EmbedderTestContextMetal*>(user_data);
+    return metal_context->PopulateExternalTexture(texture_id, width, height,
+                                                  texture_out);
+  };
+}
+
+#endif  // SHELL_ENABLE_METAL
+
+#ifdef SHELL_ENABLE_VULKAN
+
+void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
+  if (context_.GetContextType() != EmbedderTestContextType::kVulkanContext) {
+    return;
+  }
+
+  vulkan_renderer_config_.struct_size = sizeof(FlutterVulkanRendererConfig);
+  vulkan_renderer_config_.version =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->application_->GetAPIVersion();
+  vulkan_renderer_config_.instance =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->application_->GetInstance();
+  vulkan_renderer_config_.physical_device =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->device_->GetPhysicalDeviceHandle();
+  vulkan_renderer_config_.device =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->device_->GetHandle();
+  vulkan_renderer_config_.queue_family_index =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->device_->GetGraphicsQueueIndex();
+  vulkan_renderer_config_.queue =
+      static_cast<EmbedderTestContextVulkan&>(context_)
+          .vulkan_context_->device_->GetQueueHandle();
+  vulkan_renderer_config_.get_instance_proc_address_callback =
+      EmbedderTestContextVulkan::InstanceProcAddr;
+  vulkan_renderer_config_.get_next_image_callback =
+      [](void* context,
+         const FlutterFrameInfo* frame_info) -> FlutterVulkanImage {
+    VkImage image =
+        reinterpret_cast<EmbedderTestContextVulkan*>(context)->GetNextImage(
+            {static_cast<int>(frame_info->size.width),
+             static_cast<int>(frame_info->size.height)});
+    return {
+        .struct_size = sizeof(FlutterVulkanImage),
+        .image = reinterpret_cast<uint64_t>(image),
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+    };
+  };
+  vulkan_renderer_config_.present_image_callback =
+      [](void* context, const FlutterVulkanImage* image) -> bool {
+    return reinterpret_cast<EmbedderTestContextVulkan*>(context)->PresentImage(
+        reinterpret_cast<VkImage>(image->image));
+  };
+}
+
+#endif
 
 }  // namespace testing
 }  // namespace flutter

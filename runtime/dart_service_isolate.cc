@@ -33,7 +33,7 @@ namespace {
 
 static Dart_LibraryTagHandler g_embedder_tag_handler;
 static tonic::DartLibraryNatives* g_natives;
-static std::string g_observatory_uri;
+static std::string g_vm_service_uri;
 
 Dart_NativeFunction GetNativeFunction(Dart_Handle name,
                                       int argument_count,
@@ -51,7 +51,7 @@ const uint8_t* GetSymbol(Dart_NativeFunction native_function) {
 
 std::mutex DartServiceIsolate::callbacks_mutex_;
 
-std::set<std::unique_ptr<DartServiceIsolate::ObservatoryServerStateCallback>>
+std::set<std::unique_ptr<DartServiceIsolate::DartVMServiceServerStateCallback>>
     DartServiceIsolate::callbacks_;
 
 void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
@@ -63,11 +63,11 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
     return;
   }
 
-  g_observatory_uri = uri;
+  g_vm_service_uri = uri;
 
   // Collect callbacks to fire in a separate collection and invoke them outside
   // the lock.
-  std::vector<DartServiceIsolate::ObservatoryServerStateCallback>
+  std::vector<DartServiceIsolate::DartVMServiceServerStateCallback>
       callbacks_to_fire;
   {
     std::scoped_lock lock(callbacks_mutex_);
@@ -82,13 +82,13 @@ void DartServiceIsolate::NotifyServerState(Dart_NativeArguments args) {
 }
 
 DartServiceIsolate::CallbackHandle DartServiceIsolate::AddServerStatusCallback(
-    const DartServiceIsolate::ObservatoryServerStateCallback& callback) {
+    const DartServiceIsolate::DartVMServiceServerStateCallback& callback) {
   if (!callback) {
     return 0;
   }
 
   auto callback_pointer =
-      std::make_unique<DartServiceIsolate::ObservatoryServerStateCallback>(
+      std::make_unique<DartServiceIsolate::DartVMServiceServerStateCallback>(
           callback);
 
   auto handle = reinterpret_cast<CallbackHandle>(callback_pointer.get());
@@ -98,8 +98,8 @@ DartServiceIsolate::CallbackHandle DartServiceIsolate::AddServerStatusCallback(
     callbacks_.insert(std::move(callback_pointer));
   }
 
-  if (!g_observatory_uri.empty()) {
-    callback(g_observatory_uri);
+  if (!g_vm_service_uri.empty()) {
+    callback(g_vm_service_uri);
   }
 
   return handle;
@@ -126,7 +126,7 @@ void DartServiceIsolate::Shutdown(Dart_NativeArguments args) {
   // NO-OP.
 }
 
-bool DartServiceIsolate::Startup(std::string server_ip,
+bool DartServiceIsolate::Startup(const std::string& server_ip,
                                  intptr_t server_port,
                                  Dart_LibraryTagHandler embedder_tag_handler,
                                  bool disable_origin_check,
@@ -156,18 +156,6 @@ bool DartServiceIsolate::Startup(std::string server_ip,
   SHUTDOWN_ON_ERROR(result);
   result = Dart_SetNativeResolver(library, GetNativeFunction, GetSymbol);
   SHUTDOWN_ON_ERROR(result);
-
-  // Make runnable.
-  Dart_ExitScope();
-  Dart_ExitIsolate();
-  *error = Dart_IsolateMakeRunnable(isolate);
-  if (*error) {
-    Dart_EnterIsolate(isolate);
-    Dart_ShutdownIsolate();
-    return false;
-  }
-  Dart_EnterIsolate(isolate);
-  Dart_EnterScope();
 
   library = Dart_RootLibrary();
   SHUTDOWN_ON_ERROR(library);
@@ -202,6 +190,19 @@ bool DartServiceIsolate::Startup(std::string server_ip,
       library, Dart_NewStringFromCString("_enableServicePortFallback"),
       Dart_NewBoolean(enable_service_port_fallback));
   SHUTDOWN_ON_ERROR(result);
+
+  // Make runnable.
+  Dart_ExitScope();
+  Dart_ExitIsolate();
+  *error = Dart_IsolateMakeRunnable(isolate);
+  if (*error) {
+    Dart_EnterIsolate(isolate);
+    Dart_ShutdownIsolate();
+    return false;
+  }
+  Dart_EnterIsolate(isolate);
+  Dart_EnterScope();
+
   return true;
 }
 

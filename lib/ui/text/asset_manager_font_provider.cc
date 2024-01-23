@@ -4,11 +4,15 @@
 
 #include "flutter/lib/ui/text/asset_manager_font_provider.h"
 
+#include <utility>
+
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkStream.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
 
 namespace flutter {
 
@@ -22,7 +26,7 @@ void MappingReleaseProc(const void* ptr, void* context) {
 
 AssetManagerFontProvider::AssetManagerFontProvider(
     std::shared_ptr<AssetManager> asset_manager)
-    : asset_manager_(asset_manager) {}
+    : asset_manager_(std::move(asset_manager)) {}
 
 AssetManagerFontProvider::~AssetManagerFontProvider() = default;
 
@@ -38,18 +42,17 @@ std::string AssetManagerFontProvider::GetFamilyName(int index) const {
 }
 
 // |FontAssetProvider|
-SkFontStyleSet* AssetManagerFontProvider::MatchFamily(
+sk_sp<SkFontStyleSet> AssetManagerFontProvider::MatchFamily(
     const std::string& family_name) {
   auto found = registered_families_.find(CanonicalFamilyName(family_name));
   if (found == registered_families_.end()) {
     return nullptr;
   }
-  sk_sp<SkFontStyleSet> font_style_set = found->second;
-  return font_style_set.release();
+  return found->second;
 }
 
-void AssetManagerFontProvider::RegisterAsset(std::string family_name,
-                                             std::string asset) {
+void AssetManagerFontProvider::RegisterAsset(const std::string& family_name,
+                                             const std::string& asset) {
   std::string canonical_name = CanonicalFamilyName(family_name);
   auto family_it = registered_families_.find(canonical_name);
 
@@ -67,11 +70,12 @@ void AssetManagerFontProvider::RegisterAsset(std::string family_name,
 AssetManagerFontStyleSet::AssetManagerFontStyleSet(
     std::shared_ptr<AssetManager> asset_manager,
     std::string family_name)
-    : asset_manager_(asset_manager), family_name_(family_name) {}
+    : asset_manager_(std::move(asset_manager)),
+      family_name_(std::move(family_name)) {}
 
 AssetManagerFontStyleSet::~AssetManagerFontStyleSet() = default;
 
-void AssetManagerFontStyleSet::registerAsset(std::string asset) {
+void AssetManagerFontStyleSet::registerAsset(const std::string& asset) {
   assets_.emplace_back(asset);
 }
 
@@ -94,7 +98,7 @@ void AssetManagerFontStyleSet::getStyle(int index,
   }
 }
 
-SkTypeface* AssetManagerFontStyleSet::createTypeface(int i) {
+auto AssetManagerFontStyleSet::createTypeface(int i) -> CreateTypefaceRet {
   size_t index = i;
   if (index >= assets_.size()) {
     return nullptr;
@@ -114,17 +118,21 @@ SkTypeface* AssetManagerFontStyleSet::createTypeface(int i) {
         MappingReleaseProc, asset_mapping_ptr);
     std::unique_ptr<SkMemoryStream> stream = SkMemoryStream::Make(asset_data);
 
+    sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
     // Ownership of the stream is transferred.
-    asset.typeface = SkTypeface::MakeFromStream(std::move(stream));
+    asset.typeface = font_mgr->makeFromStream(std::move(stream));
     if (!asset.typeface) {
+      FML_DLOG(ERROR) << "Unable to load font asset for family: "
+                      << family_name_;
       return nullptr;
     }
   }
 
-  return SkRef(asset.typeface.get());
+  return CreateTypefaceRet(SkRef(asset.typeface.get()));
 }
 
-SkTypeface* AssetManagerFontStyleSet::matchStyle(const SkFontStyle& pattern) {
+auto AssetManagerFontStyleSet::matchStyle(const SkFontStyle& pattern)
+    -> MatchStyleRet {
   return matchStyleCSS3(pattern);
 }
 

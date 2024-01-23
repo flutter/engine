@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 // This URL was found by using the Google Fonts Developer API to find the URL
 // for Roboto. The API warns that this URL is not stable. In order to update
@@ -14,160 +17,307 @@ const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
-class SkiaFontCollection {
-  /// Fonts that have been registered but haven't been loaded yet.
-  final List<Future<_RegisteredFont?>> _unloadedFonts =
-      <Future<_RegisteredFont?>>[];
+class SkiaFontCollection implements FlutterFontCollection {
+  final Set<String> _downloadedFontFamilies = <String>{};
 
-  /// Fonts which have been registered and loaded.
-  final List<_RegisteredFont> _registeredFonts = <_RegisteredFont>[];
+  @override
+  late FontFallbackManager fontFallbackManager =
+    FontFallbackManager(SkiaFallbackRegistry(this));
 
-  final Set<String?> registeredFamilies = <String?>{};
+  /// Fonts that started the download process, but are not yet registered.
+  ///
+  /// /// Once downloaded successfully, this map is cleared and the resulting
+  /// [UnregisteredFont]s are added to [_registeredFonts].
+  final List<UnregisteredFont> _unregisteredFonts = <UnregisteredFont>[];
 
-  Future<void> ensureFontsLoaded() async {
-    await _loadFonts();
+  final List<RegisteredFont> _registeredFonts = <RegisteredFont>[];
+  final List<RegisteredFont> registeredFallbackFonts = <RegisteredFont>[];
 
-    fontProvider = canvasKit.TypefaceFontProvider.Make();
+  /// Returns fonts that have been downloaded, registered, and parsed.
+  ///
+  /// This should only be used in tests.
+  List<RegisteredFont>? get debugRegisteredFonts {
+    List<RegisteredFont>? result;
+    assert(() {
+      result = _registeredFonts;
+      return true;
+    }());
+    return result;
+  }
 
-    for (var font in _registeredFonts) {
-      fontProvider.registerFont(font.bytes, font.flutterFamily);
+  final Map<String, List<SkFont>> familyToFontMap = <String, List<SkFont>>{};
+
+  void _registerWithFontProvider() {
+    if (_fontProvider != null) {
+      _fontProvider!.delete();
+      _fontProvider = null;
+      skFontCollection?.delete();
+      skFontCollection = null;
+    }
+    _fontProvider = canvasKit.TypefaceFontProvider.Make();
+    skFontCollection = canvasKit.FontCollection.Make();
+    skFontCollection!.enableFontFallback();
+    skFontCollection!.setDefaultFontManager(_fontProvider);
+    familyToFontMap.clear();
+
+    for (final RegisteredFont font in _registeredFonts) {
+      _fontProvider!.registerFont(font.bytes, font.family);
+      familyToFontMap
+          .putIfAbsent(font.family, () => <SkFont>[])
+          .add(SkFont(font.typeface));
+    }
+
+    for (final RegisteredFont font in registeredFallbackFonts) {
+      _fontProvider!.registerFont(font.bytes, font.family);
+      familyToFontMap
+          .putIfAbsent(font.family, () => <SkFont>[])
+          .add(SkFont(font.typeface));
     }
   }
 
-  /// Loads all of the unloaded fonts in [_unloadedFonts] and adds them
-  /// to [_registeredFonts].
-  Future<void> _loadFonts() async {
-    if (_unloadedFonts.isEmpty) {
-      return;
-    }
-    final List<_RegisteredFont?> loadedFonts =
-        await Future.wait(_unloadedFonts);
-    for (_RegisteredFont? font in loadedFonts) {
-      if (font != null) {
-        _registeredFonts.add(font);
-      }
-    }
-    _unloadedFonts.clear();
-  }
-
-  Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) async {
-    String? actualFamily = _readActualFamilyName(list);
-
-    if (actualFamily == null) {
-      if (fontFamily == null) {
-        html.window.console
-            .warn('Failed to read font family name. Aborting font load.');
-        return;
-      }
-      actualFamily = fontFamily;
-    }
-
+  @override
+  Future<bool> loadFontFromList(Uint8List list, {String? fontFamily}) async {
     if (fontFamily == null) {
-      fontFamily = actualFamily;
+      fontFamily = _readActualFamilyName(list);
+      if (fontFamily == null) {
+        printWarning('Failed to read font family name. Aborting font load.');
+        return false;
+      }
     }
 
-    registeredFamilies.add(fontFamily);
+    // Make sure CanvasKit is actually loaded
+    await renderer.initialize();
 
-    _registeredFonts.add(_RegisteredFont(list, fontFamily, actualFamily));
-    await ensureFontsLoaded();
+    final SkTypeface? typeface =
+        canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
+    if (typeface != null) {
+      _registeredFonts.add(RegisteredFont(list, fontFamily, typeface));
+      _registerWithFontProvider();
+    } else {
+      printWarning('Failed to parse font family "$fontFamily"');
+      return false;
+    }
+    return true;
   }
 
-  Future<void> registerFonts(AssetManager assetManager) async {
-    ByteData byteData;
-
-    try {
-      byteData = await assetManager.load('FontManifest.json');
-    } on AssetManagerException catch (e) {
-      if (e.httpStatus == 404) {
-        html.window.console
-            .warn('Font manifest does not exist at `${e.url}` – ignoring.');
-        return;
-      } else {
-        rethrow;
+  /// Loads fonts from `FontManifest.json`.
+  @override
+  Future<AssetFontsResult> loadAssetFonts(FontManifest manifest) async {
+    final List<Future<FontDownloadResult>> pendingDownloads = <Future<FontDownloadResult>>[];
+    bool loadedRoboto = false;
+    for (final FontFamily family in manifest.families) {
+      if (family.name == 'Roboto') {
+        loadedRoboto = true;
+      }
+      for (final FontAsset fontAsset in family.fontAssets) {
+        final String url = ui_web.assetManager.getAssetUrl(fontAsset.asset);
+        pendingDownloads.add(_downloadFont(fontAsset.asset, url, family.name));
       }
     }
 
-    final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List()));
-    if (fontManifest == null) {
-      throw AssertionError(
-          'There was a problem trying to load FontManifest.json');
-    }
-
-    for (Map<String, dynamic> fontFamily
-        in fontManifest.cast<Map<String, dynamic>>()) {
-      final String family = fontFamily['family']!;
-      final List<dynamic> fontAssets = fontFamily['fonts'];
-
-      registeredFamilies.add(family);
-
-      for (dynamic fontAssetItem in fontAssets) {
-        final Map<String, dynamic> fontAsset = fontAssetItem;
-        final String asset = fontAsset['asset'];
-        _unloadedFonts
-            .add(_registerFont(assetManager.getAssetUrl(asset), family));
-      }
-    }
-
-    /// We need a default fallback font for CanvasKit, in order to
-    /// avoid crashing while laying out text with an unregistered font. We chose
+    /// We need a default fallback font for CanvasKit, in order to avoid
+    /// crashing while laying out text with an unregistered font. We chose
     /// Roboto to match Android.
-    if (!registeredFamilies.contains('Roboto')) {
+    if (!loadedRoboto) {
       // Download Roboto and add it to the font buffers.
-      _unloadedFonts.add(_registerFont(_robotoUrl, 'Roboto'));
+      pendingDownloads.add(_downloadFont('Roboto', _robotoUrl, 'Roboto'));
     }
+
+    final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
+    final List<(String, UnregisteredFont)> downloadedFonts = <(String, UnregisteredFont)>[];
+    for (final FontDownloadResult result in await Future.wait(pendingDownloads)) {
+      if (result.font != null) {
+        downloadedFonts.add((result.assetName, result.font!));
+      } else {
+        fontFailures[result.assetName] = result.error!;
+      }
+    }
+
+    // Make sure CanvasKit is actually loaded
+    await renderer.initialize();
+
+    final List<String> loadedFonts = <String>[];
+    for (final (String assetName, UnregisteredFont unregisteredFont) in downloadedFonts) {
+      final Uint8List bytes = unregisteredFont.bytes.asUint8List();
+      final SkTypeface? typeface =
+          canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
+      if (typeface != null) {
+        loadedFonts.add(assetName);
+        _registeredFonts.add(RegisteredFont(bytes, unregisteredFont.family, typeface));
+      } else {
+        printWarning('Failed to load font ${unregisteredFont.family} at ${unregisteredFont.url}');
+        printWarning('Verify that ${unregisteredFont.url} contains a valid font.');
+        fontFailures[assetName] = FontInvalidDataError(unregisteredFont.url);
+      }
+    }
+    registerDownloadedFonts();
+    return AssetFontsResult(loadedFonts, fontFailures);
   }
 
-  Future<_RegisteredFont?> _registerFont(String url, String family) async {
-    ByteBuffer buffer;
+  void registerDownloadedFonts() {
+    RegisteredFont? makeRegisterFont(ByteBuffer buffer, String url, String family) {
+      final Uint8List bytes = buffer.asUint8List();
+      final SkTypeface? typeface =
+          canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
+      if (typeface != null) {
+        return RegisteredFont(bytes, family, typeface);
+      } else {
+        printWarning('Failed to load font $family at $url');
+        printWarning('Verify that $url contains a valid font.');
+        return null;
+      }
+    }
+
+    for (final UnregisteredFont unregisteredFont in _unregisteredFonts) {
+      final RegisteredFont? registeredFont = makeRegisterFont(
+        unregisteredFont.bytes,
+        unregisteredFont.url,
+        unregisteredFont.family
+      );
+      if (registeredFont != null) {
+        _registeredFonts.add(registeredFont);
+      }
+    }
+
+    _unregisteredFonts.clear();
+    _registerWithFontProvider();
+  }
+
+  Future<FontDownloadResult> _downloadFont(
+    String assetName,
+    String url,
+    String fontFamily
+  ) async {
+    final ByteBuffer fontData;
+
+    // Try to get the font leniently. Do not crash the app when failing to
+    // fetch the font in the spirit of "gradual degradation of functionality".
     try {
-      buffer = await html.window.fetch(url).then(_getArrayBuffer);
+      final HttpFetchResponse response = await httpFetch(url);
+      if (!response.hasPayload) {
+        printWarning('Font family $fontFamily not found (404) at $url');
+        return FontDownloadResult.fromError(assetName, FontNotFoundError(url));
+      }
+
+      fontData = await response.asByteBuffer();
     } catch (e) {
-      html.window.console.warn('Failed to load font $family at $url');
-      html.window.console.warn(e);
-      return null;
+      printWarning('Failed to load font $fontFamily at $url');
+      printWarning(e.toString());
+      return FontDownloadResult.fromError(assetName, FontDownloadError(url, e));
     }
-
-    final Uint8List bytes = buffer.asUint8List();
-    String? actualFamily = _readActualFamilyName(bytes);
-
-    if (actualFamily == null) {
-      html.window.console.warn('Failed to determine the actual name of the '
-          'font $family at $url. Defaulting to $family.');
-      actualFamily = family;
-    }
-
-    return _RegisteredFont(bytes, family, actualFamily);
+    _downloadedFontFamilies.add(fontFamily);
+    return FontDownloadResult.fromFont(assetName, UnregisteredFont(fontData, url, fontFamily));
   }
+
 
   String? _readActualFamilyName(Uint8List bytes) {
-    final SkFontMgr tmpFontMgr = canvasKit.FontMgr.FromData([bytes])!;
-    String? actualFamily = tmpFontMgr.getFamilyName(0);
+    final SkFontMgr tmpFontMgr =
+        canvasKit.FontMgr.FromData(<Uint8List>[bytes])!;
+    final String? actualFamily = tmpFontMgr.getFamilyName(0);
     tmpFontMgr.delete();
     return actualFamily;
   }
 
-  Future<ByteBuffer> _getArrayBuffer(dynamic fetchResult) {
-    // TODO(yjbanov): fetchResult.arrayBuffer is a dynamic invocation. Clean it up.
-    return fetchResult
-        .arrayBuffer()
-        .then<ByteBuffer>((dynamic x) => x as ByteBuffer);
-  }
+  TypefaceFontProvider? _fontProvider;
+  SkFontCollection? skFontCollection;
 
-  SkFontMgr? skFontMgr;
-  late TypefaceFontProvider fontProvider;
+  @override
+  void clear() {}
+
+  @override
+  void debugResetFallbackFonts() {
+    fontFallbackManager = FontFallbackManager(SkiaFallbackRegistry(this));
+    registeredFallbackFonts.clear();
+  }
 }
 
 /// Represents a font that has been registered.
-class _RegisteredFont {
-  /// The font family that the font was declared to have by Flutter.
-  final String flutterFamily;
+class RegisteredFont {
+  RegisteredFont(this.bytes, this.family, this.typeface) {
+    // This is a hack which causes Skia to cache the decoded font.
+    final SkFont skFont = SkFont(typeface);
+    skFont.getGlyphBounds(<int>[0], null, null);
+  }
+
+  /// The font family name for this font.
+  final String family;
 
   /// The byte data for this font.
   final Uint8List bytes;
 
-  /// The font family that was parsed from the font's bytes.
-  final String actualFamily;
+  /// The [SkTypeface] created from this font's [bytes].
+  ///
+  /// This is used to determine which code points are supported by this font.
+  final SkTypeface typeface;
+}
 
-  _RegisteredFont(this.bytes, this.flutterFamily, this.actualFamily);
+/// Represents a font that has been downloaded but not registered.
+class UnregisteredFont {
+  const UnregisteredFont(this.bytes, this.url, this.family);
+  final ByteBuffer bytes;
+  final String url;
+  final String family;
+}
+
+class FontDownloadResult {
+  FontDownloadResult.fromFont(this.assetName, UnregisteredFont this.font) : error = null;
+  FontDownloadResult.fromError(this.assetName, FontLoadError this.error) : font = null;
+
+  final String assetName;
+  final UnregisteredFont? font;
+  final FontLoadError? error;
+}
+
+class SkiaFallbackRegistry implements FallbackFontRegistry {
+  SkiaFallbackRegistry(this.fontCollection);
+
+  SkiaFontCollection fontCollection;
+
+  @override
+  List<int> getMissingCodePoints(List<int> codeUnits, List<String> fontFamilies) {
+    final List<SkFont> fonts = <SkFont>[];
+    for (final String font in fontFamilies) {
+      final List<SkFont>? typefacesForFamily = fontCollection.familyToFontMap[font];
+      if (typefacesForFamily != null) {
+        fonts.addAll(typefacesForFamily);
+      }
+    }
+    final List<bool> codePointsSupported =
+        List<bool>.filled(codeUnits.length, false);
+    final String testString = String.fromCharCodes(codeUnits);
+    for (final SkFont font in fonts) {
+      final Uint16List glyphs = font.getGlyphIDs(testString);
+      assert(glyphs.length == codePointsSupported.length);
+      for (int i = 0; i < glyphs.length; i++) {
+        codePointsSupported[i] |= glyphs[i] != 0;
+      }
+    }
+
+    final List<int> missingCodeUnits = <int>[];
+    for (int i = 0; i < codePointsSupported.length; i++) {
+      if (!codePointsSupported[i]) {
+        missingCodeUnits.add(codeUnits[i]);
+      }
+    }
+    return missingCodeUnits;
+  }
+
+  @override
+  Future<void> loadFallbackFont(String familyName, String url) async {
+    final ByteBuffer buffer = await httpFetchByteBuffer(url);
+    final SkTypeface? typeface =
+        canvasKit.Typeface.MakeFreeTypeFaceFromData(buffer);
+    if (typeface == null) {
+      printWarning('Failed to parse fallback font $familyName as a font.');
+      return;
+    }
+    fontCollection.registeredFallbackFonts.add(
+      RegisteredFont(buffer.asUint8List(), familyName, typeface)
+    );
+  }
+
+  @override
+  void updateFallbackFontFamilies(List<String> families) {
+    fontCollection.registerDownloadedFonts();
+  }
 }

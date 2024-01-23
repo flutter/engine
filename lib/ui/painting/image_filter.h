@@ -5,12 +5,15 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_FILTER_H_
 
+#include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/color_filter.h"
-#include "flutter/lib/ui/painting/image.h"
-#include "flutter/lib/ui/painting/picture.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
 #include "third_party/tonic/typed_data/typed_list.h"
+
+namespace tonic {
+class DartLibraryNatives;
+}  // namespace tonic
 
 namespace flutter {
 
@@ -20,23 +23,26 @@ class ImageFilter : public RefCountedDartWrappable<ImageFilter> {
 
  public:
   ~ImageFilter() override;
-  static fml::RefPtr<ImageFilter> Create();
+  static void Create(Dart_Handle wrapper);
 
-  void initImage(CanvasImage* image);
-  void initPicture(Picture*);
-  void initBlur(double sigma_x, double sigma_y);
-  void initMatrix(const tonic::Float64List& matrix4, int filter_quality);
+  static DlImageSampling SamplingFromIndex(int filterQualityIndex);
+  static DlFilterMode FilterModeFromIndex(int index);
+
+  void initBlur(double sigma_x, double sigma_y, DlTileMode tile_mode);
+  void initDilate(double radius_x, double radius_y);
+  void initErode(double radius_x, double radius_y);
+  void initMatrix(const tonic::Float64List& matrix4, int filter_quality_index);
   void initColorFilter(ColorFilter* colorFilter);
   void initComposeFilter(ImageFilter* outer, ImageFilter* inner);
 
-  const sk_sp<SkImageFilter>& filter() const { return filter_; }
+  const std::shared_ptr<const DlImageFilter> filter() const { return filter_; }
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);
 
  private:
   ImageFilter();
 
-  sk_sp<SkImageFilter> filter_;
+  std::shared_ptr<const DlImageFilter> filter_;
 };
 
 }  // namespace flutter

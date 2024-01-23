@@ -20,7 +20,6 @@ compile_platform("kernel_platform_files") {
   ]
 
   args = [
-    "--enable-experiment=non-nullable",
     "--nnbd-agnostic",
     "--target=flutter_runner",
     "dart:core",
@@ -42,12 +41,7 @@ template("core_snapshot") {
 
     platform_dill =
         "$root_out_dir/flutter_runner_patched_sdk/platform_strong.dill"
-    compilation_trace =
-        "//flutter/shell/platform/fuchsia/flutter/compilation_trace.txt"
-    inputs = [
-      platform_dill,
-      compilation_trace,
-    ]
+    inputs = [ platform_dill ]
 
     vm_snapshot_data = "$target_gen_dir/vm_isolate_snapshot${suffix}.bin"
     vm_snapshot_instructions =
@@ -72,13 +66,9 @@ template("core_snapshot") {
     tool = gen_snapshot_to_use
 
     args = [
-      "--no_causal_async_stacks",
-      "--lazy_async_stacks",
       "--enable_mirrors=false",
       "--deterministic",
       "--snapshot_kind=core-jit",
-      "--load_compilation_trace=" +
-          rebase_path(compilation_trace, root_build_dir),
       "--vm_snapshot_data=" + rebase_path(vm_snapshot_data, root_build_dir),
       "--vm_snapshot_instructions=" +
           rebase_path(vm_snapshot_instructions, root_build_dir),

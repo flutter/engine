@@ -12,15 +12,15 @@ namespace tonic {
 
 namespace {
 
-// For large objects it is more efficient to use an external typed data object
-// with a buffer allocated outside the Dart heap.
-const int kExternalSizeThreshold = 1000;
-
 void FreeFinalizer(void* isolate_callback_data, void* peer) {
   free(peer);
 }
 
 }  // anonymous namespace
+
+// For large objects it is more efficient to use an external typed data object
+// with a buffer allocated outside the Dart heap.
+const size_t DartByteData::kExternalSizeThreshold = 1000;
 
 Dart_Handle DartByteData::Create(const void* data, size_t length) {
   if (length < kExternalSizeThreshold) {
@@ -61,7 +61,7 @@ DartByteData::DartByteData(Dart_Handle list)
 
   Dart_TypedData_Type type;
   Dart_TypedDataAcquireData(list, &type, &data_, &length_in_bytes_);
-  TONIC_DCHECK(!LogIfError(list));
+  TONIC_DCHECK(!CheckAndHandleError(list));
   if (type != Dart_TypedData_kByteData)
     Dart_ThrowException(ToDart("Non-genuine ByteData passed to engine."));
 }
@@ -95,7 +95,7 @@ DartByteData DartConverter<DartByteData>::FromArguments(
     int index,
     Dart_Handle& exception) {
   Dart_Handle data = Dart_GetNativeArgument(args, index);
-  TONIC_DCHECK(!LogIfError(data));
+  TONIC_DCHECK(!CheckAndHandleError(data));
   return DartByteData(data);
 }
 

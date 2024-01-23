@@ -4,7 +4,13 @@
 
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
 
+#include <utility>
+
 #include "flutter/fml/trace_event.h"
+
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -12,8 +18,8 @@ namespace flutter {
 EmbedderSurfaceSoftware::EmbedderSurfaceSoftware(
     SoftwareDispatchTable software_dispatch_table,
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
-    : software_dispatch_table_(software_dispatch_table),
-      external_view_embedder_(external_view_embedder) {
+    : software_dispatch_table_(std::move(software_dispatch_table)),
+      external_view_embedder_(std::move(external_view_embedder)) {
   if (!software_dispatch_table_.software_present_backing_store) {
     return;
   }
@@ -65,7 +71,7 @@ sk_sp<SkSurface> EmbedderSurfaceSoftware::AcquireBackingStore(
 
   SkImageInfo info = SkImageInfo::MakeN32(
       size.fWidth, size.fHeight, kPremul_SkAlphaType, SkColorSpace::MakeSRGB());
-  sk_surface_ = SkSurface::MakeRaster(info, nullptr);
+  sk_surface_ = SkSurfaces::Raster(info, nullptr);
 
   if (sk_surface_ == nullptr) {
     FML_LOG(ERROR) << "Could not create backing store for software rendering.";

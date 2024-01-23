@@ -8,9 +8,8 @@
 
 namespace flutter {
 
-TransformLayer::TransformLayer(const SkMatrix& transform)
-    : transform_(transform) {
-  // Checks (in some degree) that SkMatrix transform_ is valid and initialized.
+TransformLayer::TransformLayer(const SkM44& transform) : transform_(transform) {
+  // Checks (in some degree) that SkM44 transform_ is valid and initialized.
   //
   // If transform_ is uninitialized, this assert may look flaky as it doesn't
   // fail all the time, and some rerun may make it pass. But don't ignore it and
@@ -26,54 +25,51 @@ TransformLayer::TransformLayer(const SkMatrix& transform)
   }
 }
 
-void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "TransformLayer::Preroll");
-
-  SkMatrix child_matrix;
-  child_matrix.setConcat(matrix, transform_);
-  context->mutators_stack.PushTransform(transform_);
-  SkRect previous_cull_rect = context->cull_rect;
-  SkMatrix inverse_transform_;
-  // Perspective projections don't produce rectangles that are useful for
-  // culling for some reason.
-  if (!transform_.hasPerspective() && transform_.invert(&inverse_transform_)) {
-    inverse_transform_.mapRect(&context->cull_rect);
-  } else {
-    context->cull_rect = kGiantRect;
+void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const TransformLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (transform_ != prev->transform_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
   }
+  context->PushTransform(transform_);
+  DiffChildren(context, prev);
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+void TransformLayer::Preroll(PrerollContext* context) {
+  auto mutator = context->state_stack.save();
+  mutator.transform(transform_);
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  PrerollChildren(context, child_matrix, &child_paint_bounds);
+  PrerollChildren(context, &child_paint_bounds);
 
-  transform_.mapRect(&child_paint_bounds);
+  // We convert to a 3x3 matrix here primarily because the SkM44 object
+  // does not support a mapRect operation.
+  // https://bugs.chromium.org/p/skia/issues/detail?id=11720&q=mapRect&can=2
+  //
+  // All geometry is X,Y only which means the 3rd row of the 4x4 matrix
+  // is ignored and the output of the 3rd column is also ignored.
+  // So we can transform the rectangle using just the 3x3 SkMatrix
+  // equivalent without any loss of information.
+  //
+  // Performance consideration:
+  // Skia has an internal mapRect for their SkM44 object that is faster
+  // than what SkMatrix does when it has perspective elements. But SkMatrix
+  // is otherwise optimal for non-perspective matrices. If SkM44 ever exposes
+  // a mapRect operation, or if SkMatrix ever optimizes its handling of
+  // the perspective elements, this issue will become moot.
+  transform_.asM33().mapRect(&child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
-
-  context->cull_rect = previous_cull_rect;
-  context->mutators_stack.Pop();
 }
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-
-void TransformLayer::UpdateScene(std::shared_ptr<SceneUpdateContext> context) {
-  TRACE_EVENT0("flutter", "TransformLayer::UpdateScene");
-  FML_DCHECK(needs_system_composite());
-
-  std::optional<SceneUpdateContext::Transform> transform;
-  if (!transform_.isIdentity()) {
-    transform.emplace(context, transform_);
-  }
-
-  UpdateSceneChildren(context);
-}
-
-#endif
 
 void TransformLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  SkAutoCanvasRestore save(context.internal_nodes_canvas, true);
-  context.internal_nodes_canvas->concat(transform_);
+  auto mutator = context.state_stack.save();
+  mutator.transform(transform_);
 
   PaintChildren(context);
 }

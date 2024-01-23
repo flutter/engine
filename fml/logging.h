@@ -12,6 +12,18 @@
 
 namespace fml {
 
+namespace testing {
+struct LogCapture {
+  LogCapture();
+  ~LogCapture();
+
+  std::string str() const;
+
+ private:
+  std::ostringstream stream_;
+};
+}  // namespace testing
+
 class LogMessageVoidify {
  public:
   void operator&(std::ostream&) {}
@@ -27,7 +39,12 @@ class LogMessage {
 
   std::ostream& stream() { return stream_; }
 
+  static void CaptureNextLog(std::ostringstream* stream);
+
  private:
+  // This is a raw pointer so that we avoid having a non-trivially-destructible
+  // static. It is only ever for use in unit tests.
+  static thread_local std::ostringstream* capture_next_log_stream_;
   std::ostringstream stream_;
   const LogSeverity severity_;
   const char* file_;
@@ -40,7 +57,7 @@ class LogMessage {
 int GetVlogVerbosity();
 
 // Returns true if |severity| is at or above the current minimum log level.
-// LOG_FATAL and above is always true.
+// kLogFatal and above is always true.
 bool ShouldCreateLogMessage(LogSeverity severity);
 
 [[noreturn]] void KillProcess();
@@ -57,7 +74,7 @@ bool ShouldCreateLogMessage(LogSeverity severity);
   true || (ignored)                        \
       ? (void)0                            \
       : ::fml::LogMessageVoidify() &       \
-            ::fml::LogMessage(::fml::LOG_FATAL, 0, 0, nullptr).stream()
+            ::fml::LogMessage(::fml::kLogFatal, 0, 0, nullptr).stream()
 
 #define FML_LOG_IS_ON(severity) \
   (::fml::ShouldCreateLogMessage(::fml::LOG_##severity))
@@ -67,7 +84,7 @@ bool ShouldCreateLogMessage(LogSeverity severity);
 
 #define FML_CHECK(condition)                                              \
   FML_LAZY_STREAM(                                                        \
-      ::fml::LogMessage(::fml::LOG_FATAL, __FILE__, __LINE__, #condition) \
+      ::fml::LogMessage(::fml::kLogFatal, __FILE__, __LINE__, #condition) \
           .stream(),                                                      \
       !(condition))
 

@@ -2,6 +2,7 @@ package io.flutter.embedding.engine.systemchannels;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -23,7 +24,7 @@ public class AccessibilityChannel {
   @NonNull public final FlutterJNI flutterJNI;
   @Nullable private AccessibilityMessageHandler handler;
 
-  private final BasicMessageChannel.MessageHandler<Object> parsingMessageHandler =
+  public final BasicMessageChannel.MessageHandler<Object> parsingMessageHandler =
       new BasicMessageChannel.MessageHandler<Object>() {
         @Override
         public void onMessage(
@@ -31,6 +32,7 @@ public class AccessibilityChannel {
           // If there is no handler to respond to this message then we don't need to
           // parse it. Return.
           if (handler == null) {
+            reply.reply(null);
             return;
           }
 
@@ -64,6 +66,14 @@ public class AccessibilityChannel {
                 }
                 break;
               }
+            case "focus":
+              {
+                Integer nodeId = (Integer) annotatedEvent.get("nodeId");
+                if (nodeId != null) {
+                  handler.onFocus(nodeId);
+                }
+                break;
+              }
             case "tooltip":
               {
                 String tooltipMessage = (String) data.get("message");
@@ -90,6 +100,13 @@ public class AccessibilityChannel {
         new BasicMessageChannel<>(
             dartExecutor, "flutter/accessibility", StandardMessageCodec.INSTANCE);
     channel.setMessageHandler(parsingMessageHandler);
+    this.flutterJNI = flutterJNI;
+  }
+
+  @VisibleForTesting
+  public AccessibilityChannel(
+      @NonNull BasicMessageChannel<Object> channel, @NonNull FlutterJNI flutterJNI) {
+    this.channel = channel;
     this.flutterJNI = flutterJNI;
   }
 
@@ -167,11 +184,14 @@ public class AccessibilityChannel {
     /** The Dart application would like the given {@code message} to be announced. */
     void announce(@NonNull String message);
 
-    /** The user has tapped on the widget with the given {@code nodeId}. */
+    /** The user has tapped on the semantics node with the given {@code nodeId}. */
     void onTap(int nodeId);
 
-    /** The user has long pressed on the widget with the given {@code nodeId}. */
+    /** The user has long pressed on the semantics node with the given {@code nodeId}. */
     void onLongPress(int nodeId);
+
+    /** The framework has requested focus on the semantics node with the given {@code nodeId}. */
+    void onFocus(int nodeId);
 
     /** The user has opened a tooltip. */
     void onTooltip(@NonNull String message);

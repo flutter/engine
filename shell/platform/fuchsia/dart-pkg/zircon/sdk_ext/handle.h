@@ -7,6 +7,7 @@
 
 #include <zircon/syscalls.h>
 
+#include <optional>
 #include <vector>
 
 #include "flutter/fml/memory/ref_counted.h"
@@ -52,10 +53,14 @@ class Handle : public fml::RefCountedThreadSafe<Handle>,
   zx_handle_t handle() const { return handle_; }
 
   zx_koid_t koid() const {
-    zx_info_handle_basic_t info;
-    zx_status_t status = zx_object_get_info(
-        handle_, ZX_INFO_HANDLE_BASIC, &info, sizeof(info), nullptr, nullptr);
-    return status == ZX_OK ? info.koid : ZX_KOID_INVALID;
+    if (!cached_koid_.has_value()) {
+      zx_info_handle_basic_t info;
+      zx_status_t status = zx_object_get_info(
+          handle_, ZX_INFO_HANDLE_BASIC, &info, sizeof(info), nullptr, nullptr);
+      cached_koid_ = std::optional<zx_koid_t>(
+          status == ZX_OK ? info.koid : ZX_KOID_INVALID);
+    }
+    return cached_koid_.value();
   }
 
   zx_status_t Close();
@@ -67,9 +72,7 @@ class Handle : public fml::RefCountedThreadSafe<Handle>,
 
   Dart_Handle Duplicate(uint32_t rights);
 
-  void ScheduleCallback(tonic::DartPersistentValue callback,
-                        zx_status_t status,
-                        const zx_packet_signal_t* signal);
+  Dart_Handle Replace(uint32_t rights);
 
  private:
   explicit Handle(zx_handle_t handle);
@@ -82,12 +85,10 @@ class Handle : public fml::RefCountedThreadSafe<Handle>,
 
   std::vector<HandleWaiter*> waiters_;
 
-  // Some cached persistent handles to make running handle wait completers
-  // faster.
-  tonic::DartPersistentValue async_lib_;
-  tonic::DartPersistentValue closure_string_;
-  tonic::DartPersistentValue on_wait_completer_type_;
-  tonic::DartPersistentValue schedule_microtask_string_;
+  // Cache koid. To guarantee proper cache invalidation, only one `Handle`
+  // should own the `zx_handle_t` at a time and use of syscalls that invalidate
+  // the handle should use `ReleaseHandle()`.
+  mutable std::optional<zx_koid_t> cached_koid_;
 };
 
 }  // namespace dart

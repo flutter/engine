@@ -4,7 +4,6 @@
 
 package io.flutter.plugin.platform;
 
-import static android.content.Context.INPUT_METHOD_SERVICE;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.view.View.OnFocusChangeListener;
 
@@ -13,6 +12,7 @@ import android.app.AlertDialog;
 import android.app.Presentation;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.MutableContextWrapper;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
@@ -51,8 +51,9 @@ import java.lang.reflect.Proxy;
  *   EmbeddedView
  */
 @Keep
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
+@TargetApi(Build.VERSION_CODES.KITKAT)
 class SingleViewPresentation extends Presentation {
+  private static final String TAG = "PlatformViewsController";
 
   /*
    * When an embedded view is resized in Flutterverse we move the Android view to a new virtual display
@@ -73,8 +74,6 @@ class SingleViewPresentation extends Presentation {
     private FakeWindowViewGroup fakeWindowViewGroup;
   }
 
-  private final PlatformViewFactory viewFactory;
-
   // A reference to the current accessibility bridge to which accessibility events will be
   // delegated.
   private final AccessibilityEventsDelegate accessibilityEventsDelegate;
@@ -84,10 +83,6 @@ class SingleViewPresentation extends Presentation {
   // This is the view id assigned by the Flutter framework to the embedded view, we keep it here
   // so when we create the platform view we can tell it its view id.
   private int viewId;
-
-  // This is the creation parameters for the platform view, we keep it here
-  // so when we create the platform view we can tell it its view id.
-  private Object createParams;
 
   // The root view for the presentation, it has 2 childs: container which contains the embedded
   // view, and
@@ -99,7 +94,7 @@ class SingleViewPresentation extends Presentation {
   // presentation.
   private FrameLayout container;
 
-  private PresentationState state;
+  private final PresentationState state;
 
   private boolean startFocused = false;
 
@@ -113,19 +108,17 @@ class SingleViewPresentation extends Presentation {
   public SingleViewPresentation(
       Context outerContext,
       Display display,
-      PlatformViewFactory viewFactory,
+      PlatformView view,
       AccessibilityEventsDelegate accessibilityEventsDelegate,
       int viewId,
-      Object createParams,
       OnFocusChangeListener focusChangeListener) {
     super(new ImmContext(outerContext), display);
-    this.viewFactory = viewFactory;
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;
     this.viewId = viewId;
-    this.createParams = createParams;
     this.focusChangeListener = focusChangeListener;
     this.outerContext = outerContext;
     state = new PresentationState();
+    state.platformView = view;
     getWindow()
         .setFlags(
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
@@ -149,7 +142,6 @@ class SingleViewPresentation extends Presentation {
       boolean startFocused) {
     super(new ImmContext(outerContext), display);
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;
-    viewFactory = null;
     this.state = state;
     this.focusChangeListener = focusChangeListener;
     this.outerContext = outerContext;
@@ -179,14 +171,30 @@ class SingleViewPresentation extends Presentation {
 
     // Our base mContext has already been wrapped with an IMM cache at instantiation time, but
     // we want to wrap it again here to also return state.windowManagerHandler.
-    Context context =
+    Context baseContext =
         new PresentationContext(getContext(), state.windowManagerHandler, outerContext);
 
-    if (state.platformView == null) {
-      state.platformView = viewFactory.create(context, viewId, createParams);
+    View embeddedView = state.platformView.getView();
+    if (embeddedView.getContext() instanceof MutableContextWrapper) {
+      MutableContextWrapper currentContext = (MutableContextWrapper) embeddedView.getContext();
+      currentContext.setBaseContext(baseContext);
+    } else {
+      // In some cases, such as when using LayoutInflator, the original context
+      // may not be preserved. For backward compatibility with previous
+      // implementations of Virtual Display, which didn't validate the context,
+      // continue, but log a warning indicating that some functionality may not
+      // work as expected.
+      // See https://github.com/flutter/flutter/issues/110146 for context.
+      Log.w(
+          TAG,
+          "Unexpected platform view context for view ID "
+              + viewId
+              + "; some functionality may not work correctly. When constructing a platform view "
+              + "in the factory, ensure that the view returned from PlatformViewFactory#create "
+              + "returns the provided context from getContext(). If you are unable to associate "
+              + "the view with that context, consider using Hybrid Composition instead.");
     }
 
-    View embeddedView = state.platformView.getView();
     container.addView(embeddedView);
     rootView =
         new AccessibilityDelegatingFrameLayout(
@@ -205,13 +213,18 @@ class SingleViewPresentation extends Presentation {
   }
 
   public PresentationState detachState() {
-    container.removeAllViews();
-    rootView.removeAllViews();
+    // These views can be null before onCreate() is called
+    if (container != null) {
+      container.removeAllViews();
+    }
+    if (rootView != null) {
+      rootView.removeAllViews();
+    }
     return state;
   }
 
+  @Nullable
   public PlatformView getView() {
-    if (state.platformView == null) return null;
     return state.platformView;
   }
 

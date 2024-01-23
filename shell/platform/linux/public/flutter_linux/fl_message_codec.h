@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_MESSAGE_CODEC_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_MESSAGE_CODEC_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_MESSAGE_CODEC_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_MESSAGE_CODEC_H_
 
 #if !defined(__FLUTTER_LINUX_INSIDE__) && !defined(FLUTTER_LINUX_COMPILATION)
 #error "Only <flutter_linux/flutter_linux.h> can be included directly."
 #endif
 
 #include <glib-object.h>
+#include <gmodule.h>
 
 #include "fl_value.h"
 
@@ -29,14 +30,17 @@ G_BEGIN_DECLS
 #define FL_MESSAGE_CODEC_ERROR fl_message_codec_error_quark()
 
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   FL_MESSAGE_CODEC_ERROR_FAILED,
   FL_MESSAGE_CODEC_ERROR_OUT_OF_DATA,
   FL_MESSAGE_CODEC_ERROR_ADDITIONAL_DATA,
   FL_MESSAGE_CODEC_ERROR_UNSUPPORTED_TYPE,
+  // NOLINTEND(readability-identifier-naming)
 } FlMessageCodecError;
 
 GQuark fl_message_codec_error_quark(void) G_GNUC_CONST;
 
+G_MODULE_EXPORT
 G_DECLARE_DERIVABLE_TYPE(FlMessageCodec,
                          fl_message_codec,
                          FL,
@@ -126,4 +130,4 @@ FlValue* fl_message_codec_decode_message(FlMessageCodec* codec,
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_MESSAGE_CODEC_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_PUBLIC_FLUTTER_LINUX_FL_MESSAGE_CODEC_H_

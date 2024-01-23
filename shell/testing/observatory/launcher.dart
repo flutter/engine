@@ -2,27 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-library observatory_sky_shell_launcher;
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 class ShellProcess {
-  final Completer<Uri> _observatoryUriCompleter = Completer<Uri>();
+  final Completer<Uri> _vmServiceUriCompleter = Completer<Uri>();
   final Process _process;
 
   ShellProcess(this._process) {
-    // Scan stdout and scrape the Observatory Uri.
+    // Scan stdout and scrape the VM Service Uri.
     _process.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((String line) {
-      const String observatoryUriPrefix = 'Observatory listening on ';
-      if (line.startsWith(observatoryUriPrefix)) {
-        print(line);
-        final Uri uri = Uri.parse(line.substring(observatoryUriPrefix.length));
-        _observatoryUriCompleter.complete(uri);
+      final uri = _extractVMServiceUri(line);
+      if (uri != null) {
+        _vmServiceUriCompleter.complete(uri);
       }
     });
   }
@@ -31,14 +27,25 @@ class ShellProcess {
     return _process.kill();
   }
 
-  Future<Uri> waitForObservatory() async {
-    return _observatoryUriCompleter.future;
+  Future<Uri> waitForVMService() async {
+    return _vmServiceUriCompleter.future;
+  }
+
+  Uri? _extractVMServiceUri(String str) {
+    final listeningMessageRegExp = RegExp(
+      r'The Dart VM service is listening on ((http|//)[a-zA-Z0-9:/=_\-\.\[\]]+)',
+    );
+    final match = listeningMessageRegExp.firstMatch(str);
+    if (match != null) {
+      return Uri.parse(match[1]!);
+    }
+    return null;
   }
 }
 
 class ShellLauncher {
   final List<String> args = <String>[
-    '--observatory-port=0',
+    '--vm-service-port=0',
     '--non-interactive',
     '--run-forever',
     '--disable-service-auth-codes',
@@ -49,9 +56,7 @@ class ShellLauncher {
 
   ShellLauncher(this.shellExecutablePath, this.mainDartPath, this.startPaused,
       List<String> extraArgs) {
-    if (extraArgs is List) {
-      args.addAll(extraArgs);
-    }
+    args.addAll(extraArgs);
     args.add(mainDartPath);
   }
 

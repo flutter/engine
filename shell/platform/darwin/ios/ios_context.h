@@ -2,18 +2,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RESOURCE_CONTEXT_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RESOURCE_CONTEXT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_H_
 
 #include <memory>
 
 #include "flutter/common/graphics/gl_context_switch.h"
+#include "flutter/common/graphics/msaa_sample_count.h"
 #include "flutter/common/graphics/texture.h"
+#include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/synchronization/sync_switch.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+
+namespace impeller {
+class Context;
+}  // namespace impeller
 
 namespace flutter {
 
@@ -22,7 +29,7 @@ namespace flutter {
 ///             contexts on iOS. On-screen contexts are used by Flutter for
 ///             rendering into the surface. The lifecycle of this context may be
 ///             tied to the lifecycle of the surface. On the other hand, the
-///             lifecycle of the the off-screen context it tied to that of the
+///             lifecycle of the off-screen context it tied to that of the
 ///             platform view. This one object used to manage both context
 ///             because GPU handles may need to be shared between the two
 ///             context. To achieve this, context may need references to one
@@ -39,18 +46,34 @@ class IOSContext {
   ///             In case the engine does not support the specified client
   ///             rendering API, this a `nullptr` may be returned.
   ///
-  /// @param[in]  rendering_api  A client rendering API supported by the
-  ///                            engine/platform.
+  /// @param[in]  api       A client rendering API supported by the
+  ///                       engine/platform.
+  /// @param[in]  backend   A client rendering backend supported by the
+  ///                       engine/platform.
+  /// @param[in]  msaa_samples
+  ///                       The number of MSAA samples to use. Only supplied to
+  ///                       Skia, must be either 0, 1, 2, 4, or 8.
   ///
   /// @return     A valid context on success. `nullptr` on failure.
   ///
-  static std::unique_ptr<IOSContext> Create(IOSRenderingAPI rendering_api);
+  static std::unique_ptr<IOSContext> Create(
+      IOSRenderingAPI api,
+      IOSRenderingBackend backend,
+      MsaaSampleCount msaa_samples,
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch);
 
   //----------------------------------------------------------------------------
   /// @brief      Collects the context object. This must happen on the thread on
   ///             which this object was created.
   ///
   virtual ~IOSContext();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the rendering backend used by this context.
+  ///
+  /// @return     The rendering backend.
+  ///
+  virtual IOSRenderingBackend GetBackend() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Create a resource context for use on the IO task runner. This
@@ -106,13 +129,32 @@ class IOSContext {
       int64_t texture_id,
       fml::scoped_nsobject<NSObject<FlutterTexture>> texture) = 0;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Accessor for the Skia context associated with IOSSurfaces and
+  ///             the raster thread.
+  /// @details    There can be any number of resource contexts but this is the
+  ///             one context that will be used by surfaces to draw to the
+  ///             screen from the raster thread.
+  /// @returns    `nullptr` on failure.
+  /// @attention  The software context doesn't have a Skia context, so this
+  ///             value will be nullptr.
+  /// @see        For contexts which are used for offscreen work like loading
+  ///             textures see IOSContext::CreateResourceContext.
+  ///
+  virtual sk_sp<GrDirectContext> GetMainContext() const = 0;
+
+  virtual std::shared_ptr<impeller::Context> GetImpellerContext() const;
+
+  MsaaSampleCount GetMsaaSampleCount() const { return msaa_samples_; }
+
  protected:
-  IOSContext();
+  explicit IOSContext(MsaaSampleCount msaa_samples);
 
  private:
+  MsaaSampleCount msaa_samples_ = MsaaSampleCount::kNone;
   FML_DISALLOW_COPY_AND_ASSIGN(IOSContext);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_RESOURCE_CONTEXT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_H_

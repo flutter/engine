@@ -21,12 +21,14 @@ class EmbedderThreadHost {
  public:
   static std::unique_ptr<EmbedderThreadHost>
   CreateEmbedderOrEngineManagedThreadHost(
-      const FlutterCustomTaskRunners* custom_task_runners);
+      const FlutterCustomTaskRunners* custom_task_runners,
+      const flutter::ThreadConfigSetter& config_setter =
+          fml::Thread::SetCurrentThreadName);
 
   EmbedderThreadHost(
       ThreadHost host,
-      flutter::TaskRunners runners,
-      std::set<fml::RefPtr<EmbedderTaskRunner>> embedder_task_runners);
+      const flutter::TaskRunners& runners,
+      const std::set<fml::RefPtr<EmbedderTaskRunner>>& embedder_task_runners);
 
   ~EmbedderThreadHost();
 
@@ -42,9 +44,13 @@ class EmbedderThreadHost {
   std::map<int64_t, fml::RefPtr<EmbedderTaskRunner>> runners_map_;
 
   static std::unique_ptr<EmbedderThreadHost> CreateEmbedderManagedThreadHost(
-      const FlutterCustomTaskRunners* custom_task_runners);
+      const FlutterCustomTaskRunners* custom_task_runners,
+      const flutter::ThreadConfigSetter& config_setter =
+          fml::Thread::SetCurrentThreadName);
 
-  static std::unique_ptr<EmbedderThreadHost> CreateEngineManagedThreadHost();
+  static std::unique_ptr<EmbedderThreadHost> CreateEngineManagedThreadHost(
+      const flutter::ThreadConfigSetter& config_setter =
+          fml::Thread::SetCurrentThreadName);
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderThreadHost);
 };

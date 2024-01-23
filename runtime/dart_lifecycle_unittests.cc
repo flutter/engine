@@ -19,7 +19,7 @@ using DartLifecycleTest = FixtureTest;
 TEST_F(DartLifecycleTest, CanStartAndShutdownVM) {
   auto settings = CreateSettingsForFixture();
   settings.leak_vm = false;
-  settings.enable_observatory = false;
+  settings.enable_vm_service = false;
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   {
     auto vm_ref = DartVMRef::Create(settings);
@@ -31,7 +31,7 @@ TEST_F(DartLifecycleTest, CanStartAndShutdownVM) {
 TEST_F(DartLifecycleTest, CanStartAndShutdownVMOverAndOver) {
   auto settings = CreateSettingsForFixture();
   settings.leak_vm = false;
-  settings.enable_observatory = false;
+  settings.enable_vm_service = false;
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   auto count = DartVM::GetVMLaunchCount();
   for (size_t i = 0; i < 10; i++) {
@@ -46,34 +46,32 @@ TEST_F(DartLifecycleTest, CanStartAndShutdownVMOverAndOver) {
 static std::shared_ptr<DartIsolate> CreateAndRunRootIsolate(
     const Settings& settings,
     const DartVMData& vm,
-    fml::RefPtr<fml::TaskRunner> task_runner,
+    const fml::RefPtr<fml::TaskRunner>& task_runner,
     std::string entrypoint) {
-  FML_CHECK(entrypoint.size() > 0);
+  FML_CHECK(!entrypoint.empty());
   TaskRunners runners("io.flutter.test", task_runner, task_runner, task_runner,
                       task_runner);
 
   auto isolate_configuration =
       IsolateConfiguration::InferFromSettings(settings);
 
+  UIDartState::Context context(runners);
+  context.advisory_script_uri = "main.dart";
+  context.advisory_script_entrypoint = entrypoint.c_str();
   auto isolate =
       DartIsolate::CreateRunningRootIsolate(
           vm.GetSettings(),                    // settings
           vm.GetIsolateSnapshot(),             // isolate_snapshot
-          runners,                             // task_runners
-          {},                                  // window
-          {},                                  // snapshot_delegate
-          {},                                  // hint_freed_delegate
-          {},                                  // io_manager
-          {},                                  // unref_queue
-          {},                                  // image_decoder
-          "main.dart",                         // advisory_script_uri
-          entrypoint.c_str(),                  // advisory_script_entrypoint
+          {},                                  // platform configuration
           DartIsolate::Flags{},                // flags
+          nullptr,                             // root isolate create callback
           settings.isolate_create_callback,    // isolate create callback
           settings.isolate_shutdown_callback,  // isolate shutdown callback,
           entrypoint,                          // dart entrypoint
           std::nullopt,                        // dart entrypoint library
-          std::move(isolate_configuration)     // isolate configuration
+          {},                                  // dart entrypoint arguments
+          std::move(isolate_configuration),    // isolate configuration
+          context                              // engine context
           )
           .lock();
 
@@ -91,7 +89,7 @@ TEST_F(DartLifecycleTest, DISABLED_ShuttingDownTheVMShutsDownAllIsolates) {
   auto settings = CreateSettingsForFixture();
   settings.leak_vm = false;
   // Make sure the service protocol launches
-  settings.enable_observatory = true;
+  settings.enable_vm_service = true;
 
   auto thread_task_runner = CreateNewThread();
 

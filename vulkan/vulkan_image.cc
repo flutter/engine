@@ -4,8 +4,8 @@
 
 #include "vulkan_image.h"
 
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "vulkan_command_buffer.h"
-#include "vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -31,7 +31,7 @@ bool VulkanImage::InsertImageMemoryBarrier(
     const VulkanCommandBuffer& command_buffer,
     VkPipelineStageFlagBits src_pipline_bits,
     VkPipelineStageFlagBits dest_pipline_bits,
-    VkAccessFlagBits dest_access_flags,
+    VkAccessFlags dest_access_flags,
     VkImageLayout dest_layout) {
   const VkImageMemoryBarrier image_memory_barrier = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,

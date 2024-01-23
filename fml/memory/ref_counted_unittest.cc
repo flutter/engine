@@ -128,6 +128,7 @@ TEST(RefCountedTest, Constructors) {
     was_destroyed = false;
     RefPtr<MyClass> r1(MakeRefCounted<MyClass>(&created, &was_destroyed));
     // Copy.
+    // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
     RefPtr<MyClass> r2(r1);
     EXPECT_TRUE(created);
     EXPECT_EQ(created, r1.get());
@@ -229,7 +230,8 @@ TEST(RefCountedTest, NullAssignmentToNull) {
   EXPECT_TRUE(r1.get() == nullptr);
   // The clang linter flags the method called on the moved-from reference, but
   // this is testing the move implementation, so it is marked NOLINT.
-  EXPECT_TRUE(r2.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
+  EXPECT_TRUE(r2.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move,
+                                     // bugprone-use-after-move)
   EXPECT_FALSE(r1);
   EXPECT_FALSE(r2);
 
@@ -244,7 +246,7 @@ TEST(RefCountedTest, NullAssignmentToNull) {
   // No-op null assignment using "move" constructor.
   r1 = std::move(r3);
   EXPECT_TRUE(r1.get() == nullptr);
-  EXPECT_TRUE(r3.get() == nullptr);
+  EXPECT_TRUE(r3.get() == nullptr);  // NOLINT(bugprone-use-after-move)
   EXPECT_FALSE(r1);
   EXPECT_FALSE(r3);
 }
@@ -276,7 +278,8 @@ TEST(RefCountedTest, NonNullAssignmentToNull) {
     r2 = std::move(r1);
     // The clang linter flags the method called on the moved-from reference, but
     // this is testing the move implementation, so it is marked NOLINT.
-    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move,
+                                       // bugprone-use-after-move)
     EXPECT_EQ(created, r2.get());
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
@@ -306,7 +309,7 @@ TEST(RefCountedTest, NonNullAssignmentToNull) {
     RefPtr<MyClass> r2;
     // "Move" assignment (to null ref pointer).
     r2 = std::move(r1);
-    EXPECT_TRUE(r1.get() == nullptr);
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(bugprone-use-after-move)
     EXPECT_EQ(static_cast<MyClass*>(created), r2.get());
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
@@ -342,7 +345,8 @@ TEST(RefCountedTest, NullAssignmentToNonNull) {
   EXPECT_TRUE(r1.get() == nullptr);
   // The clang linter flags the method called on the moved-from reference, but
   // this is testing the move implementation, so it is marked NOLINT.
-  EXPECT_TRUE(r2.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
+  EXPECT_TRUE(r2.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move,
+                                     // bugprone-use-after-move)
   EXPECT_FALSE(r1);
   EXPECT_FALSE(r2);
   EXPECT_TRUE(was_destroyed);
@@ -363,7 +367,7 @@ TEST(RefCountedTest, NullAssignmentToNonNull) {
   // Null assignment (to non-null ref pointer) using "move" constructor.
   r1 = std::move(r3);
   EXPECT_TRUE(r1.get() == nullptr);
-  EXPECT_TRUE(r3.get() == nullptr);
+  EXPECT_TRUE(r3.get() == nullptr);  // NOLINT(bugprone-use-after-move)
   EXPECT_FALSE(r1);
   EXPECT_FALSE(r3);
   EXPECT_TRUE(was_destroyed);
@@ -397,7 +401,8 @@ TEST(RefCountedTest, NonNullAssignmentToNonNull) {
     r2 = std::move(r1);
     // The clang linter flags the method called on the moved-from reference, but
     // this is testing the move implementation, so it is marked NOLINT.
-    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move)
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(clang-analyzer-cplusplus.Move,
+                                       // bugprone-use-after-move)
     EXPECT_FALSE(r2.get() == nullptr);
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
@@ -428,7 +433,7 @@ TEST(RefCountedTest, NonNullAssignmentToNonNull) {
     RefPtr<MyClass> r2(MakeRefCounted<MyClass>(nullptr, &was_destroyed2));
     // Move assignment (to non-null ref pointer).
     r2 = std::move(r1);
-    EXPECT_TRUE(r1.get() == nullptr);
+    EXPECT_TRUE(r1.get() == nullptr);  // NOLINT(bugprone-use-after-move)
     EXPECT_FALSE(r2.get() == nullptr);
     EXPECT_FALSE(r1);
     EXPECT_TRUE(r2);
@@ -472,13 +477,15 @@ TEST(RefCountedTest, SelfAssignment) {
 
 TEST(RefCountedTest, Swap) {
   MyClass* created1 = nullptr;
-  bool was_destroyed1 = false;
+  static bool was_destroyed1;
+  was_destroyed1 = false;
   RefPtr<MyClass> r1(MakeRefCounted<MyClass>(&created1, &was_destroyed1));
   EXPECT_TRUE(created1);
   EXPECT_EQ(created1, r1.get());
 
   MyClass* created2 = nullptr;
-  bool was_destroyed2 = false;
+  static bool was_destroyed2;
+  was_destroyed2 = false;
   RefPtr<MyClass> r2(MakeRefCounted<MyClass>(&created2, &was_destroyed2));
   EXPECT_TRUE(created2);
   EXPECT_EQ(created2, r2.get());
@@ -537,6 +544,7 @@ TEST(RefCountedTest, Mix) {
     RefPtr<MyClass> r3 = r2;
     EXPECT_FALSE(created->HasOneRef());
     {
+      // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
       RefPtr<MyClass> r4(r3);
       r2 = nullptr;
       ASSERT_FALSE(was_destroyed);

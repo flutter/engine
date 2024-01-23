@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
 
 #include <memory>
 #include <vector>
 
+#import "flutter/fml/mapping.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
 
 @class UIView;
@@ -20,11 +21,12 @@ class AccessibilityBridgeIos {
  public:
   virtual ~AccessibilityBridgeIos() = default;
   virtual UIView* view() const = 0;
+  virtual bool isVoiceOverRunning() const = 0;
   virtual UIView<UITextInput>* textInputView() = 0;
   virtual void DispatchSemanticsAction(int32_t id, flutter::SemanticsAction action) = 0;
   virtual void DispatchSemanticsAction(int32_t id,
                                        flutter::SemanticsAction action,
-                                       std::vector<uint8_t> args) = 0;
+                                       fml::MallocMapping args) = 0;
   /**
    * A callback that is called when a SemanticObject receives focus.
    *
@@ -42,4 +44,4 @@ class AccessibilityBridgeIos {
 
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_IOS_H_

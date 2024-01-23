@@ -13,8 +13,12 @@ namespace flutter {
 
 enum class IOSRenderingAPI {
   kSoftware,
-  kOpenGLES,
   kMetal,
+};
+
+enum class IOSRenderingBackend {
+  kSkia,
+  kImpeller,
 };
 
 // Pass force_software to force software rendering. This is only respected on

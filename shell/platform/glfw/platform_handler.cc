@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "flutter/shell/platform/common/cpp/json_method_codec.h"
+#include "flutter/shell/platform/common/json_method_codec.h"
 
 static constexpr char kChannelName[] = "flutter/platform";
 
@@ -87,7 +87,6 @@ void PlatformHandler::HandleMethodCall(
     result->Success();
   } else if (method.compare(kSystemNavigatorPopMethod) == 0) {
     exit(EXIT_SUCCESS);
-    result->Success();
   } else {
     result->NotImplemented();
   }

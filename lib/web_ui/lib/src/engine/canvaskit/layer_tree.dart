@@ -2,16 +2,24 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
+import '../profiler.dart';
+import '../vector_math.dart';
+import 'canvas.dart';
+import 'embedded_views.dart';
+import 'layer.dart';
+import 'n_way_canvas.dart';
+import 'picture_recorder.dart';
+import 'raster_cache.dart';
 
 /// A tree of [Layer]s that, together with a [Size] compose a frame.
 class LayerTree {
-  /// The root of the layer tree.
-  Layer? rootLayer;
+  LayerTree(this.rootLayer);
 
-  /// The size (in physical pixels) of the frame to paint this layer tree into.
-  final ui.Size frameSize = ui.window.physicalSize;
+  /// The root of the layer tree.
+  final RootLayer rootLayer;
 
   /// The devicePixelRatio of the frame to paint this layer tree into.
   double? devicePixelRatio;
@@ -27,7 +35,7 @@ class LayerTree {
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
-    rootLayer!.preroll(context, Matrix4.identity());
+    rootLayer.preroll(context, Matrix4.identity());
   }
 
   /// Paints the layer tree into the given [frame].
@@ -37,39 +45,35 @@ class LayerTree {
   void paint(Frame frame, {bool ignoreRasterCache = false}) {
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(frame.canvas);
-    final List<CkCanvas?> overlayCanvases =
-        frame.viewEmbedder!.getCurrentCanvases();
-    for (int i = 0; i < overlayCanvases.length; i++) {
-      internalNodesCanvas.addCanvas(overlayCanvases[i]);
-    }
+    final Iterable<CkCanvas> overlayCanvases =
+        frame.viewEmbedder!.getOverlayCanvases();
+    overlayCanvases.forEach(internalNodesCanvas.addCanvas);
     final PaintContext context = PaintContext(
       internalNodesCanvas,
       frame.canvas,
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
-    if (rootLayer!.needsPainting) {
-      rootLayer!.paint(context);
+    if (rootLayer.needsPainting) {
+      rootLayer.paint(context);
     }
   }
 
   /// Flattens the tree into a single [ui.Picture].
   ///
   /// This picture does not contain any platform views.
-  ui.Picture flatten() {
-    CkPictureRecorder recorder = CkPictureRecorder();
-    CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
-    if (rootLayer != null) {
-      final PrerollContext prerollContext = PrerollContext(null, null);
-      rootLayer!.preroll(prerollContext, Matrix4.identity());
+  ui.Picture flatten(ui.Size size) {
+    final CkPictureRecorder recorder = CkPictureRecorder();
+    final CkCanvas canvas = recorder.beginRecording(ui.Offset.zero & size);
+    final PrerollContext prerollContext = PrerollContext(null, null);
+    rootLayer.preroll(prerollContext, Matrix4.identity());
 
-      CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
-      internalNodesCanvas.addCanvas(canvas);
-      final PaintContext paintContext =
-          PaintContext(internalNodesCanvas, canvas, null, null);
-      if (rootLayer!.needsPainting) {
-        rootLayer!.paint(paintContext);
-      }
+    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
+    internalNodesCanvas.addCanvas(canvas);
+    final PaintContext paintContext =
+        PaintContext(internalNodesCanvas, canvas, null, null);
+    if (rootLayer.needsPainting) {
+      rootLayer.paint(paintContext);
     }
     return recorder.endRecording();
   }
@@ -77,6 +81,8 @@ class LayerTree {
 
 /// A single frame to be rendered.
 class Frame {
+  Frame(this.canvas, this.rasterCache, this.viewEmbedder);
+
   /// The canvas to render this frame to.
   final CkCanvas canvas;
 
@@ -85,8 +91,6 @@ class Frame {
 
   /// The platform view embedder.
   final HtmlViewEmbedder? viewEmbedder;
-
-  Frame(this.canvas, this.rasterCache, this.viewEmbedder);
 
   /// Rasterize the given layer tree into this frame.
   bool raster(LayerTree layerTree, {bool ignoreRasterCache = false}) {

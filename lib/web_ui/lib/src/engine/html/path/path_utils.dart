@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+
+import 'package:ui/ui.dart' as ui;
+
+import 'path_ref.dart';
 
 /// Mask used to keep track of types of verbs used in a path segment.
 class SPathSegmentMask {
@@ -23,7 +26,7 @@ class SPathVerb {
   static const int kClose = 5; // 0 points
 }
 
-class SPath {
+abstract final class SPath {
   static const int kMoveVerb = SPathVerb.kMove;
   static const int kLineVerb = SPathVerb.kLine;
   static const int kQuadVerb = SPathVerb.kQuad;
@@ -56,6 +59,14 @@ class SPath {
   static int scalarSignedAsInt(double x) {
     return x < 0 ? -1 : ((x > 0) ? 1 : 0);
   }
+
+  static bool nearlyEqual(double value1, double value2) =>
+      (value1 - value2).abs() < SPath.scalarNearlyZero;
+
+  // Snaps a value to zero if almost zero (within tolerance).
+  static double snapToZero(double value) => SPath.nearlyEqual(value, 0.0) ? 0.0 : value;
+
+  static bool isInteger(double value) => value.floor() == value;
 }
 
 class SPathAddPathMode {
@@ -99,21 +110,21 @@ class SPathSegmentState {
 ///    Q = -1/2 (B + sign(B) sqrt[B*B - 4*A*C])
 ///    x1 = Q / A
 ///    x2 = C / Q
-class _QuadRoots {
+class QuadRoots {
+  QuadRoots();
+
   double? root0;
   double? root1;
 
-  _QuadRoots();
-
   /// Returns roots as list.
   List<double> get roots => (root0 == null)
-      ? []
+      ? <double>[]
       : (root1 == null ? <double>[root0!] : <double>[root0!, root1!]);
 
   int findRoots(double a, double b, double c) {
     int rootCount = 0;
     if (a == 0) {
-      root0 = _validUnitDivide(-c, b);
+      root0 = validUnitDivide(-c, b);
       return root0 == null ? 0 : 1;
     }
 
@@ -126,13 +137,13 @@ class _QuadRoots {
       return 0;
     }
 
-    double q = (b < 0) ? -(b - dr) / 2 : -(b + dr) / 2;
-    double? res = _validUnitDivide(q, a);
+    final double q = (b < 0) ? -(b - dr) / 2 : -(b + dr) / 2;
+    double? res = validUnitDivide(q, a);
     if (res != null) {
       root0 = res;
       ++rootCount;
     }
-    res = _validUnitDivide(c, q);
+    res = validUnitDivide(c, q);
     if (res != null) {
       if (rootCount == 0) {
         root0 = res;
@@ -155,7 +166,7 @@ class _QuadRoots {
   }
 }
 
-double? _validUnitDivide(double numer, double denom) {
+double? validUnitDivide(double numer, double denom) {
   if (numer < 0) {
     numer = -numer;
     denom = -denom;
@@ -174,15 +185,7 @@ double? _validUnitDivide(double numer, double denom) {
   return r;
 }
 
-// Snaps a value to zero if almost zero (within tolerance).
-double _snapToZero(double value) => _nearlyEqual(value, 0.0) ? 0.0 : value;
-
-bool _nearlyEqual(double value1, double value2) =>
-    (value1 - value2).abs() < SPath.scalarNearlyZero;
-
-bool _isInteger(double value) => value.floor() == value;
-
-bool _isRRectOval(ui.RRect rrect) {
+bool isRRectOval(ui.RRect rrect) {
   if ((rrect.tlRadiusX + rrect.trRadiusX) != rrect.width) {
     return false;
   }
@@ -207,10 +210,10 @@ double polyEval4(double A, double B, double C, double D, double t) =>
 
 // Interpolate between two doubles (Not using lerpDouble here since it null
 // checks and treats values as 0).
-double _interpolate(double startValue, double endValue, double t) =>
+double interpolate(double startValue, double endValue, double t) =>
     (startValue * (1 - t)) + endValue * t;
 
-double _dotProduct(double x0, double y0, double x1, double y1) {
+double dotProduct(double x0, double y0, double x1, double y1) {
   return x0 * x1 + y0 * y1;
 }
 
@@ -292,9 +295,9 @@ class Convexicator {
     // Cross product = ||lastVec|| * ||curVec|| * sin(theta) * N
     // sin(theta) angle between two vectors is positive for angles 0..180 and
     // negative for greater, providing left or right direction.
-    double lastX = lastVecX!;
-    double lastY = lastVecY!;
-    double cross = lastX * curVecY - lastY * curVecX;
+    final double lastX = lastVecX!;
+    final double lastY = lastVecY!;
+    final double cross = lastX * curVecY - lastY * curVecX;
     if (!cross.isFinite) {
       return DirChange.kUnknown;
     }
@@ -306,18 +309,18 @@ class Convexicator {
     final double largest = math.max(
         math.max(curVecX, math.max(curVecY, math.max(lastX, lastY))),
         -smallest);
-    if (_nearlyEqual(largest, largest + cross)) {
-      final double nearlyZeroSquared =
+    if (SPath.nearlyEqual(largest, largest + cross)) {
+      const double nearlyZeroSquared =
           SPath.scalarNearlyZero * SPath.scalarNearlyZero;
-      if (_nearlyEqual(_lengthSquared(lastX, lastY), nearlyZeroSquared) ||
-          _nearlyEqual(_lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
+      if (SPath.nearlyEqual(lengthSquared(lastX, lastY), nearlyZeroSquared) ||
+          SPath.nearlyEqual(lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
         // Length of either vector is smaller than tolerance to be able
         // to compute direction.
         return DirChange.kUnknown;
       }
       // The vectors are parallel, sign of dot product gives us direction.
       // cosine is positive for straight -90 < Theta < 90
-      return _dotProduct(lastX, lastY, curVecX, curVecY) < 0
+      return dotProduct(lastX, lastY, curVecX, curVecY) < 0
           ? DirChange.kBackwards
           : DirChange.kStraight;
     }
@@ -325,7 +328,7 @@ class Convexicator {
   }
 
   bool _addVector(double curVecX, double curVecY) {
-    DirChange dir = _directionChange(curVecX, curVecY);
+    final DirChange dir = _directionChange(curVecX, curVecY);
     final bool isDirectionRight = dir == DirChange.kRight;
     if (dir == DirChange.kLeft || isDirectionRight) {
       if (_expectedDirection == DirChange.kInvalid) {
@@ -363,27 +366,27 @@ class Convexicator {
   // Quick test to detect concave by looking at number of changes in direction
   // of vectors formed by path points (excluding control points).
   static int bySign(PathRef pathRef, int pointIndex, int numPoints) {
-    int lastPointIndex = pointIndex + numPoints;
+    final int lastPointIndex = pointIndex + numPoints;
     int currentPoint = pointIndex++;
-    int firstPointIndex = currentPoint;
+    final int firstPointIndex = currentPoint;
     int signChangeCountX = 0;
     int signChangeCountY = 0;
     int lastSx = kValueNeverReturnedBySign;
     int lastSy = kValueNeverReturnedBySign;
     for (int outerLoop = 0; outerLoop < 2; ++outerLoop) {
       while (pointIndex != lastPointIndex) {
-        double vecX = pathRef._fPoints[pointIndex * 2] -
-            pathRef._fPoints[currentPoint * 2];
-        double vecY = pathRef._fPoints[pointIndex * 2 + 1] -
-            pathRef._fPoints[currentPoint * 2 + 1];
+        final double vecX = pathRef.pointXAt(pointIndex) -
+            pathRef.pointXAt(currentPoint);
+        final double vecY = pathRef.pointYAt(pointIndex) -
+            pathRef.pointYAt(currentPoint);
         if (!(vecX == 0 && vecY == 0)) {
           // Give up if vector construction failed.
           // give up if vector construction failed
           if (!(vecX.isFinite && vecY.isFinite)) {
             return SPathConvexityType.kUnknown;
           }
-          int sx = vecX < 0 ? 1 : 0;
-          int sy = vecY < 0 ? 1 : 0;
+          final int sx = vecX < 0 ? 1 : 0;
+          final int sy = vecY < 0 ? 1 : 0;
           signChangeCountX += (sx != lastSx) ? 1 : 0;
           signChangeCountY += (sy != lastSy) ? 1 : 0;
           if (signChangeCountX > 3 || signChangeCountY > 3) {
@@ -410,4 +413,29 @@ enum DirChange {
   kStraight,
   kBackwards, // if double back, allow simple lines to be convex
   kInvalid
+}
+
+double lengthSquaredOffset(ui.Offset offset) {
+  final double dx = offset.dx;
+  final double dy = offset.dy;
+  return dx * dx + dy * dy;
+}
+
+double lengthSquared(double dx, double dy) => dx * dx + dy * dy;
+
+/// Evaluates A * t^2 + B * t + C = 0 for quadratic curve.
+class SkQuadCoefficients {
+  SkQuadCoefficients(
+      double x0, double y0, double x1, double y1, double x2, double y2)
+      : cx = x0,
+        cy = y0,
+        bx = 2 * (x1 - x0),
+        by = 2 * (y1 - y0),
+        ax = x2 - (2 * x1) + x0,
+        ay = y2 - (2 * y1) + y0;
+  final double ax, ay, bx, by, cx, cy;
+
+  double evalX(double t) => (ax * t + bx) * t + cx;
+
+  double evalY(double t) => (ay * t + by) * t + cy;
 }

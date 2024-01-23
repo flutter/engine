@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_DART_H_
-#define FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_DART_H_
+#ifndef FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_RESPONSE_DART_H_
+#define FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_RESPONSE_DART_H_
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/window/platform_message_response.h"
@@ -22,13 +22,15 @@ class PlatformMessageResponseDart : public PlatformMessageResponse {
  protected:
   explicit PlatformMessageResponseDart(
       tonic::DartPersistentValue callback,
-      fml::RefPtr<fml::TaskRunner> ui_task_runner);
+      fml::RefPtr<fml::TaskRunner> ui_task_runner,
+      const std::string& channel);
   ~PlatformMessageResponseDart() override;
 
   tonic::DartPersistentValue callback_;
   fml::RefPtr<fml::TaskRunner> ui_task_runner_;
+  const std::string channel_;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_RESPONSE_DART_H_
+#endif  // FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_RESPONSE_DART_H_

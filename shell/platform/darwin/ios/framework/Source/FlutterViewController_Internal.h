@@ -5,28 +5,72 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 
-#include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
+#include "flutter/fml/time/time_point.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
 namespace flutter {
 class FlutterPlatformViewsController;
 }
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterViewControllerWillDealloc;
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 
-FLUTTER_EXPORT
+FLUTTER_DARWIN_EXPORT
+// NOLINTNEXTLINE(readability-identifier-naming)
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
-@interface FlutterViewController ()
+typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
+  // NOLINTBEGIN(readability-identifier-naming)
+  FlutterKeyboardModeHidden = 0,
+  FlutterKeyboardModeDocked = 1,
+  FlutterKeyboardModeFloating = 2,
+  // NOLINTEND(readability-identifier-naming)
+};
 
+typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
+
+@interface FlutterViewController () <FlutterViewResponder>
+
+@property(class, nonatomic, readonly) BOOL accessibilityIsOnOffSwitchLabelsEnabled;
 @property(nonatomic, readonly) BOOL isPresentingViewController;
-- (fml::WeakPtr<FlutterViewController>)getWeakPtr;
+@property(nonatomic, readonly) BOOL isVoiceOverRunning;
+@property(nonatomic, retain) FlutterKeyboardManager* keyboardManager;
+
+/**
+ * @brief Whether the status bar is preferred hidden.
+ *
+ *        This overrides the |UIViewController:prefersStatusBarHidden|.
+ *        This is ignored when `UIViewControllerBasedStatusBarAppearance` in info.plist
+ *        of the app project is `false`.
+ */
+@property(nonatomic, assign, readwrite) BOOL prefersStatusBarHidden;
+
+- (fml::WeakNSObject<FlutterViewController>)getWeakNSObject;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
+- (FlutterRestorationPlugin*)restorationPlugin;
+// Send touches to the Flutter Engine while forcing the change type to be cancelled.
+// The `phase`s in `touches` are ignored.
+- (void)forceTouchesCancelled:(NSSet*)touches;
+
+// Accepts keypress events, and then calls |nextAction| if the event was not
+// handled.
+- (void)handlePressEvent:(FlutterUIPressProxy*)press
+              nextAction:(void (^)())nextAction API_AVAILABLE(ios(13.4));
+- (void)addInternalPlugins;
+- (void)deregisterNotifications;
+- (int32_t)accessibilityFlags;
 
 @end
 

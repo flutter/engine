@@ -2,31 +2,38 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COMMON_PLATFORM_VIEW_H_
-#define COMMON_PLATFORM_VIEW_H_
+#ifndef FLUTTER_SHELL_COMMON_PLATFORM_VIEW_H_
+#define FLUTTER_SHELL_COMMON_PLATFORM_VIEW_H_
 
+#include <functional>
 #include <memory>
 
-#include "flow/embedded_views.h"
 #include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
+#include "flutter/flow/embedded_views.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/mapping.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/lib/ui/semantics/custom_accessibility_action.h"
 #include "flutter/lib/ui/semantics/semantics_node.h"
+#include "flutter/lib/ui/window/key_data_packet.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/pointer_data_packet_converter.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
+#include "flutter/shell/common/platform_message_handler.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
 #include "flutter/shell/common/vsync_waiter.h"
-#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
-namespace flutter {
+namespace impeller {
 
-class Shell;
+class Context;
+
+}  // namespace impeller
+
+namespace flutter {
 
 //------------------------------------------------------------------------------
 /// @brief      Platform views are created by the shell on the platform task
@@ -51,14 +58,15 @@ class PlatformView {
   ///
   class Delegate {
    public:
+    using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was created
     ///             with the given render surface. This surface is platform
     ///             (iOS, Android) and client-rendering API (OpenGL, Software,
     ///             Metal, Vulkan) specific. This is usually a sign to the
-    ///             rasterizer to setup and begin rendering to that surface.
+    ///             rasterizer to set up and begin rendering to that surface.
     ///
-    /// @param[in]  surface  The surface
+    /// @param[in]  surface           The surface
     ///
     virtual void OnPlatformViewCreated(std::unique_ptr<Surface> surface) = 0;
 
@@ -69,6 +77,12 @@ class PlatformView {
     ///             intermediate resources.
     ///
     virtual void OnPlatformViewDestroyed() = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform needs to schedule a
+    ///             frame to regenerate the layer tree and redraw the surface.
+    ///
+    virtual void OnPlatformViewScheduleFrame() = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the specified callback needs to
@@ -90,14 +104,15 @@ class PlatformView {
         const fml::closure& closure) = 0;
 
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate the viewport metrics of the platform
-    ///             view have been updated. The rasterizer will need to be
-    ///             reconfigured to render the frame in the updated viewport
-    ///             metrics.
+    /// @brief      Notifies the delegate the viewport metrics of a view have
+    ///             been updated. The rasterizer will need to be reconfigured to
+    ///             render the frame in the updated viewport metrics.
     ///
+    /// @param[in]  view_id  The ID for the view that `metrics` describes.
     /// @param[in]  metrics  The updated viewport metrics.
     ///
     virtual void OnPlatformViewSetViewportMetrics(
+        int64_t view_id,
         const ViewportMetrics& metrics) = 0;
 
     //--------------------------------------------------------------------------
@@ -110,7 +125,7 @@ class PlatformView {
     ///                      root isolate.
     ///
     virtual void OnPlatformViewDispatchPlatformMessage(
-        fml::RefPtr<PlatformMessage> message) = 0;
+        std::unique_ptr<PlatformMessage> message) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view has encountered
@@ -130,16 +145,16 @@ class PlatformView {
     ///             event must be forwarded to the running root isolate hosted
     ///             by the engine on the UI thread.
     ///
-    /// @param[in]  id      The identifier of the accessibility node.
+    /// @param[in]  node_id The identifier of the accessibility node.
     /// @param[in]  action  The accessibility related action performed on the
     ///                     node of the specified ID.
     /// @param[in]  args    An optional list of argument that apply to the
     ///                     specified action.
     ///
     virtual void OnPlatformViewDispatchSemanticsAction(
-        int32_t id,
+        int32_t node_id,
         SemanticsAction action,
-        std::vector<uint8_t> args) = 0;
+        fml::MallocMapping args) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the embedder has expressed an
@@ -216,12 +231,20 @@ class PlatformView {
     ///             dart library is loaded successfully, the dart future
     ///             returned by the originating loadLibrary() call completes.
     ///
-    ///             The Dart compiler may generate separate shared library .so
+    ///             The Dart compiler may generate separate shared libraries
     ///             files called 'loading units' when libraries are imported
     ///             as deferred. Each of these shared libraries are identified
-    ///             by a unique loading unit id and can be dynamically loaded
-    ///             into the VM by dlopen-ing and resolving the data and
-    ///             instructions symbols.
+    ///             by a unique loading unit id. Callers should open and resolve
+    ///             a SymbolMapping from the shared library. The Mappings should
+    ///             be moved into this method, as ownership will be assumed by
+    ///             the dart root isolate after successful loading and released
+    ///             after shutdown of the root isolate. The loading unit may not
+    ///             be used after isolate shutdown. If loading fails, the
+    ///             mappings will be released.
+    ///
+    ///             This method is paired with a RequestDartDeferredLibrary
+    ///             invocation that provides the embedder with the loading unit
+    ///             id of the deferred library to load.
     ///
     ///
     /// @param[in]  loading_unit_id  The unique id of the deferred library's
@@ -235,18 +258,72 @@ class PlatformView {
     ///
     virtual void LoadDartDeferredLibrary(
         intptr_t loading_unit_id,
-        const uint8_t* snapshot_data,
-        const uint8_t* snapshot_instructions) = 0;
+        std::unique_ptr<const fml::Mapping> snapshot_data,
+        std::unique_ptr<const fml::Mapping> snapshot_instructions) = 0;
 
-    // TODO(garyq): Implement a proper asset_resolver replacement instead of
-    // overwriting the entire asset manager.
     //--------------------------------------------------------------------------
-    /// @brief      Sets the asset manager of the engine to asset_manager
+    /// @brief      Indicates to the dart VM that the request to load a deferred
+    ///             library with the specified loading unit id has failed.
     ///
-    /// @param[in]  asset_manager  The asset manager to use.
+    ///             The dart future returned by the initiating loadLibrary()
+    ///             call will complete with an error.
     ///
-    virtual void UpdateAssetManager(
-        std::shared_ptr<AssetManager> asset_manager) = 0;
+    /// @param[in]  loading_unit_id  The unique id of the deferred library's
+    ///                              loading unit, as passed in by
+    ///                              RequestDartDeferredLibrary.
+    ///
+    /// @param[in]  error_message    The error message that will appear in the
+    ///                              dart Future.
+    ///
+    /// @param[in]  transient        A transient error is a failure due to
+    ///                              temporary conditions such as no network.
+    ///                              Transient errors allow the dart VM to
+    ///                              re-request the same deferred library and
+    ///                              loading_unit_id again. Non-transient
+    ///                              errors are permanent and attempts to
+    ///                              re-request the library will instantly
+    ///                              complete with an error.
+    virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                              const std::string error_message,
+                                              bool transient) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Replaces the asset resolver handled by the engine's
+    ///             AssetManager of the specified `type` with
+    ///             `updated_asset_resolver`. The matching AssetResolver is
+    ///             removed and replaced with `updated_asset_resolvers`.
+    ///
+    ///             AssetResolvers should be updated when the existing resolver
+    ///             becomes obsolete and a newer one becomes available that
+    ///             provides updated access to the same type of assets as the
+    ///             existing one. This update process is meant to be performed
+    ///             at runtime.
+    ///
+    ///             If a null resolver is provided, nothing will be done. If no
+    ///             matching resolver is found, the provided resolver will be
+    ///             added to the end of the AssetManager resolvers queue. The
+    ///             replacement only occurs with the first matching resolver.
+    ///             Any additional matching resolvers are untouched.
+    ///
+    /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+    ///             resolver of matching type with.
+    ///
+    /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
+    ///                   the specified type will be replaced by the updated
+    ///                   resolver.
+    ///
+    virtual void UpdateAssetResolverByType(
+        std::unique_ptr<AssetResolver> updated_asset_resolver,
+        AssetResolver::AssetResolverType type) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Called by the platform view on the platform thread to get
+    ///             the settings object associated with the platform view
+    ///             instance.
+    ///
+    /// @return     The settings.
+    ///
+    virtual const Settings& OnPlatformViewGetSettings() const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -260,7 +337,7 @@ class PlatformView {
   /// @param      delegate      The delegate. This is typically the shell.
   /// @param[in]  task_runners  The task runners used by this platform view.
   ///
-  explicit PlatformView(Delegate& delegate, TaskRunners task_runners);
+  explicit PlatformView(Delegate& delegate, const TaskRunners& task_runners);
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the platform view. The platform view is owned by the
@@ -308,7 +385,7 @@ class PlatformView {
   ///
   /// @param[in]  message  The platform message to deliver to the root isolate.
   ///
-  void DispatchPlatformMessage(fml::RefPtr<PlatformMessage> message);
+  void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Overridden by embedders to perform actions in response to
@@ -320,24 +397,24 @@ class PlatformView {
   ///             may use the `DispatchPlatformMessage` method. This method is
   ///             for messages that go the other way.
   ///
-  /// @see        DisplatchPlatformMessage()
+  /// @see        DispatchPlatformMessage()
   ///
   /// @param[in]  message  The message
   ///
-  virtual void HandlePlatformMessage(fml::RefPtr<PlatformMessage> message);
+  virtual void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to dispatch an accessibility action to a
   ///             running isolate hosted by the engine.
   ///
-  /// @param[in]  id      The identifier of the accessibility node on which to
+  /// @param[in]  node_id The identifier of the accessibility node on which to
   ///                     perform the action.
   /// @param[in]  action  The action
   /// @param[in]  args    The arguments
   ///
-  void DispatchSemanticsAction(int32_t id,
+  void DispatchSemanticsAction(int32_t node_id,
                                SemanticsAction action,
-                               std::vector<uint8_t> args);
+                               fml::MallocMapping args);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedder to notify the running isolate hosted by the
@@ -389,16 +466,28 @@ class PlatformView {
                                CustomAccessibilityActionUpdates actions);
 
   //----------------------------------------------------------------------------
-  /// @brief      Used by embedders to specify the updated viewport metrics. In
-  ///             response to this call, on the raster thread, the rasterizer
-  ///             may need to be reconfigured to the updated viewport
+  /// @brief      Used by the framework to tell the embedder that it has
+  ///             registered a listener on a given channel.
+  ///
+  /// @param[in]  name      The name of the channel on which the listener has
+  ///                       set or cleared a listener.
+  /// @param[in]  listening True if a listener has been set, false if it has
+  ///                       been cleared.
+  ///
+  virtual void SendChannelUpdate(const std::string& name, bool listening);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to specify the updated viewport metrics for
+  ///             a view. In response to this call, on the raster thread, the
+  ///             rasterizer may need to be reconfigured to the updated viewport
   ///             dimensions. On the UI thread, the framework may need to start
   ///             generating a new frame for the updated viewport metrics as
   ///             well.
   ///
+  /// @param[in]  view_id  The ID for the view that `metrics` describes.
   /// @param[in]  metrics  The updated viewport metrics.
   ///
-  void SetViewportMetrics(const ViewportMetrics& metrics);
+  void SetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to notify the shell that a platform view
@@ -421,6 +510,12 @@ class PlatformView {
   ///             class method at some point in their implementation.
   ///
   virtual void NotifyDestroyed();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Used by embedders to schedule a frame. In response to this
+  ///             call, the framework may need to start generating a new frame.
+  ///
+  void ScheduleFrame();
 
   //----------------------------------------------------------------------------
   /// @brief      Used by the shell to obtain a Skia GPU context that is capable
@@ -448,12 +543,14 @@ class PlatformView {
   ///
   virtual sk_sp<GrDirectContext> CreateResourceContext() const;
 
+  virtual std::shared_ptr<impeller::Context> GetImpellerContext() const;
+
   //----------------------------------------------------------------------------
   /// @brief      Used by the shell to notify the embedder that the resource
   ///             context previously obtained via a call to
-  ///             `CreateResourceContext()` is being collected. The embedder is
-  ///             free to collect an platform specific resources associated with
-  ///             this context.
+  ///             `CreateResourceContext()` is being collected. The embedder
+  ///             is free to collect an platform specific resources
+  ///             associated with this context.
   ///
   /// @attention  Unlike all other methods on the platform view, this will be
   ///             called on IO task runner.
@@ -545,8 +642,7 @@ class PlatformView {
 
   //--------------------------------------------------------------------------
   /// @brief      Used by the embedder to notify the rasterizer that it will
-  /// no
-  ///             longer attempt to composite the specified texture within
+  ///             no longer attempt to composite the specified texture within
   ///             the layer tree. This allows the rasterizer to collect
   ///             associated resources.
   ///
@@ -609,6 +705,12 @@ class PlatformView {
   ///             downloaded and loaded into the Dart VM via
   ///             `LoadDartDeferredLibrary`
   ///
+  ///             Upon encountering errors or otherwise failing to load a
+  ///             loading unit with the specified id, the failure should be
+  ///             directly reported to dart by calling
+  ///             `LoadDartDeferredLibraryFailure` to ensure the waiting dart
+  ///             future completes with an error.
+  ///
   /// @param[in]  loading_unit_id  The unique id of the deferred library's
   ///                              loading unit. This id is to be passed
   ///                              back into LoadDartDeferredLibrary
@@ -625,10 +727,12 @@ class PlatformView {
   ///             The Dart compiler may generate separate shared libraries
   ///             files called 'loading units' when libraries are imported
   ///             as deferred. Each of these shared libraries are identified
-  ///             by a unique loading unit id. Callers should dlopen the
-  ///             shared library file and use dlsym to resolve the dart
-  ///             symbols. These symbols can then be passed to this method to
-  ///             be dynamically loaded into the VM.
+  ///             by a unique loading unit id. Callers should open and resolve
+  ///             a SymbolMapping from the shared library. The Mappings should
+  ///             be moved into this method, as ownership will be assumed by the
+  ///             dart isolate after successful loading and released after
+  ///             shutdown of the dart isolate. If loading fails, the mappings
+  ///             will naturally go out of scope.
   ///
   ///             This method is paired with a RequestDartDeferredLibrary
   ///             invocation that provides the embedder with the loading unit id
@@ -645,30 +749,131 @@ class PlatformView {
   /// @param[in]  snapshot_data    Dart snapshot instructions of the loading
   ///                              unit's shared library.
   ///
-  virtual void LoadDartDeferredLibrary(intptr_t loading_unit_id,
-                                       const uint8_t* snapshot_data,
-                                       const uint8_t* snapshot_instructions);
+  virtual void LoadDartDeferredLibrary(
+      intptr_t loading_unit_id,
+      std::unique_ptr<const fml::Mapping> snapshot_data,
+      std::unique_ptr<const fml::Mapping> snapshot_instructions);
 
-  // TODO(garyq): Implement a proper asset_resolver replacement instead of
-  // overwriting the entire asset manager.
   //--------------------------------------------------------------------------
-  /// @brief      Sets the asset manager of the engine to asset_manager
+  /// @brief      Indicates to the dart VM that the request to load a deferred
+  ///             library with the specified loading unit id has failed.
   ///
-  /// @param[in]  asset_manager  The asset manager to use.
+  ///             The dart future returned by the initiating loadLibrary() call
+  ///             will complete with an error.
   ///
-  virtual void UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
+  /// @param[in]  loading_unit_id  The unique id of the deferred library's
+  ///                              loading unit, as passed in by
+  ///                              RequestDartDeferredLibrary.
+  ///
+  /// @param[in]  error_message    The error message that will appear in the
+  ///                              dart Future.
+  ///
+  /// @param[in]  transient        A transient error is a failure due to
+  ///                              temporary conditions such as no network.
+  ///                              Transient errors allow the dart VM to
+  ///                              re-request the same deferred library and
+  ///                              loading_unit_id again. Non-transient
+  ///                              errors are permanent and attempts to
+  ///                              re-request the library will instantly
+  ///                              complete with an error.
+  ///
+  virtual void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
+                                            const std::string error_message,
+                                            bool transient);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Replaces the asset resolver handled by the engine's
+  ///             AssetManager of the specified `type` with
+  ///             `updated_asset_resolver`. The matching AssetResolver is
+  ///             removed and replaced with `updated_asset_resolvers`.
+  ///
+  ///             AssetResolvers should be updated when the existing resolver
+  ///             becomes obsolete and a newer one becomes available that
+  ///             provides updated access to the same type of assets as the
+  ///             existing one. This update process is meant to be performed
+  ///             at runtime.
+  ///
+  ///             If a null resolver is provided, nothing will be done. If no
+  ///             matching resolver is found, the provided resolver will be
+  ///             added to the end of the AssetManager resolvers queue. The
+  ///             replacement only occurs with the first matching resolver.
+  ///             Any additional matching resolvers are untouched.
+  ///
+  /// @param[in]  updated_asset_resolver  The asset resolver to replace the
+  ///             resolver of matching type with.
+  ///
+  /// @param[in]  type  The type of AssetResolver to update. Only resolvers of
+  ///                   the specified type will be replaced by the updated
+  ///                   resolver.
+  ///
+  virtual void UpdateAssetResolverByType(
+      std::unique_ptr<AssetResolver> updated_asset_resolver,
+      AssetResolver::AssetResolverType type);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Creates an object that produces surfaces suitable for raster
+  ///             snapshotting. The rasterizer will request this surface if no
+  ///             on screen surface is currently available when an application
+  ///             requests a snapshot, e.g. if `Scene.toImage` or
+  ///             `Picture.toImage` are called while the application is in the
+  ///             background.
+  ///
+  ///             Not all backends support this kind of surface usage, and the
+  ///             default implementation returns nullptr. Platforms should
+  ///             override this if they can support GPU operations in the
+  ///             background and support GPU resource context usage.
+  ///
+  virtual std::unique_ptr<SnapshotSurfaceProducer>
+  CreateSnapshotSurfaceProducer();
+
+  //--------------------------------------------------------------------------
+  /// @brief Specifies a delegate that will receive PlatformMessages from
+  /// Flutter to the host platform.
+  ///
+  /// @details If this returns `null` that means PlatformMessages should be sent
+  /// to the PlatformView.  That is to protect legacy behavior, any embedder
+  /// that wants to support executing Platform Channel handlers on background
+  /// threads should be returning a thread-safe PlatformMessageHandler instead.
+  virtual std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
+      const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the settings for this platform view instance.
+  ///
+  /// @return     The settings.
+  ///
+  const Settings& GetSettings() const;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Synchronously invokes platform-specific APIs to apply the
+  ///             system text scaling on the given unscaled font size.
+  ///
+  ///             Platforms that support this feature (currently it's only
+  ///             implemented for Android SDK level 34+) will send a valid
+  ///             configuration_id to potential callers, before this method can
+  ///             be called.
+  ///
+  /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+  ///                                 app developer. The value is in logical
+  ///                                 pixels, and is guaranteed to be finite and
+  ///                                 non-negative.
+  /// @param[in]  configuration_id    The unique id of the configuration to use
+  ///                                 for computing the scaled font size.
+  ///
+  /// @return     The scaled font size in logical pixels, or -1 if the given
+  ///             configuration_id did not match a valid configuration.
+  ///
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const;
 
  protected:
+  // This is the only method called on the raster task runner.
+  virtual std::unique_ptr<Surface> CreateRenderingSurface();
+
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;
-
   PointerDataPacketConverter pointer_data_packet_converter_;
-  SkISize size_;
-  fml::WeakPtrFactory<PlatformView> weak_factory_;
-
-  // Unlike all other methods on the platform view, this is called on the
-  // GPU task runner.
-  virtual std::unique_ptr<Surface> CreateRenderingSurface();
+  fml::WeakPtrFactory<PlatformView> weak_factory_;  // Must be the last member.
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformView);
@@ -676,4 +881,4 @@ class PlatformView {
 
 }  // namespace flutter
 
-#endif  // COMMON_PLATFORM_VIEW_H_
+#endif  // FLUTTER_SHELL_COMMON_PLATFORM_VIEW_H_

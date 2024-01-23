@@ -2,17 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+// TODO(yjbanov): this does not need to be in the production sources.
+//                https://github.com/flutter/flutter/issues/100394
+
+import 'dart:async';
+
+import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 const bool _debugLogHistoryActions = false;
 
 class TestHistoryEntry {
+  const TestHistoryEntry(this.state, this.title, this.url);
+
   final dynamic state;
   final String? title;
   final String url;
-
-  const TestHistoryEntry(this.state, this.title, this.url);
 
   @override
   String toString() {
@@ -25,10 +30,10 @@ class TestHistoryEntry {
 ///
 /// It keeps a list of history entries and event listeners in memory and
 /// manipulates them in order to achieve the desired functionality.
-class TestUrlStrategy extends UrlStrategy {
+class TestUrlStrategy implements ui_web.UrlStrategy {
   /// Creates a instance of [TestUrlStrategy] with an empty string as the
   /// path.
-  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(TestHistoryEntry(null, null, ''));
+  factory TestUrlStrategy() => TestUrlStrategy.fromEntry(const TestHistoryEntry(null, null, ''));
 
   /// Creates an instance of [TestUrlStrategy] and populates it with a list
   /// that has [initialEntry] as the only item.
@@ -119,10 +124,10 @@ class TestUrlStrategy extends UrlStrategy {
     });
   }
 
-  final List<html.EventListener> listeners = <html.EventListener>[];
+  final List<ui_web.PopStateListener> listeners = <ui_web.PopStateListener>[];
 
   @override
-  ui.VoidCallback addPopStateListener(html.EventListener fn) {
+  ui.VoidCallback addPopStateListener(ui_web.PopStateListener fn) {
     listeners.add(fn);
     return () {
       // Schedule a micro task here to avoid removing the listener during
@@ -142,16 +147,12 @@ class TestUrlStrategy extends UrlStrategy {
   /// like a real browser.
   void _firePopStateEvent() {
     assert(withinAppHistory);
-    final html.PopStateEvent event = html.PopStateEvent(
-      'popstate',
-      <String, dynamic>{'state': currentEntry.state},
-    );
     for (int i = 0; i < listeners.length; i++) {
-      listeners[i](event);
+      listeners[i](currentEntry.state);
     }
 
     if (_debugLogHistoryActions) {
-      print('$runtimeType: fired popstate event $event');
+      print('$runtimeType: fired popstate with state ${currentEntry.state}');
     }
   }
 

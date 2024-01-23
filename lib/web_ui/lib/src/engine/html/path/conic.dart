@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import 'path_utils.dart';
 
 /// Converts conic curve to a list of quadratic curves for rendering on
 /// canvas or conversion to svg.
@@ -11,13 +15,13 @@ part of engine;
 /// See "High order approximation of conic sections by quadratic splines"
 /// by Michael Floater, 1993.
 /// Skia implementation reference:
-/// https://github.com/google/skia/blob/master/src/core/SkGeometry.cpp
+/// https://github.com/google/skia/blob/main/src/core/SkGeometry.cpp
 class Conic {
+  Conic(this.p0x, this.p0y, this.p1x, this.p1y, this.p2x, this.p2y, this.fW);
+
   double p0x, p0y, p1x, p1y, p2x, p2y;
   final double fW;
   static const int _maxSubdivisionCount = 5;
-
-  Conic(this.p0x, this.p0y, this.p1x, this.p1y, this.p2x, this.p2y, this.fW);
 
   /// Returns array of points for the approximation of the conic as quad(s).
   ///
@@ -150,7 +154,7 @@ class Conic {
   }
 
   void chopAtYExtrema(List<Conic> dst) {
-    double? t = _findYExtrema();
+    final double? t = _findYExtrema();
     if (t == null) {
       dst.add(this);
       return;
@@ -199,8 +203,8 @@ class Conic {
     final double coeff0 = fW * p20 - p20;
     final double coeff1 = p20 - 2 * wP10;
     final double coeff2 = wP10;
-    final _QuadRoots quadRoots = _QuadRoots();
-    int rootCount = quadRoots.findRoots(coeff0, coeff1, coeff2);
+    final QuadRoots quadRoots = QuadRoots();
+    final int rootCount = quadRoots.findRoots(coeff0, coeff1, coeff2);
     assert(rootCount == 0 || rootCount == 1);
     if (rootCount == 1) {
       return quadRoots.root0;
@@ -212,13 +216,13 @@ class Conic {
     // Map conic to 3D.
     final double tx0 = p0x;
     final double ty0 = p0y;
-    final double tz0 = 1;
+    const double tz0 = 1;
     final double tx1 = p1x * fW;
     final double ty1 = p1y * fW;
     final double tz1 = fW;
     final double tx2 = p2x;
     final double ty2 = p2y;
-    final double tz2 = 1;
+    const double tz2 = 1;
     // Now interpolate each dimension.
     final double dx0 = tx0 + (tx1 - tx0) * t;
     final double dx2 = tx1 + (tx2 - tx1) * t;
@@ -231,12 +235,12 @@ class Conic {
     final double dz1 = dz0 + (dz2 - dz0) * t;
     // Compute new weights.
     final double root = math.sqrt(dz1);
-    if (_nearlyEqual(root, 0)) {
+    if (SPath.nearlyEqual(root, 0)) {
       return false;
     }
     final double w0 = dz0 / root;
     final double w2 = dz2 / root;
-    if (_nearlyEqual(dz0, 0) || _nearlyEqual(dz1, 0) || _nearlyEqual(dz2, 0)) {
+    if (SPath.nearlyEqual(dz0, 0) || SPath.nearlyEqual(dz1, 0) || SPath.nearlyEqual(dz2, 0)) {
       return false;
     }
     // Now we can construct the 2 conics by projecting 3D down to 2D.
@@ -304,44 +308,45 @@ class Conic {
         (t == 1 && p1x == p2x && p1y == p2y)) {
       return ui.Offset(p2x - p0x, p2y - p0y);
     }
-    double p20x = p2x - p0x;
-    double p20y = p2y - p0y;
-    double p10x = p1x - p0x;
-    double p10y = p1y - p0y;
+    final double p20x = p2x - p0x;
+    final double p20y = p2y - p0y;
+    final double p10x = p1x - p0x;
+    final double p10y = p1y - p0y;
 
-    double cx = fW * p10x;
-    double cy = fW * p10y;
-    double ax = fW * p20x - p20x;
-    double ay = fW * p20y - p20y;
-    double bx = p20x - cx - cx;
-    double by = p20y - cy - cy;
-    _SkQuadCoefficients quadC = _SkQuadCoefficients(ax, ay, bx, by, cx, cy);
+    final double cx = fW * p10x;
+    final double cy = fW * p10y;
+    final double ax = fW * p20x - p20x;
+    final double ay = fW * p20y - p20y;
+    final double bx = p20x - cx - cx;
+    final double by = p20y - cy - cy;
+    final SkQuadCoefficients quadC = SkQuadCoefficients(ax, ay, bx, by, cx, cy);
     return ui.Offset(quadC.evalX(t), quadC.evalY(t));
+  }
+
+  static double evalNumerator(
+      double p0, double p1, double p2, double w, double t) {
+    assert(t >= 0 && t <= 1);
+    final double src2w = p1 * w;
+    final double C = p0;
+    final double A = p2 - 2 * src2w + C;
+    final double B = 2 * (src2w - C);
+    return polyEval(A, B, C, t);
+  }
+
+  static double evalDenominator(double w, double t) {
+    final double B = 2 * (w - 1);
+    const double C = 1;
+    final double A = -B;
+    return polyEval(A, B, C, t);
   }
 }
 
-double _conicEvalNumerator(
-    double p0, double p1, double p2, double w, double t) {
-  assert(t >= 0 && t <= 1);
-  final double src2w = p1 * w;
-  final C = p0;
-  final A = p2 - 2 * src2w + C;
-  final B = 2 * (src2w - C);
-  return polyEval(A, B, C, t);
-}
-
-double _conicEvalDenominator(double w, double t) {
-  double B = 2 * (w - 1);
-  double C = 1;
-  double A = -B;
-  return polyEval(A, B, C, t);
-}
-
-class _QuadBounds {
+class QuadBounds {
   double minX = 0;
   double minY = 0;
   double maxX = 0;
   double maxY = 0;
+
   void calculateBounds(Float32List points, int pointIndex) {
     final double x1 = points[pointIndex++];
     final double y1 = points[pointIndex++];
@@ -399,7 +404,7 @@ class _QuadBounds {
   }
 }
 
-class _ConicBounds {
+class ConicBounds {
   double minX = 0;
   double minY = 0;
   double maxX = 0;
@@ -421,21 +426,21 @@ class _ConicBounds {
     // ------------------------------------------------
     //       {t^2 (2 - 2 w), t (-2 + 2 w), 1}
     // Calculate coefficients and solve root.
-    _QuadRoots roots = _QuadRoots();
-    final double P20x = x2 - x1;
-    final double P10x = cpX - x1;
-    final double wP10x = w * P10x;
-    double ax = w * P20x - P20x;
-    double bx = P20x - 2 * wP10x;
-    double cx = wP10x;
+    final QuadRoots roots = QuadRoots();
+    final double p20x = x2 - x1;
+    final double p10x = cpX - x1;
+    final double wP10x = w * p10x;
+    final double ax = w * p20x - p20x;
+    final double bx = p20x - 2 * wP10x;
+    final double cx = wP10x;
     int n = roots.findRoots(ax, bx, cx);
     if (n != 0) {
       final double t1 = roots.root0!;
       if ((t1 >= 0) && (t1 <= 1.0)) {
-        final double denom = _conicEvalDenominator(w, t1);
-        double numerator = _conicEvalNumerator(x1, cpX, x2, w, t1);
+        final double denom = Conic.evalDenominator(w, t1);
+        double numerator = Conic.evalNumerator(x1, cpX, x2, w, t1);
         final double extremaX = numerator / denom;
-        numerator = _conicEvalNumerator(y1, cpY, y2, w, t1);
+        numerator = Conic.evalNumerator(y1, cpY, y2, w, t1);
         final double extremaY = numerator / denom;
         // Expand bounds.
         minX = math.min(minX, extremaX);
@@ -444,21 +449,21 @@ class _ConicBounds {
         maxY = math.max(maxY, extremaY);
       }
     }
-    final double P20y = y2 - y1;
-    final double P10y = cpY - y1;
-    final double wP10y = w * P10y;
-    double a = w * P20y - P20y;
-    double b = P20y - 2 * wP10y;
-    double c = wP10y;
+    final double p20y = y2 - y1;
+    final double p10y = cpY - y1;
+    final double wP10y = w * p10y;
+    final double a = w * p20y - p20y;
+    final double b = p20y - 2 * wP10y;
+    final double c = wP10y;
     n = roots.findRoots(a, b, c);
 
     if (n != 0) {
       final double t2 = roots.root0!;
       if ((t2 >= 0) && (t2 <= 1.0)) {
-        final double denom = _conicEvalDenominator(w, t2);
-        double numerator = _conicEvalNumerator(x1, cpX, x2, w, t2);
+        final double denom = Conic.evalDenominator(w, t2);
+        double numerator = Conic.evalNumerator(x1, cpX, x2, w, t2);
         final double extrema2X = numerator / denom;
-        numerator = _conicEvalNumerator(y1, cpY, y2, w, t2);
+        numerator = Conic.evalNumerator(y1, cpY, y2, w, t2);
         final double extrema2Y = numerator / denom;
         // Expand bounds.
         minX = math.min(minX, extrema2X);

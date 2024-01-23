@@ -35,7 +35,7 @@ class RunConfiguration {
   ///             will attempt to look for the VM and isolate snapshots in the
   ///             assets directory (must be specified in settings). In AOT mode,
   ///             it will attempt to look for known snapshot symbols in the
-  ///             currently currently loaded process. The entrypoint defaults to
+  ///             currently loaded process. The entrypoint defaults to
   ///             the "main" method in the root library.
   ///
   /// @param[in]  settings   The settings object used to look for the various
@@ -51,13 +51,16 @@ class RunConfiguration {
   ///                        serial worker is kept alive for the lifetime of the
   ///                        shell associated with the engine that this run
   ///                        configuration is given to.
+  /// @param[in]  launch_type Whether to launch the new isolate into an existing
+  ///                         group or a new one.
   ///
   /// @return     A run configuration. Depending on the completeness of the
   ///             settings, This object may potentially be invalid.
   ///
   static RunConfiguration InferFromSettings(
       const Settings& settings,
-      fml::RefPtr<fml::TaskRunner> io_worker = nullptr);
+      const fml::RefPtr<fml::TaskRunner>& io_worker = nullptr,
+      IsolateLaunchType launch_type = IsolateLaunchType::kNewGroup);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a run configuration with only an isolate
@@ -66,7 +69,8 @@ class RunConfiguration {
   ///
   /// @param[in]  configuration  The configuration
   ///
-  RunConfiguration(std::unique_ptr<IsolateConfiguration> configuration);
+  explicit RunConfiguration(
+      std::unique_ptr<IsolateConfiguration> configuration);
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a run configuration with the specified isolate
@@ -151,6 +155,12 @@ class RunConfiguration {
   void SetEntrypointAndLibrary(std::string entrypoint, std::string library);
 
   //----------------------------------------------------------------------------
+  /// @brief      Updates the main application entrypoint arguments.
+  ///
+  /// @param[in]  entrypoint_args  The entrypoint arguments to use.
+  void SetEntrypointArgs(std::vector<std::string> entrypoint_args);
+
+  //----------------------------------------------------------------------------
   /// @return     The asset manager referencing all previously registered asset
   ///             resolvers.
   ///
@@ -168,6 +178,12 @@ class RunConfiguration {
   const std::string& GetEntrypointLibrary() const;
 
   //----------------------------------------------------------------------------
+  /// @return     Arguments passed as a List<String> to Dart's entrypoint
+  ///             function.
+  ///
+  const std::vector<std::string>& GetEntrypointArgs() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      The engine uses this to take the isolate configuration from
   ///             the run configuration. The run configuration is no longer
   ///             valid after this call is made. The non-copyable nature of some
@@ -183,6 +199,7 @@ class RunConfiguration {
   std::shared_ptr<AssetManager> asset_manager_;
   std::string entrypoint_ = "main";
   std::string entrypoint_library_ = "";
+  std::vector<std::string> entrypoint_args_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RunConfiguration);
 };

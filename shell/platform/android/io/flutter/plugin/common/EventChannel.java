@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.common;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import io.flutter.BuildConfig;
 import io.flutter.Log;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * responses and events are encoded into binary before being transmitted back to Flutter. The {@link
  * MethodCodec} used must be compatible with the one used by the Flutter application. This can be
  * achieved by creating an <a
- * href="https://docs.flutter.io/flutter/services/EventChannel-class.html">EventChannel</a>
+ * href="https://api.flutter.dev/flutter/services/EventChannel-class.html">EventChannel</a>
  * counterpart of this channel on the Dart side. The Java type of stream configuration arguments,
  * events, and error details is {@code Object}, but only values supported by the specified {@link
  * MethodCodec} can be used.
@@ -34,6 +35,7 @@ public final class EventChannel {
   private final BinaryMessenger messenger;
   private final String name;
   private final MethodCodec codec;
+  @Nullable private final BinaryMessenger.TaskQueue taskQueue;
 
   /**
    * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
@@ -55,6 +57,25 @@ public final class EventChannel {
    * @param codec a {@link MessageCodec}.
    */
   public EventChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
+    this(messenger, name, codec, null);
+  }
+
+  /**
+   * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
+   * specified name and {@link MethodCodec}.
+   *
+   * @param messenger a {@link BinaryMessenger}.
+   * @param name a channel name String.
+   * @param codec a {@link MessageCodec}.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null means execute on the platform thread. See also {@link
+   *     BinaryMessenger#makeBackgroundTaskQueue()}.
+   */
+  public EventChannel(
+      BinaryMessenger messenger,
+      String name,
+      MethodCodec codec,
+      BinaryMessenger.TaskQueue taskQueue) {
     if (BuildConfig.DEBUG) {
       if (messenger == null) {
         Log.e(TAG, "Parameter messenger must not be null.");
@@ -69,6 +90,7 @@ public final class EventChannel {
     this.messenger = messenger;
     this.name = name;
     this.codec = codec;
+    this.taskQueue = taskQueue;
   }
 
   /**
@@ -83,18 +105,26 @@ public final class EventChannel {
    */
   @UiThread
   public void setStreamHandler(final StreamHandler handler) {
-    messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingStreamRequestHandler(handler));
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingStreamRequestHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingStreamRequestHandler(handler));
+    }
   }
 
   /**
-   * Handler of stream setup and tear-down requests.
+   * Handler of stream setup and teardown requests.
    *
    * <p>Implementations must be prepared to accept sequences of alternating calls to {@link
-   * #onListen(Object, EventSink)} and {@link #onCancel(Object)}. Implementations should ideally
-   * consume no resources when the last such call is not {@code onListen}. In typical situations,
-   * this means that the implementation should register itself with platform-specific event sources
-   * {@code onListen} and deregister again {@code onCancel}.
+   * #onListen(Object, EventChannel.EventSink)} and {@link #onCancel(Object)}. Implementations
+   * should ideally consume no resources when the last such call is not {@code onListen}. In typical
+   * situations, this means that the implementation should register itself with platform-specific
+   * event sources {@code onListen} and deregister again {@code onCancel}.
    */
   public interface StreamHandler {
     /**

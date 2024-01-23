@@ -10,7 +10,9 @@ dart_ui_files = [
   "//flutter/lib/ui/hash_codes.dart",
   "//flutter/lib/ui/hooks.dart",
   "//flutter/lib/ui/isolate_name_server.dart",
+  "//flutter/lib/ui/key.dart",
   "//flutter/lib/ui/lerp.dart",
+  "//flutter/lib/ui/math.dart",
   "//flutter/lib/ui/natives.dart",
   "//flutter/lib/ui/painting.dart",
   "//flutter/lib/ui/platform_dispatcher.dart",
@@ -23,3 +25,10 @@ dart_ui_files = [
 ]
 
 dart_ui_path = "//flutter/lib/ui/ui.dart"
+
+dart_ui_web_files = [
+  "$root_out_dir/flutter_web_sdk/lib/ui_web/ui_web/url_strategy.dart",
+  "$root_out_dir/flutter_web_sdk/lib/ui_web/ui_web.dart",
+]
+
+dart_ui_web_path = "//flutter/lib/web_ui/lib/ui_web/src/ui_web.dart"

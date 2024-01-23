@@ -65,8 +65,8 @@ template <typename T>
 class RefPtr final {
  public:
   RefPtr() : ptr_(nullptr) {}
-  RefPtr(std::nullptr_t)
-      : ptr_(nullptr) {}  // NOLINT(google-explicit-constructor)
+  RefPtr(std::nullptr_t)  // NOLINT(google-explicit-constructor)
+      : ptr_(nullptr) {}
 
   // Explicit constructor from a plain pointer (to an object that must have
   // already been adopted). (Note that in |T::T()|, references to |this| cannot
@@ -80,22 +80,25 @@ class RefPtr final {
   }
 
   // Copy constructor.
-  RefPtr(const RefPtr<T>& r) : ptr_(r.ptr_) {
+  RefPtr(const RefPtr<T>& r)  // NOLINT(google-explicit-constructor)
+      : ptr_(r.ptr_) {
     if (ptr_) {
       ptr_->AddRef();
     }
   }
 
   template <typename U>
-  RefPtr(const RefPtr<U>& r)
-      : ptr_(r.ptr_) {  // NOLINT(google-explicit-constructor)
+  RefPtr(const RefPtr<U>& r)  // NOLINT(google-explicit-constructor)
+      : ptr_(r.ptr_) {
     if (ptr_) {
       ptr_->AddRef();
     }
   }
 
   // Move constructor.
-  RefPtr(RefPtr<T>&& r) : ptr_(r.ptr_) { r.ptr_ = nullptr; }
+  RefPtr(RefPtr<T>&& r) : ptr_(r.ptr_) {  // NOLINT(google-explicit-constructor)
+    r.ptr_ = nullptr;
+  }
 
   template <typename U>
   RefPtr(RefPtr<U>&& r) : ptr_(r.ptr_) {  // NOLINT(google-explicit-constructor)
@@ -105,6 +108,7 @@ class RefPtr final {
   // Destructor.
   ~RefPtr() {
     if (ptr_) {
+      // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDelete)
       ptr_->Release();
     }
   }
@@ -202,7 +206,7 @@ class RefPtr final {
 
   friend RefPtr<T> AdoptRef<T>(T*);
 
-  enum AdoptTag { ADOPT };
+  enum AdoptTag { kAdopt };
   RefPtr(T* ptr, AdoptTag) : ptr_(ptr) { FML_DCHECK(ptr_); }
 
   T* ptr_;
@@ -219,7 +223,7 @@ inline RefPtr<T> AdoptRef(T* ptr) {
 #ifndef NDEBUG
   ptr->Adopt();
 #endif
-  return RefPtr<T>(ptr, RefPtr<T>::ADOPT);
+  return RefPtr<T>(ptr, RefPtr<T>::kAdopt);
 }
 
 // Constructs a |RefPtr<T>| from a plain pointer (to an object that must

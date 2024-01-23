@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "handle.h"
+#include "handle_disposition.h"
 #include "handle_waiter.h"
 #include "system.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -32,6 +33,7 @@ static tonic::DartLibraryNatives* g_natives;
 
 tonic::DartLibraryNatives* InitNatives() {
   tonic::DartLibraryNatives* natives = new tonic::DartLibraryNatives();
+  HandleDisposition::RegisterNatives(natives);
   HandleWaiter::RegisterNatives(natives);
   Handle::RegisterNatives(natives);
   System::RegisterNatives(natives);
@@ -65,10 +67,10 @@ const uint8_t* NativeSymbol(Dart_NativeFunction native_function) {
 
 void Initialize() {
   Dart_Handle library = Dart_LookupLibrary(ToDart("dart:zircon"));
-  FML_CHECK(!tonic::LogIfError(library));
+  FML_CHECK(!tonic::CheckAndHandleError(library));
   Dart_Handle result = Dart_SetNativeResolver(
       library, zircon::dart::NativeLookup, zircon::dart::NativeSymbol);
-  FML_CHECK(!tonic::LogIfError(result));
+  FML_CHECK(!tonic::CheckAndHandleError(result));
 
   auto dart_state = tonic::DartState::Current();
   std::unique_ptr<tonic::DartClassProvider> zircon_class_provider(

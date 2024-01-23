@@ -6,6 +6,7 @@
 
 #include <cmath>
 
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "third_party/tonic/converter/dart_converter.h"
@@ -13,48 +14,27 @@
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
 
-using tonic::ToDart;
-
 namespace flutter {
 
 typedef CanvasPathMeasure PathMeasure;
 
-static void PathMeasure_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&CanvasPathMeasure::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, PathMeasure);
 
-#define FOR_EACH_BINDING(V)  \
-  V(PathMeasure, setPath)    \
-  V(PathMeasure, getLength)  \
-  V(PathMeasure, getPosTan)  \
-  V(PathMeasure, getSegment) \
-  V(PathMeasure, isClosed)   \
-  V(PathMeasure, nextContour)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void CanvasPathMeasure::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"PathMeasure_constructor", PathMeasure_constructor, 3, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
-fml::RefPtr<CanvasPathMeasure> CanvasPathMeasure::Create(const CanvasPath* path,
-                                                         bool forceClosed) {
+void CanvasPathMeasure::Create(Dart_Handle wrapper,
+                               const CanvasPath* path,
+                               bool forceClosed) {
+  UIDartState::ThrowIfUIOperationsProhibited();
   fml::RefPtr<CanvasPathMeasure> pathMeasure =
       fml::MakeRefCounted<CanvasPathMeasure>();
   if (path) {
-    const SkPath skPath = path->path();
+    const SkPath& skPath = path->path();
     SkScalar resScale = 1;
     pathMeasure->path_measure_ =
         std::make_unique<SkContourMeasureIter>(skPath, forceClosed, resScale);
   } else {
     pathMeasure->path_measure_ = std::make_unique<SkContourMeasureIter>();
   }
-  return pathMeasure;
+  pathMeasure->AssociateWithDartWrapper(wrapper);
 }
 
 CanvasPathMeasure::CanvasPathMeasure() {}
@@ -66,7 +46,7 @@ void CanvasPathMeasure::setPath(const CanvasPath* path, bool isClosed) {
   path_measure_->reset(skPath, isClosed);
 }
 
-float CanvasPathMeasure::getLength(int contour_index) {
+double CanvasPathMeasure::getLength(int contour_index) {
   if (static_cast<std::vector<sk_sp<SkContourMeasure>>::size_type>(
           contour_index) < measures_.size()) {
     return measures_[contour_index]->length();
@@ -75,7 +55,7 @@ float CanvasPathMeasure::getLength(int contour_index) {
 }
 
 tonic::Float32List CanvasPathMeasure::getPosTan(int contour_index,
-                                                float distance) {
+                                                double distance) {
   tonic::Float32List posTan(Dart_NewTypedData(Dart_TypedData_kFloat32, 5));
   posTan[0] = 0;  // dart code will check for this for failure
   if (static_cast<std::vector<sk_sp<SkContourMeasure>>::size_type>(
@@ -85,7 +65,8 @@ tonic::Float32List CanvasPathMeasure::getPosTan(int contour_index,
 
   SkPoint pos;
   SkVector tan;
-  bool success = measures_[contour_index]->getPosTan(distance, &pos, &tan);
+  float fdistance = SafeNarrow(distance);
+  bool success = measures_[contour_index]->getPosTan(fdistance, &pos, &tan);
 
   if (success) {
     posTan[0] = 1;  // dart code will check for this for success
@@ -100,16 +81,16 @@ tonic::Float32List CanvasPathMeasure::getPosTan(int contour_index,
 
 void CanvasPathMeasure::getSegment(Dart_Handle path_handle,
                                    int contour_index,
-                                   float start_d,
-                                   float stop_d,
+                                   double start_d,
+                                   double stop_d,
                                    bool start_with_move_to) {
   if (static_cast<std::vector<sk_sp<SkContourMeasure>>::size_type>(
           contour_index) >= measures_.size()) {
     CanvasPath::Create(path_handle);
   }
   SkPath dst;
-  bool success = measures_[contour_index]->getSegment(start_d, stop_d, &dst,
-                                                      start_with_move_to);
+  bool success = measures_[contour_index]->getSegment(
+      SafeNarrow(start_d), SafeNarrow(stop_d), &dst, start_with_move_to);
   if (!success) {
     CanvasPath::Create(path_handle);
   } else {

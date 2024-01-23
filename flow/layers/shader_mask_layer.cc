@@ -3,38 +3,76 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/layers/shader_mask_layer.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
-ShaderMaskLayer::ShaderMaskLayer(sk_sp<SkShader> shader,
+ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> color_source,
                                  const SkRect& mask_rect,
-                                 SkBlendMode blend_mode)
-    : shader_(shader), mask_rect_(mask_rect), blend_mode_(blend_mode) {}
+                                 DlBlendMode blend_mode)
+    : CacheableContainerLayer(
+          RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
+      color_source_(std::move(color_source)),
+      mask_rect_(mask_rect),
+      blend_mode_(blend_mode) {}
 
-void ShaderMaskLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  CheckForChildLayerBelow(context);
-#endif
+void ShaderMaskLayer::Diff(DiffContext* context, const Layer* old_layer) {
+  DiffContext::AutoSubtreeRestore subtree(context);
+  auto* prev = static_cast<const ShaderMaskLayer*>(old_layer);
+  if (!context->IsSubtreeDirty()) {
+    FML_DCHECK(prev);
+    if (color_source_ != prev->color_source_ ||
+        mask_rect_ != prev->mask_rect_ || blend_mode_ != prev->blend_mode_) {
+      context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
+    }
+  }
+  if (context->has_raster_cache()) {
+    context->WillPaintWithIntegralTransform();
+  }
+  DiffChildren(context, prev);
 
+  context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
+}
+
+void ShaderMaskLayer::Preroll(PrerollContext* context) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, matrix);
+  AutoCache cache = AutoCache(layer_raster_cache_item_.get(), context,
+                              context->state_stack.transform_3x3());
+
+  ContainerLayer::Preroll(context);
+  // We always paint with a saveLayer (or a cached rendering),
+  // so we can always apply opacity in any of those cases.
+  context->renderable_state_flags = kSaveLayerRenderFlags;
 }
 
 void ShaderMaskLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "ShaderMaskLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  Layer::AutoSaveLayer save =
-      Layer::AutoSaveLayer::Create(context, paint_bounds(), nullptr);
+  auto mutator = context.state_stack.save();
+
+  if (context.raster_cache) {
+    mutator.integralTransform();
+
+    DlPaint paint;
+    if (layer_raster_cache_item_->Draw(context,
+                                       context.state_stack.fill(paint))) {
+      return;
+    }
+  }
+  auto shader_rect = SkRect::MakeWH(mask_rect_.width(), mask_rect_.height());
+
+  mutator.saveLayer(paint_bounds());
+
   PaintChildren(context);
 
-  SkPaint paint;
-  paint.setBlendMode(blend_mode_);
-  paint.setShader(shader_);
-  context.leaf_nodes_canvas->translate(mask_rect_.left(), mask_rect_.top());
-  context.leaf_nodes_canvas->drawRect(
-      SkRect::MakeWH(mask_rect_.width(), mask_rect_.height()), paint);
+  DlPaint dl_paint;
+  dl_paint.setBlendMode(blend_mode_);
+  if (color_source_) {
+    dl_paint.setColorSource(color_source_.get());
+  }
+  context.canvas->Translate(mask_rect_.left(), mask_rect_.top());
+  context.canvas->DrawRect(shader_rect, dl_paint);
 }
 
 }  // namespace flutter

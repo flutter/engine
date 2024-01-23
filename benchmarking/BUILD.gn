@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 config("benchmark_config") {
-  include_dirs = [ "//third_party/benchmark:benchmark_config" ]
+  include_dirs = [ "//flutter/third_party/benchmark:benchmark_config" ]
 }
 
 source_set("benchmarking") {
@@ -16,11 +16,34 @@ source_set("benchmarking") {
 
   public_deps = [
     "//flutter/fml",
-    "//third_party/benchmark",
+    "//flutter/third_party/benchmark",
   ]
 
   public_configs = [
     "//flutter:config",
     ":benchmark_config",
+  ]
+}
+
+config("benchmark_library_config") {
+  if (is_ios) {
+    ldflags = [ "-Wl,-exported_symbol,_RunBenchmarks" ]
+  }
+}
+
+source_set("benchmarking_library") {
+  testonly = true
+
+  sources = [
+    "library.cc",
+    "library.h",
+  ]
+
+  public_deps = [ "//flutter/third_party/benchmark" ]
+
+  public_configs = [
+    "//flutter:config",
+    ":benchmark_config",
+    ":benchmark_library_config",
   ]
 }

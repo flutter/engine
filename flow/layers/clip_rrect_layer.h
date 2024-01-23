@@ -5,30 +5,20 @@
 #ifndef FLUTTER_FLOW_LAYERS_CLIP_RRECT_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_CLIP_RRECT_LAYER_H_
 
-#include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/layers/clip_shape_layer.h"
 
 namespace flutter {
 
-class ClipRRectLayer : public ContainerLayer {
+class ClipRRectLayer : public ClipShapeLayer<SkRRect> {
  public:
   ClipRRectLayer(const SkRRect& clip_rrect, Clip clip_behavior);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+ protected:
+  const SkRect& clip_shape_bounds() const override;
 
-  void Paint(PaintContext& context) const override;
-
-  bool UsesSaveLayer() const {
-    return clip_behavior_ == Clip::antiAliasWithSaveLayer;
-  }
-
-#if defined(LEGACY_FUCHSIA_EMBEDDER)
-  void UpdateScene(std::shared_ptr<SceneUpdateContext> context) override;
-#endif
+  void ApplyClip(LayerStateStack::MutatorContext& mutator) const override;
 
  private:
-  SkRRect clip_rrect_;
-  Clip clip_behavior_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRRectLayer);
 };
 

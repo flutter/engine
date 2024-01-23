@@ -2,47 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io' as io;
 
-import 'package:args/args.dart';
 import 'package:http/http.dart';
 import 'package:path/path.dart' as path;
 
 import 'common.dart';
 import 'environment.dart';
-
-class EdgeArgParser extends BrowserArgParser {
-  static final EdgeArgParser _singletonInstance = EdgeArgParser._();
-
-  /// The [EdgeArgParser] singleton.
-  static EdgeArgParser get instance => _singletonInstance;
-
-  String _version;
-
-  EdgeArgParser._();
-
-  @override
-  void populateOptions(ArgParser argParser) {
-    argParser
-      ..addOption(
-        'edge-version',
-        defaultsTo: 'system',
-        help: 'The Edge version to use while running tests. The Edge '
-            'browser installed on the system is used as the only option now.',
-      );
-  }
-
-  @override
-  void parseOptions(ArgResults argResults) {
-    _version = argResults['edge-version'] as String;
-    assert(_version == 'system');
-  }
-
-  @override
-  String get version => _version;
-}
+import 'package_lock.dart';
 
 /// Returns the installation of Edge.
 ///
@@ -52,11 +20,11 @@ class EdgeArgParser extends BrowserArgParser {
 /// exclusively with Windows 10 and cannot be downloaded or installed separately.`
 /// See: https://support.microsoft.com/en-us/help/17171/microsoft-edge-get-to-know
 ///
-// TODO(nurhan): Investigate running tests for the tech preview downloads
+// TODO(yjbanov): Investigate running tests for the tech preview downloads
 // from the beta channel.
 Future<BrowserInstallation> getEdgeInstallation(
   String requestedVersion, {
-  StringSink infoLog,
+  StringSink? infoLog,
 }) async {
   // For now these tests are aimed to run only on Windows machines local or on LUCI/CI.
   // In the future we can investigate to run them on Android or on MacOS.
@@ -86,7 +54,7 @@ Future<BrowserInstallation> getEdgeInstallation(
       version: 'system',
       executable: io.Directory(path.join(
               edgeLauncher.launcherInstallationDir.path,
-              '${PlatformBinding.instance.getCommandToRunEdge()}'))
+              PlatformBinding.instance.getCommandToRunEdge()))
           .path,
     );
   } else {
@@ -102,6 +70,8 @@ Future<BrowserInstallation> getEdgeInstallation(
 ///
 /// See: https://github.com/MicrosoftEdge/edge-launcher
 class EdgeLauncher {
+  EdgeLauncher();
+
   /// Path to the directory that contains `MicrosoftEdgeLauncher.exe`.
   io.Directory get launcherInstallationDir => io.Directory(
         path.join(environment.webUiDartToolDir.path, 'microsoftedgelauncher',
@@ -114,7 +84,7 @@ class EdgeLauncher {
   bool get isInstalled => executable.existsSync();
 
   /// Version number launcher executable  `MicrosoftEdgeLauncher`.
-  final String version;
+  String get version => packageLock.edgeLock.launcherVersion;
 
   /// Url for downloading  `MicrosoftEdgeLauncher`.
   ///
@@ -122,12 +92,8 @@ class EdgeLauncher {
   String get windowsEdgeLauncherDownloadUrl =>
       'https://github.com/MicrosoftEdge/edge-launcher/releases/download/$version/MicrosoftEdgeLauncher.exe';
 
-  EdgeLauncher()
-      : version =
-            BrowserLock.instance.configuration['edge']['launcher_version'] as String;
-
   /// Install the launcher if it does not exist in this system.
-  void install() async {
+  Future<void> install() async {
     // Checks if the  `MicrosoftEdgeLauncher` executable exists.
     if (isInstalled) {
       return;

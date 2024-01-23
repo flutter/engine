@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_TEST_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_TEST_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_TESTING_FL_TEST_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_TESTING_FL_TEST_H_
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
+#include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
 
 #include <glib.h>
 #include <stdint.h>
+#include <ostream>
 
 G_BEGIN_DECLS
 
@@ -23,6 +25,13 @@ gchar* bytes_to_hex_string(GBytes* bytes);
 // Creates a mock engine that responds to platform messages.
 FlEngine* make_mock_engine();
 
+// Creates a mock engine using a specified FlDartProject that responds to
+// platform messages.
+FlEngine* make_mock_engine_with_project(FlDartProject* project);
+
+// GTest printer for FlValue.
+void PrintTo(FlValue* v, std::ostream* os);
+
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_TEST_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_TESTING_FL_TEST_H_

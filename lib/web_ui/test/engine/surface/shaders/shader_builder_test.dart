@@ -2,35 +2,35 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' hide window;
+
+import '../../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  String mat2Sample = 'mat2(1.1, 2.1, 1.2, 2.2)';
-  String mat3Sample = 'mat3(1.1, 2.1, 3.1, // first column (not row!)\n'
+  const String mat2Sample = 'mat2(1.1, 2.1, 1.2, 2.2)';
+  const String mat3Sample = 'mat3(1.1, 2.1, 3.1, // first column (not row!)\n'
       '1.2, 2.2, 3.2, // second column\n'
       '1.3, 2.3, 3.3  // third column\n'
       ')';
-  String mat4Sample = 'mat3(1.1, 2.1, 3.1, 4.1,\n'
+  const String mat4Sample = 'mat3(1.1, 2.1, 3.1, 4.1,\n'
       '1.2, 2.2, 3.2, 4.2,\n'
       '1.3, 2.3, 3.3, 4.3,\n'
       '1.4, 2.4, 3.4, 4.4,\n'
       ')';
 
   setUpAll(() async {
-    await webOnlyInitializeEngine();
+    await bootstrapAndRunApp();
   });
 
   group('Shader Declarations', () {
     test('Constant declaration WebGL1', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl1);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl1);
       builder.addConst(ShaderType.kBool, 'false');
       builder.addConst(ShaderType.kInt, '0');
       builder.addConst(ShaderType.kFloat, '1.0');
@@ -62,13 +62,13 @@ void testMain() {
           'const vec3 c_10 = vec3(1.0, 2.0, 3.0);\n'
           'const vec4 c_11 = vec4(1.0, 2.0, 3.0, 4.0);\n'
           'const mat2 c_12 = $mat2Sample;\n'
-          'const mat2 transform1 = ${mat2Sample};\n'
-          'const mat3 c_13 = ${mat3Sample};\n'
-          'const mat4 c_14 = ${mat4Sample};\n');
+          'const mat2 transform1 = $mat2Sample;\n'
+          'const mat3 c_13 = $mat3Sample;\n'
+          'const mat4 c_14 = $mat4Sample;\n');
     });
 
     test('Constant declaration WebGL2', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.addConst(ShaderType.kBool, 'false');
       builder.addConst(ShaderType.kInt, '0');
       builder.addConst(ShaderType.kFloat, '1.0');
@@ -101,13 +101,13 @@ void testMain() {
           'const vec3 c_10 = vec3(1.0, 2.0, 3.0);\n'
           'const vec4 c_11 = vec4(1.0, 2.0, 3.0, 4.0);\n'
           'const mat2 c_12 = $mat2Sample;\n'
-          'const mat2 transform2 = ${mat2Sample};\n'
-          'const mat3 c_13 = ${mat3Sample};\n'
-          'const mat4 c_14 = ${mat4Sample};\n');
+          'const mat2 transform2 = $mat2Sample;\n'
+          'const mat3 c_13 = $mat3Sample;\n'
+          'const mat4 c_14 = $mat4Sample;\n');
     });
 
     test('Attribute declaration WebGL1', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl1);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl1);
       builder.addIn(ShaderType.kVec4, name: 'position');
       builder.addIn(ShaderType.kVec4);
       expect(
@@ -117,7 +117,7 @@ void testMain() {
     });
 
     test('in declaration WebGL1', () {
-      ShaderBuilder builder = ShaderBuilder.fragment(WebGLVersion.webgl1);
+      final ShaderBuilder builder = ShaderBuilder.fragment(WebGLVersion.webgl1);
       builder.addIn(ShaderType.kVec4, name: 'position');
       builder.addIn(ShaderType.kVec4);
       expect(
@@ -127,7 +127,7 @@ void testMain() {
     });
 
     test('Attribute declaration WebGL2', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.addIn(ShaderType.kVec4, name: 'position');
       builder.addIn(ShaderType.kVec4);
       expect(
@@ -138,8 +138,8 @@ void testMain() {
     });
 
     test('Uniform declaration WebGL1', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl1);
-      ShaderDeclaration variable =
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl1);
+      final ShaderDeclaration variable =
           builder.addUniform(ShaderType.kVec4, name: 'v1');
       expect(variable.name, 'v1');
       expect(variable.dataType, ShaderType.kVec4);
@@ -152,8 +152,8 @@ void testMain() {
     });
 
     test('Uniform declaration WebGL2', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
-      ShaderDeclaration variable =
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
+      final ShaderDeclaration variable =
           builder.addUniform(ShaderType.kVec4, name: 'v1');
       expect(variable.name, 'v1');
       expect(variable.dataType, ShaderType.kVec4);
@@ -167,7 +167,7 @@ void testMain() {
     });
 
     test('Float precision', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.floatPrecision = ShaderPrecision.kLow;
       builder.addUniform(ShaderType.kFloat, name: 'f1');
       expect(
@@ -178,7 +178,7 @@ void testMain() {
     });
 
     test('Integer precision', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.integerPrecision = ShaderPrecision.kLow;
       builder.addUniform(ShaderType.kInt, name: 'i1');
       expect(
@@ -189,11 +189,11 @@ void testMain() {
     });
 
     test('Method', () {
-      ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
+      final ShaderBuilder builder = ShaderBuilder(WebGLVersion.webgl2);
       builder.floatPrecision = ShaderPrecision.kMedium;
-      ShaderDeclaration variable =
+      final ShaderDeclaration variable =
           builder.addUniform(ShaderType.kFloat, name: 'f1');
-      ShaderMethod m = builder.addMethod('main');
+      final ShaderMethod m = builder.addMethod('main');
       m.addStatement('f1 = 5.0;');
       expect(
           builder.build(),

@@ -14,13 +14,22 @@
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/shell.h"
+
+#include "flutter/shell/platform/embedder/embedder.h"
+
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+extern NSString* const kFlutterEngineWillDealloc;
 
 @interface FlutterEngine () <FlutterViewEngineDelegate>
 
@@ -30,7 +39,8 @@
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
 
 - (fml::RefPtr<fml::TaskRunner>)platformTaskRunner;
-- (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner;
+- (fml::RefPtr<fml::TaskRunner>)uiTaskRunner;
+- (fml::RefPtr<fml::TaskRunner>)rasterTaskRunner;
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView;
 
@@ -40,15 +50,41 @@
 - (FlutterPlatformPlugin*)platformPlugin;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterTextInputPlugin*)textInputPlugin;
-- (void)launchEngine:(NSString*)entrypoint libraryURI:(NSString*)libraryOrNil;
-- (BOOL)createShell:(NSString*)entrypoint
-         libraryURI:(NSString*)libraryOrNil
-       initialRoute:(NSString*)initialRoute;
+- (FlutterRestorationPlugin*)restorationPlugin;
+- (void)launchEngine:(nullable NSString*)entrypoint
+          libraryURI:(nullable NSString*)libraryOrNil
+      entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+- (BOOL)createShell:(nullable NSString*)entrypoint
+         libraryURI:(nullable NSString*)libraryOrNil
+       initialRoute:(nullable NSString*)initialRoute;
 - (void)attachView;
 - (void)notifyLowMemory;
 - (flutter::PlatformViewIOS*)iosPlatformView;
 
 - (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
+
+/**
+ * Creates one running FlutterEngine from another, sharing components between them.
+ *
+ * This results in a faster creation time and a smaller memory footprint engine.
+ * This should only be called on a FlutterEngine that is running.
+ */
+- (FlutterEngine*)spawnWithEntrypoint:(nullable NSString*)entrypoint
+                           libraryURI:(nullable NSString*)libraryURI
+                         initialRoute:(nullable NSString*)initialRoute
+                       entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+
+/**
+ * Dispatches the given key event data to the framework through the engine.
+ * The callback is called once the response from the framework is received.
+ */
+- (void)sendKeyEvent:(const FlutterKeyEvent&)event
+            callback:(nullable FlutterKeyEventCallback)callback
+            userData:(nullable void*)userData;
+
+@property(nonatomic, readonly) FlutterDartProject* project;
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_

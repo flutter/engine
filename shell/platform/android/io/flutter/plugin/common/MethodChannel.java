@@ -11,9 +11,6 @@ import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.ByteBuffer;
 
 /**
@@ -22,7 +19,7 @@ import java.nio.ByteBuffer;
  * <p>Incoming method calls are decoded from binary on receipt, and Java results are encoded into
  * binary before being transmitted back to Flutter. The {@link MethodCodec} used must be compatible
  * with the one used by the Flutter application. This can be achieved by creating a <a
- * href="https://docs.flutter.io/flutter/services/MethodChannel-class.html">MethodChannel</a>
+ * href="https://api.flutter.dev/flutter/services/MethodChannel-class.html">MethodChannel</a>
  * counterpart of this channel on the Dart side. The Java type of method call arguments and results
  * is {@code Object}, but only values supported by the specified {@link MethodCodec} can be used.
  *
@@ -35,6 +32,7 @@ public class MethodChannel {
   private final BinaryMessenger messenger;
   private final String name;
   private final MethodCodec codec;
+  private final BinaryMessenger.TaskQueue taskQueue;
 
   /**
    * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
@@ -43,7 +41,7 @@ public class MethodChannel {
    * @param messenger a {@link BinaryMessenger}.
    * @param name a channel name String.
    */
-  public MethodChannel(BinaryMessenger messenger, String name) {
+  public MethodChannel(@NonNull BinaryMessenger messenger, @NonNull String name) {
     this(messenger, name, StandardMethodCodec.INSTANCE);
   }
 
@@ -55,7 +53,27 @@ public class MethodChannel {
    * @param name a channel name String.
    * @param codec a {@link MessageCodec}.
    */
-  public MethodChannel(BinaryMessenger messenger, String name, MethodCodec codec) {
+  public MethodChannel(
+      @NonNull BinaryMessenger messenger, @NonNull String name, @NonNull MethodCodec codec) {
+    this(messenger, name, codec, null);
+  }
+
+  /**
+   * Creates a new channel associated with the specified {@link BinaryMessenger} and with the
+   * specified name and {@link MethodCodec}.
+   *
+   * @param messenger a {@link BinaryMessenger}.
+   * @param name a channel name String.
+   * @param codec a {@link MessageCodec}.
+   * @param taskQueue a {@link BinaryMessenger.TaskQueue} that specifies what thread will execute
+   *     the handler. Specifying null means execute on the platform thread. See also {@link
+   *     BinaryMessenger#makeBackgroundTaskQueue()}.
+   */
+  public MethodChannel(
+      @NonNull BinaryMessenger messenger,
+      @NonNull String name,
+      @NonNull MethodCodec codec,
+      @Nullable BinaryMessenger.TaskQueue taskQueue) {
     if (BuildConfig.DEBUG) {
       if (messenger == null) {
         Log.e(TAG, "Parameter messenger must not be null.");
@@ -70,6 +88,7 @@ public class MethodChannel {
     this.messenger = messenger;
     this.name = name;
     this.codec = codec;
+    this.taskQueue = taskQueue;
   }
 
   /**
@@ -93,7 +112,8 @@ public class MethodChannel {
    * @param callback a {@link Result} callback for the invocation result, or null.
    */
   @UiThread
-  public void invokeMethod(String method, @Nullable Object arguments, @Nullable Result callback) {
+  public void invokeMethod(
+      @NonNull String method, @Nullable Object arguments, @Nullable Result callback) {
     messenger.send(
         name,
         codec.encodeMethodCall(new MethodCall(method, arguments)),
@@ -107,26 +127,43 @@ public class MethodChannel {
    *
    * <p>If no handler has been registered, any incoming method call on this channel will be handled
    * silently by sending a null reply. This results in a <a
-   * href="https://docs.flutter.io/flutter/services/MissingPluginException-class.html">MissingPluginException</a>
+   * href="https://api.flutter.dev/flutter/services/MissingPluginException-class.html">MissingPluginException</a>
    * on the Dart side, unless an <a
-   * href="https://docs.flutter.io/flutter/services/OptionalMethodChannel-class.html">OptionalMethodChannel</a>
+   * href="https://api.flutter.dev/flutter/services/OptionalMethodChannel-class.html">OptionalMethodChannel</a>
    * is used.
    *
    * @param handler a {@link MethodCallHandler}, or null to deregister.
    */
   @UiThread
   public void setMethodCallHandler(final @Nullable MethodCallHandler handler) {
-    messenger.setMessageHandler(
-        name, handler == null ? null : new IncomingMethodCallHandler(handler));
+    // We call the 2 parameter variant specifically to avoid breaking changes in
+    // mock verify calls.
+    // See https://github.com/flutter/flutter/issues/92582.
+    if (taskQueue != null) {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMethodCallHandler(handler), taskQueue);
+    } else {
+      messenger.setMessageHandler(
+          name, handler == null ? null : new IncomingMethodCallHandler(handler));
+    }
   }
 
   /**
    * Adjusts the number of messages that will get buffered when sending messages to channels that
-   * aren't fully setup yet. For example, the engine isn't running yet or the channel's message
-   * handler isn't setup on the Dart side yet.
+   * aren't fully set up yet. For example, the engine isn't running yet or the channel's message
+   * handler isn't set up on the Dart side yet.
    */
   public void resizeChannelBuffer(int newSize) {
     BasicMessageChannel.resizeChannelBuffer(messenger, name, newSize);
+  }
+
+  /**
+   * Toggles whether the channel should show warning messages when discarding messages due to
+   * overflow. When 'warns' is false the channel is expected to overflow and warning messages will
+   * not be shown.
+   */
+  public void setWarnsOnChannelOverflow(boolean warns) {
+    BasicMessageChannel.setWarnsOnChannelOverflow(messenger, name, warns);
   }
 
   /** A handler of incoming method calls. */
@@ -136,14 +173,16 @@ public class MethodChannel {
      *
      * <p>Handler implementations must submit a result for all incoming calls, by making a single
      * call on the given {@link Result} callback. Failure to do so will result in lingering Flutter
-     * result handlers. The result may be submitted asynchronously. Calls to unknown or
-     * unimplemented methods should be handled using {@link Result#notImplemented()}.
+     * result handlers. The result may be submitted asynchronously and on any thread. Calls to
+     * unknown or unimplemented methods should be handled using {@link Result#notImplemented()}.
      *
      * <p>Any uncaught exception thrown by this method will be caught by the channel implementation
      * and logged, and an error result will be sent back to Flutter.
      *
-     * <p>The handler is called on the platform thread (Android main thread). For more details see
-     * <a href="https://github.com/flutter/engine/wiki/Threading-in-the-Flutter-Engine">Threading in
+     * <p>The handler is called on the platform thread (Android main thread) by default, or
+     * otherwise on the thread specified by the {@link BinaryMessenger.TaskQueue} provided to the
+     * associated {@link MethodChannel} when it was created. See also <a
+     * href="https://github.com/flutter/flutter/wiki/The-Engine-architecture#threading">Threading in
      * the Flutter Engine</a>.
      *
      * @param call A {@link MethodCall}.
@@ -159,10 +198,7 @@ public class MethodChannel {
    * Flutter methods provide implementations of this interface for handling results received from
    * Flutter.
    *
-   * <p>All methods of this class must be called on the platform thread (Android main thread). For
-   * more details see <a
-   * href="https://github.com/flutter/engine/wiki/Threading-in-the-Flutter-Engine">Threading in the
-   * Flutter Engine</a>.
+   * <p>All methods of this class can be invoked on any thread.
    */
   public interface Result {
     /**
@@ -172,7 +208,6 @@ public class MethodChannel {
      *     codec. For instance, if you are using {@link StandardMessageCodec} (default), please see
      *     its documentation on what types are supported.
      */
-    @UiThread
     void success(@Nullable Object result);
 
     /**
@@ -184,11 +219,10 @@ public class MethodChannel {
      *     supported by the codec. For instance, if you are using {@link StandardMessageCodec}
      *     (default), please see its documentation on what types are supported.
      */
-    @UiThread
-    void error(String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
+    void error(
+        @NonNull String errorCode, @Nullable String errorMessage, @Nullable Object errorDetails);
 
     /** Handles a call to an unimplemented method. */
-    @UiThread
     void notImplemented();
   }
 
@@ -252,14 +286,8 @@ public class MethodChannel {
         Log.e(TAG + name, "Failed to handle method call", e);
         reply.reply(
             codec.encodeErrorEnvelopeWithStacktrace(
-                "error", e.getMessage(), null, getStackTrace(e)));
+                "error", e.getMessage(), null, Log.getStackTraceString(e)));
       }
-    }
-
-    private String getStackTrace(Exception e) {
-      Writer result = new StringWriter();
-      e.printStackTrace(new PrintWriter(result));
-      return result.toString();
     }
   }
 }

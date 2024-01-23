@@ -3,13 +3,16 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_gl.h"
-#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
+
+#include <utility>
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
+#include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
 #include "flutter/testing/testing.h"
+#include "tests/embedder_test.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -17,7 +20,7 @@ namespace flutter {
 namespace testing {
 
 EmbedderTestContextGL::EmbedderTestContextGL(std::string assets_path)
-    : EmbedderTestContext(assets_path) {}
+    : EmbedderTestContext(std::move(assets_path)) {}
 
 EmbedderTestContextGL::~EmbedderTestContextGL() {
   SetGLGetFBOCallback(nullptr);
@@ -38,7 +41,7 @@ bool EmbedderTestContextGL::GLClearCurrent() {
   return gl_surface_->ClearCurrent();
 }
 
-bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
+bool EmbedderTestContextGL::GLPresent(FlutterPresentInfo present_info) {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   gl_surface_present_count_++;
 
@@ -49,27 +52,29 @@ bool EmbedderTestContextGL::GLPresent(uint32_t fbo_id) {
   }
 
   if (callback) {
-    callback(fbo_id);
+    callback(present_info);
   }
 
   FireRootSurfacePresentCallbackIfPresent(
       [&]() { return gl_surface_->GetRasterSurfaceSnapshot(); });
 
-  if (!gl_surface_->Present()) {
-    return false;
-  }
-
-  return true;
+  return gl_surface_->Present();
 }
 
 void EmbedderTestContextGL::SetGLGetFBOCallback(GLGetFBOCallback callback) {
   std::scoped_lock lock(gl_callback_mutex_);
-  gl_get_fbo_callback_ = callback;
+  gl_get_fbo_callback_ = std::move(callback);
+}
+
+void EmbedderTestContextGL::SetGLPopulateExistingDamageCallback(
+    GLPopulateExistingDamageCallback callback) {
+  std::scoped_lock lock(gl_callback_mutex_);
+  gl_populate_existing_damage_callback_ = std::move(callback);
 }
 
 void EmbedderTestContextGL::SetGLPresentCallback(GLPresentCallback callback) {
   std::scoped_lock lock(gl_callback_mutex_);
-  gl_present_callback_ = callback;
+  gl_present_callback_ = std::move(callback);
 }
 
 uint32_t EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
@@ -89,6 +94,22 @@ uint32_t EmbedderTestContextGL::GLGetFramebuffer(FlutterFrameInfo frame_info) {
   return gl_surface_->GetFramebuffer(size.width, size.height);
 }
 
+void EmbedderTestContextGL::GLPopulateExistingDamage(
+    const intptr_t id,
+    FlutterDamage* existing_damage) {
+  FML_CHECK(gl_surface_) << "GL surface must be initialized.";
+
+  GLPopulateExistingDamageCallback callback;
+  {
+    std::scoped_lock lock(gl_callback_mutex_);
+    callback = gl_populate_existing_damage_callback_;
+  }
+
+  if (callback) {
+    callback(id, existing_damage);
+  }
+}
+
 bool EmbedderTestContextGL::GLMakeResourceCurrent() {
   FML_CHECK(gl_surface_) << "GL surface must be initialized.";
   return gl_surface_->MakeResourceCurrent();
@@ -103,17 +124,22 @@ size_t EmbedderTestContextGL::GetSurfacePresentCount() const {
   return gl_surface_present_count_;
 }
 
+EmbedderTestContextType EmbedderTestContextGL::GetContextType() const {
+  return EmbedderTestContextType::kOpenGLContext;
+}
+
 uint32_t EmbedderTestContextGL::GetWindowFBOId() const {
   FML_CHECK(gl_surface_);
   return gl_surface_->GetWindowFBOId();
 }
 
 void EmbedderTestContextGL::SetupCompositor() {
-  FML_CHECK(!compositor_) << "Already ssetup a compositor in this context.";
+  FML_CHECK(!compositor_) << "Already set up a compositor in this context.";
   FML_CHECK(gl_surface_)
-      << "Setup the GL surface before setting up a compositor.";
+      << "Set up the GL surface before setting up a compositor.";
   compositor_ = std::make_unique<EmbedderTestCompositorGL>(
       gl_surface_->GetSurfaceSize(), gl_surface_->GetGrContext());
+  GLClearCurrent();
 }
 
 }  // namespace testing

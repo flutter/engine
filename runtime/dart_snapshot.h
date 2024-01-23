@@ -79,7 +79,7 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
   ///
   /// @return     A valid core snapshot or nullptr.
   ///
-  static fml::RefPtr<DartSnapshot> VMSnapshotFromSettings(
+  static fml::RefPtr<const DartSnapshot> VMSnapshotFromSettings(
       const Settings& settings);
 
   //----------------------------------------------------------------------------
@@ -99,7 +99,28 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
   ///
   /// @return     A valid isolate snapshot or nullptr.
   ///
-  static fml::RefPtr<DartSnapshot> IsolateSnapshotFromSettings(
+  static fml::RefPtr<const DartSnapshot> IsolateSnapshotFromSettings(
+      const Settings& settings);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create an isolate snapshot from existing fml::Mappings.
+  ///
+  /// @param[in]  snapshot_data          The mapping for the heap snapshot.
+  /// @param[in]  snapshot_instructions  The mapping for the instructions
+  ///                                    snapshot.
+  ///
+  /// @return     A valid isolate snapshot or nullptr.
+  static fml::RefPtr<DartSnapshot> IsolateSnapshotFromMappings(
+      const std::shared_ptr<const fml::Mapping>& snapshot_data,
+      const std::shared_ptr<const fml::Mapping>& snapshot_instructions);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Create an isolate snapshot specialized for launching the
+  ///             service isolate. Returns nullptr if no such snapshot is
+  ///             available.
+  ///
+  /// @return     A valid isolate snapshot or nullptr.
+  static fml::RefPtr<DartSnapshot> VMServiceIsolateSnapshotFromSettings(
       const Settings& settings);
 
   //----------------------------------------------------------------------------
@@ -138,6 +159,11 @@ class DartSnapshot : public fml::RefCountedThreadSafe<DartSnapshot> {
   /// @return     The instructions mapping.
   ///
   const uint8_t* GetInstructionsMapping() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Returns whether both the data and instructions mappings are
+  ///             safe to use with madvise(DONTNEED).
+  bool IsDontNeedSafe() const;
 
   bool IsNullSafetyEnabled(
       const fml::Mapping* application_kernel_mapping) const;

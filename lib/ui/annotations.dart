@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(dnfield): Remove unused_import ignores when https://github.com/dart-lang/sdk/issues/35164 is resolved.
-
-
-// @dart = 2.12
 part of dart.ui;
 
 // TODO(dnfield): Update this if/when we default this to on in the tool,
@@ -26,22 +22,19 @@ part of dart.ui;
 /// For example, in the following class the `toString` method will remain as
 /// `return _buffer.toString();`, even if the  `--delete-tostring-package-uri`
 /// option would otherwise apply and replace it with `return super.toString()`.
+/// (By convention, `dart:ui` is usually imported `as ui`, hence the prefix.)
 ///
 /// ```dart
 /// class MyStringBuffer {
-///   StringBuffer _buffer = StringBuffer();
+///   final StringBuffer _buffer = StringBuffer();
 ///
 ///   // ...
 ///
-///   @keepToString
+///   @ui.keepToString
 ///   @override
 ///   String toString() {
 ///     return _buffer.toString();
 ///   }
 /// }
 /// ```
-const _KeepToString keepToString = _KeepToString();
-
-class _KeepToString {
-  const _KeepToString();
-}
+const pragma keepToString = pragma('flutter:keep-to-string');

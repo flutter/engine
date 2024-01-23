@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_H_
-#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_H_
+#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_H_
 
 #include <future>
 #include <map>
@@ -24,9 +24,16 @@
 namespace flutter {
 namespace testing {
 
+using SemanticsUpdateCallback2 =
+    std::function<void(const FlutterSemanticsUpdate2*)>;
+using SemanticsUpdateCallback =
+    std::function<void(const FlutterSemanticsUpdate*)>;
 using SemanticsNodeCallback = std::function<void(const FlutterSemanticsNode*)>;
 using SemanticsActionCallback =
     std::function<void(const FlutterSemanticsCustomAction*)>;
+using LogMessageCallback =
+    std::function<void(const char* tag, const char* message)>;
+using ChannelUpdateCallback = std::function<void(const FlutterChannelUpdate*)>;
 
 struct AOTDataDeleter {
   void operator()(FlutterEngineAOTData aot_data) {
@@ -38,9 +45,16 @@ struct AOTDataDeleter {
 
 using UniqueAOTData = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
 
+enum class EmbedderTestContextType {
+  kSoftwareContext,
+  kOpenGLContext,
+  kMetalContext,
+  kVulkanContext,
+};
+
 class EmbedderTestContext {
  public:
-  EmbedderTestContext(std::string assets_path = "");
+  explicit EmbedderTestContext(std::string assets_path = "");
 
   virtual ~EmbedderTestContext();
 
@@ -58,18 +72,25 @@ class EmbedderTestContext {
 
   void SetRootSurfaceTransformation(SkMatrix matrix);
 
-  void AddIsolateCreateCallback(fml::closure closure);
+  void AddIsolateCreateCallback(const fml::closure& closure);
+
+  void SetSemanticsUpdateCallback2(SemanticsUpdateCallback2 update_semantics);
+
+  void SetSemanticsUpdateCallback(SemanticsUpdateCallback update_semantics);
 
   void AddNativeCallback(const char* name, Dart_NativeFunction function);
 
-  void SetSemanticsNodeCallback(
-      const SemanticsNodeCallback& update_semantics_node);
+  void SetSemanticsNodeCallback(SemanticsNodeCallback update_semantics_node);
 
   void SetSemanticsCustomActionCallback(
-      const SemanticsActionCallback& semantics_custom_action);
+      SemanticsActionCallback semantics_custom_action);
 
   void SetPlatformMessageCallback(
       const std::function<void(const FlutterPlatformMessage*)>& callback);
+
+  void SetLogMessageCallback(const LogMessageCallback& log_message_callback);
+
+  void SetChannelUpdateCallback(const ChannelUpdateCallback& callback);
 
   std::future<sk_sp<SkImage>> GetNextSceneImage();
 
@@ -77,12 +98,29 @@ class EmbedderTestContext {
 
   virtual size_t GetSurfacePresentCount() const = 0;
 
+  virtual EmbedderTestContextType GetContextType() const = 0;
+
+  // Sets up the callback for vsync. This callback will be invoked
+  // for every vsync. This should be used in conjunction with SetupVsyncCallback
+  // on the EmbedderConfigBuilder. Any callback setup here must call
+  // `FlutterEngineOnVsync` from the platform task runner.
+  void SetVsyncCallback(std::function<void(intptr_t)> callback);
+
+  // Runs the vsync callback.
+  void RunVsyncCallback(intptr_t baton);
+
   // TODO(gw280): encapsulate these properly for subclasses to use
  protected:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
 
   using NextSceneCallback = std::function<void(sk_sp<SkImage> image)>;
+
+#ifdef SHELL_ENABLE_VULKAN
+  // The TestVulkanContext destructor must be called _after_ the compositor is
+  // freed.
+  fml::RefPtr<TestVulkanContext> vulkan_context_ = nullptr;
+#endif
 
   std::string assets_path_;
   ELFAOTSymbols aot_symbols_;
@@ -93,23 +131,35 @@ class EmbedderTestContext {
   UniqueAOTData aot_data_;
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
+  SemanticsUpdateCallback2 update_semantics_callback2_;
+  SemanticsUpdateCallback update_semantics_callback_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
+  ChannelUpdateCallback channel_update_callback_;
   std::function<void(const FlutterPlatformMessage*)> platform_message_callback_;
+  LogMessageCallback log_message_callback_;
   std::unique_ptr<EmbedderTestCompositor> compositor_;
   NextSceneCallback next_scene_callback_;
   SkMatrix root_surface_transformation_;
+  std::function<void(intptr_t)> vsync_callback_ = nullptr;
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
-  static FlutterUpdateSemanticsNodeCallback
-  GetUpdateSemanticsNodeCallbackHook();
+  FlutterUpdateSemanticsCallback2 GetUpdateSemanticsCallback2Hook();
 
-  static FlutterUpdateSemanticsCustomActionCallback
+  FlutterUpdateSemanticsCallback GetUpdateSemanticsCallbackHook();
+
+  FlutterUpdateSemanticsNodeCallback GetUpdateSemanticsNodeCallbackHook();
+
+  FlutterUpdateSemanticsCustomActionCallback
   GetUpdateSemanticsCustomActionCallbackHook();
+
+  static FlutterLogMessageCallback GetLogMessageCallbackHook();
 
   static FlutterComputePlatformResolvedLocaleCallback
   GetComputePlatformResolvedLocaleCallbackHook();
+
+  FlutterChannelUpdateCallback GetChannelUpdateCallbackHook();
 
   void SetupAOTMappingsIfNecessary();
 
@@ -138,4 +188,4 @@ class EmbedderTestContext {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_H_

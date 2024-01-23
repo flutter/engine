@@ -2,31 +2,41 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
-
 import 'dart:convert';
 import 'dart:ui';
-
-import 'package:meta/meta.dart';
 
 /// Util method to replicate the behavior of a `MethodChannel` in the Flutter
 /// framework.
 void sendJsonMethodCall({
-  @required PlatformDispatcher dispatcher,
-  @required String channel,
-  @required String method,
+  required PlatformDispatcher dispatcher,
+  required String channel,
+  required String method,
   dynamic arguments,
-  PlatformMessageResponseCallback callback,
+  PlatformMessageResponseCallback? callback,
+}) {
+  sendJsonMessage(
+    dispatcher: dispatcher,
+    channel: channel,
+    json: <String, dynamic>{
+        'method': method,
+        'args': arguments,
+    },
+  );
+}
+
+/// Send a JSON message over a channel.
+void sendJsonMessage({
+  required PlatformDispatcher dispatcher,
+  required String channel,
+  required Map<String, dynamic> json,
+  PlatformMessageResponseCallback? callback,
 }) {
   dispatcher.sendPlatformMessage(
     channel,
     // This recreates a combination of OptionalMethodChannel, JSONMethodCodec,
     // and _DefaultBinaryMessenger in the framework.
-    utf8.encoder.convert(
-      const JsonCodec().encode(<String, dynamic>{
-        'method': method,
-        'args': arguments,
-      })
+    utf8.encode(
+      const JsonCodec().encode(json)
     ).buffer.asByteData(),
     callback,
   );

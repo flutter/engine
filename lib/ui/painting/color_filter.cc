@@ -14,59 +14,40 @@
 
 namespace flutter {
 
-static void ColorFilter_constructor(Dart_NativeArguments args) {
-  UIDartState::ThrowIfUIOperationsProhibited();
-  DartCallConstructor(&ColorFilter::Create, args);
-}
-
 IMPLEMENT_WRAPPERTYPEINFO(ui, ColorFilter);
 
-#define FOR_EACH_BINDING(V)             \
-  V(ColorFilter, initMode)              \
-  V(ColorFilter, initMatrix)            \
-  V(ColorFilter, initSrgbToLinearGamma) \
-  V(ColorFilter, initLinearToSrgbGamma)
-
-FOR_EACH_BINDING(DART_NATIVE_CALLBACK)
-
-void ColorFilter::RegisterNatives(tonic::DartLibraryNatives* natives) {
-  natives->Register(
-      {{"ColorFilter_constructor", ColorFilter_constructor, 1, true},
-       FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
-}
-
-fml::RefPtr<ColorFilter> ColorFilter::Create() {
-  return fml::MakeRefCounted<ColorFilter>();
+void ColorFilter::Create(Dart_Handle wrapper) {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  auto res = fml::MakeRefCounted<ColorFilter>();
+  res->AssociateWithDartWrapper(wrapper);
 }
 
 void ColorFilter::initMode(int color, int blend_mode) {
-  filter_ = SkColorFilters::Blend(static_cast<SkColor>(color),
-                                  static_cast<SkBlendMode>(blend_mode));
-}
-
-sk_sp<SkColorFilter> ColorFilter::MakeColorMatrixFilter255(
-    const float array[20]) {
-  float tmp[20];
-  memcpy(tmp, array, sizeof(tmp));
-  tmp[4] *= 1.0f / 255;
-  tmp[9] *= 1.0f / 255;
-  tmp[14] *= 1.0f / 255;
-  tmp[19] *= 1.0f / 255;
-  return SkColorFilters::Matrix(tmp);
+  filter_ = DlBlendColorFilter::Make(static_cast<DlColor>(color),
+                                     static_cast<DlBlendMode>(blend_mode));
 }
 
 void ColorFilter::initMatrix(const tonic::Float32List& color_matrix) {
   FML_CHECK(color_matrix.num_elements() == 20);
 
-  filter_ = MakeColorMatrixFilter255(color_matrix.data());
+  // Flutter still defines the matrix to be biased by 255 in the last column
+  // (translate). skia is normalized, treating the last column as 0...1, so we
+  // post-scale here before calling the skia factory.
+  float matrix[20];
+  memcpy(matrix, color_matrix.data(), sizeof(matrix));
+  matrix[4] *= 1.0f / 255;
+  matrix[9] *= 1.0f / 255;
+  matrix[14] *= 1.0f / 255;
+  matrix[19] *= 1.0f / 255;
+  filter_ = DlMatrixColorFilter::Make(matrix);
 }
 
 void ColorFilter::initLinearToSrgbGamma() {
-  filter_ = SkColorFilters::LinearToSRGBGamma();
+  filter_ = DlLinearToSrgbGammaColorFilter::kInstance;
 }
 
 void ColorFilter::initSrgbToLinearGamma() {
-  filter_ = SkColorFilters::SRGBToLinearGamma();
+  filter_ = DlSrgbToLinearGammaColorFilter::kInstance;
 }
 
 ColorFilter::~ColorFilter() = default;

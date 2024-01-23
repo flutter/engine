@@ -9,17 +9,17 @@
 namespace flutter {
 
 PlatformMessage::PlatformMessage(std::string channel,
-                                 std::vector<uint8_t> data,
+                                 fml::MallocMapping data,
                                  fml::RefPtr<PlatformMessageResponse> response)
     : channel_(std::move(channel)),
       data_(std::move(data)),
-      hasData_(true),
+      has_data_(true),
       response_(std::move(response)) {}
 PlatformMessage::PlatformMessage(std::string channel,
                                  fml::RefPtr<PlatformMessageResponse> response)
     : channel_(std::move(channel)),
       data_(),
-      hasData_(false),
+      has_data_(false),
       response_(std::move(response)) {}
 
 PlatformMessage::~PlatformMessage() = default;

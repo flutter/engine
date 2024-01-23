@@ -40,15 +40,25 @@ void DartPersistentValue::Clear() {
 
   auto dart_state = dart_state_.lock();
   if (!dart_state) {
+    // The Dart isolate was collected and the persistent value has been
+    // collected with it. value_ is a dangling reference.
+    value_ = nullptr;
     return;
   }
 
-  if (Dart_CurrentIsolateGroup()) {
-    Dart_DeletePersistentHandle(value_);
-  } else {
-    DartIsolateScope scope(dart_state->isolate());
-    Dart_DeletePersistentHandle(value_);
+  /// TODO(80155): Remove the handle even if the isolate is shutting down.  This
+  /// may cause memory to stick around until the isolate group is destroyed.
+  /// Without this branch, if DartState::IsShuttingDown == true, this code will
+  /// crash when binding the isolate.
+  if (!dart_state->IsShuttingDown()) {
+    if (Dart_CurrentIsolateGroup()) {
+      Dart_DeletePersistentHandle(value_);
+    } else {
+      DartIsolateScope scope(dart_state->isolate());
+      Dart_DeletePersistentHandle(value_);
+    }
   }
+
   dart_state_.reset();
   value_ = nullptr;
 }

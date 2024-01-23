@@ -12,9 +12,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
-#include "flutter/shell/common/canvas_spy.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
 
 namespace flutter {
 
@@ -26,7 +24,8 @@ class EmbedderExternalView {
 
     ViewIdentifier() {}
 
-    ViewIdentifier(PlatformViewID view_id) : platform_view_id(view_id) {}
+    explicit ViewIdentifier(PlatformViewID view_id)
+        : platform_view_id(view_id) {}
 
     struct Hash {
       constexpr std::size_t operator()(const ViewIdentifier& desc) const {
@@ -47,28 +46,23 @@ class EmbedderExternalView {
   };
 
   struct RenderTargetDescriptor {
-    ViewIdentifier view_identifier;
     SkISize surface_size;
 
-    RenderTargetDescriptor(ViewIdentifier p_view_identifier,
-                           SkISize p_surface_size)
-        : view_identifier(p_view_identifier), surface_size(p_surface_size) {}
+    explicit RenderTargetDescriptor(const SkISize& p_surface_size)
+        : surface_size(p_surface_size) {}
 
     struct Hash {
       constexpr std::size_t operator()(
           const RenderTargetDescriptor& desc) const {
         return fml::HashCombine(desc.surface_size.width(),
-                                desc.surface_size.height(),
-                                ViewIdentifier::Hash{}(desc.view_identifier));
+                                desc.surface_size.height());
       }
     };
 
     struct Equal {
       bool operator()(const RenderTargetDescriptor& lhs,
                       const RenderTargetDescriptor& rhs) const {
-        return lhs.surface_size == rhs.surface_size &&
-               ViewIdentifier::Equal{}(lhs.view_identifier,
-                                       rhs.view_identifier);
+        return lhs.surface_size == rhs.surface_size;
       }
     };
   };
@@ -96,7 +90,7 @@ class EmbedderExternalView {
 
   bool HasPlatformView() const;
 
-  bool HasEngineRenderedContents() const;
+  bool HasEngineRenderedContents();
 
   ViewIdentifier GetViewIdentifier() const;
 
@@ -104,19 +98,26 @@ class EmbedderExternalView {
 
   RenderTargetDescriptor CreateRenderTargetDescriptor() const;
 
-  SkCanvas* GetCanvas() const;
+  DlCanvas* GetCanvas();
 
   SkISize GetRenderSurfaceSize() const;
 
-  bool Render(const EmbedderRenderTarget& render_target);
+  bool Render(const EmbedderRenderTarget& render_target,
+              bool clear_surface = true);
+
+  const DlRegion& GetDlRegion() const;
 
  private:
+  // End the recording of the slice.
+  // Noop if the slice's recording has already ended.
+  void TryEndRecording() const;
+
   const SkISize render_surface_size_;
   const SkMatrix surface_transformation_;
   ViewIdentifier view_identifier_;
   std::unique_ptr<EmbeddedViewParams> embedded_view_params_;
-  std::unique_ptr<SkPictureRecorder> recorder_;
-  std::unique_ptr<CanvasSpy> canvas_spy_;
+  std::unique_ptr<DisplayListEmbedderViewSlice> slice_;
+  std::optional<bool> has_engine_rendered_contents_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderExternalView);
 };

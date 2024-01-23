@@ -4,27 +4,56 @@
 
 #include "flutter/fml/synchronization/sync_switch.h"
 
+#include <thread>
+
 #include "gtest/gtest.h"
 
 using fml::SyncSwitch;
 
 TEST(SyncSwitchTest, Basic) {
-  SyncSwitch syncSwitch;
-  bool switchValue = false;
-  syncSwitch.Execute(SyncSwitch::Handlers()
-                         .SetIfTrue([&] { switchValue = true; })
-                         .SetIfFalse([&] { switchValue = false; }));
-  EXPECT_FALSE(switchValue);
-  syncSwitch.SetSwitch(true);
-  syncSwitch.Execute(SyncSwitch::Handlers()
-                         .SetIfTrue([&] { switchValue = true; })
-                         .SetIfFalse([&] { switchValue = false; }));
-  EXPECT_TRUE(switchValue);
+  SyncSwitch sync_switch;
+  bool switch_value = false;
+  sync_switch.Execute(SyncSwitch::Handlers()
+                          .SetIfTrue([&] { switch_value = true; })
+                          .SetIfFalse([&] { switch_value = false; }));
+  EXPECT_FALSE(switch_value);
+  sync_switch.SetSwitch(true);
+  sync_switch.Execute(SyncSwitch::Handlers()
+                          .SetIfTrue([&] { switch_value = true; })
+                          .SetIfFalse([&] { switch_value = false; }));
+  EXPECT_TRUE(switch_value);
 }
 
 TEST(SyncSwitchTest, NoopIfUndefined) {
-  SyncSwitch syncSwitch;
-  bool switchValue = false;
-  syncSwitch.Execute(SyncSwitch::Handlers());
-  EXPECT_FALSE(switchValue);
+  SyncSwitch sync_switch;
+  bool switch_value = false;
+  sync_switch.Execute(SyncSwitch::Handlers());
+  EXPECT_FALSE(switch_value);
+}
+
+TEST(SyncSwitchTest, SharedLock) {
+  SyncSwitch sync_switch;
+  sync_switch.SetSwitch(true);
+  bool switch_value1 = false;
+  bool switch_value2 = false;
+
+  std::thread thread1([&] {
+    sync_switch.Execute(
+        SyncSwitch::Handlers()
+            .SetIfTrue([&] {
+              switch_value1 = true;
+
+              std::thread thread2([&]() {
+                sync_switch.Execute(
+                    SyncSwitch::Handlers()
+                        .SetIfTrue([&] { switch_value2 = true; })
+                        .SetIfFalse([&] { switch_value2 = false; }));
+              });
+              thread2.join();
+            })
+            .SetIfFalse([&] { switch_value1 = false; }));
+  });
+  thread1.join();
+  EXPECT_TRUE(switch_value1);
+  EXPECT_TRUE(switch_value2);
 }

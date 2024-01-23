@@ -8,7 +8,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,26 +21,24 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.content.res.XmlResourceParser;
 import android.os.Bundle;
-import android.security.NetworkSecurityPolicy;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.StringReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.Implementation;
-import org.robolectric.annotation.Implements;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 @Config(manifest = Config.NONE)
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 public class ApplicationInfoLoaderTest {
 
   @Test
   public void itGeneratesCorrectApplicationInfoWithDefaultManifest() {
-    FlutterApplicationInfo info = ApplicationInfoLoader.load(RuntimeEnvironment.application);
+    FlutterApplicationInfo info =
+        ApplicationInfoLoader.load(ApplicationProvider.getApplicationContext());
     assertNotNull(info);
     assertEquals("libapp.so", info.aotSharedLibraryName);
     assertEquals("vm_snapshot_data", info.vmSnapshotData);
@@ -46,25 +46,10 @@ public class ApplicationInfoLoaderTest {
     assertEquals("flutter_assets", info.flutterAssetsDir);
     assertEquals("", info.domainNetworkPolicy);
     assertNull(info.nativeLibraryDir);
-    assertEquals(true, info.clearTextPermitted);
   }
 
-  @Config(shadows = {ApplicationInfoLoaderTest.ShadowNetworkSecurityPolicy.class})
-  @Test
-  public void itVotesAgainstClearTextIfSecurityPolicySaysSo() {
-    FlutterApplicationInfo info = ApplicationInfoLoader.load(RuntimeEnvironment.application);
-    assertNotNull(info);
-    assertEquals(false, info.clearTextPermitted);
-  }
-
-  @Implements(NetworkSecurityPolicy.class)
-  public static class ShadowNetworkSecurityPolicy {
-    @Implementation
-    public boolean isCleartextTrafficPermitted() {
-      return false;
-    }
-  }
-
+  @SuppressWarnings("deprecation")
+  // getApplicationInfo
   private Context generateMockContext(Bundle metadata, String networkPolicyXml) throws Exception {
     Context context = mock(Context.class);
     PackageManager packageManager = mock(PackageManager.class);
@@ -73,8 +58,8 @@ public class ApplicationInfoLoaderTest {
     Resources resources = mock(Resources.class);
     when(context.getPackageManager()).thenReturn(packageManager);
     when(context.getResources()).thenReturn(resources);
-    when(packageManager.getApplicationInfo(any(String.class), any(int.class)))
-        .thenReturn(applicationInfo);
+    when(context.getPackageName()).thenReturn("");
+    when(packageManager.getApplicationInfo(anyString(), anyInt())).thenReturn(applicationInfo);
     if (networkPolicyXml != null) {
       metadata.putInt(ApplicationInfoLoader.NETWORK_POLICY_METADATA_KEY, 5);
       doAnswer(invocationOnMock -> createMockResourceParser(networkPolicyXml))
@@ -176,10 +161,9 @@ public class ApplicationInfoLoaderTest {
     when(resourceParser.getAttributeCount()).thenAnswer(invokeMethodOnRealParser);
     when(resourceParser.getAttributeName(anyInt())).thenAnswer(invokeMethodOnRealParser);
     when(resourceParser.getAttributeValue(anyInt())).thenAnswer(invokeMethodOnRealParser);
-    when(resourceParser.getAttributeValue(any(String.class), any(String.class)))
+    when(resourceParser.getAttributeValue(anyString(), anyString()))
         .thenAnswer(invokeMethodOnRealParser);
-    when(resourceParser.getAttributeBooleanValue(
-            any(String.class), any(String.class), any(Boolean.class)))
+    when(resourceParser.getAttributeBooleanValue(any(), anyString(), anyBoolean()))
         .thenAnswer(
             invocation -> {
               Object[] args = invocation.getArguments();

@@ -2,8 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+// For member documentation see https://api.flutter.dev/flutter/dart-ui/Canvas-class.html
+
+import 'dart:typed_data';
+
+import 'package:ui/ui.dart' as ui;
+
+import 'dom.dart';
+import 'html/painting.dart';
+import 'html/render_vertices.dart';
+import 'text/canvas_paragraph.dart';
+import 'util.dart';
+import 'vector_math.dart';
 
 /// Defines canvas interface common across canvases that the [SceneBuilder]
 /// renders to.
@@ -11,7 +21,7 @@ part of engine;
 /// This can be used either as an interface or super-class.
 abstract class EngineCanvas {
   /// The element that is attached to the DOM.
-  html.Element get rootElement;
+  DomElement get rootElement;
 
   void dispose() {
     clear();
@@ -65,7 +75,7 @@ abstract class EngineCanvas {
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint);
 
-  void drawParagraph(EngineParagraph paragraph, ui.Offset offset);
+  void drawParagraph(CanvasParagraph paragraph, ui.Offset offset);
 
   void drawVertices(
       SurfaceVertices vertices, ui.BlendMode blendMode, SurfacePaintData paint);
@@ -89,47 +99,46 @@ Matrix4 transformWithOffset(Matrix4 transform, ui.Offset offset) {
 
   // Clone to avoid mutating transform.
   final Matrix4 effectiveTransform = transform.clone();
-  effectiveTransform.translate(offset.dx, offset.dy, 0.0);
+  effectiveTransform.translate(offset.dx, offset.dy);
   return effectiveTransform;
 }
 
-class _SaveStackEntry {
-  _SaveStackEntry({
+class SaveStackEntry {
+  SaveStackEntry({
     required this.transform,
     required this.clipStack,
   });
 
   final Matrix4 transform;
-  final List<_SaveClipEntry>? clipStack;
+  final List<SaveClipEntry>? clipStack;
 }
 
 /// Tagged union of clipping parameters used for canvas.
-class _SaveClipEntry {
+class SaveClipEntry {
+  SaveClipEntry.rect(this.rect, this.currentTransform)
+      : rrect = null,
+        path = null;
+  SaveClipEntry.rrect(this.rrect, this.currentTransform)
+      : rect = null,
+        path = null;
+  SaveClipEntry.path(this.path, this.currentTransform)
+      : rect = null,
+        rrect = null;
+
   final ui.Rect? rect;
   final ui.RRect? rrect;
   final ui.Path? path;
   final Matrix4 currentTransform;
-  _SaveClipEntry.rect(this.rect, this.currentTransform)
-      : rrect = null,
-        path = null;
-  _SaveClipEntry.rrect(this.rrect, this.currentTransform)
-      : rect = null,
-        path = null;
-  _SaveClipEntry.path(this.path, this.currentTransform)
-      : rect = null,
-        rrect = null;
 }
 
 /// Provides save stack tracking functionality to implementations of
 /// [EngineCanvas].
 mixin SaveStackTracking on EngineCanvas {
-  static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
-
-  final List<_SaveStackEntry> _saveStack = <_SaveStackEntry>[];
+  final List<SaveStackEntry> _saveStack = <SaveStackEntry>[];
 
   /// The stack that maintains clipping operations used when text is painted
   /// onto bitmap canvas but is composited as separate element.
-  List<_SaveClipEntry>? _clipStack;
+  List<SaveClipEntry>? _clipStack;
 
   /// Returns whether there are active clipping regions on the canvas.
   bool get isClipped => _clipStack != null;
@@ -154,10 +163,10 @@ mixin SaveStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.save()`.
   @override
   void save() {
-    _saveStack.add(_SaveStackEntry(
+    _saveStack.add(SaveStackEntry(
       transform: _currentTransform.clone(),
       clipStack:
-          _clipStack == null ? null : List<_SaveClipEntry>.from(_clipStack!),
+          _clipStack == null ? null : List<SaveClipEntry>.from(_clipStack!),
     ));
   }
 
@@ -169,7 +178,7 @@ mixin SaveStackTracking on EngineCanvas {
     if (_saveStack.isEmpty) {
       return;
     }
-    final _SaveStackEntry entry = _saveStack.removeLast();
+    final SaveStackEntry entry = _saveStack.removeLast();
     _currentTransform = entry.transform;
     _clipStack = entry.clipStack;
   }
@@ -195,7 +204,7 @@ mixin SaveStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.rotate()`.
   @override
   void rotate(double radians) {
-    _currentTransform.rotate(_unitZ, radians);
+    _currentTransform.rotate(kUnitZ, radians);
   }
 
   /// Skews the [currentTransform] matrix.
@@ -223,8 +232,8 @@ mixin SaveStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.clipRect()`.
   @override
   void clipRect(ui.Rect rect, ui.ClipOp op) {
-    _clipStack ??= <_SaveClipEntry>[];
-    _clipStack!.add(_SaveClipEntry.rect(rect, _currentTransform.clone()));
+    _clipStack ??= <SaveClipEntry>[];
+    _clipStack!.add(SaveClipEntry.rect(rect, _currentTransform.clone()));
   }
 
   /// Adds a round rectangle to clipping stack.
@@ -232,8 +241,8 @@ mixin SaveStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.clipRRect()`.
   @override
   void clipRRect(ui.RRect rrect) {
-    _clipStack ??= <_SaveClipEntry>[];
-    _clipStack!.add(_SaveClipEntry.rrect(rrect, _currentTransform.clone()));
+    _clipStack ??= <SaveClipEntry>[];
+    _clipStack!.add(SaveClipEntry.rrect(rrect, _currentTransform.clone()));
   }
 
   /// Adds a path to clipping stack.
@@ -241,22 +250,19 @@ mixin SaveStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.clipPath()`.
   @override
   void clipPath(ui.Path path) {
-    _clipStack ??= <_SaveClipEntry>[];
-    _clipStack!.add(_SaveClipEntry.path(path, _currentTransform.clone()));
+    _clipStack ??= <SaveClipEntry>[];
+    _clipStack!.add(SaveClipEntry.path(path, _currentTransform.clone()));
   }
 }
 
-html.Element _drawParagraphElement(
-  EngineParagraph paragraph,
+DomElement drawParagraphElement(
+  CanvasParagraph paragraph,
   ui.Offset offset, {
   Matrix4? transform,
 }) {
   assert(paragraph.isLaidOut);
 
-  final html.HtmlElement paragraphElement = paragraph.toDomElement();
-  paragraphElement.style
-      ..height = '${paragraph.height}px'
-      ..width = '${paragraph.width}px';
+  final DomElement paragraphElement = paragraph.toDomElement();
 
   if (transform != null) {
     setElementTransform(
@@ -273,31 +279,29 @@ class _SaveElementStackEntry {
     required this.transform,
   });
 
-  final html.Element savedElement;
+  final DomElement savedElement;
   final Matrix4 transform;
 }
 
 /// Provides save stack tracking functionality to implementations of
 /// [EngineCanvas].
 mixin SaveElementStackTracking on EngineCanvas {
-  static final Vector3 _unitZ = Vector3(0.0, 0.0, 1.0);
-
   final List<_SaveElementStackEntry> _saveStack = <_SaveElementStackEntry>[];
 
   /// The element at the top of the element stack, or [rootElement] if the stack
   /// is empty.
-  html.Element get currentElement =>
+  DomElement get currentElement =>
       _elementStack.isEmpty ? rootElement : _elementStack.last;
 
   /// The stack that maintains the DOM elements used to express certain paint
   /// operations, such as clips.
-  final List<html.Element> _elementStack = <html.Element>[];
+  final List<DomElement> _elementStack = <DomElement>[];
 
   /// Pushes the [element] onto the element stack for the purposes of applying
   /// a paint effect using a DOM element, e.g. for clipping.
   ///
   /// The [restore] method automatically pops the element off the stack.
-  void pushElement(html.Element element) {
+  void pushElement(DomElement element) {
     _elementStack.add(element);
   }
 
@@ -365,7 +369,7 @@ mixin SaveElementStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.rotate()`.
   @override
   void rotate(double radians) {
-    _currentTransform.rotate(_unitZ, radians);
+    _currentTransform.rotate(kUnitZ, radians);
   }
 
   /// Skews the [currentTransform] matrix.

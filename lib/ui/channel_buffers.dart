@@ -3,18 +3,21 @@
 // found in the LICENSE file.
 
 
-// KEEP THIS SYNCHRONIZED WITH ../web_ui/lib/src/ui/channel_buffers.dart
-
-// @dart = 2.12
+// KEEP THIS SYNCHRONIZED WITH ../web_ui/lib/channel_buffers.dart
 part of dart.ui;
 
+/// Deprecated. Migrate to [ChannelCallback] instead.
+///
 /// Signature for [ChannelBuffers.drain]'s `callback` argument.
 ///
 /// The first argument is the data sent by the plugin.
 ///
 /// The second argument is a closure that, when called, will send messages
 /// back to the plugin.
-// TODO(ianh): deprecate this once the framework is migrated to [ChannelCallback].
+@Deprecated(
+  'Migrate to ChannelCallback instead. '
+  'This feature was deprecated after v3.11.0-20.0.pre.',
+)
 typedef DrainChannelCallback = Future<void> Function(ByteData? data, PlatformMessageResponseCallback callback);
 
 /// Signature for [ChannelBuffers.setListener]'s `callback` argument.
@@ -182,8 +185,9 @@ class _Channel {
   void setListener(ChannelCallback callback) {
     final bool needDrain = _channelCallbackRecord == null;
     _channelCallbackRecord = _ChannelCallbackRecord(callback);
-    if (needDrain && !_draining)
+    if (needDrain && !_draining) {
       _drain();
+    }
   }
 
   /// Clears the listener for this channel.
@@ -236,8 +240,16 @@ class _Channel {
 /// Messages for a channel are stored until a listener is provided for that channel,
 /// using [setListener]. Only one listener may be configured per channel.
 ///
-/// Typically these buffers are drained once a callback is setup on
+/// Typically these buffers are drained once a callback is set up on
 /// the [BinaryMessenger] in the Flutter framework. (See [setListener].)
+///
+/// ## Channel names
+///
+/// By convention, channels are normally named with a reverse-DNS prefix, a
+/// slash, and then a domain-specific name. For example, `com.example/demo`.
+///
+/// Channel names cannot contain the U+0000 NULL character, because they
+/// are passed through APIs that use null-terminated strings.
 ///
 /// ## Buffer capacity and overflow
 ///
@@ -248,15 +260,13 @@ class _Channel {
 /// message overflows, in debug mode, a message is printed to the
 /// console. The message looks like the following:
 ///
-/// ```
-/// A message on the com.example channel was discarded before it could be
-/// handled.
-/// This happens when a plugin sends messages to the framework side before the
-/// framework has had an opportunity to register a listener. See the
-/// ChannelBuffers API documentation for details on how to configure the channel
-/// to expect more messages, or to expect messages to get discarded:
-///   https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html
-/// ```
+/// > A message on the com.example channel was discarded before it could be
+/// > handled.
+/// > This happens when a plugin sends messages to the framework side before the
+/// > framework has had an opportunity to register a listener. See the
+/// > ChannelBuffers API documentation for details on how to configure the channel
+/// > to expect more messages, or to expect messages to get discarded:
+/// >   https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html
 ///
 /// There are tradeoffs associated with any size. The correct size
 /// should be chosen for the semantics of the channel. To change the
@@ -324,7 +334,11 @@ class ChannelBuffers {
   /// If a message overflows the channel, and the channel has not been
   /// configured to expect overflow, then, in debug mode, a message
   /// will be printed to the console warning about the overflow.
+  ///
+  /// Channel names cannot contain the U+0000 NULL character, because they
+  /// are passed through APIs that use null-terminated strings.
   void push(String name, ByteData? data, PlatformMessageResponseCallback callback) {
+    assert(!name.contains('\u0000'), 'Channel names must not contain U+0000 NULL characters.');
     final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
     if (channel.push(_StoredMessage(data, callback))) {
       _printDebug(
@@ -333,7 +347,8 @@ class ChannelBuffers {
         'framework has had an opportunity to register a listener. See the ChannelBuffers '
         'API documentation for details on how to configure the channel to expect more '
         'messages, or to expect messages to get discarded:\n'
-        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html'
+        '  https://api.flutter.dev/flutter/dart-ui/ChannelBuffers-class.html\n'
+        'The capacity of the $name channel is ${channel._capacity} message${channel._capacity != 1 ? 's' : ''}.',
       );
     }
   }
@@ -362,8 +377,10 @@ class ChannelBuffers {
   ///
   /// The draining stops if the listener is removed.
   void setListener(String name, ChannelCallback callback) {
+    assert(!name.contains('\u0000'), 'Channel names must not contain U+0000 NULL characters.');
     final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
     channel.setListener(callback);
+    sendChannelUpdate(name, listening: true);
   }
 
   /// Clears the listener for the specified channel.
@@ -374,18 +391,30 @@ class ChannelBuffers {
   /// fashion.
   void clearListener(String name) {
     final _Channel? channel = _channels[name];
-    if (channel != null)
+    if (channel != null) {
       channel.clearListener();
+      sendChannelUpdate(name, listening: false);
+    }
   }
 
+  @Native<Void Function(Handle, Bool)>(symbol: 'PlatformConfigurationNativeApi::SendChannelUpdate')
+  external static void _sendChannelUpdate(String name, bool listening);
+
+  void sendChannelUpdate(String name, {required bool listening}) => _sendChannelUpdate(name, listening);
+
+  /// Deprecated. Migrate to [setListener] instead.
+  ///
   /// Remove and process all stored messages for a given channel.
   ///
   /// This should be called once a channel is prepared to handle messages
-  /// (i.e. when a message handler is setup in the framework).
+  /// (i.e. when a message handler is set up in the framework).
   ///
   /// The messages are processed by calling the given `callback`. Each message
   /// is processed in its own microtask.
-  // TODO(ianh): deprecate once framework uses [setListener].
+  @Deprecated(
+    'Migrate to setListener instead. '
+    'This feature was deprecated after v3.11.0-20.0.pre.',
+  )
   Future<void> drain(String name, DrainChannelCallback callback) async {
     final _Channel? channel = _channels[name];
     while (channel != null && !channel._queue.isEmpty) {
@@ -407,8 +436,9 @@ class ChannelBuffers {
   /// ## `resize`
   ///
   /// The `resize` method takes as its argument a list with two values, first
-  /// the channel name (a UTF-8 string less than 254 bytes long), and second the
-  /// allowed size of the channel buffer (an integer between 0 and 2147483647).
+  /// the channel name (a UTF-8 string less than 254 bytes long and not
+  /// containing any null bytes), and second the allowed size of the channel
+  /// buffer (an integer between 0 and 2147483647).
   ///
   /// Upon receiving the message, the channel's buffer is resized. If necessary,
   /// messages are silently discarded to ensure the buffer is no bigger than
@@ -424,8 +454,9 @@ class ChannelBuffers {
   /// ## `overflow`
   ///
   /// The `overflow` method takes as its argument a list with two values, first
-  /// the channel name (a UTF-8 string less than 254 bytes long), and second a
-  /// boolean which is true if overflow is expected and false if it is not.
+  /// the channel name (a UTF-8 string less than 254 bytes long and not
+  /// containing any null bytes), and second a boolean which is true if overflow
+  /// is expected and false if it is not.
   ///
   /// This sets a flag on the channel in debug mode. In release mode the message
   /// is silently ignored. The flag indicates whether overflow is expected on this
@@ -438,55 +469,67 @@ class ChannelBuffers {
     final Uint8List bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     if (bytes[0] == 0x07) { // 7 = value code for string
       final int methodNameLength = bytes[1];
-      if (methodNameLength >= 254) // lengths greater than 253 have more elaborate encoding
+      if (methodNameLength >= 254) { // lengths greater than 253 have more elaborate encoding
         throw Exception('Unrecognized message sent to $kControlChannelName (method name too long)');
+      }
       int index = 2; // where we are in reading the bytes
       final String methodName = utf8.decode(bytes.sublist(index, index + methodNameLength));
       index += methodNameLength;
       switch (methodName) {
         case 'resize':
-          if (bytes[index] != 0x0C) // 12 = value code for list
-            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and new capacity)');
+          if (bytes[index] != 0x0C) { // 12 = value code for list
+            throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (arguments must be a two-element list, channel name and new capacity)");
+          }
           index += 1;
-          if (bytes[index] < 0x02) // We ignore extra arguments, in case we need to support them in the future, hence <2 rather than !=2.
-            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and new capacity)');
+          if (bytes[index] < 0x02) { // We ignore extra arguments, in case we need to support them in the future, hence <2 rather than !=2.
+            throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (arguments must be a two-element list, channel name and new capacity)");
+          }
           index += 1;
-          if (bytes[index] != 0x07) // 7 = value code for string
-            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (first argument must be a string)');
+          if (bytes[index] != 0x07) { // 7 = value code for string
+            throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (first argument must be a string)");
+          }
           index += 1;
           final int channelNameLength = bytes[index];
-          if (channelNameLength >= 254) // lengths greater than 253 have more elaborate encoding
-            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (channel name must be less than 254 characters long)');
+          if (channelNameLength >= 254) { // lengths greater than 253 have more elaborate encoding
+            throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (channel name must be less than 254 characters long)");
+          }
           index += 1;
           final String channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
+          if (channelName.contains('\u0000')) {
+            throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (channel name must not contain any null bytes)");
+          }
           index += channelNameLength;
-          if (bytes[index] != 0x03) // 3 = value code for uint32
-            throw Exception('Invalid arguments for \'resize\' method sent to $kControlChannelName (second argument must be an integer in the range 0 to 2147483647)');
+          if (bytes[index] != 0x03) { // 3 = value code for uint32
+            throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (second argument must be an integer in the range 0 to 2147483647)");
+          }
           index += 1;
           resize(channelName, data.getUint32(index, Endian.host));
-          break;
         case 'overflow':
-          if (bytes[index] != 0x0C) // 12 = value code for list
-            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)');
+          if (bytes[index] != 0x0C) { // 12 = value code for list
+            throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)");
+          }
           index += 1;
-          if (bytes[index] < 0x02) // We ignore extra arguments, in case we need to support them in the future, hence <2 rather than !=2.
-            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)');
+          if (bytes[index] < 0x02) { // We ignore extra arguments, in case we need to support them in the future, hence <2 rather than !=2.
+            throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (arguments must be a two-element list, channel name and flag state)");
+          }
           index += 1;
-          if (bytes[index] != 0x07) // 7 = value code for string
-            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (first argument must be a string)');
+          if (bytes[index] != 0x07) { // 7 = value code for string
+            throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (first argument must be a string)");
+          }
           index += 1;
           final int channelNameLength = bytes[index];
-          if (channelNameLength >= 254) // lengths greater than 253 have more elaborate encoding
-            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (channel name must be less than 254 characters long)');
+          if (channelNameLength >= 254) { // lengths greater than 253 have more elaborate encoding
+            throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (channel name must be less than 254 characters long)");
+          }
           index += 1;
           final String channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
           index += channelNameLength;
-          if (bytes[index] != 0x01 && bytes[index] != 0x02) // 1 = value code for true, 2 = value code for false
-            throw Exception('Invalid arguments for \'overflow\' method sent to $kControlChannelName (second argument must be a boolean)');
+          if (bytes[index] != 0x01 && bytes[index] != 0x02) { // 1 = value code for true, 2 = value code for false
+            throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (second argument must be a boolean)");
+          }
           allowOverflow(channelName, bytes[index] == 0x01);
-          break;
         default:
-          throw Exception('Unrecognized method \'$methodName\' sent to $kControlChannelName');
+          throw Exception("Unrecognized method '$methodName' sent to $kControlChannelName");
       }
     } else {
       final List<String> parts = utf8.decode(bytes).split('\r');
@@ -515,6 +558,7 @@ class ChannelBuffers {
   void resize(String name, int newSize) {
     _Channel? channel = _channels[name];
     if (channel == null) {
+      assert(!name.contains('\u0000'), 'Channel names must not contain U+0000 NULL characters.');
       channel = _Channel(newSize);
       _channels[name] = channel;
     } else {
@@ -538,6 +582,7 @@ class ChannelBuffers {
     assert(() {
       _Channel? channel = _channels[name];
       if (channel == null && allowed) {
+        assert(!name.contains('\u0000'), 'Channel names must not contain U+0000 NULL characters.');
         channel = _Channel();
         _channels[name] = channel;
       }

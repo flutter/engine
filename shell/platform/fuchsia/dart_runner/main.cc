@@ -4,6 +4,7 @@
 
 #include <lib/async-loop/cpp/loop.h>
 #include <lib/async-loop/default.h>
+#include <lib/sys/inspect/cpp/component.h>
 #include <lib/syslog/global.h>
 #include <lib/trace-provider/provider.h>
 #include <lib/trace/event.h>
@@ -13,7 +14,9 @@
 #include "flutter/fml/trace_event.h"
 #include "logging.h"
 #include "platform/utils.h"
+#include "runtime/dart/utils/build_info.h"
 #include "runtime/dart/utils/files.h"
+#include "runtime/dart/utils/root_inspect_node.h"
 #include "runtime/dart/utils/tempfs.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
@@ -34,6 +37,15 @@ static void RegisterProfilerSymbols(const char* symbols_path,
 int main(int argc, const char** argv) {
   async::Loop loop(&kAsyncLoopConfigAttachToCurrentThread);
 
+  // Create our component context which is served later.
+  auto context = sys::ComponentContext::Create();
+  dart_utils::RootInspectNode::Initialize(context.get());
+  auto build_info = dart_utils::RootInspectNode::CreateRootChild("build_info");
+  dart_utils::BuildInfo::Dump(build_info);
+
+  dart::SetDartVmNode(std::make_unique<inspect::Node>(
+      dart_utils::RootInspectNode::CreateRootChild("vm")));
+
   std::unique_ptr<trace::TraceProviderWithFdio> provider;
   {
     bool already_started;
@@ -50,8 +62,11 @@ int main(int argc, const char** argv) {
 #endif  // defined(AOT_RUNTIME)
 #endif  // !defined(DART_PRODUCT)
 
-  dart_utils::RunnerTemp runner_temp;
-  dart_runner::DartRunner runner(dart::ComponentContext());
+  dart_runner::DartRunner runner(context.get());
+
+  // Wait to serve until we have finished all of our setup.
+  context->outgoing()->ServeFromStartupInfo();
+
   loop.Run();
   return 0;
 }

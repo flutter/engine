@@ -6,8 +6,7 @@
 
 namespace flutter {
 
-AndroidEnvironmentGL::AndroidEnvironmentGL()
-    : display_(EGL_NO_DISPLAY), valid_(false) {
+AndroidEnvironmentGL::AndroidEnvironmentGL() : display_(EGL_NO_DISPLAY) {
   // Get the display.
   display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
@@ -24,8 +23,8 @@ AndroidEnvironmentGL::AndroidEnvironmentGL()
 }
 
 AndroidEnvironmentGL::~AndroidEnvironmentGL() {
-  // Diconnect the display if valid.
-  if (display_ != EGL_NO_CONTEXT) {
+  // Disconnect the display if valid.
+  if (display_ != EGL_NO_DISPLAY) {
     eglTerminate(display_);
   }
 }

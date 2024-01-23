@@ -16,11 +16,11 @@
 
 namespace flutter {
 
-PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+PlatformViewIOS::AccessibilityBridgeManager::AccessibilityBridgeManager(
     const std::function<void(bool)>& set_semantics_enabled)
-    : AccessibilityBridgePtr(set_semantics_enabled, nullptr) {}
+    : AccessibilityBridgeManager(set_semantics_enabled, nullptr) {}
 
-PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
+PlatformViewIOS::AccessibilityBridgeManager::AccessibilityBridgeManager(
     const std::function<void(bool)>& set_semantics_enabled,
     AccessibilityBridge* bridge)
     : accessibility_bridge_(bridge), set_semantics_enabled_(set_semantics_enabled) {
@@ -29,54 +29,65 @@ PlatformViewIOS::AccessibilityBridgePtr::AccessibilityBridgePtr(
   }
 }
 
-PlatformViewIOS::AccessibilityBridgePtr::~AccessibilityBridgePtr() {
-  if (accessibility_bridge_) {
-    set_semantics_enabled_(false);
-  }
+void PlatformViewIOS::AccessibilityBridgeManager::Set(std::unique_ptr<AccessibilityBridge> bridge) {
+  accessibility_bridge_ = std::move(bridge);
+  set_semantics_enabled_(true);
 }
 
-void PlatformViewIOS::AccessibilityBridgePtr::reset(AccessibilityBridge* bridge) {
-  if (accessibility_bridge_) {
-    set_semantics_enabled_(false);
-  }
-  accessibility_bridge_.reset(bridge);
-  if (accessibility_bridge_) {
-    set_semantics_enabled_(true);
-  }
+void PlatformViewIOS::AccessibilityBridgeManager::Clear() {
+  set_semantics_enabled_(false);
+  accessibility_bridge_.reset();
 }
+
+PlatformViewIOS::PlatformViewIOS(
+    PlatformView::Delegate& delegate,
+    const std::shared_ptr<IOSContext>& context,
+    const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
+    const flutter::TaskRunners& task_runners)
+    : PlatformView(delegate, task_runners),
+      ios_context_(context),
+      platform_views_controller_(platform_views_controller),
+      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }),
+      platform_message_handler_(
+          new PlatformMessageHandlerIos(task_runners.GetPlatformTaskRunner())) {}
 
 PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     IOSRenderingAPI rendering_api,
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-    flutter::TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)),
-      ios_context_(IOSContext::Create(rendering_api)),
-      platform_views_controller_(platform_views_controller),
-      accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }) {}
+    const flutter::TaskRunners& task_runners,
+    const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
+    : PlatformViewIOS(
+          delegate,
+          IOSContext::Create(
+              rendering_api,
+              delegate.OnPlatformViewGetSettings().enable_impeller ? IOSRenderingBackend::kImpeller
+                                                                   : IOSRenderingBackend::kSkia,
+              static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples),
+              is_gpu_disabled_sync_switch),
+          platform_views_controller,
+          task_runners) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
-PlatformMessageRouter& PlatformViewIOS::GetPlatformMessageRouter() {
-  return platform_message_router_;
-}
-
 // |PlatformView|
-void PlatformViewIOS::HandlePlatformMessage(fml::RefPtr<flutter::PlatformMessage> message) {
-  platform_message_router_.HandlePlatformMessage(std::move(message));
+void PlatformViewIOS::HandlePlatformMessage(std::unique_ptr<flutter::PlatformMessage> message) {
+  platform_message_handler_->HandlePlatformMessage(std::move(message));
 }
 
-fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
+fml::WeakNSObject<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
   return owner_controller_;
 }
 
-void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
+void PlatformViewIOS::SetOwnerViewController(
+    const fml::WeakNSObject<FlutterViewController>& owner_controller) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
-    accessibility_bridge_.reset();
+    accessibility_bridge_.Clear();
   }
   owner_controller_ = owner_controller;
 
@@ -88,7 +99,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
                                                           queue:[NSOperationQueue mainQueue]
                                                      usingBlock:^(NSNotification* note) {
                                                        // Implicit copy of 'this' is fine.
-                                                       accessibility_bridge_.reset();
+                                                       accessibility_bridge_.Clear();
                                                        owner_controller_.reset();
                                                      }] retain]);
 
@@ -112,7 +123,7 @@ void PlatformViewIOS::attachView() {
   FML_DCHECK(ios_surface_ != nullptr);
 
   if (accessibility_bridge_) {
-    accessibility_bridge_.reset(new AccessibilityBridge(
+    accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
         owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   }
 }
@@ -138,7 +149,7 @@ std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
                       "has no ViewController.";
     return nullptr;
   }
-  return ios_surface_->CreateGPUSurface();
+  return ios_surface_->CreateGPUSurface(ios_context_->GetMainContext().get());
 }
 
 // |PlatformView|
@@ -152,6 +163,11 @@ sk_sp<GrDirectContext> PlatformViewIOS::CreateResourceContext() const {
 }
 
 // |PlatformView|
+std::shared_ptr<impeller::Context> PlatformViewIOS::GetImpellerContext() const {
+  return ios_context_->GetImpellerContext();
+}
+
+// |PlatformView|
 void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
   if (!owner_controller_) {
     FML_LOG(WARNING) << "Could not set semantics to enabled, this "
@@ -159,10 +175,10 @@ void PlatformViewIOS::SetSemanticsEnabled(bool enabled) {
     return;
   }
   if (enabled && !accessibility_bridge_) {
-    accessibility_bridge_.reset(new AccessibilityBridge(
+    accessibility_bridge_.Set(std::make_unique<AccessibilityBridge>(
         owner_controller_.get(), this, [owner_controller_.get() platformViewsController]));
   } else if (!enabled && accessibility_bridge_) {
-    accessibility_bridge_.reset();
+    accessibility_bridge_.Clear();
   } else {
     PlatformView::SetSemanticsEnabled(enabled);
   }
@@ -178,7 +194,7 @@ void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
                                       flutter::CustomAccessibilityActionUpdates actions) {
   FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
+    accessibility_bridge_.get()->UpdateSemantics(std::move(update), actions);
     [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
                                                         object:owner_controller_.get()];
   }
@@ -191,12 +207,13 @@ std::unique_ptr<VsyncWaiter> PlatformViewIOS::CreateVSyncWaiter() {
 
 void PlatformViewIOS::OnPreEngineRestart() const {
   if (accessibility_bridge_) {
-    accessibility_bridge_->clearState();
+    accessibility_bridge_.get()->clearState();
   }
   if (!owner_controller_) {
     return;
   }
   [owner_controller_.get() platformViewsController]->Reset();
+  [[owner_controller_.get() restorationPlugin] reset];
 }
 
 std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolvedLocales(
@@ -206,9 +223,12 @@ std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolv
       [NSMutableArray arrayWithCapacity:supported_locale_data.size() / localeDataLength];
   for (size_t i = 0; i < supported_locale_data.size(); i += localeDataLength) {
     NSDictionary<NSString*, NSString*>* dict = @{
-      NSLocaleLanguageCode : [NSString stringWithUTF8String:supported_locale_data[i].c_str()],
-      NSLocaleCountryCode : [NSString stringWithUTF8String:supported_locale_data[i + 1].c_str()],
+      NSLocaleLanguageCode : [NSString stringWithUTF8String:supported_locale_data[i].c_str()]
+          ?: @"",
+      NSLocaleCountryCode : [NSString stringWithUTF8String:supported_locale_data[i + 1].c_str()]
+          ?: @"",
       NSLocaleScriptCode : [NSString stringWithUTF8String:supported_locale_data[i + 2].c_str()]
+          ?: @""
     };
     [supported_locale_identifiers addObject:[NSLocale localeIdentifierFromComponents:dict]];
   }
@@ -219,20 +239,18 @@ std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolv
   std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
 
   if (result != nullptr && [result count] > 0) {
-    if (@available(ios 10.0, *)) {
-      NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
-      NSString* languageCode = [locale languageCode];
-      out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
-      NSString* countryCode = [locale countryCode];
-      out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
-      NSString* scriptCode = [locale scriptCode];
-      out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
-    }
+    NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
+    NSString* languageCode = [locale languageCode];
+    out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
+    NSString* countryCode = [locale countryCode];
+    out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
+    NSString* scriptCode = [locale scriptCode];
+    out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
   }
   return out;
 }
 
-PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
+PlatformViewIOS::ScopedObserver::ScopedObserver() {}
 
 PlatformViewIOS::ScopedObserver::~ScopedObserver() {
   if (observer_) {

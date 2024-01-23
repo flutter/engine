@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:ui/ui.dart' as ui;
+
+import '../../browser_detection.dart';
 
 /// Creates shader program for target webgl version.
 ///
@@ -26,10 +27,17 @@ part of engine;
 ///  method.addStatement('${u1.name} = vec4(1.0, 1.0, 1.0, 0.0);');
 ///  source = builder.build();
 class ShaderBuilder {
+  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = false;
+
+  ShaderBuilder.fragment(this.version) :
+        isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = true;
+
   /// WebGL version.
   final int version;
-  final List<ShaderDeclaration> declarations = [];
-  final List<ShaderMethod> _methods = [];
+  final List<ShaderDeclaration> declarations = <ShaderDeclaration>[];
+  final List<ShaderMethod> _methods = <ShaderMethod>[];
 
   /// Precision for integer variables.
   int? integerPrecision;
@@ -57,13 +65,6 @@ class ShaderBuilder {
   /// Lazily allocated fragment color output.
   ShaderDeclaration? _fragmentColorDeclaration;
 
-  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
-        _isFragmentShader = false;
-
-  ShaderBuilder.fragment(this.version) :
-        isWebGl2 = version == WebGLVersion.webgl2,
-        _isFragmentShader = true;
-
   /// Returns fragment color declaration for fragment shader.
   ///
   /// This is hard coded for webgl1 as gl_FragColor.
@@ -81,7 +82,7 @@ class ShaderBuilder {
   /// series of graphics primitives are rendered. The value is only accessible
   /// in the vertex shader.
   ShaderDeclaration addIn(int dataType, {String? name}) {
-    ShaderDeclaration attrib = ShaderDeclaration(
+    final ShaderDeclaration attrib = ShaderDeclaration(
         name ?? 'attr_${_attribCounter++}',
         dataType,
         ShaderStorageQualifier.kAttribute);
@@ -91,7 +92,7 @@ class ShaderBuilder {
 
   /// Adds a constant.
   ShaderDeclaration addConst(int dataType, String value, {String? name}) {
-    ShaderDeclaration declaration = ShaderDeclaration.constant(
+    final ShaderDeclaration declaration = ShaderDeclaration.constant(
         name ?? 'c_${_constCounter++}', dataType, value);
     declarations.add(declaration);
     return declaration;
@@ -103,7 +104,7 @@ class ShaderBuilder {
   /// It is accessible in both the vertex and fragment shaders.
   ///
   ShaderDeclaration addUniform(int dataType, {String? name}) {
-    ShaderDeclaration uniform = ShaderDeclaration(
+    final ShaderDeclaration uniform = ShaderDeclaration(
         name ?? 'uni_${_uniformCounter++}',
         dataType,
         ShaderStorageQualifier.kUniform);
@@ -118,7 +119,7 @@ class ShaderBuilder {
   /// input to a fragment shader.
   /// It can be used in a fragment shader, but not changed.
   ShaderDeclaration addOut(int dataType, {String? name}) {
-    ShaderDeclaration varying = ShaderDeclaration(
+    final ShaderDeclaration varying = ShaderDeclaration(
         name ?? 'output_${_varyingCounter++}',
         dataType,
         ShaderStorageQualifier.kVarying);
@@ -130,17 +131,13 @@ class ShaderBuilder {
     switch (variable.storage) {
       case ShaderStorageQualifier.kConst:
         _buffer.write('const ');
-        break;
       case ShaderStorageQualifier.kAttribute:
         _buffer.write(isWebGl2 ? 'in '
             : _isFragmentShader ? 'varying ' : 'attribute ');
-        break;
       case ShaderStorageQualifier.kUniform:
         _buffer.write('uniform ');
-        break;
       case ShaderStorageQualifier.kVarying:
         _buffer.write(isWebGl2 ? 'out ' : 'varying ');
-        break;
     }
     _buffer.write('${typeToString(variable.dataType)} ${variable.name}');
     if (variable.storage == ShaderStorageQualifier.kConst) {
@@ -218,10 +215,10 @@ class ShaderBuilder {
     if (isWebGl2 && _fragmentColorDeclaration != null) {
       _writeVariableDeclaration(_buffer, _fragmentColorDeclaration!);
     }
-    for (ShaderDeclaration decl in declarations) {
+    for (final ShaderDeclaration decl in declarations) {
       _writeVariableDeclaration(_buffer, decl);
     }
-    for (ShaderMethod method in _methods) {
+    for (final ShaderMethod method in _methods) {
       method.write(_buffer);
     }
     return _buffer.toString();
@@ -230,6 +227,8 @@ class ShaderBuilder {
   String _precisionToString(int precision) => precision == ShaderPrecision.kLow
       ? 'lowp'
       : precision == ShaderPrecision.kMedium ? 'mediump' : 'highp';
+
+  String get texture2DFunction => isWebGl2 ? 'texture' : 'texture2D';
 }
 
 class ShaderMethod {
@@ -237,7 +236,7 @@ class ShaderMethod {
 
   final String returnType = 'void';
   final String name;
-  final List<String> _statements = [];
+  final List<String> _statements = <String>[];
   int _indentLevel = 1;
 
   void indent() {
@@ -250,18 +249,44 @@ class ShaderMethod {
   }
 
   void addStatement(String statement) {
-    if (assertionsEnabled) {
-      _statements.add('  ' * _indentLevel + statement);
-    } else {
-      _statements.add(statement);
+    String itemToAdd = statement;
+    assert(() {
+      itemToAdd = '  ' * _indentLevel + statement;
+      return true;
+    }());
+    _statements.add(itemToAdd);
+  }
+
+  /// Adds statements to compute tiling in 0..1 coordinate space.
+  ///
+  /// For clamp we simply assign source value to destination.
+  ///
+  /// For repeat, we use fractional part of source value.
+  ///   float destination = fract(source);
+  ///
+  /// For mirror, we repeat every 2 units, by scaling and measuring distance
+  /// from floor.
+  ///   float destination = 1.0 - source;
+  ///   destination = abs((destination - 2.0 * floor(destination * 0.5)) - 1.0);
+  void addTileStatements(String source, String destination,
+      ui.TileMode tileMode) {
+    switch(tileMode) {
+      case ui.TileMode.repeated:
+        addStatement('float $destination = fract($source);');
+      case ui.TileMode.mirror:
+        addStatement('float $destination = ($source - 1.0);');
+        addStatement(
+            '$destination = '
+            'abs(($destination - 2.0 * floor($destination * 0.5)) - 1.0);');
+      case ui.TileMode.clamp:
+      case ui.TileMode.decal:
+        addStatement('float $destination = $source;');
     }
   }
 
   void write(StringBuffer buffer) {
     buffer.writeln('$returnType $name() {');
-    for (String statement in _statements) {
-      buffer.writeln(statement);
-    }
+    _statements.forEach(buffer.writeln);
     buffer.writeln('}');
   }
 }
@@ -313,10 +338,6 @@ abstract class ShaderStorageQualifier {
 
 /// Shader variable and constant declaration.
 class ShaderDeclaration {
-  final String name;
-  final int dataType;
-  final int storage;
-  final String constValue;
   ShaderDeclaration(this.name, this.dataType, this.storage)
       : assert(!_isGLSLReservedWord(name)),
         constValue = '';
@@ -324,11 +345,16 @@ class ShaderDeclaration {
   /// Constructs a constant.
   ShaderDeclaration.constant(this.name, this.dataType, this.constValue)
       : storage = ShaderStorageQualifier.kConst;
+
+  final String name;
+  final int dataType;
+  final int storage;
+  final String constValue;
 }
 
 // These are used only in debug mode to assert if used as variable name.
 // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.10.pdf
-const List<String> _kReservedWords = [
+const List<String> _kReservedWords = <String>[
   'attribute',
   'const',
   'uniform',
@@ -382,7 +408,7 @@ const List<String> _kReservedWords = [
   'image2DArrayShadow', 'image2DShadow', 'image3D', 'imageBuffer',
   'imageCube', 'inline', 'input', 'interface', 'long',
   'namespace', 'noinline', 'output', 'packed', 'partition', 'public',
-  'row_majo', 'short', 'sizeof', 'static', 'superp', 'template', 'this',
+  'row_major', 'sampler3DRect', 'short', 'sizeof', 'static', 'superp', 'template', 'this',
   'typedef', 'uimage1D', 'uimage1DArray', 'uimage2D', 'uimage2DArray',
   'uimage3D', 'uimageBuffer', 'uimageCube', 'union', 'unsigned',
   'using', 'volatile',

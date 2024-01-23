@@ -7,7 +7,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 
-#if OS_MACOSX
+#if FML_OS_MACOSX
 #include <dispatch/dispatch.h>
 
 namespace fml {
@@ -15,44 +15,51 @@ namespace fml {
 class PlatformSemaphore {
  public:
   explicit PlatformSemaphore(uint32_t count)
-      : _sem(dispatch_semaphore_create(count)), _initial(count) {}
+      : sem_(dispatch_semaphore_create(count)), initial_(count) {}
 
   ~PlatformSemaphore() {
-    for (uint32_t i = 0; i < _initial; ++i) {
+    for (uint32_t i = 0; i < initial_; ++i) {
       Signal();
     }
-    if (_sem != nullptr) {
-      dispatch_release(reinterpret_cast<dispatch_object_t>(_sem));
-      _sem = nullptr;
+    if (sem_ != nullptr) {
+      dispatch_release(reinterpret_cast<dispatch_object_t>(sem_));
+      sem_ = nullptr;
     }
   }
 
-  bool IsValid() const { return _sem != nullptr; }
+  bool IsValid() const { return sem_ != nullptr; }
+
+  bool Wait() {
+    if (sem_ == nullptr) {
+      return false;
+    }
+    return dispatch_semaphore_wait(sem_, DISPATCH_TIME_FOREVER) == 0;
+  }
 
   bool TryWait() {
-    if (_sem == nullptr) {
+    if (sem_ == nullptr) {
       return false;
     }
 
-    return dispatch_semaphore_wait(_sem, DISPATCH_TIME_NOW) == 0;
+    return dispatch_semaphore_wait(sem_, DISPATCH_TIME_NOW) == 0;
   }
 
   void Signal() {
-    if (_sem != nullptr) {
-      dispatch_semaphore_signal(_sem);
+    if (sem_ != nullptr) {
+      dispatch_semaphore_signal(sem_);
     }
   }
 
  private:
-  dispatch_semaphore_t _sem;
-  const uint32_t _initial;
+  dispatch_semaphore_t sem_;
+  const uint32_t initial_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformSemaphore);
 };
 
 }  // namespace fml
 
-#elif OS_WIN
+#elif FML_OS_WIN
 #include <windows.h>
 
 namespace fml {
@@ -70,6 +77,14 @@ class PlatformSemaphore {
   }
 
   bool IsValid() const { return _sem != nullptr; }
+
+  bool Wait() {
+    if (_sem == nullptr) {
+      return false;
+    }
+
+    return WaitForSingleObject(_sem, INFINITE) == WAIT_OBJECT_0;
+  }
 
   bool TryWait() {
     if (_sem == nullptr) {
@@ -107,6 +122,7 @@ class PlatformSemaphore {
   ~PlatformSemaphore() {
     if (valid_) {
       int result = ::sem_destroy(&sem_);
+      (void)result;
       // Can only be EINVAL which should not be possible since we checked for
       // validity.
       FML_DCHECK(result == 0);
@@ -114,6 +130,14 @@ class PlatformSemaphore {
   }
 
   bool IsValid() const { return valid_; }
+
+  bool Wait() {
+    if (!valid_) {
+      return false;
+    }
+
+    return FML_HANDLE_EINTR(::sem_wait(&sem_)) == 0;
+  }
 
   bool TryWait() {
     if (!valid_) {
@@ -146,20 +170,24 @@ class PlatformSemaphore {
 
 namespace fml {
 
-Semaphore::Semaphore(uint32_t count) : _impl(new PlatformSemaphore(count)) {}
+Semaphore::Semaphore(uint32_t count) : impl_(new PlatformSemaphore(count)) {}
 
 Semaphore::~Semaphore() = default;
 
 bool Semaphore::IsValid() const {
-  return _impl->IsValid();
+  return impl_->IsValid();
+}
+
+bool Semaphore::Wait() {
+  return impl_->Wait();
 }
 
 bool Semaphore::TryWait() {
-  return _impl->TryWait();
+  return impl_->TryWait();
 }
 
 void Semaphore::Signal() {
-  return _impl->Signal();
+  return impl_->Signal();
 }
 
 }  // namespace fml

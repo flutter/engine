@@ -5,7 +5,8 @@
 #ifndef FLUTTER_VULKAN_VULKAN_PROVIDER_H_
 #define FLUTTER_VULKAN_VULKAN_PROVIDER_H_
 
-#include "vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace vulkan {
 
@@ -25,9 +26,10 @@ class VulkanProvider {
                                            &fence)) != VK_SUCCESS)
       return vulkan::VulkanHandle<VkFence>();
 
-    return {fence, [this](VkFence fence) {
-              vk().DestroyFence(vk_device(), fence, nullptr);
-            }};
+    return VulkanHandle<VkFence>{fence, [this](VkFence fence) {
+                                   vk().DestroyFence(vk_device(), fence,
+                                                     nullptr);
+                                 }};
   }
 };
 

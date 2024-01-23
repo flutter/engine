@@ -2,13 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:ui';
 
-import 'package:test/test.dart';
+import 'package:litetest/litetest.dart';
 
 class NotAColor extends Color {
-  const NotAColor(int value) : super(value);
+  const NotAColor(super.value);
 }
 
 void main() {
@@ -28,32 +27,24 @@ void main() {
   });
 
   test('color created with out of bounds value', () {
-    try {
-      const Color c = Color(0x100 << 24);
-      final Paint p = Paint();
-      p.color = c;
-    } catch (e) {
-      expect(e != null, equals(true));
-    }
+    const Color c = Color(0x100 << 24);
+    final Paint p = Paint();
+    p.color = c;
   });
 
   test('color created with wildly out of bounds value', () {
-    try {
-      const Color c = Color(1 << 1000000);
-      final Paint p = Paint();
-      p.color = c;
-    } catch (e) {
-      expect(e != null, equals(true));
-    }
+    const Color c = Color(1 << 1000000);
+    final Paint p = Paint();
+    p.color = c;
   });
 
   test('two colors are only == if they have the same runtime type', () {
-    expect(const Color(123), equals(const Color(123)));
-    expect(const Color(123), equals(Color(123))); // ignore: prefer_const_constructors
-    expect(const Color(123), isNot(equals(const Color(321))));
-    expect(const Color(123), isNot(equals(const NotAColor(123))));
-    expect(const NotAColor(123), isNot(equals(const Color(123))));
-    expect(const NotAColor(123), equals(const NotAColor(123)));
+    expect(const Color(0x12345678), equals(const Color(0x12345678)));
+    expect(const Color(0x12345678), equals(Color(0x12345678))); // ignore: prefer_const_constructors
+    expect(const Color(0x12345678), notEquals(const Color(0x87654321)));
+    expect(const Color(0x12345678), notEquals(const NotAColor(0x12345678)));
+    expect(const NotAColor(0x12345678), notEquals(const Color(0x12345678)));
+    expect(const NotAColor(0x12345678), equals(const NotAColor(0x12345678)));
   });
 
   test('Color.lerp', () {

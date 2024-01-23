@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:typed_data';
+
+import 'package:meta/meta.dart';
 
 /// A message encoding/decoding mechanism.
 ///
@@ -31,8 +32,7 @@ abstract class MessageCodec<T> {
 class MethodCall {
   /// Creates a [MethodCall] representing the invocation of [method] with the
   /// specified [arguments].
-  // ignore: unnecessary_null_comparison
-  const MethodCall(this.method, [this.arguments]) : assert(method != null);
+  const MethodCall(this.method, [this.arguments]);
 
   /// The name of the method to be called.
   final String method;
@@ -101,7 +101,7 @@ class PlatformException implements Exception {
     required this.code,
     this.message,
     this.details,
-  }) : assert(code != null); // ignore: unnecessary_null_comparison
+  });
 
   /// An error code.
   final String code;

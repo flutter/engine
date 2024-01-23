@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
-import 'package:test/test.dart';
 
 void main() {
   test('basic image descriptor - encoded - greyscale', () async {
@@ -82,13 +81,13 @@ void main() {
 
     final Codec codec = await descriptor.instantiateCodec();
     expect(codec.frameCount, 1);
-  }, skip: !(Platform.isIOS || Platform.isMacOS || Platform.isWindows));
+  }, skip: !(Platform.isAndroid || Platform.isIOS || Platform.isMacOS || Platform.isWindows));
 }
 
 Future<Uint8List> readFile(String fileName, ) async {
   final File file =
       File(path.join('flutter', 'testing', 'resources', fileName));
-  return await file.readAsBytes();
+  return file.readAsBytes();
 }
 
 /// Returns a File handle to a file in the skia/resources directory.
@@ -98,7 +97,8 @@ File _getSkiaResource(String fileName) {
   // assuming the curent working directory is engine/src.
   // This is fragile and should be changed once the Platform.script issue is
   // resolved.
-  final String assetPath =
-    path.join('third_party', 'skia', 'resources', 'images', fileName);
+  final String assetPath = path.join(
+    'flutter', 'third_party', 'skia', 'resources', 'images', fileName,
+  );
   return File(assetPath);
 }

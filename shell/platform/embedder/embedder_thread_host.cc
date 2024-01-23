@@ -81,9 +81,11 @@ CreateEmbedderTaskRunner(const FlutterTaskRunnerDescription* description) {
 
 std::unique_ptr<EmbedderThreadHost>
 EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
-    const FlutterCustomTaskRunners* custom_task_runners) {
+    const FlutterCustomTaskRunners* custom_task_runners,
+    const flutter::ThreadConfigSetter& config_setter) {
   {
-    auto host = CreateEmbedderManagedThreadHost(custom_task_runners);
+    auto host =
+        CreateEmbedderManagedThreadHost(custom_task_runners, config_setter);
     if (host && host->IsValid()) {
       return host;
     }
@@ -94,7 +96,7 @@ EmbedderThreadHost::CreateEmbedderOrEngineManagedThreadHost(
   // configuration if the embedder attempted to specify a configuration but
   // messed up with an incorrect configuration.
   if (custom_task_runners == nullptr) {
-    auto host = CreateEngineManagedThreadHost();
+    auto host = CreateEngineManagedThreadHost(config_setter);
     if (host && host->IsValid()) {
       return host;
     }
@@ -110,20 +112,34 @@ static fml::RefPtr<fml::TaskRunner> GetCurrentThreadTaskRunner() {
 
 constexpr const char* kFlutterThreadName = "io.flutter";
 
+fml::Thread::ThreadConfig MakeThreadConfig(
+    flutter::ThreadHost::Type type,
+    fml::Thread::ThreadPriority priority) {
+  return fml::Thread::ThreadConfig(
+      flutter::ThreadHost::ThreadHostConfig::MakeThreadName(type,
+                                                            kFlutterThreadName),
+      priority);
+}
+
 // static
 std::unique_ptr<EmbedderThreadHost>
 EmbedderThreadHost::CreateEmbedderManagedThreadHost(
-    const FlutterCustomTaskRunners* custom_task_runners) {
+    const FlutterCustomTaskRunners* custom_task_runners,
+    const flutter::ThreadConfigSetter& config_setter) {
   if (custom_task_runners == nullptr) {
     return nullptr;
   }
+
+  auto thread_host_config = ThreadHost::ThreadHostConfig(config_setter);
 
   // The UI and IO threads are always created by the engine and the embedder has
   // no opportunity to specify task runners for the same.
   //
   // If/when more task runners are exposed, this mask will need to be updated.
-  uint64_t engine_thread_host_mask =
-      ThreadHost::Type::UI | ThreadHost::Type::IO;
+  thread_host_config.SetUIConfig(MakeThreadConfig(
+      ThreadHost::Type::kUi, fml::Thread::ThreadPriority::kDisplay));
+  thread_host_config.SetIOConfig(MakeThreadConfig(
+      ThreadHost::Type::kIo, fml::Thread::ThreadPriority::kBackground));
 
   auto platform_task_runner_pair = CreateEmbedderTaskRunner(
       SAFE_ACCESS(custom_task_runners, platform_task_runner, nullptr));
@@ -137,14 +153,15 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
     return nullptr;
   }
 
-  // If the embedder has not supplied a GPU task runner, one needs to be
+  // If the embedder has not supplied a raster task runner, one needs to be
   // created.
   if (!render_task_runner_pair.second) {
-    engine_thread_host_mask |= ThreadHost::Type::GPU;
+    thread_host_config.SetRasterConfig(MakeThreadConfig(
+        ThreadHost::Type::kRaster, fml::Thread::ThreadPriority::kRaster));
   }
 
-  // If both the platform task runner and the GPU task runner are specified and
-  // have the same identifier, store only one.
+  // If both the platform task runner and the raster task runner are specified
+  // and have the same identifier, store only one.
   if (platform_task_runner_pair.second && render_task_runner_pair.second) {
     if (platform_task_runner_pair.second->GetEmbedderIdentifier() ==
         render_task_runner_pair.second->GetEmbedderIdentifier()) {
@@ -154,7 +171,7 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
 
   // Create a thread host with just the threads that need to be managed by the
   // engine. The embedder has provided the rest.
-  ThreadHost thread_host(kFlutterThreadName, engine_thread_host_mask);
+  ThreadHost thread_host(thread_host_config);
 
   // If the embedder has supplied a platform task runner, use that. If not, use
   // the current thread task runner.
@@ -163,8 +180,8 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
                                         platform_task_runner_pair.second)
                                   : GetCurrentThreadTaskRunner();
 
-  // If the embedder has supplied a GPU task runner, use that. If not, use the
-  // one from our thread host.
+  // If the embedder has supplied a raster task runner, use that. If not, use
+  // the one from our thread host.
   auto render_task_runner = render_task_runner_pair.second
                                 ? static_cast<fml::RefPtr<fml::TaskRunner>>(
                                       render_task_runner_pair.second)
@@ -205,12 +222,20 @@ EmbedderThreadHost::CreateEmbedderManagedThreadHost(
 
 // static
 std::unique_ptr<EmbedderThreadHost>
-EmbedderThreadHost::CreateEngineManagedThreadHost() {
+EmbedderThreadHost::CreateEngineManagedThreadHost(
+    const flutter::ThreadConfigSetter& config_setter) {
+  // Crate a thraed host config, and specified the thread name and priority.
+  auto thread_host_config = ThreadHost::ThreadHostConfig(config_setter);
+  thread_host_config.SetUIConfig(MakeThreadConfig(
+      flutter::ThreadHost::kUi, fml::Thread::ThreadPriority::kDisplay));
+  thread_host_config.SetRasterConfig(MakeThreadConfig(
+      flutter::ThreadHost::kRaster, fml::Thread::ThreadPriority::kRaster));
+  thread_host_config.SetIOConfig(MakeThreadConfig(
+      flutter::ThreadHost::kIo, fml::Thread::ThreadPriority::kBackground));
+
   // Create a thread host with the current thread as the platform thread and all
   // other threads managed.
-  ThreadHost thread_host(kFlutterThreadName, ThreadHost::Type::GPU |
-                                                 ThreadHost::Type::IO |
-                                                 ThreadHost::Type::UI);
+  ThreadHost thread_host(thread_host_config);
 
   // For embedder platforms that don't have native message loop interop, this
   // will reference a task runner that points to a null message loop
@@ -244,9 +269,9 @@ EmbedderThreadHost::CreateEngineManagedThreadHost() {
 
 EmbedderThreadHost::EmbedderThreadHost(
     ThreadHost host,
-    flutter::TaskRunners runners,
-    std::set<fml::RefPtr<EmbedderTaskRunner>> embedder_task_runners)
-    : host_(std::move(host)), runners_(std::move(runners)) {
+    const flutter::TaskRunners& runners,
+    const std::set<fml::RefPtr<EmbedderTaskRunner>>& embedder_task_runners)
+    : host_(std::move(host)), runners_(runners) {
   for (const auto& runner : embedder_task_runners) {
     runners_map_[reinterpret_cast<int64_t>(runner.get())] = runner;
   }

@@ -4,6 +4,8 @@
 
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+#include <utility>
+
 namespace flutter {
 
 SamplingProfiler::SamplingProfiler(
@@ -12,11 +14,17 @@ SamplingProfiler::SamplingProfiler(
     Sampler sampler,
     int num_samples_per_sec)
     : thread_label_(thread_label),
-      profiler_task_runner_(profiler_task_runner),
+      profiler_task_runner_(std::move(profiler_task_runner)),
       sampler_(std::move(sampler)),
       num_samples_per_sec_(num_samples_per_sec) {}
 
-void SamplingProfiler::Start() const {
+SamplingProfiler::~SamplingProfiler() {
+  if (is_running_) {
+    Stop();
+  }
+}
+
+void SamplingProfiler::Start() {
   if (!profiler_task_runner_) {
     return;
   }
@@ -25,13 +33,24 @@ void SamplingProfiler::Start() const {
       << num_samples_per_sec_;
   double delay_between_samples = 1.0 / num_samples_per_sec_;
   auto task_delay = fml::TimeDelta::FromSecondsF(delay_between_samples);
-  UpdateObservatoryThreadName();
+  UpdateDartVMServiceThreadName();
+  is_running_ = true;
   SampleRepeatedly(task_delay);
+}
+
+void SamplingProfiler::Stop() {
+  FML_DCHECK(is_running_);
+  auto latch = std::make_unique<fml::AutoResetWaitableEvent>();
+  shutdown_latch_.store(latch.get());
+  latch->Wait();
+  shutdown_latch_.store(nullptr);
+  is_running_ = false;
 }
 
 void SamplingProfiler::SampleRepeatedly(fml::TimeDelta task_delay) const {
   profiler_task_runner_->PostDelayedTask(
-      [profiler = this, task_delay = task_delay, sampler = sampler_]() {
+      [profiler = this, task_delay = task_delay, sampler = sampler_,
+       &shutdown_latch = shutdown_latch_]() {
         // TODO(kaushikiska): consider buffering these every n seconds to
         // avoid spamming the trace buffer.
         const ProfileSample usage = sampler();
@@ -60,12 +79,16 @@ void SamplingProfiler::SampleRepeatedly(fml::TimeDelta task_delay) const {
           TRACE_EVENT_INSTANT1("flutter::profiling", "GpuUsage", "gpu_usage",
                                gpu_usage.c_str());
         }
-        profiler->SampleRepeatedly(task_delay);
+        if (shutdown_latch.load()) {
+          shutdown_latch.load()->Signal();
+        } else {
+          profiler->SampleRepeatedly(task_delay);
+        }
       },
       task_delay);
 }
 
-void SamplingProfiler::UpdateObservatoryThreadName() const {
+void SamplingProfiler::UpdateDartVMServiceThreadName() const {
   FML_CHECK(profiler_task_runner_);
 
   profiler_task_runner_->PostTask(

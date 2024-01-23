@@ -4,6 +4,7 @@
 .*.sw?
 .DS_Store
 .ccls-cache
+.cache
 .classpath
 .clangd/
 .cproject
@@ -26,8 +27,6 @@ pubspec.lock
 .vscode/
 docs/doxygen/
 xcuserdata
-
-third_party/gn/
 
 # Miscellaneous
 *.class
@@ -64,7 +63,7 @@ third_party/gn/
 .packages
 .pub-cache/
 .pub/
-build/
+*/**/build/
 flutter_*.png
 linked_*.ds
 unlinked.ds
@@ -81,7 +80,7 @@ unlinked_spec.ds
 **/android/key.properties
 *.jks
 
-# iOS/XCode related
+# iOS/Xcode related
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
 **/ios/**/*.moved-aside
@@ -101,7 +100,6 @@ unlinked_spec.ds
 **/ios/Flutter/App.framework
 **/ios/Flutter/Flutter.framework
 **/ios/Flutter/Flutter.xcframework
-**/ios/Flutter/Flutter.podspec
 **/ios/Flutter/Generated.xcconfig
 **/ios/Flutter/app.flx
 **/ios/Flutter/app.zip
@@ -129,3 +127,12 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# Prebuilt binaries.
+/prebuilts/
+
+# GN build support for protobufs vended by Fuchsia.
+/build/secondary/third_party/protobuf
+
+# RBE support configurations and scripts vended from CIPD
+/build/rbe

@@ -51,8 +51,7 @@ Mapping::Mapping() = default;
 Mapping::~Mapping() = default;
 
 FileMapping::FileMapping(const fml::UniqueFD& handle,
-                         std::initializer_list<Protection> protection)
-    : size_(0), mapping_(nullptr) {
+                         std::initializer_list<Protection> protection) {
   if (!handle.is_valid()) {
     return;
   }
@@ -98,6 +97,10 @@ size_t FileMapping::GetSize() const {
 
 const uint8_t* FileMapping::GetMapping() const {
   return mapping_;
+}
+
+bool FileMapping::IsDontNeedSafe() const {
+  return mutable_mapping_ == nullptr;
 }
 
 bool FileMapping::IsValid() const {

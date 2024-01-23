@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
-
 /// A monotonically increasing frame number being rendered.
 ///
 /// Used for debugging only.
-int _debugFrameNumber = 1;
+int debugFrameNumber = 1;
 
-List<FrameReference<dynamic>> _frameReferences = <FrameReference<dynamic>>[];
+List<FrameReference<dynamic>> frameReferences = <FrameReference<dynamic>>[];
 
 /// A temporary reference to a value of type [V].
 ///
@@ -22,7 +19,7 @@ List<FrameReference<dynamic>> _frameReferences = <FrameReference<dynamic>>[];
 class FrameReference<V> {
   /// Creates a frame reference to a value.
   FrameReference([this.value]) {
-    _frameReferences.add(this);
+    frameReferences.add(this);
   }
 
   /// The current value of this reference.
@@ -49,8 +46,8 @@ class CrossFrameCache<T> {
   void commitFrame() {
     // Evict unused items from prior frame.
     if (_reusablePool != null) {
-      for (List<_CrossFrameCacheItem<T>> items in _reusablePool!.values) {
-        for (_CrossFrameCacheItem<T> item in items) {
+      for (final List<_CrossFrameCacheItem<T>> items in _reusablePool!.values) {
+        for (final _CrossFrameCacheItem<T> item in items) {
           item.evict();
         }
       }
@@ -69,8 +66,8 @@ class CrossFrameCache<T> {
   }
 
   void _addToCache(String key, _CrossFrameCacheItem<T> item) {
-    _cache ??= {};
-    (_cache![key] ??= [])..add(item);
+    _cache ??= <String, List<_CrossFrameCacheItem<T>>>{};
+    (_cache![key] ??= <_CrossFrameCacheItem<T>>[]).add(item);
   }
 
   /// Given a key, consumes an item that has been cached in a prior frame.
@@ -78,20 +75,20 @@ class CrossFrameCache<T> {
     if (_reusablePool == null) {
       return null;
     }
-    List<_CrossFrameCacheItem<T>>? items = _reusablePool![key];
+    final List<_CrossFrameCacheItem<T>>? items = _reusablePool![key];
     if (items == null || items.isEmpty) {
       return null;
     }
-    _CrossFrameCacheItem<T> item = items.removeAt(0);
+    final _CrossFrameCacheItem<T> item = items.removeAt(0);
     _addToCache(key, item);
     return item.value;
   }
 }
 
 class _CrossFrameCacheItem<T> {
+  _CrossFrameCacheItem(this.value, this.evictCallback);
   final T value;
   final CrossFrameCacheEvictCallback<T>? evictCallback;
-  _CrossFrameCacheItem(this.value, this.evictCallback);
   void evict() {
     if (evictCallback != null) {
       evictCallback!(value);

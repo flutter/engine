@@ -2,84 +2,103 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'dart:async';
+import 'dart:typed_data';
 
-/// Singleton for accessing accessibility announcements from the platform.
-final AccessibilityAnnouncements accessibilityAnnouncements =
-    AccessibilityAnnouncements.instance;
+import '../dom.dart';
+import '../services.dart';
+import '../util.dart';
 
-/// Attaches accessibility announcements coming from the 'flutter/accessibility'
-/// channel as temporary elements to the DOM.
+/// Determines the assertiveness level of the accessibility announcement.
+///
+/// It is used to set the priority with which assistive technology should treat announcements.
+///
+/// The order of this enum must match the order of the values in semantics_event.dart in framework.
+enum Assertiveness {
+  polite,
+  assertive,
+}
+
+/// Duration for which a live message will be present in the DOM for the screen
+/// reader to announce it.
+///
+/// This was determined by trial and error with some extra buffer added.
+Duration liveMessageDuration = const Duration(milliseconds: 300);
+
+/// Sets [liveMessageDuration] to reduce the delay in tests.
+void setLiveMessageDurationForTest(Duration duration) {
+  liveMessageDuration = duration;
+}
+
+/// Makes accessibility announcements using `aria-live` DOM elements.
 class AccessibilityAnnouncements {
-  /// Initializes the [AccessibilityAnnouncements] singleton if it is not
-  /// already initialized.
-  static AccessibilityAnnouncements get instance {
-    return _instance ??= AccessibilityAnnouncements._();
+  /// Creates a new instance with its own DOM elements used for announcements.
+  factory AccessibilityAnnouncements({required DomElement hostElement}) {
+    final DomHTMLElement politeElement = _createElement(Assertiveness.polite);
+    final DomHTMLElement assertiveElement = _createElement(Assertiveness.assertive);
+    hostElement.append(politeElement);
+    hostElement.append(assertiveElement);
+    return AccessibilityAnnouncements._(politeElement, assertiveElement);
   }
 
-  static AccessibilityAnnouncements? _instance;
+  AccessibilityAnnouncements._(this._politeElement, this._assertiveElement);
 
-  AccessibilityAnnouncements._() {
-    registerHotRestartListener(() {
-      _removeElementTimer?.cancel();
-    });
-  }
+  /// A live region element with `aria-live` set to "polite", used to announce
+  /// accouncements politely.
+  final DomHTMLElement _politeElement;
 
-  /// Timer that times when the accessibility element should be removed from the
-  /// DOM.
-  ///
-  /// The element is added to the DOM temporarily for announcing the
-  /// message to the assistive technology.
-  Timer? _removeElementTimer;
+  /// A live region element with `aria-live` set to "assertive", used to announce
+  /// accouncements assertively.
+  final DomHTMLElement _assertiveElement;
 
-  /// The duration the accessibility announcements stay on the DOM.
-  ///
-  /// It is removed after this time expired.
-  Duration durationA11yMessageIsOnDom = const Duration(seconds: 5);
-
-  /// Element which is used to communicate the message from the
-  /// 'flutter/accessibility' to the assistive technologies.
-  ///
-  /// This element gets attached to the DOM temporarily. It gets removed
-  /// after a duration. See [durationA11yMessageIsOnDom].
-  ///
-  /// This element has aria-live attribute.
-  ///
-  /// It also has id 'accessibility-element' for testing purposes.
-  html.HtmlElement? _element;
-
-  html.HtmlElement get _domElement => _element ??= _createElement();
-
-  /// Decodes the message coming from the 'flutter/accessibility' channel.
-  void handleMessage(StandardMessageCodec codec, ByteData? data) {
-    final Map<dynamic, dynamic> inputMap =
-        codec.decodeMessage(data);
-    final Map<dynamic, dynamic> dataMap = inputMap['data'];
-    final String? message = dataMap['message'];
-    if (message != null && message.isNotEmpty) {
-      _initLiveRegion(message);
-      _removeElementTimer = Timer(durationA11yMessageIsOnDom, () {
-        _element!.remove();
-      });
+  /// Looks up the element used to announce messages of the given [assertiveness].
+  DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
+    switch (assertiveness) {
+      case Assertiveness.polite: return _politeElement;
+      case Assertiveness.assertive: return _assertiveElement;
     }
   }
 
-  void _initLiveRegion(String message) {
-    _domElement.setAttribute('aria-live', 'polite');
-    _domElement.text = message;
-    html.document.body!.append(_domElement);
+  /// Makes an accessibity announcement from a message sent by the framework
+  /// over the 'flutter/accessibility' channel.
+  ///
+  /// The encoded message is passed as [data], and will be decoded using [codec].
+  void handleMessage(StandardMessageCodec codec, ByteData? data) {
+    final Map<dynamic, dynamic> inputMap = codec.decodeMessage(data) as Map<dynamic, dynamic>;
+    final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
+    final String? message = dataMap.tryString('message');
+    if (message != null && message.isNotEmpty) {
+      /// The default value for assertiveness is `polite`.
+      final int assertivenessIndex = dataMap.tryInt('assertiveness') ?? 0;
+      final Assertiveness assertiveness = Assertiveness.values[assertivenessIndex];
+      announce(message, assertiveness);
+    }
   }
 
-  html.LabelElement _createElement() {
-    final html.LabelElement liveRegion = html.LabelElement();
-    liveRegion.setAttribute('id', 'accessibility-element');
+  /// Makes an accessibility announcement using an `aria-live` element.
+  ///
+  /// [message] is the text of the announcement.
+  ///
+  /// [assertiveness] controls how interruptive the announcement is.
+  void announce(String message, Assertiveness assertiveness) {
+    final DomHTMLElement ariaLiveElement = ariaLiveElementFor(assertiveness);
+
+    final DomHTMLDivElement messageElement = createDomHTMLDivElement();
+    messageElement.text = message;
+    ariaLiveElement.append(messageElement);
+    Timer(liveMessageDuration, () => messageElement.remove());
+  }
+
+  static DomHTMLElement _createElement(Assertiveness assertiveness) {
+    final String ariaLiveValue = (assertiveness == Assertiveness.assertive) ? 'assertive' : 'polite';
+    final DomHTMLElement liveRegion = createDomElement('flt-announcement-$ariaLiveValue') as DomHTMLElement;
     liveRegion.style
       ..position = 'fixed'
       ..overflow = 'hidden'
       ..transform = 'translate(-99999px, -99999px)'
       ..width = '1px'
       ..height = '1px';
+    liveRegion.setAttribute('aria-live', ariaLiveValue);
     return liveRegion;
   }
 }

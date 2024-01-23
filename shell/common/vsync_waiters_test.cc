@@ -60,8 +60,19 @@ void ConstantFiringVsyncWaiter::AwaitVSync() {
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
   auto async_wait = std::async([this]() {
     task_runners_.GetPlatformTaskRunner()->PostTask(
-        [this]() { FireCallback(frame_begin_time, frame_target_time); });
+        [this]() { FireCallback(kFrameBeginTime, kFrameTargetTime); });
   });
+}
+
+TestRefreshRateReporter::TestRefreshRateReporter(double refresh_rate)
+    : refresh_rate_(refresh_rate) {}
+
+void TestRefreshRateReporter::UpdateRefreshRate(double refresh_rate) {
+  refresh_rate_ = refresh_rate;
+}
+
+double TestRefreshRateReporter::GetRefreshRate() const {
+  return refresh_rate_;
 }
 
 }  // namespace testing

@@ -8,6 +8,8 @@
 #include <cstdint>
 
 #include "flutter/fml/macros.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -15,7 +17,7 @@ namespace testing {
 
 class TestGLSurface {
  public:
-  TestGLSurface(SkISize surface_size);
+  explicit TestGLSurface(SkISize surface_size);
 
   ~TestGLSurface();
 

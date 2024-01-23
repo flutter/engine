@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:const_finder/const_finder.dart';
+import 'package:kernel/const_finder.dart';
 
 void main(List<String> args) {
   final ArgParser parser = ArgParser();
@@ -42,25 +42,46 @@ void main(List<String> args) {
     ..addOption('kernel-file',
         valueHelp: 'path/to/main.dill',
         help: 'The path to a kernel file to parse, which was created from the '
-            'main-package-uri library.')
+            'main-package-uri library.',
+        mandatory: true)
     ..addOption('class-library-uri',
+        mandatory: true,
         help: 'The package: URI of the class to find.',
         valueHelp: 'package:flutter/src/widgets/icon_data.dart')
     ..addOption('class-name',
-        help: 'The class name for the class to find.', valueHelp: 'IconData')
+        help: 'The class name for the class to find.',
+        valueHelp: 'IconData',
+        mandatory: true)
     ..addSeparator('Optional arguments:')
     ..addFlag('pretty',
-        defaultsTo: false,
         negatable: false,
         help: 'Pretty print JSON output (defaults to false).')
     ..addFlag('help',
         abbr: 'h',
-        defaultsTo: false,
         negatable: false,
-        help: 'Print usage and exit');
+        help: 'Print usage and exit')
+    ..addOption('annotation-class-name',
+        help: 'The class name of the annotation for classes that should be '
+              'ignored.',
+        valueHelp: 'StaticIconProvider')
+    ..addOption('annotation-class-library-uri',
+        help: 'The package: URI of the class of the annotation for classes '
+              'that should be ignored.',
+        valueHelp: 'package:flutter/src/material/icons.dart');
 
   final ArgResults argResults = parser.parse(args);
   T getArg<T>(String name) => argResults[name] as T;
+
+  final String? annotationClassName = getArg<String?>('annotation-class-name');
+  final String? annotationClassLibraryUri = getArg<String?>('annotation-class-library-uri');
+
+  final bool annotationClassNameProvided = annotationClassName != null;
+  final bool annotationClassLibraryUriProvided = annotationClassLibraryUri != null;
+  if (annotationClassNameProvided != annotationClassLibraryUriProvided) {
+    throw StateError(
+      'If either "--annotation-class-name" or "--annotation-class-library-uri" are provided they both must be',
+    );
+  }
 
   if (getArg<bool>('help')) {
     stdout.writeln(parser.usage);
@@ -71,6 +92,8 @@ void main(List<String> args) {
     kernelFilePath: getArg<String>('kernel-file'),
     classLibraryUri: getArg<String>('class-library-uri'),
     className: getArg<String>('class-name'),
+    annotationClassName: annotationClassName,
+    annotationClassLibraryUri: annotationClassLibraryUri,
   );
 
   final JsonEncoder encoder = getArg<bool>('pretty')

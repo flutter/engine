@@ -2,13 +2,14 @@ package io.flutter.embedding.android;
 
 import android.util.LongSparseArray;
 import android.view.MotionEvent;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.PriorityQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 /** Tracks the motion events received by the FlutterView. */
 public final class MotionEventTracker {
-
+  private static final String TAG = "MotionEventTracker";
   /** Represents a unique identifier corresponding to a motion event. */
   public static class MotionEventId {
     private static final AtomicLong ID_COUNTER = new AtomicLong(0);
@@ -18,10 +19,12 @@ public final class MotionEventTracker {
       this.id = id;
     }
 
+    @NonNull
     public static MotionEventId from(long id) {
       return new MotionEventId(id);
     }
 
+    @NonNull
     public static MotionEventId createUnique() {
       return MotionEventId.from(ID_COUNTER.incrementAndGet());
     }
@@ -35,6 +38,7 @@ public final class MotionEventTracker {
   private final PriorityQueue<Long> unusedEvents;
   private static MotionEventTracker INSTANCE;
 
+  @NonNull
   public static MotionEventTracker getInstance() {
     if (INSTANCE == null) {
       INSTANCE = new MotionEventTracker();
@@ -48,20 +52,28 @@ public final class MotionEventTracker {
   }
 
   /** Tracks the event and returns a unique MotionEventId identifying the event. */
-  public MotionEventId track(MotionEvent event) {
+  @NonNull
+  public MotionEventId track(@NonNull MotionEvent event) {
     MotionEventId eventId = MotionEventId.createUnique();
-    eventById.put(eventId.id, MotionEvent.obtain(event));
+    // We copy event here because the original MotionEvent delivered to us
+    // will be automatically recycled (`MotionEvent.recycle`) by the RootView and we need
+    // access to it after the RootView code runs.
+    // The return value of `MotionEvent.obtain(event)` is still verifiable if the input
+    // event was verifiable. Other overloads of `MotionEvent.obtain` do not have this
+    // guarantee and should be avoided when possible.
+    MotionEvent eventCopy = MotionEvent.obtain(event);
+    eventById.put(eventId.id, eventCopy);
     unusedEvents.add(eventId.id);
     return eventId;
   }
 
   /**
    * Returns the MotionEvent corresponding to the eventId while discarding all the motion events
-   * that occured prior to the event represented by the eventId. Returns null if this event was
+   * that occurred prior to the event represented by the eventId. Returns null if this event was
    * popped or discarded.
    */
   @Nullable
-  public MotionEvent pop(MotionEventId eventId) {
+  public MotionEvent pop(@NonNull MotionEventId eventId) {
     // remove all the older events.
     while (!unusedEvents.isEmpty() && unusedEvents.peek() < eventId.id) {
       eventById.remove(unusedEvents.poll());

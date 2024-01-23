@@ -25,7 +25,7 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
 
   ~AssetManagerFontStyleSet() override;
 
-  void registerAsset(std::string asset);
+  void registerAsset(const std::string& asset);
 
   // |SkFontStyleSet|
   int count() override;
@@ -34,17 +34,21 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
   void getStyle(int index, SkFontStyle*, SkString* style) override;
 
   // |SkFontStyleSet|
-  SkTypeface* createTypeface(int index) override;
+  using CreateTypefaceRet =
+      decltype(std::declval<SkFontStyleSet>().createTypeface(0));
+  CreateTypefaceRet createTypeface(int index) override;
 
   // |SkFontStyleSet|
-  SkTypeface* matchStyle(const SkFontStyle& pattern) override;
+  using MatchStyleRet = decltype(std::declval<SkFontStyleSet>().matchStyle(
+      std::declval<SkFontStyle>()));
+  MatchStyleRet matchStyle(const SkFontStyle& pattern) override;
 
  private:
   std::shared_ptr<AssetManager> asset_manager_;
   std::string family_name_;
 
   struct TypefaceAsset {
-    TypefaceAsset(std::string a);
+    explicit TypefaceAsset(std::string a);
 
     TypefaceAsset(const TypefaceAsset& other);
 
@@ -60,11 +64,12 @@ class AssetManagerFontStyleSet : public SkFontStyleSet {
 
 class AssetManagerFontProvider : public txt::FontAssetProvider {
  public:
-  AssetManagerFontProvider(std::shared_ptr<AssetManager> asset_manager);
+  explicit AssetManagerFontProvider(
+      std::shared_ptr<AssetManager> asset_manager);
 
   ~AssetManagerFontProvider() override;
 
-  void RegisterAsset(std::string family_name, std::string asset);
+  void RegisterAsset(const std::string& family_name, const std::string& asset);
 
   // |FontAssetProvider|
   size_t GetFamilyCount() const override;
@@ -73,7 +78,7 @@ class AssetManagerFontProvider : public txt::FontAssetProvider {
   std::string GetFamilyName(int index) const override;
 
   // |FontAssetProvider|
-  SkFontStyleSet* MatchFamily(const std::string& family_name) override;
+  sk_sp<SkFontStyleSet> MatchFamily(const std::string& family_name) override;
 
  private:
   std::shared_ptr<AssetManager> asset_manager_;

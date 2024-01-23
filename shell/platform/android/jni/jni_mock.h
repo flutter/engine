@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
-#define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_JNI_MOCK_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_JNI_MOCK_H_
 
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "gmock/gmock.h"
@@ -18,7 +18,8 @@ class JNIMock final : public PlatformViewAndroidJNI {
  public:
   MOCK_METHOD(void,
               FlutterViewHandlePlatformMessage,
-              (fml::RefPtr<flutter::PlatformMessage> message, int responseId),
+              (std::unique_ptr<flutter::PlatformMessage> message,
+               int responseId),
               (override));
 
   MOCK_METHOD(void,
@@ -28,7 +29,9 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               FlutterViewUpdateSemantics,
-              (std::vector<uint8_t> buffer, std::vector<std::string> strings),
+              (std::vector<uint8_t> buffer,
+               std::vector<std::string> strings,
+               std::vector<std::vector<uint8_t>> string_attribute_args),
               (override));
 
   MOCK_METHOD(void,
@@ -43,22 +46,39 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               SurfaceTextureAttachToGLContext,
-              (JavaWeakGlobalRef surface_texture, int textureId),
+              (JavaLocalRef surface_texture, int textureId),
               (override));
 
   MOCK_METHOD(void,
               SurfaceTextureUpdateTexImage,
-              (JavaWeakGlobalRef surface_texture),
+              (JavaLocalRef surface_texture),
               (override));
 
   MOCK_METHOD(void,
               SurfaceTextureGetTransformMatrix,
-              (JavaWeakGlobalRef surface_texture, SkMatrix& transform),
+              (JavaLocalRef surface_texture, SkMatrix& transform),
+              (override));
+
+  MOCK_METHOD(JavaLocalRef,
+              ImageProducerTextureEntryAcquireLatestImage,
+              (JavaLocalRef image_texture_entry),
+              (override));
+
+  MOCK_METHOD(JavaLocalRef,
+              ImageGetHardwareBuffer,
+              (JavaLocalRef image),
+              (override));
+
+  MOCK_METHOD(void, ImageClose, (JavaLocalRef image), (override));
+
+  MOCK_METHOD(void,
+              HardwareBufferClose,
+              (JavaLocalRef hardware_buffer),
               (override));
 
   MOCK_METHOD(void,
               SurfaceTextureDetachFromGLContext,
-              (JavaWeakGlobalRef surface_texture),
+              (JavaLocalRef surface_texture),
               (override));
 
   MOCK_METHOD(void,
@@ -95,13 +115,21 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (override));
 
   MOCK_METHOD(double, GetDisplayRefreshRate, (), (override));
+  MOCK_METHOD(double, GetDisplayWidth, (), (override));
+  MOCK_METHOD(double, GetDisplayHeight, (), (override));
+  MOCK_METHOD(double, GetDisplayDensity, (), (override));
 
   MOCK_METHOD(bool,
               RequestDartDeferredLibrary,
               (int loading_unit_id),
               (override));
+
+  MOCK_METHOD(double,
+              FlutterViewGetScaledFontSize,
+              (double font_size, int configuration_id),
+              (const, override));
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_JNI_JNI_MOCK_H_

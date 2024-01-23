@@ -2,40 +2,62 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.6
 import 'dart:async';
-import 'dart:html' as html;
-
-import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
+import 'package:ui/src/engine.dart';
+import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../../matchers.dart';
+import '../../common/matchers.dart';
+import '../../common/test_initialization.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineSingletonFlutterWindow window = EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
-  PersistedPlatformView view;
+Future<void> testMain() async {
+  await bootstrapAndRunApp(withImplicitView: true);
+
+  late PersistedPlatformView view;
+
+  test('importing platformViewRegistry from dart:ui is deprecated', () {
+    final void Function(String) oldPrintWarning = printWarning;
+
+    final List<String> warnings = <String>[];
+    printWarning = (String message) {
+      warnings.add(message);
+    };
+
+    // ignore: unnecessary_statements
+    ui_web.platformViewRegistry;
+    expect(warnings, isEmpty);
+
+    // ignore: unnecessary_statements
+    ui.platformViewRegistry;
+    expect(warnings, hasLength(1));
+    expect(warnings.single, contains('platformViewRegistry'));
+    expect(warnings.single, contains('deprecated'));
+    expect(warnings.single, contains('dart:ui_web'));
+
+    printWarning = oldPrintWarning;
+  });
 
   group('PersistedPlatformView', () {
     setUp(() async {
-      platformViewRegistry.registerViewFactory(
+      ui_web.platformViewRegistry.registerViewFactory(
         'test-0',
-        (viewId) => html.DivElement(),
+        (int viewId) => createDomHTMLDivElement(),
       );
-      platformViewRegistry.registerViewFactory(
+      ui_web.platformViewRegistry.registerViewFactory(
         'test-1',
-        (viewId) => html.DivElement(),
+        (int viewId) => createDomHTMLDivElement(),
       );
       // Ensure the views are created...
-      await Future.wait([
+      await Future.wait(<Future<void>>[
         _createPlatformView(0, 'test-0'),
         _createPlatformView(1, 'test-1'),
       ]);
@@ -44,7 +66,7 @@ void testMain() {
 
     group('update', () {
       test('throws assertion error if called with different viewIds', () {
-        final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(() {
           view.update(differentView);
         }, throwsAssertionError);
@@ -53,18 +75,27 @@ void testMain() {
 
     group('canUpdateAsMatch', () {
       test('returns true when viewId is the same', () {
-        final sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
+        final PersistedPlatformView sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(sameView), isTrue);
       });
 
       test('returns false when viewId is different', () {
-        final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(differentView), isFalse);
       });
 
       test('returns false when other view is not a PlatformView', () {
-        final anyView = PersistedOpacity(null, 1, Offset(0, 0))..build();
+        final PersistedOpacity anyView = PersistedOpacity(null, 1, ui.Offset.zero)..build();
         expect(view.canUpdateAsMatch(anyView), isFalse);
+      });
+    });
+
+    group('createElement', () {
+      test('creates slot element that can receive pointer events', () {
+        final DomElement element = view.createElement();
+
+        expect(element.tagName, equalsIgnoringCase('flt-platform-view-slot'));
+        expect(element.style.pointerEvents, 'auto');
       });
     });
   });
@@ -72,8 +103,8 @@ void testMain() {
 
 // Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> _createPlatformView(int id, String viewType) {
-  final completer = Completer<void>();
-  window.sendPlatformMessage(
+  final Completer<void> completer = Completer<void>();
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
       'create',

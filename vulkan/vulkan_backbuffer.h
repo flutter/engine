@@ -9,10 +9,10 @@
 
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/macros.h"
+#include "flutter/vulkan/procs/vulkan_handle.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "vulkan_command_buffer.h"
-#include "vulkan_handle.h"
 
 namespace vulkan {
 
@@ -43,7 +43,7 @@ class VulkanBackbuffer {
   VulkanCommandBuffer& GetRenderCommandBuffer();
 
  private:
-  const VulkanProcTable& vk;
+  const VulkanProcTable& vk_;
   const VulkanHandle<VkDevice>& device_;
   std::array<VulkanHandle<VkSemaphore>, 2> semaphores_;
   std::array<VulkanHandle<VkFence>, 2> use_fences_;

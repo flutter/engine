@@ -41,11 +41,17 @@ class FlutterProjectBundle {
   // Returns any switches that should be passed to the engine.
   const std::vector<std::string> GetSwitches();
 
+  // Sets engine switches.
+  void SetSwitches(const std::vector<std::string>& switches);
+
   // Attempts to load AOT data for this bundle. The returned data must be
   // retained until any engine instance it is passed to has been shut down.
   //
   // Logs and returns nullptr on failure.
   UniqueAotDataPtr LoadAotData(const FlutterEngineProcTable& engine_procs);
+
+  // Returns the Dart entrypoint.
+  const std::string& dart_entrypoint() const { return dart_entrypoint_; }
 
   // Returns the command line arguments to be passed through to the Dart
   // entrypoint.
@@ -60,8 +66,14 @@ class FlutterProjectBundle {
   // Path to the AOT library file, if any.
   std::filesystem::path aot_library_path_;
 
+  // The Dart entrypoint to launch.
+  std::string dart_entrypoint_;
+
   // Dart entrypoint arguments.
   std::vector<std::string> dart_entrypoint_arguments_;
+
+  // Engine switches.
+  std::vector<std::string> engine_switches_;
 };
 
 }  // namespace flutter

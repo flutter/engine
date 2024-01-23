@@ -4,10 +4,9 @@
 
 package io.flutter.plugin.common;
 
+import androidx.annotation.NonNull;
+import io.flutter.Log;
 import io.flutter.plugin.common.StandardMessageCodec.ExposedByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -15,7 +14,7 @@ import java.nio.ByteOrder;
  * A {@link MethodCodec} using the Flutter standard binary encoding.
  *
  * <p>This codec is guaranteed to be compatible with the corresponding <a
- * href="https://docs.flutter.io/flutter/services/StandardMethodCodec-class.html">StandardMethodCodec</a>
+ * href="https://api.flutter.dev/flutter/services/StandardMethodCodec-class.html">StandardMethodCodec</a>
  * on the Dart side. These parts of the Flutter SDK are evolved synchronously.
  *
  * <p>Values supported as method arguments and result payloads are those supported by {@link
@@ -27,12 +26,13 @@ public final class StandardMethodCodec implements MethodCodec {
   private final StandardMessageCodec messageCodec;
 
   /** Creates a new method codec based on the specified message codec. */
-  public StandardMethodCodec(StandardMessageCodec messageCodec) {
+  public StandardMethodCodec(@NonNull StandardMessageCodec messageCodec) {
     this.messageCodec = messageCodec;
   }
 
   @Override
-  public ByteBuffer encodeMethodCall(MethodCall methodCall) {
+  @NonNull
+  public ByteBuffer encodeMethodCall(@NonNull MethodCall methodCall) {
     final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
     messageCodec.writeValue(stream, methodCall.method);
     messageCodec.writeValue(stream, methodCall.arguments);
@@ -42,7 +42,8 @@ public final class StandardMethodCodec implements MethodCodec {
   }
 
   @Override
-  public MethodCall decodeMethodCall(ByteBuffer methodCall) {
+  @NonNull
+  public MethodCall decodeMethodCall(@NonNull ByteBuffer methodCall) {
     methodCall.order(ByteOrder.nativeOrder());
     final Object method = messageCodec.readValue(methodCall);
     final Object arguments = messageCodec.readValue(methodCall);
@@ -53,7 +54,8 @@ public final class StandardMethodCodec implements MethodCodec {
   }
 
   @Override
-  public ByteBuffer encodeSuccessEnvelope(Object result) {
+  @NonNull
+  public ByteBuffer encodeSuccessEnvelope(@NonNull Object result) {
     final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
     stream.write(0);
     messageCodec.writeValue(stream, result);
@@ -63,14 +65,15 @@ public final class StandardMethodCodec implements MethodCodec {
   }
 
   @Override
+  @NonNull
   public ByteBuffer encodeErrorEnvelope(
-      String errorCode, String errorMessage, Object errorDetails) {
+      @NonNull String errorCode, @NonNull String errorMessage, @NonNull Object errorDetails) {
     final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
     stream.write(1);
     messageCodec.writeValue(stream, errorCode);
     messageCodec.writeValue(stream, errorMessage);
     if (errorDetails instanceof Throwable) {
-      messageCodec.writeValue(stream, getStackTrace((Throwable) errorDetails));
+      messageCodec.writeValue(stream, Log.getStackTraceString((Throwable) errorDetails));
     } else {
       messageCodec.writeValue(stream, errorDetails);
     }
@@ -80,14 +83,18 @@ public final class StandardMethodCodec implements MethodCodec {
   }
 
   @Override
+  @NonNull
   public ByteBuffer encodeErrorEnvelopeWithStacktrace(
-      String errorCode, String errorMessage, Object errorDetails, String errorStacktrace) {
+      @NonNull String errorCode,
+      @NonNull String errorMessage,
+      @NonNull Object errorDetails,
+      @NonNull String errorStacktrace) {
     final ExposedByteArrayOutputStream stream = new ExposedByteArrayOutputStream();
     stream.write(1);
     messageCodec.writeValue(stream, errorCode);
     messageCodec.writeValue(stream, errorMessage);
     if (errorDetails instanceof Throwable) {
-      messageCodec.writeValue(stream, getStackTrace((Throwable) errorDetails));
+      messageCodec.writeValue(stream, Log.getStackTraceString((Throwable) errorDetails));
     } else {
       messageCodec.writeValue(stream, errorDetails);
     }
@@ -98,7 +105,8 @@ public final class StandardMethodCodec implements MethodCodec {
   }
 
   @Override
-  public Object decodeEnvelope(ByteBuffer envelope) {
+  @NonNull
+  public Object decodeEnvelope(@NonNull ByteBuffer envelope) {
     envelope.order(ByteOrder.nativeOrder());
     final byte flag = envelope.get();
     switch (flag) {
@@ -123,11 +131,5 @@ public final class StandardMethodCodec implements MethodCodec {
         }
     }
     throw new IllegalArgumentException("Envelope corrupted");
-  }
-
-  private static String getStackTrace(Throwable t) {
-    Writer result = new StringWriter();
-    t.printStackTrace(new PrintWriter(result));
-    return result.toString();
   }
 }

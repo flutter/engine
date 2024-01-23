@@ -2,41 +2,53 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-part of engine;
+import 'package:meta/meta.dart';
+
+import '../platform_dispatcher.dart';
+import 'accessibility.dart';
+import 'label_and_value.dart';
+import 'semantics.dart';
 
 /// Manages semantics configurations that represent live regions.
 ///
-/// "aria-live" attribute is added to communicate the live region to the
-/// assistive technology.
+/// Assistive technologies treat "aria-live" attribute differently. To keep
+/// the behavior consistent, [AccessibilityAnnouncements.announce] is used.
 ///
-/// The usage of "aria-live" is browser-dependent.
-///
-/// VoiceOver only supports "aria-live" with "polite" politeness setting. When
-/// the inner html content is changed. It doesn't read the "aria-label".
-///
-/// When there is an aria-live attribute added, assistive technologies read the
+/// When there is an update to [LiveRegion], assistive technologies read the
 /// label of the element. See [LabelAndValue]. If there is no label provided
-/// no content will be read, therefore DOM is cleaned.
+/// no content will be read.
 class LiveRegion extends RoleManager {
-  LiveRegion(SemanticsObject semanticsObject)
-      : super(Role.labelAndValue, semanticsObject);
+  LiveRegion(SemanticsObject semanticsObject, PrimaryRoleManager owner)
+      : super(Role.liveRegion, semanticsObject, owner);
+
+  String? _lastAnnouncement;
+
+  static AccessibilityAnnouncements? _accessibilityAnnouncementsOverride;
+
+  @visibleForTesting
+  static void debugOverrideAccessibilityAnnouncements(AccessibilityAnnouncements? value) {
+    _accessibilityAnnouncementsOverride = value;
+  }
+
+  AccessibilityAnnouncements get _accessibilityAnnouncements =>
+      _accessibilityAnnouncementsOverride ??
+      EnginePlatformDispatcher.instance.implicitView!.accessibilityAnnouncements;
 
   @override
   void update() {
-    if (semanticsObject.hasLabel) {
-      semanticsObject.element.setAttribute('aria-live', 'polite');
-    } else {
-      _cleanupDom();
+    if (!semanticsObject.isLiveRegion) {
+      return;
     }
-  }
 
-  void _cleanupDom() {
-    semanticsObject.element.attributes.remove('aria-live');
-  }
-
-  @override
-  void dispose() {
-    _cleanupDom();
+    // Avoid announcing the same message over and over.
+    if (_lastAnnouncement != semanticsObject.label) {
+      _lastAnnouncement = semanticsObject.label;
+      if (semanticsObject.hasLabel) {
+        _accessibilityAnnouncements.announce(
+          _lastAnnouncement!,
+          Assertiveness.polite,
+        );
+      }
+    }
   }
 }
