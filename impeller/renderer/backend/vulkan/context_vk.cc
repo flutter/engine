@@ -308,24 +308,19 @@ void ContextVK::Setup(Settings settings) {
   const auto queue_create_infos = GetQueueCreateInfos(
       {graphics_queue.value(), compute_queue.value(), transfer_queue.value()});
 
-  const auto enabled_features_x =
+  const auto enabled_features =
       caps->GetEnabledDeviceFeatures(device_holder->physical_device);
-  if (!enabled_features_x.has_value()) {
+  if (!enabled_features.has_value()) {
     // This shouldn't happen since the device can't be picked if this was not
     // true. But doesn't hurt to check.
     return;
   }
 
-  vk::PhysicalDeviceFeatures2 enabled_features = enabled_features_x.value();
-  vk::PhysicalDeviceSynchronization2Features physical_features;
-  physical_features.synchronization2 = true;
-  enabled_features.pNext = &physical_features;
-
   vk::DeviceCreateInfo device_info;
 
   device_info.setQueueCreateInfos(queue_create_infos);
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
-  device_info.setPNext(&enabled_features);
+  device_info.setPEnabledFeatures(&enabled_features.value());
   // Device layers are deprecated and ignored.
 
   {
