@@ -30,9 +30,6 @@ class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
   std::shared_ptr<SharedObjectVKT<vk::Sampler>> sampler_;
   bool is_valid_ = false;
 
-  // |Sampler|
-  bool IsValid() const override;
-
   SamplerVK(const SamplerVK&) = delete;
 
   SamplerVK& operator=(const SamplerVK&) = delete;

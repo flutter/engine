@@ -72,8 +72,8 @@ bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
                            const ShaderMetadata& metadata,
                            std::shared_ptr<const Texture> texture,
-                           const Sampler& sampler) {
-  if (!sampler.IsValid()) {
+                           const std::unique_ptr<const Sampler>& sampler) {
+  if (!sampler) {
     return false;
   }
   if (!texture || !texture->IsValid()) {

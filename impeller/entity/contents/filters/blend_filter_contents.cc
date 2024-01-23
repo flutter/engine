@@ -179,7 +179,7 @@ static std::optional<Entity> AdvancedBlend(
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    const Sampler& dst_sampler =
+    const std::unique_ptr<const Sampler>& dst_sampler =
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             dst_sampler_descriptor);
     FS::BindTextureSamplerDst(pass, dst_snapshot->texture, dst_sampler);
@@ -202,7 +202,7 @@ static std::optional<Entity> AdvancedBlend(
         src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
         src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
       }
-      const Sampler& src_sampler =
+      const std::unique_ptr<const Sampler>& src_sampler =
           renderer.GetContext()->GetSamplerLibrary()->GetSampler(
               src_sampler_descriptor);
       blend_info.color_factor = 0;
@@ -353,7 +353,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    const Sampler& dst_sampler =
+    const std::unique_ptr<const Sampler>& dst_sampler =
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             dst_sampler_descriptor);
     FS::BindTextureSamplerDst(pass, dst_snapshot->texture, dst_sampler);
@@ -476,7 +476,7 @@ std::optional<Entity> BlendFilterContents::CreateForegroundPorterDuffBlend(
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    const Sampler& dst_sampler =
+    const std::unique_ptr<const Sampler>& dst_sampler =
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             dst_sampler_descriptor);
     FS::BindTextureSamplerDst(pass, dst_snapshot->texture, dst_sampler);
@@ -574,7 +574,7 @@ static std::optional<Entity> PipelineBlend(
         return false;
       }
 
-      const Sampler& sampler =
+      const std::unique_ptr<const Sampler>& sampler =
           renderer.GetContext()->GetSamplerLibrary()->GetSampler(
               input->sampler_descriptor);
       FS::BindTextureSamplerSrc(pass, input->texture, sampler);

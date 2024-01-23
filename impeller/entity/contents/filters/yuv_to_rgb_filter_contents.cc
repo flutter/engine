@@ -111,7 +111,7 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
         break;
     }
 
-    const Sampler& sampler =
+    const std::unique_ptr<const Sampler>& sampler =
         renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindYTexture(pass, y_input_snapshot->texture, sampler);
     FS::BindUvTexture(pass, uv_input_snapshot->texture, sampler);

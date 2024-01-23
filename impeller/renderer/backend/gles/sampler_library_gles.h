@@ -21,12 +21,12 @@ class SamplerLibraryGLES final : public SamplerLibrary {
   friend class ContextGLES;
 
   SamplerMap samplers_;
-  InvalidSampler invalid_sampler_ = InvalidSampler({});
 
   SamplerLibraryGLES();
 
   // |SamplerLibrary|
-  const Sampler& GetSampler(SamplerDescriptor descriptor) override;
+  const std::unique_ptr<const Sampler>& GetSampler(
+      SamplerDescriptor descriptor) override;
 
   bool supports_decal_sampler_address_mode_ = false;
 

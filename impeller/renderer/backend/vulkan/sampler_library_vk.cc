@@ -16,27 +16,17 @@ SamplerLibraryVK::SamplerLibraryVK(
 
 SamplerLibraryVK::~SamplerLibraryVK() = default;
 
-static const std::unique_ptr<Sampler> kNullSampler = nullptr;
+static const std::unique_ptr<const Sampler> kNullSampler = nullptr;
 
-static const std::unique_ptr<Sampler>& find_thing(
-    const SamplerMap& map,
-    const SamplerDescriptor& desc) {
-  const auto& it = map.find(desc);
-  if (it == map.end()) {
-    return kNullSampler;
-  } else {
-    return it->second;
-  }
-}
-
-const Sampler& SamplerLibraryVK::GetSampler(SamplerDescriptor desc) {
+const std::unique_ptr<const Sampler>& SamplerLibraryVK::GetSampler(
+    SamplerDescriptor desc) {
   auto found = samplers_.find(desc);
   if (found != samplers_.end()) {
-    return *found->second.get();
+    return found->second;
   }
   auto device_holder = device_holder_.lock();
   if (!device_holder || !device_holder->GetDevice()) {
-    return invalid_sampler_;
+    return kNullSampler;
   }
 
   const auto mip_map = ToVKSamplerMipmapMode(desc.mip_filter);
@@ -62,21 +52,17 @@ const Sampler& SamplerLibraryVK::GetSampler(SamplerDescriptor desc) {
       device_holder->GetDevice().createSamplerUnique(sampler_create_info);
   if (res.result != vk::Result::eSuccess) {
     FML_LOG(ERROR) << "Failed to create sampler: " << vk::to_string(res.result);
-    return invalid_sampler_;
+    return kNullSampler;
   }
 
   auto sampler = std::make_unique<SamplerVK>(desc, std::move(res.value));
-
-  if (!sampler->IsValid()) {
-    return invalid_sampler_;
-  }
 
   if (!desc.label.empty()) {
     ContextVK::SetDebugName(device_holder->GetDevice(), sampler->GetSampler(),
                             desc.label.c_str());
   }
 
-  return *(samplers_[desc] = std::move(sampler)).get();
+  return (samplers_[desc] = std::move(sampler));
 }
 
 }  // namespace impeller
