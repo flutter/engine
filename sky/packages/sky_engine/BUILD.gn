@@ -110,6 +110,17 @@ copy("internal") {
       [ "$root_gen_dir/dart-pkg/sky_engine/lib/internal/{{source_file_part}}" ]
 }
 
+copy("vm_internal") {
+  lib_path = rebase_path("_internal/vm/lib/", "", dart_sdk_lib_path)
+  sources = exec_script("//build/ls.py",
+                        [
+                          "--target-directory",
+                          rebase_path(lib_path),
+                        ],
+                        "list lines")
+  outputs = [ "$root_gen_dir/dart-pkg/sky_engine/lib/_internal/vm/lib/{{source_file_part}}" ]
+}
+
 copy("io") {
   lib_path = rebase_path("io", "", dart_sdk_lib_path)
   sources = rebase_path(io_sdk_sources, "", lib_path)
@@ -219,6 +230,7 @@ group("copy_dart_sdk") {
     ":js_util",
     ":math",
     ":typed_data",
+    ":vm_internal",
   ]
 }
 
