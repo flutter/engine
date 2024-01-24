@@ -22,7 +22,7 @@ class SamplerLibrary {
   ///
   ///        The sampler library implementations must cache this sampler object
   ///        and guarantee that the reference will continue to be valid
-  ///        throughout the lifetime of the engine.
+  ///        throughout the lifetime of the Impeller context.
   virtual const std::unique_ptr<const Sampler>& GetSampler(
       SamplerDescriptor descriptor) = 0;
 
