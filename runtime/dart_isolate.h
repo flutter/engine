@@ -422,9 +422,6 @@ class DartIsolate : public UIDartState {
   const bool is_spawning_in_group_;
   std::string domain_network_policy_;
   uint32_t platform_isolate_pending_messages_ = 0;
-
-  // TODO: This is only needed for OnShutdownCallback. Find a way to access the
-  //     PlatformIsolateManager from there and remove this field.
   PlatformIsolateManager* platform_isolate_manager_ = nullptr;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(

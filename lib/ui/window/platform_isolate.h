@@ -16,8 +16,6 @@ class PlatformIsolateNativeApi {
                     Dart_Handle debug_name,
                     bool errors_are_fatal);
 
-  // Using this function to verify we're on the platform thread for prototyping.
-  // TODO: Need to figure out a better way of doing this.
   static bool IsRunningOnPlatformThread();
 };
 

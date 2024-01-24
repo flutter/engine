@@ -6,8 +6,7 @@ part of dart.ui;
 class PlatformIsolate {
   static Future<Isolate> spawn<T>(
       void entryPoint(T message), T message,
-      {//bool paused = false,  // TODO: Support this.
-      bool errorsAreFatal = true,
+      {bool errorsAreFatal = true,
       SendPort? onExit,
       SendPort? onError,
       String? debugName}) {
@@ -114,7 +113,8 @@ class PlatformIsolate {
       } else {
         result = potentiallyAsyncResult;
       }
-      // TODO: Use Isolate.exit. It's causing an error atm.
+      // TODO(flutter/flutter#136314): Use Isolate.exit. At the moment this
+      // works, but logs a spurious error. We need to silence that error.
       //Isolate.exit(resultPort, (result, null, null));
       resultPort.send((result, null, null));
     } catch (e, s) {
@@ -124,8 +124,6 @@ class PlatformIsolate {
     }
   }
 
-  // Using this function to verify we're on the platform thread for prototyping.
-  // TODO: Need to figure out a better way of doing this.
   @Native<Bool Function()>(symbol: 'PlatformIsolateNativeApi::IsRunningOnPlatformThread')
   external static bool isRunningOnPlatformThread();
 }

@@ -307,4 +307,51 @@ void main() {
           expect(() => PlatformIsolate.run(() => print('Unreachable')), throws);
         });
   });
+
+  // TODO(flutter/flutter#136314): At the moment this works, but logs a spurious
+  // error. We need to silence that error.
+  /*test('PlatformIsolate.spawn, onExit, self exit', () async {
+    final exitCompleter = Completer();
+    final onExitPort = RawReceivePort();
+    onExitPort.handler = (_) {
+      exitCompleter.complete(true);
+      onExitPort.close();
+    };
+    await PlatformIsolate.spawn((_) async {
+        Isolate.exit();
+      }, null, onExit: onExitPort.sendPort);
+    expect(await exitCompleter.future, true);
+  });*/
+
+  // TODO(flutter/flutter#136314): Support pausing/resuming PlatformIsolates.
+  /*test('PlatformIsolate.spawn, start paused', () async {
+    // Start 2 platform isolates, one paused and one not. The paused isolate
+    // sends a message to port1, which will throw when it gets any message. The
+    // second isolate sends a message to port2, which swaps out the handler of
+    // port1 so that it doesn't throw, then unpauses the first isolate. Since
+    // the first isolate is started paused, the message won't be sent to port1
+    // until the handler has been swapped out.
+    RawReceivePort port1 = RawReceivePort((_) => throw "NOT YET");
+
+    final isolate1 = await PlatformIsolate.spawn(
+        (port) => port.send("PlatIso1"), port1.sendPort, errorsAreFatal: true);
+
+    final completer = Completer();
+    final port2 = RawReceivePort();
+    port2.handler = (message) {
+      Expect.equals("PlatIso2", message);
+      port2.close();
+      port1.handler = (message) {
+        Expect.equals("PlatIso1", message);
+        port1.close();
+        completer.complete();
+      };
+      print("Resume isolate1");
+      isolate1.resume(isolate1.pauseCapability!);
+    };
+
+    await PlatformIsolate.spawn(
+        (port) => port.send("PlatIso2"), port2.sendPort, errorsAreFatal:false);
+    await completer.future;
+  });*/
 }
