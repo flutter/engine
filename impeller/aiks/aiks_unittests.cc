@@ -3869,6 +3869,28 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
 
 TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreScaledUp) {
   Canvas canvas;
+  // Create a subpass with no bounds hint and an entity coverage of (95, 95).
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+  });
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 10, 10), {.color = Color::Red()});
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 95, 95), {.color = Color::Blue()});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {100, 100});
+
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(100, 100));
+  }
+}
+
+TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreNotScaledUpPastBoundsHint) {
+  Canvas canvas;
   canvas.SaveLayer(
       {
           .color = Color::Black().WithAlpha(0.5),
@@ -3886,7 +3908,7 @@ TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreScaledUp) {
 
   for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
        ++it) {
-    EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(100, 100));
+    EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(95, 95));
   }
 }
 
