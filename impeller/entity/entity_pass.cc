@@ -622,7 +622,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // size, we may scale it up to the root pass size. This will improve
     // performance by improving the efficiency of the render target cache, as
     // only textures with exactly the same sizes + descriptors can be recycled.
-    if (root_pass_size.width - subpass_size.width <=
+    if (subpass_size.width < root_pass_size.width &&
+        subpass_size.height < root_pass_size.height &&
+        root_pass_size.width - subpass_size.width <=
             (0.1 * subpass_size.width) &&
         root_pass_size.height - subpass_size.height <=
             (0.1 * subpass_size.height)) {
