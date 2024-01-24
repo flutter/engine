@@ -76,6 +76,7 @@ impeller_component("context_spy") {
     "testing/context_spy.h",
   ]
   deps = [
+    "//flutter/impeller/entity:entity_test_helpers",
     "//flutter/impeller/renderer",
     "//flutter/testing:testing_lib",
   ]
@@ -85,6 +86,7 @@ template("aiks_unittests_component") {
   target_name = invoker.target_name
   predefined_sources = [
     "aiks_gradient_unittests.cc",
+    "aiks_path_unittests.cc",
     "aiks_unittests.cc",
     "aiks_unittests.h",
   ]

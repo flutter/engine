@@ -15,7 +15,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 RenderPass& pass) const {
   auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
@@ -29,8 +29,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = 4,
               .index_type = IndexType::k16bit,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

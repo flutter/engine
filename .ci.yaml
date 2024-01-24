@@ -30,14 +30,11 @@ platform_properties:
           {"dependency": "open_jdk", "version": "version:17"}
         ]
       device_type: none
-      cpu: x86
-      os: Mac-12|Mac-13
+      os: Mac-13
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
-    dimensions:
-      mac_model: "Macmini8,1|Macmini9,1"
   windows:
     properties:
       # CIPD flutter/java/openjdk/$platform
@@ -55,6 +52,22 @@ targets:
     recipe: engine_v2/engine_v2
     properties:
       config_name: linux_android_emulator
+    timeout: 60
+    runIf:
+      - .ci.yaml
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+
+# Task to run Linux linux_android_emulator_tests on AVDs running Android 33
+# instead of 34 for investigating https://github.com/flutter/flutter/issues/137947.
+  - name: Linux linux_android_emulator_tests_api_33
+    bringup: true
+    enabled_branches:
+      - main
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: linux_android_emulator_api_33
     timeout: 60
     runIf:
       - .ci.yaml
@@ -102,6 +115,7 @@ targets:
     timeout: 60
 
   - name: Mac builder_cache
+    bringup: true
     enabled_branches:
       - main
     recipe: engine_v2/cache
@@ -113,6 +127,11 @@ targets:
         [
           "builder",
           "git"
+        ]
+      ignore_cache_paths: >-
+        [
+          "builder/src/flutter/prebuilts/SDKs",
+          "builder/src/flutter/prebuilts/Library"
         ]
       gclient_variables: >-
         {
@@ -365,10 +384,10 @@ targets:
         ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
     drone_dimensions:
-      - os=Mac-12|Mac-13
+      - os=Mac-13
 
   - name: Linux mac_unopt
     recipe: engine_v2/engine_v2
@@ -386,10 +405,10 @@ targets:
       config_name: mac_ios_engine
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
     drone_dimensions:
-      - os=Mac-12|Mac-13
+      - os=Mac-13
       - cpu=x86
 
   - name: Mac impeller-cmake-example

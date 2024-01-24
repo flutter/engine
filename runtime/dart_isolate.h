@@ -379,6 +379,12 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
+                                     Dart_Port isolate_ready_port_id,
+                                     const char* debug_name,
+                                     bool errors_are_fatal,
+                                     char** error) override;
+
   bool LoadLoadingUnit(
       intptr_t loading_unit_id,
       std::unique_ptr<const fml::Mapping> snapshot_data,
@@ -392,11 +398,10 @@ class DartIsolate : public UIDartState {
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
 
-  Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
-                                     Dart_Port isolate_ready_port_id,
-                                     const char* debug_name,
-                                     bool errors_are_fatal,
-                                     char** error) override;
+  /// Returns the "main" entrypoint of the library contained in the kernel
+  /// data in `mapping`.
+  static Dart_Handle LoadLibraryFromKernel(
+      const std::shared_ptr<const fml::Mapping>& mapping);
 
  private:
   friend class IsolateConfiguration;
@@ -413,7 +418,6 @@ class DartIsolate : public UIDartState {
   friend class DartVM;
 
   Phase phase_ = Phase::Unknown;
-  std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;

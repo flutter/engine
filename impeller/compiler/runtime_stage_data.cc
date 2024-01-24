@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 
+#include "fml/backtrace.h"
 #include "impeller/core/runtime_types.h"
 #include "inja/inja.hpp"
 
@@ -23,10 +24,10 @@ RuntimeStageData::RuntimeStageData() = default;
 
 RuntimeStageData::~RuntimeStageData() = default;
 
-void RuntimeStageData::AddShader(RuntimeStageBackend backend,
-                                 const std::shared_ptr<Shader>& data) {
-  FML_DCHECK(data_.find(backend) == data_.end());
-  data_[backend] = data;
+void RuntimeStageData::AddShader(const std::shared_ptr<Shader>& data) {
+  FML_DCHECK(data);
+  FML_DCHECK(data_.find(data->backend) == data_.end());
+  data_[data->backend] = data;
 }
 
 static std::optional<fb::Stage> ToStage(spv::ExecutionModel stage) {
@@ -60,32 +61,23 @@ static std::optional<fb::Stage> ToJsonStage(spv::ExecutionModel stage) {
 static std::optional<fb::UniformDataType> ToUniformType(
     spirv_cross::SPIRType::BaseType type) {
   switch (type) {
-    case spirv_cross::SPIRType::Boolean:
-      return fb::UniformDataType::kBoolean;
-    case spirv_cross::SPIRType::SByte:
-      return fb::UniformDataType::kSignedByte;
-    case spirv_cross::SPIRType::UByte:
-      return fb::UniformDataType::kUnsignedByte;
-    case spirv_cross::SPIRType::Short:
-      return fb::UniformDataType::kSignedShort;
-    case spirv_cross::SPIRType::UShort:
-      return fb::UniformDataType::kUnsignedShort;
-    case spirv_cross::SPIRType::Int:
-      return fb::UniformDataType::kSignedInt;
-    case spirv_cross::SPIRType::UInt:
-      return fb::UniformDataType::kUnsignedInt;
-    case spirv_cross::SPIRType::Int64:
-      return fb::UniformDataType::kSignedInt64;
-    case spirv_cross::SPIRType::UInt64:
-      return fb::UniformDataType::kUnsignedInt64;
-    case spirv_cross::SPIRType::Half:
-      return fb::UniformDataType::kHalfFloat;
     case spirv_cross::SPIRType::Float:
       return fb::UniformDataType::kFloat;
-    case spirv_cross::SPIRType::Double:
-      return fb::UniformDataType::kDouble;
     case spirv_cross::SPIRType::SampledImage:
       return fb::UniformDataType::kSampledImage;
+    case spirv_cross::SPIRType::Struct:
+      return fb::UniformDataType::kStruct;
+    case spirv_cross::SPIRType::Boolean:
+    case spirv_cross::SPIRType::SByte:
+    case spirv_cross::SPIRType::UByte:
+    case spirv_cross::SPIRType::Short:
+    case spirv_cross::SPIRType::UShort:
+    case spirv_cross::SPIRType::Int:
+    case spirv_cross::SPIRType::UInt:
+    case spirv_cross::SPIRType::Int64:
+    case spirv_cross::SPIRType::UInt64:
+    case spirv_cross::SPIRType::Half:
+    case spirv_cross::SPIRType::Double:
     case spirv_cross::SPIRType::AccelerationStructure:
     case spirv_cross::SPIRType::AtomicCounter:
     case spirv_cross::SPIRType::Char:
@@ -94,7 +86,6 @@ static std::optional<fb::UniformDataType> ToUniformType(
     case spirv_cross::SPIRType::Interpolant:
     case spirv_cross::SPIRType::RayQuery:
     case spirv_cross::SPIRType::Sampler:
-    case spirv_cross::SPIRType::Struct:
     case spirv_cross::SPIRType::Unknown:
     case spirv_cross::SPIRType::Void:
       return std::nullopt;
@@ -173,6 +164,8 @@ static std::optional<uint32_t> ToJsonType(
       return 11;  // fb::UniformDataType::kDouble;
     case spirv_cross::SPIRType::SampledImage:
       return 12;  // fb::UniformDataType::kSampledImage;
+    case spirv_cross::SPIRType::Struct:
+      return 13;
     case spirv_cross::SPIRType::AccelerationStructure:
     case spirv_cross::SPIRType::AtomicCounter:
     case spirv_cross::SPIRType::Char:
@@ -181,7 +174,6 @@ static std::optional<uint32_t> ToJsonType(
     case spirv_cross::SPIRType::Interpolant:
     case spirv_cross::SPIRType::RayQuery:
     case spirv_cross::SPIRType::Sampler:
-    case spirv_cross::SPIRType::Struct:
     case spirv_cross::SPIRType::Unknown:
     case spirv_cross::SPIRType::Void:
       return std::nullopt;
@@ -272,13 +264,9 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
 
       uniform_object[kUniformTypeKey] = uniform_type.value();
       uniform_object[kUniformBitWidthKey] = uniform.bit_width;
+      uniform_object[kUniformArrayElementsKey] =
+          uniform.array_elements.value_or(0);
 
-      if (uniform.array_elements.has_value()) {
-        uniform_object[kUniformArrayElementsKey] =
-            uniform.array_elements.value();
-      } else {
-        uniform_object[kUniformArrayElementsKey] = 0;
-      }
       uniforms.push_back(uniform_object);
     }
 
@@ -292,79 +280,97 @@ std::shared_ptr<fml::Mapping> RuntimeStageData::CreateJsonMapping() const {
       json_string->size(), [json_string](auto, auto) {});
 }
 
-std::unique_ptr<fb::RuntimeStagesT> RuntimeStageData::CreateFlatbuffer() const {
+std::unique_ptr<fb::RuntimeStageT> RuntimeStageData::CreateStageFlatbuffer(
+    impeller::RuntimeStageBackend backend) const {
+  auto kvp = data_.find(backend);
+  if (kvp == data_.end()) {
+    return nullptr;
+  }
+
+  auto runtime_stage = std::make_unique<fb::RuntimeStageT>();
+  runtime_stage->entrypoint = kvp->second->entrypoint;
+  const auto stage = ToStage(kvp->second->stage);
+  if (!stage.has_value()) {
+    VALIDATION_LOG << "Invalid runtime stage.";
+    return nullptr;
+  }
+  runtime_stage->stage = stage.value();
+  if (!kvp->second->shader) {
+    VALIDATION_LOG << "No shader specified for runtime stage.";
+    return nullptr;
+  }
+  if (kvp->second->shader->GetSize() > 0u) {
+    runtime_stage->shader = {
+        kvp->second->shader->GetMapping(),
+        kvp->second->shader->GetMapping() + kvp->second->shader->GetSize()};
+  }
+  for (const auto& uniform : kvp->second->uniforms) {
+    auto desc = std::make_unique<fb::UniformDescriptionT>();
+
+    desc->name = uniform.name;
+    if (desc->name.empty()) {
+      VALIDATION_LOG << "Uniform name cannot be empty.";
+      return nullptr;
+    }
+    desc->location = uniform.location;
+    desc->rows = uniform.rows;
+    desc->columns = uniform.columns;
+    auto uniform_type = ToUniformType(uniform.type);
+    if (!uniform_type.has_value()) {
+      VALIDATION_LOG << "Invalid uniform type for runtime stage.";
+      return nullptr;
+    }
+    desc->type = uniform_type.value();
+    desc->bit_width = uniform.bit_width;
+    if (uniform.array_elements.has_value()) {
+      desc->array_elements = uniform.array_elements.value();
+    }
+
+    for (const auto& byte_type : uniform.struct_layout) {
+      desc->struct_layout.push_back(static_cast<fb::StructByteType>(byte_type));
+    }
+    desc->struct_float_count = uniform.struct_float_count;
+
+    runtime_stage->uniforms.emplace_back(std::move(desc));
+  }
+
+  for (const auto& input : kvp->second->inputs) {
+    auto desc = std::make_unique<fb::StageInputT>();
+
+    desc->name = input.name;
+
+    if (desc->name.empty()) {
+      VALIDATION_LOG << "Stage input name cannot be empty.";
+      return nullptr;
+    }
+    desc->location = input.location;
+    desc->set = input.set;
+    desc->binding = input.binding;
+    auto input_type = ToInputType(input.type);
+    if (!input_type.has_value()) {
+      VALIDATION_LOG << "Invalid uniform type for runtime stage.";
+      return nullptr;
+    }
+    desc->type = input_type.value();
+    desc->bit_width = input.bit_width;
+    desc->vec_size = input.vec_size;
+    desc->columns = input.columns;
+    desc->offset = input.offset;
+
+    runtime_stage->inputs.emplace_back(std::move(desc));
+  }
+
+  return runtime_stage;
+}
+
+std::unique_ptr<fb::RuntimeStagesT>
+RuntimeStageData::CreateMultiStageFlatbuffer() const {
   // The high level object API is used here for writing to the buffer. This is
   // just a convenience.
   auto runtime_stages = std::make_unique<fb::RuntimeStagesT>();
 
   for (const auto& kvp : data_) {
-    auto runtime_stage = std::make_unique<fb::RuntimeStageT>();
-    runtime_stage->entrypoint = kvp.second->entrypoint;
-    const auto stage = ToStage(kvp.second->stage);
-    if (!stage.has_value()) {
-      VALIDATION_LOG << "Invalid runtime stage.";
-      return nullptr;
-    }
-    runtime_stage->stage = stage.value();
-    if (!kvp.second->shader) {
-      VALIDATION_LOG << "No shader specified for runtime stage.";
-      return nullptr;
-    }
-    if (kvp.second->shader->GetSize() > 0u) {
-      runtime_stage->shader = {
-          kvp.second->shader->GetMapping(),
-          kvp.second->shader->GetMapping() + kvp.second->shader->GetSize()};
-    }
-    for (const auto& uniform : kvp.second->uniforms) {
-      auto desc = std::make_unique<fb::UniformDescriptionT>();
-
-      desc->name = uniform.name;
-      if (desc->name.empty()) {
-        VALIDATION_LOG << "Uniform name cannot be empty.";
-        return nullptr;
-      }
-      desc->location = uniform.location;
-      desc->rows = uniform.rows;
-      desc->columns = uniform.columns;
-      auto uniform_type = ToUniformType(uniform.type);
-      if (!uniform_type.has_value()) {
-        VALIDATION_LOG << "Invalid uniform type for runtime stage.";
-        return nullptr;
-      }
-      desc->type = uniform_type.value();
-      desc->bit_width = uniform.bit_width;
-      if (uniform.array_elements.has_value()) {
-        desc->array_elements = uniform.array_elements.value();
-      }
-
-      runtime_stage->uniforms.emplace_back(std::move(desc));
-    }
-
-    for (const auto& input : kvp.second->inputs) {
-      auto desc = std::make_unique<fb::StageInputT>();
-
-      desc->name = input.name;
-
-      if (desc->name.empty()) {
-        VALIDATION_LOG << "Stage input name cannot be empty.";
-        return nullptr;
-      }
-      desc->location = input.location;
-      desc->set = input.set;
-      desc->binding = input.binding;
-      auto input_type = ToInputType(input.type);
-      if (!input_type.has_value()) {
-        VALIDATION_LOG << "Invalid uniform type for runtime stage.";
-        return nullptr;
-      }
-      desc->type = input_type.value();
-      desc->bit_width = input.bit_width;
-      desc->vec_size = input.vec_size;
-      desc->columns = input.columns;
-      desc->offset = input.offset;
-
-      runtime_stage->inputs.emplace_back(std::move(desc));
-    }
+    auto runtime_stage = CreateStageFlatbuffer(kvp.first);
     switch (kvp.first) {
       case RuntimeStageBackend::kSkSL:
         runtime_stages->sksl = std::move(runtime_stage);
@@ -384,7 +390,7 @@ std::unique_ptr<fb::RuntimeStagesT> RuntimeStageData::CreateFlatbuffer() const {
 }
 
 std::shared_ptr<fml::Mapping> RuntimeStageData::CreateMapping() const {
-  auto runtime_stages = CreateFlatbuffer();
+  auto runtime_stages = CreateMultiStageFlatbuffer();
   if (!runtime_stages) {
     return nullptr;
   }
