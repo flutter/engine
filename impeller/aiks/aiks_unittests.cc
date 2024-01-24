@@ -3864,5 +3864,28 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
 #endif
 }
 
+TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreScaledUp) {
+  Canvas canvas;
+  canvas.SaveLayer(
+      {
+          .color = Color::Black().WithAlpha(0.5),
+      },
+      Rect::MakeSize(ISize(95, 95)));
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), {.color = Color::Red()});
+  canvas.DrawRect(Rect::MakeLTRB(50, 50, 150, 150), {.color = Color::Blue()});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {100, 100});
+
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(100, 100));
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller
