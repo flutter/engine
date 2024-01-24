@@ -3906,8 +3906,11 @@ TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreNotScaledUpPastBoundsHint) {
   AiksContext aiks_context(GetContext(), nullptr, cache);
   picture.ToImage(aiks_context, {100, 100});
 
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
+  // We expect a single 100x100 texture and the rest should be 95x95.
+  EXPECT_EQ(cache->GetTextureDataBegin()->texture->GetTextureDescriptor().size,
+            ISize(100, 100));
+  for (auto it = ++cache->GetTextureDataBegin();
+       it != cache->GetTextureDataEnd(); ++it) {
     EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(95, 95));
   }
 }
