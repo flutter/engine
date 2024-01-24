@@ -228,14 +228,18 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   /**
-   * Similar to {@link FlutterRenderer#registerSurfaceTexture} but with an existing @{code textureId}.
+   * Similar to {@link FlutterRenderer#registerSurfaceTexture} but with an existing @{code
+   * textureId}.
+   *
    * @param surfaceTexture Surface texture to wrap.
    * @param textureId A texture ID already created that should be assigned to the surface texture.
    */
   @NonNull
-  private SurfaceTextureEntry registerSurfaceTexture(long textureId, @NonNull SurfaceTexture surfaceTexture) {
+  private SurfaceTextureEntry registerSurfaceTexture(
+      long textureId, @NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
-    final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(textureId, surfaceTexture);
+    final SurfaceTextureRegistryEntry entry =
+        new SurfaceTextureRegistryEntry(textureId, surfaceTexture);
     Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), entry.textureWrapper());
     addOnTrimMemoryListener(entry);
