@@ -131,8 +131,7 @@ static void SetTextureLayout(
   }
   const auto& texture_vk = TextureVK::Cast(*texture);
 
-  if (attachment_desc.initialLayout == vk::ImageLayout::eGeneral ||
-      texture_vk.GetTextureDescriptor().mip_count > 1) {
+  if (attachment_desc.initialLayout == vk::ImageLayout::eGeneral) {
     BarrierVK barrier;
     barrier.new_layout = vk::ImageLayout::eGeneral;
     barrier.cmd_buffer = command_buffer->GetEncoder()->GetCommandBuffer();
