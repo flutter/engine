@@ -433,6 +433,8 @@ class FlutterWindowsEngine {
 
   std::map<std::int64_t, HWND> platform_views_;
 
+  std::map<std::int64_t, std::pair<Win32PlatformViewFactory, PlatformViewCreationParams>> pending_platform_views_;
+
   std::unique_ptr<MethodChannel<EncodableValue>> platform_view_channel_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);

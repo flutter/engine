@@ -231,10 +231,6 @@ FlutterWindowsEngine::FlutterWindowsEngine(
         if (name == "create") {
           FML_LOG(ERROR) << "Receiving creation method";
           const auto& args = std::get<EncodableMap>(*call.arguments());
-          FML_LOG(ERROR) << "Got args of size: " << args.size();
-          for (auto it : args) {
-            FML_LOG(ERROR) << "Has key: " << std::get<std::string>(it.first);
-          }
           auto id = std::get<int32_t>(args.find(EncodableValue("id"))->second);
           FML_LOG(ERROR) << "Found ID for platform view: " << id;
           auto type = std::get<std::string>(
@@ -509,7 +505,16 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                        size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
           UpdateWindow(view);
         } else {
-          FML_LOG(ERROR) << "No platform view registered with id " << id;
+          const auto pending = host->pending_platform_views_.find(platform_view->identifier);
+          if (pending != host->pending_platform_views_.end()) {
+            host->task_runner_->PostTask([host, pending](){
+              auto args = pending->second.second;
+              HWND view = pending->second.first(&args);
+              host->platform_views_.insert({args.id, view});
+            });
+          } else {
+            FML_LOG(ERROR) << "No platform view registered with id " << id;
+          }
         }
       }
     }
@@ -853,6 +858,11 @@ void FlutterWindowsEngine::OnPreEngineRestart() {
   if (view_) {
     InitializeKeyboard();
   }
+  for (auto itr : platform_views_) {
+    auto window = itr.second;
+    DestroyWindow(window);
+  }
+  platform_views_.clear();
 }
 
 std::string FlutterWindowsEngine::GetExecutableName() const {
@@ -971,10 +981,11 @@ void FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams args) {
     FML_LOG(ERROR) << "View type not registered";
     return;
   }
-  task_runner_->PostTask([this, itr, args]() {
+  pending_platform_views_.insert({args.id, {itr->second, args}});
+  /*task_runner_->PostTask([this, itr, args]() {
     HWND platform_view = itr->second(&args);
     platform_views_.insert({args.id, platform_view});
-  });
+  });*/
 }
 
 }  // namespace flutter
