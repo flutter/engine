@@ -198,7 +198,7 @@ public class FlutterRenderer implements TextureRegistry {
     } else {
       final SurfaceTextureSurfaceProducer producer =
           new SurfaceTextureSurfaceProducer(id, handler, flutterJNI);
-      registerSurfaceTexture(producer.getSurfaceTexture());
+      registerSurfaceTexture(id, producer.getSurfaceTexture());
       Log.v(TAG, "New SurfaceTextureSurfaceProducer ID: " + id);
       entry = producer;
     }
