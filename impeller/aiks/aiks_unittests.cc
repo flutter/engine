@@ -3481,17 +3481,19 @@ TEST_P(AiksTest, BlurredRectangleWithShader) {
 TEST_P(AiksTest, MaskBlurWithZeroSigmaIsSkipped) {
   Canvas canvas;
 
-  Paint paint = {
-      .color = Color::Blue(),
-      .mask_blur_descriptor =
-          Paint::MaskBlurDescriptor{
-              .style = FilterContents::BlurStyle::kNormal,
-              .sigma = Sigma(0),
-          },
-  };
+  for (Sigma sigma : {Sigma(0), Sigma(-10)}) {
+    Paint paint = {
+        .color = Color::Blue(),
+        .mask_blur_descriptor =
+            Paint::MaskBlurDescriptor{
+                .style = FilterContents::BlurStyle::kNormal,
+                .sigma = sigma,
+            },
+    };
 
-  canvas.DrawCircle({300, 300}, 200, paint);
-  canvas.DrawRect(Rect::MakeLTRB(100, 300, 500, 600), paint);
+    canvas.DrawCircle({300, 300}, 200, paint);
+    canvas.DrawRect(Rect::MakeLTRB(100, 300, 500, 600), paint);
+  }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

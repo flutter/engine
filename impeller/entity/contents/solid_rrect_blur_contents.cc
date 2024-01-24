@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include <optional>
 
+#include "impeller/base/validation.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
@@ -61,8 +62,13 @@ std::optional<Rect> SolidRRectBlurContents::GetCoverage(
 bool SolidRRectBlurContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-  // Early return if sigma is close to zero to avoid rendering NaNs.
-  if (!rect_.has_value() || std::fabs(sigma_.sigma) <= kEhCloseEnough) {
+  if (!rect_.has_value()) {
+    return true;
+  }
+  // Early return if sigma is close to zero or negative to avoid rendering NaNs.
+  if (sigma_.sigma <= kEhCloseEnough) {
+    VALIDATION_LOG
+        << "Sigma must not be nearly zero or negative for the RRect blur.";
     return true;
   }
 
