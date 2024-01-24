@@ -109,14 +109,6 @@ bool BlitPassVK::OnCopyBufferToTextureCommand(
   return true;
 }
 
-bool BlitPassVK::ConvertToShaderRead(std::shared_ptr<Texture> texture) {
-  auto command = std::make_unique<BlitConvertLayoutCommand>();
-  command->texture = texture;
-  command->label = "";
-  commands_.push_back(std::move(command));
-  return true;
-}
-
 // |BlitPass|
 bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                          std::string label) {

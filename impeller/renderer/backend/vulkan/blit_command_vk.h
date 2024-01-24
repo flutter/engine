@@ -62,17 +62,6 @@ struct BlitGenerateMipmapCommandVK : public BlitGenerateMipmapCommand,
   [[nodiscard]] bool Encode(CommandEncoderVK& encoder) const override;
 };
 
-struct BlitConvertLayoutCommand : public BlitEncodeVK {
-  ~BlitConvertLayoutCommand() {}
-
-  std::shared_ptr<Texture> texture;
-  std::string label;
-
-  std::string GetLabel() const override;
-
-  [[nodiscard]] bool Encode(CommandEncoderVK& encoder) const override;
-};
-
 }  // namespace impeller
 
 #endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BLIT_COMMAND_VK_H_

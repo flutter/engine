@@ -112,10 +112,6 @@ class BlitPass {
   ///
   bool GenerateMipmap(std::shared_ptr<Texture> texture, std::string label = "");
 
-  virtual bool ConvertToShaderRead(std::shared_ptr<Texture> texture) {
-    return true;
-  }
-
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
   ///

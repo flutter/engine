@@ -256,7 +256,7 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
-  if (context->GetBackendType() == Context::BackendType::kOpenGLES) {
+  if (context->GetBackendType() != Context::BackendType::kOpenGLES) {
     // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
     // generation on opengles.
     mip_count = 1;
@@ -386,8 +386,6 @@ bool EntityPass::Render(ContentContext& renderer,
       auto blit_pass = command_buffer->CreateBlitPass();
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
-          root_render_target.GetRenderTargetTexture());
-      blit_pass->ConvertToShaderRead(
           root_render_target.GetRenderTargetTexture());
       if (!command_buffer->EncodeAndSubmit(
               blit_pass, renderer.GetContext()->GetResourceAllocator())) {
