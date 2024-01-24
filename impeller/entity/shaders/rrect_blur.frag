@@ -21,12 +21,6 @@ out f16vec4 frag_color;
 
 const int kSampleCount = 4;
 
-float16_t RRectDistance(vec2 sample_position, vec2 half_size) {
-  vec2 space = abs(sample_position) - half_size + frag_info.corner_radius;
-  return float16_t(length(max(space, 0.0)) + min(max(space.x, space.y), 0.0) -
-                   frag_info.corner_radius);
-}
-
 /// Closed form unidirectional rounded rect blur mask solution using the
 /// analytical Gaussian integral (with approximated erf).
 float RRectBlurX(vec2 sample_position, vec2 half_size) {
@@ -73,9 +67,5 @@ void main() {
   vec2 half_size = frag_info.rect_size * 0.5;
   vec2 sample_position = v_position - half_size;
 
-  if (frag_info.blur_sigma > 0.0) {
-    frag_color *= float16_t(RRectBlur(sample_position, half_size));
-  } else {
-    frag_color *= float16_t(-RRectDistance(sample_position, half_size));
-  }
+  frag_color *= float16_t(RRectBlur(sample_position, half_size));
 }
