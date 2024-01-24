@@ -179,15 +179,11 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
   // If the subpass has an image filter, then its coverage space may deviate
   // from the parent pass and make intersecting with the pass coverage limit
   // unsafe.
-  // if (image_filter && coverage_limit.has_value()) {
-  //   coverage_limit = image_filter->GetSourceCoverage(subpass.transform_,
-  //                                                    coverage_limit.value());
-  // }
+  if (image_filter && coverage_limit.has_value()) {
+    coverage_limit = image_filter->GetSourceCoverage(subpass.transform_,
+                                                     coverage_limit.value());
+  }
 
-  // Note: I'm not sure why, but feeding the coverage limit back into the
-  // element coverage with a scale tranform image filter (one that is center
-  // aligned and offsets as it scales), causes the entity coverage to wildly
-  // vary, which destabilizes the image cache.
   auto entities_coverage = subpass.GetElementsCoverage(coverage_limit);
   // The entities don't cover anything. There is nothing to do.
   if (!entities_coverage.has_value()) {
@@ -613,6 +609,17 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     if (subpass_size.IsEmpty()) {
       capture.CreateChild("Subpass Entity (Skipped: Empty subpass coverage B)");
       return EntityPass::EntityResult::Skip();
+    }
+
+    // When a subpass size is close to, but still smaller than the root pass
+    // size, we may scale it up to the root pass size. This will improve
+    // performance by improving the efficiency of the render target cache, as
+    // only textures with exactly the same sizes + descriptors can be recycled.
+    if (root_pass_size.width - subpass_size.width <=
+            (0.1 * subpass_size.width) &&
+        root_pass_size.height - subpass_size.height <=
+            (0.1 * subpass_size.height)) {
+      subpass_size = root_pass_size;
     }
 
     auto subpass_target = CreateRenderTarget(
