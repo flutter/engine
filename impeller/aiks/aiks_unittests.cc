@@ -2742,7 +2742,8 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
   auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
-  auto runtime_stage = runtime_stages[RuntimeStageBackend::kMetal];
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
@@ -3557,6 +3558,8 @@ TEST_P(AiksTest, GaussianBlurWithoutDecalSupport) {
       .WillRepeatedly(::testing::Return(false));
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultColorFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, GetDefaultStencilFormat);
+  FLT_FORWARD(mock_capabilities, old_capabilities,
+              GetDefaultDepthStencilFormat);
   FLT_FORWARD(mock_capabilities, old_capabilities, SupportsOffscreenMSAA);
   FLT_FORWARD(mock_capabilities, old_capabilities,
               SupportsImplicitResolvingMSAA);
@@ -3885,6 +3888,53 @@ TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreScaledUp) {
        ++it) {
     EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(100, 100));
   }
+}
+
+TEST_P(AiksTest, ImageColorSourceEffectTransform) {
+  // Compare with https://fiddle.skia.org/c/6cdc5aefb291fda3833b806ca347a885
+
+  Canvas canvas;
+  auto texture = CreateTextureForFixture("monkey.png");
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  // Translation
+  {
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix::MakeTranslation({50, 50}));
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
+  }
+
+  // Rotation/skew
+  {
+    canvas.Save();
+    canvas.Rotate(Degrees(45));
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix(1, -1, 0, 0,  //
+               1, 1, 0, 0,   //
+               0, 0, 1, 0,   //
+               0, 0, 0, 1)   //
+    );
+    canvas.DrawRect(Rect::MakeLTRB(100, 0, 200, 100), paint);
+    canvas.Restore();
+  }
+
+  // Scale
+  {
+    canvas.Translate(Vector2(100, 0));
+    canvas.Scale(Vector2(100, 100));
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix::MakeScale(Vector2(0.005, 0.005)));
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 1, 1), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 }  // namespace testing

@@ -1,4 +1,4 @@
-Signature: daead36ced55089addbba48079b45282
+Signature: 296985fdbab9aae40d3156cc40f62a33
 
 ====================================================================================================
 LIBRARY: dart
@@ -857,7 +857,6 @@ ORIGIN: ../../../third_party/dart/sdk/lib/io/secure_server_socket.dart + ../../.
 ORIGIN: ../../../third_party/dart/sdk/lib/isolate/isolate.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/math/math.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/math/random.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/svg/dart2js/svg_dart2js.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/web_audio/dart2js/web_audio_dart2js.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/web_gl/dart2js/web_gl_dart2js.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/web_sql/dart2js/web_sql_dart2js.dart + ../../../third_party/dart/LICENSE
@@ -1225,7 +1224,6 @@ FILE: ../../../third_party/dart/sdk/lib/io/secure_server_socket.dart
 FILE: ../../../third_party/dart/sdk/lib/isolate/isolate.dart
 FILE: ../../../third_party/dart/sdk/lib/math/math.dart
 FILE: ../../../third_party/dart/sdk/lib/math/random.dart
-FILE: ../../../third_party/dart/sdk/lib/svg/dart2js/svg_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_audio/dart2js/web_audio_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_gl/dart2js/web_gl_dart2js.dart
 FILE: ../../../third_party/dart/sdk/lib/web_sql/dart2js/web_sql_dart2js.dart
@@ -4707,7 +4705,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/7a91ef52d2002ef7a0e30f95fa6a398a31c2fbcd
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/69af2ca8332ff84cbc9a132d97b6e35ca56b328d
 /third_party/fallback_root_certificates/
 
 ====================================================================================================

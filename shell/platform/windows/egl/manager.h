@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_ANGLE_SURFACE_MANAGER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_ANGLE_SURFACE_MANAGER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_EGL_MANAGER_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_EGL_MANAGER_H_
 
 // OpenGL ES and EGL includes
 #include <EGL/egl.h>
@@ -19,17 +19,18 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/windows/window_binding_handler.h"
+#include "flutter/shell/platform/windows/egl/context.h"
 
 namespace flutter {
+namespace egl {
 
 // A manager for initializing ANGLE correctly and using it to create and
 // destroy surfaces
-class AngleSurfaceManager {
+class Manager {
  public:
-  static std::unique_ptr<AngleSurfaceManager> Create(bool enable_impeller);
+  static std::unique_ptr<Manager> Create(bool enable_impeller);
 
-  virtual ~AngleSurfaceManager();
+  virtual ~Manager();
 
   // Whether the manager is currently valid.
   bool IsValid() const;
@@ -40,7 +41,7 @@ class AngleSurfaceManager {
   // dimensions surface is created at.
   //
   // After the surface is created, |SetVSyncEnabled| should be called on a
-  // thread that can bind the |egl_context_|.
+  // thread that can bind the |render_context_|.
   virtual bool CreateSurface(HWND hwnd, EGLint width, EGLint height);
 
   // Resizes backing surface from current size to newly requested size
@@ -48,7 +49,7 @@ class AngleSurfaceManager {
   // not match current surface dimensions. Target represents the visual entity
   // to bind to.
   //
-  // This binds |egl_context_| to the current thread.
+  // This binds |render_context_| to the current thread.
   virtual void ResizeSurface(HWND hwnd,
                              EGLint width,
                              EGLint height,
@@ -64,19 +65,9 @@ class AngleSurfaceManager {
   // Check if the current thread has a context bound.
   bool HasContextCurrent();
 
-  // Binds |egl_context_| to the current rendering thread and to the draw and
+  // Binds |render_context_| to the current rendering thread and to the draw and
   // read surfaces returning a boolean result reflecting success.
   virtual bool MakeCurrent();
-
-  // Unbinds the current EGL context from the current thread.
-  virtual bool ClearCurrent();
-
-  // Clears the |egl_context_| draw and read surfaces.
-  bool ClearContext();
-
-  // Binds egl_resource_context_ to the current rendering thread and to the draw
-  // and read surfaces returning a boolean result reflecting success.
-  bool MakeResourceCurrent();
 
   // Swaps the front and back buffers of the DX11 swapchain backing surface if
   // not null.
@@ -96,20 +87,26 @@ class AngleSurfaceManager {
   // If disabled, allows one thread to swap multiple buffers per v-blank
   // but can result in screen tearing if the system compositor is disabled.
   //
-  // This binds |egl_context_| to the current thread and makes the render
+  // This binds |render_context_| to the current thread and makes the render
   // surface current.
   virtual void SetVSyncEnabled(bool enabled);
 
   // Gets the |ID3D11Device| chosen by ANGLE.
   bool GetDevice(ID3D11Device** device);
 
+  // Get the EGL context used to render Flutter views.
+  virtual Context* render_context() const;
+
+  // Get the EGL context used for async texture uploads.
+  virtual Context* resource_context() const;
+
  protected:
   // Creates a new surface manager retaining reference to the passed-in target
   // for the lifetime of the manager.
-  explicit AngleSurfaceManager(bool enable_impeller);
+  explicit Manager(bool enable_impeller);
 
  private:
-  // Number of active instances of AngleSurfaceManager
+  // Number of active instances of Manager
   static int instance_count_;
 
   // Initialize the EGL display.
@@ -135,12 +132,11 @@ class AngleSurfaceManager {
   // EGL framebuffer configuration.
   EGLConfig config_ = nullptr;
 
-  // EGL representation of current rendering context.
-  EGLContext render_context_ = EGL_NO_CONTEXT;
+  // The EGL context used to render Flutter views.
+  std::unique_ptr<Context> render_context_;
 
-  // EGL representation of current rendering context used for async texture
-  // uploads.
-  EGLContext resource_context_ = EGL_NO_CONTEXT;
+  // The EGL context used for async texture uploads.
+  std::unique_ptr<Context> resource_context_;
 
   // Current render_surface that engine will draw into.
   EGLSurface surface_ = EGL_NO_SURFACE;
@@ -152,9 +148,10 @@ class AngleSurfaceManager {
   // The current D3D device.
   Microsoft::WRL::ComPtr<ID3D11Device> resolved_device_ = nullptr;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AngleSurfaceManager);
+  FML_DISALLOW_COPY_AND_ASSIGN(Manager);
 };
 
+}  // namespace egl
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_ANGLE_SURFACE_MANAGER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_EGL_MANAGER_H_
