@@ -61,6 +61,9 @@ class TextureSourceVK {
   /// reflect the actual layout.
   vk::ImageLayout GetLayout() const;
 
+  /// Whether or not this is a swapchain image.
+  virtual bool IsOnscreen() const = 0;
+
  protected:
   const TextureDescriptor desc_;
 

@@ -43,6 +43,11 @@ class AndroidHardwareBufferTextureSourceVK final : public TextureSourceVK {
 
   bool IsValid() const;
 
+  bool IsOnscreen() const override {
+    return false;
+  }
+
+
  private:
   const vk::Device& device_;
   vk::Image image_ = VK_NULL_HANDLE;

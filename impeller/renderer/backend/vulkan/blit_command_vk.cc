@@ -357,4 +357,28 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   return true;
 }
 
+bool BlitConvertLayoutCommand::Encode(CommandEncoderVK& encoder) const {
+  const auto& cmd_buffer = encoder.GetCommandBuffer();
+  const auto& texture_vk = TextureVK::Cast(*texture);
+
+  if (texture_vk.IsOnscreen()) {
+    return true;
+  }
+
+  BarrierVK barrier;
+  barrier.cmd_buffer = cmd_buffer;
+  barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+  barrier.src_access = {};
+  barrier.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  barrier.dst_access =
+      vk::AccessFlagBits::eShaderRead;
+  barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+  return texture_vk.SetLayout(barrier);
+}
+
+ std::string BlitConvertLayoutCommand::GetLabel() const {
+  return label;
+}
+
 }  // namespace impeller

@@ -54,6 +54,9 @@ class BlitPassVK final : public BlitPass {
                                     std::string label) override;
 
   // |BlitPass|
+  bool ConvertToShaderRead(std::shared_ptr<Texture> texture) override;
+
+  // |BlitPass|
   bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
                                     IPoint destination_origin,

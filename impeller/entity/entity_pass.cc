@@ -387,7 +387,7 @@ bool EntityPass::Render(ContentContext& renderer,
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
-
+      blit_pass->ConvertToShaderRead(root_render_target.GetRenderTargetTexture());
       if (!command_buffer->EncodeAndSubmit(
               blit_pass, renderer.GetContext()->GetResourceAllocator())) {
         VALIDATION_LOG << "Failed to encode root pass blit command.";

@@ -382,6 +382,10 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     return resource_->rt_image_view.get();
   }
 
+  bool IsOnscreen() const override {
+    return false;
+  }
+
  private:
   struct ImageResource {
     UniqueImageVMA image;
