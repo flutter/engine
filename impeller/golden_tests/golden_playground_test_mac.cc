@@ -11,6 +11,7 @@
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
+#include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -59,6 +60,13 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CaptureContext_Vulkan",
 };
 
+/// TODO(https://github.com/flutter/flutter/issues/142017): Turn on validation
+/// for all vulkan tests.
+static const std::vector<std::string> kVulkanValidationTests = {
+    "impeller_Play_AiksTest_CanRenderImageRect_Vulkan",
+    "impeller_Play_AiksTest_CanRenderTextFrame_Vulkan",
+};
+
 namespace {
 std::string GetTestName() {
   std::string suite_name =
@@ -77,7 +85,7 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -91,9 +99,7 @@ bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
-  GoldenPlaygroundTestImpl()
-      : screenshotter(new testing::MetalScreenshotter()) {}
-  std::unique_ptr<testing::MetalScreenshotter> screenshotter;
+  std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
 
@@ -128,7 +134,20 @@ void GoldenPlaygroundTest::SetUp() {
     return;
   }
 
+  bool enable_vulkan_validations = false;
   std::string test_name = GetTestName();
+  if (std::find(kVulkanValidationTests.begin(), kVulkanValidationTests.end(),
+                test_name) != kVulkanValidationTests.end()) {
+    enable_vulkan_validations = true;
+  }
+
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+        enable_vulkan_validations);
+  }
+
   if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
       kSkipTests.end()) {
     GTEST_SKIP_(
@@ -158,7 +177,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   AiksContext renderer(GetContext(), typographer_context_);
 
   std::optional<Picture> picture;
-  std::unique_ptr<testing::MetalScreenshot> screenshot;
+  std::unique_ptr<testing::Screenshot> screenshot;
   for (int i = 0; i < 2; ++i) {
     picture = callback(renderer);
     if (!picture.has_value()) {
