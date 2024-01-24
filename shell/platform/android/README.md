@@ -75,6 +75,15 @@ flutter drive \
   --local-engine=$ENGINE/out/android_debug_unopt_arm64
 ```
 
+Another good source of (unfortunately, manual) testing is `flutter/packages`:
+
+```shell
+cd $PACKAGES/packages/video_player/video_player_android/example
+flutter run \
+  --local-engine-host=$ENGINE/out/host_debug_unopt_arm64 \
+  --local-engine=$ENGINE/out/android_debug_unopt_arm64
+```
+
 > ![NOTE]
 > External texture rendering on Android is based on the device API level. For
 > example to test the OpenGLES branch (which uses `SurfaceTexture`), you'll
