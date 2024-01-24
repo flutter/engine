@@ -268,7 +268,7 @@ void Canvas::DrawPaint(const Paint& paint) {
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
-                                     Scalar corner_radius,
+                                     Size corner_radius,
                                      const Paint& paint) {
   if (paint.color_source.GetType() != ColorSource::Type::kColor ||
       paint.style != Paint::Style::kFill) {
@@ -279,8 +279,8 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
     return false;
   }
-  // A blur sigma that is close to zero should not result in any shadow.
-  if (std::fabs(paint.mask_blur_descriptor->sigma.sigma) <= kEhCloseEnough) {
+  // A blur sigma that is not positive enough should not result in a blur.
+  if (paint.mask_blur_descriptor->sigma.sigma <= kEhCloseEnough) {
     return false;
   }
 
@@ -324,7 +324,7 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
     return;
   }
 
-  if (AttemptDrawBlurredRRect(rect, 0, paint)) {
+  if (AttemptDrawBlurredRRect(rect, {}, paint)) {
     return;
   }
 
@@ -351,7 +351,7 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
     return;
   }
 
-  if (AttemptDrawBlurredRRect(rect, 0, paint)) {
+  if (AttemptDrawBlurredRRect(rect, rect.GetSize() * 0.5f, paint)) {
     return;
   }
 
@@ -368,8 +368,7 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
 void Canvas::DrawRRect(const Rect& rect,
                        const Size& corner_radii,
                        const Paint& paint) {
-  if (corner_radii.IsSquare() &&
-      AttemptDrawBlurredRRect(rect, corner_radii.width, paint)) {
+  if (AttemptDrawBlurredRRect(rect, corner_radii, paint)) {
     return;
   }
 
@@ -398,8 +397,8 @@ void Canvas::DrawCircle(const Point& center,
                         const Paint& paint) {
   Size half_size(radius, radius);
   if (AttemptDrawBlurredRRect(
-          Rect::MakeOriginSize(center - half_size, half_size * 2), radius,
-          paint)) {
+          Rect::MakeOriginSize(center - half_size, half_size * 2),
+          {radius, radius}, paint)) {
     return;
   }
 
