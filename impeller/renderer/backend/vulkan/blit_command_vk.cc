@@ -370,14 +370,13 @@ bool BlitConvertLayoutCommand::Encode(CommandEncoderVK& encoder) const {
   barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
   barrier.src_access = {};
   barrier.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
-  barrier.dst_access =
-      vk::AccessFlagBits::eShaderRead;
+  barrier.dst_access = vk::AccessFlagBits::eShaderRead;
   barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
 
   return texture_vk.SetLayout(barrier);
 }
 
- std::string BlitConvertLayoutCommand::GetLabel() const {
+std::string BlitConvertLayoutCommand::GetLabel() const {
   return label;
 }
 

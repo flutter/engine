@@ -42,9 +42,7 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   void SetMipMapGenerated() { mipmap_generated_ = true; }
 
-  bool IsOnscreen() const {
-    return source_->IsOnscreen();
-  }
+  bool IsOnscreen() const { return source_->IsOnscreen(); }
 
  private:
   std::weak_ptr<Context> context_;

@@ -117,7 +117,6 @@ bool BlitPassVK::ConvertToShaderRead(std::shared_ptr<Texture> texture) {
   return true;
 }
 
-
 // |BlitPass|
 bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                          std::string label) {
