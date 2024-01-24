@@ -468,7 +468,8 @@ class SingleViewPresentation extends Presentation {
 
     @RequiresApi(api = Build.VERSION_CODES.S)
     @Override
-    public void addCrossWindowBlurEnabledListener(@NonNull Executor executor, @NonNull Consumer<Boolean> listener) {
+    public void addCrossWindowBlurEnabledListener(
+        @NonNull Executor executor, @NonNull Consumer<Boolean> listener) {
       delegate.addCrossWindowBlurEnabledListener(executor, listener);
     }
 
