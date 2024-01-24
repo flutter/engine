@@ -30,6 +30,21 @@ std::unique_ptr<PlaygroundImpl> MakeVulkanPlayground(bool enable_validations) {
   return PlaygroundImpl::Create(PlaygroundBackend::kVulkan,
                                 playground_switches);
 }
+
+// Returns a static instance to a playground that can be used across tests.
+const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
+    bool enable_validations) {
+  if (enable_validations) {
+    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+        vulkan_validation_playground(
+            MakeVulkanPlayground(/*enable_validations=*/true));
+    return *vulkan_validation_playground;
+  } else {
+    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+        vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
+    return *vulkan_playground;
+  }
+}
 }  // namespace
 
 // If you add a new playground test to the aiks unittests and you do not want it
@@ -112,13 +127,9 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
 }
 
 bool ShouldTestHaveVulkanValidations() {
-  bool enable_vulkan_validations = false;
   std::string test_name = GetTestName();
-  if (std::find(kVulkanValidationTests.begin(), kVulkanValidationTests.end(),
-                test_name) != kVulkanValidationTests.end()) {
-    enable_vulkan_validations = true;
-  }
-  return enable_vulkan_validations;
+  return std::find(kVulkanValidationTests.begin(), kVulkanValidationTests.end(),
+                   test_name) != kVulkanValidationTests.end();
 }
 }  // namespace
 
@@ -163,18 +174,10 @@ void GoldenPlaygroundTest::SetUp() {
   if (GetParam() == PlaygroundBackend::kMetal) {
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    if (enable_vulkan_validations) {
-      static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
-          vulkan_validation_playground(
-              MakeVulkanPlayground(/*enable_validations=*/true));
-      pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
-          *vulkan_validation_playground);
-    } else {
-      static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
-          vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
-      pimpl_->screenshotter =
-          std::make_unique<testing::VulkanScreenshotter>(*vulkan_playground);
-    }
+    const std::unique_ptr<PlaygroundImpl>& playground =
+        GetSharedVulkanPlayground(enable_vulkan_validations);
+    pimpl_->screenshotter =
+        std::make_unique<testing::VulkanScreenshotter>(playground);
   }
 
   std::string test_name = GetTestName();
