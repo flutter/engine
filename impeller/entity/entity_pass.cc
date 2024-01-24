@@ -69,6 +69,13 @@ std::optional<Rect> EntityPass::GetBoundsLimit() const {
   return bounds_limit_;
 }
 
+std::optional<Rect> EntityPass::GetTransformedBoundsLimit() const {
+  if (bounds_limit_.has_value()) {
+    return bounds_limit_->TransformBounds(transform_);
+  }
+  return std::nullopt;
+}
+
 void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() == BlendMode::kSourceOver &&
       entity.GetContents()->IsOpaque()) {
@@ -192,12 +199,11 @@ std::optional<Rect> EntityPass::GetSubpassCoverage(
     return std::nullopt;
   }
 
-  if (!subpass.bounds_limit_.has_value()) {
+  auto user_bounds_coverage = subpass.GetTransformedBoundsLimit();
+  if (!user_bounds_coverage.has_value()) {
     return entities_coverage;
   }
-  auto user_bounds_coverage =
-      subpass.bounds_limit_->TransformBounds(subpass.transform_);
-  return entities_coverage->Intersection(user_bounds_coverage);
+  return entities_coverage->Intersection(user_bounds_coverage.value());
 }
 
 EntityPass* EntityPass::GetSuperpass() const {
@@ -494,8 +500,7 @@ bool EntityPass::Render(ContentContext& renderer,
 // descriptors can be recycled.
 static ISize MaybeRoundUpTextureSize(ISize subpass_size,
                                      ISize root_pass_size,
-                                     std::optional<Rect> bounds_limit,
-                                     const Matrix& subpass_transform) {
+                                     std::optional<Rect> bounds_limit) {
   // If the subpass is already bigger than the root pass size,
   // return the existing subpass size.
   if (subpass_size.width > root_pass_size.width ||
@@ -507,10 +512,9 @@ static ISize MaybeRoundUpTextureSize(ISize subpass_size,
   // return the existing subpass size. This case could be removed if we
   // conditionally inserted clips/scissor instead.
   if (bounds_limit.has_value()) {
-    auto user_bounds_size =
-        bounds_limit->TransformBounds(subpass_transform).GetSize();
-    if (user_bounds_size.width < root_pass_size.width ||
-        user_bounds_size.height < root_pass_size.height) {
+    auto bounds_size = bounds_limit->GetSize();
+    if (bounds_size.width < root_pass_size.width ||
+        bounds_size.height < root_pass_size.height) {
       return subpass_size;
     }
   }
@@ -659,9 +663,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    subpass_size =
-        MaybeRoundUpTextureSize(subpass_size, root_pass_size,
-                                subpass->bounds_limit_, subpass->transform_);
+    subpass_size = MaybeRoundUpTextureSize(
+        subpass_size, root_pass_size, subpass->GetTransformedBoundsLimit());
     auto subpass_target = CreateRenderTarget(
         renderer,      // renderer
         subpass_size,  // size
