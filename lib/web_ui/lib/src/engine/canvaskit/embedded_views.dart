@@ -659,7 +659,7 @@ class HtmlViewEmbedder {
 
   /// Disposes the state of this view embedder.
   void dispose() {
-    final Set<int> allViews = PlatformViewManager.instance.debugClear();
+    final Set<int> allViews = PlatformViewManager.instance.getKnownPlatformViewIds();
     disposeViews(allViews);
     _context = EmbedderFrameContext();
     _currentCompositionParams.clear();
