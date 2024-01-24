@@ -4,8 +4,7 @@
 part of dart.ui;
 
 class PlatformIsolate {
-  static Future<Isolate> spawn<T>(
-      void entryPoint(T message), T message,
+  static Future<Isolate> spawn<T>(void entryPoint(T message), T message,
       {bool errorsAreFatal = true,
       SendPort? onExit,
       SendPort? onError,
@@ -16,8 +15,7 @@ class PlatformIsolate {
       isolateReadyPort.close();
 
       if (readyMessage is _PlatformIsolateReadyMessage) {
-        final isolate = new Isolate(
-            readyMessage.controlPort,
+        final isolate = new Isolate(readyMessage.controlPort,
             pauseCapability: readyMessage.pauseCapability,
             terminateCapability: readyMessage.terminateCapability);
         if (onError != null) {
@@ -55,19 +53,22 @@ class PlatformIsolate {
     };
     final isolate = Isolate.current;
     isolateReadyPort.send(_PlatformIsolateReadyMessage(
-        isolate.controlPort, isolate.pauseCapability,
-        isolate.terminateCapability, entryPointPort.sendPort));
+        isolate.controlPort,
+        isolate.pauseCapability,
+        isolate.terminateCapability,
+        entryPointPort.sendPort));
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Bool)>(symbol: 'PlatformIsolateNativeApi::Spawn')
-  external static void _spawn(
-      Function entryPoint, SendPort isolateReadyPort, String debugName, bool errorsAreFatal);
+  @Native<Void Function(Handle, Handle, Handle, Bool)>(
+      symbol: 'PlatformIsolateNativeApi::Spawn')
+  external static void _spawn(Function entryPoint, SendPort isolateReadyPort,
+      String debugName, bool errorsAreFatal);
 
   static FutureOr<R> run<R>(FutureOr<R> computation(), {String? debugName}) {
     final resultCompleter = Completer<R>();
     final resultPort = RawReceivePort();
-    resultPort.handler = (
-        (R? result, Object? remoteError, Object? remoteStack)? response) {
+    resultPort.handler =
+        ((R? result, Object? remoteError, Object? remoteStack)? response) {
       resultPort.close();
       if (response == null) {
         // onExit handler message, isolate terminated without sending result.
@@ -124,7 +125,8 @@ class PlatformIsolate {
     }
   }
 
-  @Native<Bool Function()>(symbol: 'PlatformIsolateNativeApi::IsRunningOnPlatformThread')
+  @Native<Bool Function()>(
+      symbol: 'PlatformIsolateNativeApi::IsRunningOnPlatformThread')
   external static bool isRunningOnPlatformThread();
 }
 
@@ -134,7 +136,6 @@ class _PlatformIsolateReadyMessage {
   final Capability? terminateCapability;
   final SendPort entryPointPort;
 
-  _PlatformIsolateReadyMessage(
-      this.controlPort, this.pauseCapability, this.terminateCapability,
-      this.entryPointPort);
+  _PlatformIsolateReadyMessage(this.controlPort, this.pauseCapability,
+      this.terminateCapability, this.entryPointPort);
 }

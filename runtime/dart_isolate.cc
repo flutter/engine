@@ -284,10 +284,10 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 }
 
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
-                                        Dart_Port isolate_ready_port_id,
-                                        const char* debug_name,
-                                        bool errors_are_fatal,
-                                        char** error) {
+                                                Dart_Port isolate_ready_port_id,
+                                                const char* debug_name,
+                                                bool errors_are_fatal,
+                                                char** error) {
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
   FML_DCHECK(platform_config != nullptr);
@@ -341,11 +341,10 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   context.advisory_script_entrypoint =
       (*isolate_group_data)->GetAdvisoryScriptEntrypoint();
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
-      std::shared_ptr<DartIsolate>(
-          new DartIsolate(settings,  // settings
-                          false,       // is_root_isolate
-                          true,        // is_platform_isolate
-                          context)));  // context
+      std::shared_ptr<DartIsolate>(new DartIsolate(settings,  // settings
+                                                   false,     // is_root_isolate
+                                                   true,  // is_platform_isolate
+                                                   context)));  // context
   (*isolate_data)->platform_isolate_manager_ = platform_isolate_manager;
 
   IsolateMaker isolate_maker =
@@ -366,8 +365,8 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
             /*error=*/error);
       };
   Dart_Isolate platform_isolate = CreateDartIsolateGroup(
-      std::move(isolate_group_data), std::move(isolate_data), nullptr,
-      error, isolate_maker);
+      std::move(isolate_group_data), std::move(isolate_data), nullptr, error,
+      isolate_maker);
 
   Dart_EnterIsolate(parent_isolate);
 

@@ -53,7 +53,6 @@ void PlatformIsolateManager::ShutdownPlatformIsolates() {
   platform_isolates_.clear();
 }
 
-
 bool PlatformIsolateManager::IsRegistered(Dart_Isolate isolate) {
   std::scoped_lock lock(platform_isolates_lock_);
   return platform_isolates_.count(isolate) != 0;

@@ -172,10 +172,10 @@ class UIDartState : public tonic::DartState {
   impeller::RuntimeStageBackend GetRuntimeStageBackend() const;
 
   virtual Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
-                                     Dart_Port isolate_ready_port_id,
-                                     const char* debug_name,
-                                     bool errors_are_fatal,
-                                     char** error);
+                                             Dart_Port isolate_ready_port_id,
+                                             const char* debug_name,
+                                             bool errors_are_fatal,
+                                             char** error);
 
  protected:
   UIDartState(TaskObserverAdd add_callback,

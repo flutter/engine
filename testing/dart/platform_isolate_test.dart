@@ -12,15 +12,15 @@ void main() {
   test('PlatformIsolate.isRunningOnPlatformThread, false cases', () async {
     expect(PlatformIsolate.isRunningOnPlatformThread(), isFalse);
 
-    final isPlatThread = await Isolate.run(
-        () => PlatformIsolate.isRunningOnPlatformThread());
+    final isPlatThread =
+        await Isolate.run(() => PlatformIsolate.isRunningOnPlatformThread());
     expect(isPlatThread, isFalse);
   });
 
   test('PlatformIsolate.spawn', () async {
     final resultCompleter = Completer();
-    final resultPort = RawReceivePort();
-    resultPort.handler = (message) => resultCompleter.complete(message);
+    final resultPort =
+        RawReceivePort((message) => resultCompleter.complete(message));
     final isolate = await PlatformIsolate.spawn(
         (port) => port.send(PlatformIsolate.isRunningOnPlatformThread()),
         resultPort.sendPort);
@@ -36,28 +36,25 @@ void main() {
 
   test('PlatformIsolate.spawn, async operations', () async {
     final resultCompleter = Completer();
-    final resultPort = RawReceivePort();
-    resultPort.handler = (message) => resultCompleter.complete(message);
-    final isolate = await PlatformIsolate.spawn(
-        (port) async {
-          await Future.delayed(Duration(milliseconds: 100));
-          await Future.delayed(Duration(milliseconds: 100));
-          await Future.delayed(Duration(milliseconds: 100));
-          port.send(PlatformIsolate.isRunningOnPlatformThread());
-        },
-        resultPort.sendPort);
+    final resultPort =
+        RawReceivePort((message) => resultCompleter.complete(message));
+    final isolate = await PlatformIsolate.spawn((port) async {
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      port.send(PlatformIsolate.isRunningOnPlatformThread());
+    }, resultPort.sendPort);
     expect(await resultCompleter.future, isTrue);
     resultPort.close();
   });
 
   test('PlatformIsolate.run, async operations', () async {
-    final isPlatThread = await PlatformIsolate.run(
-        () async {
-          await Future.delayed(Duration(milliseconds: 100));
-          await Future.delayed(Duration(milliseconds: 100));
-          await Future.delayed(Duration(milliseconds: 100));
-          return PlatformIsolate.isRunningOnPlatformThread();
-        });
+    final isPlatThread = await PlatformIsolate.run(() async {
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      return PlatformIsolate.isRunningOnPlatformThread();
+    });
     expect(isPlatThread, isTrue);
   });
 
@@ -65,9 +62,8 @@ void main() {
     // Send numbers 1 to 10 to the platform isolate. The platform isolate
     // multiplies them by 100 and sends them back.
     final completer = Completer();
-    final recvPort = RawReceivePort();
     int sum = 0;
-    recvPort.handler = (message) {
+    final recvPort = RawReceivePort((message) {
       if (message is SendPort) {
         for (int i = 1; i <= 10; ++i) {
           message.send(i);
@@ -78,30 +74,27 @@ void main() {
           completer.complete();
         }
       }
-    };
-    final isolate = await PlatformIsolate.spawn(
-        (port) {
-          final recvPort = RawReceivePort();
-          recvPort.handler = (message) {
-            port.send((message as int) * 100);
-            if (message == 10) {
-              recvPort.close();
-            }
-          };
-          port.send(recvPort.sendPort);
-        },
-        recvPort.sendPort);
+    });
+    final isolate = await PlatformIsolate.spawn((port) {
+      final recvPort = RawReceivePort();
+      recvPort.handler = (message) {
+        port.send((message as int) * 100);
+        if (message == 10) {
+          recvPort.close();
+        }
+      };
+      port.send(recvPort.sendPort);
+    }, recvPort.sendPort);
     await completer.future;
-    expect(sum, 5500);  // sum(1 to 10) * 100
+    expect(sum, 5500); // sum(1 to 10) * 100
     recvPort.close();
   });
 
   test('PlatformIsolate.run, send and receive messages', () async {
     // Send numbers 1 to 10 to the platform isolate. The platform isolate
     // multiplies them by 100 and sends them back.
-    final recvPort = RawReceivePort();
     int sum = 0;
-    recvPort.handler = (message) {
+    final recvPort = RawReceivePort((message) {
       if (message is SendPort) {
         for (int i = 1; i <= 10; ++i) {
           message.send(i);
@@ -109,23 +102,21 @@ void main() {
       } else {
         sum += message as int;
       }
-    };
+    });
     final sendPort = recvPort.sendPort;
-    final isolate = await PlatformIsolate.run(
-        () async {
-          final completer = Completer();
-          final recvPort = RawReceivePort();
-          recvPort.handler = (message) {
-            sendPort.send((message as int) * 100);
-            if (message == 10) {
-              completer.complete();
-            }
-          };
-          sendPort.send(recvPort.sendPort);
-          await completer.future;
-          recvPort.close();
-        });
-    expect(sum, 5500);  // sum(1 to 10) * 100
+    final isolate = await PlatformIsolate.run(() async {
+      final completer = Completer();
+      final recvPort = RawReceivePort((message) {
+        sendPort.send((message as int) * 100);
+        if (message == 10) {
+          completer.complete();
+        }
+      });
+      sendPort.send(recvPort.sendPort);
+      await completer.future;
+      recvPort.close();
+    });
+    expect(sum, 5500); // sum(1 to 10) * 100
     recvPort.close();
   });
 
@@ -182,10 +173,10 @@ void main() {
       onExitPort.close();
     };
     await PlatformIsolate.spawn((_) async {
-        await Future.delayed(Duration(milliseconds: 100));
-        await Future.delayed(Duration(milliseconds: 100));
-        await Future.delayed(Duration(milliseconds: 100));
-      }, null, onExit: onExitPort.sendPort);
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+    }, null, onExit: onExitPort.sendPort);
     expect(await exitCompleter.future, true);
   });
 
@@ -197,11 +188,11 @@ void main() {
       onExitPort.close();
     };
     await PlatformIsolate.spawn((_) async {
-        await Future.delayed(Duration(milliseconds: 100));
-        await Future.delayed(Duration(milliseconds: 100));
-        await Future.delayed(Duration(milliseconds: 100));
-        throw "Oh no!";
-      }, null, onExit: onExitPort.sendPort);
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(Duration(milliseconds: 100));
+      throw "Oh no!";
+    }, null, onExit: onExitPort.sendPort);
     expect(await exitCompleter.future, true);
   });
 
@@ -210,15 +201,14 @@ void main() {
     // an error, which causes the isolate to exit because errorsAreFatal is set
     // to true. So the second should not be received.
     bool secondMessageReplyReceived = false;
-    final recvPort = RawReceivePort();
-    recvPort.handler = (message) {
+    final recvPort = RawReceivePort((message) {
       if (message is SendPort) {
         message.send("First");
         message.send("Second");
       } else {
         secondMessageReplyReceived = true;
       }
-    };
+    });
 
     final exitCompleter = Completer();
     final exitPort = RawReceivePort();
@@ -227,22 +217,18 @@ void main() {
       exitPort.close();
     };
 
-    final isolate = await PlatformIsolate.spawn(
-        (port) {
-          final recvPort = RawReceivePort();
-          recvPort.handler = (message) {
-            if (message == "First") {
-              throw "Oh no!";
-            } else {
-              port.send("Reply to second message");
-              recvPort.close();
-            }
-          };
-          port.send(recvPort.sendPort);
-        },
-        recvPort.sendPort,
-        onExit: exitPort.sendPort,
-        errorsAreFatal: true);
+    final isolate = await PlatformIsolate.spawn((port) {
+      final recvPort = RawReceivePort();
+      recvPort.handler = (message) {
+        if (message == "First") {
+          throw "Oh no!";
+        } else {
+          port.send("Reply to second message");
+          recvPort.close();
+        }
+      };
+      port.send(recvPort.sendPort);
+    }, recvPort.sendPort, onExit: exitPort.sendPort, errorsAreFatal: true);
 
     await exitCompleter.future;
     expect(secondMessageReplyReceived, false);
@@ -254,15 +240,14 @@ void main() {
     // an error, but the isolate continues running because errorsAreFatal is set
     // to false. So the second should be received.
     bool secondMessageReplyReceived = false;
-    final recvPort = RawReceivePort();
-    recvPort.handler = (message) {
+    final recvPort = RawReceivePort((message) {
       if (message is SendPort) {
         message.send("First");
         message.send("Second");
       } else {
         secondMessageReplyReceived = true;
       }
-    };
+    });
 
     final exitCompleter = Completer();
     final exitPort = RawReceivePort();
@@ -271,22 +256,18 @@ void main() {
       exitPort.close();
     };
 
-    final isolate = await PlatformIsolate.spawn(
-        (port) {
-          final recvPort = RawReceivePort();
-          recvPort.handler = (message) {
-            if (message == "First") {
-              throw "Oh no!";
-            } else {
-              port.send("Reply to second message");
-              recvPort.close();
-            }
-          };
-          port.send(recvPort.sendPort);
-        },
-        recvPort.sendPort,
-        onExit: exitPort.sendPort,
-        errorsAreFatal: false);
+    final isolate = await PlatformIsolate.spawn((port) {
+      final recvPort = RawReceivePort();
+      recvPort.handler = (message) {
+        if (message == "First") {
+          throw "Oh no!";
+        } else {
+          port.send("Reply to second message");
+          recvPort.close();
+        }
+      };
+      port.send(recvPort.sendPort);
+    }, recvPort.sendPort, onExit: exitPort.sendPort, errorsAreFatal: false);
 
     await exitCompleter.future;
     expect(secondMessageReplyReceived, true);
@@ -294,18 +275,16 @@ void main() {
   });
 
   test('PlatformIsolate.spawn, root isolate only', () async {
-    await Isolate.run(
-        () {
-          expect(() => PlatformIsolate.spawn((_) => print('Unreachable'), null),
-              throws);
-        });
+    await Isolate.run(() {
+      expect(() => PlatformIsolate.spawn((_) => print('Unreachable'), null),
+          throws);
+    });
   });
 
   test('PlatformIsolate.run, root isolate only', () async {
-    await Isolate.run(
-        () {
-          expect(() => PlatformIsolate.run(() => print('Unreachable')), throws);
-        });
+    await Isolate.run(() {
+      expect(() => PlatformIsolate.run(() => print('Unreachable')), throws);
+    });
   });
 
   // TODO(flutter/flutter#136314): At the moment this works, but logs a spurious

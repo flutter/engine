@@ -7,8 +7,8 @@
 #include "flutter/fml/thread_local.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/testing/testing.h"
 #include "flutter/testing/fixture_test.h"
+#include "flutter/testing/testing.h"
 
 namespace flutter {
 namespace testing {
@@ -26,7 +26,8 @@ struct IsolateData {
 // IsolateData objects to live as long as the map itself. The last element of
 // the vector is always the currently active IsolateData, and the other elements
 // refer to isolates that have been shutdown.
-using IsolateDataMap = std::unordered_map<Dart_Isolate, std::vector<std::unique_ptr<IsolateData>>>;
+using IsolateDataMap =
+    std::unordered_map<Dart_Isolate, std::vector<std::unique_ptr<IsolateData>>>;
 
 // Using a thread local isolate data map so that MultithreadedCreation test
 // can avoid using locks while creating isolates on multiple threads. A lock
@@ -49,11 +50,10 @@ class PlatformIsolateManagerTest : public FixtureTest {
     Dart_IsolateFlagsInitialize(&flags);
     char* error = nullptr;
     root_isolate_ = Dart_CreateIsolateGroup(
-          "main.dart",
-          "RootIsolate",
-          vm_data->GetIsolateSnapshot()->GetDataMapping(),
-          vm_data->GetIsolateSnapshot()->GetInstructionsMapping(),
-          &flags, nullptr, nullptr, &error);
+        "main.dart", "RootIsolate",
+        vm_data->GetIsolateSnapshot()->GetDataMapping(),
+        vm_data->GetIsolateSnapshot()->GetInstructionsMapping(), &flags,
+        nullptr, nullptr, &error);
     ASSERT_TRUE(root_isolate_);
     Dart_ExitIsolate();
 
@@ -70,8 +70,9 @@ class PlatformIsolateManagerTest : public FixtureTest {
 
     IsolateData* isolate_data = new IsolateData(mgr);
     char* error = nullptr;
-    Dart_Isolate isolate = Dart_CreateIsolateInGroup(
-        root_isolate_, "TestIsolate", OnShutdown, nullptr, isolate_data, &error);
+    Dart_Isolate isolate =
+        Dart_CreateIsolateInGroup(root_isolate_, "TestIsolate", OnShutdown,
+                                  nullptr, isolate_data, &error);
     isolate_data->isolate = isolate;
     EXPECT_TRUE(isolate);
     Dart_ExitIsolate();
@@ -96,11 +97,11 @@ class PlatformIsolateManagerTest : public FixtureTest {
   }
 
  private:
-
   Dart_Isolate root_isolate_ = nullptr;
 
   static void OnShutdown(void*, void* raw_isolate_data) {
-    IsolateData* isolate_data = reinterpret_cast<IsolateData*>(raw_isolate_data);
+    IsolateData* isolate_data =
+        reinterpret_cast<IsolateData*>(raw_isolate_data);
     EXPECT_TRUE(isolate_data->isolate);
     EXPECT_FALSE(isolate_data->is_shutdown);
     isolate_data->is_shutdown = true;
@@ -112,7 +113,6 @@ class PlatformIsolateManagerTest : public FixtureTest {
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformIsolateManagerTest);
 };
-
 
 TEST_F(PlatformIsolateManagerTest, OrdinaryFlow) {
   TestWithRootIsolate([this]() {
@@ -227,18 +227,17 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
 
     std::vector<std::thread> threads;
     for (int i = 0; i < 10; ++i) {
-      threads.push_back(
-        std::thread([this, &mgr](){
-          for (int j = 0; j < 100; ++j) {
-            Dart_Isolate isolate = CreateAndRegisterIsolate(&mgr);
-            ASSERT_TRUE(isolate);
-            EXPECT_FALSE(IsolateIsShutdown(isolate));
+      threads.push_back(std::thread([this, &mgr]() {
+        for (int j = 0; j < 100; ++j) {
+          Dart_Isolate isolate = CreateAndRegisterIsolate(&mgr);
+          ASSERT_TRUE(isolate);
+          EXPECT_FALSE(IsolateIsShutdown(isolate));
 
-            if (!IsolateIsRegistered(isolate)) {
-              Dart_EnterIsolate(isolate);
-              Dart_ShutdownIsolate();
-            }
+          if (!IsolateIsRegistered(isolate)) {
+            Dart_EnterIsolate(isolate);
+            Dart_ShutdownIsolate();
           }
+        }
       }));
     }
 
