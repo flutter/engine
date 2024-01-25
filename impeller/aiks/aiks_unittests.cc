@@ -1524,6 +1524,67 @@ TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, SolidColorCirclesOvalsRRectsMaskBlurCorrectly) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma{1},
+  };
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  paint.color = Color::Crimson();
+  Scalar y = 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 10.0f;
+    canvas.DrawRect(Rect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
+                                   radius, 60.0f - radius),
+                    paint);
+  }
+
+  paint.color = Color::Blue();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 10.0f;
+    canvas.DrawCircle({x + 25, y + 25}, radius, paint);
+  }
+
+  paint.color = Color::Green();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 10.0f;
+    canvas.DrawOval(Rect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
+                                   radius, 60.0f - radius),
+                    paint);
+  }
+
+  paint.color = Color::Purple();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 20.0f;
+    canvas.DrawRRect(Rect::MakeXYWH(x, y, 60.0f, 60.0f),  //
+                     {radius, radius},                    //
+                     paint);
+  }
+
+  paint.color = Color::Orange();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 20.0f;
+    canvas.DrawRRect(Rect::MakeXYWH(x, y, 60.0f, 60.0f),  //
+                     {radius, 5.0f}, paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -3213,7 +3274,7 @@ TEST_P(AiksTest, CaptureInactivatedByDefault) {
 
 // Regression test for https://github.com/flutter/flutter/issues/134678.
 TEST_P(AiksTest, ReleasesTextureOnTeardown) {
-  auto context = GetContext();
+  auto context = MakeContext();
   std::weak_ptr<Texture> weak_texture;
 
   {
@@ -3865,6 +3926,54 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
               std::string::npos);
   }
 #endif
+}
+
+TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreScaledUp) {
+  Canvas canvas;
+  // Create a subpass with no bounds hint and an entity coverage of (95, 95).
+  canvas.SaveLayer({
+      .color = Color::Black().WithAlpha(0.5),
+  });
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 10, 10), {.color = Color::Red()});
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 95, 95), {.color = Color::Blue()});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {100, 100});
+
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(100, 100));
+  }
+}
+
+TEST_P(AiksTest, SaveLayersCloseToRootPassSizeAreNotScaledUpPastBoundsHint) {
+  Canvas canvas;
+  canvas.SaveLayer(
+      {
+          .color = Color::Black().WithAlpha(0.5),
+      },
+      Rect::MakeSize(ISize(95, 95)));
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), {.color = Color::Red()});
+  canvas.DrawRect(Rect::MakeLTRB(50, 50, 150, 150), {.color = Color::Blue()});
+  canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {100, 100});
+
+  // We expect a single 100x100 texture and the rest should be 95x95.
+  EXPECT_EQ(cache->GetTextureDataBegin()->texture->GetTextureDescriptor().size,
+            ISize(100, 100));
+  for (auto it = ++cache->GetTextureDataBegin();
+       it != cache->GetTextureDataEnd(); ++it) {
+    EXPECT_EQ(it->texture->GetTextureDescriptor().size, ISize(95, 95));
+  }
 }
 
 TEST_P(AiksTest, ImageColorSourceEffectTransform) {
