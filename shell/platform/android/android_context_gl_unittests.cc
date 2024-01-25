@@ -81,7 +81,7 @@ class TestImpellerContext : public impeller::Context {
 
 class TestAndroidContext : public AndroidContext {
  public:
-  TestAndroidContext(std::shared_ptr<impeller::Context> impeller_context,
+  TestAndroidContext(const std::shared_ptr<impeller::Context>& impeller_context,
                      AndroidRenderingAPI rendering_api)
       : AndroidContext(rendering_api) {
     SetImpellerContext(impeller_context);
