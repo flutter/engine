@@ -159,12 +159,13 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
       total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
         VS::PerVertexData* vtx_contents =
             reinterpret_cast<VS::PerVertexData*>(data);
-        VS::PerVertexData vertex_data = {
-            .position = vertices_[i],
-            .color = colors_[i],
-        };
-        i++;
-        std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
+        for (auto i = 0u; i < vertices_.size(); i++) {
+          VS::PerVertexData vertex_data = {
+              .position = vertices_[i],
+              .color = colors_[i],
+          };
+          std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
+        }
       });
 
   BufferView index_buffer = {};
@@ -204,25 +205,25 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
 
   size_t total_vtx_bytes = vertices_.size() * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
-  size_t i = 0u;
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
       total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
         VS::PerVertexData* vtx_contents =
             reinterpret_cast<VS::PerVertexData*>(data);
-        auto vertex = vertices_[i];
-        auto texture_coord =
-            has_texture_coordinates ? texture_coordinates_[i] : vertices_[i];
-        auto uv = uv_transform * texture_coord;
-        // From experimentation we need to clamp these values to < 1.0 or else
-        // there can be flickering.
-        VS::PerVertexData vertex_data = {
-            .position = vertex,
-            .texture_coords =
-                Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
-                      std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
-        };
-        i++;
-        std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
+        for (auto i = 0u; i < vertices_.size(); i++) {
+          auto vertex = vertices_[i];
+          auto texture_coord =
+              has_texture_coordinates ? texture_coordinates_[i] : vertices_[i];
+          auto uv = uv_transform * texture_coord;
+          // From experimentation we need to clamp these values to < 1.0 or else
+          // there can be flickering.
+          VS::PerVertexData vertex_data = {
+              .position = vertex,
+              .texture_coords =
+                  Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
+                        std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
+          };
+          std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
+        }
       });
 
   BufferView index_buffer = {};
