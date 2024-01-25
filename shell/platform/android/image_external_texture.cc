@@ -60,36 +60,37 @@ void ImageExternalTexture::OnGrContextCreated() {
 }
 
 sk_sp<flutter::DlImage> ImageExternalTexture::FindImage(uint64_t key) {
-  for (auto i = 0u; i < kImageReaderSwapchainSize; i++) {
+  for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
     if (images_[i].key == key) {
-      UpdateKey(key);
-      return images_[i].image;
+      auto result = images_[i].image;
+      UpdateKey(result, key);
+      return result;
     }
   }
   return nullptr;
 }
 
-void ImageExternalTexture::UpdateKey(uint64_t key) {
-  if (keys_[0] == key) {
+void ImageExternalTexture::UpdateKey(const sk_sp<flutter::DlImage>& image,
+                                     uint64_t key) {
+  if (images_[0].key == key) {
     return;
   }
-  auto i = 1u;
+  size_t i = 1u;
   for (; i < kImageReaderSwapchainSize; i++) {
-    if (keys_[i] == key) {
+    if (images_[i].key == key) {
       break;
     }
   }
   for (auto j = i; j > 0; j--) {
-    keys_[j] = keys_[j - 1];
+    images_[j] = images_[j - 1];
   }
-  keys_[0] = key;
 }
 
 void ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
                                     uint64_t key) {
-  uint64_t lru_key = keys_[kImageReaderSwapchainSize - 1];
+  uint64_t lru_key = images_[kImageReaderSwapchainSize - 1].key;
   bool updated_image = false;
-  for (auto i = 0u; i < kImageReaderSwapchainSize; i++) {
+  for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
     if (images_[i].key == lru_key) {
       updated_image = true;
       images_[i] = LRUImage{.key = key, .image = image};
@@ -97,16 +98,22 @@ void ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
     }
   }
   if (!updated_image) {
-    keys_[0] = key;
     images_[0] = LRUImage{.key = key, .image = image};
   }
-  UpdateKey(key);
+  UpdateKey(image, key);
+}
+
+void ImageExternalTexture::ResetCache() {
+  for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
+    images_[i] = {.key = 0u, .image = nullptr};
+  }
 }
 
 // Implementing flutter::ContextListener.
 void ImageExternalTexture::OnGrContextDestroyed() {
   if (state_ == AttachmentState::kAttached) {
     dl_image_.reset();
+    ResetCache();
     Detach();
   }
   state_ = AttachmentState::kDetached;

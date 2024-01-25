@@ -15,7 +15,12 @@
 
 namespace flutter {
 
-static constexpr size_t kImageReaderSwapchainSize = 3u;
+// This value needs to be larger than the number of swapchain images
+// that a typical image reader will produce to ensure that we effectively
+// cache. If the value is too small, we will unnecessarily churn through
+// images, while if it is too large we may retain images longer than
+// necessary.
+static constexpr size_t kImageReaderSwapchainSize = 6u;
 
 // External texture peered to a sequence of android.hardware.HardwareBuffers.
 //
@@ -52,8 +57,9 @@ class ImageExternalTexture : public flutter::Texture {
   virtual void ProcessFrame(PaintContext& context, const SkRect& bounds) = 0;
 
   sk_sp<flutter::DlImage> FindImage(uint64_t key);
-  void UpdateKey(uint64_t key);
+  void UpdateKey(const sk_sp<flutter::DlImage>& image, uint64_t key);
   void AddImage(const sk_sp<flutter::DlImage>& image, uint64_t key);
+  void ResetCache();
 
   struct LRUImage {
     uint64_t key;
@@ -78,7 +84,6 @@ class ImageExternalTexture : public flutter::Texture {
       LRUImage{.key = 0, .image = nullptr},
       LRUImage{.key = 0, .image = nullptr},
   };
-  std::array<uint64_t, kImageReaderSwapchainSize> keys_ = {0, 0, 0};
 
   sk_sp<flutter::DlImage> dl_image_;
 
