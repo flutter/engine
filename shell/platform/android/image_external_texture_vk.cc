@@ -96,6 +96,11 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   auto existing_image = FindImage(key);
   if (existing_image != nullptr) {
     dl_image_ = existing_image;
+
+    CloseHardwareBuffer(hardware_buffer);
+    // IMPORTANT: We only close the old image after texture stops referencing
+    // it.
+    CloseImage(old_android_image);
     return;
   }
 
