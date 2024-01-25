@@ -32,9 +32,9 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   Dart_StringToCString(debug_name, &debug_name_cstr);
 
   char* error = nullptr;
-  current_state->CreatePlatformIsolate(
-      entry_point, isolate_ready_port_id, debug_name_cstr, errors_are_fatal,
-      &error);
+  current_state->CreatePlatformIsolate(entry_point, isolate_ready_port_id,
+                                       debug_name_cstr, errors_are_fatal,
+                                       &error);
   if (error) {
     Dart_EnterScope();
     Dart_Handle error_handle = tonic::ToDart<const char*>(error);
