@@ -19,13 +19,13 @@ abstract final class PlatformIsolate {
       SendPort? onExit,
       SendPort? onError,
       String? debugName}) {
-    final isolateCompleter = Completer<PlatformIsolate>();
+    final isolateCompleter = Completer<Isolate>();
     final isolateReadyPort = RawReceivePort();
     isolateReadyPort.handler = (readyMessage) {
       isolateReadyPort.close();
 
       if (readyMessage is _PlatformIsolateReadyMessage) {
-        final isolate = Isolate._(readyMessage.controlPort,
+        final isolate = Isolate(readyMessage.controlPort,
             pauseCapability: readyMessage.pauseCapability,
             terminateCapability: readyMessage.terminateCapability);
         if (onError != null) {
