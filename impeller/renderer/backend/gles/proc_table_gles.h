@@ -24,7 +24,7 @@ struct AutoErrorCheck {
 
   // TODO(matanlurey) Change to string_view.
   // https://github.com/flutter/flutter/issues/135922
-  const char* name;
+  std::string_view name;// Change from const char* to std::string_view
 
   AutoErrorCheck(PFNGLGETERRORPROC error, const char* name)
       : error_fn(error), name(name) {}
@@ -58,7 +58,7 @@ struct GLProc {
   //----------------------------------------------------------------------------
   /// The name of the GL function.
   ///
-  const char* name = nullptr;
+  std::string_view name;  // Change from const char* to std::string_view
 
   //----------------------------------------------------------------------------
   /// The pointer to the GL function.
