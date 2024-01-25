@@ -43,7 +43,7 @@ class AndroidHardwareBufferTextureSourceVK final : public TextureSourceVK {
 
   bool IsValid() const;
 
-  bool IsOnscreen() const override { return false; }
+  bool IsSwapchainImage() const override { return false; }
 
  private:
   const vk::Device& device_;

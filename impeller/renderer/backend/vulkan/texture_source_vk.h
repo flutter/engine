@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_SOURCE_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_SOURCE_VK_H_
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/status.h"
 #include "impeller/base/thread.h"
 #include "impeller/core/texture_descriptor.h"
@@ -34,7 +33,7 @@ class TextureSourceVK {
   /// @brief Retrieve the image view used for render target attachments
   ///        with this texture source.
   ///
-  /// image views used as render target attachments cannot have any mip levels.
+  /// ImageViews used as render target attachments cannot have any mip levels.
   /// In cases where we want to generate mipmaps with the result of this
   /// texture, we need to create multiple image views.
   virtual vk::ImageView GetRenderTargetView() const = 0;
@@ -62,7 +61,7 @@ class TextureSourceVK {
   vk::ImageLayout GetLayout() const;
 
   /// Whether or not this is a swapchain image.
-  virtual bool IsOnscreen() const = 0;
+  virtual bool IsSwapchainImage() const = 0;
 
  protected:
   const TextureDescriptor desc_;

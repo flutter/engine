@@ -355,10 +355,10 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     }
     // Create a specialized view for render target attachments.
     view_info.subresourceRange.levelCount = 1u;
-    auto [result_2, rt_image_view] = device.createImageViewUnique(view_info);
-    if (result != vk::Result::eSuccess) {
+    auto [rt_result, rt_image_view] = device.createImageViewUnique(view_info);
+    if (rt_result != vk::Result::eSuccess) {
       VALIDATION_LOG << "Unable to create an image view for allocation: "
-                     << vk::to_string(result);
+                     << vk::to_string(rt_result);
       return;
     }
 
@@ -382,7 +382,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     return resource_->rt_image_view.get();
   }
 
-  bool IsOnscreen() const override { return false; }
+  bool IsSwapchainImage() const override { return false; }
 
  private:
   struct ImageResource {
@@ -399,11 +399,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
           image_view(std::move(p_image_view)),
           rt_image_view(std::move(p_rt_image_view)) {}
 
-    ImageResource(ImageResource&& o) {
-      std::swap(image, o.image);
-      std::swap(image_view, o.image_view);
-      std::swap(rt_image_view, o.rt_image_view);
-    }
+    ImageResource(ImageResource&& o) = default;
 
     ImageResource(const ImageResource&) = delete;
 

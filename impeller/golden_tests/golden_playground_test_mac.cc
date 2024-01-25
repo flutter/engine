@@ -65,6 +65,7 @@ static const std::vector<std::string> kSkipTests = {
 static const std::vector<std::string> kVulkanValidationTests = {
     "impeller_Play_AiksTest_CanRenderImageRect_Vulkan",
     "impeller_Play_AiksTest_CanRenderTextFrame_Vulkan",
+    "impeller_Play_AiksTest_GaussianBlurMipMapNestedLayer",
 };
 
 namespace {
@@ -128,7 +129,8 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetBackend() != PlaygroundBackend::kMetal &&
+      GetBackend() != PlaygroundBackend::kVulkan) {
     GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
     return;
   }

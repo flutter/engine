@@ -42,7 +42,7 @@ class SwapchainImageVK final : public TextureSourceVK {
 
   void SetMSAATexture(std::shared_ptr<Texture> msaa_tex);
 
-  bool IsOnscreen() const override { return true; }
+  bool IsSwapchainImage() const override { return true; }
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;

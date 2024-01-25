@@ -56,14 +56,12 @@ bool InlinePassContext::EndPass() {
   if (!IsActive()) {
     return true;
   }
+  FML_DCHECK(command_buffer_);
 
-  if (command_buffer_) {
-    if (!pass_->EncodeCommands()) {
-      VALIDATION_LOG
-          << "Failed to encode and submit command buffer while ending "
-             "render pass.";
-      return false;
-    }
+  if (!pass_->EncodeCommands()) {
+    VALIDATION_LOG << "Failed to encode and submit command buffer while ending "
+                      "render pass.";
+    return false;
   }
 
   const std::shared_ptr<Texture>& target_texture =

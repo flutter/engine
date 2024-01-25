@@ -85,8 +85,9 @@ bool BlitCopyTextureToTextureCommandVK::Encode(
                        image_copy               //
   );
 
-  // If this is not an onscreen, convert back to shader read.
-  if (dst.IsOnscreen()) {
+  // If this is an onscreen texture, do not transition the layout
+  // back to shader read.
+  if (dst.IsSwapchainImage()) {
     return true;
   }
 
