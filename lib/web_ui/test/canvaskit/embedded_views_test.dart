@@ -318,6 +318,19 @@ void testMain() {
         await renderScene(sb.build());
       }
 
+      ui.ErrorCallback? previousErrorCallback =
+          EnginePlatformDispatcher.instance.onError;
+
+      Object? lastException;
+      int errorCount = 0;
+
+      EnginePlatformDispatcher.instance.onError =
+          (Object exception, StackTrace stackTrace) {
+        errorCount++;
+        lastException = exception;
+        return true;
+      };
+
       // Frame 1:
       //   Render: up to cache size platform views.
       //   Expect: main canvas plus platform view overlays.
@@ -421,15 +434,12 @@ void testMain() {
         await completer.future;
       }
 
-      try {
-        await renderTestScene(viewCount: platformViewIds.length);
-        fail('Expected to throw');
-      } on AssertionError catch (error) {
-        expect(
-          error.toString(),
-          'Assertion failed: "Cannot render platform views: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15. These views have not been created, or they have been deleted."',
-        );
-      }
+      await renderTestScene(viewCount: platformViewIds.length);
+      expect(errorCount, equals(1));
+      expect(
+        lastException.toString(),
+        'Assertion failed: "Cannot render platform views: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15. These views have not been created, or they have been deleted."',
+      );
 
       // Frame 7:
       //   Render: a platform view after error.
@@ -441,6 +451,7 @@ void testMain() {
       for (int i = 0; i < 16; i++) {
         await disposePlatformView(i);
       }
+      EnginePlatformDispatcher.instance.onError = previousErrorCallback;
     });
 
     test('correctly reuses overlays', () async {
