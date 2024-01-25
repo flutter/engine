@@ -60,7 +60,6 @@ struct GLProc {
   ///
   const char* name = nullptr;
 
-
   //----------------------------------------------------------------------------
   /// The pointer to the GL function.
   ///
