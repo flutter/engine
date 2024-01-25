@@ -451,7 +451,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto vertex_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
@@ -482,7 +482,7 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   auto stroke_builder = CreateSolidStrokeVertices(
       path_, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
@@ -508,7 +508,6 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
   if (!path_bounds.has_value()) {
     return std::nullopt;
   }
-  auto path_coverage = path_bounds->TransformBounds(transform);
 
   Scalar max_radius = 0.5;
   if (stroke_cap_ == Cap::kSquare) {
@@ -522,12 +521,8 @@ std::optional<Rect> StrokePathGeometry::GetCoverage(
     return std::nullopt;
   }
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
-  Vector2 max_radius_xy =
-      transform
-          .TransformDirection(Vector2(max_radius, max_radius) *
-                              std::max(stroke_width_, min_size))
-          .Abs();
-  return path_coverage.Expand(max_radius_xy);
+  max_radius *= std::max(stroke_width_, min_size);
+  return path_bounds->Expand(max_radius).TransformBounds(transform);
 }
 
 }  // namespace impeller

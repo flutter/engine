@@ -51,9 +51,6 @@ class WindowBindingHandler {
   // Returns the scale factor for the backing window.
   virtual float GetDpiScale() = 0;
 
-  // Returns whether the HWND is currently visible.
-  virtual bool IsVisible() = 0;
-
   // Returns the bounds of the backing window in physical pixels.
   virtual PhysicalWindowBounds GetPhysicalWindowBounds() = 0;
 
@@ -67,7 +64,12 @@ class WindowBindingHandler {
   // Invoked when the cursor/composing rect has been updated in the framework.
   virtual void OnCursorRectUpdated(const Rect& rect) = 0;
 
-  // Invoked when the Embedder provides us with new bitmap data for the contents
+  // Invoked when the embedder clears the contents of this Flutter view.
+  //
+  // Returns whether the surface was successfully updated or not.
+  virtual bool OnBitmapSurfaceCleared() = 0;
+
+  // Invoked when the embedder provides us with new bitmap data for the contents
   // of this Flutter view.
   //
   // Returns whether the surface was successfully updated or not.

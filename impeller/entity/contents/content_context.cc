@@ -136,16 +136,31 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
   desc.SetColorAttachmentDescriptor(0u, color0);
 
-  if (!has_stencil_attachment) {
+  if (!has_depth_stencil_attachments) {
+    desc.ClearDepthAttachment();
     desc.ClearStencilAttachments();
   }
 
   auto maybe_stencil = desc.GetFrontStencilAttachmentDescriptor();
+  auto maybe_depth = desc.GetDepthStencilAttachmentDescriptor();
+  FML_DCHECK(has_depth_stencil_attachments == maybe_depth.has_value())
+      << "Depth attachment doesn't match expected pipeline state. "
+         "has_depth_stencil_attachments="
+      << has_depth_stencil_attachments;
+  FML_DCHECK(has_depth_stencil_attachments == maybe_stencil.has_value())
+      << "Stencil attachment doesn't match expected pipeline state. "
+         "has_depth_stencil_attachments="
+      << has_depth_stencil_attachments;
   if (maybe_stencil.has_value()) {
     StencilAttachmentDescriptor stencil = maybe_stencil.value();
     stencil.stencil_compare = stencil_compare;
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
+  }
+  if (maybe_depth.has_value()) {
+    DepthAttachmentDescriptor depth = maybe_depth.value();
+    depth.depth_compare = CompareFunction::kAlways;
+    depth.depth_write_enabled = false;
   }
 
   desc.SetPrimitiveType(primitive_type);
@@ -184,10 +199,12 @@ ContentContext::ContentContext(
       render_target_cache_(render_target_allocator == nullptr
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
-                               : std::move(render_target_allocator)) {
+                               : std::move(render_target_allocator)),
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
+
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
       .color_attachment_pixel_format =
@@ -330,6 +347,7 @@ ContentContext::ContentContext(
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   texture_blend_pipelines_.CreateDefault(*context_, options);
   texture_pipelines_.CreateDefault(*context_, options);
+  texture_strict_src_pipelines_.CreateDefault(*context_, options);
   position_uv_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options);
   gaussian_blur_noalpha_decal_pipelines_.CreateDefault(*context_,
@@ -412,18 +430,18 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled) const {
-  std::shared_ptr<Context> context = GetContext();
+  const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size,
+        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
         SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
@@ -436,7 +454,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
     const RenderTarget& subpass_target,
     const SubpassCallback& subpass_callback) const {
-  std::shared_ptr<Context> context = GetContext();
+  const std::shared_ptr<Context>& context = GetContext();
 
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
@@ -486,6 +504,32 @@ const Capabilities& ContentContext::GetDeviceCapabilities() const {
 
 void ContentContext::SetWireframe(bool wireframe) {
   wireframe_ = wireframe;
+}
+
+std::shared_ptr<Pipeline<PipelineDescriptor>>
+ContentContext::GetCachedRuntimeEffectPipeline(
+    const std::string& unique_entrypoint_name,
+    const ContentContextOptions& options,
+    const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
+        create_callback) const {
+  RuntimeEffectPipelineKey key{unique_entrypoint_name, options};
+  auto it = runtime_effect_pipelines_.find(key);
+  if (it == runtime_effect_pipelines_.end()) {
+    it = runtime_effect_pipelines_.insert(it, {key, create_callback()});
+  }
+  return it->second;
+}
+
+void ContentContext::ClearCachedRuntimeEffectPipeline(
+    const std::string& unique_entrypoint_name) const {
+  for (auto it = runtime_effect_pipelines_.begin();
+       it != runtime_effect_pipelines_.end();) {
+    if (it->first.unique_entrypoint_name == unique_entrypoint_name) {
+      it = runtime_effect_pipelines_.erase(it);
+    } else {
+      it++;
+    }
+  }
 }
 
 }  // namespace impeller

@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "flutter/fml/logging.h"
+#include "fml/backtrace.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/compiler/code_gen_template.h"
@@ -23,53 +24,11 @@
 #include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/runtime_stage/runtime_stage.h"
+#include "spirv_common.hpp"
 
 namespace impeller {
 namespace compiler {
-
-static std::string BaseTypeToString(spirv_cross::SPIRType::BaseType type) {
-  using Type = spirv_cross::SPIRType::BaseType;
-  switch (type) {
-    case Type::Void:
-      return "ShaderType::kVoid";
-    case Type::Boolean:
-      return "ShaderType::kBoolean";
-    case Type::SByte:
-      return "ShaderType::kSignedByte";
-    case Type::UByte:
-      return "ShaderType::kUnsignedByte";
-    case Type::Short:
-      return "ShaderType::kSignedShort";
-    case Type::UShort:
-      return "ShaderType::kUnsignedShort";
-    case Type::Int:
-      return "ShaderType::kSignedInt";
-    case Type::UInt:
-      return "ShaderType::kUnsignedInt";
-    case Type::Int64:
-      return "ShaderType::kSignedInt64";
-    case Type::UInt64:
-      return "ShaderType::kUnsignedInt64";
-    case Type::AtomicCounter:
-      return "ShaderType::kAtomicCounter";
-    case Type::Half:
-      return "ShaderType::kHalfFloat";
-    case Type::Float:
-      return "ShaderType::kFloat";
-    case Type::Double:
-      return "ShaderType::kDouble";
-    case Type::Struct:
-      return "ShaderType::kStruct";
-    case Type::Image:
-      return "ShaderType::kImage";
-    case Type::SampledImage:
-      return "ShaderType::kSampledImage";
-    case Type::Sampler:
-      return "ShaderType::kSampler";
-    default:
-      return "ShaderType::kUnknown";
-  }
-}
 
 static std::string ExecutionModelToString(spv::ExecutionModel model) {
   switch (model) {
@@ -299,6 +258,18 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     std::set<spirv_cross::ID> known_structs;
     ir_->for_each_typed_id<spirv_cross::SPIRType>(
         [&](uint32_t, const spirv_cross::SPIRType& type) {
+          if (type.basetype != spirv_cross::SPIRType::BaseType::Struct) {
+            return;
+          }
+          // Skip structs that do not have layout offset decorations.
+          // These structs are used internally within the shader and are not
+          // part of the shader's interface.
+          for (size_t i = 0; i < type.member_types.size(); i++) {
+            if (!compiler_->has_member_decoration(type.self, i,
+                                                  spv::DecorationOffset)) {
+              return;
+            }
+          }
           if (known_structs.find(type.self) != known_structs.end()) {
             // Iterating over types this way leads to duplicates which may cause
             // duplicate struct definitions.
@@ -370,7 +341,6 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
   // Sort the IR so that the uniforms are in declaration order.
   std::vector<spirv_cross::ID> uniforms =
       SortUniforms(ir_.get(), compiler_.GetCompiler());
-
   for (auto& sorted_id : uniforms) {
     auto var = ir_->ids[sorted_id].get<spirv_cross::SPIRVariable>();
     const auto spir_type = compiler_->get_type(var.basetype);
@@ -383,7 +353,67 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     uniform_description.columns = spir_type.columns;
     uniform_description.bit_width = spir_type.width;
     uniform_description.array_elements = GetArrayElements(spir_type);
+    FML_CHECK(data->backend != RuntimeStageBackend::kVulkan ||
+              spir_type.basetype ==
+                  spirv_cross::SPIRType::BaseType::SampledImage)
+        << "Vulkan runtime effect had unexpected uniforms outside of the "
+           "uniform buffer object.";
     data->uniforms.emplace_back(std::move(uniform_description));
+  }
+
+  const auto ubos = compiler_->get_shader_resources().uniform_buffers;
+  if (data->backend == RuntimeStageBackend::kVulkan && !ubos.empty()) {
+    if (ubos.size() != 1 && ubos[0].name != RuntimeStage::kVulkanUBOName) {
+      VALIDATION_LOG << "Expected a single UBO resource named "
+                        "'"
+                     << RuntimeStage::kVulkanUBOName
+                     << "' "
+                        "for Vulkan runtime stage backend.";
+      return nullptr;
+    }
+
+    const auto& ubo = ubos[0];
+
+    auto members = ReadStructMembers(ubo.type_id);
+    std::vector<uint8_t> struct_layout;
+    size_t float_count = 0;
+
+    for (size_t i = 0; i < members.size(); i += 1) {
+      const auto& member = members[i];
+      std::vector<int> bytes;
+      switch (member.underlying_type) {
+        case StructMember::UnderlyingType::kPadding: {
+          size_t padding_count =
+              (member.size + sizeof(float) - 1) / sizeof(float);
+          while (padding_count > 0) {
+            struct_layout.push_back(0);
+            padding_count--;
+          }
+          break;
+        }
+        case StructMember::UnderlyingType::kFloat: {
+          size_t member_float_count = member.byte_length / sizeof(float);
+          float_count += member_float_count;
+          while (member_float_count > 0) {
+            struct_layout.push_back(1);
+            member_float_count--;
+          }
+          break;
+        }
+        case StructMember::UnderlyingType::kOther:
+          VALIDATION_LOG << "Non-floating-type struct member " << member.name
+                         << " is not supported.";
+          return nullptr;
+      }
+    }
+    data->uniforms.emplace_back(UniformDescription{
+        .name = ubo.name,
+        .location = 64,  // Magic constant that must match the descriptor set
+                         // location for fragment programs.
+        .type = spirv_cross::SPIRType::Struct,
+        .struct_layout = std::move(struct_layout),
+        .struct_float_count = float_count,
+    });
   }
 
   // We only need to worry about storing vertex attributes.
@@ -532,6 +562,8 @@ static std::string ToString(CompilerBackend::Type type) {
       return "Metal Shading Language";
     case CompilerBackend::Type::kGLSL:
       return "OpenGL Shading Language";
+    case CompilerBackend::Type::kGLSLVulkan:
+      return "OpenGL Shading Language (Relaxed Vulkan Semantics)";
     case CompilerBackend::Type::kSkSL:
       return "SkSL Shading Language";
   }
@@ -627,7 +659,7 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
 
   const auto type = compiler_->get_type(type_id);
 
-  result["type_name"] = BaseTypeToString(type.basetype);
+  result["type_name"] = StructMember::BaseTypeToString(type.basetype);
   result["bit_width"] = type.width;
   result["vec_size"] = type.vecsize;
   result["columns"] = type.columns;
@@ -637,7 +669,8 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       auto member = nlohmann::json::object_t{};
       member["name"] = struct_member.name;
       member["type"] = struct_member.type;
-      member["base_type"] = BaseTypeToString(struct_member.base_type);
+      member["base_type"] =
+          StructMember::BaseTypeToString(struct_member.base_type);
       member["offset"] = struct_member.offset;
       member["size"] = struct_member.size;
       member["byte_length"] = struct_member.byte_length;
@@ -1117,7 +1150,8 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
     auto& member = members.emplace_back(nlohmann::json::object_t{});
     member["name"] = struct_member.name;
     member["type"] = struct_member.type;
-    member["base_type"] = BaseTypeToString(struct_member.base_type);
+    member["base_type"] =
+        StructMember::BaseTypeToString(struct_member.base_type);
     member["offset"] = struct_member.offset;
     member["byte_length"] = struct_member.byte_length;
     if (struct_member.array_elements.has_value()) {
@@ -1142,7 +1176,7 @@ static VertexType VertexTypeFromInputResource(
     const spirv_cross::Resource* resource) {
   VertexType result;
   result.variable_name = resource->name;
-  const auto type = compiler.get_type(resource->type_id);
+  const auto& type = compiler.get_type(resource->type_id);
   result.base_type = type.basetype;
   const auto total_size = type.columns * type.vecsize * type.width / 8u;
   result.byte_length = total_size;
@@ -1286,6 +1320,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(uniform_buffer.name);
+    proto.descriptor_type = "DescriptorType::kUniformBuffer";
     {
       std::stringstream stream;
       stream << "Bind uniform buffer for resource named " << uniform_buffer.name
@@ -1305,6 +1340,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(storage_buffer.name);
+    proto.descriptor_type = "DescriptorType::kStorageBuffer";
     {
       std::stringstream stream;
       stream << "Bind storage buffer for resource named " << storage_buffer.name
@@ -1324,6 +1360,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(sampled_image.name);
+    proto.descriptor_type = "DescriptorType::kSampledImage";
     {
       std::stringstream stream;
       stream << "Bind combined image sampler for resource named "
@@ -1339,7 +1376,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
         .argument_name = "texture",
     });
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = "std::shared_ptr<const Sampler>",
+        .type_name = "const std::unique_ptr<const Sampler>&",
         .argument_name = "sampler",
     });
   }
@@ -1347,6 +1384,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(separate_image.name);
+    proto.descriptor_type = "DescriptorType::kImage";
     {
       std::stringstream stream;
       stream << "Bind separate image for resource named " << separate_image.name
@@ -1366,6 +1404,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(separate_sampler.name);
+    proto.descriptor_type = "DescriptorType::kSampler";
     {
       std::stringstream stream;
       stream << "Bind separate sampler for resource named "
@@ -1394,6 +1433,7 @@ nlohmann::json::array_t Reflector::EmitBindPrototypes(
     item["return_type"] = res.return_type;
     item["name"] = res.name;
     item["docstring"] = res.docstring;
+    item["descriptor_type"] = res.descriptor_type;
     auto& args = item["args"] = nlohmann::json::array_t{};
     for (const auto& arg : res.args) {
       auto& json_arg = args.emplace_back(nlohmann::json::object_t{});

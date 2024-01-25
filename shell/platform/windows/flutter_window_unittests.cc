@@ -66,7 +66,6 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD(void, OnSetCursor, (), (override));
   MOCK_METHOD(float, GetScrollOffsetMultiplier, (), (override));
   MOCK_METHOD(float, GetDpiScale, (), (override));
-  MOCK_METHOD(bool, IsVisible, (), (override));
   MOCK_METHOD(void, UpdateCursorRect, (const Rect&), (override));
   MOCK_METHOD(void, OnResetImeComposing, (), (override));
   MOCK_METHOD(UINT, Win32DispatchMessage, (UINT, WPARAM, LPARAM), (override));
@@ -434,6 +433,13 @@ TEST(FlutterWindowTest, PosthumousWindowMessage) {
     msg_count = 0;
   }
   EXPECT_GE(msg_count, 1);
+}
+
+TEST(FlutterWindowTest, UpdateCursor) {
+  FlutterWindow win32window(100, 100);
+  win32window.UpdateFlutterCursor("text");
+  HCURSOR cursor = ::GetCursor();
+  EXPECT_EQ(cursor, ::LoadCursor(nullptr, IDC_IBEAM));
 }
 
 }  // namespace testing

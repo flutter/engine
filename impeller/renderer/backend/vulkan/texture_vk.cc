@@ -107,6 +107,24 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
       &copy                                               // regions
   );
 
+  // Transition to shader-read.
+  {
+    BarrierVK barrier;
+    barrier.cmd_buffer = vk_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                         vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                        vk::PipelineStageFlagBits::eTransfer;
+    barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+    barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+    barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+    if (!SetLayout(barrier)) {
+      return false;
+    }
+  }
+
   return cmd_buffer->SubmitCommands();
 }
 
@@ -149,6 +167,10 @@ vk::ImageLayout TextureVK::SetLayoutWithoutEncoding(
 
 vk::ImageLayout TextureVK::GetLayout() const {
   return source_ ? source_->GetLayout() : vk::ImageLayout::eUndefined;
+}
+
+vk::ImageView TextureVK::GetRenderTargetView() const {
+  return source_->GetRenderTargetView();
 }
 
 }  // namespace impeller

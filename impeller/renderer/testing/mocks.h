@@ -92,7 +92,7 @@ class MockBlitPass : public BlitPass {
 
 class MockRenderPass : public RenderPass {
  public:
-  MockRenderPass(std::weak_ptr<const Context> context,
+  MockRenderPass(std::shared_ptr<const Context> context,
                  const RenderTarget& target)
       : RenderPass(std::move(context), target) {}
   MOCK_METHOD(bool, IsValid, (), (const, override));
@@ -202,7 +202,7 @@ class MockCapabilities : public Capabilities {
 
 class MockSamplerLibrary : public SamplerLibrary {
  public:
-  MOCK_METHOD(std::shared_ptr<const Sampler>,
+  MOCK_METHOD(const std::unique_ptr<const Sampler>&,
               GetSampler,
               (SamplerDescriptor descriptor),
               (override));
@@ -211,7 +211,6 @@ class MockSamplerLibrary : public SamplerLibrary {
 class MockSampler : public Sampler {
  public:
   explicit MockSampler(const SamplerDescriptor& desc) : Sampler(desc) {}
-  MOCK_METHOD(bool, IsValid, (), (const, override));
 };
 
 }  // namespace testing

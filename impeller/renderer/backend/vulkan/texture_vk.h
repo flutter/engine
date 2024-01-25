@@ -5,9 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEXTURE_VK_H_
 
-#include <variant>
-
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -30,6 +27,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   vk::ImageView GetImageView() const;
 
+  vk::ImageView GetRenderTargetView() const;
+
   bool SetLayout(const BarrierVK& barrier) const;
 
   vk::ImageLayout SetLayoutWithoutEncoding(vk::ImageLayout layout) const;
@@ -37,6 +36,13 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   vk::ImageLayout GetLayout() const;
 
   std::shared_ptr<const TextureSourceVK> GetTextureSource() const;
+
+  // |Texture|
+  ISize GetSize() const override;
+
+  void SetMipMapGenerated() { mipmap_generated_ = true; }
+
+  bool IsSwapchainImage() const { return source_->IsSwapchainImage(); }
 
  private:
   std::weak_ptr<Context> context_;
@@ -56,9 +62,6 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   // |Texture|
   bool IsValid() const override;
-
-  // |Texture|
-  ISize GetSize() const override;
 
   TextureVK(const TextureVK&) = delete;
 

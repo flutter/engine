@@ -7,7 +7,11 @@
 
 #include <string>
 
+#include "fml/status.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/resource_binder.h"
+#include "impeller/core/shader_types.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
@@ -26,11 +30,11 @@ class Allocator;
 ///
 /// @see        `CommandBuffer`
 ///
-class RenderPass {
+class RenderPass : public ResourceBinder {
  public:
   virtual ~RenderPass();
 
-  const std::weak_ptr<const Context>& GetContext() const;
+  const std::shared_ptr<const Context>& GetContext() const;
 
   const RenderTarget& GetRenderTarget() const;
 
@@ -45,22 +49,89 @@ class RenderPass {
   /// @brief Reserve [command_count] commands in the HAL command buffer.
   ///
   /// Note: this is not the native command buffer.
-  void ReserveCommands(size_t command_count) {
+  virtual void ReserveCommands(size_t command_count) {
     commands_.reserve(command_count);
   }
 
-  HostBuffer& GetTransientsBuffer();
+  //----------------------------------------------------------------------------
+  /// The pipeline to use for this command.
+  virtual void SetPipeline(
+      const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline);
 
   //----------------------------------------------------------------------------
-  /// @brief      Record a command for subsequent encoding to the underlying
-  ///             command buffer. No work is encoded into the command buffer at
-  ///             this time.
+  /// The debugging label to use for the command.
+  virtual void SetCommandLabel(std::string_view label);
+
+  //----------------------------------------------------------------------------
+  /// The reference value to use in stenciling operations. Stencil configuration
+  /// is part of pipeline setup and can be read from the pipelines descriptor.
   ///
-  /// @param[in]  command  The command
+  /// @see         `Pipeline`
+  /// @see         `PipelineDescriptor`
   ///
-  /// @return     If the command was valid for subsequent commitment.
+  virtual void SetStencilReference(uint32_t value);
+
+  virtual void SetBaseVertex(uint64_t value);
+
+  //----------------------------------------------------------------------------
+  /// The viewport coordinates that the rasterizer linearly maps normalized
+  /// device coordinates to.
+  /// If unset, the viewport is the size of the render target with a zero
+  /// origin, znear=0, and zfar=1.
   ///
-  bool AddCommand(Command&& command);
+  virtual void SetViewport(Viewport viewport);
+
+  //----------------------------------------------------------------------------
+  /// The scissor rect to use for clipping writes to the render target. The
+  /// scissor rect must lie entirely within the render target.
+  /// If unset, no scissor is applied.
+  ///
+  virtual void SetScissor(IRect scissor);
+
+  //----------------------------------------------------------------------------
+  /// The number of instances of the given set of vertices to render. Not all
+  /// backends support rendering more than one instance at a time.
+  ///
+  /// @warning      Setting this to more than one will limit the availability of
+  ///               backends to use with this command.
+  ///
+  virtual void SetInstanceCount(size_t count);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Specify the vertex and index buffer to use for this command.
+  ///
+  /// @param[in]  buffer  The vertex and index buffer definition. If possible,
+  ///             this value should be moved and not copied.
+  ///
+  /// @return     returns if the binding was updated.
+  ///
+  virtual bool SetVertexBuffer(VertexBuffer buffer);
+
+  /// Record the currently pending command.
+  virtual fml::Status Draw();
+
+  // |ResourceBinder|
+  virtual bool BindResource(ShaderStage stage,
+                            DescriptorType type,
+                            const ShaderUniformSlot& slot,
+                            const ShaderMetadata& metadata,
+                            BufferView view) override;
+
+  virtual bool BindResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const ShaderUniformSlot& slot,
+      const std::shared_ptr<const ShaderMetadata>& metadata,
+      BufferView view);
+
+  // |ResourceBinder|
+  virtual bool BindResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      const ShaderMetadata& metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
@@ -75,7 +146,7 @@ class RenderPass {
   ///
   /// @details    Visible for testing.
   ///
-  const std::vector<Command>& GetCommands() const { return commands_; }
+  virtual const std::vector<Command>& GetCommands() const { return commands_; }
 
   //----------------------------------------------------------------------------
   /// @brief      The sample count of the attached render target.
@@ -90,7 +161,7 @@ class RenderPass {
   bool HasStencilAttachment() const;
 
  protected:
-  const std::weak_ptr<const Context> context_;
+  const std::shared_ptr<const Context> context_;
   // The following properties: sample_count, pixel_format,
   // has_stencil_attachment, and render_target_size are cached on the
   // RenderTarget to speed up numerous lookups during rendering. This is safe as
@@ -101,11 +172,22 @@ class RenderPass {
   const bool has_stencil_attachment_;
   const ISize render_target_size_;
   const RenderTarget render_target_;
-  std::shared_ptr<HostBuffer> transients_buffer_;
   std::vector<Command> commands_;
   const Matrix orthographic_;
 
-  RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
+  //----------------------------------------------------------------------------
+  /// @brief      Record a command for subsequent encoding to the underlying
+  ///             command buffer. No work is encoded into the command buffer at
+  ///             this time.
+  ///
+  /// @param[in]  command  The command
+  ///
+  /// @return     If the command was valid for subsequent commitment.
+  ///
+  bool AddCommand(Command&& command);
+
+  RenderPass(std::shared_ptr<const Context> context,
+             const RenderTarget& target);
 
   virtual void OnSetLabel(std::string label) = 0;
 
@@ -115,6 +197,8 @@ class RenderPass {
   RenderPass(const RenderPass&) = delete;
 
   RenderPass& operator=(const RenderPass&) = delete;
+
+  Command pending_;
 };
 
 }  // namespace impeller

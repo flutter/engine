@@ -5,7 +5,6 @@
 #include "impeller/entity/geometry/point_field_geometry.h"
 
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/compute_command.h"
 
 namespace impeller {
 
@@ -26,7 +25,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     return {};
   }
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
@@ -54,7 +53,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
       ComputeUVGeometryCPU(vtx_builder.value(), {0, 0},
                            texture_coverage.GetSize(), effect_transform);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
@@ -152,7 +151,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
   auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
   auto compute_pass = cmd_buffer->CreateComputePass();
-  auto& host_buffer = compute_pass->GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   auto points_data =
       host_buffer.Emplace(points_.data(), points_.size() * sizeof(Point),
@@ -162,17 +161,15 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   buffer_desc.size = total * sizeof(Point);
   buffer_desc.storage_mode = StorageMode::kDevicePrivate;
 
-  auto geometry_buffer = renderer.GetContext()
-                             ->GetResourceAllocator()
-                             ->CreateBuffer(buffer_desc)
-                             ->AsBufferView();
+  auto geometry_buffer = DeviceBuffer::AsBufferView(
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc));
 
   BufferView output;
   {
     using PS = PointsComputeShader;
-    ComputeCommand cmd;
-    DEBUG_COMMAND_INFO(cmd, "Points Geometry");
-    cmd.pipeline = renderer.GetPointComputePipeline();
+
+    compute_pass->SetPipeline(renderer.GetPointComputePipeline());
+    compute_pass->SetCommandLabel("Points Geometry");
 
     PS::FrameInfo frame_info;
     frame_info.count = points_.size();
@@ -182,11 +179,11 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     frame_info.points_per_circle = points_per_circle;
     frame_info.divisions_per_circle = vertices_per_geom;
 
-    PS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    PS::BindGeometryData(cmd, geometry_buffer);
-    PS::BindPointData(cmd, points_data);
+    PS::BindFrameInfo(*compute_pass, host_buffer.EmplaceUniform(frame_info));
+    PS::BindGeometryData(*compute_pass, geometry_buffer);
+    PS::BindPointData(*compute_pass, points_data);
 
-    if (!compute_pass->AddCommand(std::move(cmd))) {
+    if (!compute_pass->Compute(ISize(total, 1)).ok()) {
       return {};
     }
     output = geometry_buffer;
@@ -197,16 +194,14 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     buffer_desc.size = total * sizeof(Vector4);
     buffer_desc.storage_mode = StorageMode::kDevicePrivate;
 
-    auto geometry_uv_buffer = renderer.GetContext()
-                                  ->GetResourceAllocator()
-                                  ->CreateBuffer(buffer_desc)
-                                  ->AsBufferView();
+    auto geometry_uv_buffer = DeviceBuffer::AsBufferView(
+        renderer.GetContext()->GetResourceAllocator()->CreateBuffer(
+            buffer_desc));
 
     using UV = UvComputeShader;
 
-    ComputeCommand cmd;
-    DEBUG_COMMAND_INFO(cmd, "UV Geometry");
-    cmd.pipeline = renderer.GetUvComputePipeline();
+    compute_pass->SetCommandLabel("UV Geometry");
+    compute_pass->SetPipeline(renderer.GetUvComputePipeline());
 
     UV::FrameInfo frame_info;
     frame_info.count = total;
@@ -214,18 +209,15 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     frame_info.texture_origin = {0, 0};
     frame_info.texture_size = Vector2(texture_coverage.value().GetSize());
 
-    UV::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    UV::BindGeometryData(cmd, geometry_buffer);
-    UV::BindGeometryUVData(cmd, geometry_uv_buffer);
+    UV::BindFrameInfo(*compute_pass, host_buffer.EmplaceUniform(frame_info));
+    UV::BindGeometryData(*compute_pass, geometry_buffer);
+    UV::BindGeometryUVData(*compute_pass, geometry_uv_buffer);
 
-    if (!compute_pass->AddCommand(std::move(cmd))) {
+    if (!compute_pass->Compute(ISize(total, 1)).ok()) {
       return {};
     }
     output = geometry_uv_buffer;
   }
-
-  compute_pass->SetGridSize(ISize(total, 1));
-  compute_pass->SetThreadGroupSize(ISize(total, 1));
 
   if (!compute_pass->EncodeCommands() || !cmd_buffer->SubmitCommands()) {
     return {};

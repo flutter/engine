@@ -168,16 +168,12 @@ float FlutterWindow::GetDpiScale() {
   return static_cast<float>(GetCurrentDPI()) / static_cast<float>(base_dpi);
 }
 
-bool FlutterWindow::IsVisible() {
-  return IsWindowVisible(GetWindowHandle());
-}
-
 PhysicalWindowBounds FlutterWindow::GetPhysicalWindowBounds() {
   return {GetCurrentWidth(), GetCurrentHeight()};
 }
 
 void FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
-  current_cursor_ = GetCursorByName(cursor_name);
+  SetFlutterCursor(GetCursorByName(cursor_name));
 }
 
 void FlutterWindow::SetFlutterCursor(HCURSOR cursor) {
@@ -308,6 +304,13 @@ void FlutterWindow::OnResetImeComposing() {
   AbortImeComposing();
 }
 
+bool FlutterWindow::OnBitmapSurfaceCleared() {
+  HDC dc = ::GetDC(GetWindowHandle());
+  bool result = ::PatBlt(dc, 0, 0, current_width_, current_height_, BLACKNESS);
+  ::ReleaseDC(GetWindowHandle(), dc);
+  return result;
+}
+
 bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
                                            size_t row_bytes,
                                            size_t height) {
@@ -320,8 +323,8 @@ bool FlutterWindow::OnBitmapSurfaceUpdated(const void* allocation,
   bmi.bmiHeader.biBitCount = 32;
   bmi.bmiHeader.biCompression = BI_RGB;
   bmi.bmiHeader.biSizeImage = 0;
-  int ret = SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0, height,
-                              allocation, &bmi, DIB_RGB_COLORS);
+  int ret = ::SetDIBitsToDevice(dc, 0, 0, row_bytes / 4, height, 0, 0, 0,
+                                height, allocation, &bmi, DIB_RGB_COLORS);
   ::ReleaseDC(GetWindowHandle(), dc);
   return ret != 0;
 }

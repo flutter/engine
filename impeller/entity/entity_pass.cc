@@ -247,35 +247,45 @@ static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
 
 static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
                                            ISize size,
+                                           int mip_count,
                                            const Color& clear_color) {
-  auto context = renderer.GetContext();
+  const std::shared_ptr<Context>& context = renderer.GetContext();
 
   /// All of the load/store actions are managed by `InlinePassContext` when
   /// `RenderPasses` are created, so we just set them to `kDontCare` here.
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
+  if (context->GetBackendType() == Context::BackendType::kOpenGLES) {
+    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
+    // generation on opengles.
+    mip_count = 1;
+  }
+
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = RenderTarget::CreateOffscreenMSAA(
-        *context,                          // context
-        *renderer.GetRenderTargetCache(),  // allocator
-        size,                              // size
-        "EntityPass",                      // label
+        /*context=*/*context,
+        /*allocator=*/*renderer.GetRenderTargetCache(),
+        /*size=*/size,
+        /*mip_count=*/mip_count,
+        /*label=*/"EntityPass",
+        /*color_attachment_config=*/
         RenderTarget::AttachmentConfigMSAA{
             .storage_mode = StorageMode::kDeviceTransient,
             .resolve_storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
-            .clear_color = clear_color},  // color_attachment_config
-        kDefaultStencilConfig             // stencil_attachment_config
-    );
+            .clear_color = clear_color},
+        /*stencil_attachment_config=*/
+        kDefaultStencilConfig);
   } else {
     target = RenderTarget::CreateOffscreen(
         *context,                          // context
         *renderer.GetRenderTargetCache(),  // allocator
         size,                              // size
-        "EntityPass",                      // label
+        /*mip_count=*/mip_count,
+        "EntityPass",  // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
             .load_action = LoadAction::kDontCare,
@@ -304,6 +314,10 @@ bool EntityPass::Render(ContentContext& renderer,
       renderer.GetContext()->capture.GetDocument(kCaptureDocumentName);
 
   renderer.GetRenderTargetCache()->Start();
+  fml::ScopedCleanupClosure reset_state([&renderer]() {
+    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
+    renderer.GetRenderTargetCache()->End();
+  });
 
   auto root_render_target = render_target;
 
@@ -312,18 +326,19 @@ bool EntityPass::Render(ContentContext& renderer,
     VALIDATION_LOG << "The root RenderTarget must have a color attachment.";
     return false;
   }
+  if (root_render_target.GetDepthAttachment().has_value() !=
+      root_render_target.GetStencilAttachment().has_value()) {
+    VALIDATION_LOG << "The root RenderTarget should have a stencil attachment "
+                      "iff it has a depth attachment.";
+    return false;
+  }
 
   capture.AddRect("Coverage",
                   Rect::MakeSize(root_render_target.GetRenderTargetSize()),
                   {.readonly = true});
 
-  fml::ScopedCleanupClosure reset_state([&renderer]() {
-    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
-    renderer.GetRenderTargetCache()->End();
-  });
-
-  IterateAllEntities([lazy_glyph_atlas =
-                          renderer.GetLazyGlyphAtlas()](const Entity& entity) {
+  const auto& lazy_glyph_atlas = renderer.GetLazyGlyphAtlas();
+  IterateAllEntities([&lazy_glyph_atlas](const Entity& entity) {
     if (const auto& contents = entity.GetContents()) {
       contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
     }
@@ -339,8 +354,9 @@ bool EntityPass::Render(ContentContext& renderer,
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
   if (reads_from_onscreen_backdrop) {
-    auto offscreen_target = CreateRenderTarget(
+    EntityPassTarget offscreen_target = CreateRenderTarget(
         renderer, root_render_target.GetRenderTargetSize(),
+        GetRequiredMipCount(),
         GetClearColorOrDefault(render_target.GetRenderTargetSize()));
 
     if (!OnRender(renderer,  // renderer
@@ -371,7 +387,6 @@ bool EntityPass::Render(ContentContext& renderer,
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
-
       if (!command_buffer->EncodeAndSubmit(
               blit_pass, renderer.GetContext()->GetResourceAllocator())) {
         VALIDATION_LOG << "Failed to encode root pass blit command.";
@@ -419,7 +434,8 @@ bool EntityPass::Render(ContentContext& renderer,
   // If a root stencil was provided by the caller, then verify that it has a
   // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
-  if (stencil_attachment.has_value()) {
+  auto depth_attachment = root_render_target.GetDepthAttachment();
+  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
     auto stencil_texture = stencil_attachment->texture;
     if (!stencil_texture) {
       VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
@@ -438,7 +454,7 @@ bool EntityPass::Render(ContentContext& renderer,
   // Setup a new root stencil with an optimal configuration if one wasn't
   // provided by the caller.
   else {
-    root_render_target.SetupStencilAttachment(
+    root_render_target.SetupDepthStencilAttachments(
         *renderer.GetContext(), *renderer.GetRenderTargetCache(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
@@ -600,8 +616,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     auto subpass_target = CreateRenderTarget(
-        renderer,                                        // renderer
-        subpass_size,                                    // size
+        renderer,      // renderer
+        subpass_size,  // size
+        subpass->GetRequiredMipCount(),
         subpass->GetClearColorOrDefault(subpass_size));  // clear_color
 
     if (!subpass_target.IsValid()) {
@@ -838,7 +855,7 @@ bool EntityPass::OnRender(
         collapsed_parent_pass) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
-  auto context = renderer.GetContext();
+  const std::shared_ptr<Context>& context = renderer.GetContext();
   InlinePassContext pass_context(context, pass_target,
                                  GetTotalPassReads(renderer), GetElementCount(),
                                  collapsed_parent_pass);
@@ -1012,6 +1029,25 @@ void EntityPass::IterateAllElements(
     }
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       subpass->get()->IterateAllElements(iterator);
+    }
+  }
+}
+
+void EntityPass::IterateAllElements(
+    const std::function<bool(const Element&)>& iterator) const {
+  /// TODO(gaaclarke): Remove duplication here between const and non-const
+  /// versions.
+  if (!iterator) {
+    return;
+  }
+
+  for (auto& element : elements_) {
+    if (!iterator(element)) {
+      return;
+    }
+    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      const EntityPass* entity_pass = subpass->get();
+      entity_pass->IterateAllElements(iterator);
     }
   }
 }
