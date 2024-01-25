@@ -45,6 +45,13 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   AHardwareBuffer_Desc hb_desc = {};
   flutter::NDKHelpers::AHardwareBuffer_describe(latest_hardware_buffer,
                                                 &hb_desc);
+  uint64_t id;
+  flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer, &id);
+  auto lookup = cache_.find(id);
+  if (lookup != cache_.end()) {
+    dl_image_ = lookup->second;
+    return;
+  }
 
   impeller::TextureDescriptor desc;
   desc.storage_mode = impeller::StorageMode::kDevicePrivate;
@@ -88,6 +95,7 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   }
 
   dl_image_ = impeller::DlImageImpeller::Make(texture);
+  cache_[id] = dl_image_;
   CloseHardwareBuffer(hardware_buffer);
   // IMPORTANT: We only close the old image after texture stops referencing
   // it.
