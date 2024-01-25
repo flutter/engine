@@ -165,6 +165,10 @@ group("unittests") {
   testonly = true
 
   public_deps = []
+
+  public_deps +=
+      [ "//flutter/impeller/renderer/backend/vulkan:vulkan_availability_test" ]
+
   if (is_android) {
     public_deps +=
         [ "//flutter/shell/platform/android:flutter_shell_native_unittests" ]

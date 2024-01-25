@@ -5,6 +5,19 @@
 import("//flutter/vulkan/config.gni")
 import("../../../tools/impeller.gni")
 
+impeller_component("vulkan_availability_test") {
+  target_type = "executable"
+  testonly = true
+  sources = [ "vulkan_availability_test.cc" ]
+  deps = [
+    "//flutter/impeller/fixtures",
+    "//flutter/impeller/renderer/backend/vulkan:vulkan",
+    "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests",
+    "//flutter/testing:testing",
+    "//third_party/vulkan-deps/vulkan-loader/src:libvulkan",
+  ]
+}
+
 impeller_component("vulkan_unittests") {
   testonly = true
   sources = [
