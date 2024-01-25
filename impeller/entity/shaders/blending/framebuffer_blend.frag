@@ -62,6 +62,11 @@ void main() {
                 frag_info.src_input_alpha;
 
   f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, int(blend_type));
-  f16vec4 blended = mix(src, f16vec4(blend_result, src.a), dst.a);
-  frag_color = vec4(mix(dst, blended, src.a));
+
+  // Mix the blended colors together, weighted by the destination alpha. This
+  // color becomes the new source color for the alpha composite.
+  f16vec3 blended = mix(src.rgb, blend_result, dst.a);
+
+  // Source-over blend atop the destination color.
+  frag_color = f16vec4(blended, src.a) + dst * (1.0f - src.a);
 }
