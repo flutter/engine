@@ -1,5 +1,6 @@
 
 #include "flutter/shell/platform/android/image_external_texture_vk.h"
+#include <cstdint>
 
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/core/texture_descriptor.h"
@@ -31,6 +32,50 @@ void ImageExternalTextureVK::Attach(PaintContext& context) {
 
 void ImageExternalTextureVK::Detach() {}
 
+sk_sp<flutter::DlImage> ImageExternalTextureVK::FindImage(uint64_t key) {
+  for (auto i = 0u; i < kImageReaderSwapchainSize; i++) {
+    if (images_[i].first == key) {
+      UpdateKey(key);
+      return images_[i].second;
+    }
+  }
+  return nullptr;
+}
+
+void ImageExternalTextureVK::UpdateKey(uint64_t key) {
+  if (keys_[0] == key) {
+    return;
+  }
+  auto i = 1u;
+  for (; i < kImageReaderSwapchainSize; i++) {
+    if (keys_[i] == key) {
+      break;
+    }
+  }
+  for (auto j = i; j > 0; j--) {
+    keys_[j] = keys_[j - 1];
+  }
+  keys_[0] = key;
+}
+
+void ImageExternalTextureVK::AddImage(sk_sp<flutter::DlImage> image,
+                                      uint64_t key) {
+  uint64_t lru_key = keys_[2];
+  bool updated_image = false;
+  for (auto i = 0u; i < kImageReaderSwapchainSize; i++) {
+    if (images_[i].first == lru_key) {
+      updated_image = true;
+      images_[i] = std::make_pair(key, image);
+      break;
+    }
+  }
+  if (!updated_image) {
+    keys_[0] = key;
+    images_[0] = std::make_pair(key, image);
+  }
+  UpdateKey(key);
+}
+
 void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
                                           const SkRect& bounds) {
   JavaLocalRef image = AcquireLatestImage();
@@ -45,11 +90,12 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   AHardwareBuffer_Desc hb_desc = {};
   flutter::NDKHelpers::AHardwareBuffer_describe(latest_hardware_buffer,
                                                 &hb_desc);
-  uint64_t id;
-  flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer, &id);
-  auto lookup = cache_.find(id);
-  if (lookup != cache_.end()) {
-    dl_image_ = lookup->second;
+  uint64_t key;
+  flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer, &key);
+
+  auto existing_image = FindImage(key);
+  if (existing_image != nullptr) {
+    dl_image_ = existing_image;
     return;
   }
 
@@ -95,7 +141,7 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   }
 
   dl_image_ = impeller::DlImageImpeller::Make(texture);
-  cache_[id] = dl_image_;
+  AddImage(dl_image_, key);
   CloseHardwareBuffer(hardware_buffer);
   // IMPORTANT: We only close the old image after texture stops referencing
   // it.

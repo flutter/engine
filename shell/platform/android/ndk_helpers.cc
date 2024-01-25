@@ -116,9 +116,10 @@ void NDKHelpers::AHardwareBuffer_describe(AHardwareBuffer* buffer,
   _AHardwareBuffer_describe(buffer, desc);
 }
 
-void NDKHelpers::AHardwareBuffer_getId(AHardwareBuffer* buffer, uint64_t *outId) {
+void NDKHelpers::AHardwareBuffer_getId(AHardwareBuffer* buffer,
+                                       uint64_t* outId) {
   NDKHelpers::Init();
-  FML_CHECK(_AHardwareBuffer_getId!= nullptr);
+  FML_CHECK(_AHardwareBuffer_getId != nullptr);
   _AHardwareBuffer_getId(buffer, outId);
 }
 
