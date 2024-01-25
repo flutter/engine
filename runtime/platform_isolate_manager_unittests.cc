@@ -18,7 +18,7 @@ struct IsolateData {
   Dart_Isolate isolate = nullptr;
   bool is_shutdown = false;
   bool is_registered = false;
-  IsolateData(PlatformIsolateManager* _mgr) : mgr(_mgr) {}
+  explicit IsolateData(PlatformIsolateManager* _mgr) : mgr(_mgr) {}
 };
 
 // The IsolateDataMap is a map from Dart_Isolate to a *vector* of IsolateData,
@@ -38,7 +38,7 @@ class PlatformIsolateManagerTest : public FixtureTest {
  public:
   PlatformIsolateManagerTest() {}
 
-  void TestWithRootIsolate(std::function<void()> test) {
+  void TestWithRootIsolate(const std::function<void()>& test) {
     ASSERT_FALSE(DartVMRef::IsInstanceRunning());
     auto settings = CreateSettingsForFixture();
     auto vm_ref = DartVMRef::Create(settings);
@@ -226,6 +226,7 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
     EXPECT_FALSE(mgr.IsShutdown());
 
     std::vector<std::thread> threads;
+    threads.reserve(10);
     for (int i = 0; i < 10; ++i) {
       threads.push_back(std::thread([this, &mgr]() {
         for (int j = 0; j < 100; ++j) {

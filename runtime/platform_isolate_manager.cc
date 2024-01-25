@@ -27,8 +27,8 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
   // isolate shutdown. This can happen either during the ordinary platform
   // isolate shutdown, or during ShutdownPlatformIsolates(). In either case
   // we're on the platform thread.
-  // TODO: Assert that we're on the platform thread. Need a method that works
-  // for ShutdownPlatformIsolates() too, where there's no current UIDartState.
+  // TODO(flutter/flutter#136314): Assert that we're on the platform thread.
+  // Need a method that works for ShutdownPlatformIsolates() too.
   if (is_shutdown_) {
     // Removal during ShutdownPlatformIsolates. Ignore, to avoid modifying
     // platform_isolates_ during iteration.
@@ -43,8 +43,9 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
 }
 
 void PlatformIsolateManager::ShutdownPlatformIsolates() {
-  // TODO: Assert that we're on the platform thread. There's no current
-  // UIDartState here, so the trick we used in platform_isolate.cc won't work.
+  // TODO(flutter/flutter#136314): Assert that we're on the platform thread.
+  // There's no current UIDartState here, so platform_isolate.cc's method won't
+  // work.
   std::scoped_lock lock(platform_isolates_lock_);
   is_shutdown_ = true;
   for (Dart_Isolate isolate : platform_isolates_) {
