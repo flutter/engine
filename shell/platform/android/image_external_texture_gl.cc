@@ -51,27 +51,6 @@ void ImageExternalTextureGL::Detach() {
   egl_image_.reset();
 }
 
-bool ImageExternalTextureGL::MaybeSwapImages() {
-  JavaLocalRef image = AcquireLatestImage();
-  if (image.is_null()) {
-    return false;
-  }
-  // NOTE: In the following code it is important that old_android_image is
-  // not closed until after the update of egl_image_ otherwise the image might
-  // be closed before the old EGLImage referencing it has been deleted. After
-  // an image is closed the underlying HardwareBuffer may be recycled and used
-  // for a future frame.
-  JavaLocalRef old_android_image(android_image_);
-  android_image_.Reset(image);
-  JavaLocalRef hardware_buffer = HardwareBufferFor(image);
-  egl_image_ = CreateEGLImage(AHardwareBufferFor(hardware_buffer));
-  CloseHardwareBuffer(hardware_buffer);
-  // IMPORTANT: We only close the old image after egl_image_ stops referencing
-  // it.
-  CloseImage(old_android_image);
-  return true;
-}
-
 impeller::UniqueEGLImageKHR ImageExternalTextureGL::CreateEGLImage(
     AHardwareBuffer* hardware_buffer) {
   if (hardware_buffer == nullptr) {
@@ -123,13 +102,45 @@ void ImageExternalTextureGLSkia::Detach() {
 
 void ImageExternalTextureGLSkia::ProcessFrame(PaintContext& context,
                                               const SkRect& bounds) {
-  const bool swapped = MaybeSwapImages();
-  if (!swapped && !egl_image_.is_valid()) {
-    // Nothing to do.
+  JavaLocalRef image = AcquireLatestImage();
+  if (image.is_null()) {
     return;
   }
+
+  // NOTE: In the following code it is important that old_android_image is
+  // not closed until after the update of egl_image_ otherwise the image might
+  // be closed before the old EGLImage referencing it has been deleted. After
+  // an image is closed the underlying HardwareBuffer may be recycled and used
+  // for a future frame.
+  JavaLocalRef old_android_image(android_image_);
+  android_image_.Reset(image);
+  JavaLocalRef hardware_buffer = HardwareBufferFor(image);
+  AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
+  auto key = flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+  auto existing_image = FindImage(key);
+  if (existing_image != nullptr) {
+    dl_image_ = existing_image;
+
+    CloseHardwareBuffer(hardware_buffer);
+    // IMPORTANT: We only close the old image after texture stops referencing
+    // it.
+    CloseImage(old_android_image);
+    return;
+  }
+
+  egl_image_ = CreateEGLImage(latest_hardware_buffer);
+  CloseHardwareBuffer(hardware_buffer);
+  // IMPORTANT: We only close the old image after egl_image_ stops referencing
+  // it.
+  CloseImage(old_android_image);
+
+  if (!egl_image_.is_valid()) {
+    return;
+  }
+
   BindImageToTexture(egl_image_, texture_.get().texture_name);
   dl_image_ = CreateDlImage(context, bounds);
+  AddImage(dl_image_, key);
 }
 
 void ImageExternalTextureGLSkia::BindImageToTexture(
@@ -173,12 +184,42 @@ void ImageExternalTextureGLImpeller::Attach(PaintContext& context) {
 
 void ImageExternalTextureGLImpeller::ProcessFrame(PaintContext& context,
                                                   const SkRect& bounds) {
-  const bool swapped = MaybeSwapImages();
-  if (!swapped && !egl_image_.is_valid()) {
-    // Nothing to do.
+  JavaLocalRef image = AcquireLatestImage();
+  if (image.is_null()) {
     return;
   }
+  // NOTE: In the following code it is important that old_android_image is
+  // not closed until after the update of egl_image_ otherwise the image might
+  // be closed before the old EGLImage referencing it has been deleted. After
+  // an image is closed the underlying HardwareBuffer may be recycled and used
+  // for a future frame.
+  JavaLocalRef old_android_image(android_image_);
+  android_image_.Reset(image);
+  JavaLocalRef hardware_buffer = HardwareBufferFor(image);
+  AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
+  auto key = flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+  auto existing_image = FindImage(key);
+  if (existing_image != nullptr) {
+    dl_image_ = existing_image;
+
+    CloseHardwareBuffer(hardware_buffer);
+    // IMPORTANT: We only close the old image after texture stops referencing
+    // it.
+    CloseImage(old_android_image);
+    return;
+  }
+
+  egl_image_ = CreateEGLImage(latest_hardware_buffer);
+  CloseHardwareBuffer(hardware_buffer);
+  // IMPORTANT: We only close the old image after egl_image_ stops referencing
+  // it.
+  CloseImage(old_android_image);
+  if (!egl_image_.is_valid()) {
+    return;
+  }
+
   dl_image_ = CreateDlImage(context, bounds);
+  AddImage(dl_image_, key);
 }
 
 sk_sp<flutter::DlImage> ImageExternalTextureGLImpeller::CreateDlImage(

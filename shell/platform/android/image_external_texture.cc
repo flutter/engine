@@ -59,6 +59,50 @@ void ImageExternalTexture::OnGrContextCreated() {
   state_ = AttachmentState::kUninitialized;
 }
 
+sk_sp<flutter::DlImage> ImageExternalTexture::FindImage(uint64_t key) {
+  for (auto i = 0u; i < kImageReaderSwapchainSize; i++) {
+    if (images_[i].key == key) {
+      UpdateKey(key);
+      return images_[i].image;
+    }
+  }
+  return nullptr;
+}
+
+void ImageExternalTexture::UpdateKey(uint64_t key) {
+  if (keys_[0] == key) {
+    return;
+  }
+  auto i = 1u;
+  for (; i < kImageReaderSwapchainSize; i++) {
+    if (keys_[i] == key) {
+      break;
+    }
+  }
+  for (auto j = i; j > 0; j--) {
+    keys_[j] = keys_[j - 1];
+  }
+  keys_[0] = key;
+}
+
+void ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
+                                    uint64_t key) {
+  uint64_t lru_key = keys_[kImageReaderSwapchainSize - 1];
+  bool updated_image = false;
+  for (auto i = 0u; i < kImageReaderSwapchainSize; i++) {
+    if (images_[i].key == lru_key) {
+      updated_image = true;
+      images_[i] = LRUImage{.key = key, .image = image};
+      break;
+    }
+  }
+  if (!updated_image) {
+    keys_[0] = key;
+    images_[0] = LRUImage{.key = key, .image = image};
+  }
+  UpdateKey(key);
+}
+
 // Implementing flutter::ContextListener.
 void ImageExternalTexture::OnGrContextDestroyed() {
   if (state_ == AttachmentState::kAttached) {

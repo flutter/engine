@@ -116,11 +116,12 @@ void NDKHelpers::AHardwareBuffer_describe(AHardwareBuffer* buffer,
   _AHardwareBuffer_describe(buffer, desc);
 }
 
-void NDKHelpers::AHardwareBuffer_getId(AHardwareBuffer* buffer,
-                                       uint64_t* outId) {
+uint64_t NDKHelpers::AHardwareBuffer_getId(AHardwareBuffer* buffer) {
   NDKHelpers::Init();
   FML_CHECK(_AHardwareBuffer_getId != nullptr);
-  _AHardwareBuffer_getId(buffer, outId);
+  uint64_t outId;
+  _AHardwareBuffer_getId(buffer, &outId);
+  return outId;
 }
 
 EGLClientBuffer NDKHelpers::eglGetNativeClientBufferANDROID(

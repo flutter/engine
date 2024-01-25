@@ -31,9 +31,6 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   void Attach(PaintContext& context) override;
   void Detach() override;
 
-  // Returns true if a new image was acquired and android_image_ and egl_image_
-  // were updated.
-  bool MaybeSwapImages();
   impeller::UniqueEGLImageKHR CreateEGLImage(AHardwareBuffer* buffer);
 
   fml::jni::ScopedJavaGlobalRef<jobject> android_image_;

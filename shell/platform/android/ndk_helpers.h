@@ -27,7 +27,7 @@ class NDKHelpers {
   static void AHardwareBuffer_release(AHardwareBuffer* buffer);
   static void AHardwareBuffer_describe(AHardwareBuffer* buffer,
                                        AHardwareBuffer_Desc* desc);
-  static void AHardwareBuffer_getId(AHardwareBuffer* buffer, uint64_t* outId);
+  static uint64_t AHardwareBuffer_getId(AHardwareBuffer* buffer);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
       AHardwareBuffer* buffer);
 

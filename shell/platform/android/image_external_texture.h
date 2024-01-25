@@ -15,6 +15,8 @@
 
 namespace flutter {
 
+static constexpr size_t kImageReaderSwapchainSize = 3u;
+
 // External texture peered to a sequence of android.hardware.HardwareBuffers.
 //
 class ImageExternalTexture : public flutter::Texture {
@@ -49,6 +51,15 @@ class ImageExternalTexture : public flutter::Texture {
   virtual void Detach() = 0;
   virtual void ProcessFrame(PaintContext& context, const SkRect& bounds) = 0;
 
+  sk_sp<flutter::DlImage> FindImage(uint64_t key);
+  void UpdateKey(uint64_t key);
+  void AddImage(const sk_sp<flutter::DlImage>& image, uint64_t key);
+
+  struct LRUImage {
+    uint64_t key;
+    sk_sp<flutter::DlImage> image;
+  };
+
   JavaLocalRef AcquireLatestImage();
   void CloseImage(const fml::jni::JavaRef<jobject>& image);
   JavaLocalRef HardwareBufferFor(const fml::jni::JavaRef<jobject>& image);
@@ -62,6 +73,12 @@ class ImageExternalTexture : public flutter::Texture {
   enum class AttachmentState { kUninitialized, kAttached, kDetached };
   AttachmentState state_ = AttachmentState::kUninitialized;
   bool new_frame_ready_ = false;
+  std::array<LRUImage, kImageReaderSwapchainSize> images_ = {
+      LRUImage{.key = 0, .image = nullptr},
+      LRUImage{.key = 0, .image = nullptr},
+      LRUImage{.key = 0, .image = nullptr},
+  };
+  std::array<uint64_t, kImageReaderSwapchainSize> keys_ = {0, 0, 0};
 
   sk_sp<flutter::DlImage> dl_image_;
 
