@@ -20,11 +20,10 @@ const char* GLErrorToString(GLenum value);
 bool GLErrorIsFatal(GLenum value);
 
 struct AutoErrorCheck {
-  const char* GLErrorToString(GLenum value);
-bool GLErrorIsFatal(GLenum value);
-
-struct AutoErrorCheck {
   const PFNGLGETERRORPROC error_fn;
+
+  // TODO(matanlurey) Change to string_view.
+  // https://github.com/flutter/flutter/issues/135922
   const char* name;
 
   AutoErrorCheck(PFNGLGETERRORPROC error, const char* name)
