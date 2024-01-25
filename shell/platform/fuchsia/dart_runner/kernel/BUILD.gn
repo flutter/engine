@@ -70,7 +70,8 @@ template("create_kernel_core_snapshot") {
     # No asserts in release with flutter_profile=true (non-product)
     # Yes asserts in non-product debug.
     if (!invoker.product &&
-        (is_debug || !(flutter_runtime_mode == "profile"))) {
+        (is_debug || !(flutter_runtime_mode == "profile" ||
+                       flutter_runtime_mode == "release"))) {
       args += [ "--enable_asserts" ]
     }
     args += [ rebase_path(platform_dill) ]
