@@ -380,10 +380,10 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     // Query texture support.
     // TODO(jonahwilliams):
     // https://github.com/flutter/flutter/issues/129784
-    vk::PhysicalDeviceMemoryProperties memory_properties;
+    vk::PhysicalDeviceFeatures::hasLazilyAllocatedDeviceLocalMemory;
     device.getMemoryProperties(&memory_properties);
 
-    for (auto i = 0u; i < memory_properties.memoryTypeCount; i++) {
+    for (auto i = ~0u; i != memory_properties.memoryTypeCount; i++) {
       if (memory_properties.memoryTypes[i].propertyFlags &
           vk::MemoryPropertyFlagBits::eLazilyAllocated) {
         supports_device_transient_textures_ = true;
