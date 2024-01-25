@@ -1,4 +1,4 @@
-// Copyright 2024 The Flutter Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -32,7 +32,7 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   Dart_StringToCString(debug_name, &debug_name_cstr);
 
   char* error = nullptr;
-  Dart_Isolate platform_isolate = current_state->CreatePlatformIsolate(
+  current_state->CreatePlatformIsolate(
       entry_point, isolate_ready_port_id, debug_name_cstr, errors_are_fatal,
       &error);
   if (error) {

@@ -5827,6 +5827,7 @@ ORIGIN: ../../../flutter/lib/ui/painting/single_frame_codec.h + ../../../flutter
 ORIGIN: ../../../flutter/lib/ui/painting/vertices.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/vertices.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/platform_dispatcher.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/platform_isolate.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/plugins.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/plugins/callback_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/plugins/callback_cache.h + ../../../flutter/LICENSE
@@ -5867,6 +5868,8 @@ ORIGIN: ../../../flutter/lib/ui/window/key_data_packet.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/lib/ui/window/key_data_packet.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/platform_configuration.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/platform_configuration.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/window/platform_isolate.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/window/platform_isolate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/platform_message.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/platform_message.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/window/platform_message_response.cc + ../../../flutter/LICENSE
@@ -6201,6 +6204,8 @@ ORIGIN: ../../../flutter/runtime/isolate_configuration.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/runtime/isolate_configuration.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/platform_data.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/platform_data.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/runtime/platform_isolate_manager.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/runtime/platform_isolate_manager.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/ptrace_check.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/ptrace_check.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/runtime_controller.cc + ../../../flutter/LICENSE
@@ -8675,6 +8680,7 @@ FILE: ../../../flutter/lib/ui/painting/single_frame_codec.h
 FILE: ../../../flutter/lib/ui/painting/vertices.cc
 FILE: ../../../flutter/lib/ui/painting/vertices.h
 FILE: ../../../flutter/lib/ui/platform_dispatcher.dart
+FILE: ../../../flutter/lib/ui/platform_isolate.dart
 FILE: ../../../flutter/lib/ui/plugins.dart
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.cc
 FILE: ../../../flutter/lib/ui/plugins/callback_cache.h
@@ -8715,6 +8721,8 @@ FILE: ../../../flutter/lib/ui/window/key_data_packet.cc
 FILE: ../../../flutter/lib/ui/window/key_data_packet.h
 FILE: ../../../flutter/lib/ui/window/platform_configuration.cc
 FILE: ../../../flutter/lib/ui/window/platform_configuration.h
+FILE: ../../../flutter/lib/ui/window/platform_isolate.cc
+FILE: ../../../flutter/lib/ui/window/platform_isolate.h
 FILE: ../../../flutter/lib/ui/window/platform_message.cc
 FILE: ../../../flutter/lib/ui/window/platform_message.h
 FILE: ../../../flutter/lib/ui/window/platform_message_response.cc
@@ -9050,6 +9058,8 @@ FILE: ../../../flutter/runtime/isolate_configuration.cc
 FILE: ../../../flutter/runtime/isolate_configuration.h
 FILE: ../../../flutter/runtime/platform_data.cc
 FILE: ../../../flutter/runtime/platform_data.h
+FILE: ../../../flutter/runtime/platform_isolate_manager.cc
+FILE: ../../../flutter/runtime/platform_isolate_manager.h
 FILE: ../../../flutter/runtime/ptrace_check.cc
 FILE: ../../../flutter/runtime/ptrace_check.h
 FILE: ../../../flutter/runtime/runtime_controller.cc

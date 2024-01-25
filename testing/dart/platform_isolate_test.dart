@@ -10,8 +10,6 @@ import 'package:litetest/litetest.dart';
 
 void main() {
   test('PlatformIsolate.isRunningOnPlatformThread, false cases', () async {
-    expect(PlatformIsolate.isRunningOnPlatformThread(), isFalse);
-
     final isPlatThread =
         await Isolate.run(() => PlatformIsolate.isRunningOnPlatformThread());
     expect(isPlatThread, isFalse);

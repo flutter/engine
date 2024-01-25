@@ -5,6 +5,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
