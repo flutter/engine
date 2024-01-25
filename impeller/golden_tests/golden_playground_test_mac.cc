@@ -65,7 +65,7 @@ static const std::vector<std::string> kSkipTests = {
 static const std::vector<std::string> kVulkanValidationTests = {
     "impeller_Play_AiksTest_CanRenderImageRect_Vulkan",
     "impeller_Play_AiksTest_CanRenderTextFrame_Vulkan",
-    "impeller_Play_AiksTest_GaussianBlurMipMapNestedLayer",
+    "impeller_Play_AiksTest_GaussianBlurMipMapNestedLayer_Vulkan",
 };
 
 namespace {
