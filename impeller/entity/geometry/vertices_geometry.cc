@@ -154,7 +154,6 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
   size_t total_vtx_bytes = vertex_count * sizeof(VS::PerVertexData);
   size_t total_idx_bytes = index_count * sizeof(uint16_t);
 
-  size_t i = 0u;
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
       total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
         VS::PerVertexData* vtx_contents =
