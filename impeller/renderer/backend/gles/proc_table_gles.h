@@ -20,10 +20,14 @@ const char* GLErrorToString(GLenum value);
 bool GLErrorIsFatal(GLenum value);
 
 struct AutoErrorCheck {
-  const PFNGLGETERRORPROC error_fn;
-  std::string_view name;  // Change from const char* to std::string_view
+  const char* GLErrorToString(GLenum value);
+bool GLErrorIsFatal(GLenum value);
 
-  AutoErrorCheck(PFNGLGETERRORPROC error, std::string_view name)
+struct AutoErrorCheck {
+  const PFNGLGETERRORPROC error_fn;
+  const char* name;
+
+  AutoErrorCheck(PFNGLGETERRORPROC error, const char* name)
       : error_fn(error), name(name) {}
 
   ~AutoErrorCheck() {
@@ -55,7 +59,7 @@ struct GLProc {
   //----------------------------------------------------------------------------
   /// The name of the GL function.
   ///
-  std::string_view name;  // Change from const char* to std::string_view
+  const char* name = nullptr;
 
 
   //----------------------------------------------------------------------------
