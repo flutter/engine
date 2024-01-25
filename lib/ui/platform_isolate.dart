@@ -3,19 +3,29 @@
 // found in the LICENSE file.
 part of dart.ui;
 
-class PlatformIsolate {
+/// Methods for constructing [Isolate]s that run on the Flutter platform thread.
+///
+/// This is an experimental API. It may be changed or removed in future versions
+/// based on user feedback.
+abstract final class PlatformIsolate {
+  /// Creates and spawns an isolate that shares the same code as the current
+  /// isolate. The spawned isolate runs on the Flutter platform thread.
+  ///
+  /// This method can only be invoked from the main isolate.
+  ///
+  /// See [Isolate.spawn] for details.
   static Future<Isolate> spawn<T>(void entryPoint(T message), T message,
       {bool errorsAreFatal = true,
       SendPort? onExit,
       SendPort? onError,
       String? debugName}) {
-    final isolateCompleter = Completer<Isolate>();
+    final isolateCompleter = Completer<PlatformIsolate>();
     final isolateReadyPort = RawReceivePort();
     isolateReadyPort.handler = (readyMessage) {
       isolateReadyPort.close();
 
       if (readyMessage is _PlatformIsolateReadyMessage) {
-        final isolate = new Isolate(readyMessage.controlPort,
+        final isolate = Isolate._(readyMessage.controlPort,
             pauseCapability: readyMessage.pauseCapability,
             terminateCapability: readyMessage.terminateCapability);
         if (onError != null) {
@@ -30,11 +40,11 @@ class PlatformIsolate {
         readyMessage.entryPointPort.send((entryPoint, message));
       } else if (readyMessage is String) {
         // We encountered an error while starting the new isolate.
-        isolateCompleter.completeError(new IsolateSpawnException(
-            'Unable to spawn isolate: $readyMessage'));
+        isolateCompleter.completeError(
+            IsolateSpawnException('Unable to spawn isolate: $readyMessage'));
       } else {
         // This shouldn't happen.
-        isolateCompleter.completeError(new IsolateSpawnException(
+        isolateCompleter.completeError(IsolateSpawnException(
             "Internal error: unexpected format for ready message: "
             "'$readyMessage'"));
       }
@@ -64,6 +74,12 @@ class PlatformIsolate {
   external static void _spawn(Function entryPoint, SendPort isolateReadyPort,
       String debugName, bool errorsAreFatal);
 
+  /// Runs [computation] in a new isolate on the platform thread and returns the
+  /// result.
+  ///
+  /// This method can only be invoked from the main isolate.
+  ///
+  /// See [Isolate.run] for details.
   static FutureOr<R> run<R>(FutureOr<R> computation(), {String? debugName}) {
     final resultCompleter = Completer<R>();
     final resultPort = RawReceivePort();
@@ -125,6 +141,7 @@ class PlatformIsolate {
     }
   }
 
+  /// Returns whether the current isolate is running on the platform thread.
   @Native<Bool Function()>(
       symbol: 'PlatformIsolateNativeApi::IsRunningOnPlatformThread')
   external static bool isRunningOnPlatformThread();

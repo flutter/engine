@@ -13,14 +13,29 @@
 
 namespace flutter {
 
+/// Maintains a list of registered platform isolates, so that they can be
+/// proactively shutdown as a group during shell shutdown.
 class PlatformIsolateManager {
  public:
+  /// Returns whether the PlatformIsolateManager is shutdown. New isolates
+  /// cannot be registered after the manager is shutdown. Callable from any
+  /// thread.
   bool IsShutdown() const { return is_shutdown_; }
+
+  /// Register an isolate in the list of platform isolates. Callable from any
+  /// thread.
   bool RegisterPlatformIsolate(Dart_Isolate isolate);
+
+  /// Remove an isolate from the list of platform isolates. Must be called from
+  /// the platform thread.
   void RemovePlatformIsolate(Dart_Isolate isolate);
+
+  /// Shuts down all registered isolates, and the manager itself. Must be called
+  /// from the platform thread.
   void ShutdownPlatformIsolates();
 
-  // For testing only.
+  /// Returns whether an isolate is registered. For testing only. Callable from
+  /// any thread.
   bool IsRegistered(Dart_Isolate isolate);
 
  private:

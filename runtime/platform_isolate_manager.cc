@@ -28,6 +28,7 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
   // isolate shutdown, or during ShutdownPlatformIsolates(). In either case
   // we're on the platform thread.
   // TODO: Assert that we're on the platform thread. Need a method that works
+  // for ShutdownPlatformIsolates() too, where there's no current UIDartState.
   if (is_shutdown_) {
     // Removal during ShutdownPlatformIsolates. Ignore, to avoid modifying
     // platform_isolates_ during iteration.

@@ -379,10 +379,30 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new isolate in the same group as this isolate, which
+  ///             runs on the platform thread. This method can only be invoked
+  ///             on the root isolate.
+  ///
+  /// @param[in]  entry_point   The entrypoint to invoke once the isolate is
+  ///                           spawned. Will be run on the platform thread.
+  /// @param[in]  port_id       The port to pass to the entrypoint.
+  /// @param[in]  debug_name    The debug name of the new isolate.
+  /// @param[in]  errors_fatal  Whether uncaught errors should cause the isolate
+  ///                           to shutdown.
+  /// @param[out] error         If spawning fails inside the Dart VM, this is
+  ///                           set to the error string. The error should be
+  ///                           reported to the user. Otherwise it is set to
+  ///                           null. It's possible for spawning to fail, but
+  ///                           this error still be null. In that case the
+  ///                           failure should not be reported to the user.
+  ///
+  /// @return     The newly created isolate, or null if spawning failed.
+  ///
   Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
-                                     Dart_Port isolate_ready_port_id,
+                                     Dart_Port port_id,
                                      const char* debug_name,
-                                     bool errors_are_fatal,
+                                     bool errors_fatal,
                                      char** error) override;
 
   bool LoadLoadingUnit(

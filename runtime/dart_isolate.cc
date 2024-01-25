@@ -284,9 +284,9 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 }
 
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
-                                                Dart_Port isolate_ready_port_id,
+                                                Dart_Port port_id,
                                                 const char* debug_name,
-                                                bool errors_are_fatal,
+                                                bool errors_fatal,
                                                 char** error) {
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
@@ -323,14 +323,14 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
 
   // PlatformIsolate.spawn should behave like Isolate.spawn when unhandled
   // exceptions happen (log the exception, but don't terminate the app). But the
-  // unhandled_exception_callback may terminate the app, because it is usually
+  // default unhandled_exception_callback may terminate the app, because it is
   // only called for the root isolate (child isolates are managed by the VM and
-  // have a different code path). So override it to simply log the error.
-  settings.unhandled_exception_callback = [errors_are_fatal](
+  // have a different error code path). So override it to simply log the error.
+  settings.unhandled_exception_callback = [errors_fatal](
                                               const std::string& error,
                                               const std::string& stack_trace) {
     FML_LOG(ERROR) << "Unhandled exception:\n" << error << "\n" << stack_trace;
-    if (errors_are_fatal) {
+    if (errors_fatal) {
       Dart_ShutdownIsolate();
     }
     return true;
@@ -382,8 +382,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     return nullptr;
   }
 
-  platform_task_runner->PostTask([entry_point_handle, platform_isolate,
-                                  isolate_ready_port_id,
+  platform_task_runner->PostTask([entry_point_handle, platform_isolate, port_id,
                                   platform_isolate_manager]() {
     if (platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
@@ -395,7 +394,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_EnterScope();
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_DeletePersistentHandle(entry_point_handle);
-    Dart_Handle isolate_ready_port = Dart_NewSendPort(isolate_ready_port_id);
+    Dart_Handle isolate_ready_port = Dart_NewSendPort(port_id);
 
     tonic::DartInvoke(entry_point, {isolate_ready_port});
 
