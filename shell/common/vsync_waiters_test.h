@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
+#define FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
+
 #define FML_USED_ON_EMBEDDER
 
 #ifndef FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
@@ -72,5 +75,7 @@ class TestRefreshRateReporter final : public VariableRefreshRateReporter {
 
 }  // namespace testing
 }  // namespace flutter
+
+#endif  // FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
 
 #endif  // FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_

@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_LIB_GPU_FIXTURES_H_
+#define FLUTTER_LIB_GPU_FIXTURES_H_
+
 #include "impeller/core/shader_types.h"
 
 struct FlutterGPUUnlitVertexShader {
@@ -107,3 +110,5 @@ extern unsigned char kFlutterGPUTextureVertIPLR[];
 
 constexpr unsigned int kFlutterGPUTextureFragIPLRLength = 800;
 extern unsigned char kFlutterGPUTextureFragIPLR[];
+
+#endif  // FLUTTER_LIB_GPU_FIXTURES_H_
