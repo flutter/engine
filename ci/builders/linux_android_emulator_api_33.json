@@ -32,7 +32,11 @@
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
-                            "version": "33"
+                            "version": "android_33_google_apis_x64.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "SjJFjwg1rz5dh2xdLMSPqU6MF4ipvATxpiQ_gCOyTOgC"
                         }
                     ],
                     "contexts": [
@@ -52,7 +56,11 @@
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
-                            "version": "33"
+                            "version": "android_33_google_apis_x64.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "SjJFjwg1rz5dh2xdLMSPqU6MF4ipvATxpiQ_gCOyTOgC"
                         }
                     ],
                     "contexts": [
