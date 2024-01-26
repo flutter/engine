@@ -46,7 +46,8 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   AHardwareBuffer_Desc hb_desc = {};
   flutter::NDKHelpers::AHardwareBuffer_describe(latest_hardware_buffer,
                                                 &hb_desc);
-  auto key = flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+  HardwareBufferKey key =
+      flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
   auto existing_image = image_lru_.FindImage(key);
   if (existing_image != nullptr) {
     dl_image_ = existing_image;
