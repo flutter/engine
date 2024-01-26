@@ -33,7 +33,7 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   void Attach(PaintContext& context) override;
   void Detach() override;
   void ProcessFrame(PaintContext& context, const SkRect& bounds) override;
-  void UpdateImage(JavaLocalRef hardware_buffer, PaintContext& context);
+  void UpdateImage(JavaLocalRef& hardware_buffer, PaintContext& context);
 
   virtual sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,

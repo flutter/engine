@@ -41,7 +41,7 @@ void ImageExternalTextureGL::Attach(PaintContext& context) {
   }
 }
 
-void ImageExternalTextureGL::UpdateImage(JavaLocalRef hardware_buffer,
+void ImageExternalTextureGL::UpdateImage(JavaLocalRef& hardware_buffer,
                                          PaintContext& context) {
   AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
   HardwareBufferKey key =
