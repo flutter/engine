@@ -9,6 +9,15 @@
 #include <impeller/constants.glsl>
 #include <impeller/types.glsl>
 
+f16vec4 IPApplyBlendedColor(f16vec4 dst, f16vec4 src, f16vec3 blend_result) {
+  // Mix the blended colors together, weighted by the destination alpha. This
+  // color becomes the new source color for the alpha composite.
+  f16vec3 blended = mix(src.rgb, blend_result, dst.a);
+
+  // Source-over blend atop the destination color.
+  return f16vec4(blended, src.a) + dst * (1.0f - src.a);
+}
+
 //------------------------------------------------------------------------------
 /// HSV utilities.
 ///
