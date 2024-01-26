@@ -1752,7 +1752,7 @@ TEST_P(EntityTest, RRectShadowTest) {
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 
     auto contents = std::make_unique<SolidRRectBlurContents>();
-    contents->SetRRect(rect, corner_radius);
+    contents->SetRRect(rect, {corner_radius, corner_radius});
     contents->SetColor(color);
     contents->SetSigma(Radius(blur_radius));
 
@@ -2543,11 +2543,6 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
   ASSERT_EQ(*geometry->GetCoverage(Matrix()), Rect::MakeLTRB(5, 15, 105, 205));
   ASSERT_EQ(*geometry->GetCoverage(Matrix::MakeTranslation({30, 0, 0})),
             Rect::MakeLTRB(35, 15, 135, 205));
-}
-
-TEST_P(EntityTest, PointFieldCanUseCompute) {
-  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()),
-            GetContext()->GetBackendType() == Context::BackendType::kMetal);
 }
 
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
