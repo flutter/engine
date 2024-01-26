@@ -256,9 +256,7 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
-  if (context->GetBackendType() != Context::BackendType::kMetal) {
-    // TODO(https://github.com/flutter/flutter/issues/141495): Implement mip map
-    // generation on vulkan.
+  if (context->GetBackendType() == Context::BackendType::kOpenGLES) {
     // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
     // generation on opengles.
     mip_count = 1;
@@ -328,6 +326,12 @@ bool EntityPass::Render(ContentContext& renderer,
     VALIDATION_LOG << "The root RenderTarget must have a color attachment.";
     return false;
   }
+  if (root_render_target.GetDepthAttachment().has_value() !=
+      root_render_target.GetStencilAttachment().has_value()) {
+    VALIDATION_LOG << "The root RenderTarget should have a stencil attachment "
+                      "iff it has a depth attachment.";
+    return false;
+  }
 
   capture.AddRect("Coverage",
                   Rect::MakeSize(root_render_target.GetRenderTargetSize()),
@@ -383,7 +387,6 @@ bool EntityPass::Render(ContentContext& renderer,
       blit_pass->AddCopy(
           offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
           root_render_target.GetRenderTargetTexture());
-
       if (!command_buffer->EncodeAndSubmit(
               blit_pass, renderer.GetContext()->GetResourceAllocator())) {
         VALIDATION_LOG << "Failed to encode root pass blit command.";

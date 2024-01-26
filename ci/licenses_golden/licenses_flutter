@@ -6020,6 +6020,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/noto_font_encoding.dart + ../
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart + ../../../flutter/LICENSE
@@ -7156,7 +7157,6 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_settings_portal.cc + ../../../f
 ORIGIN: ../../../flutter/shell/platform/linux/fl_settings_portal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_settings_portal_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/linux/fl_standard_message_codec_private.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_standard_message_codec_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_standard_method_codec.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_standard_method_codec_test.cc + ../../../flutter/LICENSE
@@ -7233,10 +7233,18 @@ ORIGIN: ../../../flutter/shell/platform/windows/direct_manipulation.cc + ../../.
 ORIGIN: ../../../flutter/shell/platform/windows/direct_manipulation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/dpi_utils.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/dpi_utils.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/context.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/context.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/egl.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/egl.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/egl/manager.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/egl/manager.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/egl/proc_table.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/egl/proc_table.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/surface.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/surface.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/window_surface.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/egl/window_surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/event_watcher.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/event_watcher.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/external_texture.h + ../../../flutter/LICENSE
@@ -8866,6 +8874,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/noto_font_encoding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart
@@ -10026,7 +10035,6 @@ FILE: ../../../flutter/shell/platform/linux/fl_settings_portal.cc
 FILE: ../../../flutter/shell/platform/linux/fl_settings_portal.h
 FILE: ../../../flutter/shell/platform/linux/fl_settings_portal_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec.cc
-FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_standard_message_codec_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_method_codec.cc
 FILE: ../../../flutter/shell/platform/linux/fl_standard_method_codec_test.cc
@@ -10103,10 +10111,18 @@ FILE: ../../../flutter/shell/platform/windows/direct_manipulation.cc
 FILE: ../../../flutter/shell/platform/windows/direct_manipulation.h
 FILE: ../../../flutter/shell/platform/windows/dpi_utils.cc
 FILE: ../../../flutter/shell/platform/windows/dpi_utils.h
+FILE: ../../../flutter/shell/platform/windows/egl/context.cc
+FILE: ../../../flutter/shell/platform/windows/egl/context.h
+FILE: ../../../flutter/shell/platform/windows/egl/egl.cc
+FILE: ../../../flutter/shell/platform/windows/egl/egl.h
 FILE: ../../../flutter/shell/platform/windows/egl/manager.cc
 FILE: ../../../flutter/shell/platform/windows/egl/manager.h
 FILE: ../../../flutter/shell/platform/windows/egl/proc_table.cc
 FILE: ../../../flutter/shell/platform/windows/egl/proc_table.h
+FILE: ../../../flutter/shell/platform/windows/egl/surface.cc
+FILE: ../../../flutter/shell/platform/windows/egl/surface.h
+FILE: ../../../flutter/shell/platform/windows/egl/window_surface.cc
+FILE: ../../../flutter/shell/platform/windows/egl/window_surface.h
 FILE: ../../../flutter/shell/platform/windows/event_watcher.cc
 FILE: ../../../flutter/shell/platform/windows/event_watcher.h
 FILE: ../../../flutter/shell/platform/windows/external_texture.h

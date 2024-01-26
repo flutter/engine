@@ -1207,6 +1207,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
@@ -2521,6 +2522,7 @@
 ../../../third_party/dart/sdk/lib/html/doc
 ../../../third_party/dart/sdk/lib/libraries.json
 ../../../third_party/dart/sdk/lib/libraries.yaml
+../../../third_party/dart/sdk/lib/svg/dart2js
 ../../../third_party/dart/sdk/lib/vmservice_libraries.json
 ../../../third_party/dart/sdk/lib/vmservice_libraries.yaml
 ../../../third_party/dart/sdk/version
@@ -2544,6 +2546,7 @@
 ../../../third_party/dart/third_party/fallback_root_certificates/certdata.pem
 ../../../third_party/dart/third_party/fallback_root_certificates/certdata.txt
 ../../../third_party/dart/third_party/firefox_jsshell
+../../../third_party/dart/third_party/jsc/README.google
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
 ../../../third_party/dart/third_party/requirejs

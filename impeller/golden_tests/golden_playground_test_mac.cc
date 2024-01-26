@@ -15,7 +15,45 @@
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
+#define GLFW_INCLUDE_NONE
+#include "third_party/glfw/include/GLFW/glfw3.h"
+
+#include "third_party/abseil-cpp/absl/base/no_destructor.h"
+
 namespace impeller {
+
+namespace {
+std::unique_ptr<PlaygroundImpl> MakeVulkanPlayground(bool enable_validations) {
+  FML_CHECK(::glfwInit() == GLFW_TRUE);
+  PlaygroundSwitches playground_switches;
+  playground_switches.enable_vulkan_validation = enable_validations;
+  return PlaygroundImpl::Create(PlaygroundBackend::kVulkan,
+                                playground_switches);
+}
+
+// Returns a static instance to a playground that can be used across tests.
+const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
+    bool enable_validations) {
+  if (enable_validations) {
+    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+        vulkan_validation_playground(
+            MakeVulkanPlayground(/*enable_validations=*/true));
+    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
+    // removed when the thread local storage is removed.
+    static fml::ScopedCleanupClosure context_cleanup(
+        [&] { (*vulkan_validation_playground)->GetContext()->Shutdown(); });
+    return *vulkan_validation_playground;
+  } else {
+    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+        vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
+    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
+    // removed when the thread local storage is removed.
+    static fml::ScopedCleanupClosure context_cleanup(
+        [&] { (*vulkan_playground)->GetContext()->Shutdown(); });
+    return *vulkan_playground;
+  }
+}
+}  // namespace
 
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
@@ -60,6 +98,11 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CaptureContext_Vulkan",
 };
 
+static const std::vector<std::string> kVulkanDenyValidationTests = {
+    // TODO(https://github.com/flutter/flutter/issues/142080): remove this.
+    "impeller_Play_AiksTest_EmptySaveLayerRendersWithClear_Vulkan",
+};
+
 namespace {
 std::string GetTestName() {
   std::string suite_name =
@@ -89,9 +132,17 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   return screenshot->WriteToPNG(
       testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
+
+bool ShouldTestHaveVulkanValidations() {
+  std::string test_name = GetTestName();
+  return std::find(kVulkanDenyValidationTests.begin(),
+                   kVulkanDenyValidationTests.end(),
+                   test_name) == kVulkanDenyValidationTests.end();
+}
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
+  std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
   std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
@@ -127,10 +178,14 @@ void GoldenPlaygroundTest::SetUp() {
     return;
   }
 
+  bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
   if (GetParam() == PlaygroundBackend::kMetal) {
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>();
+    const std::unique_ptr<PlaygroundImpl>& playground =
+        GetSharedVulkanPlayground(enable_vulkan_validations);
+    pimpl_->screenshotter =
+        std::make_unique<testing::VulkanScreenshotter>(playground);
   }
 
   std::string test_name = GetTestName();
@@ -201,6 +256,25 @@ RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
   return pimpl_->screenshotter->GetPlayground().GetContext();
+}
+
+std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    /// On Metal we create a context for each test.
+    return GetContext();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+    FML_CHECK(!pimpl_->test_vulkan_playground)
+        << "We don't support creating multiple contexts for one test";
+    pimpl_->test_vulkan_playground =
+        MakeVulkanPlayground(enable_vulkan_validations);
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+        pimpl_->test_vulkan_playground);
+    return pimpl_->test_vulkan_playground->GetContext();
+  } else {
+    FML_CHECK(false);
+    return nullptr;
+  }
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {
