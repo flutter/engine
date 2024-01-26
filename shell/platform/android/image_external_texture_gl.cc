@@ -56,7 +56,8 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
   android_image_.Reset(image);
   JavaLocalRef hardware_buffer = HardwareBufferFor(image);
   AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
-  auto key = flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+  HardwareBufferKey key =
+      flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
   auto existing_image = image_lru_.FindImage(key);
   if (existing_image != nullptr) {
     dl_image_ = existing_image;
@@ -146,7 +147,7 @@ void ImageExternalTextureGLSkia::BindImageToTexture(
 sk_sp<flutter::DlImage> ImageExternalTextureGLSkia::CreateDlImage(
     PaintContext& context,
     const SkRect& bounds,
-    uint64_t id,
+    HardwareBufferKey id,
     impeller::UniqueEGLImageKHR&& egl_image) {
   GLuint texture_name;
   glGenTextures(1, &texture_name);
@@ -185,7 +186,7 @@ void ImageExternalTextureGLImpeller::Attach(PaintContext& context) {
 sk_sp<flutter::DlImage> ImageExternalTextureGLImpeller::CreateDlImage(
     PaintContext& context,
     const SkRect& bounds,
-    uint64_t id,
+    HardwareBufferKey id,
     impeller::UniqueEGLImageKHR&& egl_image) {
   impeller::TextureDescriptor desc;
   desc.type = impeller::TextureType::kTextureExternalOES;

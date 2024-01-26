@@ -9,6 +9,7 @@
 #include <cstddef>
 
 #include "display_list/image/dl_image.h"
+#include "shell/platform/android/ndk_helpers.h"
 
 namespace flutter {
 
@@ -21,28 +22,29 @@ static constexpr size_t kImageReaderSwapchainSize = 6u;
 
 class ImageLRU {
  public:
-  ImageLRU() { Clear(); }
+  ImageLRU() = default;
 
   ~ImageLRU() = default;
 
   /// @brief Retrieve the image associated with the given [key], or nullptr.
-  sk_sp<flutter::DlImage> FindImage(uint64_t key);
+  sk_sp<flutter::DlImage> FindImage(HardwareBufferKey key);
 
   /// @brief Add a new image to the cache with a key, returning the key of the
   ///        LRU entry that was removed.
   ///
   /// The value may be `0`, in which case nothing was removed.
-  uint64_t AddImage(const sk_sp<flutter::DlImage>& image, uint64_t key);
+  HardwareBufferKey AddImage(const sk_sp<flutter::DlImage>& image,
+                             HardwareBufferKey key);
 
   /// @brief Remove all entires from the image cache.
   void Clear();
 
  private:
   /// @brief Marks [key] as the most recently used.
-  void UpdateKey(const sk_sp<flutter::DlImage>& image, uint64_t key);
+  void UpdateKey(const sk_sp<flutter::DlImage>& image, HardwareBufferKey key);
 
   struct Data {
-    uint64_t key;
+    HardwareBufferKey key = 0u;
     sk_sp<flutter::DlImage> value;
   };
 

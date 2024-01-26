@@ -6,7 +6,7 @@
 
 namespace flutter {
 
-sk_sp<flutter::DlImage> ImageLRU::FindImage(uint64_t key) {
+sk_sp<flutter::DlImage> ImageLRU::FindImage(HardwareBufferKey key) {
   for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
     if (images_[i].key == key) {
       auto result = images_[i].value;
@@ -17,7 +17,8 @@ sk_sp<flutter::DlImage> ImageLRU::FindImage(uint64_t key) {
   return nullptr;
 }
 
-void ImageLRU::UpdateKey(const sk_sp<flutter::DlImage>& image, uint64_t key) {
+void ImageLRU::UpdateKey(const sk_sp<flutter::DlImage>& image,
+                         HardwareBufferKey key) {
   if (images_[0].key == key) {
     return;
   }
@@ -33,9 +34,9 @@ void ImageLRU::UpdateKey(const sk_sp<flutter::DlImage>& image, uint64_t key) {
   images_[0] = Data{.key = key, .value = image};
 }
 
-uint64_t ImageLRU::AddImage(const sk_sp<flutter::DlImage>& image,
-                            uint64_t key) {
-  uint64_t lru_key = images_[kImageReaderSwapchainSize - 1].key;
+HardwareBufferKey ImageLRU::AddImage(const sk_sp<flutter::DlImage>& image,
+                                     HardwareBufferKey key) {
+  HardwareBufferKey lru_key = images_[kImageReaderSwapchainSize - 1].key;
   bool updated_image = false;
   for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
     if (images_[i].key == lru_key) {

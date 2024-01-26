@@ -36,7 +36,7 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   virtual sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      uint64_t id,
+      HardwareBufferKey id,
       impeller::UniqueEGLImageKHR&& egl_image) = 0;
 
   impeller::UniqueEGLImageKHR CreateEGLImage(AHardwareBuffer* buffer);
@@ -48,7 +48,10 @@ class ImageExternalTextureGL : public ImageExternalTexture {
     impeller::UniqueGLTexture texture;
   };
 
-  std::unordered_map<uint64_t, GlEntry> gl_entry_;
+  // Each GL entry is keyed off of the currently active
+  // hardware buffers and evicted when the hardware buffer
+  // is removed from the LRU cache.
+  std::unordered_map<HardwareBufferKey, GlEntry> gl_entry_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTextureGL);
 };
@@ -70,7 +73,7 @@ class ImageExternalTextureGLSkia : public ImageExternalTextureGL {
   sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      uint64_t id,
+      HardwareBufferKey id,
       impeller::UniqueEGLImageKHR&& egl_image) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTextureGLSkia);
@@ -92,7 +95,7 @@ class ImageExternalTextureGLImpeller : public ImageExternalTextureGL {
   sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      uint64_t id,
+      HardwareBufferKey id,
       impeller::UniqueEGLImageKHR&& egl_image) override;
 
   const std::shared_ptr<impeller::ContextGLES> impeller_context_;
