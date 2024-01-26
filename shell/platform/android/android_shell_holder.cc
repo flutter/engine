@@ -298,7 +298,8 @@ Rasterizer::Screenshot AndroidShellHolder::Screenshot(
   if (!IsValid()) {
     return {nullptr, SkISize::MakeEmpty(), ""};
   }
-  return shell_->Screenshot(type, base64_encode);
+  return {shell_->Screenshot(type, base64_encode),
+          Rasterizer::ScreenshotFormat::kR8G8B8A8UNormInt};
 }
 
 fml::WeakPtr<PlatformViewAndroid> AndroidShellHolder::GetPlatformView() {

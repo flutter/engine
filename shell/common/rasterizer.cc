@@ -19,9 +19,6 @@
 #include "flutter/shell/common/serialization_callbacks.h"
 #include "fml/make_copyable.h"
 #include "fml/synchronization/waitable_event.h"
-#include "impeller/aiks/aiks_context.h"
-#include "impeller/core/formats.h"
-#include "impeller/display_list/dl_dispatcher.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -38,6 +35,12 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "impeller/aiks/aiks_context.h"           // nogncheck
+#include "impeller/core/formats.h"                // nogncheck
+#include "impeller/display_list/dl_dispatcher.h"  // nogncheck
+#endif
 
 namespace flutter {
 
