@@ -9,7 +9,7 @@ import 'scenario.dart';
 
 /// Fills the screen with a solid blue color.
 class SolidBlueScenario extends Scenario {
-  /// Creates the AnimatedColorSquare scenario.
+  /// Creates the SolidBlue scenario.
   SolidBlueScenario(super.view);
 
   @override
