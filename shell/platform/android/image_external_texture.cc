@@ -85,8 +85,8 @@ void ImageExternalTexture::UpdateKey(const sk_sp<flutter::DlImage>& image,
   images_[0] = LRUImage{.key = key, .image = image};
 }
 
- uint64_t ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
-                                    uint64_t key) {
+uint64_t ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
+                                        uint64_t key) {
   uint64_t lru_key = images_[kImageReaderSwapchainSize - 1].key;
   bool updated_image = false;
   for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
