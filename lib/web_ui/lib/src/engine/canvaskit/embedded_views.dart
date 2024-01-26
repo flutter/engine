@@ -658,7 +658,7 @@ class HtmlViewEmbedder {
 
   /// Disposes the state of this view embedder.
   void dispose() {
-    disposeViews(_viewClipChains.keys.toList());
+    disposeViews(_viewClipChains.keys);
     _context = EmbedderFrameContext();
     _currentCompositionParams.clear();
     debugCleanupSvgClipPaths();
