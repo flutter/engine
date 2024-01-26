@@ -7,6 +7,8 @@
 
 #include <functional>
 #include <string>
+#include <string_view>
+#include <iostream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
@@ -29,23 +31,27 @@ struct AutoErrorCheck {
   AutoErrorCheck(PFNGLGETERRORPROC error, std::string_view name)
       : error_fn(error), name(name) {}
 
-  ~AutoErrorCheck() {
-    if (error_fn) {
-      auto error = error_fn();
-      if (error == GL_NO_ERROR) {
-        return;
-      }
-      if (GLErrorIsFatal(error)) {
-        FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
-                       << error << ")"
-                       << " encountered on call to " << name;
-      } else {
-        FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
-                       << ")"
-                       << " encountered on call to " << name;
-      }
-    }
+  [[nodiscard]] GLenum checkError() const {
+        return error_fn ? error_fn() : GL_NO_ERROR;
   }
+  ~AutoErrorCheck() noexcept {
+        try {
+            auto error = checkError();
+            if (error != GL_NO_ERROR) {
+                if (GLErrorIsFatal(error)) {
+                    FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
+                                   << error << ")"
+                                   << " encountered on call to " << name;
+                } else {
+                    FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
+                                   << ")"
+                                   << " encountered on call to " << name;
+                }
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Exception caught: " << e.what() << std::endl;
+        }
+    }
 };
 
 template <class T>
