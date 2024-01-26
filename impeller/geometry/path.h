@@ -276,7 +276,7 @@ class Path {
   Data& GetModifiableData();
 };
 
-static_assert(sizeof(Path) == 16);
+static_assert(sizeof(Path) == sizeof(std::shared_ptr<struct Anonymous>));
 
 }  // namespace impeller
 

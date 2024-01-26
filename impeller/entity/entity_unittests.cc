@@ -478,7 +478,7 @@ TEST_P(EntityTest, CubicCurveTest) {
           .TakePath();
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
@@ -522,7 +522,7 @@ TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransform) {
 
     Entity entity;
     entity.SetTransform(result_transform);
-    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -752,7 +752,7 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
           .TakePath();
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
@@ -952,7 +952,7 @@ TEST_P(EntityTest, BezierCircleScaled) {
                     .TakePath();
     entity.SetTransform(
         Matrix::MakeScale({scale, scale, 1.0}).Translate({-90, -20, 0}));
-    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
