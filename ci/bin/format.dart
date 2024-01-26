@@ -990,14 +990,20 @@ final class HeaderFormatChecker extends FormatChecker {
 
   @override
   Future<bool> checkFormatting() async {
+    final List<String> include = <String>[];
+    if (!allFiles) {
+      include.addAll(await getFileList(<String>[
+        '*.h',
+      ]));
+      if (include.isEmpty) {
+        message('No header files with changes, skipping header guard check.');
+        return true;
+      }
+    }
     final List<String> args = <String>[
       _dartBin,
       _headerGuardCheckBin,
-      if (!allFiles)
-        ...(await getFileList(<String>[
-          '*.h',
-        ]))
-            .map((String f) => '--include=$f'),
+      ...include.map((String f) => '--include=$f'),
     ];
     final ProcessRunnerResult result = await _processRunner.runProcess(args);
     if (result.exitCode != 0) {
@@ -1010,14 +1016,21 @@ final class HeaderFormatChecker extends FormatChecker {
 
   @override
   Future<bool> fixFormatting() async {
+    final List<String> include = <String>[];
+    if (!allFiles) {
+      include.addAll(await getFileList(<String>[
+        '*.h',
+      ]));
+      if (include.isEmpty) {
+        message('No header files with changes, skipping header guard fix.');
+        return true;
+      }
+    }
     final List<String> args = <String>[
       _dartBin,
       _headerGuardCheckBin,
       '--fix',
-      if (!allFiles)
-        ...(await getFileList(<String>[
-          '*.h',
-        ])).map((String f) => '--include=$f'),
+      ...include.map((String f) => '--include=$f'),
     ];
     final ProcessRunnerResult result = await _processRunner.runProcess(args);
     if (result.exitCode != 0) {
