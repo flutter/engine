@@ -230,6 +230,82 @@ Future<int> main(List<String> args) async {
         expect(headerFile.pragmaOnce, isNotNull);
       });
     });
+
+    test('fixes a file that uses #pragma once', () {
+      final String input = <String>[
+        '#pragma once',
+        '',
+        '// ...',
+      ].join('\n');
+      withTestFile('foo.h', input, (io.File file) {
+        final HeaderFile headerFile = HeaderFile.parse(file.path);
+        expect(headerFile.fix(engineRoot: p.dirname(file.path)), isTrue);
+        expect(file.readAsStringSync(), <String>[
+          '#ifndef FLUTTER_FOO_H_',
+          '#define FLUTTER_FOO_H_',
+          '',
+          '// ...',
+          '#endif  // FLUTTER_FOO_H_',
+          '',
+        ].join('\n'));
+      });
+    });
+
+    test('fixes a file with an incorrect header guard', () {
+      final String input = <String>[
+        '#ifndef FOO_H_',
+        '#define FOO_H_',
+        '',
+        '#endif  // FOO_H_',
+      ].join('\n');
+      withTestFile('foo.h', input, (io.File file) {
+        final HeaderFile headerFile = HeaderFile.parse(file.path);
+        expect(headerFile.fix(engineRoot: p.dirname(file.path)), isTrue);
+        expect(file.readAsStringSync(), <String>[
+          '#ifndef FLUTTER_FOO_H_',
+          '#define FLUTTER_FOO_H_',
+          '',
+          '#endif  // FLUTTER_FOO_H_',
+          '',
+        ].join('\n'));
+      });
+    });
+
+    test('fixes a file with no header guard', () {
+      final String input = <String>[
+        '// 1.',
+        '// 2.',
+        '// 3.',
+        '',
+        "#import 'flutter/shell/platform/darwin/Flutter.h'",
+        '',
+        '@protocl Flutter',
+        '',
+        '@end',
+        '',
+      ].join('\n');
+      withTestFile('foo.h', input, (io.File file) {
+        final HeaderFile headerFile = HeaderFile.parse(file.path);
+        expect(headerFile.fix(engineRoot: p.dirname(file.path)), isTrue);
+        expect(file.readAsStringSync(), <String>[
+          '// 1.',
+          '// 2.',
+          '// 3.',
+          '',
+          '#ifndef FLUTTER_FOO_H_',
+          '#define FLUTTER_FOO_H_',
+          '',
+          "#import 'flutter/shell/platform/darwin/Flutter.h'",
+          '',
+          '@protocl Flutter',
+          '',
+          '@end',
+          '',
+          '#endif  // FLUTTER_FOO_H_',
+          '',
+        ].join('\n'));
+      });
+    });
   });
 
   return 0;

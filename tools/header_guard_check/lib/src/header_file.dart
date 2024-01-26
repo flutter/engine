@@ -131,9 +131,10 @@ final class HeaderFile {
 
   /// Updates the file at [path] to have the expected header guard.
   bool fix({required String engineRoot}) {
+    final String expectedGuard = expectedName(engineRoot: engineRoot);
+
     // Check if the file already has a valid header guard.
     if (guard != null) {
-      final String expectedGuard = expectedName(engineRoot: engineRoot);
       if (guard!.ifndefValue == expectedGuard &&
           guard!.defineValue == expectedGuard &&
           guard!.endifValue == expectedGuard) {
@@ -147,8 +148,6 @@ final class HeaderFile {
     // If we're using pragma once, replace it with an ifndef/define, and
     // append an endif and a newline at the end of the file.
     if (pragmaOnce != null) {
-      final String expectedGuard = expectedName(engineRoot: engineRoot);
-
       // Append the endif and newline.
       String newContents = '$oldContents\n#endif  // $expectedGuard\n';
 
@@ -162,14 +161,12 @@ final class HeaderFile {
 
       // Write the new contents to the file.
       io.File(path).writeAsStringSync(newContents);
-
       return true;
     }
 
     // If we're not using pragma once, replace the header guard with the
     // expected header guard.
     if (guard != null) {
-      final String expectedGuard = expectedName(engineRoot: engineRoot);
 
       // Replace endif:
       String newContents = oldContents.replaceRange(
@@ -193,12 +190,24 @@ final class HeaderFile {
       );
 
       // Write the new contents to the file.
-      io.File(path).writeAsStringSync(newContents);
-
+      io.File(path).writeAsStringSync('$newContents\n');
       return true;
     }
 
-    return false;
+    // If we're missing a guard entirely, add one. The rules are:
+    // 1. Add a newline, #endif at the end of the file.
+    // 2. Add a newline, #ifndef, #define after the first non-comment line.
+    String newContents = oldContents;
+    newContents += '\n#endif  // $expectedGuard\n';
+    newContents = newContents.replaceFirst(
+      RegExp(r'^(?!//)', multiLine: true),
+      '\n#ifndef $expectedGuard\n'
+      '#define $expectedGuard\n'
+    );
+
+    // Write the new contents to the file.
+    io.File(path).writeAsStringSync(newContents);
+    return true;
   }
 
   @override
