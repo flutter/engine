@@ -635,6 +635,9 @@ public class FlutterRendererTest {
     // Try setting width and height to 0.
     texture.setSize(0, 0);
 
+    // Ensure we can still create/get a surface without an exception being raised.
+    assertNotNull(texture.getSurface());
+
     // Expect clamp to 1.
     assertEquals(texture.getWidth(), 1);
     assertEquals(texture.getHeight(), 1);
