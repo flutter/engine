@@ -462,7 +462,8 @@ TEST(PathTest, CanBeCloned) {
   builder.SetConvexity(Convexity::kConvex);
 
   auto path_a = builder.TakePath(FillType::kAbsGeqTwo);
-  auto path_b = path_a.Clone();
+  // NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+  auto path_b = path_a;
 
   EXPECT_EQ(path_a.GetBoundingBox(), path_b.GetBoundingBox());
   EXPECT_EQ(path_a.GetFillType(), path_b.GetFillType());
