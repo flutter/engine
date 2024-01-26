@@ -104,11 +104,7 @@ fml::Status ComputePassVK::Compute(const ISize& grid_size) {
 
   // Special case for linear processing.
   if (height == 1) {
-    int64_t minimum = 1;
-    int64_t threadGroups = std::max(
-        static_cast<int64_t>(std::ceil(width * 1.0 / max_wg_size_[0] * 1.0)),
-        minimum);
-    command_buffer_vk.dispatch(threadGroups, 1, 1);
+    command_buffer_vk.dispatch(width, 1, 1);
   } else {
     while (width > max_wg_size_[0]) {
       width = std::max(static_cast<int64_t>(1), width / 2);
