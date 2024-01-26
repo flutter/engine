@@ -134,7 +134,7 @@ final class HeaderFile {
   }
 
   /// Updates the file at [path] to have the expected header guard.
-  /// 
+  ///
   /// Returns `true` if the file was modified, `false` otherwise.
   bool fix({required String engineRoot}) {
     final String expectedGuard = computeExpectedName(engineRoot: engineRoot);

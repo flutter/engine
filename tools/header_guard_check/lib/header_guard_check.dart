@@ -70,7 +70,7 @@ final class HeaderGuardCheck {
 
     return 0;
   }
-  
+
   Iterable<io.File> _findIncludedHeaderFiles() sync* {
     final io.Directory dir = source.flutterDir;
     for (final io.FileSystemEntity entity in dir.listSync(recursive: true)) {
