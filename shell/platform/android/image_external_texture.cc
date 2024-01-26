@@ -85,7 +85,7 @@ void ImageExternalTexture::UpdateKey(const sk_sp<flutter::DlImage>& image,
   images_[0] = LRUImage{.key = key, .image = image};
 }
 
-void ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
+ uint64_t ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
                                     uint64_t key) {
   uint64_t lru_key = images_[kImageReaderSwapchainSize - 1].key;
   bool updated_image = false;
@@ -100,9 +100,10 @@ void ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
     images_[0] = LRUImage{.key = key, .image = image};
   }
   UpdateKey(image, key);
+  return lru_key;
 }
 
-void ImageExternalTexture::ResetCache() {
+void ImageExternalTexture::Clear() {
   for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
     images_[i] = {.key = 0u, .image = nullptr};
   }
@@ -112,7 +113,7 @@ void ImageExternalTexture::ResetCache() {
 void ImageExternalTexture::OnGrContextDestroyed() {
   if (state_ == AttachmentState::kAttached) {
     dl_image_.reset();
-    ResetCache();
+    Clear();
     Detach();
   }
   state_ = AttachmentState::kDetached;

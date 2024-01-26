@@ -78,12 +78,13 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
     return;
   }
 
-  dl_image_ = CreateDlImage(context, bounds, egl_image);
-  AddImage(dl_image_, key);
+  dl_image_ = CreateDlImage(context, bounds, key, std::move(egl_image));
+  gl_entry_.erase(AddImage(dl_image_, key));
 }
 
 void ImageExternalTextureGL::Detach() {
   // TODO: should we clear the cache in detach?
+  gl_entry_.clear();
 }
 
 impeller::UniqueEGLImageKHR ImageExternalTextureGL::CreateEGLImage(
@@ -124,15 +125,11 @@ void ImageExternalTextureGLSkia::Attach(PaintContext& context) {
     // After this call state_ will be AttachmentState::kAttached and egl_image_
     // will have been created if we still have an Image associated with us.
     ImageExternalTextureGL::Attach(context);
-    GLuint texture_name;
-    glGenTextures(1, &texture_name);
-    texture_.reset(impeller::GLTexture{texture_name});
   }
 }
 
 void ImageExternalTextureGLSkia::Detach() {
   ImageExternalTextureGL::Detach();
-  texture_.reset();
 }
 
 void ImageExternalTextureGLSkia::BindImageToTexture(
@@ -149,12 +146,21 @@ void ImageExternalTextureGLSkia::BindImageToTexture(
 sk_sp<flutter::DlImage> ImageExternalTextureGLSkia::CreateDlImage(
     PaintContext& context,
     const SkRect& bounds,
-    impeller::UniqueEGLImageKHR& egl_image) {
-  BindImageToTexture(egl_image, texture_.get().texture_name);
-  GrGLTextureInfo textureInfo = {GL_TEXTURE_EXTERNAL_OES,
-                                 texture_.get().texture_name, GL_RGBA8_OES};
+    uint64_t id,
+    impeller::UniqueEGLImageKHR&& egl_image) {
+  GLuint texture_name;
+  glGenTextures(1, &texture_name);
+  auto gl_texture = impeller::GLTexture{texture_name};
+  impeller::UniqueGLTexture unique_texture;
+  unique_texture.reset(gl_texture);
+
+  BindImageToTexture(egl_image, unique_texture.get().texture_name);
+  GrGLTextureInfo textureInfo = {
+      GL_TEXTURE_EXTERNAL_OES, unique_texture.get().texture_name, GL_RGBA8_OES};
   auto backendTexture =
       GrBackendTextures::MakeGL(1, 1, skgpu::Mipmapped::kNo, textureInfo);
+  gl_entry_[id] = GlEntry{.egl_image = std::move(egl_image),
+                          .texture = std::move(unique_texture)};
   return DlImage::Make(SkImages::BorrowTextureFrom(
       context.gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr));
@@ -179,7 +185,8 @@ void ImageExternalTextureGLImpeller::Attach(PaintContext& context) {
 sk_sp<flutter::DlImage> ImageExternalTextureGLImpeller::CreateDlImage(
     PaintContext& context,
     const SkRect& bounds,
-    impeller::UniqueEGLImageKHR& egl_image) {
+    uint64_t id,
+    impeller::UniqueEGLImageKHR&& egl_image) {
   impeller::TextureDescriptor desc;
   desc.type = impeller::TextureType::kTextureExternalOES;
   desc.storage_mode = impeller::StorageMode::kDevicePrivate;
@@ -198,6 +205,9 @@ sk_sp<flutter::DlImage> ImageExternalTextureGLImpeller::CreateDlImage(
   // Associate the hardware buffer image with the texture.
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES,
                                (GLeglImageOES)egl_image.get().image);
+  gl_entry_[id] = GlEntry{
+      .egl_image = std::move(egl_image),
+  };
   return impeller::DlImageImpeller::Make(texture);
 }
 

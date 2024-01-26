@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_IMAGE_EXTERNAL_TEXTURE_GL_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_IMAGE_EXTERNAL_TEXTURE_GL_H_
 
+#include <unordered_map>
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/shell/platform/android/image_external_texture.h"
 
@@ -35,12 +36,19 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   virtual sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      impeller::UniqueEGLImageKHR& egl_image) = 0;
+      uint64_t id,
+      impeller::UniqueEGLImageKHR&& egl_image) = 0;
 
   impeller::UniqueEGLImageKHR CreateEGLImage(AHardwareBuffer* buffer);
 
   fml::jni::ScopedJavaGlobalRef<jobject> android_image_;
-  // impeller::UniqueEGLImageKHR egl_image_;
+
+  struct GlEntry {
+    impeller::UniqueEGLImageKHR egl_image;
+    impeller::UniqueGLTexture texture;
+  };
+
+  std::unordered_map<uint64_t, GlEntry> gl_entry_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTextureGL);
 };
@@ -58,12 +66,12 @@ class ImageExternalTextureGLSkia : public ImageExternalTextureGL {
   void Detach() override;
 
   void BindImageToTexture(const impeller::UniqueEGLImageKHR& image, GLuint tex);
+
   sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      impeller::UniqueEGLImageKHR& egl_image) override;
-
-  impeller::UniqueGLTexture texture_;
+      uint64_t id,
+      impeller::UniqueEGLImageKHR&& egl_image) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTextureGLSkia);
 };
@@ -84,7 +92,8 @@ class ImageExternalTextureGLImpeller : public ImageExternalTextureGL {
   sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      impeller::UniqueEGLImageKHR& egl_image) override;
+      uint64_t id,
+      impeller::UniqueEGLImageKHR&& egl_image) override;
 
   const std::shared_ptr<impeller::ContextGLES> impeller_context_;
 

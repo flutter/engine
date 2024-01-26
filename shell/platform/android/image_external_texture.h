@@ -58,8 +58,8 @@ class ImageExternalTexture : public flutter::Texture {
 
   sk_sp<flutter::DlImage> FindImage(uint64_t key);
   void UpdateKey(const sk_sp<flutter::DlImage>& image, uint64_t key);
-  void AddImage(const sk_sp<flutter::DlImage>& image, uint64_t key);
-  void ResetCache();
+  uint64_t AddImage(const sk_sp<flutter::DlImage>& image, uint64_t key);
+  void Clear();
 
   struct LRUImage {
     uint64_t key;
