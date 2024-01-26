@@ -306,6 +306,26 @@ Future<int> main(List<String> args) async {
         ].join('\n'));
       });
     });
+
+    test('does not touch a file with an existing guard and another #define', () {
+      final String input = <String>[
+        '// 1.',
+        '// 2.',
+        '// 3.',
+        '',
+        '#define FML_USED_ON_EMBEDDER',
+        '',
+        '#ifndef FLUTTER_FOO_H_',
+        '#define FLUTTER_FOO_H_',
+        '',
+        '#endif  // FLUTTER_FOO_H_',
+        '',
+      ].join('\n');
+      withTestFile('foo.h', input, (io.File file) {
+        final HeaderFile headerFile = HeaderFile.parse(file.path);
+        expect(headerFile.fix(engineRoot: p.dirname(file.path)), isFalse);
+      });
+    });
   });
 
   return 0;

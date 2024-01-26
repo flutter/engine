@@ -54,6 +54,10 @@ final class HeaderFile {
       if (line.startsWith('#ifndef')) {
         ifndefSpan = sourceFile.span(start, end);
       } else if (line.startsWith('#define')) {
+        // If we find a define preceding an ifndef, it is not a header guard.
+        if (ifndefSpan == null) {
+          continue;
+        }
         defineSpan = sourceFile.span(start, end);
         break;
       }
