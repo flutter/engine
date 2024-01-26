@@ -1431,6 +1431,158 @@ TEST(GeometryTest, ColorSRGBToLinear) {
   }
 }
 
+struct ColorBlendTestData {
+  static constexpr Color kDestinationColor =
+      Color::CornflowerBlue().WithAlpha(0.75);
+  static constexpr Color kSourceColors[] = {Color::White().WithAlpha(0.75),
+                                            Color::LimeGreen().WithAlpha(0.75),
+                                            Color::Black().WithAlpha(0.75)};
+
+  // THIS RESULT TABLE IS GENERATED!
+  //
+  // Uncomment the `GenerateColorBlendResults` test below to print a new table
+  // after making changes to `Color::Blend`.
+  static constexpr Color kExpectedResults
+      [sizeof(kSourceColors)]
+      [static_cast<std::underlying_type_t<BlendMode>>(BlendMode::kLast) + 1] = {
+          {
+              {0, 0, 0, 0},                            // Clear
+              {1, 1, 1, 0.75},                         // Source
+              {0.392157, 0.584314, 0.929412, 0.75},    // Destination
+              {0.878431, 0.916863, 0.985882, 0.9375},  // SourceOver
+              {0.513726, 0.667451, 0.943529, 0.9375},  // DestinationOver
+              {1, 1, 1, 0.5625},                       // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},  // DestinationIn
+              {1, 1, 1, 0.1875},                       // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},  // DestinationOut
+              {0.848039, 0.896078, 0.982353, 0.75},    // SourceATop
+              {0.544118, 0.688235, 0.947059, 0.75},    // DestinationATop
+              {0.696078, 0.792157, 0.964706, 0.375},   // Xor
+              {1, 1, 1, 1},                            // Plus
+              {0.392157, 0.584314, 0.929412, 0.5625},  // Modulate
+              {0.937255, 1.00451, 1.12529, 0.9375},    // Screen
+              {0.631373, 0.842745, 1.06471, 0.9375},   // Overlay
+              {0.513726, 0.667451, 0.943529, 0.9375},  // Darken
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Lighten
+              {1.03554, 1.08358, 1.16985, 0.75},       // ColorDodge
+              {0.329657, 0.521814, 0.866912, 0.75},    // ColorBurn
+              {0.796078, 0.892157, 1.06471, 0.9375},   // HardLight
+              {0.613009, 0.756954, 0.998666, 0.9375},  // SoftLight
+              {0.643137, 0.566275, 0.428235, 0.9375},  // Difference
+              {0.760784, 0.741569, 0.707059, 0.9375},  // Exclusion
+              {0.454902, 0.579804, 0.804118, 0.9375},  // Multiply
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Hue
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Saturation
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Color
+              {0.784215, 0.927617, 1.18515, 0.9375},   // Luminosity
+          },
+          {
+              {0, 0, 0, 0},                             // Clear
+              {0.196078, 0.803922, 0.196078, 0.75},     // Source
+              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
+              {0.235294, 0.76, 0.342745, 0.9375},       // SourceOver
+              {0.352941, 0.628235, 0.782745, 0.9375},   // DestinationOver
+              {0.196078, 0.803922, 0.196078, 0.5625},   // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
+              {0.196078, 0.803922, 0.196078, 0.1875},   // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
+              {0.245098, 0.74902, 0.379412, 0.75},      // SourceATop
+              {0.343137, 0.639216, 0.746078, 0.75},     // DestinationATop
+              {0.294118, 0.694118, 0.562745, 0.375},    // Xor
+              {0.441176, 1, 0.844118, 1},               // Plus
+              {0.0768935, 0.469742, 0.182238, 0.5625},  // Modulate
+              {0.435986, 0.899204, 0.818385, 0.9375},   // Screen
+              {0.186851, 0.700415, 0.611672, 0.9375},   // Overlay
+              {0.235294, 0.628235, 0.342745, 0.9375},   // Darken
+              {0.352941, 0.76, 0.782745, 0.9375},       // Lighten
+              {0.393425, 1.04681, 0.882049, 0.75},      // ColorDodge
+              {0.134804, 0.348033, 0.269118, 0.75},     // ColorBurn
+              {0.186851, 0.720761, 0.389112, 0.9375},   // HardLight
+              {0.235701, 0.66509, 0.663497, 0.9375},    // SoftLight
+              {0.235294, 0.409412, 0.665098, 0.9375},   // Difference
+              {0.401384, 0.68782, 0.736378, 0.9375},    // Exclusion
+              {0.152249, 0.489031, 0.307105, 0.9375},   // Multiply
+              {0.266235, 0.748588, 0.373686, 0.9375},   // Hue
+              {0.339345, 0.629787, 0.811502, 0.9375},   // Saturation
+              {0.241247, 0.765953, 0.348698, 0.9375},   // Color
+              {0.346988, 0.622282, 0.776792, 0.9375},   // Luminosity
+          },
+          {
+              {0, 0, 0, 0},                             // Clear
+              {0, 0, 0, 0.75},                          // Source
+              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // SourceOver
+              {0.313726, 0.467451, 0.743529, 0.9375},   // DestinationOver
+              {0, 0, 0, 0.5625},                        // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
+              {0, 0, 0, 0.1875},                        // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
+              {0.0980392, 0.146078, 0.232353, 0.75},    // SourceATop
+              {0.294118, 0.438235, 0.697059, 0.75},     // DestinationATop
+              {0.196078, 0.292157, 0.464706, 0.375},    // Xor
+              {0.294118, 0.438235, 0.697059, 1},        // Plus
+              {0, 0, 0, 0.5625},                        // Modulate
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Screen
+              {0.0784314, 0.116863, 0.501176, 0.9375},  // Overlay
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Darken
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Lighten
+              {0.318627, 0.474755, 0.755147, 0.75},     // ColorDodge
+              {0.0980392, 0.146078, 0.232353, 0.75},    // ColorBurn
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // HardLight
+              {0.147636, 0.270503, 0.574595, 0.9375},   // SoftLight
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Difference
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Exclusion
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Multiply
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Hue
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Saturation
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Color
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Luminosity
+          },
+  };
+};
+
+/// To print a new ColorBlendTestData::kExpectedResults table, uncomment this
+/// test and run with:
+/// --gtest_filter="GeometryTest.GenerateColorBlendResults"
+/*
+TEST(GeometryTest, GenerateColorBlendResults) {
+  auto& o = std::cout;
+  using BlendT = std::underlying_type_t<BlendMode>;
+  o << "{";
+  for (const auto& source : ColorBlendTestData::kSourceColors) {
+    o << "{";
+    for (BlendT blend_i = 0;
+         blend_i < static_cast<BlendT>(BlendMode::kLast) + 1; blend_i++) {
+      auto blend = static_cast<BlendMode>(blend_i);
+      Color c = ColorBlendTestData::kDestinationColor.Blend(source, blend);
+      o << "{" << c.red << "," << c.green << "," << c.blue << "," << c.alpha
+        << "}, // " << BlendModeToString(blend) << std::endl;
+    }
+    o << "},";
+  }
+  o << "};" << std::endl;
+}
+*/
+
+#define _BLEND_MODE_RESULT_CHECK(blend_mode)                          \
+  blend_i = static_cast<BlendT>(BlendMode::k##blend_mode);            \
+  expected = ColorBlendTestData::kExpectedResults[source_i][blend_i]; \
+  EXPECT_COLOR_NEAR(dst.Blend(src, BlendMode::k##blend_mode), expected);
+
+TEST(GeometryTest, ColorBlendReturnsExpectedResults) {
+  using BlendT = std::underlying_type_t<BlendMode>;
+  Color dst = ColorBlendTestData::kDestinationColor;
+  for (size_t source_i = 0;
+       source_i < sizeof(ColorBlendTestData::kSourceColors) / sizeof(Color);
+       source_i++) {
+    Color src = ColorBlendTestData::kSourceColors[source_i];
+
+    size_t blend_i;
+    Color expected;
+    IMPELLER_FOR_EACH_BLEND_MODE(_BLEND_MODE_RESULT_CHECK)
+  }
+}
+
 #define _BLEND_MODE_NAME_CHECK(blend_mode) \
   case BlendMode::k##blend_mode:           \
     ASSERT_STREQ(result, #blend_mode);     \
