@@ -44,7 +44,6 @@
 namespace impeller {
 class Context;
 class AiksContext;
-enum class PixelFormat : uint8_t { kUnknown };
 }  // namespace impeller
 #endif  // !IMPELLER_SUPPORTS_RENDERING
 
