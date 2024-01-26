@@ -9,18 +9,12 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
+#include "flutter/shell/platform/android/image_lru.h"
 
 #include <android/hardware_buffer.h>
 #include <android/hardware_buffer_jni.h>
 
 namespace flutter {
-
-// This value needs to be larger than the number of swapchain images
-// that a typical image reader will produce to ensure that we effectively
-// cache. If the value is too small, we will unnecessarily churn through
-// images, while if it is too large we may retain images longer than
-// necessary.
-static constexpr size_t kImageReaderSwapchainSize = 6u;
 
 // External texture peered to a sequence of android.hardware.HardwareBuffers.
 //
@@ -56,16 +50,6 @@ class ImageExternalTexture : public flutter::Texture {
   virtual void Detach() = 0;
   virtual void ProcessFrame(PaintContext& context, const SkRect& bounds) = 0;
 
-  sk_sp<flutter::DlImage> FindImage(uint64_t key);
-  void UpdateKey(const sk_sp<flutter::DlImage>& image, uint64_t key);
-  uint64_t AddImage(const sk_sp<flutter::DlImage>& image, uint64_t key);
-  void Clear();
-
-  struct LRUImage {
-    uint64_t key;
-    sk_sp<flutter::DlImage> image;
-  };
-
   JavaLocalRef AcquireLatestImage();
   void CloseImage(const fml::jni::JavaRef<jobject>& image);
   JavaLocalRef HardwareBufferFor(const fml::jni::JavaRef<jobject>& image);
@@ -79,11 +63,8 @@ class ImageExternalTexture : public flutter::Texture {
   enum class AttachmentState { kUninitialized, kAttached, kDetached };
   AttachmentState state_ = AttachmentState::kUninitialized;
   bool new_frame_ready_ = false;
-  std::array<LRUImage, kImageReaderSwapchainSize> images_ = {
-      LRUImage{0, nullptr}, LRUImage{0, nullptr}, LRUImage{0, nullptr},
-      LRUImage{0, nullptr}, LRUImage{0, nullptr}, LRUImage{0, nullptr},
-  };
   sk_sp<flutter::DlImage> dl_image_;
+  ImageLRU image_lru_ = ImageLRU();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTexture);
 };

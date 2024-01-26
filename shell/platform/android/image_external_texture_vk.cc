@@ -47,7 +47,7 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   flutter::NDKHelpers::AHardwareBuffer_describe(latest_hardware_buffer,
                                                 &hb_desc);
   auto key = flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
-  auto existing_image = FindImage(key);
+  auto existing_image = image_lru_.FindImage(key);
   if (existing_image != nullptr) {
     dl_image_ = existing_image;
 
@@ -100,7 +100,7 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   }
 
   dl_image_ = impeller::DlImageImpeller::Make(texture);
-  AddImage(dl_image_, key);
+  image_lru_.AddImage(dl_image_, key);
   CloseHardwareBuffer(hardware_buffer);
   // IMPORTANT: We have just received a new frame to display so close the
   // previous Java Image so that it is recycled and used for a future frame.

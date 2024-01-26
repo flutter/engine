@@ -57,7 +57,7 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
   JavaLocalRef hardware_buffer = HardwareBufferFor(image);
   AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
   auto key = flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
-  auto existing_image = FindImage(key);
+  auto existing_image = image_lru_.FindImage(key);
   if (existing_image != nullptr) {
     dl_image_ = existing_image;
 
@@ -79,7 +79,7 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
   }
 
   dl_image_ = CreateDlImage(context, bounds, key, std::move(egl_image));
-  gl_entry_.erase(AddImage(dl_image_, key));
+  gl_entry_.erase(image_lru_.AddImage(dl_image_, key));
 }
 
 void ImageExternalTextureGL::Detach() {
