@@ -26,7 +26,7 @@ struct AutoErrorCheck {
   // https://github.com/flutter/flutter/issues/135922
   std::string_view name;
 
-  AutoErrorCheck(PFNGLGETERRORPROC error, const char* name)
+  AutoErrorCheck(PFNGLGETERRORPROC error, std::string_view name)
       : error_fn(error), name(name) {}
 
   ~AutoErrorCheck() {
