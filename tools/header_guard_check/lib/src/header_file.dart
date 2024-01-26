@@ -127,15 +127,17 @@ final class HeaderFile {
   /// Returns the expected header guard for this file, relative to [engineRoot].
   ///
   /// For example, if the file is `foo/bar/baz.h`, this will return `FLUTTER_FOO_BAR_BAZ_H_`.
-  String expectedName({required String engineRoot}) {
+  String computeExpectedName({required String engineRoot}) {
     final String relativePath = p.relative(path, from: engineRoot);
     final String underscoredRelativePath = p.withoutExtension(relativePath).replaceAll(_nonAlphaNumeric, '_');
     return 'FLUTTER_${underscoredRelativePath.toUpperCase()}_H_';
   }
 
   /// Updates the file at [path] to have the expected header guard.
+  /// 
+  /// Returns `true` if the file was modified, `false` otherwise.
   bool fix({required String engineRoot}) {
-    final String expectedGuard = expectedName(engineRoot: engineRoot);
+    final String expectedGuard = computeExpectedName(engineRoot: engineRoot);
 
     // Check if the file already has a valid header guard.
     if (guard != null) {

@@ -157,7 +157,7 @@ Future<int> main(List<String> args) async {
           guard: null,
           pragmaOnce: null,
         );
-        expect(headerFile.expectedName(engineRoot: ''), endsWith('FOO_BAR_BAZ_H_'));
+        expect(headerFile.computeExpectedName(engineRoot: ''), endsWith('FOO_BAR_BAZ_H_'));
       }
     });
 

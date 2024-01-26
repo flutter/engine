@@ -47,72 +47,7 @@ final class HeaderGuardCheck {
 
   /// Runs the header guard check.
   Future<int> run() async {
-    final List<io.File> files = <io.File>[];
-
-    // Recursive search for header files.
-    final io.Directory dir = source.flutterDir;
-    await for (final io.FileSystemEntity entity in dir.list(recursive: true)) {
-      if (entity is io.File && entity.path.endsWith('.h')) {
-        // Check that the file is included.
-        bool included = include.isEmpty;
-        for (final String includePath in include) {
-          final String relativePath = p.relative(includePath, from: source.flutterDir.path);
-          if (p.isWithin(relativePath, entity.path) || p.equals(relativePath, entity.path)) {
-            included = true;
-            break;
-          }
-        }
-        if (!included) {
-          continue;
-        }
-
-        // Check that the file is not excluded.
-        bool excluded = false;
-        for (final String excludePath in exclude) {
-          final String relativePath = p.relative(excludePath, from: source.flutterDir.path);
-          if (p.isWithin(relativePath, entity.path) || p.equals(relativePath, entity.path)) {
-            excluded = true;
-            break;
-          }
-        }
-        if (!excluded) {
-          files.add(entity);
-        }
-      }
-    }
-
-    // Check each file.
-    final List<HeaderFile> badFiles = <HeaderFile>[];
-    for (final io.File file in files) {
-      final HeaderFile headerFile = HeaderFile.parse(file.path);
-      if (headerFile.pragmaOnce != null) {
-        io.stderr.writeln(headerFile.pragmaOnce!.message('Unexpected #pragma once'));
-        badFiles.add(headerFile);
-        continue;
-      }
-      if (headerFile.guard == null) {
-        io.stderr.writeln('Missing header guard in ${headerFile.path}');
-        badFiles.add(headerFile);
-        continue;
-      }
-
-      final String expectedGuard = headerFile.expectedName(engineRoot: source.flutterDir.path);
-      if (headerFile.guard!.ifndefValue != expectedGuard) {
-        io.stderr.writeln(headerFile.guard!.ifndefSpan!.message('Expected #ifndef $expectedGuard'));
-        badFiles.add(headerFile);
-        continue;
-      }
-      if (headerFile.guard!.defineValue != expectedGuard) {
-        io.stderr.writeln(headerFile.guard!.defineSpan!.message('Expected #define $expectedGuard'));
-        badFiles.add(headerFile);
-        continue;
-      }
-      if (headerFile.guard!.endifValue != expectedGuard) {
-        io.stderr.writeln(headerFile.guard!.endifSpan!.message('Expected #endif // $expectedGuard'));
-        badFiles.add(headerFile);
-        continue;
-      }
-    }
+    final List<HeaderFile> badFiles = _checkFiles(_findIncludedHeaderFiles()).toList();
 
     if (badFiles.isNotEmpty) {
       io.stdout.writeln('The following ${badFiles.length} files have invalid header guards:');
@@ -134,6 +69,74 @@ final class HeaderGuardCheck {
     }
 
     return 0;
+  }
+  
+  Iterable<io.File> _findIncludedHeaderFiles() sync* {
+    final io.Directory dir = source.flutterDir;
+    for (final io.FileSystemEntity entity in dir.listSync(recursive: true)) {
+      if (entity is! io.File) {
+        continue;
+      }
+
+      if (!entity.path.endsWith('.h')) {
+        continue;
+      }
+
+      if (!_isIncluded(entity.path) || _isExcluded(entity.path)) {
+        continue;
+      }
+
+      yield entity;
+    }
+  }
+
+  bool _isIncluded(String path) {
+    for (final String includePath in include) {
+      final String relativePath = p.relative(includePath, from: source.flutterDir.path);
+      if (p.isWithin(relativePath, path) || p.equals(relativePath, path)) {
+        return true;
+      }
+    }
+    return include.isEmpty;
+  }
+
+  bool _isExcluded(String path) {
+    for (final String excludePath in exclude) {
+      final String relativePath = p.relative(excludePath, from: source.flutterDir.path);
+      if (p.isWithin(relativePath, path) || p.equals(relativePath, path)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Iterable<HeaderFile> _checkFiles(Iterable<io.File> headers) sync* {
+    for (final io.File header in headers) {
+      final HeaderFile headerFile = HeaderFile.parse(header.path);
+      if (headerFile.pragmaOnce != null) {
+        io.stderr.writeln(headerFile.pragmaOnce!.message('Unexpected #pragma once'));
+        yield headerFile;
+      }
+
+      if (headerFile.guard == null) {
+        io.stderr.writeln('Missing header guard in ${headerFile.path}');
+        yield headerFile;
+      }
+
+      final String expectedGuard = headerFile.computeExpectedName(engineRoot: source.flutterDir.path);
+      if (headerFile.guard!.ifndefValue != expectedGuard) {
+        io.stderr.writeln(headerFile.guard!.ifndefSpan!.message('Expected #ifndef $expectedGuard'));
+        yield headerFile;
+      }
+      if (headerFile.guard!.defineValue != expectedGuard) {
+        io.stderr.writeln(headerFile.guard!.defineSpan!.message('Expected #define $expectedGuard'));
+        yield headerFile;
+      }
+      if (headerFile.guard!.endifValue != expectedGuard) {
+        io.stderr.writeln(headerFile.guard!.endifSpan!.message('Expected #endif // $expectedGuard'));
+        yield headerFile;
+      }
+    }
   }
 }
 
