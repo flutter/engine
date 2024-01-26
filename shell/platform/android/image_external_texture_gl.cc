@@ -36,6 +36,27 @@ ImageExternalTextureGL::ImageExternalTextureGL(
 
 void ImageExternalTextureGL::Attach(PaintContext& context) {
   if (state_ == AttachmentState::kUninitialized) {
+    if (!android_image_.is_null() && !last_bounds_.isEmpty()) {
+      // After detach the cache of textures will have been cleared. If
+      // there is an android image we must populate it now so that the
+      // first frame isn't blank.
+      JavaLocalRef hardware_buffer = HardwareBufferFor(android_image_);
+      AHardwareBuffer* latest_hardware_buffer =
+          AHardwareBufferFor(hardware_buffer);
+      HardwareBufferKey key =
+          flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+
+      auto egl_image = CreateEGLImage(latest_hardware_buffer);
+      CloseHardwareBuffer(hardware_buffer);
+
+      if (!egl_image.is_valid()) {
+        return;
+      }
+
+      dl_image_ =
+          CreateDlImage(context, last_bounds_, key, std::move(egl_image));
+      gl_entries_.erase(image_lru_.AddImage(dl_image_, key));
+    }
     state_ = AttachmentState::kAttached;
   }
 }
@@ -80,12 +101,12 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
   }
 
   dl_image_ = CreateDlImage(context, bounds, key, std::move(egl_image));
-  gl_entry_.erase(image_lru_.AddImage(dl_image_, key));
+  gl_entries_.erase(image_lru_.AddImage(dl_image_, key));
 }
 
 void ImageExternalTextureGL::Detach() {
-  // TODO: should we clear the cache in detach?
-  gl_entry_.clear();
+  image_lru_.Clear();
+  gl_entries_.clear();
 }
 
 impeller::UniqueEGLImageKHR ImageExternalTextureGL::CreateEGLImage(
@@ -160,8 +181,8 @@ sk_sp<flutter::DlImage> ImageExternalTextureGLSkia::CreateDlImage(
       GL_TEXTURE_EXTERNAL_OES, unique_texture.get().texture_name, GL_RGBA8_OES};
   auto backendTexture =
       GrBackendTextures::MakeGL(1, 1, skgpu::Mipmapped::kNo, textureInfo);
-  gl_entry_[id] = GlEntry{.egl_image = std::move(egl_image),
-                          .texture = std::move(unique_texture)};
+  gl_entries_[id] = GlEntry{.egl_image = std::move(egl_image),
+                            .texture = std::move(unique_texture)};
   return DlImage::Make(SkImages::BorrowTextureFrom(
       context.gr_context, backendTexture, kTopLeft_GrSurfaceOrigin,
       kRGBA_8888_SkColorType, kPremul_SkAlphaType, nullptr));
@@ -206,7 +227,7 @@ sk_sp<flutter::DlImage> ImageExternalTextureGLImpeller::CreateDlImage(
   // Associate the hardware buffer image with the texture.
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES,
                                (GLeglImageOES)egl_image.get().image);
-  gl_entry_[id] = GlEntry{
+  gl_entries_[id] = GlEntry{
       .egl_image = std::move(egl_image),
   };
   return impeller::DlImageImpeller::Make(texture);

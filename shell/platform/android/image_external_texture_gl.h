@@ -51,7 +51,7 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   // Each GL entry is keyed off of the currently active
   // hardware buffers and evicted when the hardware buffer
   // is removed from the LRU cache.
-  std::unordered_map<HardwareBufferKey, GlEntry> gl_entry_;
+  std::unordered_map<HardwareBufferKey, GlEntry> gl_entries_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTextureGL);
 };
