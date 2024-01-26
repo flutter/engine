@@ -908,7 +908,6 @@ ScreenshotLayerTreeAsImageImpeller(
       latch.Signal();
       return;
     }
-    auto buffer_view = impeller::DeviceBuffer::AsBufferView(buffer);
     sk_data = SkData::MakeWithCopy(buffer->OnGetContents(), buffer_desc.size);
 
     latch.Signal();
