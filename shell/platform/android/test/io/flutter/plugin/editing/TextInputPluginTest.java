@@ -1233,6 +1233,64 @@ public class TextInputPluginTest {
         new String[] {"0", "TextInputAction.done"});
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
+  @Test
+  public void inputConnection_respondsToKeyEvents_textInputTypeNone() throws JSONException {
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
+    FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
+    View testView = new View(ctx);
+    DartExecutor dartExecutor = spy(new DartExecutor(mockFlutterJni, mock(AssetManager.class)));
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.NONE, false, false),
+            null,
+            null,
+            null,
+            null,
+            null));
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+
+    ArgumentCaptor<String> channelCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<ByteBuffer> bufferCaptor = ArgumentCaptor.forClass(ByteBuffer.class);
+    verify(dartExecutor, times(1)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(bufferCaptor.getValue(), "TextInputClient.requestExistingInputState", null);
+    InputConnectionAdaptor connection =
+        (InputConnectionAdaptor)
+            textInputPlugin.createInputConnection(
+                testView, mock(KeyboardManager.class), new EditorInfo());
+
+    connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
+    verify(dartExecutor, times(2)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performAction",
+        new String[] {"0", "TextInputAction.done"});
+    connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER));
+
+    connection.handleKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_NUMPAD_ENTER));
+    verify(dartExecutor, times(3)).send(channelCaptor.capture(), bufferCaptor.capture(), isNull());
+    assertEquals("flutter/textinput", channelCaptor.getValue());
+    verifyMethodCall(
+        bufferCaptor.getValue(),
+        "TextInputClient.performAction",
+        new String[] {"0", "TextInputAction.done"});
+  }
+
   @SuppressWarnings("deprecation") // InputMethodSubtype
   @Test
   public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
