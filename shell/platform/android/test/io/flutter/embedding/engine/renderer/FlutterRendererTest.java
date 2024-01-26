@@ -626,7 +626,7 @@ public class FlutterRendererTest {
   public void ImageReaderSurfaceProducerClampsWidthAndHeightTo1() {
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
     FlutterRenderer.ImageReaderSurfaceProducer texture =
-            flutterRenderer.new ImageReaderSurfaceProducer(0);
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
 
     // Default values.
     assertEquals(texture.getWidth(), 1);
