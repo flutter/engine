@@ -1005,6 +1005,8 @@ final class HeaderFormatChecker extends FormatChecker {
       _headerGuardCheckBin,
       ...include.map((String f) => '--include=$f'),
     ];
+    // TIP: --exclude is encoded into the tool itself.
+    // see tools/header_guard_check/lib/header_guard_check.dart
     final ProcessRunnerResult result = await _processRunner.runProcess(args);
     if (result.exitCode != 0) {
       error('Header check failed. The following files have incorrect header guards:');
@@ -1032,6 +1034,8 @@ final class HeaderFormatChecker extends FormatChecker {
       '--fix',
       ...include.map((String f) => '--include=$f'),
     ];
+    // TIP: --exclude is encoded into the tool itself.
+    // see tools/header_guard_check/lib/header_guard_check.dart
     final ProcessRunnerResult result = await _processRunner.runProcess(args);
     if (result.exitCode != 0) {
       error('Header check fix failed:');
