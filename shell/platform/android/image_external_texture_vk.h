@@ -33,8 +33,6 @@ class ImageExternalTextureVK : public ImageExternalTexture {
   void Detach() override;
 
   const std::shared_ptr<impeller::ContextVK> impeller_context_;
-
-  fml::jni::ScopedJavaGlobalRef<jobject> android_image_;
 };
 
 }  // namespace flutter

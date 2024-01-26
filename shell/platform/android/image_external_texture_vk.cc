@@ -38,9 +38,9 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   if (image.is_null()) {
     return;
   }
-  JavaLocalRef old_android_image(android_image_);
-  android_image_.Reset(image);
-  JavaLocalRef hardware_buffer = HardwareBufferFor(android_image_);
+  JavaLocalRef old_android_image(latest_android_image_);
+  latest_android_image_.Reset(image);
+  JavaLocalRef hardware_buffer = HardwareBufferFor(latest_android_image_);
   AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
 
   AHardwareBuffer_Desc hb_desc = {};

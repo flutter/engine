@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_ANDROID_IMAGE_EXTERNAL_TEXTURE_GL_H_
 
 #include <unordered_map>
+
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/shell/platform/android/image_external_texture.h"
 
@@ -32,6 +33,7 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   void Attach(PaintContext& context) override;
   void Detach() override;
   void ProcessFrame(PaintContext& context, const SkRect& bounds) override;
+  void UpdateImage(JavaLocalRef hardware_buffer, PaintContext& context);
 
   virtual sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
@@ -40,8 +42,6 @@ class ImageExternalTextureGL : public ImageExternalTexture {
       impeller::UniqueEGLImageKHR&& egl_image) = 0;
 
   impeller::UniqueEGLImageKHR CreateEGLImage(AHardwareBuffer* buffer);
-
-  fml::jni::ScopedJavaGlobalRef<jobject> android_image_;
 
   struct GlEntry {
     impeller::UniqueEGLImageKHR egl_image;

@@ -8,20 +8,13 @@
 #include <android/sensor.h>
 
 #include "flutter/common/graphics/texture.h"
-#include "flutter/display_list/effects/dl_color_source.h"
-#include "flutter/flow/layers/layer.h"
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
-#include "flutter/impeller/renderer/backend/gles/texture_gles.h"
 #include "flutter/impeller/toolkit/egl/image.h"
 #include "flutter/impeller/toolkit/gles/texture.h"
 #include "flutter/shell/platform/android/ndk_helpers.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
-#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "third_party/skia/include/gpu/gl/GrGLTypes.h"
@@ -36,29 +29,36 @@ ImageExternalTextureGL::ImageExternalTextureGL(
 
 void ImageExternalTextureGL::Attach(PaintContext& context) {
   if (state_ == AttachmentState::kUninitialized) {
-    if (!android_image_.is_null() && !last_bounds_.isEmpty()) {
+    if (!latest_android_image_.is_null() && !latest_bounds_.isEmpty()) {
       // After detach the cache of textures will have been cleared. If
       // there is an android image we must populate it now so that the
       // first frame isn't blank.
-      JavaLocalRef hardware_buffer = HardwareBufferFor(android_image_);
-      AHardwareBuffer* latest_hardware_buffer =
-          AHardwareBufferFor(hardware_buffer);
-      HardwareBufferKey key =
-          flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
-
-      auto egl_image = CreateEGLImage(latest_hardware_buffer);
+      JavaLocalRef hardware_buffer = HardwareBufferFor(latest_android_image_);
+      UpdateImage(hardware_buffer, context);
       CloseHardwareBuffer(hardware_buffer);
-
-      if (!egl_image.is_valid()) {
-        return;
-      }
-
-      dl_image_ =
-          CreateDlImage(context, last_bounds_, key, std::move(egl_image));
-      gl_entries_.erase(image_lru_.AddImage(dl_image_, key));
     }
     state_ = AttachmentState::kAttached;
   }
+}
+
+void ImageExternalTextureGL::UpdateImage(JavaLocalRef hardware_buffer,
+                                         PaintContext& context) {
+  AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
+  HardwareBufferKey key =
+      flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+  auto existing_image = image_lru_.FindImage(key);
+  if (existing_image != nullptr) {
+    dl_image_ = existing_image;
+    return;
+  }
+
+  auto egl_image = CreateEGLImage(latest_hardware_buffer);
+  if (!egl_image.is_valid()) {
+    return;
+  }
+
+  dl_image_ = CreateDlImage(context, latest_bounds_, key, std::move(egl_image));
+  gl_entries_.erase(image_lru_.AddImage(dl_image_, key));
 }
 
 void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
@@ -67,41 +67,18 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
   if (image.is_null()) {
     return;
   }
+  JavaLocalRef hardware_buffer = HardwareBufferFor(image);
+  UpdateImage(hardware_buffer, context);
+  CloseHardwareBuffer(hardware_buffer);
 
   // NOTE: In the following code it is important that old_android_image is
   // not closed until after the update of egl_image_ otherwise the image might
   // be closed before the old EGLImage referencing it has been deleted. After
   // an image is closed the underlying HardwareBuffer may be recycled and used
   // for a future frame.
-  JavaLocalRef old_android_image(android_image_);
-  android_image_.Reset(image);
-  JavaLocalRef hardware_buffer = HardwareBufferFor(image);
-  AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
-  HardwareBufferKey key =
-      flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
-  auto existing_image = image_lru_.FindImage(key);
-  if (existing_image != nullptr) {
-    dl_image_ = existing_image;
-
-    CloseHardwareBuffer(hardware_buffer);
-    // IMPORTANT: We have just received a new frame to display so close the
-    // previous Java Image so that it is recycled and used for a future frame.
-    CloseImage(old_android_image);
-    return;
-  }
-
-  auto egl_image = CreateEGLImage(latest_hardware_buffer);
-  CloseHardwareBuffer(hardware_buffer);
-  // IMPORTANT: We have just received a new frame to display so close the
-  // previous Java Image so that it is recycled and used for a future frame.
+  JavaLocalRef old_android_image(latest_android_image_);
+  latest_android_image_.Reset(image);
   CloseImage(old_android_image);
-
-  if (!egl_image.is_valid()) {
-    return;
-  }
-
-  dl_image_ = CreateDlImage(context, bounds, key, std::move(egl_image));
-  gl_entries_.erase(image_lru_.AddImage(dl_image_, key));
 }
 
 void ImageExternalTextureGL::Detach() {

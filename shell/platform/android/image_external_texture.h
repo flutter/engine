@@ -59,7 +59,8 @@ class ImageExternalTexture : public flutter::Texture {
 
   fml::jni::ScopedJavaGlobalRef<jobject> image_texture_entry_;
   std::shared_ptr<PlatformViewAndroidJNI> jni_facade_;
-  SkRect last_bounds_ = SkRect::MakeEmpty();
+  SkRect latest_bounds_ = SkRect::MakeEmpty();
+  fml::jni::ScopedJavaGlobalRef<jobject> latest_android_image_;
 
   enum class AttachmentState { kUninitialized, kAttached, kDetached };
   AttachmentState state_ = AttachmentState::kUninitialized;
