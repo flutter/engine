@@ -10,7 +10,7 @@
 struct FlutterGPUUnlitVertexShader {
   struct PerVertexData {
     impeller::Point position;  // (offset 0, size 8)
-  };                           // struct PerVertexData (size 8)
+  };  // struct PerVertexData (size 8)
 
   static constexpr auto kInputPosition = impeller::ShaderStageIOSlot{
       // position
@@ -49,7 +49,7 @@ struct FlutterGPUTextureVertexShader {
     impeller::Vector3 position;      // (offset 0, size 12)
     impeller::Point texture_coords;  // (offset 12, size 8)
     impeller::Vector4 color;         // (offset 20, size 16)
-  };                                 // struct PerVertexData (size 36)
+  };  // struct PerVertexData (size 36)
 
   static constexpr auto kInputTextureCoords = impeller::ShaderStageIOSlot{
       // texture_coords

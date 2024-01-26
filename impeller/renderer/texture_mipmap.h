@@ -21,4 +21,3 @@ namespace impeller {
 }  // namespace impeller
 
 #endif  // FLUTTER_IMPELLER_RENDERER_TEXTURE_MIPMAP_H_
-
