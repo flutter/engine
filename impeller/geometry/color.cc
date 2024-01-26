@@ -193,15 +193,23 @@ static constexpr inline Color FromRGB(Vector3 color, Scalar alpha) {
   return {color.x, color.y, color.z, alpha};
 }
 
+/// This routine is the same as `IPApplyBlendedColor` in the Impeller shader
+/// library, except all inputs are unpremultiplied.
 static constexpr inline Color DoColorBlend(
-    Color d,
-    Color s,
+    Color dst,
+    Color src,
     const std::function<Vector3(Vector3, Vector3)>& blend_rgb_func) {
-  d = d.Premultiply();
-  s = s.Premultiply();
-  const Vector3 rgb = blend_rgb_func(ToRGB(d), ToRGB(s));
-  const Color blended = Color::Lerp(s, FromRGB(rgb, d.alpha), d.alpha);
-  return Color::Lerp(d, blended, s.alpha).Unpremultiply();
+  dst = dst.Premultiply();
+  src = src.Premultiply();
+
+  // The destination alpha determines how blended the result looks. This
+  // color becomes the new source color for the alpha composite step.
+  const Vector3 blend_result = blend_rgb_func(ToRGB(dst), ToRGB(src));
+
+  // Source-over blend atop the destination color.
+  const Vector3 blended = ToRGB(src).Lerp(blend_result, dst.alpha);
+  return (FromRGB(blended, src.alpha) + dst * (1.0f - src.alpha))
+      .Unpremultiply();
 }
 
 static constexpr inline Color DoColorBlendComponents(

@@ -9,13 +9,17 @@
 #include <impeller/constants.glsl>
 #include <impeller/types.glsl>
 
+/// Composite a blended color onto the destination.
+///
+/// All three parameters are premultiplied, including `blend_result`, which
+/// is assumed to already be premultiplied with `src.a`.
 f16vec4 IPApplyBlendedColor(f16vec4 dst, f16vec4 src, f16vec3 blend_result) {
-  // Mix the blended colors together, weighted by the destination alpha. This
-  // color becomes the new source color for the alpha composite.
+  // The destination alpha determines how blended the result looks. This
+  // color becomes the new source color for the alpha composite step.
   f16vec3 blended = mix(src.rgb, blend_result, dst.a);
 
   // Source-over blend atop the destination color.
-  return f16vec4(blended, src.a) + dst * (1.0f - src.a);
+  return f16vec4(blended, src.a) + dst * (1.0hf - src.a);
 }
 
 //------------------------------------------------------------------------------
