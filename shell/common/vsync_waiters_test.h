@@ -7,9 +7,6 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#ifndef FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
-#define FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
-
 #include <utility>
 
 #include "flutter/shell/common/shell.h"
@@ -75,7 +72,5 @@ class TestRefreshRateReporter final : public VariableRefreshRateReporter {
 
 }  // namespace testing
 }  // namespace flutter
-
-#endif  // FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
 
 #endif  // FLUTTER_SHELL_COMMON_VSYNC_WAITERS_TEST_H_
