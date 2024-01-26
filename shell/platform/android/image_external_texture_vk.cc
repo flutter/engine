@@ -52,8 +52,8 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
     dl_image_ = existing_image;
 
     CloseHardwareBuffer(hardware_buffer);
-    // IMPORTANT: We only close the old image after texture stops referencing
-    // it.
+    // IMPORTANT: We have just received a new frame to display so close the
+    // previous Java Image so that it is recycled and used for a future frame.
     CloseImage(old_android_image);
     return;
   }
@@ -102,8 +102,8 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   dl_image_ = impeller::DlImageImpeller::Make(texture);
   AddImage(dl_image_, key);
   CloseHardwareBuffer(hardware_buffer);
-  // IMPORTANT: We only close the old image after texture stops referencing
-  // it.
+  // IMPORTANT: We have just received a new frame to display so close the
+  // previous Java Image so that it is recycled and used for a future frame.
   CloseImage(old_android_image);
 }
 

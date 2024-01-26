@@ -30,6 +30,10 @@ class ImageExternalTextureGL : public ImageExternalTexture {
  protected:
   void Attach(PaintContext& context) override;
   void Detach() override;
+  void ProcessFrame(PaintContext& context, const SkRect& bounds) override;
+
+  virtual sk_sp<flutter::DlImage> CreateDlImage(PaintContext& context,
+                                                const SkRect& bounds) = 0;
 
   impeller::UniqueEGLImageKHR CreateEGLImage(AHardwareBuffer* buffer);
 
@@ -50,11 +54,10 @@ class ImageExternalTextureGLSkia : public ImageExternalTextureGL {
  private:
   void Attach(PaintContext& context) override;
   void Detach() override;
-  void ProcessFrame(PaintContext& context, const SkRect& bounds) override;
 
   void BindImageToTexture(const impeller::UniqueEGLImageKHR& image, GLuint tex);
   sk_sp<flutter::DlImage> CreateDlImage(PaintContext& context,
-                                        const SkRect& bounds);
+                                        const SkRect& bounds) override;
 
   impeller::UniqueGLTexture texture_;
 
@@ -72,11 +75,10 @@ class ImageExternalTextureGLImpeller : public ImageExternalTextureGL {
 
  private:
   void Attach(PaintContext& context) override;
-  void ProcessFrame(PaintContext& context, const SkRect& bounds) override;
   void Detach() override;
 
   sk_sp<flutter::DlImage> CreateDlImage(PaintContext& context,
-                                        const SkRect& bounds);
+                                        const SkRect& bounds) override;
 
   const std::shared_ptr<impeller::ContextGLES> impeller_context_;
 
