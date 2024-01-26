@@ -80,11 +80,9 @@ class ImageExternalTexture : public flutter::Texture {
   AttachmentState state_ = AttachmentState::kUninitialized;
   bool new_frame_ready_ = false;
   std::array<LRUImage, kImageReaderSwapchainSize> images_ = {
-      LRUImage{.key = 0, .image = nullptr},
-      LRUImage{.key = 0, .image = nullptr},
-      LRUImage{.key = 0, .image = nullptr},
+      LRUImage{0, nullptr}, LRUImage{0, nullptr}, LRUImage{0, nullptr},
+      LRUImage{0, nullptr}, LRUImage{0, nullptr}, LRUImage{0, nullptr},
   };
-
   sk_sp<flutter::DlImage> dl_image_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTexture);

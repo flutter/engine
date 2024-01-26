@@ -26,11 +26,9 @@ void ImageExternalTexture::Paint(PaintContext& context,
     return;
   }
   Attach(context);
-  const bool should_process_frame =
-      (!freeze && new_frame_ready_) || dl_image_ == nullptr;
+  const bool should_process_frame = !freeze;
   if (should_process_frame) {
     ProcessFrame(context, bounds);
-    new_frame_ready_ = false;
   }
   if (dl_image_) {
     context.canvas->DrawImageRect(
@@ -48,7 +46,7 @@ void ImageExternalTexture::Paint(PaintContext& context,
 
 // Implementing flutter::Texture.
 void ImageExternalTexture::MarkNewFrameAvailable() {
-  new_frame_ready_ = true;
+  // NOOP.
 }
 
 // Implementing flutter::Texture.
@@ -84,6 +82,7 @@ void ImageExternalTexture::UpdateKey(const sk_sp<flutter::DlImage>& image,
   for (auto j = i; j > 0; j--) {
     images_[j] = images_[j - 1];
   }
+  images_[0] = LRUImage{.key = key, .image = image};
 }
 
 void ImageExternalTexture::AddImage(const sk_sp<flutter::DlImage>& image,
