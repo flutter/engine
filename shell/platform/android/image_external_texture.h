@@ -7,9 +7,9 @@
 
 #include "flutter/common/graphics/texture.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/android/image_lru.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
-#include "flutter/shell/platform/android/image_lru.h"
 
 #include <android/hardware_buffer.h>
 #include <android/hardware_buffer_jni.h>
