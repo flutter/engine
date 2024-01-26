@@ -7,14 +7,7 @@
 #include <vector>
 
 #include "flutter/fml/logging.h"
-
-// Logs an EGL error to stderr. This automatically calls eglGetError()
-// and logs the error code.
-static void LogEglError(std::string message) {
-  EGLint error = ::eglGetError();
-  FML_LOG(ERROR) << "EGL: " << message;
-  FML_LOG(ERROR) << "EGL: eglGetError returned " << error;
-}
+#include "flutter/shell/platform/windows/egl/egl.h"
 
 namespace flutter {
 namespace egl {
@@ -109,7 +102,7 @@ bool Manager::InitializeDisplay() {
       reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
           ::eglGetProcAddress("eglGetPlatformDisplayEXT"));
   if (!egl_get_platform_display_EXT) {
-    LogEglError("eglGetPlatformDisplayEXT not available");
+    LogEGLError("eglGetPlatformDisplayEXT not available");
     return false;
   }
 
@@ -123,7 +116,7 @@ bool Manager::InitializeDisplay() {
 
     if (display_ == EGL_NO_DISPLAY) {
       if (is_last) {
-        LogEglError("Failed to get a compatible EGLdisplay");
+        LogEGLError("Failed to get a compatible EGLdisplay");
         return false;
       }
 
@@ -133,7 +126,7 @@ bool Manager::InitializeDisplay() {
 
     if (::eglInitialize(display_, nullptr, nullptr) == EGL_FALSE) {
       if (is_last) {
-        LogEglError("Failed to initialize EGL via ANGLE");
+        LogEGLError("Failed to initialize EGL via ANGLE");
         return false;
       }
 
@@ -189,27 +182,29 @@ bool Manager::InitializeConfig(bool enable_impeller) {
     }
   }
 
-  LogEglError("Failed to choose EGL config");
+  LogEGLError("Failed to choose EGL config");
   return false;
 }
 
 bool Manager::InitializeContexts() {
   const EGLint context_attributes[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
 
-  render_context_ =
+  auto const render_context =
       ::eglCreateContext(display_, config_, EGL_NO_CONTEXT, context_attributes);
-  if (render_context_ == EGL_NO_CONTEXT) {
-    LogEglError("Failed to create EGL render context");
+  if (render_context == EGL_NO_CONTEXT) {
+    LogEGLError("Failed to create EGL render context");
     return false;
   }
 
-  resource_context_ = ::eglCreateContext(display_, config_, render_context_,
-                                         context_attributes);
-  if (resource_context_ == EGL_NO_CONTEXT) {
-    LogEglError("Failed to create EGL resource context");
+  auto const resource_context =
+      ::eglCreateContext(display_, config_, render_context, context_attributes);
+  if (resource_context == EGL_NO_CONTEXT) {
+    LogEGLError("Failed to create EGL resource context");
     return false;
   }
 
+  render_context_ = std::make_unique<Context>(display_, render_context);
+  resource_context_ = std::make_unique<Context>(display_, resource_context);
   return true;
 }
 
@@ -247,26 +242,12 @@ bool Manager::InitializeDevice() {
 void Manager::CleanUp() {
   EGLBoolean result = EGL_FALSE;
 
-  // Needs to be reset before destroying the EGLContext.
+  // Needs to be reset before destroying the contexts.
   resolved_device_.Reset();
 
-  if (display_ != EGL_NO_DISPLAY && render_context_ != EGL_NO_CONTEXT) {
-    result = ::eglDestroyContext(display_, render_context_);
-    render_context_ = EGL_NO_CONTEXT;
-
-    if (result == EGL_FALSE) {
-      LogEglError("Failed to destroy context");
-    }
-  }
-
-  if (display_ != EGL_NO_DISPLAY && resource_context_ != EGL_NO_CONTEXT) {
-    result = ::eglDestroyContext(display_, resource_context_);
-    resource_context_ = EGL_NO_CONTEXT;
-
-    if (result == EGL_FALSE) {
-      LogEglError("Failed to destroy resource context");
-    }
-  }
+  // Needs to be reset before destroying the EGLDisplay.
+  render_context_.reset();
+  resource_context_.reset();
 
   if (display_ != EGL_NO_DISPLAY) {
     // Display is reused between instances so only terminate display
@@ -282,105 +263,69 @@ bool Manager::IsValid() const {
   return is_valid_;
 }
 
-bool Manager::CreateSurface(HWND hwnd, EGLint width, EGLint height) {
+bool Manager::CreateWindowSurface(HWND hwnd, size_t width, size_t height) {
+  FML_DCHECK(surface_ == nullptr || !surface_->IsValid());
+
   if (!hwnd || !is_valid_) {
     return false;
   }
 
-  EGLSurface surface = EGL_NO_SURFACE;
-
   // Disable ANGLE's automatic surface resizing and provide an explicit size.
   // The surface will need to be destroyed and re-created if the HWND is
   // resized.
-  const EGLint surface_attributes[] = {
-      EGL_FIXED_SIZE_ANGLE, EGL_TRUE, EGL_WIDTH, width,
-      EGL_HEIGHT,           height,   EGL_NONE};
+  const EGLint surface_attributes[] = {EGL_FIXED_SIZE_ANGLE,
+                                       EGL_TRUE,
+                                       EGL_WIDTH,
+                                       static_cast<EGLint>(width),
+                                       EGL_HEIGHT,
+                                       static_cast<EGLint>(height),
+                                       EGL_NONE};
 
-  surface = ::eglCreateWindowSurface(display_, config_,
-                                     static_cast<EGLNativeWindowType>(hwnd),
-                                     surface_attributes);
+  auto const surface = ::eglCreateWindowSurface(
+      display_, config_, static_cast<EGLNativeWindowType>(hwnd),
+      surface_attributes);
   if (surface == EGL_NO_SURFACE) {
-    LogEglError("Surface creation failed.");
+    LogEGLError("Surface creation failed.");
     return false;
   }
 
-  surface_width_ = width;
-  surface_height_ = height;
-  surface_ = surface;
+  surface_ = std::make_unique<WindowSurface>(
+      display_, render_context_->GetHandle(), surface, width, height);
   return true;
 }
 
-void Manager::ResizeSurface(HWND hwnd,
-                            EGLint width,
-                            EGLint height,
-                            bool vsync_enabled) {
-  EGLint existing_width, existing_height;
-  GetSurfaceDimensions(&existing_width, &existing_height);
-  if (width != existing_width || height != existing_height) {
-    surface_width_ = width;
-    surface_height_ = height;
+void Manager::ResizeWindowSurface(HWND hwnd, size_t width, size_t height) {
+  FML_CHECK(surface_ != nullptr);
 
+  auto const existing_width = surface_->width();
+  auto const existing_height = surface_->height();
+  auto const existing_vsync = surface_->vsync_enabled();
+
+  if (width != existing_width || height != existing_height) {
     // TODO: Destroying the surface and re-creating it is expensive.
     // Ideally this would use ANGLE's automatic surface sizing instead.
     // See: https://github.com/flutter/flutter/issues/79427
-    ClearContext();
-    DestroySurface();
-    if (!CreateSurface(hwnd, width, height)) {
+    if (!surface_->Destroy()) {
+      FML_LOG(ERROR) << "Manager::ResizeSurface failed to destroy surface";
+      return;
+    }
+
+    if (!CreateWindowSurface(hwnd, width, height)) {
       FML_LOG(ERROR) << "Manager::ResizeSurface failed to create surface";
+      return;
+    }
+
+    if (!surface_->SetVSyncEnabled(existing_vsync)) {
+      // Surfaces block until the v-blank by default.
+      // Failing to update the vsync might result in unnecessary blocking.
+      // This regresses performance but not correctness.
+      FML_LOG(ERROR) << "Manager::ResizeSurface failed to set vsync";
     }
   }
-
-  SetVSyncEnabled(vsync_enabled);
-}
-
-void Manager::GetSurfaceDimensions(EGLint* width, EGLint* height) {
-  if (surface_ == EGL_NO_SURFACE || !is_valid_) {
-    *width = 0;
-    *height = 0;
-    return;
-  }
-
-  // This avoids eglQuerySurface as ideally surfaces would be automatically
-  // sized by ANGLE to avoid expensive surface destroy & re-create. With
-  // automatic sizing, ANGLE could resize the surface before Flutter asks it to,
-  // which would break resize redraw synchronization.
-  *width = surface_width_;
-  *height = surface_height_;
-}
-
-void Manager::DestroySurface() {
-  if (display_ != EGL_NO_DISPLAY && surface_ != EGL_NO_SURFACE) {
-    ::eglDestroySurface(display_, surface_);
-  }
-  surface_ = EGL_NO_SURFACE;
 }
 
 bool Manager::HasContextCurrent() {
   return ::eglGetCurrentContext() != EGL_NO_CONTEXT;
-}
-
-bool Manager::MakeCurrent() {
-  return (::eglMakeCurrent(display_, surface_, surface_, render_context_) ==
-          EGL_TRUE);
-}
-
-bool Manager::ClearCurrent() {
-  return (::eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
-                           EGL_NO_CONTEXT) == EGL_TRUE);
-}
-
-bool Manager::ClearContext() {
-  return (::eglMakeCurrent(display_, nullptr, nullptr, render_context_) ==
-          EGL_TRUE);
-}
-
-bool Manager::MakeResourceCurrent() {
-  return (::eglMakeCurrent(display_, EGL_NO_SURFACE, EGL_NO_SURFACE,
-                           resource_context_) == EGL_TRUE);
-}
-
-bool Manager::SwapBuffers() {
-  return (::eglSwapBuffers(display_, surface_));
 }
 
 EGLSurface Manager::CreateSurfaceFromHandle(EGLenum handle_type,
@@ -388,23 +333,6 @@ EGLSurface Manager::CreateSurfaceFromHandle(EGLenum handle_type,
                                             const EGLint* attributes) const {
   return ::eglCreatePbufferFromClientBuffer(display_, handle_type, handle,
                                             config_, attributes);
-}
-
-void Manager::SetVSyncEnabled(bool enabled) {
-  if (!MakeCurrent()) {
-    LogEglError("Unable to make surface current to update the swap interval");
-    return;
-  }
-
-  // OpenGL swap intervals can be used to prevent screen tearing.
-  // If enabled, the raster thread blocks until the v-blank.
-  // This is unnecessary if DWM composition is enabled.
-  // See: https://www.khronos.org/opengl/wiki/Swap_Interval
-  // See: https://learn.microsoft.com/windows/win32/dwm/composition-ovw
-  if (::eglSwapInterval(display_, enabled ? 1 : 0) != EGL_TRUE) {
-    LogEglError("Unable to update the swap interval");
-    return;
-  }
 }
 
 bool Manager::GetDevice(ID3D11Device** device) {
@@ -416,6 +344,18 @@ bool Manager::GetDevice(ID3D11Device** device) {
 
   resolved_device_.CopyTo(device);
   return (resolved_device_ != nullptr);
+}
+
+Context* Manager::render_context() const {
+  return render_context_.get();
+}
+
+Context* Manager::resource_context() const {
+  return resource_context_.get();
+}
+
+WindowSurface* Manager::surface() const {
+  return surface_.get();
 }
 
 }  // namespace egl
