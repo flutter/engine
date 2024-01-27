@@ -44,13 +44,27 @@ void testMain() {
     });
 
     test('will error if trying to render into an unregistered view', () async {
+      ui.ErrorCallback? previousErrorCallback =
+          EnginePlatformDispatcher.instance.onError;
+
+      Object? lastException;
+      int errorCount = 0;
+
+      EnginePlatformDispatcher.instance.onError =
+          (Object exception, StackTrace stackTrace) {
+        errorCount++;
+        lastException = exception;
+        return true;
+      };
+
       final EngineFlutterView unregisteredView = EngineFlutterView(
           EnginePlatformDispatcher.instance,
           createDomElement('unregistered-view'));
-      expect(
-        () => CanvasKitRenderer.instance.renderScene(scene, unregisteredView),
-        throwsAssertionError,
-      );
+      await CanvasKitRenderer.instance.renderScene(scene, unregisteredView);
+      expect(errorCount, equals(1));
+      expect(lastException, isAssertionError);
+
+      EnginePlatformDispatcher.instance.onError = previousErrorCallback;
     });
 
     test('will dispose the Rasterizer for a disposed view', () async {
@@ -71,7 +85,8 @@ void testMain() {
     });
 
     // Issue https://github.com/flutter/flutter/issues/142094
-    test('does not reset platform view factories when disposing a view', () async {
+    test('does not reset platform view factories when disposing a view',
+        () async {
       expect(PlatformViewManager.instance.knowsViewType('self-test'), isFalse);
 
       final EngineFlutterView view = EngineFlutterView(
@@ -89,8 +104,14 @@ void testMain() {
         isNull,
       );
 
-      expect(PlatformViewManager.instance.knowsViewType(ui_web.PlatformViewRegistry.defaultVisibleViewType), isTrue);
-      expect(PlatformViewManager.instance.knowsViewType(ui_web.PlatformViewRegistry.defaultInvisibleViewType), isTrue);
+      expect(
+          PlatformViewManager.instance.knowsViewType(
+              ui_web.PlatformViewRegistry.defaultVisibleViewType),
+          isTrue);
+      expect(
+          PlatformViewManager.instance.knowsViewType(
+              ui_web.PlatformViewRegistry.defaultInvisibleViewType),
+          isTrue);
     });
   });
 }
