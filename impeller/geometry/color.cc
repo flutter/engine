@@ -194,31 +194,29 @@ static constexpr inline Color FromRGB(Vector3 color, Scalar alpha) {
 }
 
 /// Composite a blended color onto the destination.
+/// All three parameters are unpremultiplied. Returns a premultiplied result.
 ///
-/// All three parameters are premultiplied, including `blend_result`, which
-/// is assumed to already be premultiplied with `src.a`.
-///
-/// This routine is identical to `IPApplyBlendedColor` in the Impeller shader
+/// This routine is the same as `IPApplyBlendedColor` in the Impeller shader
 /// library.
 static constexpr inline Color ApplyBlendedColor(Color dst,
                                                 Color src,
                                                 Vector3 blend_result) {
-  // The source and destination alpha modulates the amount that the colors
-  // should get blended. This color becomes the new source color for the alpha
-  // composite step.
-  const Vector3 blended_src =
-      ToRGB(src).Lerp(blend_result, dst.alpha * src.alpha);
+  dst = dst.Premultiply();
+  src =
+      // Use the blended color for areas where the source and destination
+      // colors overlap.
+      FromRGB(blend_result, src.alpha * dst.alpha).Premultiply() +
+      // Use the original source color for any remaining non-overlapping areas.
+      src.Premultiply() * (1.0f - dst.alpha);
 
-  // Source-over blend atop the destination color.
-  return FromRGB(blended_src, src.alpha) + dst * (1.0f - src.alpha);
+  // Source-over composite the blended source color atop the destination.
+  return src + dst * (1.0f - src.alpha);
 }
 
 static constexpr inline Color DoColorBlend(
     Color dst,
     Color src,
     const std::function<Vector3(Vector3, Vector3)>& blend_rgb_func) {
-  dst = dst.Premultiply();
-  src = src.Premultiply();
   const Vector3 blend_result = blend_rgb_func(ToRGB(dst), ToRGB(src));
   return ApplyBlendedColor(dst, src, blend_result).Unpremultiply();
 }
@@ -227,8 +225,6 @@ static constexpr inline Color DoColorBlendComponents(
     Color dst,
     Color src,
     const std::function<Scalar(Scalar, Scalar)>& blend_func) {
-  dst = dst.Premultiply();
-  src = src.Premultiply();
   Vector3 blend_result = Vector3(blend_func(dst.red, src.red),      //
                                  blend_func(dst.green, src.green),  //
                                  blend_func(dst.blue, src.blue));   //

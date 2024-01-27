@@ -55,11 +55,12 @@ vec4 Sample(sampler2D texture_sampler, vec2 texture_coords) {
 }
 
 void main() {
-  f16vec4 dst = f16vec4(ReadDestination());
-  f16vec4 src = f16vec4(Sample(texture_sampler_src,  // sampler
-                               v_src_texture_coords  // texture coordinates
-                               )) *
-                frag_info.src_input_alpha;
+  f16vec4 dst = IPUnpremultiply(f16vec4(ReadDestination()));
+  f16vec4 src = IPUnpremultiply(
+      f16vec4(Sample(texture_sampler_src,  // sampler
+                     v_src_texture_coords  // texture coordinates
+                     )));
+  src.a *= frag_info.src_input_alpha;
 
   f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, int(blend_type));
 
