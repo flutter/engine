@@ -27,7 +27,7 @@ class ImageLRU {
   ~ImageLRU() = default;
 
   /// @brief Retrieve the image associated with the given [key], or nullptr.
-  sk_sp<flutter::DlImage> FindImage(HardwareBufferKey key);
+  sk_sp<flutter::DlImage> FindImage(std::optional<HardwareBufferKey> key);
 
   /// @brief Add a new image to the cache with a key, returning the key of the
   ///        LRU entry that was removed.

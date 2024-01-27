@@ -116,9 +116,12 @@ void NDKHelpers::AHardwareBuffer_describe(AHardwareBuffer* buffer,
   _AHardwareBuffer_describe(buffer, desc);
 }
 
-HardwareBufferKey NDKHelpers::AHardwareBuffer_getId(AHardwareBuffer* buffer) {
+std::optional<HardwareBufferKey> NDKHelpers::AHardwareBuffer_getId(
+    AHardwareBuffer* buffer) {
   NDKHelpers::Init();
-  FML_CHECK(_AHardwareBuffer_getId != nullptr);
+  if (_AHardwareBuffer_getId == nullptr) {
+    return std::nullopt;
+  }
   HardwareBufferKey outId;
   _AHardwareBuffer_getId(buffer, &outId);
   return outId;

@@ -6,11 +6,16 @@
 
 namespace flutter {
 
-sk_sp<flutter::DlImage> ImageLRU::FindImage(HardwareBufferKey key) {
+sk_sp<flutter::DlImage> ImageLRU::FindImage(
+    std::optional<HardwareBufferKey> key) {
+  if (!key.has_value()) {
+    return nullptr;
+  }
+  auto key_value = key.value();
   for (size_t i = 0u; i < kImageReaderSwapchainSize; i++) {
-    if (images_[i].key == key) {
+    if (images_[i].key == key_value) {
       auto result = images_[i].value;
-      UpdateKey(result, key);
+      UpdateKey(result, key_value);
       return result;
     }
   }

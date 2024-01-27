@@ -38,7 +38,7 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   virtual sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      HardwareBufferKey id,
+      std::optional<HardwareBufferKey> id,
       impeller::UniqueEGLImageKHR&& egl_image) = 0;
 
   impeller::UniqueEGLImageKHR CreateEGLImage(AHardwareBuffer* buffer);
@@ -73,7 +73,7 @@ class ImageExternalTextureGLSkia : public ImageExternalTextureGL {
   sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      HardwareBufferKey id,
+      std::optional<HardwareBufferKey> id,
       impeller::UniqueEGLImageKHR&& egl_image) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTextureGLSkia);
@@ -95,7 +95,7 @@ class ImageExternalTextureGLImpeller : public ImageExternalTextureGL {
   sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,
       const SkRect& bounds,
-      HardwareBufferKey id,
+      std::optional<HardwareBufferKey> id,
       impeller::UniqueEGLImageKHR&& egl_image) override;
 
   const std::shared_ptr<impeller::ContextGLES> impeller_context_;

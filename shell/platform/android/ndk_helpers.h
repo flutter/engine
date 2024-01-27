@@ -29,8 +29,13 @@ class NDKHelpers {
   static void AHardwareBuffer_release(AHardwareBuffer* buffer);
   static void AHardwareBuffer_describe(AHardwareBuffer* buffer,
                                        AHardwareBuffer_Desc* desc);
-  static HardwareBufferKey AHardwareBuffer_getId(AHardwareBuffer* buffer);
   static EGLClientBuffer eglGetNativeClientBufferANDROID(
+      AHardwareBuffer* buffer);
+
+  // API Version 31
+
+  // Returns std::nullopt on API version 26 - 30.
+  static std::optional<HardwareBufferKey> AHardwareBuffer_getId(
       AHardwareBuffer* buffer);
 
  private:
