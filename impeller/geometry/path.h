@@ -194,15 +194,10 @@ class Path {
   // copy constructor for Path is very cheap and we don't need to deal
   // with shared pointers for Path fields and method arguments.
   //
-  // The PathBuilder will also share its internal prototype_'s data
-  // with the results of |TakePath()| by virtue of marking the data
-  // locked. If the PathBuilder is never used again then we never
-  // copy the data. If it is used again, then the next call that
-  // modifies the data in the prototype_ will discover that it is
-  // locked when |GetModifiableData()| is called and the prototype_
-  // will clone its data at that point - leaving all of the Path
-  // references that referred to its most recently "taken" version
-  // to share the old data.
+  // PathBuilder also uses this structure to accumulate the path data
+  // but the Path constructor used in |TakePath()| will clone the
+  // structure to prevent sharing and future modifications within the
+  // builder from affecting the existing taken paths.
   struct Data {
     Data() = default;
     Data(const Data& other) = default;
