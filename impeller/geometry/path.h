@@ -133,12 +133,6 @@ class Path {
 
   ~Path();
 
-  Path(const Path& other);
-  Path(Path&& other);
-
-  void operator=(Path&& other);
-  void operator=(const Path& other);
-
   size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
   FillType GetFillType() const;
@@ -182,43 +176,8 @@ class Path {
 
   std::optional<Rect> GetTransformedBoundingBox(const Matrix& transform) const;
 
-  std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
-
  private:
   friend class PathBuilder;
-
-  /// @brief Reserve [point_size] points and [verb_size] verbs in the
-  ///        associated vectors.
-  void Reserve(size_t point_size, size_t verb_size);
-
-  void SetConvexity(Convexity value);
-
-  void SetFillType(FillType fill);
-
-  void SetBounds(Rect rect);
-
-  Path& AddLinearComponent(const Point& p1, const Point& p2);
-
-  Path& AddQuadraticComponent(const Point& p1,
-                              const Point& cp,
-                              const Point& p2);
-
-  Path& AddCubicComponent(const Point& p1,
-                          const Point& cp1,
-                          const Point& cp2,
-                          const Point& p2);
-
-  Path& AddContourComponent(const Point& destination, bool is_closed = false);
-
-  /// @brief Called by `PathBuilder` to compute the bounds for certain paths.
-  ///
-  /// `PathBuilder` may set the bounds directly, in case they come from a source
-  /// with already computed bounds, such as an SkPath.
-  void ComputeBounds();
-
-  void SetContourClosed(bool is_closed);
-
-  void Shift(Point shift);
 
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
@@ -256,24 +215,14 @@ class Path {
     std::vector<Point> points;
     std::vector<ContourComponent> contours;
 
-    std::optional<Rect> computed_bounds;
+    std::optional<Rect> bounds;
 
     bool locked = false;
   };
 
-  // The local shared reference to the data for this path. The name is
-  // rather long to discourage any use of the field directly in methods
-  // that aren't specifically managing construct/copy semantics. Regular
-  // methods should get a reference to this structure using either
-  // |GetImmutableData()| from a const method, or |GetModifiableData()|
-  // from methods that mutate the path. Such mutating methods should only
-  // ever be called by PathBuilder on its own prototype_ instance and
-  // will copy-on-write-if-shared the structure to isolate the changes
-  // from any of the "taken" paths.
-  std::shared_ptr<Data> copy_on_shared_write_data_;
+  explicit Path(const Data& data);
 
-  const Data& GetImmutableData() const { return *copy_on_shared_write_data_; }
-  Data& GetModifiableData();
+  std::shared_ptr<const Data> data_;
 };
 
 static_assert(sizeof(Path) == sizeof(std::shared_ptr<struct Anonymous>));

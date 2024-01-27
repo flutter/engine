@@ -13,45 +13,15 @@
 
 namespace impeller {
 
-Path::Path() : copy_on_shared_write_data_(new Data()) {
-  AddContourComponent({});
-};
+Path::Path() : data_(new Data()) {}
 
-Path::Path(const Path& other) {
-  copy_on_shared_write_data_ = other.copy_on_shared_write_data_;
-  copy_on_shared_write_data_->locked = true;
-}
-
-Path::Path(Path&& other) {
-  copy_on_shared_write_data_ = other.copy_on_shared_write_data_;
-  other.copy_on_shared_write_data_.reset(new Data());
-}
-
-void Path::operator=(const Path& other) {
-  copy_on_shared_write_data_ = other.copy_on_shared_write_data_;
-  copy_on_shared_write_data_->locked = true;
-}
-
-void Path::operator=(Path&& other) {
-  copy_on_shared_write_data_ = other.copy_on_shared_write_data_;
-  other.copy_on_shared_write_data_.reset(new Data());
+Path::Path(const Data& data) : data_(new Data(data)) {
+  FML_DCHECK(data_->points.size() == data_->points.capacity());
+  FML_DCHECK(data_->components.size() == data_->components.capacity());
+  FML_DCHECK(data_->contours.size() == data_->contours.capacity());
 }
 
 Path::~Path() = default;
-
-Path::Data& Path::GetModifiableData() {
-  if (copy_on_shared_write_data_->locked) {
-    copy_on_shared_write_data_.reset(new Data(*copy_on_shared_write_data_));
-    copy_on_shared_write_data_->locked = false;
-  }
-  return *copy_on_shared_write_data_;
-}
-
-void Path::Reserve(size_t point_size, size_t verb_size) {
-  auto& data = GetModifiableData();
-  data.points.reserve(point_size);
-  data.components.reserve(verb_size);
-}
 
 std::tuple<size_t, size_t> Path::Polyline::GetContourPointBounds(
     size_t contour_index) const {
@@ -66,16 +36,15 @@ std::tuple<size_t, size_t> Path::Polyline::GetContourPointBounds(
 }
 
 size_t Path::GetComponentCount(std::optional<ComponentType> type) const {
-  auto& data = GetImmutableData();
   if (!type.has_value()) {
-    return data.components.size();
+    return data_->components.size();
   }
   auto type_value = type.value();
   if (type_value == ComponentType::kContour) {
-    return data.contours.size();
+    return data_->contours.size();
   }
   size_t count = 0u;
-  for (const auto& component : data.components) {
+  for (const auto& component : data_->components) {
     if (component.type == type_value) {
       count++;
     }
@@ -83,91 +52,16 @@ size_t Path::GetComponentCount(std::optional<ComponentType> type) const {
   return count;
 }
 
-void Path::SetFillType(FillType fill) {
-  GetModifiableData().fill = fill;
-}
-
 FillType Path::GetFillType() const {
-  return GetImmutableData().fill;
+  return data_->fill;
 }
 
 bool Path::IsConvex() const {
-  return GetImmutableData().convexity == Convexity::kConvex;
+  return data_->convexity == Convexity::kConvex;
 }
 
 bool Path::IsEmpty() const {
-  return GetImmutableData().points.empty();
-}
-
-void Path::SetConvexity(Convexity value) {
-  GetModifiableData().convexity = value;
-}
-
-void Path::Shift(Point shift) {
-  auto& data = GetModifiableData();
-  for (auto& point : data.points) {
-    point += shift;
-  }
-  for (auto& contour : data.contours) {
-    contour.destination += shift;
-  }
-}
-
-Path& Path::AddLinearComponent(const Point& p1, const Point& p2) {
-  auto& data = GetModifiableData();
-  auto& points = data.points;
-  auto index = points.size();
-  points.emplace_back(p1);
-  points.emplace_back(p2);
-  data.components.emplace_back(ComponentType::kLinear, index);
-  return *this;
-}
-
-Path& Path::AddQuadraticComponent(const Point& p1,
-                                  const Point& cp,
-                                  const Point& p2) {
-  auto& data = GetModifiableData();
-  auto& points = data.points;
-  auto index = points.size();
-  points.emplace_back(p1);
-  points.emplace_back(cp);
-  points.emplace_back(p2);
-  data.components.emplace_back(ComponentType::kQuadratic, index);
-  return *this;
-}
-
-Path& Path::AddCubicComponent(const Point& p1,
-                              const Point& cp1,
-                              const Point& cp2,
-                              const Point& p2) {
-  auto& data = GetModifiableData();
-  auto& points = data.points;
-  auto index = points.size();
-  points.emplace_back(p1);
-  points.emplace_back(cp1);
-  points.emplace_back(cp2);
-  points.emplace_back(p2);
-  data.components.emplace_back(ComponentType::kCubic, index);
-  return *this;
-}
-
-Path& Path::AddContourComponent(const Point& destination, bool is_closed) {
-  auto& data = GetModifiableData();
-  auto& components = data.components;
-  auto& contours = data.contours;
-  if (components.size() > 0 &&
-      components.back().type == ComponentType::kContour) {
-    // Never insert contiguous contours.
-    contours.back() = ContourComponent(destination, is_closed);
-  } else {
-    contours.emplace_back(ContourComponent(destination, is_closed));
-    components.emplace_back(ComponentType::kContour, contours.size() - 1);
-  }
-  return *this;
-}
-
-void Path::SetContourClosed(bool is_closed) {
-  GetModifiableData().contours.back().is_closed = is_closed;
+  return data_->points.empty();
 }
 
 void Path::EnumerateComponents(
@@ -175,10 +69,9 @@ void Path::EnumerateComponents(
     const Applier<QuadraticPathComponent>& quad_applier,
     const Applier<CubicPathComponent>& cubic_applier,
     const Applier<ContourComponent>& contour_applier) const {
-  auto& data = GetImmutableData();
-  auto& points = data.points;
+  auto& points = data_->points;
   size_t currentIndex = 0;
-  for (const auto& component : data.components) {
+  for (const auto& component : data_->components) {
     switch (component.type) {
       case ComponentType::kLinear:
         if (linear_applier) {
@@ -206,7 +99,7 @@ void Path::EnumerateComponents(
         break;
       case ComponentType::kContour:
         if (contour_applier) {
-          contour_applier(currentIndex, data.contours[component.index]);
+          contour_applier(currentIndex, data_->contours[component.index]);
         }
         break;
     }
@@ -216,8 +109,7 @@ void Path::EnumerateComponents(
 
 bool Path::GetLinearComponentAtIndex(size_t index,
                                      LinearPathComponent& linear) const {
-  auto& data = GetImmutableData();
-  auto& components = data.components;
+  auto& components = data_->components;
 
   if (index >= components.size()) {
     return false;
@@ -227,7 +119,7 @@ bool Path::GetLinearComponentAtIndex(size_t index,
     return false;
   }
 
-  auto& points = data.points;
+  auto& points = data_->points;
   auto point_index = components[index].index;
   linear = LinearPathComponent(points[point_index], points[point_index + 1]);
   return true;
@@ -236,8 +128,7 @@ bool Path::GetLinearComponentAtIndex(size_t index,
 bool Path::GetQuadraticComponentAtIndex(
     size_t index,
     QuadraticPathComponent& quadratic) const {
-  auto& data = GetImmutableData();
-  auto& components = data.components;
+  auto& components = data_->components;
 
   if (index >= components.size()) {
     return false;
@@ -247,7 +138,7 @@ bool Path::GetQuadraticComponentAtIndex(
     return false;
   }
 
-  auto& points = data.points;
+  auto& points = data_->points;
   auto point_index = components[index].index;
   quadratic = QuadraticPathComponent(
       points[point_index], points[point_index + 1], points[point_index + 2]);
@@ -256,8 +147,7 @@ bool Path::GetQuadraticComponentAtIndex(
 
 bool Path::GetCubicComponentAtIndex(size_t index,
                                     CubicPathComponent& cubic) const {
-  auto& data = GetImmutableData();
-  auto& components = data.components;
+  auto& components = data_->components;
 
   if (index >= components.size()) {
     return false;
@@ -267,7 +157,7 @@ bool Path::GetCubicComponentAtIndex(size_t index,
     return false;
   }
 
-  auto& points = data.points;
+  auto& points = data_->points;
   auto point_index = components[index].index;
   cubic = CubicPathComponent(points[point_index], points[point_index + 1],
                              points[point_index + 2], points[point_index + 3]);
@@ -276,8 +166,7 @@ bool Path::GetCubicComponentAtIndex(size_t index,
 
 bool Path::GetContourComponentAtIndex(size_t index,
                                       ContourComponent& move) const {
-  auto& data = GetImmutableData();
-  auto& components = data.components;
+  auto& components = data_->components;
 
   if (index >= components.size()) {
     return false;
@@ -287,7 +176,7 @@ bool Path::GetContourComponentAtIndex(size_t index,
     return false;
   }
 
-  move = data.contours[components[index].index];
+  move = data_->contours[components[index].index];
   return true;
 }
 
@@ -316,9 +205,8 @@ Path::Polyline Path::CreatePolyline(
     Path::Polyline::ReclaimPointBufferCallback reclaim) const {
   Polyline polyline(std::move(point_buffer), std::move(reclaim));
 
-  auto& data = GetImmutableData();
-  auto& path_components = data.components;
-  auto& path_points = data.points;
+  auto& path_components = data_->components;
+  auto& path_points = data_->points;
 
   auto get_path_component = [&path_components, &path_points](
                                 size_t component_i) -> PathComponentVariant {
@@ -438,7 +326,7 @@ Path::Polyline Path::CreatePolyline(
         end_contour();
 
         Vector2 start_direction = compute_contour_start_direction(component_i);
-        const auto& contour = data.contours[path_component.index];
+        const auto& contour = data_->contours[path_component.index];
         polyline.contours.push_back({.start_index = polyline.points->size(),
                                      .is_closed = contour.is_closed,
                                      .start_direction = start_direction,
@@ -453,21 +341,7 @@ Path::Polyline Path::CreatePolyline(
 }
 
 std::optional<Rect> Path::GetBoundingBox() const {
-  return GetImmutableData().computed_bounds;
-}
-
-void Path::ComputeBounds() {
-  auto& data = GetModifiableData();
-  auto min_max = GetMinMaxCoveragePoints();
-  if (!min_max.has_value()) {
-    data.computed_bounds = std::nullopt;
-    return;
-  }
-  auto min = min_max->first;
-  auto max = min_max->second;
-  const auto difference = max - min;
-  data.computed_bounds =
-      Rect::MakeXYWH(min.x, min.y, difference.x, difference.y);
+  return data_->bounds;
 }
 
 std::optional<Rect> Path::GetTransformedBoundingBox(
@@ -477,70 +351,6 @@ std::optional<Rect> Path::GetTransformedBoundingBox(
     return std::nullopt;
   }
   return bounds->TransformBounds(transform);
-}
-
-std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
-  auto data = GetImmutableData();
-  auto& points = data.points;
-
-  if (points.empty()) {
-    return std::nullopt;
-  }
-
-  std::optional<Point> min, max;
-
-  auto clamp = [&min, &max](const Point& point) {
-    if (min.has_value()) {
-      min = min->Min(point);
-    } else {
-      min = point;
-    }
-
-    if (max.has_value()) {
-      max = max->Max(point);
-    } else {
-      max = point;
-    }
-  };
-
-  for (const auto& component : data.components) {
-    switch (component.type) {
-      case ComponentType::kLinear: {
-        auto* linear = reinterpret_cast<const LinearPathComponent*>(
-            &points[component.index]);
-        clamp(linear->p1);
-        clamp(linear->p2);
-        break;
-      }
-      case ComponentType::kQuadratic:
-        for (const auto& extrema :
-             reinterpret_cast<const QuadraticPathComponent*>(
-                 &points[component.index])
-                 ->Extrema()) {
-          clamp(extrema);
-        }
-        break;
-      case ComponentType::kCubic:
-        for (const auto& extrema : reinterpret_cast<const CubicPathComponent*>(
-                                       &points[component.index])
-                                       ->Extrema()) {
-          clamp(extrema);
-        }
-        break;
-      case ComponentType::kContour:
-        break;
-    }
-  }
-
-  if (!min.has_value() || !max.has_value()) {
-    return std::nullopt;
-  }
-
-  return std::make_pair(min.value(), max.value());
-}
-
-void Path::SetBounds(Rect rect) {
-  GetModifiableData().computed_bounds = rect;
 }
 
 }  // namespace impeller
