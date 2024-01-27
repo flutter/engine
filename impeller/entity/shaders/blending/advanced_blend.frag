@@ -37,16 +37,16 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
 
 void main() {
   f16vec4 dst =
-      IPUnpremultiply(Sample(texture_sampler_dst,  // sampler
-                             v_dst_texture_coords  // texture coordinates
-                             ));
+      IPHalfUnpremultiply(Sample(texture_sampler_dst,  // sampler
+                                 v_dst_texture_coords  // texture coordinates
+                                 ));
   dst *= blend_info.dst_input_alpha;
-  f16vec4 src =
-      IPUnpremultiply(blend_info.color_factor > 0.0hf
-                          ? blend_info.color
-                          : Sample(texture_sampler_src,  // sampler
-                                   v_src_texture_coords  // texture coordinates
-                                   ));
+  f16vec4 src = IPHalfUnpremultiply(
+      blend_info.color_factor > 0.0hf
+          ? blend_info.color
+          : Sample(texture_sampler_src,  // sampler
+                   v_src_texture_coords  // texture coordinates
+                   ));
   src *= blend_info.src_input_alpha;
 
   f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, int(blend_type));

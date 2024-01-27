@@ -55,8 +55,8 @@ vec4 Sample(sampler2D texture_sampler, vec2 texture_coords) {
 }
 
 void main() {
-  f16vec4 dst = IPUnpremultiply(f16vec4(ReadDestination()));
-  f16vec4 src = IPUnpremultiply(
+  f16vec4 dst = IPHalfUnpremultiply(f16vec4(ReadDestination()));
+  f16vec4 src = IPHalfUnpremultiply(
       f16vec4(Sample(texture_sampler_src,  // sampler
                      v_src_texture_coords  // texture coordinates
                      )));
