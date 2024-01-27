@@ -3176,7 +3176,7 @@ TEST_P(AiksTest, SolidColorApplyColorFilter) {
   });
   ASSERT_TRUE(result);
   ASSERT_COLOR_NEAR(contents.GetColor(),
-                    Color(0.435986, 0.899204, 0.818385, 0.9375));
+                    Color(0.385813, 0.864403, 0.699475, 0.9375));
 }
 
 TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {

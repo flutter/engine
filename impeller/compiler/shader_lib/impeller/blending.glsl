@@ -13,13 +13,17 @@
 ///
 /// All three parameters are premultiplied, including `blend_result`, which
 /// is assumed to already be premultiplied with `src.a`.
+///
+/// This routine is identical to `ApplyBlendedColor` in
+/// `impeller/geometry/color.cc`.
 f16vec4 IPApplyBlendedColor(f16vec4 dst, f16vec4 src, f16vec3 blend_result) {
-  // The destination alpha determines how blended the result looks. This
-  // color becomes the new source color for the alpha composite step.
-  f16vec3 blended = mix(src.rgb, blend_result, dst.a);
+  // The source and destination alpha modulates the amount that the colors
+  // should get blended. This color becomes the new source color for the alpha
+  // composite step.
+  f16vec3 blended_src = mix(src.rgb, blend_result, dst.a * src.a);
 
   // Source-over blend atop the destination color.
-  return f16vec4(blended, src.a) + dst * (1.0hf - src.a);
+  return f16vec4(blended_src, src.a) + dst * (1.0hf - src.a);
 }
 
 //------------------------------------------------------------------------------
