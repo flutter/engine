@@ -7,7 +7,6 @@
 
 #include "fml/logging.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
@@ -17,6 +16,7 @@
 #include "impeller/renderer/backend/gles/shader_library_gles.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/graphics_queue.h"
 
 namespace impeller {
 
@@ -50,6 +50,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<PipelineLibraryGLES> pipeline_library_;
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
+  std::shared_ptr<GraphicsQueue> graphics_queue_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
@@ -87,9 +88,7 @@ class ContextGLES final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
-  const std::shared_ptr<GraphicsQueue>& GetQueue() const override {
-    FML_UNREACHABLE();
-  }
+  const std::shared_ptr<GraphicsQueue>& GetQueue() const override;
 
   // |Context|
   void Shutdown() override;

@@ -269,6 +269,12 @@ using TiledTextureExternalPipeline =
                     TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
+// A struct used to isolate command buffer storage from the content
+// context options to preserve const-ness.
+struct PendingCommandBuffers {
+  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
+};
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -716,15 +722,9 @@ class ContentContext {
 
   void SetWireframe(bool wireframe);
 
-  void RecordCommandBuffer(
-      std::shared_ptr<CommandBuffer> command_buffer) const {
-    command_buffers_.push_back(std::move(command_buffer));
-  }
+  void RecordCommandBuffer(std::shared_ptr<CommandBuffer> command_buffer) const;
 
-  void FlushCommandBuffers() const {
-    GetContext()->GetQueue()->Submit(command_buffers_);
-    command_buffers_.clear();
-  }
+  void FlushCommandBuffers() const;
 
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
@@ -1016,8 +1016,7 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
-  // TODO
-  mutable std::vector<std::shared_ptr<CommandBuffer>> command_buffers_;
+  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

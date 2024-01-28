@@ -164,6 +164,11 @@ class MockImpellerContext : public Context {
               GetCapabilities,
               (),
               (const, override));
+
+  MOCK_METHOD(const std::shared_ptr<GraphicsQueue>&,
+              GetQueue,
+              (),
+              (const, override));
 };
 
 class MockTexture : public Texture {

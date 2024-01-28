@@ -11,6 +11,7 @@
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/graphics_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/tracked_objects_vk.h"
+#include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 
@@ -24,6 +25,13 @@ fml::Status GraphicsQueueVK::Submit(
     return fml::Status(fml::StatusCode::kInvalidArgument,
                        "No command buffers provided.");
   }
+  bool fail_callback = !!callback;
+  // Success or failure, you only get to submit once.
+  fml::ScopedCleanupClosure reset([&]() {
+    if (fail_callback) {
+      callback(CommandBuffer::Status::kError);
+    }
+  });
 
   std::vector<vk::CommandBuffer> vk_buffers;
   std::vector<std::shared_ptr<TrackedObjectsVK>> tracked_objects;
@@ -74,10 +82,9 @@ fml::Status GraphicsQueueVK::Submit(
         }
       });
   if (!added_fence) {
-    callback(CommandBuffer::Status::kError);
     return fml::Status(fml::StatusCode::kCancelled, "Failed to add fence.");
   }
-
+  fail_callback = false;
   return fml::Status();
 }
 

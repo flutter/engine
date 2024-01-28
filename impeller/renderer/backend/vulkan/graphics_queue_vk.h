@@ -20,8 +20,8 @@ class GraphicsQueueVK : public GraphicsQueue {
   fml::Status Submit(const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
                      const CompletionCallback& callback = {}) override;
 
-  private:
-    std::weak_ptr<ContextVK> context_;
+ private:
+  std::weak_ptr<ContextVK> context_;
 };
 
 }  // namespace impeller

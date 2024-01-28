@@ -50,6 +50,10 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
     return real_context->GetPipelineLibrary();
   });
 
+  ON_CALL(*mock_context, GetQueue).WillByDefault([real_context]() {
+    return real_context->GetQueue();
+  });
+
   ON_CALL(*mock_context, CreateCommandBuffer)
       .WillByDefault([real_context, shared_this]() {
         auto real_buffer = real_context->CreateCommandBuffer();

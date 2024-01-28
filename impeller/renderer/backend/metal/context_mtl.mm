@@ -16,6 +16,7 @@
 #include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/graphics_queue.h"
 
 namespace impeller {
 
@@ -128,6 +129,7 @@ ContextMTL::ContextMTL(
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
+  graphics_queue_ = std::make_shared<GraphicsQueue>();
 #ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
 #endif  // IMPELLER_DEBUG
@@ -392,6 +394,11 @@ void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
   if (!new_is_disabled) {
     parent_.FlushTasksAwaitingGPU();
   }
+}
+
+// |Context|
+const std::shared_ptr<GraphicsQueue>& ContextMTL::GetQueue() const {
+  return graphics_queue_;
 }
 
 }  // namespace impeller

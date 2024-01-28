@@ -9,6 +9,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/gles/command_buffer_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
+#include "impeller/renderer/graphics_queue.h"
 
 namespace impeller {
 
@@ -67,6 +68,7 @@ ContextGLES::ContextGLES(
   }
   gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable(),
                                                 enable_gpu_tracing);
+  graphics_queue_ = std::make_shared<GraphicsQueue>();
   is_valid_ = true;
 }
 
@@ -136,6 +138,11 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
 const std::shared_ptr<const Capabilities>& ContextGLES::GetCapabilities()
     const {
   return device_capabilities_;
+}
+
+// |Context|
+const std::shared_ptr<GraphicsQueue>& ContextGLES::GetQueue() const {
+  return graphics_queue_;
 }
 
 }  // namespace impeller

@@ -45,7 +45,7 @@ class InlinePassContext {
   RenderPassResult GetRenderPass(uint32_t pass_depth);
 
  private:
-   const ContentContext& renderer_;
+  const ContentContext& renderer_;
   EntityPassTarget& pass_target_;
   std::shared_ptr<CommandBuffer> command_buffer_;
   std::shared_ptr<RenderPass> pass_;

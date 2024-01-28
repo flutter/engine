@@ -11,8 +11,8 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
-#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
