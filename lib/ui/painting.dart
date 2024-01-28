@@ -1714,7 +1714,7 @@ class Image {
   /// The number of image pixels along the image's vertical axis.
   final int height;
 
-  bool _disposed = false;
+  bool disposed = false;
   /// Release this handle's claim on the underlying Image. This handle is no
   /// longer usable after this method is called.
   ///
@@ -1727,9 +1727,9 @@ class Image {
   /// image resident in memory.
   void dispose() {
     onDispose?.call(this);
-    assert(!_disposed && !_image._disposed);
+    assert(!disposed && !_image._disposed);
     assert(_image._handles.contains(this));
-    _disposed = true;
+    disposed = true;
     final bool removed = _image._handles.remove(this);
     assert(removed);
     if (_image._handles.isEmpty) {
@@ -1744,7 +1744,7 @@ class Image {
   bool get debugDisposed {
     bool? disposed;
     assert(() {
-      disposed = _disposed;
+      disposed = this.disposed;
       return true;
     }());
     return disposed ?? (throw StateError('Image.debugDisposed is only available when asserts are enabled.'));
@@ -1766,7 +1766,7 @@ class Image {
   // use the third-party pure dart image library to encode other formats.
   // See: https://github.com/flutter/flutter/issues/16635 for more details.
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
-    assert(!_disposed && !_image._disposed);
+    assert(!disposed && !_image._disposed);
     return _image.toByteData(format: format);
   }
 
@@ -1883,7 +1883,7 @@ class Image {
   /// [dispose] on it will only dispose the underlying native resources if it
   /// is the last remaining handle.
   Image clone() {
-    if (_disposed) {
+    if (disposed) {
       throw StateError(
         'Cannot clone a disposed image.\n'
         'The clone() method of a previously-disposed Image was called. Once an '
