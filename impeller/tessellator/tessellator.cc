@@ -67,6 +67,12 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
   if (!callback) {
     return Result::kInputError;
   }
+  if (path.HasTessellatedData(tolerance)) {
+    auto& data = path.GetTessellatedData();
+    callback(data.points.data(), data.points.size() / 2, data.indices.data(),
+             data.indices.size());
+    return Result::kSuccess;
+  }
 
   point_buffer_->clear();
   auto polyline =
@@ -144,6 +150,8 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
                   element_item_count)) {
       return Result::kInputError;
     }
+    path.StoreTessellatedData(tolerance, vertices, vertex_item_count,
+                              indices.data(), element_item_count);
   } else {
     std::vector<Point> points;
     std::vector<float> data;

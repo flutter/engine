@@ -353,4 +353,29 @@ std::optional<Rect> Path::GetTransformedBoundingBox(
   return bounds->TransformBounds(transform);
 }
 
+bool Path::HasTessellatedData(Scalar scale) const {
+  return ScalarNearlyEqual(scale, data_->tessellated_data.scale);
+}
+
+const Path::TessellatedData& Path::GetTessellatedData() const {
+  return data_->tessellated_data;
+}
+
+void Path::StoreTessellatedData(Scalar scale,
+                                const float* vertices,
+                                size_t vertices_count,
+                                const uint16_t* indices,
+                                size_t indices_count) const {
+  auto data = data_->tessellated_data;
+  data.scale = scale;
+  data.points.resize(vertices_count * 2);
+  data.indices.resize(indices_count);
+  for (auto i = 0u; i < vertices_count * 2; i++) {
+    data.points[i] = vertices[i];
+  }
+  for (auto i = 0u; i < indices_count; i++) {
+    data.indices[i] = indices[i];
+  }
+}
+
 }  // namespace impeller

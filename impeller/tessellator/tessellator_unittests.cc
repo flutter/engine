@@ -2,16 +2,31 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <utility>
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 namespace testing {
+
+class TessellatorAccess {
+ public:
+  static bool HasData(const Path& path, Scalar scale) {
+    return path.HasTessellatedData(scale);
+  }
+
+  static std::pair<std::vector<Scalar>, std::vector<uint16_t>> GetData(
+      const Path& path) {
+    auto& result = path.GetTessellatedData();
+    return std::make_pair(result.points, result.indices);
+  }
+};
 
 TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
@@ -482,6 +497,90 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
        Rect::MakeXYWH(5000, 10000, 3000, 2000), {50, 70});
   test(Matrix::MakeScale({0.002, 0.002, 0.0}),
        Rect::MakeXYWH(5000, 10000, 2000, 3000), {50, 70});
+}
+
+TEST(TessellatorTest, CachesPathData) {
+  Tessellator t;
+  auto path = PathBuilder{}
+                  .AddCircle(Point{100, 100}, 10)
+                  .TakePath(FillType::kPositive);
+
+  EXPECT_FALSE(TessellatorAccess::HasData(path, 1.0));
+
+  std::vector<float> test_vertices;
+  std::vector<uint16_t> test_indicies;
+  Tessellator::Result result =
+      t.Tessellate(path, 1.0f,
+                   [&](const float* vertices, size_t vertices_count,
+                       const uint16_t* indices, size_t indices_count) {
+                     for (auto i = 0u; i < vertices_count * 2; i++) {
+                       test_vertices.push_back(vertices[i]);
+                     }
+                     for (auto i = 0u; i < indices_count; i++) {
+                       test_indicies.push_back(indices[i]);
+                     }
+                     return true;
+                   });
+
+  EXPECT_EQ(result, Tessellator::Result::kSuccess);
+  EXPECT_TRUE(TessellatorAccess::HasData(path, 1.0));
+  EXPECT_TRUE(TessellatorAccess::HasData(path, 1.0000001));
+  EXPECT_FALSE(TessellatorAccess::HasData(path, 2.0));
+
+  auto [points, indices] = TessellatorAccess::GetData(path);
+
+  ASSERT_EQ(points.size(), test_vertices.size());
+  ASSERT_EQ(indices.size(), test_indicies.size());
+
+  for (auto i = 0u; i < test_vertices.size(); i++) {
+    EXPECT_EQ(test_vertices[i], points[i]);
+  }
+  for (auto i = 0u; i < test_indicies.size(); i++) {
+    EXPECT_EQ(test_indicies[i], indices[i]);
+  }
+}
+
+TEST(TessellatorTest, CachesSingleScalarData) {
+  Tessellator t;
+  auto path = PathBuilder{}
+                  .AddCircle(Point{100, 100}, 10)
+                  .TakePath(FillType::kPositive);
+
+  EXPECT_FALSE(TessellatorAccess::HasData(path, 1.0));
+
+  Tessellator::Result result = t.Tessellate(
+      path, 1.0f,
+      [](const float* vertices, size_t vertices_count, const uint16_t* indices,
+         size_t indices_count) { return true; });
+
+  EXPECT_EQ(result, Tessellator::Result::kSuccess);
+  EXPECT_TRUE(TessellatorAccess::HasData(path, 1.0));
+
+  result = t.Tessellate(
+      path, 2.0f,
+      [](const float* vertices, size_t vertices_count, const uint16_t* indices,
+         size_t indices_count) { return true; });
+
+  EXPECT_EQ(result, Tessellator::Result::kSuccess);
+  EXPECT_FALSE(TessellatorAccess::HasData(path, 1.0));
+  EXPECT_TRUE(TessellatorAccess::HasData(path, 2.0));
+}
+
+TEST(TessellatorTest, DoesNotCacheFailedTessellation) {
+  Tessellator t;
+  auto path = PathBuilder{}
+                  .AddCircle(Point{100, 100}, 10)
+                  .TakePath(FillType::kPositive);
+
+  EXPECT_FALSE(TessellatorAccess::HasData(path, 1.0));
+
+  Tessellator::Result result = t.Tessellate(
+      path, 1.0f,
+      [](const float* vertices, size_t vertices_count, const uint16_t* indices,
+         size_t indices_count) { return false; });
+
+  EXPECT_EQ(result, Tessellator::Result::kTessellationError);
+  EXPECT_FALSE(TessellatorAccess::HasData(path, 1.0));
 }
 
 }  // namespace testing

@@ -5,15 +5,20 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_H_
 #define FLUTTER_IMPELLER_GEOMETRY_PATH_H_
 
+#include <cstdint>
 #include <functional>
 #include <optional>
-#include <set>
 #include <tuple>
 #include <vector>
 
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/scalar.h"
 
 namespace impeller {
+
+namespace testing {
+class TessellatorAccess;
+}
 
 enum class Cap {
   kButt,
@@ -178,6 +183,35 @@ class Path {
 
  private:
   friend class PathBuilder;
+  friend class Tessellator;
+  friend class testing::TessellatorAccess;
+
+  struct TessellatedData {
+    Scalar scale = 0.0;
+    std::vector<Scalar> points;
+    std::vector<uint16_t> indices;
+  };
+
+  // The following methods are not thread safe and should only be called
+  // by the tessellator component. This functionality should be removed
+  // after https://github.com/flutter/flutter/issues/123671 is fixed.
+
+  /// @brief Whether or not there is tessellated data at or close to the
+  /// provided [scale].
+  bool HasTessellatedData(Scalar scale) const;
+
+  /// @brief Retrieve the tessellated data for the current path.
+  ///
+  ///        You must check that this data matches the current scale with
+  ///        [HasTessellatedData] first.
+  const TessellatedData& GetTessellatedData() const;
+
+  /// @brief Update the tessellated data for the given [scale].
+  void StoreTessellatedData(Scalar scale,
+                            const float* vertices,
+                            size_t vertices_count,
+                            const uint16_t* indices,
+                            size_t indices_count) const;
 
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
@@ -209,10 +243,8 @@ class Path {
     std::vector<ComponentIndexPair> components;
     std::vector<Point> points;
     std::vector<ContourComponent> contours;
-
     std::optional<Rect> bounds;
-
-    bool locked = false;
+    mutable TessellatedData tessellated_data;
   };
 
   explicit Path(const Data& data);
