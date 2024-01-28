@@ -18,6 +18,7 @@
 #include "impeller/core/host_buffer.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
@@ -715,6 +716,16 @@ class ContentContext {
 
   void SetWireframe(bool wireframe);
 
+  void RecordCommandBuffer(
+      std::shared_ptr<CommandBuffer> command_buffer) const {
+    command_buffers_.push_back(std::move(command_buffer));
+  }
+
+  void FlushCommandBuffers() const {
+    GetContext()->GetQueue()->Submit(command_buffers_);
+    command_buffers_.clear();
+  }
+
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
@@ -1005,6 +1016,8 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
+  // TODO
+  mutable std::vector<std::shared_ptr<CommandBuffer>> command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

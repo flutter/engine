@@ -477,9 +477,10 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  if (!sub_command_buffer->EncodeAndSubmit(sub_renderpass)) {
+  if (!sub_renderpass->EncodeCommands()) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
+  RecordCommandBuffer(std::move(sub_command_buffer));
 
   return subpass_target;
 }

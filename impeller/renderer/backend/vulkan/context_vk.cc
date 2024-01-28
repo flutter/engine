@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include "fml/concurrent_message_loop.h"
+#include "impeller/renderer/backend/vulkan/graphics_queue_vk.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -156,7 +157,7 @@ void ContextVK::Setup(Settings settings) {
   // 1. The user has explicitly enabled it.
   // 2. We are in a combination of debug mode, and running on Android.
   // (It's possible 2 is overly conservative and we can simplify this)
-  auto enable_validation = settings.enable_validation;
+  auto enable_validation = false; //settings.enable_validation;
 
 #if defined(FML_OS_ANDROID) && !defined(NDEBUG)
   enable_validation = true;
@@ -445,6 +446,7 @@ void ContextVK::Setup(Settings settings) {
   command_pool_recycler_ = std::move(command_pool_recycler);
   descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
+  graphics_queue_vk_ = std::make_shared<GraphicsQueueVK>(weak_from_this());
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from

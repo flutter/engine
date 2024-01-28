@@ -34,9 +34,9 @@ GPUTracerVK::GPUTracerVK(std::weak_ptr<ContextVK> context)
     return;
   }
   // Disable tracing in release mode.
-#ifdef IMPELLER_DEBUG
-  enabled_ = true;
-#endif  // IMPELLER_DEBUG
+// #ifdef IMPELLER_DEBUG
+//   enabled_ = true;
+// #endif  // IMPELLER_DEBUG
 }
 
 void GPUTracerVK::InitializeQueryPool(const ContextVK& context) {
@@ -61,7 +61,7 @@ void GPUTracerVK::InitializeQueryPool(const ContextVK& context) {
     buffer_vk.GetEncoder()->GetCommandBuffer().resetQueryPool(
         trace_states_[i].query_pool.get(), 0, kPoolSize);
   }
-  if (!buffer->SubmitCommands()) {
+  if (!context.GetQueue()->Submit({buffer}).ok()) {
     VALIDATION_LOG << "Failed to reset query pool for trace events.";
     enabled_ = false;
   }

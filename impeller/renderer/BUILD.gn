@@ -55,6 +55,8 @@ impeller_component("renderer") {
     "command.h",
     "command_buffer.cc",
     "command_buffer.h",
+    "graphics_queue.h",
+    "graphics_queue.cc",
     "compute_pass.cc",
     "compute_pass.h",
     "compute_pipeline_builder.cc",

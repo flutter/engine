@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
 
@@ -61,6 +62,9 @@ class SurfaceContextVK : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  // |Context|
+  const std::shared_ptr<GraphicsQueue>& GetQueue() const override;
 
   // |Context|
   void Shutdown() override;

@@ -5,7 +5,9 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 
+#include "fml/logging.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 #include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
@@ -84,6 +86,10 @@ class ContextGLES final : public Context,
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  const std::shared_ptr<GraphicsQueue>& GetQueue() const override {
+    FML_UNREACHABLE();
+  }
 
   // |Context|
   void Shutdown() override;

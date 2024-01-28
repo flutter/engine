@@ -11,9 +11,8 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/host_buffer.h"
+#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/capabilities.h"
-#include "impeller/renderer/pool.h"
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
@@ -162,6 +161,9 @@ class Context {
   /// @return     A new command buffer.
   ///
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
+
+  /// @brief Return the graphics queue for submitting command buffers.
+  virtual const std::shared_ptr<GraphicsQueue>& GetQueue() const = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Force all pending asynchronous work to finish. This is
