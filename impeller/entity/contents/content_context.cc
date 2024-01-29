@@ -15,6 +15,7 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/texture_mipmap.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -478,7 +479,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  if (!sub_command_buffer->EncodeAndSubmit(sub_renderpass)) {
+  if (!sub_renderpass->EncodeCommands()) {
+    return fml::Status(fml::StatusCode::kUnknown, "");
+  }
+
+  const std::shared_ptr<Texture>& target_texture =
+      subpass_target.GetRenderTargetTexture();
+  if (target_texture->GetMipCount() > 1) {
+    fml::Status mipmap_status =
+        AddMipmapGeneration(sub_command_buffer, context, target_texture);
+    if (!mipmap_status.ok()) {
+      return mipmap_status;
+    }
+  }
+
+  if (!sub_command_buffer->SubmitCommands()) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
