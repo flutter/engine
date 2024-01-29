@@ -5464,6 +5464,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc + ../../
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/graphics_queue_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/graphics_queue_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc + ../../../flutter/LICENSE
@@ -5527,6 +5529,8 @@ ORIGIN: ../../../flutter/impeller/renderer/compute_tessellator.cc + ../../../flu
 ORIGIN: ../../../flutter/impeller/renderer/compute_tessellator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/context.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/graphics_queue.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/graphics_queue.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/path_polyline.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline.h + ../../../flutter/LICENSE
@@ -8309,6 +8313,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/gpu_tracer_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/graphics_queue_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/graphics_queue_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/limits_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.h
@@ -8373,6 +8379,8 @@ FILE: ../../../flutter/impeller/renderer/compute_tessellator.cc
 FILE: ../../../flutter/impeller/renderer/compute_tessellator.h
 FILE: ../../../flutter/impeller/renderer/context.cc
 FILE: ../../../flutter/impeller/renderer/context.h
+FILE: ../../../flutter/impeller/renderer/graphics_queue.cc
+FILE: ../../../flutter/impeller/renderer/graphics_queue.h
 FILE: ../../../flutter/impeller/renderer/path_polyline.comp
 FILE: ../../../flutter/impeller/renderer/pipeline.cc
 FILE: ../../../flutter/impeller/renderer/pipeline.h

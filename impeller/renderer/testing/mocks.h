@@ -11,6 +11,7 @@
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
@@ -203,6 +204,15 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
+};
+
+class MockGraphicsQueue : public GraphicsQueue {
+ public:
+  MOCK_METHOD(fml::Status,
+              Submit,
+              (const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
+               const CompletionCallback& cb),
+              (override));
 };
 
 class MockSamplerLibrary : public SamplerLibrary {
