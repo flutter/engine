@@ -269,9 +269,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     expanded_coverage_hint = coverage_hint->Expand(local_padding);
   }
 
-  std::optional<Snapshot> input_snapshot =
-      inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
-                             /*coverage_limit=*/expanded_coverage_hint);
+  std::optional<Snapshot> input_snapshot = inputs[0]->GetSnapshot(
+      "GaussianBlur", renderer, entity,
+      /*coverage_limit=*/expanded_coverage_hint, /*mip_count=*/4);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }

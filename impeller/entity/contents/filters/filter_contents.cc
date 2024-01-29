@@ -262,6 +262,7 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   // Resolve the render instruction (entity) from the filter and render it to a
   // snapshot.
@@ -274,7 +275,8 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
         coverage_limit,  // coverage_limit
         std::nullopt,    // sampler_descriptor
         true,            // msaa_enabled
-        label);          // label
+        /*mip_count=*/mip_count,
+        label);  // label
   }
 
   return std::nullopt;
