@@ -44,7 +44,7 @@ class CanvasKitRenderer implements Renderer {
   DomElement? _sceneHost;
   DomElement? get sceneHost => _sceneHost;
 
-  Rasterizer rasterizer = _createRasterizer();
+  Rasterizer _rasterizer = _createRasterizer();
 
   static Rasterizer _createRasterizer() {
     if (isSafari || isFirefox) {
@@ -53,13 +53,13 @@ class CanvasKitRenderer implements Renderer {
     return OffscreenCanvasRasterizer();
   }
 
-  /// Override the rasterizer with the given [rasterizer]. Used in tests.
+  /// Override the rasterizer with the given [_rasterizer]. Used in tests.
   void debugOverrideRasterizer(Rasterizer testRasterizer) {
-    rasterizer = testRasterizer;
+    _rasterizer = testRasterizer;
   }
 
   set resourceCacheMaxBytes(int bytes) =>
-      rasterizer.setResourceCacheMaxBytes(bytes);
+      _rasterizer.setResourceCacheMaxBytes(bytes);
 
   /// A surface used specifically for `Picture.toImage` when software rendering
   /// is supported.
@@ -444,7 +444,7 @@ class CanvasKitRenderer implements Renderer {
   void _onViewCreated(int viewId) {
     final EngineFlutterView view =
         EnginePlatformDispatcher.instance.viewManager[viewId]!;
-    _rasterizers[view.viewId] = rasterizer.createViewRasterizer(view);
+    _rasterizers[view.viewId] = _rasterizer.createViewRasterizer(view);
   }
 
   void _onViewDisposed(int viewId) {
