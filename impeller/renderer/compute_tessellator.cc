@@ -171,7 +171,7 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     return Status::kCommandInvalid;
   }
 
-  if (!context->GetQueue()->Submit({cmd_buffer}).ok()) {
+  if (!context->GetCommandQueue()->Submit({cmd_buffer}).ok()) {
     return Status::kCommandInvalid;
   }
 

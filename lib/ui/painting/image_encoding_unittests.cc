@@ -193,8 +193,8 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
 using ::impeller::testing::MockAllocator;
 using ::impeller::testing::MockBlitPass;
 using ::impeller::testing::MockCommandBuffer;
+using ::impeller::testing::MockCommandQueue;
 using ::impeller::testing::MockDeviceBuffer;
-using ::impeller::testing::MockGraphicsQueue;
 using ::impeller::testing::MockImpellerContext;
 using ::impeller::testing::MockTexture;
 using ::testing::_;
@@ -210,7 +210,7 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
   auto command_buffer = std::make_shared<MockCommandBuffer>(context);
   auto allocator = std::make_shared<MockAllocator>();
   auto blit_pass = std::make_shared<MockBlitPass>();
-  auto graphics_queue = std::make_shared<MockGraphicsQueue>();
+  auto command_queue = std::make_shared<MockCommandQueue>();
   impeller::DeviceBufferDescriptor device_buffer_desc;
   device_buffer_desc.size = buffer.size();
   auto device_buffer = std::make_shared<MockDeviceBuffer>(device_buffer_desc);
@@ -225,10 +225,9 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
   EXPECT_CALL(*context, GetResourceAllocator).WillRepeatedly(Return(allocator));
   EXPECT_CALL(*context, CreateCommandBuffer).WillOnce(Return(command_buffer));
   EXPECT_CALL(*device_buffer, OnGetContents).WillOnce(Return(buffer.data()));
-  EXPECT_CALL(*context, GetQueue).WillRepeatedly(Invoke([graphics_queue]() {
-    return graphics_queue;
-  }));
-  EXPECT_CALL(*graphics_queue, Submit(_, _))
+  EXPECT_CALL(*context, GetCommandQueue)
+      .WillRepeatedly(Invoke([command_queue]() { return command_queue; }));
+  EXPECT_CALL(*command_queue, Submit(_, _))
       .WillOnce(
           DoAll(InvokeArgument<1>(impeller::CommandBuffer::Status::kCompleted),
                 Return(fml::Status())));

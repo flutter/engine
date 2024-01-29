@@ -21,8 +21,8 @@
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/graphics_queue.h"
 
 #if TARGET_OS_SIMULATOR
 #define IMPELLER_CA_METAL_LAYER_AVAILABLE API_AVAILABLE(macos(10.11), ios(13.0))
@@ -82,7 +82,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  const std::shared_ptr<GraphicsQueue>& GetQueue() const override;
+  const std::shared_ptr<CommandQueue>& GetCommandQueue() const override;
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
@@ -130,7 +130,7 @@ class ContextMTL final : public Context,
 #endif  // IMPELLER_DEBUG
   std::deque<std::function<void()>> tasks_awaiting_gpu_;
   std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
-  std::shared_ptr<GraphicsQueue> graphics_queue_;
+  std::shared_ptr<CommandQueue> command_queue_ip_;
   bool is_valid_ = false;
 
   ContextMTL(

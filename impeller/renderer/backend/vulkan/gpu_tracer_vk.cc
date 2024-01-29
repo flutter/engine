@@ -61,7 +61,7 @@ void GPUTracerVK::InitializeQueryPool(const ContextVK& context) {
     buffer_vk.GetEncoder()->GetCommandBuffer().resetQueryPool(
         trace_states_[i].query_pool.get(), 0, kPoolSize);
   }
-  if (!context.GetQueue()->Submit({buffer}).ok()) {
+  if (!context.GetCommandQueue()->Submit({buffer}).ok()) {
     VALIDATION_LOG << "Failed to reset query pool for trace events.";
     enabled_ = false;
   }

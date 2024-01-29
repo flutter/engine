@@ -153,7 +153,7 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   pass->GenerateMipmap(std::move(texture), std::move(label));
 
   pass->EncodeCommands(context->GetResourceAllocator());
-  return context->GetQueue()->Submit({buffer}).ok();
+  return context->GetCommandQueue()->Submit({buffer}).ok();
 }
 
 void CanRenderTiledTexture(AiksTest* aiks_test,

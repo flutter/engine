@@ -28,7 +28,7 @@ TEST(GPUTracerVK, CanTraceCmdBuffer) {
 
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
 
-  if (!context->GetQueue()
+  if (!context->GetCommandQueue()
            ->Submit(
                {cmd_buffer},
                [latch](CommandBuffer::Status status) { latch->CountDown(); })
@@ -58,7 +58,7 @@ TEST(GPUTracerVK, DoesNotTraceOutsideOfFrameWorkload) {
   blit_pass->EncodeCommands(context->GetResourceAllocator());
 
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  if (!context->GetQueue()
+  if (!context->GetCommandQueue()
            ->Submit(
                {cmd_buffer},
                [latch](CommandBuffer::Status status) { latch->CountDown(); })
@@ -90,7 +90,7 @@ TEST(GPUTracerVK, TracesWithPartialFrameOverlap) {
   tracer->MarkFrameEnd();
 
   auto latch = std::make_shared<fml::CountDownLatch>(1u);
-  if (!context->GetQueue()
+  if (!context->GetCommandQueue()
            ->Submit(
                {cmd_buffer},
                [latch](CommandBuffer::Status status) { latch->CountDown(); })

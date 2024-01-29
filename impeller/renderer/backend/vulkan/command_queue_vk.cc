@@ -4,21 +4,22 @@
 
 #include "fml/status.h"
 
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
-#include "impeller/renderer/backend/vulkan/graphics_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/tracked_objects_vk.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 
-GraphicsQueueVK::GraphicsQueueVK(const std::weak_ptr<ContextVK>& context)
+CommandQueueVK::CommandQueueVK(const std::weak_ptr<ContextVK>& context)
     : context_(context) {}
 
-fml::Status GraphicsQueueVK::Submit(
+fml::Status CommandQueueVK::Submit(
     const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
     const CompletionCallback& callback) {
   if (buffers.empty()) {
@@ -74,9 +75,7 @@ fml::Status GraphicsQueueVK::Submit(
       [callback, tracked_objects = std::move(tracked_objects)]() mutable {
         // Ensure tracked objects are destructed before calling any final
         // callbacks.
-        for (auto& tracked_object : tracked_objects) {
-          tracked_object.reset();
-        }
+        tracked_objects.clear();
         if (callback) {
           callback(CommandBuffer::Status::kCompleted);
         }

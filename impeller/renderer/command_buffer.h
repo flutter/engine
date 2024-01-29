@@ -17,7 +17,7 @@ class ComputePass;
 class Context;
 class RenderPass;
 class RenderTarget;
-class GraphicsQueue;
+class CommandQueue;
 
 namespace testing {
 class CommandBufferMock;
@@ -107,7 +107,7 @@ class CommandBuffer {
   virtual std::shared_ptr<ComputePass> OnCreateComputePass() = 0;
 
  private:
-  friend class GraphicsQueue;
+  friend class CommandQueue;
 
   //----------------------------------------------------------------------------
   /// @brief      Schedule the command encoded by render passes within this

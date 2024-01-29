@@ -76,7 +76,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
 
   fml::AutoResetWaitableEvent latch;
   ASSERT_TRUE(
-      context->GetQueue()
+      context->GetCommandQueue()
           ->Submit(
               {cmd_buffer},
               [&latch, output_buffer, &input_0,
@@ -146,7 +146,7 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
 
   fml::AutoResetWaitableEvent latch;
   ASSERT_TRUE(
-      context->GetQueue()
+      context->GetCommandQueue()
           ->Submit({cmd_buffer},
                    [&latch, output_buffer](CommandBuffer::Status status) {
                      EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
@@ -204,7 +204,7 @@ TEST_P(ComputeTest, 1DThreadgroupSizingIsCorrect) {
 
   fml::AutoResetWaitableEvent latch;
   ASSERT_TRUE(
-      context->GetQueue()
+      context->GetCommandQueue()
           ->Submit({cmd_buffer},
                    [&latch, output_buffer](CommandBuffer::Status status) {
                      EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
@@ -263,7 +263,7 @@ TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
     pass->Compute(ISize(kCount, 1));
     pass->EncodeCommands();
     host_buffer->Reset();
-    return context->GetQueue()->Submit({cmd_buffer}).ok();
+    return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -339,7 +339,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   fml::AutoResetWaitableEvent latch;
   ASSERT_TRUE(
-      context->GetQueue()
+      context->GetCommandQueue()
           ->Submit({cmd_buffer},
                    [&latch, &output_buffer_1,
                     &output_buffer_2](CommandBuffer::Status status) {
@@ -419,7 +419,7 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
 
   fml::AutoResetWaitableEvent latch;
   ASSERT_TRUE(
-      context->GetQueue()
+      context->GetCommandQueue()
           ->Submit(
               {cmd_buffer},
               [&latch, output_buffer, &input_0,

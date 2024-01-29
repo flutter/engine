@@ -38,7 +38,7 @@ bool CommandBuffer::Submit() {
     encodable->EncodeCommands();
   }
 
-  return context_->GetQueue()->Submit({command_buffer_}).ok();
+  return context_->GetCommandQueue()->Submit({command_buffer_}).ok();
 }
 
 bool CommandBuffer::Submit(
@@ -46,7 +46,7 @@ bool CommandBuffer::Submit(
   for (auto& encodable : encodables_) {
     encodable->EncodeCommands();
   }
-  return context_->GetQueue()
+  return context_->GetCommandQueue()
       ->Submit({command_buffer_}, completion_callback)
       .ok();
 }

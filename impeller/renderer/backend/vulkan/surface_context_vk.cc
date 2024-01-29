@@ -48,8 +48,8 @@ std::shared_ptr<CommandBuffer> SurfaceContextVK::CreateCommandBuffer() const {
   return parent_->CreateCommandBuffer();
 }
 
-const std::shared_ptr<GraphicsQueue>& SurfaceContextVK::GetQueue() const {
-  return parent_->GetQueue();
+const std::shared_ptr<CommandQueue>& SurfaceContextVK::GetCommandQueue() const {
+  return parent_->GetCommandQueue();
 }
 
 const std::shared_ptr<const Capabilities>& SurfaceContextVK::GetCapabilities()

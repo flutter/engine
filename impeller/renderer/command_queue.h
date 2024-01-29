@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_RENDERER_GRAPHICS_QUEUE_H_
-#define FLUTTER_IMPELLER_RENDERER_GRAPHICS_QUEUE_H_
+#ifndef FLUTTER_IMPELLER_RENDERER_COMMAND_QUEUE_H_
+#define FLUTTER_IMPELLER_RENDERER_COMMAND_QUEUE_H_
 
 #include <functional>
 
@@ -14,13 +14,13 @@ namespace impeller {
 
 /// @brief An interface for submitting command buffers to the GPU for
 ///        encoding and execution.
-class GraphicsQueue {
+class CommandQueue {
  public:
   using CompletionCallback = std::function<void(CommandBuffer::Status)>;
 
-  GraphicsQueue() = default;
+  CommandQueue() = default;
 
-  virtual ~GraphicsQueue() = default;
+  virtual ~CommandQueue() = default;
 
   /// @brief Submit one or more command buffer objects to be encoded and
   ///        executed on the GPU.
@@ -37,11 +37,11 @@ class GraphicsQueue {
       const CompletionCallback& cb = {});
 
  private:
-  GraphicsQueue(const GraphicsQueue&) = delete;
+  CommandQueue(const CommandQueue&) = delete;
 
-  GraphicsQueue& operator=(const GraphicsQueue&) = delete;
+  CommandQueue& operator=(const CommandQueue&) = delete;
 };
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_RENDERER_GRAPHICS_QUEUE_H_
+#endif  // FLUTTER_IMPELLER_RENDERER_COMMAND_QUEUE_H_

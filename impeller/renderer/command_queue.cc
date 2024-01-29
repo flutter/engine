@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/graphics_queue.h"
+#include "impeller/renderer/command_queue.h"
 
 namespace impeller {
 
-fml::Status GraphicsQueue::Submit(
+fml::Status CommandQueue::Submit(
     const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
     const CompletionCallback& cb) {
   if (buffers.empty()) {

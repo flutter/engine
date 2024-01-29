@@ -111,8 +111,8 @@ class ContextMock : public Context {
               (),
               (const, override));
 
-  MOCK_METHOD(const std::shared_ptr<GraphicsQueue>&,
-              GetQueue,
+  MOCK_METHOD(const std::shared_ptr<CommandQueue>&,
+              GetCommandQueue,
               (),
               (const override));
 

@@ -542,7 +542,7 @@ void ContentContext::RecordCommandBuffer(
 
 void ContentContext::FlushCommandBuffers() const {
   auto buffers = std::move(pending_command_buffers_->command_buffers);
-  GetContext()->GetQueue()->Submit(buffers);
+  GetContext()->GetCommandQueue()->Submit(buffers);
 }
 
 }  // namespace impeller

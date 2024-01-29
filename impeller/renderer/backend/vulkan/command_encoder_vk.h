@@ -10,10 +10,10 @@
 #include <optional>
 
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
-#include "impeller/renderer/backend/vulkan/graphics_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -89,7 +89,7 @@ class CommandEncoderVK {
 
  private:
   friend class ContextVK;
-  friend class GraphicsQueueVK;
+  friend class CommandQueueVK;
 
   std::weak_ptr<const DeviceHolder> device_holder_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;

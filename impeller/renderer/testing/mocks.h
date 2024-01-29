@@ -10,8 +10,8 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/graphics_queue.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
@@ -166,8 +166,8 @@ class MockImpellerContext : public Context {
               (),
               (const, override));
 
-  MOCK_METHOD(const std::shared_ptr<GraphicsQueue>&,
-              GetQueue,
+  MOCK_METHOD(const std::shared_ptr<CommandQueue>&,
+              GetCommandQueue,
               (),
               (const, override));
 };
@@ -206,9 +206,9 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
 };
 
-class MockGraphicsQueue : public GraphicsQueue {
+class MockCommandQueue : public CommandQueue {
  public:
-  ~MockGraphicsQueue() override = default;
+  ~MockCommandQueue() override = default;
 
   MOCK_METHOD(fml::Status,
               Submit,

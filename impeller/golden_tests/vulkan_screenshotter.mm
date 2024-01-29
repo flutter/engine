@@ -36,7 +36,7 @@ std::unique_ptr<Screenshot> ReadTexture(
 
   fml::AutoResetWaitableEvent latch;
   success =
-      surface_context->GetQueue()
+      surface_context->GetCommandQueue()
           ->Submit({command_buffer},
                    [&latch](CommandBuffer::Status status) {
                      FML_CHECK(status == CommandBuffer::Status::kCompleted);
