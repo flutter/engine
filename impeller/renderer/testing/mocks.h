@@ -208,8 +208,6 @@ class MockCapabilities : public Capabilities {
 
 class MockCommandQueue : public CommandQueue {
  public:
-  ~MockCommandQueue() override = default;
-
   MOCK_METHOD(fml::Status,
               Submit,
               (const std::vector<std::shared_ptr<CommandBuffer>>& buffers,

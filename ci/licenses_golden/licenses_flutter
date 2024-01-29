@@ -5519,6 +5519,8 @@ ORIGIN: ../../../flutter/impeller/renderer/command.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/command.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/command_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/command_buffer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/command_queue.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/command_queue.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/compute_pass.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/compute_pass.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_builder.cc + ../../../flutter/LICENSE
@@ -5683,8 +5685,6 @@ ORIGIN: ../../../flutter/impeller/typographer/typographer_context.cc + ../../../
 ORIGIN: ../../../flutter/impeller/typographer/typographer_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/command_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/command_buffer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/command_queue.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/command_queue.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/gpu/device_buffer.cc + ../../../flutter/LICENSE

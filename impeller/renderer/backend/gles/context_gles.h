@@ -87,6 +87,7 @@ class ContextGLES final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  // |Context|
   const std::shared_ptr<CommandQueue>& GetCommandQueue() const override;
 
   // |Context|
