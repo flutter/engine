@@ -44,7 +44,7 @@ void testMain() {
     });
 
     test('will error if trying to render into an unregistered view', () async {
-      ui.ErrorCallback? previousErrorCallback =
+      final ui.ErrorCallback? previousErrorCallback =
           EnginePlatformDispatcher.instance.onError;
 
       Object? lastException;
