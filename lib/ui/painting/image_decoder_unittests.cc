@@ -23,6 +23,8 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
+#include "fml/logging.h"
+#include "impeller/renderer/command_queue.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -34,8 +36,6 @@
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
 namespace impeller {
-
-static const std::shared_ptr<GraphicsQueue> kNullQueue = nullptr;
 
 class TestImpellerContext : public impeller::Context {
  public:
@@ -67,8 +67,8 @@ class TestImpellerContext : public impeller::Context {
     return nullptr;
   }
 
-  const std::shared_ptr<GraphicsQueue>& GetQueue() const override {
-    return kNullQueue;
+  const std::shared_ptr<CommandQueue>& GetCommandQueue() const override {
+    FML_UNREACHABLE();
   }
 
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
