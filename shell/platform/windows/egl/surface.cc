@@ -40,6 +40,13 @@ bool Surface::Destroy() {
   return true;
 }
 
+bool Surface::IsCurrent() const {
+  return display_ == ::eglGetCurrentDisplay() &&
+         surface_ == ::eglGetCurrentSurface(EGL_DRAW) &&
+         surface_ == ::eglGetCurrentSurface(EGL_READ) &&
+         context_ == ::eglGetCurrentContext();
+}
+
 bool Surface::MakeCurrent() const {
   if (::eglMakeCurrent(display_, surface_, surface_, context_) != EGL_TRUE) {
     WINDOWS_LOG_EGL_ERROR;

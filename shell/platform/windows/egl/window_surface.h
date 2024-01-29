@@ -29,7 +29,7 @@ class WindowSurface : public Surface {
   // If disabled, allows one thread to swap multiple buffers per v-blank
   // but can result in screen tearing if the system compositor is disabled.
   //
-  // This binds the EGL context and surface to the current thread.
+  // The surface must be current before calling this.
   virtual bool SetVSyncEnabled(bool enabled);
 
   // Get the surface's width in physical pixels.

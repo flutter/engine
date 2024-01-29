@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/egl/window_surface.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/windows/egl/egl.h"
 
 namespace flutter {
@@ -17,9 +18,7 @@ WindowSurface::WindowSurface(EGLDisplay display,
     : Surface(display, context, surface), width_(width), height_(height) {}
 
 bool WindowSurface::SetVSyncEnabled(bool enabled) {
-  if (!MakeCurrent()) {
-    return false;
-  }
+  FML_DCHECK(IsCurrent());
 
   if (::eglSwapInterval(display_, enabled ? 1 : 0) != EGL_TRUE) {
     WINDOWS_LOG_EGL_ERROR;

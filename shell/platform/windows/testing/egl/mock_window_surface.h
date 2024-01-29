@@ -19,6 +19,7 @@ class MockWindowSurface : public flutter::egl::WindowSurface {
   MockWindowSurface()
       : WindowSurface(EGL_NO_DISPLAY, EGL_NO_CONTEXT, EGL_NO_SURFACE, 0, 0) {}
 
+  MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(bool, Destroy, (), (override));
   MOCK_METHOD(bool, MakeCurrent, (), (const, override));
   MOCK_METHOD(bool, SwapBuffers, (), (const, override));

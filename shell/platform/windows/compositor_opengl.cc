@@ -170,7 +170,17 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
 bool CompositorOpenGL::Initialize() {
   FML_DCHECK(!is_initialized_);
 
-  if (!engine_->egl_manager()->surface()->MakeCurrent()) {
+  egl::Manager* manager = engine_->egl_manager();
+  if (!manager) {
+    return false;
+  }
+
+  egl::Surface* surface = manager->surface();
+  if (!surface || !surface->IsValid()) {
+    return false;
+  }
+
+  if (!surface->MakeCurrent()) {
     return false;
   }
 
