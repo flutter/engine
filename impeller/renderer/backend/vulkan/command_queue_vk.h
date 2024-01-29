@@ -18,7 +18,7 @@ class CommandQueueVK : public CommandQueue {
   ~CommandQueueVK() override;
 
   fml::Status Submit(
-      const std::initializer_list<std::shared_ptr<CommandBuffer>>& buffers,
+      const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
       const CompletionCallback& completion_callback = {}) override;
 
  private:

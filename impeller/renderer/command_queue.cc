@@ -12,9 +12,9 @@ CommandQueue::CommandQueue() = default;
 CommandQueue::~CommandQueue() = default;
 
 fml::Status CommandQueue::Submit(
-    const std::initializer_list<std::shared_ptr<CommandBuffer>>& buffers,
+    const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
     const CompletionCallback& completion_callback) {
-  if (buffers.size() == 0u) {
+  if (buffers.empty()) {
     if (completion_callback) {
       completion_callback(CommandBuffer::Status::kError);
     }

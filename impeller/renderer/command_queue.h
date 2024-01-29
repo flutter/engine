@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_RENDERER_COMMAND_QUEUE_H_
 
 #include <functional>
-#include <initializer_list>
 
 #include "fml/status.h"
 #include "impeller/renderer/command_buffer.h"
@@ -37,7 +36,7 @@ class CommandQueue {
   ///        successful encoding. This callback may be called more than once and
   ///        potentially on a different thread.
   virtual fml::Status Submit(
-      const std::initializer_list<std::shared_ptr<CommandBuffer>>& buffers,
+      const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
       const CompletionCallback& completion_callback = {});
 
  private:
