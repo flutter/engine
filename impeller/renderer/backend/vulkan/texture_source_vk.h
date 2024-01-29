@@ -10,7 +10,9 @@
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -62,6 +64,20 @@ class TextureSourceVK {
 
   /// Whether or not this is a swapchain image.
   virtual bool IsSwapchainImage() const = 0;
+
+  virtual void SetFramebuffer(
+      const SharedHandleVK<vk::Framebuffer>& framebuffer) const {}
+
+  virtual void SetRenderPass(
+      const SharedHandleVK<vk::RenderPass>& renderpass) const {}
+
+  virtual SharedHandleVK<vk::Framebuffer> GetFramebuffer() const {
+    return nullptr;
+  }
+
+  virtual SharedHandleVK<vk::RenderPass> GetRenderPass() const {
+    return nullptr;
+  }
 
  protected:
   const TextureDescriptor desc_;

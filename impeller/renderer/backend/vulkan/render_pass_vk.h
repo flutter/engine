@@ -11,6 +11,7 @@
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -124,11 +125,13 @@ class RenderPassVK final : public RenderPass {
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
       const std::shared_ptr<CommandBufferVK>& command_buffer,
-      bool has_subpass_dependency) const;
+      bool has_subpass_dependency,
+      const SharedHandleVK<vk::RenderPass>& old_pass) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,
-      const vk::RenderPass& pass) const;
+      const vk::RenderPass& pass,
+      const SharedHandleVK<vk::Framebuffer>& old_framebuffer) const;
 
   RenderPassVK(const RenderPassVK&) = delete;
 

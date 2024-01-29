@@ -105,10 +105,8 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   }
 
   // Always insert a barrier to transition to color attachment optimal.
-  if (current_layout != vk::ImageLayout::ePresentSrcKHR) {
-    // Note: This should incur a barrier.
-    current_layout = vk::ImageLayout::eGeneral;
-  }
+  // Note: This should incur a barrier.
+  current_layout = vk::ImageLayout::eGeneral;
 
   return CreateAttachmentDescription(desc.format,        //
                                      desc.sample_count,  //
@@ -152,7 +150,8 @@ static void SetTextureLayout(
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
     const std::shared_ptr<CommandBufferVK>& command_buffer,
-    bool supports_framebuffer_fetch) const {
+    bool supports_framebuffer_fetch,
+    const SharedHandleVK<vk::RenderPass>& old_pass) const {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -243,6 +242,10 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
   render_pass_desc.setPSubpasses(&subpass_desc);
   render_pass_desc.setSubpassCount(1u);
 
+  if (old_pass != nullptr) {
+    return old_pass;
+  }
+
   auto [result, pass] =
       context.GetDevice().createRenderPassUnique(render_pass_desc);
   if (result != vk::Result::eSuccess) {
@@ -256,6 +259,11 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
                            const RenderTarget& target,
                            std::shared_ptr<CommandBufferVK> command_buffer)
     : RenderPass(context, target), command_buffer_(std::move(command_buffer)) {
+  color_image_vk_ =
+      render_target_.GetColorAttachments().find(0u)->second.texture;
+  resolve_image_vk_ =
+      render_target_.GetColorAttachments().find(0u)->second.resolve_texture;
+
   const auto& vk_context = ContextVK::Cast(*context);
   const std::shared_ptr<CommandEncoderVK>& encoder =
       command_buffer_->GetEncoder();
@@ -269,16 +277,23 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
+  auto maybe_render_pass =
+      TextureVK::Cast(*resolve_image_vk_).GetTextureSource()->GetRenderPass();
+  auto maybe_framebuffer =
+      TextureVK::Cast(*resolve_image_vk_).GetTextureSource()->GetFramebuffer();
+
   render_pass_ = CreateVKRenderPass(
       vk_context, command_buffer_,
-      vk_context.GetCapabilities()->SupportsFramebufferFetch());
+      vk_context.GetCapabilities()->SupportsFramebufferFetch(),
+      maybe_render_pass);
   if (!render_pass_) {
     VALIDATION_LOG << "Could not create renderpass.";
     is_valid_ = false;
     return;
   }
 
-  auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass_);
+  auto framebuffer =
+      CreateVKFramebuffer(vk_context, *render_pass_, maybe_framebuffer);
   if (!framebuffer) {
     VALIDATION_LOG << "Could not create framebuffer.";
     is_valid_ = false;
@@ -289,6 +304,12 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
     is_valid_ = false;
     return;
   }
+  TextureVK::Cast(*resolve_image_vk_)
+      .GetTextureSource()
+      ->SetFramebuffer(framebuffer);
+  TextureVK::Cast(*resolve_image_vk_)
+      .GetTextureSource()
+      ->SetRenderPass(render_pass_);
 
   auto clear_values = GetVKClearValues(render_target_);
 
@@ -320,10 +341,6 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
           .setExtent(vk::Extent2D(sc.GetWidth(), sc.GetHeight()));
   command_buffer_vk_.setScissor(0, 1, &scissor);
 
-  color_image_vk_ =
-      render_target_.GetColorAttachments().find(0u)->second.texture;
-  resolve_image_vk_ =
-      render_target_.GetColorAttachments().find(0u)->second.resolve_texture;
   is_valid_ = true;
 }
 
@@ -342,7 +359,8 @@ void RenderPassVK::OnSetLabel(std::string label) {
 
 SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
     const ContextVK& context,
-    const vk::RenderPass& pass) const {
+    const vk::RenderPass& pass,
+    const SharedHandleVK<vk::Framebuffer>& old_framebuffer) const {
   vk::FramebufferCreateInfo fb_info;
 
   fb_info.renderPass = pass;
@@ -377,6 +395,10 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   }
 
   fb_info.setAttachments(attachments);
+
+  if (old_framebuffer != nullptr) {
+    return old_framebuffer;
+  }
 
   auto [result, framebuffer] =
       context.GetDevice().createFramebufferUnique(fb_info);
