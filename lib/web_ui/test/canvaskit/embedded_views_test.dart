@@ -318,7 +318,7 @@ void testMain() {
         await renderScene(sb.build());
       }
 
-      ui.ErrorCallback? previousErrorCallback =
+      final ui.ErrorCallback? previousErrorCallback =
           EnginePlatformDispatcher.instance.onError;
 
       Object? lastException;
