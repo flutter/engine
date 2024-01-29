@@ -60,10 +60,11 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  // Both frame_timings_recorder_ and layer_trees_tasks_ must be empty if not
-  // between BeginFrame and EndFrame.
-  FML_DCHECK(frame_timings_recorder_ == nullptr);
-  FML_DCHECK(layer_trees_tasks_.empty());
+  // Clear frame_timings_recorder_ and layer_trees_tasks_. Animator::Render
+  // might have been called before BeginFrame, whose layer trees might not have
+  // been submitted.
+  frame_timings_recorder_ = nullptr;
+  layer_trees_tasks_.clear();
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
   frame_request_number_++;
