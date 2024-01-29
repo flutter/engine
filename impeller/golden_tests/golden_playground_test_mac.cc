@@ -11,6 +11,7 @@
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
+#include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -77,7 +78,7 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -91,9 +92,7 @@ bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
-  GoldenPlaygroundTestImpl()
-      : screenshotter(new testing::MetalScreenshotter()) {}
-  std::unique_ptr<testing::MetalScreenshotter> screenshotter;
+  std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
 
@@ -122,9 +121,16 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  if (GetBackend() != PlaygroundBackend::kMetal) {
+  if (GetBackend() != PlaygroundBackend::kMetal &&
+      GetBackend() != PlaygroundBackend::kVulkan) {
     GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
     return;
+  }
+
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>();
   }
 
   std::string test_name = GetTestName();
@@ -157,7 +163,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   AiksContext renderer(GetContext(), typographer_context_);
 
   std::optional<Picture> picture;
-  std::unique_ptr<testing::MetalScreenshot> screenshot;
+  std::unique_ptr<testing::Screenshot> screenshot;
   for (int i = 0; i < 2; ++i) {
     picture = callback(renderer);
     if (!picture.has_value()) {
