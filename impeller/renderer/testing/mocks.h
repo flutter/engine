@@ -208,6 +208,8 @@ class MockCapabilities : public Capabilities {
 
 class MockGraphicsQueue : public GraphicsQueue {
  public:
+  ~MockGraphicsQueue() override = default;
+
   MOCK_METHOD(fml::Status,
               Submit,
               (const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
