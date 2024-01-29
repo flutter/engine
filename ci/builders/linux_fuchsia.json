@@ -1,7 +1,22 @@
 {
     "builds": [
         {
-            "archives": [],
+            "archives": [
+                {
+                    "name": "fuchsia_profile_arm64",
+                    "type": "gcs",
+                    "base_path": "out/fuchsia_profile_arm64/",
+                    "include_paths": [
+			"out/fuchsia_profile_arm64/platform_strong.dill",
+			"out/fuchsia_profile_arm64/vm_outline_strong.dill",
+			"out/fuchsia_profile_arm64/dart_aot_runner-0.far",
+			"out/fuchsia_profile_arm64/dart_jit_runner-0.far",
+			"out/fuchsia_profile_arm64/flutter_aot_runner-0.far",
+			"out/fuchsia_profile_arm64/flutter_jit_runner-0.far"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -25,7 +40,22 @@
             }
         },
         {
-            "archives": [],
+            "archives": [
+                {
+                    "name": "fuchsia_release_arm64",
+                    "type": "gcs",
+                    "base_path": "out/fuchsia_release_arm64/",
+                    "include_paths": [
+			"out/fuchsia_release_arm64/platform_strong.dill",
+			"out/fuchsia_release_arm64/vm_outline_strong.dill",
+			"out/fuchsia_release_arm64/dart_aot_runner-0.far",
+			"out/fuchsia_release_arm64/dart_jit_runner-0.far",
+			"out/fuchsia_release_arm64/flutter_aot_runner-0.far",
+			"out/fuchsia_release_arm64/flutter_jit_runner-0.far"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -49,7 +79,22 @@
             }
         },
         {
-            "archives": [],
+            "archives": [
+                {
+                    "name": "fuchsia_debug_arm64",
+                    "type": "gcs",
+                    "base_path": "out/fuchsia_debug_arm64/",
+                    "include_paths": [
+			"out/fuchsia_debug_arm64/platform_strong.dill",
+			"out/fuchsia_debug_arm64/vm_outline_strong.dill",
+			"out/fuchsia_debug_arm64/dart_aot_runner-0.far",
+			"out/fuchsia_debug_arm64/dart_jit_runner-0.far",
+			"out/fuchsia_debug_arm64/flutter_aot_runner-0.far",
+			"out/fuchsia_debug_arm64/flutter_jit_runner-0.far"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -90,6 +135,22 @@
             ]
         },
         {
+            "archives": [
+                {
+                    "name": "fuchsia_profile_x64",
+                    "type": "gcs",
+                    "base_path": "out/fuchsia_profile_x64/",
+                    "include_paths": [
+			"out/fuchsia_profile_x64/platform_strong.dill",
+			"out/fuchsia_profile_x64/vm_outline_strong.dill",
+			"out/fuchsia_profile_x64/dart_aot_runner-0.far",
+			"out/fuchsia_profile_x64/dart_jit_runner-0.far",
+			"out/fuchsia_profile_x64/flutter_aot_runner-0.far",
+			"out/fuchsia_profile_x64/flutter_jit_runner-0.far"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -113,6 +174,22 @@
             }
         },
         {
+            "archives": [
+                {
+                    "name": "fuchsia_release_x64",
+                    "type": "gcs",
+                    "base_path": "out/fuchsia_release_x64/",
+                    "include_paths": [
+			"out/fuchsia_release_x64/platform_strong.dill",
+			"out/fuchsia_release_x64/vm_outline_strong.dill",
+			"out/fuchsia_release_x64/dart_aot_runner-0.far",
+			"out/fuchsia_release_x64/dart_jit_runner-0.far",
+			"out/fuchsia_release_x64/flutter_aot_runner-0.far",
+			"out/fuchsia_release_x64/flutter_jit_runner-0.far"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -136,6 +213,22 @@
             }
         },
         {
+            "archives": [
+                {
+                    "name": "fuchsia_debug_x64",
+                    "type": "gcs",
+                    "base_path": "out/fuchsia_debug_x64/",
+                    "include_paths": [
+			"out/fuchsia_debug_x64/platform_strong.dill",
+			"out/fuchsia_debug_x64/vm_outline_strong.dill",
+			"out/fuchsia_debug_x64/dart_aot_runner-0.far",
+			"out/fuchsia_debug_x64/dart_jit_runner-0.far",
+			"out/fuchsia_debug_x64/flutter_aot_runner-0.far",
+			"out/fuchsia_debug_x64/flutter_jit_runner-0.far"
+                    ],
+                    "realm": "production"
+                }
+            ],
             "drone_dimensions": [
                 "device_type=none",
                 "kvm=1",
