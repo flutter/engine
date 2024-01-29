@@ -143,6 +143,7 @@ bool ShouldTestHaveVulkanValidations() {
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
+  std::unique_ptr<PlaygroundImpl> test_opengl_playground;
   std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
@@ -172,13 +173,27 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  if (GetBackend() != PlaygroundBackend::kMetal &&
-      GetBackend() != PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
-    return;
-  }
-
   bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+  switch (GetParam()) {
+    case PlaygroundBackend::kMetal:
+      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+      break;
+    case PlaygroundBackend::kVulkan: {
+      const std::unique_ptr<PlaygroundImpl>& playground =
+          GetSharedVulkanPlayground(enable_vulkan_validations);
+      pimpl_->screenshotter =
+          std::make_unique<testing::VulkanScreenshotter>(playground);
+      break;
+    }
+    case PlaygroundBackend::kOpenGLES: {
+      FML_CHECK(::glfwInit() == GLFW_TRUE);
+      pimpl_->test_opengl_playground =
+          PlaygroundImpl::Create(PlaygroundBackend::kOpenGLES, {});
+      pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+          pimpl_->test_opengl_playground);
+      break;
+    }
+  }
   if (GetParam() == PlaygroundBackend::kMetal) {
     pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {

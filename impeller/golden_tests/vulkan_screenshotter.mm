@@ -6,8 +6,6 @@
 
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/impeller/golden_tests/metal_screenshot.h"
-#include "impeller/renderer/backend/vulkan/surface_context_vk.h"
-#include "impeller/renderer/backend/vulkan/texture_vk.h"
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
 
@@ -84,8 +82,6 @@ std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(
       aiks_context,
       ISize(size.width * content_scale.x, size.height * content_scale.y));
   std::shared_ptr<Texture> texture = image->GetTexture();
-  FML_CHECK(aiks_context.GetContext()->GetBackendType() ==
-            Context::BackendType::kVulkan);
   return ReadTexture(aiks_context.GetContext(), texture);
 }
 
