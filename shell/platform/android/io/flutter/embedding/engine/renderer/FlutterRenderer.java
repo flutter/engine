@@ -198,7 +198,7 @@ public class FlutterRenderer implements TextureRegistry {
     } else {
       final SurfaceTextureSurfaceProducer producer =
           new SurfaceTextureSurfaceProducer(id, handler, flutterJNI);
-      registerSurfaceTexture(producer.getSurfaceTexture());
+      registerSurfaceTexture(id, producer.getSurfaceTexture());
       Log.v(TAG, "New SurfaceTextureSurfaceProducer ID: " + id);
       entry = producer;
     }
@@ -224,9 +224,22 @@ public class FlutterRenderer implements TextureRegistry {
   @NonNull
   @Override
   public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
+    return registerSurfaceTexture(nextTextureId.getAndIncrement(), surfaceTexture);
+  }
+
+  /**
+   * Similar to {@link FlutterRenderer#registerSurfaceTexture} but with an existing @{code
+   * textureId}.
+   *
+   * @param surfaceTexture Surface texture to wrap.
+   * @param textureId A texture ID already created that should be assigned to the surface texture.
+   */
+  @NonNull
+  private SurfaceTextureEntry registerSurfaceTexture(
+      long textureId, @NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
-        new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
+        new SurfaceTextureRegistryEntry(textureId, surfaceTexture);
     Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), entry.textureWrapper());
     addOnTrimMemoryListener(entry);
@@ -403,8 +416,9 @@ public class FlutterRenderer implements TextureRegistry {
     private boolean released;
     private boolean ignoringFence = false;
 
-    private int requestedWidth = 0;
-    private int requestedHeight = 0;
+    // The requested width and height are updated by setSize.
+    private int requestedWidth = 1;
+    private int requestedHeight = 1;
 
     /** Internal class: state held per image produced by image readers. */
     private class PerImage {
@@ -489,6 +503,9 @@ public class FlutterRenderer implements TextureRegistry {
 
     @Override
     public void setSize(int width, int height) {
+      // Clamp to a minimum of 1. A 0x0 texture is a runtime exception in ImageReader.
+      width = Math.max(1, width);
+      height = Math.max(1, height);
       if (requestedWidth == width && requestedHeight == height) {
         // No size change.
         return;
