@@ -309,8 +309,9 @@ typedef CanvasPath Path;
 
 #ifdef IMPELLER_ENABLE_3D
 
-#define FFI_FUNCTION_LIST_3D(V) V(SceneNode::Create)
-V(SceneShader::Create)
+#define FFI_FUNCTION_LIST_3D(V) \
+  V(SceneNode::Create)          \
+  V(SceneShader::Create)
 
 #define FFI_METHOD_LIST_3D(V)        \
   V(SceneNode, initFromAsset)        \
