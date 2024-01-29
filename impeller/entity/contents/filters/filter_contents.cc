@@ -50,7 +50,8 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   return blur;
 }
 
-const int32_t FilterContents::kBlurFilterRequiredMipCount = 4;
+const int32_t FilterContents::kBlurFilterRequiredMipCount =
+    GaussianBlurFilterContents::kBlurFilterRequiredMipCount;
 
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const FilterInput::Ref& input,
