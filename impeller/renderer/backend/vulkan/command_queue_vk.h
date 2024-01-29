@@ -15,10 +15,11 @@ class CommandQueueVK : public CommandQueue {
  public:
   explicit CommandQueueVK(const std::weak_ptr<ContextVK>& context);
 
-  ~CommandQueueVK() override {}
+  ~CommandQueueVK() override;
 
-  fml::Status Submit(const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
-                     const CompletionCallback& callback = {}) override;
+  fml::Status Submit(
+      const std::initializer_list<std::shared_ptr<CommandBuffer>>& buffers,
+      const CompletionCallback& completion_callback = {}) override;
 
  private:
   std::weak_ptr<ContextVK> context_;

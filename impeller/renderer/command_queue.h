@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_COMMAND_QUEUE_H_
 
 #include <functional>
+#include <initializer_list>
 
 #include "fml/status.h"
 #include "impeller/renderer/command_buffer.h"
@@ -18,9 +19,9 @@ class CommandQueue {
  public:
   using CompletionCallback = std::function<void(CommandBuffer::Status)>;
 
-  CommandQueue() = default;
+  CommandQueue();
 
-  virtual ~CommandQueue() = default;
+  virtual ~CommandQueue();
 
   /// @brief Submit one or more command buffer objects to be encoded and
   ///        executed on the GPU.
@@ -28,13 +29,16 @@ class CommandQueue {
   ///        The order of the provided buffers determines the ordering in which
   ///        they are submitted.
   ///
-  ///        Optionally accepts a ccallback that will fire with an updated
-  ///        status based on encoding state. Only the Metal and Vulkan backend
-  ///        can give a status beyond successful encoding. This callback may
-  ///        be called more than once.
+  ///        The returned status only indicates if the command buffer was
+  ///        successfully submitted. Successful completion of the command buffer
+  ///        can only be checked in the optional completion callback.
+  ///
+  ///        Only the Metal and Vulkan backends can give a status beyond
+  ///        successful encoding. This callback may be called more than once and
+  ///        potentially on a different thread.
   virtual fml::Status Submit(
-      const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
-      const CompletionCallback& cb = {});
+      const std::initializer_list<std::shared_ptr<CommandBuffer>>& buffers,
+      const CompletionCallback& completion_callback = {});
 
  private:
   CommandQueue(const CommandQueue&) = delete;

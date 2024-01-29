@@ -19,18 +19,19 @@ namespace impeller {
 CommandQueueVK::CommandQueueVK(const std::weak_ptr<ContextVK>& context)
     : context_(context) {}
 
+CommandQueueVK::~CommandQueueVK() = default;
+
 fml::Status CommandQueueVK::Submit(
-    const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
-    const CompletionCallback& callback) {
-  if (buffers.empty()) {
+    const std::initializer_list<std::shared_ptr<CommandBuffer>>& buffers,
+    const CompletionCallback& completion_callback) {
+  if (buffers.size() == 0u) {
     return fml::Status(fml::StatusCode::kInvalidArgument,
                        "No command buffers provided.");
   }
-  bool fail_callback = !!callback;
   // Success or failure, you only get to submit once.
   fml::ScopedCleanupClosure reset([&]() {
-    if (fail_callback) {
-      callback(CommandBuffer::Status::kError);
+    if (completion_callback) {
+      completion_callback(CommandBuffer::Status::kError);
     }
   });
 
@@ -71,19 +72,19 @@ fml::Status CommandQueueVK::Submit(
   // Submit will proceed, call callback with true when it is done and do not
   // call when `reset` is collected.
   auto added_fence = context->GetFenceWaiter()->AddFence(
-      std::move(fence),
-      [callback, tracked_objects = std::move(tracked_objects)]() mutable {
+      std::move(fence), [completion_callback, tracked_objects = std::move(
+                                                  tracked_objects)]() mutable {
         // Ensure tracked objects are destructed before calling any final
         // callbacks.
         tracked_objects.clear();
-        if (callback) {
-          callback(CommandBuffer::Status::kCompleted);
+        if (completion_callback) {
+          completion_callback(CommandBuffer::Status::kCompleted);
         }
       });
   if (!added_fence) {
     return fml::Status(fml::StatusCode::kCancelled, "Failed to add fence.");
   }
-  fail_callback = false;
+  reset.Release();
   return fml::Status();
 }
 
