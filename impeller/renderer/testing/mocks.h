@@ -15,7 +15,6 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_library.h"
-#include "impeller/renderer/graphics_queue.h"
 
 namespace impeller {
 namespace testing {
