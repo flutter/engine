@@ -518,12 +518,16 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
           'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
       })
+    mac_impeller_unittests_flags = shuffle_flags + [
+        '--enable_vulkan_validation',
+        '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
+    ]
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags + ['--enable_vulkan_validation'],
+        mac_impeller_unittests_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(https://github.com/flutter/flutter/issues/123733): Remove this allowlist.
