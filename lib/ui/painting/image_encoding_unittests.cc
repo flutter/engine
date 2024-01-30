@@ -218,10 +218,6 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
   EXPECT_CALL(*blit_pass, IsValid).WillRepeatedly(Return(true));
   EXPECT_CALL(*command_buffer, IsValid).WillRepeatedly(Return(true));
   EXPECT_CALL(*command_buffer, OnCreateBlitPass).WillOnce(Return(blit_pass));
-  EXPECT_CALL(*command_buffer, OnSubmitCommands(_))
-      .WillOnce(
-          DoAll(InvokeArgument<0>(impeller::CommandBuffer::Status::kCompleted),
-                Return(true)));
   EXPECT_CALL(*context, GetResourceAllocator).WillRepeatedly(Return(allocator));
   EXPECT_CALL(*context, CreateCommandBuffer).WillOnce(Return(command_buffer));
   EXPECT_CALL(*device_buffer, OnGetContents).WillOnce(Return(buffer.data()));
