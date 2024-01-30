@@ -1107,7 +1107,7 @@ def run_impeller_golden_tests(build_dir: str):
       'golden_tests_harvester'
   )
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    run_cmd([tests_path, '--working_dir=%s' % temp_dir])
+    run_cmd([tests_path, '--working_dir=%s' % temp_dir], cwd=build_dir)
     with DirectoryChange(harvester_path):
       run_cmd(['dart', 'pub', 'get'])
       bin_path = Path('.').joinpath('bin'
