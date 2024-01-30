@@ -19,8 +19,12 @@ class ShaderData {
     if (rawShaderData is! Map<String, Object?>) {
       throw const FormatException('Invalid Shader Data');
     }
-    final Object? source = rawShaderData['sksl'];
-    final Object? rawUniforms = rawShaderData['uniforms'];
+    final Object? sksl = rawShaderData['sksl'];
+    if (sksl is! Map<String, Object?>) {
+      throw const FormatException('Invalid Shader Data');
+    }
+    final Object? source = sksl['shader'];
+    final Object? rawUniforms = sksl['uniforms'];
     if (source is! String || rawUniforms is! List<Object?>) {
       throw const FormatException('Invalid Shader Data');
     }
