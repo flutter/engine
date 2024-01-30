@@ -2750,7 +2750,7 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
           .color = Color::Green(),
           .image_filter = ImageFilter::MakeBlur(
               Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
-              Entity::TileMode::kClamp),
+              Entity::TileMode::kDecal),
       });
   canvas.Restore();
 
