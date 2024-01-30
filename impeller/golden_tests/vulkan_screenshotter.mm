@@ -64,10 +64,10 @@ std::unique_ptr<Screenshot> ReadTexture(
 }
 }  // namespace
 
-VulkanScreenshotter::VulkanScreenshotter() {
-  FML_CHECK(::glfwInit() == GLFW_TRUE);
-  playground_ =
-      PlaygroundImpl::Create(PlaygroundBackend::kVulkan, PlaygroundSwitches{});
+VulkanScreenshotter::VulkanScreenshotter(
+    const std::unique_ptr<PlaygroundImpl>& playground)
+    : playground_(playground) {
+  FML_CHECK(playground_);
 }
 
 std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(

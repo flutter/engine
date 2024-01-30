@@ -37,6 +37,95 @@ void testMain() {
       engineDispatcher.dispose();
     });
 
+    test('AppLifecycleState transitions through all states', () {
+      final List<ui.AppLifecycleState> states = <ui.AppLifecycleState>[];
+      void listener(ui.AppLifecycleState state) {
+        states.add(state);
+      }
+
+      final MockAppLifecycleState mockAppLifecycleState =
+          MockAppLifecycleState();
+
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.resumed);
+
+      mockAppLifecycleState.addListener(listener);
+      expect(mockAppLifecycleState.activeCallCount, 1);
+
+      expect(
+          states, equals(<ui.AppLifecycleState>[ui.AppLifecycleState.resumed]));
+
+      mockAppLifecycleState.inactive();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.inactive);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive
+          ]));
+
+      // consecutive same states are skipped
+      mockAppLifecycleState.inactive();
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive
+          ]));
+
+      mockAppLifecycleState.hidden();
+      expect(
+          mockAppLifecycleState.appLifecycleState, ui.AppLifecycleState.hidden);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden
+          ]));
+
+      mockAppLifecycleState.resume();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.resumed);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed
+          ]));
+
+      mockAppLifecycleState.detach();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.detached);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.detached
+          ]));
+
+      mockAppLifecycleState.removeListener(listener);
+      expect(mockAppLifecycleState.deactivateCallCount, 1);
+
+      // No more states should be recorded after the listener is removed.
+      mockAppLifecycleState.resume();
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.detached
+          ]));
+    });
+
     test('responds to flutter/skia Skia.setResourceCacheMaxBytes', () async {
       const MethodCodec codec = JSONMethodCodec();
       final Completer<ByteData?> completer = Completer<ByteData?>();
@@ -252,6 +341,26 @@ void testMain() {
 
       dispatcher.dispose();
     });
+
+    test('disconnects view disposal event on dispose', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager.registerView(view1);
+
+      expect(view1.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      dispatcher.dispose();
+
+      expect(onMetricsChangedCalled, isFalse);
+      expect(view1.isDisposed, isTrue);
+    });
   });
 }
 
@@ -277,5 +386,36 @@ class MockHighContrastSupport implements HighContrastSupport {
   @override
   void removeListener(HighContrastListener listener) {
     _listeners.remove(listener);
+  }
+}
+
+class MockAppLifecycleState extends AppLifecycleState {
+  int activeCallCount = 0;
+  int deactivateCallCount = 0;
+
+  void detach() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.detached);
+  }
+
+  void resume() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.resumed);
+  }
+
+  void inactive() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.inactive);
+  }
+
+  void hidden() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.hidden);
+  }
+
+  @override
+  void activate() {
+    activeCallCount++;
+  }
+
+  @override
+  void deactivate() {
+    deactivateCallCount++;
   }
 }
