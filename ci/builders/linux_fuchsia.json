@@ -5,7 +5,7 @@
                 {
                     "name": "fuchsia_profile_arm64",
                     "type": "gcs",
-                    "base_path": "out/fuchsia_profile_arm64/",
+                    "base_path": "out/",
                     "include_paths": [
 			"out/fuchsia_profile_arm64/vm_outline_strong.dill",
 			"out/fuchsia_profile_arm64/vm_platform_strong.dill",
@@ -44,7 +44,7 @@
                 {
                     "name": "fuchsia_release_arm64",
                     "type": "gcs",
-                    "base_path": "out/fuchsia_release_arm64/",
+                    "base_path": "out/",
                     "include_paths": [
 			"out/fuchsia_release_arm64/vm_outline_strong.dill",
 			"out/fuchsia_release_arm64/vm_platform_strong.dill",
@@ -83,7 +83,7 @@
                 {
                     "name": "fuchsia_debug_arm64",
                     "type": "gcs",
-                    "base_path": "out/fuchsia_debug_arm64/",
+                    "base_path": "out/",
                     "include_paths": [
 			"out/fuchsia_debug_arm64/vm_outline_strong.dill",
 			"out/fuchsia_debug_arm64/vm_platform_strong.dill",
@@ -139,7 +139,7 @@
                 {
                     "name": "fuchsia_profile_x64",
                     "type": "gcs",
-                    "base_path": "out/fuchsia_profile_x64/",
+                    "base_path": "out/",
                     "include_paths": [
 			"out/fuchsia_profile_x64/vm_outline_strong.dill",
 			"out/fuchsia_profile_x64/vm_platform_strong.dill",
@@ -178,7 +178,7 @@
                 {
                     "name": "fuchsia_release_x64",
                     "type": "gcs",
-                    "base_path": "out/fuchsia_release_x64/",
+                    "base_path": "out/",
                     "include_paths": [
 			"out/fuchsia_release_x64/vm_outline_strong.dill",
 			"out/fuchsia_release_x64/vm_platform_strong.dill",
@@ -217,7 +217,7 @@
                 {
                     "name": "fuchsia_debug_x64",
                     "type": "gcs",
-                    "base_path": "out/fuchsia_debug_x64/",
+                    "base_path": "out/",
                     "include_paths": [
 			"out/fuchsia_debug_x64/vm_outline_strong.dill",
 			"out/fuchsia_debug_x64/vm_platform_strong.dill",
