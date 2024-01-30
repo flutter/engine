@@ -74,8 +74,7 @@ class TestImpellerContext : public impeller::Context {
     FML_UNREACHABLE();
   }
 
-  const std::shared_ptr<impeller::CommandQueue>& GetCommandQueue()
-      const override {
+  std::shared_ptr<impeller::CommandQueue> GetCommandQueue() const override {
     FML_UNREACHABLE();
   }
 
