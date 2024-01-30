@@ -55,47 +55,33 @@ const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
 }
 }  // namespace
 
+#define IMP_AIKSTEST(name)                         \
+  "impeller_Play_AiksTest_" #name "_Metal",        \
+      "impeller_Play_AiksTest_" #name "_OpenGLES", \
+      "impeller_Play_AiksTest_" #name "_Vulkan"
+
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
 static const std::vector<std::string> kSkipTests = {
-    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Metal",
-    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Vulkan",
-    "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_Metal",
-    "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_"
-    "Vulkan",
-    "impeller_Play_AiksTest_CanRenderRadialGradient_Metal",
-    "impeller_Play_AiksTest_CanRenderRadialGradient_Vulkan",
-    "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Metal",
-    "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Vulkan",
-    "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Metal",
-    "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Vulkan",
-    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_Metal",
-    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_"
-    "Vulkan",
-    "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
-    "Metal",
-    "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
-    "Vulkan",
-    "impeller_Play_AiksTest_GaussianBlurRotatedAndClippedInteractive_Metal",
-    "impeller_Play_AiksTest_GaussianBlurRotatedAndClippedInteractive_Vulkan",
-    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Metal",
-    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Vulkan",
-    "impeller_Play_AiksTest_ColorWheel_Metal",
-    "impeller_Play_AiksTest_ColorWheel_Vulkan",
-    "impeller_Play_AiksTest_SceneColorSource_Metal",
-    "impeller_Play_AiksTest_SceneColorSource_Vulkan",
-    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Metal",
-    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Vulkan",
-    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
-    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
+    IMP_AIKSTEST(CanDrawPaintMultipleTimesInteractive),
+    IMP_AIKSTEST(CanRenderLinearGradientManyColorsUnevenStops),
+    IMP_AIKSTEST(CanRenderRadialGradient),
+    IMP_AIKSTEST(CanRenderRadialGradientManyColors),
+    IMP_AIKSTEST(CanRenderBackdropBlurInteractive),
+    IMP_AIKSTEST(ClippedBlurFilterRendersCorrectlyInteractive),
+    IMP_AIKSTEST(CoverageOriginShouldBeAccountedForInSubpasses),
+    IMP_AIKSTEST(GaussianBlurRotatedAndClippedInteractive),
+    IMP_AIKSTEST(GradientStrokesRenderCorrectly),
+    IMP_AIKSTEST(ColorWheel),
+    IMP_AIKSTEST(SceneColorSource),
+    IMP_AIKSTEST(SolidStrokesRenderCorrectly),
+    IMP_AIKSTEST(TextFrameSubpixelAlignment),
     // TextRotated is flakey and we can't seem to get it to stabilize on Skia
     // Gold.
-    "impeller_Play_AiksTest_TextRotated_Metal",
-    "impeller_Play_AiksTest_TextRotated_Vulkan",
+    IMP_AIKSTEST(TextRotated),
     // Runtime stage based tests get confused with a Metal context.
     "impeller_Play_AiksTest_CanRenderClippedRuntimeEffects_Vulkan",
-    "impeller_Play_AiksTest_CaptureContext_Metal",
-    "impeller_Play_AiksTest_CaptureContext_Vulkan",
+    IMP_AIKSTEST(CaptureContext),
 };
 
 static const std::vector<std::string> kVulkanDenyValidationTests = {
@@ -289,8 +275,8 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
         pimpl_->test_vulkan_playground);
     return pimpl_->test_vulkan_playground->GetContext();
   } else {
-    FML_CHECK(false);
-    return nullptr;
+    /// On OpenGL we create a context for each test.
+    return GetContext();
   }
 }
 
