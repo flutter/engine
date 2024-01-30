@@ -98,7 +98,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   )
   tests = list(
       filter(
-          lambda test: not 'variant' in test or VARIANT in test['variant'],
+          lambda test: not 'variant' in test or VARIANT == test['variant'],
           tests
       )
   )
