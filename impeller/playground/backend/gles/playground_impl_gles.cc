@@ -62,7 +62,6 @@ PlaygroundImplGLES::PlaygroundImplGLES(PlaygroundSwitches switches)
       handle_(nullptr, &DestroyWindowHandle),
       worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())),
       use_angle_(switches.use_angle) {
-
   if (use_angle_) {
     angle_glesv2_ = dlopen("libGLESv2.dylib", RTLD_LAZY);
     FML_CHECK(angle_glesv2_ != nullptr);
@@ -71,8 +70,14 @@ PlaygroundImplGLES::PlaygroundImplGLES(PlaygroundSwitches switches)
   ::glfwDefaultWindowHints();
 
 #if FML_OS_MACOSX
-  // ES Profiles are not supported on Mac.
-  ::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+  if (use_angle_) {
+    ::glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+    ::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    ::glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    ::glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  } else {
+    ::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+  }
 #else   // FML_OS_MACOSX
   ::glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
   ::glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
