@@ -2199,6 +2199,9 @@ static Picture BlendModeTest(Vector2 content_scale,
 
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Black()});
+  // TODO(bdero): Why does this cause the left image to double scale on high DPI
+  //              displays.
+  // canvas.Scale(content_scale);
 
   //----------------------------------------------------------------------------
   /// 1. Save layer blending (top squares).
@@ -2236,7 +2239,6 @@ static Picture BlendModeTest(Vector2 content_scale,
 
   canvas.Save();
   canvas.Translate({0, 100});
-
   // Perform the blend in a SaveLayer so that the initial backdrop color is
   // fully transparent black. SourceOver blend the result onto the parent pass.
   canvas.SaveLayer({});
@@ -2247,7 +2249,8 @@ static Picture BlendModeTest(Vector2 content_scale,
                      .blend_mode = BlendMode::kSourceOver});
     canvas.Translate(Vector2(100, 0));
   }
-  canvas.RestoreToCount(0);
+  canvas.Restore();
+  canvas.Restore();
 
   //----------------------------------------------------------------------------
   /// 3. Image blending (bottom images).
@@ -2269,16 +2272,17 @@ static Picture BlendModeTest(Vector2 content_scale,
     }
   }
 
-  // Uploaded image source (unpremultiplied source texture).
+  // Uploaded image source (left image).
   canvas.Save();
   canvas.SaveLayer({.blend_mode = BlendMode::kSourceOver});
   {
     canvas.DrawImage(dst_image, {0, 0}, {.blend_mode = BlendMode::kSourceOver});
     canvas.DrawImage(src_image, {0, 0}, {.blend_mode = blend_mode});
   }
-  canvas.RestoreToCount(0);
+  canvas.Restore();
+  canvas.Restore();
 
-  // Rendered image source (premultiplied source texture).
+  // Rendered image source (right image).
   canvas.Save();
   canvas.SaveLayer({.blend_mode = BlendMode::kSourceOver});
   {
@@ -2292,7 +2296,7 @@ static Picture BlendModeTest(Vector2 content_scale,
     canvas.Restore();
   }
   canvas.Restore();
-  canvas.RestoreToCount(0);
+  canvas.Restore();
 
   return canvas.EndRecordingAsPicture();
 }
@@ -2737,7 +2741,7 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
           .color = Color::Green(),
           .image_filter = ImageFilter::MakeBlur(
               Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
-              Entity::TileMode::kClamp),
+              Entity::TileMode::kDecal),
       });
   canvas.Restore();
 
@@ -3167,7 +3171,7 @@ TEST_P(AiksTest, SolidColorApplyColorFilter) {
   });
   ASSERT_TRUE(result);
   ASSERT_COLOR_NEAR(contents.GetColor(),
-                    Color(0.433247, 0.879523, 0.825324, 0.75));
+                    Color(0.424452, 0.828743, 0.79105, 0.9375));
 }
 
 TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {
@@ -3921,6 +3925,48 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
                                              FilterContents::BlurStyle::kNormal,
                                              Entity::TileMode::kClamp)});
   canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {1024, 768});
+
+  size_t max_mip_count = 0;
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    max_mip_count =
+        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
+  }
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+  // The log is FML_DLOG, so only check in debug builds.
+#ifndef NDEBUG
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
+#endif
+}
+
+TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
+  fml::testing::LogCapture log_capture;
+  Canvas canvas;
+  canvas.DrawPath(PathBuilder{}
+                      .MoveTo({100, 100})
+                      .LineTo({200, 100})
+                      .LineTo({150, 200})
+                      .LineTo({50, 200})
+                      .Close()
+                      .TakePath(),
+                  {.color = Color::Chartreuse(),
+                   .image_filter = ImageFilter::MakeBlur(
+                       Sigma(30), Sigma(30), FilterContents::BlurStyle::kNormal,
+                       Entity::TileMode::kClamp)});
 
   Picture picture = canvas.EndRecordingAsPicture();
   std::shared_ptr<RenderTargetCache> cache =

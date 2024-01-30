@@ -15,6 +15,7 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/texture_mipmap.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -430,20 +431,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
     ISize texture_size,
     const SubpassCallback& subpass_callback,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    int32_t mip_count) const {
   const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
-        SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
-        SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
     );
@@ -481,6 +483,17 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (!sub_renderpass->EncodeCommands()) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
+
+  const std::shared_ptr<Texture>& target_texture =
+      subpass_target.GetRenderTargetTexture();
+  if (target_texture->GetMipCount() > 1) {
+    fml::Status mipmap_status =
+        AddMipmapGeneration(sub_command_buffer, context, target_texture);
+    if (!mipmap_status.ok()) {
+      return mipmap_status;
+    }
+  }
+
   RecordCommandBuffer(std::move(sub_command_buffer));
 
   return subpass_target;
