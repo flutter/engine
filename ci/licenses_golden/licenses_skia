@@ -1,4 +1,4 @@
-Signature: 192962fe217dfc11cdabd695a56d6fea
+Signature: af3f21027d711f4f3ae3495c519aa22d
 
 ====================================================================================================
 LIBRARY: etc1
@@ -396,6 +396,7 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
+FILE: ../../../flutter/third_party/skia/relnotes/VkDeviceLostCallback.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -8848,7 +8849,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/core/SkPixmapDraw.cpp + ../../../f
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkRSXform.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkReadPixelsRec.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkRuntimeBlender.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/core/SkScan_SAAPath.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkSwizzler_opts.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkSwizzler_opts_hsw.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkSwizzler_opts_ssse3.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -9141,7 +9141,6 @@ FILE: ../../../flutter/third_party/skia/src/core/SkPixmapDraw.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkRSXform.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkReadPixelsRec.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkRuntimeBlender.h
-FILE: ../../../flutter/third_party/skia/src/core/SkScan_SAAPath.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkSwizzler_opts.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkSwizzler_opts_hsw.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkSwizzler_opts_ssse3.cpp
@@ -9505,9 +9504,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckSymbolTableCorrectness.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinStructs.cpp + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckSymbolTableCorrectness.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp
+FILE: ../../../flutter/third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinStructs.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2024 Google LLC
 

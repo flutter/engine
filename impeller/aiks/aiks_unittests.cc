@@ -141,8 +141,7 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
 namespace {
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
-                    std::string label,
-                    bool async_submit) {
+                    std::string label) {
   auto buffer = context->CreateCommandBuffer();
   if (!buffer) {
     return false;
@@ -152,23 +151,19 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
     return false;
   }
   pass->GenerateMipmap(std::move(texture), std::move(label));
-  if (async_submit) {
-    return buffer->EncodeAndSubmit(pass, context->GetResourceAllocator());
-  }
 
   pass->EncodeCommands(context->GetResourceAllocator());
-  return buffer->SubmitCommands();
+  return context->GetCommandQueue()->Submit({buffer}).ok();
 }
 
 void CanRenderTiledTexture(AiksTest* aiks_test,
                            Entity::TileMode tile_mode,
-                           bool async_submit = false,
                            Matrix local_matrix = {}) {
   auto context = aiks_test->GetContext();
   ASSERT_TRUE(context);
   auto texture = aiks_test->CreateTextureForFixture("table_mountain_nx.png",
                                                     /*enable_mipmapping=*/true);
-  GenerateMipmap(context, texture, "table_mountain_nx", async_submit);
+  GenerateMipmap(context, texture, "table_mountain_nx");
   Canvas canvas;
   canvas.Scale(aiks_test->GetContentScale());
   canvas.Translate({100.0f, 100.0f, 0});
@@ -215,10 +210,6 @@ TEST_P(AiksTest, CanRenderTiledTextureClamp) {
   CanRenderTiledTexture(this, Entity::TileMode::kClamp);
 }
 
-TEST_P(AiksTest, CanRenderTiledTextureClampAsync) {
-  CanRenderTiledTexture(this, Entity::TileMode::kClamp, /*async_submit=*/true);
-}
-
 TEST_P(AiksTest, CanRenderTiledTextureRepeat) {
   CanRenderTiledTexture(this, Entity::TileMode::kRepeat);
 }
@@ -232,7 +223,7 @@ TEST_P(AiksTest, CanRenderTiledTextureDecal) {
 }
 
 TEST_P(AiksTest, CanRenderTiledTextureClampWithTranslate) {
-  CanRenderTiledTexture(this, Entity::TileMode::kClamp, /*async_submit=*/false,
+  CanRenderTiledTexture(this, Entity::TileMode::kClamp,
                         Matrix::MakeTranslation({172.f, 172.f, 0.f}));
 }
 
@@ -672,7 +663,7 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
                   .AddRoundedRect(Rect::MakeXYWH(100, 100, 500, 500), radii)
                   .TakePath();
 
-  canvas.DrawPath(std::move(path), paint);
+  canvas.DrawPath(path, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -2208,6 +2199,9 @@ static Picture BlendModeTest(Vector2 content_scale,
 
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Black()});
+  // TODO(bdero): Why does this cause the left image to double scale on high DPI
+  //              displays.
+  // canvas.Scale(content_scale);
 
   //----------------------------------------------------------------------------
   /// 1. Save layer blending (top squares).
@@ -2245,7 +2239,6 @@ static Picture BlendModeTest(Vector2 content_scale,
 
   canvas.Save();
   canvas.Translate({0, 100});
-
   // Perform the blend in a SaveLayer so that the initial backdrop color is
   // fully transparent black. SourceOver blend the result onto the parent pass.
   canvas.SaveLayer({});
@@ -2256,7 +2249,8 @@ static Picture BlendModeTest(Vector2 content_scale,
                      .blend_mode = BlendMode::kSourceOver});
     canvas.Translate(Vector2(100, 0));
   }
-  canvas.RestoreToCount(0);
+  canvas.Restore();
+  canvas.Restore();
 
   //----------------------------------------------------------------------------
   /// 3. Image blending (bottom images).
@@ -2278,16 +2272,17 @@ static Picture BlendModeTest(Vector2 content_scale,
     }
   }
 
-  // Uploaded image source (unpremultiplied source texture).
+  // Uploaded image source (left image).
   canvas.Save();
   canvas.SaveLayer({.blend_mode = BlendMode::kSourceOver});
   {
     canvas.DrawImage(dst_image, {0, 0}, {.blend_mode = BlendMode::kSourceOver});
     canvas.DrawImage(src_image, {0, 0}, {.blend_mode = blend_mode});
   }
-  canvas.RestoreToCount(0);
+  canvas.Restore();
+  canvas.Restore();
 
-  // Rendered image source (premultiplied source texture).
+  // Rendered image source (right image).
   canvas.Save();
   canvas.SaveLayer({.blend_mode = BlendMode::kSourceOver});
   {
@@ -2301,7 +2296,7 @@ static Picture BlendModeTest(Vector2 content_scale,
     canvas.Restore();
   }
   canvas.Restore();
-  canvas.RestoreToCount(0);
+  canvas.Restore();
 
   return canvas.EndRecordingAsPicture();
 }
@@ -2392,7 +2387,7 @@ TEST_P(AiksTest, ImageFilteredSaveLayerWithUnboundedContents) {
                       .TakePath();
       Paint paint = p;
       paint.style = Paint::Style::kStroke;
-      canvas.DrawPath(std::move(path), paint);
+      canvas.DrawPath(path, paint);
     };
     // Registration marks for the edge of the SaveLayer
     DrawLine(Point(75, 100), Point(225, 100), {.color = Color::White()});
@@ -3176,7 +3171,7 @@ TEST_P(AiksTest, SolidColorApplyColorFilter) {
   });
   ASSERT_TRUE(result);
   ASSERT_COLOR_NEAR(contents.GetColor(),
-                    Color(0.433247, 0.879523, 0.825324, 0.75));
+                    Color(0.424452, 0.828743, 0.79105, 0.9375));
 }
 
 TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {

@@ -454,6 +454,7 @@ public class FlutterRenderer implements TextureRegistry {
     private final LinkedList<PerImageReader> imageReaderQueue = new LinkedList<PerImageReader>();
     private final HashMap<ImageReader, PerImageReader> perImageReaders =
         new HashMap<ImageReader, PerImageReader>();
+    private PerImageReader lastReaderDequeuedFrom = null;
 
     /** Internal class: state held per Image produced by ImageReaders. */
     private class PerImage {
@@ -470,6 +471,7 @@ public class FlutterRenderer implements TextureRegistry {
     private class PerImageReader {
       public final ImageReader reader;
       private final LinkedList<PerImage> imageQueue = new LinkedList<PerImage>();
+      private boolean closed = false;
 
       private final ImageReader.OnImageAvailableListener onImageAvailableListener =
           reader -> {
@@ -479,7 +481,7 @@ public class FlutterRenderer implements TextureRegistry {
             } catch (IllegalStateException e) {
               Log.e(TAG, "onImageAvailable acquireLatestImage failed: " + e);
             }
-            if (released) {
+            if (released || closed) {
               return;
             }
             if (image == null) {
@@ -494,6 +496,9 @@ public class FlutterRenderer implements TextureRegistry {
       }
 
       PerImage queueImage(Image image) {
+        if (closed) {
+          return null;
+        }
         PerImage perImage = new PerImage(image, System.nanoTime());
         imageQueue.add(perImage);
         // If we fall too far behind we will skip some frames.
@@ -514,10 +519,14 @@ public class FlutterRenderer implements TextureRegistry {
 
       /** returns true if we can prune this reader */
       boolean canPrune() {
-        return imageQueue.size() == 0;
+        return imageQueue.size() == 0 && lastReaderDequeuedFrom != this;
       }
 
       void close() {
+        closed = true;
+        if (VERBOSE_LOGS) {
+          Log.i(TAG, "Closing reader=" + reader.hashCode());
+        }
         reader.close();
         imageQueue.clear();
       }
@@ -539,6 +548,9 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     void pruneImageReaderQueue() {
+      if (VERBOSE_LOGS) {
+        Log.i(TAG, "Pruning image reader queue length=" + imageReaderQueue.size());
+      }
       // Prune nodes from the head of the ImageReader queue.
       while (imageReaderQueue.size() > 1) {
         PerImageReader r = imageReaderQueue.peekFirst();
@@ -550,6 +562,9 @@ public class FlutterRenderer implements TextureRegistry {
         perImageReaders.remove(r.reader);
         r.close();
       }
+      if (VERBOSE_LOGS) {
+        Log.i(TAG, "Pruned image reader queue length=" + imageReaderQueue.size());
+      }
     }
 
     void onImage(ImageReader reader, Image image) {
@@ -559,6 +574,7 @@ public class FlutterRenderer implements TextureRegistry {
         queuedImage = perReader.queueImage(image);
       }
       if (queuedImage == null) {
+        // We got a late image.
         return;
       }
       if (VERBOSE_LOGS) {
@@ -609,7 +625,8 @@ public class FlutterRenderer implements TextureRegistry {
               lastDequeueTime = System.nanoTime();
             }
           }
-          // We have dequeued the first image.
+          // We have dequeued the first image from reader.
+          lastReaderDequeuedFrom = reader;
           break;
         }
         pruneImageReaderQueue();
