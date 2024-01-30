@@ -24,7 +24,6 @@ CommandQueueVK::~CommandQueueVK() = default;
 fml::Status CommandQueueVK::Submit(
     const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
     const CompletionCallback& completion_callback) {
-  FML_LOG(ERROR) << "uh -oh!";
   if (buffers.empty()) {
     return fml::Status(fml::StatusCode::kInvalidArgument,
                        "No command buffers provided.");
