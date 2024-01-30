@@ -1473,13 +1473,13 @@ public class FlutterView extends FrameLayout
       if (Build.VERSION.SDK_INT >= 31) {
         List<SpellCheckerInfo> enabledSpellCheckerInfos =
             textServicesManager.getEnabledSpellCheckerInfos();
-        boolean gboardSpellCheckerEnabled =
-            enabledSpellCheckerInfos.stream()
-                .anyMatch(
-                    spellCheckerInfo ->
-                        spellCheckerInfo
-                            .getPackageName()
-                            .equals("com.google.android.inputmethod.latin"));
+        boolean gboardSpellCheckerEnabled = false;
+        for (SpellCheckerInfo info : enabledSpellCheckerInfos) {
+          if (spellCheckerInfo.getPackageName().equals("com.google.android.inputmethod.latin")) {
+            gboardSpellCheckerEnabled = true;
+            break;
+          }
+        }
 
         // Checks if enabled spell checker is the one that is suppported by Gboard, which is
         // the one Flutter supports by default.
