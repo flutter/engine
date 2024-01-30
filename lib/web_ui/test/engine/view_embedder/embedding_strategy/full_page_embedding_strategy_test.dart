@@ -15,13 +15,9 @@ void main() {
 }
 
 void doTests() {
-  late FullPageEmbeddingStrategy strategy;
-  late DomElement target;
-
   group('initialize', () {
-    setUp(() {
-      strategy = FullPageEmbeddingStrategy();
-      target = domDocument.body!;
+    test('Prepares target environment', () {
+      final DomElement target = domDocument.body!;
       final DomHTMLMetaElement meta = createDomHTMLMetaElement();
       meta
         ..id = 'my_viewport_meta_for_testing'
@@ -29,13 +25,14 @@ void doTests() {
         ..content = 'width=device-width, initial-scale=1.0, '
             'maximum-scale=1.0, user-scalable=no';
       domDocument.head!.append(meta);
-    });
 
-    test('Prepares target environment', () {
       DomElement? userMeta =
           domDocument.querySelector('#my_viewport_meta_for_testing');
 
       expect(userMeta, isNotNull);
+
+      // ignore: unused_local_variable
+      final FullPageEmbeddingStrategy strategy = FullPageEmbeddingStrategy();
 
       expect(target.getAttribute('flt-embedding'), 'full-page',
           reason:
@@ -56,11 +53,9 @@ void doTests() {
   });
 
   group('attachViewRoot', () {
-    setUp(() {
-      strategy = FullPageEmbeddingStrategy();
-    });
-
     test('Should attach glasspane into embedder target (body)', () async {
+      final FullPageEmbeddingStrategy strategy = FullPageEmbeddingStrategy();
+
       final DomElement glassPane = createDomElement('some-tag-for-tests');
       final DomCSSStyleDeclaration style = glassPane.style;
 
