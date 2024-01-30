@@ -296,14 +296,9 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   if (platform_isolate_manager->IsShutdown()) {
     // Don't set the error string. We want to silently ignore this error,
     // because the engine is shutting down.
-    FML_LOG(ERROR) << "CreatePlatformIsolate called after shutdown";
+    FML_LOG(INFO) << "CreatePlatformIsolate called after shutdown";
     return nullptr;
   }
-
-  Dart_EnterScope();
-  Dart_PersistentHandle entry_point_handle =
-      Dart_NewPersistentHandle(entry_point);
-  Dart_ExitScope();
 
   Dart_Isolate parent_isolate = isolate();
   Dart_ExitIsolate();  // Exit parent_isolate.
@@ -378,16 +373,21 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     // The PlatformIsolateManager was shutdown while we were creating the
     // isolate. This means that we're shutting down the engine. Do nothing. The
     // ordinary engine shut down procedure will clean up the isolate.
-    FML_LOG(ERROR) << "Shutdown during platform isolate creation";
+    FML_LOG(INFO) << "Shutdown during platform isolate creation";
     return nullptr;
   }
+
+  Dart_EnterScope();
+  Dart_PersistentHandle entry_point_handle =
+      Dart_NewPersistentHandle(entry_point);
+  Dart_ExitScope();
 
   platform_task_runner->PostTask([entry_point_handle, platform_isolate, port_id,
                                   platform_isolate_manager]() {
     if (platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
       // platform_isolate has already been shut down. Do nothing.
-      FML_LOG(ERROR) << "Shutdown before platform isolate entry point";
+      FML_LOG(INFO) << "Shutdown before platform isolate entry point";
       return;
     }
     Dart_EnterIsolate(platform_isolate);
@@ -423,7 +423,7 @@ DartIsolate::DartIsolate(const Settings& settings,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate,
                   context,
-                  [this](Dart_Handle result) { MessageEpilogue(result); }),
+                  [this](Dart_Handle result) { OnMessageEpilogue(result); }),
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
       is_platform_isolate_(is_platform_isolate),
@@ -1262,7 +1262,7 @@ void DartIsolate::OnShutdownCallback() {
   }
 }
 
-void DartIsolate::MessageEpilogue(Dart_Handle result) {
+void DartIsolate::OnMessageEpilogue(Dart_Handle result) {
   if (is_platform_isolate_ && Dart_CurrentIsolate() != nullptr) {
     FML_DCHECK(Dart_CurrentIsolate() == isolate());
     FML_DCHECK(platform_isolate_pending_messages_ > 0);

@@ -242,7 +242,6 @@ class PlatformConfigurationClient {
                                    int configuration_id) const = 0;
 
   virtual PlatformIsolateManager* GetPlatformIsolateManager() = 0;
-  virtual const PlatformIsolateManager* GetPlatformIsolateManager() const = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();

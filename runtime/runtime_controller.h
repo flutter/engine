@@ -619,9 +619,11 @@ class RuntimeController : public PlatformConfigurationClient {
     return &platform_isolate_manager_;
   }
 
-  const PlatformIsolateManager* GetPlatformIsolateManager() const override {
-    return &platform_isolate_manager_;
-  }
+  //--------------------------------------------------------------------------
+  /// @brief      Shuts down all registered platform isolates. Must be called
+  ///             from the platform thread.
+  ///
+  void ShutdownPlatformIsolates();
 
  protected:
   /// Constructor for Mocks.

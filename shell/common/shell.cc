@@ -528,12 +528,7 @@ Shell::~Shell() {
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetPlatformTaskRunner(),
       fml::MakeCopyable([this, &platiso_latch]() mutable {
-        const PlatformIsolateManager* platform_isolate_manager =
-            engine_->GetRuntimeController()->GetPlatformIsolateManager();
-        // PlatformIsolateManager::ShutdownPlatformIsolates is thread safe,
-        // so it's safe to const_cast here.
-        const_cast<PlatformIsolateManager*>(platform_isolate_manager)
-            ->ShutdownPlatformIsolates();
+        engine_->ShutdownPlatformIsolates();
         platiso_latch.Signal();
       }));
   platiso_latch.Wait();

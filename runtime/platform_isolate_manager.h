@@ -19,7 +19,8 @@ class PlatformIsolateManager {
  public:
   /// Returns whether the PlatformIsolateManager is shutdown. New isolates
   /// cannot be registered after the manager is shutdown. Callable from any
-  /// thread.
+  /// thread. The result may be obsolete immediately after the call, except when
+  /// called on the platform thread.
   bool IsShutdown() const { return is_shutdown_; }
 
   /// Register an isolate in the list of platform isolates. Callable from any

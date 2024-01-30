@@ -700,9 +700,6 @@ class FakePlatformConfigurationClient : public PlatformConfigurationClient {
  public:
   PlatformIsolateManager mgr;
   PlatformIsolateManager* GetPlatformIsolateManager() override { return &mgr; }
-  const PlatformIsolateManager* GetPlatformIsolateManager() const override {
-    return &mgr;
-  }
 
   std::string DefaultRouteName() override { return ""; }
   void ScheduleFrame() override {}

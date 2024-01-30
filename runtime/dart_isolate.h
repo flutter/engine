@@ -488,7 +488,7 @@ class DartIsolate : public UIDartState {
 
   void OnShutdownCallback();
 
-  void MessageEpilogue(Dart_Handle result);
+  void OnMessageEpilogue(Dart_Handle result);
 
   // |Dart_IsolateGroupCreateCallback|
   static Dart_Isolate DartIsolateGroupCreateCallback(
