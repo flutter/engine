@@ -240,6 +240,22 @@ FlutterWindowsEngine::FlutterWindowsEngine(
                                                    id, type.data()};
           CreatePlatformView(creation_args);
           result->Success();
+        } else if (name == "focus") {
+          const auto& args = std::get<EncodableMap>(*call.arguments());
+          auto id = std::get<int32_t>(args.find(EncodableValue("id"))->second);
+          auto focus =
+              std::get<bool>(args.find(EncodableValue("focus"))->second);
+          auto itr = platform_views_.find(id);
+          if (itr == platform_views_.end()) {
+            result->Error("Invalid ID", "Platform view not found");
+            return;
+          }
+          HWND platform_view = itr->second;
+          FML_LOG(ERROR) << "Setting focus to platform view";
+          if (focus) {
+            ::SetFocus(platform_view);
+          }
+          result->Success();
         } else {
           result->NotImplemented();
         }
@@ -505,9 +521,10 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
                        size.height, SWP_NOZORDER | SWP_SHOWWINDOW);
           UpdateWindow(view);
         } else {
-          const auto pending = host->pending_platform_views_.find(platform_view->identifier);
+          const auto pending =
+              host->pending_platform_views_.find(platform_view->identifier);
           if (pending != host->pending_platform_views_.end()) {
-            host->task_runner_->PostTask([host, pending](){
+            host->task_runner_->PostTask([host, pending]() {
               auto args = pending->second.second;
               HWND view = pending->second.first(&args);
               host->platform_views_.insert({args.id, view});
@@ -986,6 +1003,19 @@ void FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams args) {
     HWND platform_view = itr->second(&args);
     platform_views_.insert({args.id, platform_view});
   });*/
+}
+
+void FlutterWindowsEngine::OnLoseFocus(HWND new_focus) {
+  for (auto itr : platform_views_) {
+    HWND hwnd = itr.second;
+    if (hwnd == new_focus) {
+      auto id = itr.first;
+      FML_LOG(ERROR) << "Sending viewFocused for " << id;
+      platform_view_channel_->InvokeMethod(
+          "viewFocused", std::make_unique<EncodableValue>(id));
+      return;
+    }
+  }
 }
 
 }  // namespace flutter

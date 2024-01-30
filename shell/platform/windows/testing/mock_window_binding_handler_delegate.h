@@ -77,6 +77,8 @@ class MockWindowBindingHandlerDelegate : public WindowBindingHandlerDelegate {
 
   MOCK_METHOD(void, OnWindowStateEvent, (HWND, WindowStateEvent), (override));
 
+  MOCK_METHOD(void, OnLoseFocus, (HWND), (override));
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockWindowBindingHandlerDelegate);
 };

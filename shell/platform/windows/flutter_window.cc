@@ -679,6 +679,7 @@ FlutterWindow::HandleMessage(UINT const message,
     case WM_KILLFOCUS:
       OnWindowStateEvent(WindowStateEvent::kUnfocus);
       ::DestroyCaret();
+      binding_handler_delegate_->OnLoseFocus((HWND)wparam);
       break;
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
@@ -705,6 +706,8 @@ FlutterWindow::HandleMessage(UINT const message,
       yPos = GET_Y_LPARAM(lparam);
       OnPointerDown(static_cast<double>(xPos), static_cast<double>(yPos),
                     device_kind, kDefaultPointerDeviceId, button_pressed);
+
+      ::SetFocus(window_handle_);
       break;
     case WM_LBUTTONUP:
     case WM_RBUTTONUP:

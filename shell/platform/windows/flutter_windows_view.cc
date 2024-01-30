@@ -698,4 +698,10 @@ void FlutterWindowsView::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
   }
 }
 
+void FlutterWindowsView::OnLoseFocus(HWND new_focus) {
+  if (engine_) {
+    engine_->OnLoseFocus(new_focus);
+  }
+}
+
 }  // namespace flutter

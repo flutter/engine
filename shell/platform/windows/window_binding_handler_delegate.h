@@ -149,6 +149,8 @@ class WindowBindingHandlerDelegate {
   // Called when a window receives an event that may alter application lifecycle
   // state.
   virtual void OnWindowStateEvent(HWND hwnd, WindowStateEvent event) = 0;
+
+  virtual void OnLoseFocus(HWND new_focus) = 0;
 };
 
 }  // namespace flutter

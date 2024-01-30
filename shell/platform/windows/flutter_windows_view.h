@@ -211,6 +211,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |WindowBindingHandlerDelegate|
   void OnWindowStateEvent(HWND hwnd, WindowStateEvent event) override;
 
+  void OnLoseFocus(HWND new_focus) override;
+
  protected:
   virtual void NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
                                      ax::mojom::Event event);
