@@ -82,8 +82,8 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'),
             'r') as file:
     tests = yaml.safe_load(file)
-  # TODO: 140179 - Run tests with multiple packages or with extra test
-  # arguments.
+  # TODO(zijiehe-google-com): Run tests with multiple packages or with extra
+  # test arguments, https://github.com/flutter/flutter/issues/140179.
   tests = list(
       filter(
           lambda test: test['test_command'].startswith('test run ') and test[
