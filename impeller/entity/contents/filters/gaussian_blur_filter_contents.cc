@@ -282,7 +282,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
                              /*coverage_limit=*/expanded_coverage_hint,
-                             /*mip_count=*/kBlurFilterRequiredMipCount);
+                             /*mip_count=*/mip_count);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
