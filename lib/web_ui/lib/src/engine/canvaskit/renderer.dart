@@ -26,6 +26,9 @@ enum CanvasKitVariant {
   chromium,
 }
 
+/// Encapsulates a request to render a [ui.Scene]. Contains the scene to render,
+/// the view to render it into, and a [Completer] which completes when the
+/// scene has been rendered.
 typedef _RenderRequest = ({
   ui.Scene scene,
   ui.FlutterView view,
