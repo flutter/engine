@@ -16,7 +16,7 @@ void testMain() {
   late ResourceManager resourceManager;
 
   setUp(() {
-    domManager = DomManager(viewId: 123, devicePixelRatio: 3);
+    domManager = DomManager(devicePixelRatio: 3);
     hostElement.appendChild(domManager.rootElement);
     resourceManager = ResourceManager(domManager);
   });

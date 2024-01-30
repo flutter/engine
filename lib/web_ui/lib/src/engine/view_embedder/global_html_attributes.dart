@@ -4,30 +4,47 @@
 
 import '../dom.dart';
 
-/// Sets global attributes on [_hostElement] (the body element in full page mode).
+/// Sets global attributes for a Flutter View.
+///
+/// The global attributes are set on the [rootElement] of the Flutter View, as
+/// well as the on [hostElement] where the Flutter View is inserted.
+///
+/// The [hostElement] corresponds to the <body> element in full-page mode.
 ///
 /// The global attributes provide quick and general information about the
 /// Flutter app. They are set on a global element (e.g. the body element) to
 /// make it easily accessible to the user.
 class GlobalHtmlAttributes {
-  GlobalHtmlAttributes(this._hostElement);
+  GlobalHtmlAttributes({required this.rootElement, required this.hostElement});
 
-  final DomElement _hostElement;
+  final DomElement rootElement;
+  final DomElement hostElement;
 
   void applyAttributes({
+    required int viewId,
     required bool autoDetectRenderer,
     required String rendererTag,
     required String buildMode,
   }) {
+    // This `flt-view-id` attribute does not serve a function in the engine's
+    // operation, but it's useful for debugging, test automation, and DOM
+    // interop use-cases. It allows one to use CSS selectors to find views by
+    // their identifiers.
+    //
+    // Example:
+    //
+    //     document.querySelector('flutter-view[flt-view-id="$viewId"]')
+    rootElement.setAttribute('flt-view-id', viewId);
+
     // How was the current renderer selected?
     final String rendererSelection = autoDetectRenderer
         ? 'auto-selected'
         : 'requested explicitly';
 
-    _hostElement.setAttribute('flt-renderer', '$rendererTag ($rendererSelection)');
-    _hostElement.setAttribute('flt-build-mode', buildMode);
+    hostElement.setAttribute('flt-renderer', '$rendererTag ($rendererSelection)');
+    hostElement.setAttribute('flt-build-mode', buildMode);
     // TODO(mdebbar): Disable spellcheck until changes in the framework and
     // engine are complete.
-    _hostElement.setAttribute('spellcheck', 'false');
+    hostElement.setAttribute('spellcheck', 'false');
   }
 }

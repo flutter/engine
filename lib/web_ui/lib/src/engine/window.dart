@@ -68,6 +68,7 @@ base class EngineFlutterView implements ui.FlutterView {
     pointerBinding = PointerBinding(this);
     _resizeSubscription = onResize.listen(_didResize);
     _globalHtmlAttributes.applyAttributes(
+      viewId: viewId,
       autoDetectRenderer: FlutterConfiguration.flutterWebAutoDetect,
       rendererTag: renderer.rendererTag,
       buildMode: buildMode,
@@ -131,14 +132,16 @@ base class EngineFlutterView implements ui.FlutterView {
   late final AccessibilityAnnouncements accessibilityAnnouncements =
       AccessibilityAnnouncements(hostElement: dom.announcementsHost);
 
-  late final GlobalHtmlAttributes _globalHtmlAttributes =
-      GlobalHtmlAttributes(embeddingStrategy.hostElement);
+  late final GlobalHtmlAttributes _globalHtmlAttributes = GlobalHtmlAttributes(
+    rootElement: dom.rootElement,
+    hostElement: embeddingStrategy.hostElement,
+  );
 
   late final MouseCursor mouseCursor = MouseCursor(dom.rootElement);
 
   late final ContextMenu contextMenu = ContextMenu(dom.rootElement);
 
-  late final DomManager dom = DomManager(viewId: viewId, devicePixelRatio: devicePixelRatio);
+  late final DomManager dom = DomManager(devicePixelRatio: devicePixelRatio);
 
   late final PointerBinding pointerBinding;
 
