@@ -1475,7 +1475,7 @@ public class FlutterView extends FrameLayout
             textServicesManager.getEnabledSpellCheckerInfos();
         boolean gboardSpellCheckerEnabled = false;
         for (SpellCheckerInfo info : enabledSpellCheckerInfos) {
-          if (spellCheckerInfo.getPackageName().equals("com.google.android.inputmethod.latin")) {
+          if (info.getPackageName().equals("com.google.android.inputmethod.latin")) {
             gboardSpellCheckerEnabled = true;
             break;
           }
