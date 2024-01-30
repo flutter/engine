@@ -538,6 +538,16 @@ void ContentContext::RecordCommandBuffer(
     std::shared_ptr<CommandBuffer> command_buffer) const {
   pending_command_buffers_->command_buffers.push_back(
       std::move(command_buffer));
+  // Metal systems seem to have a limit on the number of command buffers that
+  // can be created concurrently, which appears to be in the range of 50 or so
+  // command buffers. When this limit is hit, creation of further command
+  // buffers will fail. To work around this, we regularly flush the
+  // command buffers on the metal backend.
+  if (GetContext()->GetBackendType() == Context::BackendType::kMetal &&
+      pending_command_buffers_->command_buffers.size() > 10u) {
+    auto buffers = std::move(pending_command_buffers_->command_buffers);
+    GetContext()->GetCommandQueue()->Submit(buffers);
+  }
 }
 
 void ContentContext::FlushCommandBuffers() const {
