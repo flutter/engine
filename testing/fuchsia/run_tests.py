@@ -71,7 +71,7 @@ class BundledTestRunner(TestRunner):
       )
       test_runner._package_deps = self._package_deps
       result = test_runner.run_test().returncode
-      logging.warning('Result of test %s is %s', test, result)
+      logging.info('Result of test %s is %s', test, result)
       if result != 0:
         returncode = result
     return CompletedProcess(args='', returncode=returncode)
@@ -82,8 +82,8 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'),
             'r') as file:
     tests = yaml.safe_load(file)
-  # Ignore tests needing multiple packages or with extra test arguments for
-  # now.
+  # TODO: 140179 - Run tests with multiple packages or with extra test
+  # arguments.
   tests = list(
       filter(
           lambda test: test['test_command'].startswith('test run ') and test[
@@ -123,7 +123,7 @@ def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
 
 
 if __name__ == '__main__':
-  logging.warning('Running tests in %s', OUT_DIR)
+  logging.info('Running tests in %s', OUT_DIR)
   sys.argv.append('--out-dir=' + OUT_DIR)
   # The 'flutter-test-type' is a place holder and has no specific meaning; the
   # _get_test_runner is overrided.
