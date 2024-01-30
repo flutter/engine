@@ -371,9 +371,13 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
 
   if (!platform_isolate_manager->RegisterPlatformIsolate(platform_isolate)) {
     // The PlatformIsolateManager was shutdown while we were creating the
-    // isolate. This means that we're shutting down the engine. Do nothing. The
-    // ordinary engine shut down procedure will clean up the isolate.
+    // isolate. This means that we're shutting down the engine. We need to
+    // shutdown the platform isolate.
     FML_LOG(INFO) << "Shutdown during platform isolate creation";
+    Dart_ExitIsolate();  // Exit parent_isolate.
+    Dart_EnterIsolate(platform_isolate);
+    Dart_ShutdownIsolate();
+    Dart_EnterIsolate(parent_isolate);
     return nullptr;
   }
 
