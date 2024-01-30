@@ -4,7 +4,11 @@
 
 #include "impeller/playground/backend/gles/playground_impl_gles.h"
 
+#define IMPELLER_PLAYGROUND_SUPPORTS_ANGLE FML_OS_MACOSX
+
+#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
 #include <dlfcn.h>
+#endif
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
@@ -63,7 +67,9 @@ PlaygroundImplGLES::PlaygroundImplGLES(PlaygroundSwitches switches)
       worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())),
       use_angle_(switches.use_angle) {
   if (use_angle_) {
+#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
     angle_glesv2_ = dlopen("libGLESv2.dylib", RTLD_LAZY);
+#endif
     FML_CHECK(angle_glesv2_ != nullptr);
   }
 
@@ -128,8 +134,11 @@ ShaderLibraryMappingsForPlayground() {
 // |PlaygroundImpl|
 std::shared_ptr<Context> PlaygroundImplGLES::GetContext() const {
   auto resolver = use_angle_ ? [](const char* name) -> void* {
+    void* symbol;
+#if IMPELLER_PLAYGROUND_SUPPORTS_ANGLE
     void* angle_glesv2 = dlopen("libGLESv2.dylib", RTLD_LAZY);
-    void* symbol = dlsym(angle_glesv2, name);
+    symbol = dlsym(angle_glesv2, name);
+#endif
     FML_CHECK(symbol);
     return symbol;
   }
