@@ -14,7 +14,6 @@ import 'browser_detection.dart';
 import 'configuration.dart';
 import 'display.dart';
 import 'dom.dart';
-import 'html/resource_manager.dart';
 import 'initialization.dart';
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
@@ -296,8 +295,6 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
     super.dispose();
     _browserHistory?.dispose();
   }
-
-  late final ResourceManager resources = ResourceManager(dom);
 
   @override
   ui.VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;

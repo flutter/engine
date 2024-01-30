@@ -5,13 +5,24 @@
 import '../browser_detection.dart';
 import '../dom.dart';
 import '../view_embedder/dom_manager.dart';
+import '../window.dart';
 
+/// Manages global resources for the singleton Flutter Window in the HTML
+/// renderer.
+///
+/// It's used for resources that are referenced by CSS, such as svg filters.
 class ResourceManager {
   ResourceManager(this._domManager);
 
   final DomManager _domManager;
 
   static const String resourcesHostTagName = 'flt-svg-filters';
+
+  static ResourceManager? _instance;
+  static ResourceManager get instance {
+    assert(_instance != null, 'ResourceManager has not been initialized.');
+    return _instance!;
+  }
 
   /// A child element of body outside the shadowroot that hosts
   /// global resources such svg filters and clip paths when using webkit.
@@ -55,4 +66,13 @@ class ResourceManager {
     assert(element.parentNode == _resourcesHost);
     element.remove();
   }
+}
+
+/// Initializes the [ResourceManager.instance] singleton if it hasn't been
+/// initialized yet.
+void ensureResourceManagerInitialized(EngineFlutterWindow implicitView) {
+  if (ResourceManager._instance != null) {
+    return;
+  }
+  ResourceManager._instance = ResourceManager(implicitView.dom);
 }

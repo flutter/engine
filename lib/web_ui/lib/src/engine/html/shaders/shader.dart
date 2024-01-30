@@ -10,7 +10,6 @@ import 'package:ui/ui.dart' as ui;
 import '../../browser_detection.dart';
 import '../../color_filter.dart';
 import '../../dom.dart';
-import '../../platform_dispatcher.dart';
 import '../../safe_browser_api.dart';
 import '../../util.dart';
 import '../../validators.dart';
@@ -864,7 +863,7 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
     }
 
     final SvgFilter svgFilter = svgFilterFromBlendMode(color, blendMode);
-    EnginePlatformDispatcher.instance.implicitView!.resources.addResource(svgFilter.element);
+    ResourceManager.instance.addResource(svgFilter.element);
     filterId = svgFilter.id;
 
     if (blendMode == ui.BlendMode.saturation ||
@@ -884,7 +883,7 @@ class MatrixHtmlColorFilter extends EngineHtmlColorFilter {
   @override
   DomElement? makeSvgFilter(DomNode? filterElement) {
     final SvgFilter svgFilter = svgFilterFromColorMatrix(matrix);
-    EnginePlatformDispatcher.instance.implicitView!.resources.addResource(svgFilter.element);
+    ResourceManager.instance.addResource(svgFilter.element);
     filterId = svgFilter.id;
     return svgFilter.element;
   }
