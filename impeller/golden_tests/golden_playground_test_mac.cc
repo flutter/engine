@@ -187,8 +187,10 @@ void GoldenPlaygroundTest::SetUp() {
     }
     case PlaygroundBackend::kOpenGLES: {
       FML_CHECK(::glfwInit() == GLFW_TRUE);
-      pimpl_->test_opengl_playground =
-          PlaygroundImpl::Create(PlaygroundBackend::kOpenGLES, {});
+      PlaygroundSwitches playground_switches;
+      playground_switches.use_angle = true;
+      pimpl_->test_opengl_playground = PlaygroundImpl::Create(
+          PlaygroundBackend::kOpenGLES, playground_switches);
       pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
           pimpl_->test_opengl_playground);
       break;
