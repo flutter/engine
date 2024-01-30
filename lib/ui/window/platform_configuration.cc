@@ -452,9 +452,11 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
 void PlatformConfigurationNativeApi::Render(Scene* scene,
                                             double width,
                                             double height) {
+  // TODO(dkwingsmt): Currently only supports a single window.
+  int64_t view_id = kFlutterImplicitViewId;
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->Render(
-      scene, width, height);
+      view_id, scene, width, height);
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {

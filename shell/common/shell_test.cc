@@ -249,7 +249,8 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
           if (view_content.builder) {
             view_content.builder(root_layer);
           }
-          runtime_delegate->Render(std::move(layer_tree), device_pixel_ratio);
+          runtime_delegate->Render(view_id, std::move(layer_tree),
+                                   device_pixel_ratio);
         }
         engine->animator_->EndFrame();
         latch.Signal();
