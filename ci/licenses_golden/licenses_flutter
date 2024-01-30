@@ -6023,6 +6023,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/noto_font_encoding.dart + ../
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart + ../../../flutter/LICENSE
@@ -6145,6 +6146,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/asset_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/benchmarks.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/flutter_views_proxy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/images.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/initialization.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart + ../../../flutter/LICENSE
@@ -8877,6 +8879,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/noto_font_encoding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart
@@ -8999,6 +9002,7 @@ FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/asset_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/benchmarks.dart
+FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/flutter_views_proxy.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/images.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/initialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui_web/src/ui_web/navigation/platform_location.dart
