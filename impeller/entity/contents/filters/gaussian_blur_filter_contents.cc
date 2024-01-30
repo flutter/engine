@@ -271,6 +271,14 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     expanded_coverage_hint = coverage_hint->Expand(local_padding);
   }
 
+  int32_t mip_count = kBlurFilterRequiredMipCount;
+  if (renderer.GetContext()->GetBackendType() ==
+      Context::BackendType::kOpenGLES) {
+    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
+    // generation on opengles.
+    mip_count = 1;
+  }
+
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
                              /*coverage_limit=*/expanded_coverage_hint,
