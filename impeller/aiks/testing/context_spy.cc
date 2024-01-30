@@ -51,9 +51,7 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
   });
 
   ON_CALL(*mock_context, GetCommandQueue).WillByDefault([real_context]() {
-    // Return the base command queue type to avoid vulkan specific behavior with
-    // mock objects.
-    return std::make_shared<CommandQueue>();
+    return real_context->GetCommandQueue();
   });
 
   ON_CALL(*mock_context, CreateCommandBuffer)
