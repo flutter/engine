@@ -64,7 +64,7 @@ class SurfaceContextVK : public Context,
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
-  const std::shared_ptr<CommandQueue>& GetCommandQueue() const override;
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 
   // |Context|
   void Shutdown() override;

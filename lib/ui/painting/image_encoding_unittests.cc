@@ -225,10 +225,7 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
       .WillRepeatedly(
           DoAll(InvokeArgument<1>(impeller::CommandBuffer::Status::kCompleted),
                 Return(fml::Status())));
-  EXPECT_CALL(*context, GetCommandQueue)
-      .WillRepeatedly(
-          Invoke([command_queue = std::shared_ptr<impeller::CommandQueue>(
-                      command_queue)]() { return command_queue; }));
+  EXPECT_CALL(*context, GetCommandQueue).WillRepeatedly(Return(command_queue));
   return context;
 }
 }  // namespace

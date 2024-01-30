@@ -163,7 +163,7 @@ class Context {
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
   /// @brief Return the graphics queue for submitting command buffers.
-  virtual const std::shared_ptr<CommandQueue>& GetCommandQueue() const = 0;
+  virtual std::shared_ptr<CommandQueue> GetCommandQueue() const = 0;
 
   //----------------------------------------------------------------------------
   /// @brief      Force all pending asynchronous work to finish. This is

@@ -141,7 +141,7 @@ const std::shared_ptr<const Capabilities>& ContextGLES::GetCapabilities()
 }
 
 // |Context|
-const std::shared_ptr<CommandQueue>& ContextGLES::GetCommandQueue() const {
+std::shared_ptr<CommandQueue> ContextGLES::GetCommandQueue() const {
   return command_queue_;
 }
 

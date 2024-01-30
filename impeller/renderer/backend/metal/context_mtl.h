@@ -82,7 +82,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  const std::shared_ptr<CommandQueue>& GetCommandQueue() const override;
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;

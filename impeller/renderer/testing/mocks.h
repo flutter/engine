@@ -166,7 +166,7 @@ class MockImpellerContext : public Context {
               (),
               (const, override));
 
-  MOCK_METHOD(const std::shared_ptr<CommandQueue>&,
+  MOCK_METHOD(std::shared_ptr<CommandQueue>,
               GetCommandQueue,
               (),
               (const, override));

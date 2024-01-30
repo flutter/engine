@@ -566,7 +566,7 @@ std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
   return gpu_tracer_;
 }
 
-const std::shared_ptr<CommandQueue>& ContextVK::GetCommandQueue() const {
+std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
   return command_queue_vk_;
 }
 

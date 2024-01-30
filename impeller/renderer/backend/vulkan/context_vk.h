@@ -165,7 +165,7 @@ class ContextVK final : public Context,
     return descriptor_pool_recycler_;
   }
 
-  const std::shared_ptr<CommandQueue>& GetCommandQueue() const override;
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 
   std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
 

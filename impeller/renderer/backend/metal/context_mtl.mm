@@ -396,7 +396,7 @@ void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
 }
 
 // |Context|
-const std::shared_ptr<CommandQueue>& ContextMTL::GetCommandQueue() const {
+std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
   return command_queue_ip_;
 }
 

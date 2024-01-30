@@ -54,9 +54,7 @@ class FakeContext : public Context {
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const {
     return nullptr;
   }
-  const std::shared_ptr<CommandQueue>& GetCommandQueue() const {
-    FML_UNREACHABLE();
-  }
+  std::shared_ptr<CommandQueue> GetCommandQueue() const { FML_UNREACHABLE(); }
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const { return nullptr; }
   void Shutdown() {}
 
