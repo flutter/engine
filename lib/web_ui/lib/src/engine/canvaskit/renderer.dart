@@ -26,6 +26,23 @@ enum CanvasKitVariant {
   chromium,
 }
 
+typedef _RenderRequest = ({
+  ui.Scene scene,
+  ui.FlutterView view,
+  Completer<void> completer,
+});
+
+/// A per-view queue of render requests. Only contains the current render
+/// request and the next render request. If a new render request is made before
+/// the current request is complete, then the next render request is replaced
+/// with the most recently requested render and the other one is dropped.
+class _RenderQueue {
+  _RenderQueue();
+
+  _RenderRequest? current;
+  _RenderRequest? next;
+}
+
 class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
   static late CanvasKitRenderer _instance;
@@ -414,49 +431,44 @@ class CanvasKitRenderer implements Renderer {
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
     CkParagraphBuilder(style);
 
-  ({
-    ui.Scene scene,
-    ui.FlutterView view,
-    Completer<void> completer
-  })? _currentRender;
-  ({
-    ui.Scene scene,
-    ui.FlutterView view,
-    Completer<void> completer
-  })? _nextRender;
+  final Map<ui.FlutterView, _RenderQueue> _renderQueues =
+      <ui.FlutterView, _RenderQueue>{};
 
   // TODO(harryterkelsen): Merge this logic with the async logic in
   // [EngineScene], https://github.com/flutter/flutter/issues/142072.
   @override
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
-    if (_currentRender != null) {
+    _renderQueues.putIfAbsent(view, () => _RenderQueue());
+    final _RenderQueue renderQueue = _renderQueues[view]!;
+    if (renderQueue.current != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
-      _nextRender?.completer.complete();
+      renderQueue.next?.completer.complete();
       final Completer<void> completer = Completer<void>();
-      _nextRender = (scene: scene, view: view, completer: completer);
+      renderQueue.next = (scene: scene, view: view, completer: completer);
       return completer.future;
     }
     final Completer<void> completer = Completer<void>();
-    _currentRender = (scene: scene, view: view, completer: completer);
-    unawaited(_kickRenderLoop());
+    renderQueue.current = (scene: scene, view: view, completer: completer);
+    unawaited(_kickRenderLoop(view));
     return completer.future;
   }
 
-  Future<void> _kickRenderLoop() async {
-    final ({
-      ui.Scene scene,
-      ui.FlutterView view,
-      Completer<void> completer
-    }) current = _currentRender!;
-    await _renderScene(current.scene, current.view);
-    current.completer.complete();
-    _currentRender = _nextRender;
-    _nextRender = null;
-    if (_currentRender == null) {
+  Future<void> _kickRenderLoop(ui.FlutterView view) async {
+    final _RenderQueue renderQueue = _renderQueues[view]!;
+    final _RenderRequest current = renderQueue.current!;
+    try {
+      await _renderScene(current.scene, current.view);
+      current.completer.complete();
+    } catch (error, stackTrace) {
+      current.completer.completeError(error, stackTrace);
+    }
+    renderQueue.current = renderQueue.next;
+    renderQueue.next = null;
+    if (renderQueue.current == null) {
       return;
     } else {
-      return _kickRenderLoop();
+      return _kickRenderLoop(view);
     }
   }
 

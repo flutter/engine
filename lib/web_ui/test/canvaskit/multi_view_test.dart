@@ -44,27 +44,13 @@ void testMain() {
     });
 
     test('will error if trying to render into an unregistered view', () async {
-      final ui.ErrorCallback? previousErrorCallback =
-          EnginePlatformDispatcher.instance.onError;
-
-      Object? lastException;
-      int errorCount = 0;
-
-      EnginePlatformDispatcher.instance.onError =
-          (Object exception, StackTrace stackTrace) {
-        errorCount++;
-        lastException = exception;
-        return true;
-      };
-
       final EngineFlutterView unregisteredView = EngineFlutterView(
           EnginePlatformDispatcher.instance,
           createDomElement('unregistered-view'));
-      await CanvasKitRenderer.instance.renderScene(scene, unregisteredView);
-      expect(errorCount, equals(1));
-      expect(lastException, isAssertionError);
-
-      EnginePlatformDispatcher.instance.onError = previousErrorCallback;
+      expect(
+        () => CanvasKitRenderer.instance.renderScene(scene, unregisteredView),
+        throwsAssertionError,
+      );
     });
 
     test('will dispose the Rasterizer for a disposed view', () async {
