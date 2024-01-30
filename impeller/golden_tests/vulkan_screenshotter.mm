@@ -36,10 +36,13 @@ std::unique_ptr<Screenshot> ReadTexture(
 
   fml::AutoResetWaitableEvent latch;
   success =
-      command_buffer->SubmitCommands([&latch](CommandBuffer::Status status) {
-        FML_CHECK(status == CommandBuffer::Status::kCompleted);
-        latch.Signal();
-      });
+      surface_context->GetCommandQueue()
+          ->Submit({command_buffer},
+                   [&latch](CommandBuffer::Status status) {
+                     FML_CHECK(status == CommandBuffer::Status::kCompleted);
+                     latch.Signal();
+                   })
+          .ok();
   FML_CHECK(success);
   latch.Wait();
 
@@ -64,10 +67,10 @@ std::unique_ptr<Screenshot> ReadTexture(
 }
 }  // namespace
 
-VulkanScreenshotter::VulkanScreenshotter() {
-  FML_CHECK(::glfwInit() == GLFW_TRUE);
-  playground_ =
-      PlaygroundImpl::Create(PlaygroundBackend::kVulkan, PlaygroundSwitches{});
+VulkanScreenshotter::VulkanScreenshotter(
+    const std::unique_ptr<PlaygroundImpl>& playground)
+    : playground_(playground) {
+  FML_CHECK(playground_);
 }
 
 std::unique_ptr<Screenshot> VulkanScreenshotter::MakeScreenshot(

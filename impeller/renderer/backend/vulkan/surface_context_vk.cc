@@ -48,6 +48,10 @@ std::shared_ptr<CommandBuffer> SurfaceContextVK::CreateCommandBuffer() const {
   return parent_->CreateCommandBuffer();
 }
 
+std::shared_ptr<CommandQueue> SurfaceContextVK::GetCommandQueue() const {
+  return parent_->GetCommandQueue();
+}
+
 const std::shared_ptr<const Capabilities>& SurfaceContextVK::GetCapabilities()
     const {
   return parent_->GetCapabilities();
@@ -80,9 +84,6 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   if (auto pipeline_library = parent_->GetPipelineLibrary()) {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
-  }
-  if (auto allocator = parent_->GetResourceAllocator()) {
-    allocator->DidAcquireSurfaceFrame();
   }
   parent_->GetCommandPoolRecycler()->Dispose();
   return surface;

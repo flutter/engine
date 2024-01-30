@@ -14,22 +14,19 @@ import 'fake_asset_manager.dart';
 import 'rendering.dart';
 
 void setUpUnitTests({
+  bool withImplicitView = false,
   bool emulateTesterEnvironment = true,
   bool setUpTestViewDimensions = true,
 }) {
   late final FakeAssetScope debugFontsScope;
   setUpAll(() async {
-    // The implicit view is needed for `debugEmulateFlutterTesterEnvironment`,
-    // and `debugPhysicalSizeOverride`.
-    engine.ensureImplicitViewInitialized();
-
     if (emulateTesterEnvironment) {
       ui_web.debugEmulateFlutterTesterEnvironment = true;
     }
 
     debugFontsScope = configureDebugFontsAssetScope(fakeAssetManager);
     debugOnlyAssetManager = fakeAssetManager;
-    await bootstrapAndRunApp();
+    await bootstrapAndRunApp(withImplicitView: withImplicitView);
     engine.renderer.fontCollection.fontFallbackManager?.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
 
     if (setUpTestViewDimensions) {
@@ -38,7 +35,7 @@ void setUpUnitTests({
       // this stuff in.
       const double devicePixelRatio = 3.0;
       engine.EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(devicePixelRatio);
-      engine.EnginePlatformDispatcher.instance.implicitView!.debugPhysicalSizeOverride =
+      engine.EnginePlatformDispatcher.instance.implicitView?.debugPhysicalSizeOverride =
           const ui.Size(800 * devicePixelRatio, 600 * devicePixelRatio);
       engine.scheduleFrameCallback = () {};
     }
@@ -51,8 +48,21 @@ void setUpUnitTests({
   });
 }
 
-Future<void> bootstrapAndRunApp() async {
+Future<void> bootstrapAndRunApp({bool withImplicitView = false}) async {
   final Completer<void> completer = Completer<void>();
   await ui_web.bootstrapEngine(runApp: () => completer.complete());
   await completer.future;
+  if (!withImplicitView) {
+    _disableImplicitView();
+  }
+}
+
+void _disableImplicitView() {
+  // TODO(mdebbar): Instead of disabling the implicit view, we should be able to
+  //                initialize tests without an implicit view to begin with.
+  //                https://github.com/flutter/flutter/issues/138906
+  final engine.EngineFlutterWindow? implicitView = engine.EnginePlatformDispatcher.instance.implicitView;
+  if (implicitView != null) {
+    engine.EnginePlatformDispatcher.instance.viewManager.disposeAndUnregisterView(implicitView.viewId);
+  }
 }

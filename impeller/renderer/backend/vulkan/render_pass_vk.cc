@@ -14,7 +14,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/vulkan/barrier_vk.h"
-#include "impeller/renderer/backend/vulkan/binding_helpers_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -106,8 +105,7 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   }
 
   // Always insert a barrier to transition to color attachment optimal.
-  if (current_layout != vk::ImageLayout::ePresentSrcKHR &&
-      current_layout != vk::ImageLayout::eUndefined) {
+  if (current_layout != vk::ImageLayout::ePresentSrcKHR) {
     // Note: This should incur a barrier.
     current_layout = vk::ImageLayout::eGeneral;
   }
@@ -361,18 +359,21 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   for (const auto& [_, color] : render_target_.GetColorAttachments()) {
     // The bind point doesn't matter here since that information is present in
     // the render pass.
-    attachments.emplace_back(TextureVK::Cast(*color.texture).GetImageView());
+    attachments.emplace_back(
+        TextureVK::Cast(*color.texture).GetRenderTargetView());
     if (color.resolve_texture) {
       attachments.emplace_back(
-          TextureVK::Cast(*color.resolve_texture).GetImageView());
+          TextureVK::Cast(*color.resolve_texture).GetRenderTargetView());
     }
   }
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
-    attachments.emplace_back(TextureVK::Cast(*depth->texture).GetImageView());
+    attachments.emplace_back(
+        TextureVK::Cast(*depth->texture).GetRenderTargetView());
   }
   if (auto stencil = render_target_.GetStencilAttachment();
       stencil.has_value()) {
-    attachments.emplace_back(TextureVK::Cast(*stencil->texture).GetImageView());
+    attachments.emplace_back(
+        TextureVK::Cast(*stencil->texture).GetRenderTargetView());
   }
 
   fb_info.setAttachments(attachments);
@@ -638,15 +639,17 @@ bool RenderPassVK::BindResource(ShaderStage stage,
                                 const SampledImageSlot& slot,
                                 const ShaderMetadata& metadata,
                                 std::shared_ptr<const Texture> texture,
-                                std::shared_ptr<const Sampler> sampler) {
+                                const std::unique_ptr<const Sampler>& sampler) {
   if (bound_buffer_offset_ >= kMaxBindings) {
+    return false;
+  }
+  if (!texture->IsValid() || !sampler) {
     return false;
   }
   const TextureVK& texture_vk = TextureVK::Cast(*texture);
   const SamplerVK& sampler_vk = SamplerVK::Cast(*sampler);
 
-  if (!command_buffer_->GetEncoder()->Track(texture) ||
-      !command_buffer_->GetEncoder()->Track(sampler_vk.GetSharedSampler())) {
+  if (!command_buffer_->GetEncoder()->Track(texture)) {
     return false;
   }
 

@@ -142,11 +142,25 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
 
   auto maybe_stencil = desc.GetFrontStencilAttachmentDescriptor();
+  auto maybe_depth = desc.GetDepthStencilAttachmentDescriptor();
+  FML_DCHECK(has_depth_stencil_attachments == maybe_depth.has_value())
+      << "Depth attachment doesn't match expected pipeline state. "
+         "has_depth_stencil_attachments="
+      << has_depth_stencil_attachments;
+  FML_DCHECK(has_depth_stencil_attachments == maybe_stencil.has_value())
+      << "Stencil attachment doesn't match expected pipeline state. "
+         "has_depth_stencil_attachments="
+      << has_depth_stencil_attachments;
   if (maybe_stencil.has_value()) {
     StencilAttachmentDescriptor stencil = maybe_stencil.value();
     stencil.stencil_compare = stencil_compare;
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
+  }
+  if (maybe_depth.has_value()) {
+    DepthAttachmentDescriptor depth = maybe_depth.value();
+    depth.depth_compare = CompareFunction::kAlways;
+    depth.depth_write_enabled = false;
   }
 
   desc.SetPrimitiveType(primitive_type);
@@ -186,7 +200,8 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())),
+      pending_command_buffers_(std::make_unique<PendingCommandBuffers>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -463,9 +478,10 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  if (!sub_command_buffer->EncodeAndSubmit(sub_renderpass)) {
+  if (!sub_renderpass->EncodeCommands()) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
+  RecordCommandBuffer(std::move(sub_command_buffer));
 
   return subpass_target;
 }
@@ -516,6 +532,17 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
       it++;
     }
   }
+}
+
+void ContentContext::RecordCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) const {
+  pending_command_buffers_->command_buffers.push_back(
+      std::move(command_buffer));
+}
+
+void ContentContext::FlushCommandBuffers() const {
+  auto buffers = std::move(pending_command_buffers_->command_buffers);
+  GetContext()->GetCommandQueue()->Submit(buffers);
 }
 
 }  // namespace impeller

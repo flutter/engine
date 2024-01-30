@@ -76,16 +76,16 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
 
 static std::shared_ptr<Contents> CreatePathContentsWithFilters(
     const Paint& paint,
-    Path path = {}) {
+    const Path& path) {
   std::shared_ptr<Geometry> geometry;
   switch (paint.style) {
     case Paint::Style::kFill:
-      geometry = Geometry::MakeFillPath(std::move(path));
+      geometry = Geometry::MakeFillPath(path);
       break;
     case Paint::Style::kStroke:
-      geometry = Geometry::MakeStrokePath(std::move(path), paint.stroke_width,
-                                          paint.stroke_miter, paint.stroke_cap,
-                                          paint.stroke_join);
+      geometry =
+          Geometry::MakeStrokePath(path, paint.stroke_width, paint.stroke_miter,
+                                   paint.stroke_cap, paint.stroke_join);
       break;
   }
 
@@ -283,12 +283,12 @@ void Canvas::RestoreToCount(size_t count) {
   }
 }
 
-void Canvas::DrawPath(Path path, const Paint& paint) {
+void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(CreatePathContentsWithFilters(paint, std::move(path)));
+  entity.SetContents(CreatePathContentsWithFilters(paint, path));
 
   GetCurrentPass().AddEntity(std::move(entity));
 }
@@ -304,7 +304,7 @@ void Canvas::DrawPaint(const Paint& paint) {
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
-                                     Scalar corner_radius,
+                                     Size corner_radius,
                                      const Paint& paint) {
   if (paint.color_source.GetType() != ColorSource::Type::kColor ||
       paint.style != Paint::Style::kFill) {
@@ -315,8 +315,8 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
     return false;
   }
-  // A blur sigma that is close to zero should not result in any shadow.
-  if (std::fabs(paint.mask_blur_descriptor->sigma.sigma) <= kEhCloseEnough) {
+  // A blur sigma that is not positive enough should not result in a blur.
+  if (paint.mask_blur_descriptor->sigma.sigma <= kEhCloseEnough) {
     return false;
   }
 
@@ -360,7 +360,7 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
     return;
   }
 
-  if (AttemptDrawBlurredRRect(rect, 0, paint)) {
+  if (AttemptDrawBlurredRRect(rect, {}, paint)) {
     return;
   }
 
@@ -387,7 +387,7 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
     return;
   }
 
-  if (AttemptDrawBlurredRRect(rect, 0, paint)) {
+  if (AttemptDrawBlurredRRect(rect, rect.GetSize() * 0.5f, paint)) {
     return;
   }
 
@@ -404,8 +404,7 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
 void Canvas::DrawRRect(const Rect& rect,
                        const Size& corner_radii,
                        const Paint& paint) {
-  if (corner_radii.IsSquare() &&
-      AttemptDrawBlurredRRect(rect, corner_radii.width, paint)) {
+  if (AttemptDrawBlurredRRect(rect, corner_radii, paint)) {
     return;
   }
 
@@ -426,7 +425,7 @@ void Canvas::DrawRRect(const Rect& rect,
                   .AddRoundedRect(rect, corner_radii)
                   .SetBounds(rect)
                   .TakePath();
-  DrawPath(std::move(path), paint);
+  DrawPath(path, paint);
 }
 
 void Canvas::DrawCircle(const Point& center,
@@ -434,8 +433,8 @@ void Canvas::DrawCircle(const Point& center,
                         const Paint& paint) {
   Size half_size(radius, radius);
   if (AttemptDrawBlurredRRect(
-          Rect::MakeOriginSize(center - half_size, half_size * 2), radius,
-          paint)) {
+          Rect::MakeOriginSize(center - half_size, half_size * 2),
+          {radius, radius}, paint)) {
     return;
   }
 
@@ -453,9 +452,9 @@ void Canvas::DrawCircle(const Point& center,
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
-void Canvas::ClipPath(Path path, Entity::ClipOperation clip_op) {
+void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
   auto bounds = path.GetBoundingBox();
-  ClipGeometry(Geometry::MakeFillPath(std::move(path)), clip_op);
+  ClipGeometry(Geometry::MakeFillPath(path), clip_op);
   if (clip_op == Entity::ClipOperation::kIntersect) {
     if (bounds.has_value()) {
       IntersectCulling(bounds.value());
