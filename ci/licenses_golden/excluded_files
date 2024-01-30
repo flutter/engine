@@ -106,6 +106,7 @@
 ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.mm
 ../../../flutter/fml/platform/darwin/weak_nsobject_arc_unittests.mm
 ../../../flutter/fml/platform/darwin/weak_nsobject_unittests.mm
+../../../flutter/fml/platform/fuchsia/log_interest_listener_unittests.cc
 ../../../flutter/fml/platform/win/file_win_unittests.cc
 ../../../flutter/fml/platform/win/wstring_conversion_unittests.cc
 ../../../flutter/fml/raster_thread_merger_unittests.cc
@@ -282,6 +283,7 @@
 ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
 ../../../flutter/shell/platform/android/flutter_shell_native_unittests.cc
 ../../../flutter/shell/platform/android/gradle.properties
+../../../flutter/shell/platform/android/image_lru_unittests.cc
 ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate_unittests.cc
 ../../../flutter/shell/platform/android/platform_view_android_unittests.cc
@@ -1977,6 +1979,7 @@
 ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_tables.go
 ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-nistz_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/ecdsa/ecdsa_test.cc
+../../../third_party/boringssl/src/crypto/fipsmodule/hkdf/hkdf_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/md5/md5_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/rand/ctrdrbg_test.cc
@@ -1984,7 +1987,6 @@
 ../../../third_party/boringssl/src/crypto/fipsmodule/rand/urandom_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/service_indicator/service_indicator_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/sha/sha_test.cc
-../../../third_party/boringssl/src/crypto/hkdf/hkdf_test.cc
 ../../../third_party/boringssl/src/crypto/hmac_extra/hmac_test.cc
 ../../../third_party/boringssl/src/crypto/hpke/hpke_test.cc
 ../../../third_party/boringssl/src/crypto/hpke/translate_test_vectors.py
@@ -2002,6 +2004,7 @@
 ../../../third_party/boringssl/src/crypto/pkcs8/test
 ../../../third_party/boringssl/src/crypto/poly1305/poly1305_test.cc
 ../../../third_party/boringssl/src/crypto/pool/pool_test.cc
+../../../third_party/boringssl/src/crypto/rand_extra/getentropy_test.cc
 ../../../third_party/boringssl/src/crypto/rand_extra/rand_test.cc
 ../../../third_party/boringssl/src/crypto/refcount_test.cc
 ../../../third_party/boringssl/src/crypto/rsa_extra/rsa_test.cc
@@ -2023,6 +2026,8 @@
 ../../../third_party/boringssl/src/decrepit/ripemd/ripemd_test.cc
 ../../../third_party/boringssl/src/decrepit/xts/xts_test.cc
 ../../../third_party/boringssl/src/fuzz
+../../../third_party/boringssl/src/pki/README.md
+../../../third_party/boringssl/src/pki/testdata
 ../../../third_party/boringssl/src/rust
 ../../../third_party/boringssl/src/sources.cmake
 ../../../third_party/boringssl/src/ssl/CMakeLists.txt
@@ -2268,7 +2273,6 @@
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_test.json
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.json
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.txt
-../../../third_party/boringssl/src/tool/CMakeLists.txt
 ../../../third_party/boringssl/src/util
 ../../../third_party/boringssl/win-aarch64/crypto/test
 ../../../third_party/boringssl/win-x86/crypto/test

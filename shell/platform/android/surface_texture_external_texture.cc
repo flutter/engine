@@ -37,7 +37,7 @@ void SurfaceTextureExternalTexture::OnGrContextCreated() {
 }
 
 void SurfaceTextureExternalTexture::MarkNewFrameAvailable() {
-  new_frame_ready_ = true;
+  // NOOP.
 }
 
 void SurfaceTextureExternalTexture::Paint(PaintContext& context,
@@ -48,27 +48,20 @@ void SurfaceTextureExternalTexture::Paint(PaintContext& context,
     return;
   }
   const bool should_process_frame =
-      (!freeze && new_frame_ready_) || dl_image_ == nullptr;
+      !freeze || ShouldUpdate() || dl_image_ == nullptr;
   if (should_process_frame) {
     ProcessFrame(context, bounds);
-    new_frame_ready_ = false;
   }
   FML_CHECK(state_ == AttachmentState::kAttached);
 
   if (dl_image_) {
     DlAutoCanvasRestore autoRestore(context.canvas, true);
 
-    // The incoming texture is vertically flipped, so we flip it back.
-    //
-    // OpenGL's coordinate system has Positive Y equivalent to up, while Skia's
-    // coordinate system (as well as Impeller's) has Negative Y equvalent to up.
-    {
-      // Move (translate) the origin to the bottom-left corner of the image.
-      context.canvas->Translate(bounds.x(), bounds.y() + bounds.height());
-
-      // No change in the X axis, but we need to flip the Y axis.
-      context.canvas->Scale(1, -1);
-    }
+    // The incoming texture is vertically flipped, so we flip it
+    // back. OpenGL's coordinate system has Positive Y equivalent to up, while
+    // Skia's coordinate system has Negative Y equvalent to up.
+    context.canvas->Translate(bounds.x(), bounds.y() + bounds.height());
+    context.canvas->Scale(bounds.width(), -bounds.height());
 
     if (!transform_.isIdentity()) {
       DlImageColorSource source(dl_image_, DlTileMode::kClamp,
@@ -79,8 +72,7 @@ void SurfaceTextureExternalTexture::Paint(PaintContext& context,
         paintWithShader = *context.paint;
       }
       paintWithShader.setColorSource(&source);
-      context.canvas->DrawRect(SkRect::MakeWH(bounds.width(), bounds.height()),
-                               paintWithShader);
+      context.canvas->DrawRect(SkRect::MakeWH(1, 1), paintWithShader);
     } else {
       context.canvas->DrawImage(dl_image_, {0, 0}, sampling, context.paint);
     }
@@ -109,6 +101,11 @@ void SurfaceTextureExternalTexture::Attach(int gl_tex_id) {
   jni_facade_->SurfaceTextureAttachToGLContext(
       fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_), gl_tex_id);
   state_ = AttachmentState::kAttached;
+}
+
+bool SurfaceTextureExternalTexture::ShouldUpdate() {
+  return jni_facade_->SurfaceTextureShouldUpdate(
+      fml::jni::ScopedJavaLocalRef<jobject>(surface_texture_));
 }
 
 void SurfaceTextureExternalTexture::Update() {
