@@ -9,14 +9,20 @@ import 'package:ui/src/engine/display.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/ui.dart' as ui show Display;
 
-/// Determines if high contrast is enabled using media query 'forced-colors: active' for Windows
+/// Provides a stream of `devicePixelRatio` changes for the given display.
+///
+/// Note that until the Window Management API is generally available, this class
+/// only monitors the global `devicePixelRatio` property, provided by the default
+/// [EngineFlutterDisplay.instance].
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/Window_Management_API
 class DisplayDprStream {
-  DisplayDprStream(ui.Display display) : _display = display, _currentDpr = display.devicePixelRatio {
+  DisplayDprStream(this._display) : _currentDpr = _display.devicePixelRatio {
     // Start listening to DPR changes.
     _subscribeToMediaQuery();
   }
 
-  /// A singleton instance of DisplayDprObserver.
+  /// A singleton instance of DisplayDprStream.
   static DisplayDprStream instance = DisplayDprStream(EngineFlutterDisplay.instance);
 
   // The display object that will provide the DPR information.
@@ -25,10 +31,10 @@ class DisplayDprStream {
   // Last reported value of DPR.
   double _currentDpr;
 
-  // Controls the [dprChanged] Stream.
+  // Controls the [dprChanged] broadcast Stream.
   final StreamController<double> _dprStreamController = StreamController<double>.broadcast();
 
-  // Listens for the `_currentDpr` to change.
+  // Provides a `change` event for the `_currentDpr`.
   late DomMediaQueryList _dprMediaQuery;
 
   // Creates the media query for the latest known DPR value, and adds a change listener to it.
