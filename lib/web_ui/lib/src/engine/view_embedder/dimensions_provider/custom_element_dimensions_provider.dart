@@ -4,7 +4,9 @@
 
 import 'dart:async';
 
+import 'package:ui/src/engine/display.dart';
 import 'package:ui/src/engine/dom.dart';
+import 'package:ui/src/engine/view_embedder/display_dpr_stream.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
@@ -18,6 +20,11 @@ import 'dimensions_provider.dart';
 class CustomElementDimensionsProvider extends DimensionsProvider {
   /// Creates a [CustomElementDimensionsProvider] from a [_hostElement].
   CustomElementDimensionsProvider(this._hostElement) {
+    // Send a resize event when the page DPR changes.
+    _dprChangeStreamSubscription = DisplayDprStream.instance.dprChanged.listen((_) {
+      _broadcastSize(computePhysicalSize());
+    });
+
     // Hook up a resize observer on the hostElement (if supported!).
     _hostElementResizeObserver = createDomResizeObserver((
       List<DomResizeObserverEntry> entries,
@@ -45,6 +52,7 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
 
   // Handle resize events
   late DomResizeObserver? _hostElementResizeObserver;
+  late StreamSubscription<double>? _dprChangeStreamSubscription;
   final StreamController<ui.Size> _onResizeStreamController =
       StreamController<ui.Size>.broadcast();
 
@@ -58,6 +66,8 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
     super.close();
     _hostElementResizeObserver?.disconnect();
     // ignore:unawaited_futures
+    _dprChangeStreamSubscription?.cancel();
+    // ignore:unawaited_futures
     _onResizeStreamController.close();
   }
 
@@ -66,8 +76,7 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
 
   @override
   ui.Size computePhysicalSize() {
-    final double devicePixelRatio = getDevicePixelRatio();
-
+    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
     return ui.Size(
       _hostElement.clientWidth * devicePixelRatio,
       _hostElement.clientHeight * devicePixelRatio,
