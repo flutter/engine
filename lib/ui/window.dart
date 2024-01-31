@@ -382,12 +382,12 @@ class FlutterView {
       return true;
     }());
     if (validRender) {
-      _render(scene as _NativeScene, size?.width ?? physicalSize.width, size?.height ?? physicalSize.height);
+      _render(viewId, scene as _NativeScene, size?.width ?? physicalSize.width, size?.height ?? physicalSize.height);
     }
   }
 
-  @Native<Void Function(Pointer<Void>, Double, Double)>(symbol: 'PlatformConfigurationNativeApi::Render')
-  external static void _render(_NativeScene scene, double width, double height);
+  @Native<Void Function(Int64, Pointer<Void>, Double, Double)>(symbol: 'PlatformConfigurationNativeApi::Render')
+  external static void _render(int viewId, _NativeScene scene, double width, double height);
 
   /// Change the retained semantics data about this [FlutterView].
   ///
