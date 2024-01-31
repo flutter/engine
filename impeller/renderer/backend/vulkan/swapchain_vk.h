@@ -47,7 +47,9 @@ class SwapchainVK {
   ISize size_;
   const bool enable_msaa_;
 
-  SwapchainVK(std::shared_ptr<SwapchainImplVK> impl, const ISize& size, bool enable_msaa);
+  SwapchainVK(std::shared_ptr<SwapchainImplVK> impl,
+              const ISize& size,
+              bool enable_msaa);
 
   SwapchainVK(const SwapchainVK&) = delete;
 
