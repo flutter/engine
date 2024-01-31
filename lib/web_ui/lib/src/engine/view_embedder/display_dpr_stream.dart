@@ -11,13 +11,16 @@ import 'package:ui/ui.dart' as ui show Display;
 
 /// Determines if high contrast is enabled using media query 'forced-colors: active' for Windows
 class DisplayDprStream {
-  DisplayDprStream(ui.Display display) : _currentDpr = display.devicePixelRatio {
+  DisplayDprStream(ui.Display display) : _display = display, _currentDpr = display.devicePixelRatio {
     // Start listening to DPR changes.
     _subscribeToMediaQuery();
   }
 
   /// A singleton instance of DisplayDprObserver.
   static DisplayDprStream instance = DisplayDprStream(EngineFlutterDisplay.instance);
+
+  // The display object that will provide the DPR information.
+  final ui.Display _display;
 
   // Last reported value of DPR.
   double _currentDpr;
@@ -34,17 +37,23 @@ class DisplayDprStream {
     _dprMediaQuery.addEventListenerWithOptions(
       'change',
       createDomEventListener(_onDprMediaQueryChange),
-      <String, Object>{
+      <String, Object> {
+        // We only listen `once` because this event only triggers once when the
+        // DPR changes from `_currentDpr`. Once that happens, we need a new
+        // `_dprMediaQuery` that is watching the new `_currentDpr`.
+        //
+        // By using `once`, we don't need to worry about detaching the event
+        // listener from the old mediaQuery after we're done with it.
         'once': true,
         'passive': true,
       });
   }
 
-  // Handler of the 'change' event.
+  // Handler of the _dprMediaQuery 'change' event.
   //
   // This calls subscribe again because events are listened to with `once: true`.
   JSVoid _onDprMediaQueryChange(DomEvent _) {
-    _currentDpr = EngineFlutterDisplay.instance.devicePixelRatio;
+    _currentDpr = _display.devicePixelRatio;
     _dprStreamController.add(_currentDpr);
     // Re-subscribe...
     _subscribeToMediaQuery();
