@@ -315,7 +315,8 @@ void Manager::ResizeWindowSurface(HWND hwnd, size_t width, size_t height) {
       return;
     }
 
-    if (!surface_->SetVSyncEnabled(existing_vsync)) {
+    if (!surface_->MakeCurrent() ||
+        !surface_->SetVSyncEnabled(existing_vsync)) {
       // Surfaces block until the v-blank by default.
       // Failing to update the vsync might result in unnecessary blocking.
       // This regresses performance but not correctness.
