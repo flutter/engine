@@ -146,14 +146,16 @@ std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
     const ISize& size,
+    bool enable_msaa,
     vk::SwapchainKHR old_swapchain) {
-  return std::shared_ptr<SwapchainImplVK>(
-      new SwapchainImplVK(context, std::move(surface), size, old_swapchain));
+  return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
+      context, std::move(surface), size, enable_msaa, old_swapchain));
 }
 
 SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
                                  vk::UniqueSurfaceKHR surface,
                                  const ISize& size,
+                                 bool enable_msaa,
                                  vk::SwapchainKHR old_swapchain) {
   if (!context) {
     VALIDATION_LOG << "Cannot create a swapchain without a context.";
@@ -300,6 +302,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
   size_ = size;
+  enable_msaa_ = enable_msaa;
   is_valid_ = true;
 }
 
@@ -405,7 +408,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
           return false;
         }
         return swapchain->Present(image, image_index);
-      }  // swap callback
+      },            // swap callback
+      enable_msaa_  //
       )};
 }
 

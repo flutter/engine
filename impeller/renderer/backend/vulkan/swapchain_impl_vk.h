@@ -35,6 +35,7 @@ class SwapchainImplVK final
       const std::shared_ptr<Context>& context,
       vk::UniqueSurfaceKHR surface,
       const ISize& size,
+      bool enable_msaa = true,
       vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
   ~SwapchainImplVK();
@@ -72,11 +73,13 @@ class SwapchainImplVK final
   std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers_;
   size_t current_frame_ = 0u;
   ISize size_;
+  bool enable_msaa_ = true;
   bool is_valid_ = false;
 
   SwapchainImplVK(const std::shared_ptr<Context>& context,
                   vk::UniqueSurfaceKHR surface,
                   const ISize& size,
+                  bool enable_msaa,
                   vk::SwapchainKHR old_swapchain);
 
   bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);

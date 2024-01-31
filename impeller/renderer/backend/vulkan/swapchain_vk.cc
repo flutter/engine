@@ -13,18 +13,22 @@ namespace impeller {
 std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
-    const ISize& size) {
-  auto impl = SwapchainImplVK::Create(context, std::move(surface), size);
+    const ISize& size,
+    bool enable_msaa) {
+  auto impl =
+      SwapchainImplVK::Create(context, std::move(surface), size, enable_msaa);
   if (!impl || !impl->IsValid()) {
     VALIDATION_LOG << "Failed to create SwapchainVK implementation.";
     return nullptr;
   }
-  return std::shared_ptr<SwapchainVK>(new SwapchainVK(std::move(impl), size));
+  return std::shared_ptr<SwapchainVK>(
+      new SwapchainVK(std::move(impl), size, enable_msaa));
 }
 
 SwapchainVK::SwapchainVK(std::shared_ptr<SwapchainImplVK> impl,
-                         const ISize& size)
-    : impl_(std::move(impl)), size_(size) {}
+                         const ISize& size,
+                         bool enable_msaa)
+    : impl_(std::move(impl)), size_(size), enable_msaa_(enable_msaa) {}
 
 SwapchainVK::~SwapchainVK() = default;
 
@@ -60,6 +64,7 @@ std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
   auto new_impl = SwapchainImplVK::Create(context,             //
                                           std::move(surface),  //
                                           size_,               //
+                                          enable_msaa_,        //
                                           *old_swapchain       //
   );
   if (!new_impl || !new_impl->IsValid()) {
