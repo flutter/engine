@@ -372,18 +372,7 @@ class FlutterView {
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
   void render(Scene scene, {Size? size}) {
-    // Duplicated calls or calls outside of onBeginFrame/onDrawFrame (indicated
-    // by _debugRenderedViews being null) are ignored. See _debugRenderedViews.
-    // TODO(dkwingsmt): We should change this skip into an assertion.
-    // https://github.com/flutter/flutter/issues/137073
-    bool validRender = true;
-    assert(() {
-      validRender = platformDispatcher._debugRenderedViews?.add(this) ?? false;
-      return true;
-    }());
-    if (validRender) {
-      _render(viewId, scene as _NativeScene, size?.width ?? physicalSize.width, size?.height ?? physicalSize.height);
-    }
+    _render(viewId, scene as _NativeScene, size?.width ?? physicalSize.width, size?.height ?? physicalSize.height);
   }
 
   @Native<Void Function(Int64, Pointer<Void>, Double, Double)>(symbol: 'PlatformConfigurationNativeApi::Render')
