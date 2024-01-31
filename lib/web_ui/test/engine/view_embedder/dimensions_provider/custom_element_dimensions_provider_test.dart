@@ -128,6 +128,28 @@ void doTests() {
       expect(await provider.onResize.first, const ui.Size(300, 300));
     });
 
+    test('funnels DPR change events too', () async {
+      // Override the source of DPR events...
+      final DomEventTarget eventTarget = createDomElement('div');
+      DisplayDprStream.instance = DisplayDprStream(
+        EngineFlutterDisplay.instance,
+        overrides: DebugDisplayDprStreamOverrides(
+          getMediaQuery: (_) => eventTarget,
+        )
+      );
+      final CustomElementDimensionsProvider provider = CustomElementDimensionsProvider(sizeSource);
+
+      // The size that will be emitted by the provider eventually
+      final Future<ui.Size> newSize = provider.onResize.first;
+
+      // Set the mock DPR value
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(3.2);
+      // Simulate the mediaQuery change event from the browser
+      eventTarget.dispatchEvent(createDomEvent('Event', 'change'));
+
+      expect(await newSize, const ui.Size(10, 10) * 3.2);
+    });
+
     test('closed by onHotRestart', () async {
       // Register an onDone listener for the stream
       final Completer<bool> completer = Completer<bool>();
