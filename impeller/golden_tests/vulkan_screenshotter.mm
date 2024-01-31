@@ -59,7 +59,9 @@ std::unique_ptr<Screenshot> ReadTexture(
   CGColorSpacePtr color_space(CGColorSpaceCreateDeviceRGB(),
                               &CGColorSpaceRelease);
   CGBitmapInfo bitmap_info =
-      kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little;
+      texture->GetTextureDescriptor().format == PixelFormat::kB8G8R8A8UNormInt
+          ? kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little
+          : kCGImageAlphaPremultipliedLast;
   CGContextPtr context(
       CGBitmapContextCreate(
           device_buffer->OnGetContents(), texture->GetSize().width,
