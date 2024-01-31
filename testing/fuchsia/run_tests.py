@@ -82,8 +82,8 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'),
             'r') as file:
     tests = yaml.safe_load(file)
-  # TODO(zijiehe-google-com): Run tests with multiple packages or with extra
-  # test arguments, https://github.com/flutter/flutter/issues/140179.
+  # TODO(zijiehe-google-com): Run tests with extra test arguments,
+  # https://github.com/flutter/flutter/issues/140179.
   tests = list(
       filter(
           lambda test: test['test_command'].startswith('test run ') and test[
@@ -92,28 +92,33 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   )
   tests = list(
       filter(
-          lambda test: 'package' in test and test['package'].endswith('-0.far'),
-          tests
-      )
-  )
-  tests = list(
-      filter(
           lambda test: not 'variant' in test or VARIANT == test['variant'],
           tests
       )
   )
+  packages = []
   for test in tests:
-    original_package = test['package']
-    test['package'] = os.path.join(
-        OUT_DIR, test['package'].replace('-0.far', '.far')
-    )
-    try:
-      os.remove(test['package'])
-    except FileNotFoundError:
-      pass
-    os.symlink(original_package, test['package'])
+    if 'package' in test:
+      packages.append(test['package'])
+    else:
+      assert 'packages' in test, 'Expect either one package or a list of packages'
+      packages.extend(test['packages'])
+  resolved_packages = []
+  for package in list(dict.fromkeys(packages)):
+    if package.endswith('-0.far'):
+      # Make a symbolic link to match the name of the package itself without the -0.far suffix.
+      original_package = package
+      package = os.path.join(OUT_DIR, package.replace('-0.far', '.far'))
+      try:
+        os.remove(package)
+      except FileNotFoundError:
+        pass
+      os.symlink(original_package, package)
+      resolved_packages.append(package)
+    else:
+      resolved_packages.append(os.path.join(OUT_DIR, package))
   return BundledTestRunner(
-      target_id, [test['package'] for test in tests],
+      target_id, list(dict.fromkeys(resolved_packages)),
       [test['test_command'][len('test run '):] for test in tests], log_dir
   )
 
