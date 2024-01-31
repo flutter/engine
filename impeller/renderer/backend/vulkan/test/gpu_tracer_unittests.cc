@@ -15,6 +15,18 @@ namespace impeller {
 namespace testing {
 
 #ifdef IMPELLER_DEBUG
+TEST(GPUTracerVK, CanBeDisabled) {
+  auto const context =
+      MockVulkanContextBuilder()
+          .SetSettingsCallback([](ContextVK::Settings& settings) {
+            settings.enable_gpu_tracing = false;
+          })
+          .Build();
+  auto tracer = context->GetGPUTracer();
+
+  ASSERT_FALSE(tracer->IsEnabled());
+}
+
 TEST(GPUTracerVK, CanTraceCmdBuffer) {
   auto const context = MockVulkanContextBuilder().Build();
   auto tracer = context->GetGPUTracer();
