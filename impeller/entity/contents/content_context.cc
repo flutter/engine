@@ -15,6 +15,7 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/texture_mipmap.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -200,7 +201,8 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())),
+      pending_command_buffers_(std::make_unique<PendingCommandBuffers>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -429,20 +431,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
     ISize texture_size,
     const SubpassCallback& subpass_callback,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    int32_t mip_count) const {
   const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
-        SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
-        SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
     );
@@ -477,9 +480,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  if (!sub_command_buffer->EncodeAndSubmit(sub_renderpass)) {
+  if (!sub_renderpass->EncodeCommands()) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
+
+  const std::shared_ptr<Texture>& target_texture =
+      subpass_target.GetRenderTargetTexture();
+  if (target_texture->GetMipCount() > 1) {
+    fml::Status mipmap_status =
+        AddMipmapGeneration(sub_command_buffer, context, target_texture);
+    if (!mipmap_status.ok()) {
+      return mipmap_status;
+    }
+  }
+
+  RecordCommandBuffer(std::move(sub_command_buffer));
 
   return subpass_target;
 }
@@ -530,6 +545,26 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
       it++;
     }
   }
+}
+
+void ContentContext::RecordCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) const {
+  // Metal systems seem to have a limit on the number of command buffers that
+  // can be created concurrently, which appears to be in the range of 50 or so
+  // command buffers. When this limit is hit, creation of further command
+  // buffers will fail. To work around this, we regularly flush the
+  // command buffers on the metal backend.
+  if (GetContext()->GetBackendType() == Context::BackendType::kMetal) {
+    GetContext()->GetCommandQueue()->Submit({command_buffer});
+  } else {
+    pending_command_buffers_->command_buffers.push_back(
+        std::move(command_buffer));
+  }
+}
+
+void ContentContext::FlushCommandBuffers() const {
+  auto buffers = std::move(pending_command_buffers_->command_buffers);
+  GetContext()->GetCommandQueue()->Submit(buffers);
 }
 
 }  // namespace impeller
