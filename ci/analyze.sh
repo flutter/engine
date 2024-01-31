@@ -43,4 +43,4 @@ if [[ ! -f "$DART" ]]; then
 fi
 
 # Invoke the implementation half of this analyze script.
-./analyze_impl.sh --dart="$DART" --flutter-dir="$FLUTTER_DIR"
+"$FLUTTER_DIR/ci/analyze_impl.sh" --dart="$DART" --flutter-dir="$FLUTTER_DIR"
