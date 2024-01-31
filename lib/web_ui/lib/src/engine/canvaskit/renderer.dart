@@ -26,26 +26,6 @@ enum CanvasKitVariant {
   chromium,
 }
 
-/// Encapsulates a request to render a [ui.Scene]. Contains the scene to render,
-/// the view to render it into, and a [Completer] which completes when the
-/// scene has been rendered.
-typedef _RenderRequest = ({
-  ui.Scene scene,
-  ui.FlutterView view,
-  Completer<void> completer,
-});
-
-/// A per-view queue of render requests. Only contains the current render
-/// request and the next render request. If a new render request is made before
-/// the current request is complete, then the next render request is replaced
-/// with the most recently requested render and the other one is dropped.
-class _RenderQueue {
-  _RenderQueue();
-
-  _RenderRequest? current;
-  _RenderRequest? next;
-}
-
 class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
   static late CanvasKitRenderer _instance;
@@ -434,34 +414,33 @@ class CanvasKitRenderer implements Renderer {
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
     CkParagraphBuilder(style);
 
-  final Map<ui.FlutterView, _RenderQueue> _renderQueues =
-      <ui.FlutterView, _RenderQueue>{};
-
   // TODO(harryterkelsen): Merge this logic with the async logic in
   // [EngineScene], https://github.com/flutter/flutter/issues/142072.
   @override
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
-    _renderQueues.putIfAbsent(view, () => _RenderQueue());
-    final _RenderQueue renderQueue = _renderQueues[view]!;
+    assert(_rasterizers.containsKey(view.viewId),
+        "Unable to render to a view which hasn't been registered");
+    final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;
+    final RenderQueue renderQueue = rasterizer.queue;
     if (renderQueue.current != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
       renderQueue.next?.completer.complete();
       final Completer<void> completer = Completer<void>();
-      renderQueue.next = (scene: scene, view: view, completer: completer);
+      renderQueue.next = (scene: scene, completer: completer);
       return completer.future;
     }
     final Completer<void> completer = Completer<void>();
-    renderQueue.current = (scene: scene, view: view, completer: completer);
-    unawaited(_kickRenderLoop(view));
+    renderQueue.current = (scene: scene, completer: completer);
+    unawaited(_kickRenderLoop(rasterizer));
     return completer.future;
   }
 
-  Future<void> _kickRenderLoop(ui.FlutterView view) async {
-    final _RenderQueue renderQueue = _renderQueues[view]!;
-    final _RenderRequest current = renderQueue.current!;
+  Future<void> _kickRenderLoop(ViewRasterizer rasterizer) async {
+    final RenderQueue renderQueue = rasterizer.queue;
+    final RenderRequest current = renderQueue.current!;
     try {
-      await _renderScene(current.scene, current.view);
+      await _renderScene(current.scene, rasterizer);
       current.completer.complete();
     } catch (error, stackTrace) {
       current.completer.completeError(error, stackTrace);
@@ -471,11 +450,11 @@ class CanvasKitRenderer implements Renderer {
     if (renderQueue.current == null) {
       return;
     } else {
-      return _kickRenderLoop(view);
+      return _kickRenderLoop(rasterizer);
     }
   }
 
-  Future<void> _renderScene(ui.Scene scene, ui.FlutterView view) async {
+  Future<void> _renderScene(ui.Scene scene, ViewRasterizer rasterizer) async {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
@@ -485,10 +464,6 @@ class CanvasKitRenderer implements Renderer {
     // here are CanvasKit-only.
     frameTimingsOnBuildFinish();
     frameTimingsOnRasterStart();
-
-    assert(_rasterizers.containsKey(view.viewId),
-        "Unable to render to a view which hasn't been registered");
-    final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;
 
     await rasterizer.draw((scene as LayerScene).layerTree);
     frameTimingsOnRasterFinish();
