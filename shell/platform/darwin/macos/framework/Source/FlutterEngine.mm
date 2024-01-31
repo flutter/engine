@@ -834,13 +834,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     CGDirectDisplayID displayID =
         static_cast<CGDirectDisplayID>([screen.deviceDescription[@"NSScreenNumber"] integerValue]);
 
+    double devicePixelRatio = screen.backingScaleFactor;
     FlutterEngineDisplay display;
     display.struct_size = sizeof(display);
     display.display_id = displayID;
     display.single_display = false;
-    display.width = static_cast<size_t>(screen.frame.size.width);
-    display.height = static_cast<size_t>(screen.frame.size.height);
-    display.device_pixel_ratio = screen.backingScaleFactor;
+    display.width = static_cast<size_t>(screen.frame.size.width) * devicePixelRatio;
+    display.height = static_cast<size_t>(screen.frame.size.height) * devicePixelRatio;
+    display.device_pixel_ratio = devicePixelRatio;
 
     CVDisplayLinkRef displayLinkRef = nil;
     CVReturn error = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLinkRef);
