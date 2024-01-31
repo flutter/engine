@@ -449,11 +449,10 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void PlatformConfigurationNativeApi::Render(Scene* scene,
-                                            double width,
-                                            double height) {
-  // TODO(dkwingsmt): Currently only supports a single window.
-  int64_t view_id = kFlutterImplicitViewId;
+void PlatformConfigurationNativeApi::RenderView(int64_t view_id,
+                                                Scene* scene,
+                                                double width,
+                                                double height) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->Render(
       view_id, scene, width, height);
