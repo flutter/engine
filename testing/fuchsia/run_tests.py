@@ -90,6 +90,8 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
               'test_command'].endswith('.cm'), tests
       )
   )
+  # TODO(zijiehe-google-com): Run tests with dart aot,
+  # https://github.com/flutter/flutter/issues/140179.
   tests = list(
       filter(
           lambda test: not (
