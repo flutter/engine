@@ -36,7 +36,7 @@
                         },
                         {
                             "dependency": "avd_cipd_version",
-                            "version": "SjJFjwg1rz5dh2xdLMSPqU6MF4ipvATxpiQ_gCOyTOgC"
+                            "version": "build_id:8759428741582061553"
                         }
                     ],
                     "contexts": [
@@ -60,7 +60,7 @@
                         },
                         {
                             "dependency": "avd_cipd_version",
-                            "version": "SjJFjwg1rz5dh2xdLMSPqU6MF4ipvATxpiQ_gCOyTOgC"
+                            "version": "build_id:8759428741582061553"
                         }
                     ],
                     "contexts": [
