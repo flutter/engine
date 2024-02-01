@@ -25,6 +25,7 @@
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -162,8 +163,12 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
         encoder->Track(attachment.resolve_texture);
         return true;
       });
-  auto maybe_render_pass = TextureVK::Cast(*resolve_image_vk_).GetRenderPass();
-  auto maybe_framebuffer = TextureVK::Cast(*resolve_image_vk_).GetFramebuffer();
+  SharedHandleVK<vk::RenderPass> maybe_render_pass;
+  SharedHandleVK<vk::Framebuffer> maybe_framebuffer;
+  if (resolve_image_vk_) {
+    maybe_render_pass = TextureVK::Cast(*resolve_image_vk_).GetRenderPass();
+    maybe_framebuffer = TextureVK::Cast(*resolve_image_vk_).GetFramebuffer();
+  }
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
@@ -187,8 +192,10 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
     is_valid_ = false;
     return;
   }
-  TextureVK::Cast(*resolve_image_vk_).SetFramebuffer(framebuffer);
-  TextureVK::Cast(*resolve_image_vk_).SetRenderPass(render_pass_);
+  if (resolve_image_vk_) {
+    TextureVK::Cast(*resolve_image_vk_).SetFramebuffer(framebuffer);
+    TextureVK::Cast(*resolve_image_vk_).SetRenderPass(render_pass_);
+  }
 
   auto clear_values = GetVKClearValues(render_target_);
 
