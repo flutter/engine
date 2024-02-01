@@ -170,15 +170,20 @@ void main(List<String> args) async {
     });
 
     await step('Running instrumented tests...', () async {
-      final int exitCode = await pm.runAndForward(<String>[
+      final (int exitCode, StringBuffer out) = await pm.runAndCapture(<String>[
         adb.path,
         'shell',
         'am',
         'instrument',
-        '-w', 'dev.flutter.scenarios.test/dev.flutter.TestRunner',
+        '-w',
+        'dev.flutter.scenarios.test/dev.flutter.TestRunner',
       ]);
       if (exitCode != 0) {
-        panic(<String>['could not install test apk']);
+        panic(<String>['instrumented tests failed to run']);
+      }
+      if (out.toString().contains('FAILURES!!!')) {
+        stdout.write(out);
+        panic(<String>['1 or more tests failed']);
       }
     });
   } finally {
