@@ -18,7 +18,7 @@ import os
 import sys
 
 from subprocess import CompletedProcess
-from typing import List
+from typing import List, Set
 
 # The import is coming from vpython wheel and pylint cannot find it.
 import yaml  # pylint: disable=import-error
@@ -55,10 +55,10 @@ class BundledTestRunner(TestRunner):
 
   # private, use bundled_test_runner_of function instead.
   def __init__(
-      self, target_id: str, package_deps: List[str], tests: List[str],
+      self, target_id: str, package_deps: Set[str], tests: List[str],
       logs_dir: str
   ):
-    super().__init__(OUT_DIR, [], None, target_id, package_deps)
+    super().__init__(OUT_DIR, [], None, target_id, list(package_deps))
     self.tests = tests
     self.logs_dir = logs_dir
 
@@ -94,7 +94,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   # https://github.com/flutter/flutter/issues/140179.
   tests = list(
       filter(
-          lambda test: not 'run_with_dart_aot' in test or test[
+          lambda test: 'run_with_dart_aot' not in test or test[
               'run_with_dart_aot'] != 'true', tests
       )
   )
@@ -113,7 +113,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
              'Expect either one package or a list of packages'
       packages.extend(test['packages'])
   resolved_packages = []
-  for package in list(dict.fromkeys(packages)):
+  for package in set(packages):
     if package.endswith('-0.far'):
       # Make a symbolic link to match the name of the package itself without the
       # '-0.far' suffix.
@@ -128,7 +128,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
     else:
       resolved_packages.append(os.path.join(OUT_DIR, package))
   return BundledTestRunner(
-      target_id, list(dict.fromkeys(resolved_packages)),
+      target_id, set(resolved_packages),
       [test['test_command'][len('test run '):] for test in tests], log_dir
   )
 
