@@ -126,9 +126,24 @@ void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
 void FlutterDesktopEngineRegisterPlatformView(
     FlutterDesktopEngineRef,
     const char* view_type,
-    Win32PlatformViewFactory factory) {
+    PlatformViewCreationContext factory) {
   if (s_stub_implementation) {
     s_stub_implementation->EngineRegisterPlatformView(view_type, factory);
+  }
+}
+
+int FlutterDesktopEngineQueryFocusReason(FlutterDesktopEngineRef engine) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->EngineQueryFocusReason();
+  }
+  return 0;
+}
+
+void FlutterDesktopEngineSendTabOut(FlutterDesktopEngineRef engine,
+                                    HWND hwnd,
+                                    int reason) {
+  if (s_stub_implementation) {
+    s_stub_implementation->EngineSendTabOut(hwnd, reason);
   }
 }
 

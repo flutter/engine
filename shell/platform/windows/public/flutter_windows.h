@@ -207,13 +207,26 @@ typedef struct {
   HWND parent;
   int64_t id;
   const char* view_type;
+  void* user_data;
 } PlatformViewCreationParams;
 typedef HWND (*Win32PlatformViewFactory)(const PlatformViewCreationParams*);
+
+typedef struct {
+  Win32PlatformViewFactory factory;
+  void* user_data;
+} PlatformViewCreationContext;
 
 FLUTTER_EXPORT void FlutterDesktopEngineRegisterPlatformView(
     FlutterDesktopEngineRef,
     const char* view_type,
-    Win32PlatformViewFactory factory);
+    PlatformViewCreationContext factory);
+
+FLUTTER_EXPORT int FlutterDesktopEngineQueryFocusReason(
+    FlutterDesktopEngineRef);
+
+FLUTTER_EXPORT void FlutterDesktopEngineSendTabOut(FlutterDesktopEngineRef,
+                                                   HWND,
+                                                   int);
 
 // ========== View ==========
 

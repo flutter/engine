@@ -114,10 +114,24 @@ std::optional<LRESULT> FlutterEngine::ProcessExternalWindowMessage(
 }
 
 void FlutterEngine::RegisterPlatformViewType(const std::string& view_type,
-                                             Win32PlatformViewFactory factory) {
+                                             Win32PlatformViewFactory factory,
+                                             void* user_data) {
   if (engine_) {
-    FlutterDesktopEngineRegisterPlatformView(engine_, view_type.data(),
-                                             factory);
+    PlatformViewCreationContext ctx = {factory, user_data};
+    FlutterDesktopEngineRegisterPlatformView(engine_, view_type.data(), ctx);
+  }
+}
+
+int FlutterEngine::QueryFocusReason() {
+  if (engine_) {
+    return FlutterDesktopEngineQueryFocusReason(engine_);
+  }
+  return 0;
+}
+
+void FlutterEngine::SendTabOut(HWND hwnd, int reason) {
+  if (engine_) {
+    return FlutterDesktopEngineSendTabOut(engine_, hwnd, reason);
   }
 }
 

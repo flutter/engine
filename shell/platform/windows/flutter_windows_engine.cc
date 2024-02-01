@@ -245,6 +245,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(
           auto id = std::get<int32_t>(args.find(EncodableValue("id"))->second);
           auto focus =
               std::get<bool>(args.find(EncodableValue("focus"))->second);
+          pv_reason_ = std::get<int>(args.find(EncodableValue("dir"))->second);
           auto itr = platform_views_.find(id);
           if (itr == platform_views_.end()) {
             result->Error("Invalid ID", "Platform view not found");
@@ -986,7 +987,7 @@ void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
 // Platform view methods:
 void FlutterWindowsEngine::RegisterPlatformViewType(
     const std::string& type,
-    Win32PlatformViewFactory factory) {
+    PlatformViewCreationContext factory) {
   platform_view_types_.insert({type, factory});
 }
 
@@ -998,7 +999,8 @@ void FlutterWindowsEngine::CreatePlatformView(PlatformViewCreationParams args) {
     FML_LOG(ERROR) << "View type not registered";
     return;
   }
-  pending_platform_views_.insert({args.id, {itr->second, args}});
+  args.user_data = itr->second.user_data;
+  pending_platform_views_.insert({args.id, {itr->second.factory, args}});
   /*task_runner_->PostTask([this, itr, args]() {
     HWND platform_view = itr->second(&args);
     platform_views_.insert({args.id, platform_view});
@@ -1016,6 +1018,22 @@ void FlutterWindowsEngine::OnLoseFocus(HWND new_focus) {
       return;
     }
   }
+}
+
+void FlutterWindowsEngine::SendTabOut(HWND pv, int reason) {
+  for (auto itr : platform_views_) {
+    HWND hwnd = itr.second;
+    if (hwnd == pv) {
+      auto id = itr.first;
+      FML_LOG(ERROR) << "Sending tabOut for " << id;
+      platform_view_channel_->InvokeMethod(
+          "tabOut", std::make_unique<EncodableValue>(EncodableMap{
+                        {EncodableValue("id"), EncodableValue(id)},
+                        {EncodableValue("reason"), EncodableValue(reason)}}));
+      return;
+    }
+  }
+  FML_LOG(ERROR) << "No platform found for HWND";
 }
 
 }  // namespace flutter

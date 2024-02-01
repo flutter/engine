@@ -70,7 +70,12 @@ class StubFlutterWindowsApi {
                                           void* user_data) {}
 
   virtual void EngineRegisterPlatformView(const char* view_type,
-                                          Win32PlatformViewFactory factory) {}
+                                          PlatformViewCreationContext factory) {
+  }
+
+  virtual int EngineQueryFocusReason() { return 0; }
+
+  virtual void EngineSendTabOut(HWND hwnd, int reason) {}
 
   // Called for FlutterDesktopEngineReloadSystemFonts.
   virtual void EngineReloadSystemFonts() {}

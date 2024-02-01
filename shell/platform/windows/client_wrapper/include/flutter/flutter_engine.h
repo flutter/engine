@@ -95,7 +95,12 @@ class FlutterEngine : public PluginRegistry {
                                                       LPARAM lparam);
 
   void RegisterPlatformViewType(const std::string& view_type,
-                                Win32PlatformViewFactory factory);
+                                Win32PlatformViewFactory factory,
+                                void* user_data);
+
+  int QueryFocusReason();
+
+  void SendTabOut(HWND hwnd, int reason);
 
  private:
   // For access to RelinquishEngine.
