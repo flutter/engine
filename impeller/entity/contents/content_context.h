@@ -750,6 +750,10 @@ class ContentContext {
     return uv_compute_pipelines_;
   }
 
+  /// @brief Populate variants of the initial shader set that are likely to be
+  ///        used on the first few frames of an application.
+  void CreateDeferredVariants();
+
   std::shared_ptr<Context> GetContext() const;
 
   const Capabilities& GetDeviceCapabilities() const;
@@ -1029,6 +1033,7 @@ class ContentContext {
       return nullptr;
     }
 
+    FML_LOG(ERROR) << "Create! !";
     auto variant_future = pipeline->CreateVariant(
         [&opts, variants_count =
                     container.GetPipelineCount()](PipelineDescriptor& desc) {

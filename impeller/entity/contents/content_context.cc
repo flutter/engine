@@ -11,12 +11,14 @@
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/texture_mipmap.h"
 #include "impeller/tessellator/tessellator.h"
+#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/typographer_context.h"
 
 namespace impeller {
@@ -454,8 +456,43 @@ ContentContext::ContentContext(
       std::move(clip_color_attachments));
   clip_pipelines_.SetDefault(options, std::make_unique<ClipPipeline>(
                                           *context_, clip_pipeline_descriptor));
-
   is_valid_ = true;
+  CreateDeferredVariants();
+}
+
+// Attempt to populate pipeline variants that are very likely to be used
+// on or near the first frame of the application.
+void ContentContext::CreateDeferredVariants() {
+  auto options = ContentContextOptions{
+      .sample_count = SampleCount::kCount4,
+      .color_attachment_pixel_format =
+          context_->GetCapabilities()->GetDefaultColorFormat()};
+
+  for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
+    for (const auto geometry :
+         {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
+      options.blend_mode = mode;
+      options.primitive_type = geometry;
+      GetSolidFillPipeline(options);
+      if (context_->GetCapabilities()->SupportsSSBO()) {
+        GetLinearGradientSSBOFillPipeline(options);
+        GetRadialGradientSSBOFillPipeline(options);
+        GetSweepGradientSSBOFillPipeline(options);
+        GetConicalGradientSSBOFillPipeline(options);
+        GetTexturePipeline(options);
+      }
+    }
+  }
+
+  options.blend_mode = BlendMode::kDestination;
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  for (const auto stencil_mode :
+       {ContentContextOptions::StencilMode::kLegacyClipIncrement,
+        ContentContextOptions::StencilMode::kLegacyClipDecrement,
+        ContentContextOptions::StencilMode::kLegacyClipRestore}) {
+    options.stencil_mode = stencil_mode;
+    GetClipPipeline(options);
+  }
 }
 
 ContentContext::~ContentContext() = default;
