@@ -65,20 +65,14 @@ class TextureSourceVK {
   /// Whether or not this is a swapchain image.
   virtual bool IsSwapchainImage() const = 0;
 
-  void SetFramebuffer(
-      const SharedHandleVK<vk::Framebuffer>& framebuffer) const {
-    framebuffer_ = framebuffer;
-  }
+  // These methods should only be used by render_pass_vk.h
+  void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer) const;
 
-  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass) const {
-    renderpass_ = renderpass;
-  }
+  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass) const;
 
-  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const {
-    return framebuffer_;
-  }
+  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
 
-  SharedHandleVK<vk::RenderPass> GetRenderPass() const { return renderpass_; }
+  SharedHandleVK<vk::RenderPass> GetRenderPass() const;
 
  protected:
   const TextureDescriptor desc_;

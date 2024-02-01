@@ -14,6 +14,24 @@ const TextureDescriptor& TextureSourceVK::GetTextureDescriptor() const {
   return desc_;
 }
 
+void TextureSourceVK::SetFramebuffer(
+    const SharedHandleVK<vk::Framebuffer>& framebuffer) const {
+  framebuffer_ = framebuffer;
+}
+
+void TextureSourceVK::SetRenderPass(
+    const SharedHandleVK<vk::RenderPass>& renderpass) const {
+  renderpass_ = renderpass;
+}
+
+SharedHandleVK<vk::Framebuffer> TextureSourceVK::GetFramebuffer() const {
+  return framebuffer_;
+}
+
+SharedHandleVK<vk::RenderPass> TextureSourceVK::GetRenderPass() const {
+  return renderpass_;
+}
+
 vk::ImageLayout TextureSourceVK::GetLayout() const {
   ReaderLock lock(layout_mutex_);
   return layout_;
