@@ -109,23 +109,28 @@ void doTests() {
     });
 
     test('funnels resize events on sizeSource', () async {
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.7);
+
       sizeSource
         ..style.width = '100px'
         ..style.height = '100px';
 
-      expect(await provider.onResize.first, const ui.Size(100, 100));
+      expect(provider.onResize.first, completes);
+      expect(provider.computePhysicalSize(), const ui.Size(270, 270));
 
       sizeSource
         ..style.width = '200px'
         ..style.height = '200px';
 
-      expect(await provider.onResize.first, const ui.Size(200, 200));
+      expect(provider.onResize.first, completes);
+      expect(provider.computePhysicalSize(), const ui.Size(540, 540));
 
       sizeSource
         ..style.width = '300px'
         ..style.height = '300px';
 
-      expect(await provider.onResize.first, const ui.Size(300, 300));
+      expect(provider.onResize.first, completes);
+      expect(provider.computePhysicalSize(), const ui.Size(810, 810));
     });
 
     test('funnels DPR change events too', () async {
@@ -140,14 +145,15 @@ void doTests() {
       final CustomElementDimensionsProvider provider = CustomElementDimensionsProvider(sizeSource);
 
       // The size that will be emitted by the provider eventually
-      final Future<ui.Size> newSize = provider.onResize.first;
+      final Future<ui.Size?> newSize = provider.onResize.first;
 
       // Set the mock DPR value
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(3.2);
       // Simulate the mediaQuery change event from the browser
       eventTarget.dispatchEvent(createDomEvent('Event', 'change'));
 
-      expect(await newSize, const ui.Size(10, 10) * 3.2);
+      expect(newSize, completes);
+      expect(provider.computePhysicalSize(), const ui.Size(32, 32));
     });
 
     test('closed by onHotRestart', () async {

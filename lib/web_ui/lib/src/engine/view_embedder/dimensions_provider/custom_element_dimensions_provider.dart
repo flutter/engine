@@ -17,12 +17,17 @@ import 'dimensions_provider.dart';
 /// All the measurements returned from this class are potentially *expensive*,
 /// and should be cached as needed. Every call to every method on this class
 /// WILL perform actual DOM measurements.
+///
+/// This broadcasts `null` size events, to match the implementation of the
+/// FullPageDimensionsProvider, but it could broadcast the size coming from the
+/// DomResizeObserverEntry. Further changes in the engine are required for this
+/// to be effective.
 class CustomElementDimensionsProvider extends DimensionsProvider {
   /// Creates a [CustomElementDimensionsProvider] from a [_hostElement].
   CustomElementDimensionsProvider(this._hostElement) {
     // Send a resize event when the page DPR changes.
     _dprChangeStreamSubscription = DisplayDprStream.instance.dprChanged.listen((_) {
-      _broadcastSize(computePhysicalSize());
+      _broadcastSize(null);
     });
 
     // Hook up a resize observer on the hostElement (if supported!).
@@ -30,10 +35,9 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
       List<DomResizeObserverEntry> entries,
       DomResizeObserver _,
     ) {
-      entries
-          .map((DomResizeObserverEntry entry) =>
-              ui.Size(entry.contentRect.width, entry.contentRect.height))
-          .forEach(_broadcastSize);
+      for (final DomResizeObserverEntry _ in entries) {
+        _broadcastSize(null);
+      }
     });
 
     assert(() {
@@ -53,11 +57,11 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
   // Handle resize events
   late DomResizeObserver? _hostElementResizeObserver;
   late StreamSubscription<double>? _dprChangeStreamSubscription;
-  final StreamController<ui.Size> _onResizeStreamController =
-      StreamController<ui.Size>.broadcast();
+  final StreamController<ui.Size?> _onResizeStreamController =
+      StreamController<ui.Size?>.broadcast();
 
   // Broadcasts the last seen `Size`.
-  void _broadcastSize(ui.Size size) {
+  void _broadcastSize(ui.Size? size) {
     _onResizeStreamController.add(size);
   }
 
@@ -72,7 +76,7 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
   }
 
   @override
-  Stream<ui.Size> get onResize => _onResizeStreamController.stream;
+  Stream<ui.Size?> get onResize => _onResizeStreamController.stream;
 
   @override
   ui.Size computePhysicalSize() {
