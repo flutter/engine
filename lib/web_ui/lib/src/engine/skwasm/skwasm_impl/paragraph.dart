@@ -261,6 +261,9 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
     final LineMetricsHandle lineMetrics = paragraphGetLineMetricsAtIndex(handle, index);
     return lineMetrics == nullptr ? SkwasmLineMetrics._(lineMetrics) : null;
   }
+
+  @override
+  ui.FontInfo? getFontInfoAt(int codeUnitOffset) => null;
 }
 
 void withScopedFontList(

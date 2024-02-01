@@ -1242,6 +1242,19 @@ final class GlyphInfo {
   String toString() => 'Glyph($graphemeClusterLayoutBounds, textRange: $graphemeClusterCodeUnitRange, direction: $writingDirection)';
 }
 
+final class FontInfo {
+  const FontInfo._(bool isItalic, this.weight, this.fontSize, this.fontFamily)
+    : style = isItalic ? FontStyle.italic : FontStyle.normal;
+
+  final FontStyle style;
+  final int weight;
+  final double fontSize;
+  final String fontFamily;
+
+  @override
+  String toString() => '$fontFamily $fontSize, w$weight, $style';
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -3104,6 +3117,8 @@ abstract class Paragraph {
   /// rather than the beginning of the new line.
   int? getLineNumberAt(int codeUnitOffset);
 
+  FontInfo? getFontInfoAt(int codeUnitOffset);
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose();
@@ -3307,6 +3322,11 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   }
   @Native<Int32 Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getLineNumberAt')
   external int _getLineNumber(int codeUnitOffset);
+
+  @override
+  FontInfo? getFontInfoAt(int codeUnitOffset) => _getFontInfoAt(codeUnitOffset, FontInfo._);
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
+  external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
 
   @override
   void dispose() {

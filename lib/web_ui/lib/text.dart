@@ -245,6 +245,19 @@ final class GlyphInfo {
   String toString() => 'Glyph($graphemeClusterLayoutBounds, textRange: $graphemeClusterCodeUnitRange, direction: $writingDirection)';
 }
 
+final class FontInfo {
+  const FontInfo._(bool isItalic, this.weight, this.fontSize, this.fontFamily)
+    : style = isItalic ? FontStyle.italic : FontStyle.normal;
+
+  final FontStyle style;
+  final int weight;
+  final double fontSize;
+  final String fontFamily;
+
+  @override
+  String toString() => '$fontFamily $fontSize, w$weight, $style';
+}
+
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
   left,
@@ -725,6 +738,7 @@ abstract class Paragraph {
   LineMetrics? getLineMetricsAt(int lineNumber);
   int get numberOfLines;
   int? getLineNumberAt(int codeUnitOffset);
+  FontInfo? getFontInfoAt(int codeUnitOffset);
   void dispose();
   bool get debugDisposed;
 }

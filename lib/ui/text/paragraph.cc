@@ -248,6 +248,29 @@ int Paragraph::getLineNumberAt(size_t utf16Offset) const {
   return m_paragraph_->GetLineNumberAt(utf16Offset);
 }
 
+Dart_Handle Paragraph::getFontInfoAt(unsigned utf16Offset, Dart_Handle constructor) const {
+  const SkFont font = m_paragraph_->GetFontAt(utf16Offset);
+  const SkTypeface* typeface = font.getTypeface();
+  // SkParagraph returns SkFont() for out-of-bounds indices.
+  if (typeface == nullptr) {
+    return Dart_Null();
+  }
+
+  SkString familyName;
+  typeface->getFamilyName(&familyName);
+  std::array<Dart_Handle, 4> arguments = {
+      Dart_NewBoolean(typeface->isItalic()),
+      Dart_NewInteger(typeface->fontStyle().weight()),
+      Dart_NewDouble(font.getSize()),
+      Dart_NewStringFromCString(familyName.c_str()),
+  };
+
+  Dart_Handle handle =
+      Dart_InvokeClosure(constructor, arguments.size(), arguments.data());
+  tonic::CheckAndHandleError(handle);
+  return handle;
+}
+
 void Paragraph::dispose() {
   m_paragraph_.reset();
   ClearDartWrapper();

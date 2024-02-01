@@ -404,6 +404,10 @@ int ParagraphSkia::GetLineNumberAt(size_t codeUnitIndex) const {
   return paragraph_->getLineNumberAtUTF16Offset(codeUnitIndex);
 }
 
+SkFont ParagraphSkia::GetFontAt(size_t offset) const {
+  return paragraph_->getFontAtUTF16Offset(offset);
+}
+
 TextStyle ParagraphSkia::SkiaToTxt(const skt::TextStyle& skia) {
   TextStyle txt;
 
