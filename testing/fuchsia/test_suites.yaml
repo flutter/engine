@@ -77,3 +77,4 @@
     - text-input-test-0.far
     - oot_flutter_jit_runner-0.far
     - gen/flutter/shell/platform/fuchsia/flutter/tests/integration/text-input/text-input-view/text-input-view/text-input-view.far
+  variant: fuchsia_debug_x64
