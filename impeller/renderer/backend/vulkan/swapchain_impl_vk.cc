@@ -145,17 +145,18 @@ static std::optional<vk::Queue> ChoosePresentQueue(
 std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
-    vk::SwapchainKHR old_swapchain,
-    vk::SurfaceTransformFlagBitsKHR last_transform) {
+    const ISize& size,
+    bool enable_msaa,
+    vk::SwapchainKHR old_swapchain) {
   return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
-      context, std::move(surface), old_swapchain, last_transform));
+      context, std::move(surface), size, enable_msaa, old_swapchain));
 }
 
-SwapchainImplVK::SwapchainImplVK(
-    const std::shared_ptr<Context>& context,
-    vk::UniqueSurfaceKHR surface,
-    vk::SwapchainKHR old_swapchain,
-    vk::SurfaceTransformFlagBitsKHR last_transform) {
+SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
+                                 vk::UniqueSurfaceKHR surface,
+                                 const ISize& size,
+                                 bool enable_msaa,
+                                 vk::SwapchainKHR old_swapchain) {
   if (!context) {
     VALIDATION_LOG << "Cannot create a swapchain without a context.";
     return;
@@ -163,7 +164,7 @@ SwapchainImplVK::SwapchainImplVK(
 
   auto& vk_context = ContextVK::Cast(*context);
 
-  auto [caps_result, caps] =
+  const auto [caps_result, surface_caps] =
       vk_context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface);
   if (caps_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not get surface capabilities: "
@@ -188,7 +189,7 @@ SwapchainImplVK::SwapchainImplVK(
   vk_context.SetOffscreenFormat(ToPixelFormat(format.value().format));
 
   const auto composite =
-      ChooseAlphaCompositionMode(caps.supportedCompositeAlpha);
+      ChooseAlphaCompositionMode(surface_caps.supportedCompositeAlpha);
   if (!composite.has_value()) {
     VALIDATION_LOG << "No composition mode supported.";
     return;
@@ -209,22 +210,26 @@ SwapchainImplVK::SwapchainImplVK(
   swapchain_info.imageColorSpace = format.value().colorSpace;
   swapchain_info.presentMode = vk::PresentModeKHR::eFifo;
   swapchain_info.imageExtent = vk::Extent2D{
-      std::clamp(caps.currentExtent.width, caps.minImageExtent.width,
-                 caps.maxImageExtent.width),
-      std::clamp(caps.currentExtent.height, caps.minImageExtent.height,
-                 caps.maxImageExtent.height),
+      std::clamp(static_cast<uint32_t>(size.width),
+                 surface_caps.minImageExtent.width,
+                 surface_caps.maxImageExtent.width),
+      std::clamp(static_cast<uint32_t>(size.height),
+                 surface_caps.minImageExtent.height,
+                 surface_caps.maxImageExtent.height),
   };
-  swapchain_info.minImageCount = std::clamp(
-      caps.minImageCount + 1u,  // preferred image count
-      caps.minImageCount,       // min count cannot be zero
-      caps.maxImageCount == 0u ? caps.minImageCount + 1u
-                               : caps.maxImageCount  // max zero means no limit
-  );
+  swapchain_info.minImageCount =
+      std::clamp(surface_caps.minImageCount + 1u,  // preferred image count
+                 surface_caps.minImageCount,       // min count cannot be zero
+                 surface_caps.maxImageCount == 0u
+                     ? surface_caps.minImageCount + 1u
+                     : surface_caps.maxImageCount  // max zero means no limit
+      );
   swapchain_info.imageArrayLayers = 1u;
-  // Swapchain images are primarily used as color attachments (via resolve) or
-  // blit targets.
+  // Swapchain images are primarily used as color attachments (via resolve),
+  // blit targets, or input attachments.
   swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
-                              vk::ImageUsageFlagBits::eTransferDst;
+                              vk::ImageUsageFlagBits::eTransferDst |
+                              vk::ImageUsageFlagBits::eInputAttachment;
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
   // If we set the clipped value to true, Vulkan expects we will never read back
@@ -300,12 +305,17 @@ SwapchainImplVK::SwapchainImplVK(
   images_ = std::move(swapchain_images);
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
+  size_ = size;
+  enable_msaa_ = enable_msaa;
   is_valid_ = true;
-  transform_if_changed_discard_swapchain_ = last_transform;
 }
 
 SwapchainImplVK::~SwapchainImplVK() {
   DestroySwapchain();
+}
+
+const ISize& SwapchainImplVK::GetSize() const {
+  return size_;
 }
 
 bool SwapchainImplVK::IsValid() const {
@@ -333,10 +343,6 @@ vk::Format SwapchainImplVK::GetSurfaceFormat() const {
   return surface_format_;
 }
 
-vk::SurfaceTransformFlagBitsKHR SwapchainImplVK::GetLastTransform() const {
-  return transform_if_changed_discard_swapchain_;
-}
-
 std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
   return context_.lock();
 }
@@ -359,26 +365,6 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   if (!sync->WaitForFence(context.GetDevice())) {
     VALIDATION_LOG << "Could not wait for fence.";
     return SwapchainImplVK::AcquireResult{};
-  }
-
-  //----------------------------------------------------------------------------
-  /// Poll to see if the orientation has changed.
-  ///
-  /// https://developer.android.com/games/optimize/vulkan-prerotation#using_polling
-  current_transform_poll_count_++;
-  if (current_transform_poll_count_ >= kPollFramesForOrientation) {
-    current_transform_poll_count_ = 0u;
-    auto [caps_result, caps] =
-        context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface_);
-    if (caps_result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not get surface capabilities: "
-                     << vk::to_string(caps_result);
-      return SwapchainImplVK::AcquireResult{};
-    }
-    if (caps.currentTransform != transform_if_changed_discard_swapchain_) {
-      transform_if_changed_discard_swapchain_ = caps.currentTransform;
-      return AcquireResult{true /* out of date */};
-    }
   }
 
   //----------------------------------------------------------------------------
@@ -426,7 +412,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
           return false;
         }
         return swapchain->Present(image, image_index);
-      }  // swap callback
+      },            // swap callback
+      enable_msaa_  //
       )};
 }
 
@@ -439,6 +426,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   const auto& sync = synchronizers_[current_frame_];
+  context.GetGPUTracer()->MarkFrameEnd();
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
@@ -488,8 +476,6 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
       return false;
     }
   }
-
-  context.GetGPUTracer()->MarkFrameEnd();
 
   auto task = [&, index, current_frame = current_frame_] {
     auto context_strong = context_.lock();

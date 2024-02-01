@@ -47,6 +47,7 @@ class ContextVK final : public Context,
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
     bool enable_validation = false;
+    bool enable_gpu_tracing = false;
 
     Settings() = default;
 
@@ -161,9 +162,7 @@ class ContextVK final : public Context,
 
   std::shared_ptr<CommandPoolRecyclerVK> GetCommandPoolRecycler() const;
 
-  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const {
-    return descriptor_pool_recycler_;
-  }
+  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const;
 
   std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 

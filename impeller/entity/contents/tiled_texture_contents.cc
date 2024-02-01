@@ -138,6 +138,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = GetOpacityFactor();
@@ -152,8 +153,8 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
   options.primitive_type = geometry_result.type;
 

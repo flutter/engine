@@ -22,8 +22,12 @@ namespace impeller {
 
 static constexpr uint32_t kPoolSize = 128u;
 
-GPUTracerVK::GPUTracerVK(std::weak_ptr<ContextVK> context)
+GPUTracerVK::GPUTracerVK(std::weak_ptr<ContextVK> context,
+                         bool enable_gpu_tracing)
     : context_(std::move(context)) {
+  if (!enable_gpu_tracing) {
+    return;
+  }
   timestamp_period_ = context_.lock()
                           ->GetDeviceHolder()
                           ->GetPhysicalDevice()
@@ -72,12 +76,17 @@ bool GPUTracerVK::IsEnabled() const {
 }
 
 void GPUTracerVK::MarkFrameStart() {
+  if (!enabled_) {
+    return;
+  }
   FML_DCHECK(!in_frame_);
   in_frame_ = true;
   raster_thread_id_ = std::this_thread::get_id();
 }
 
 void GPUTracerVK::MarkFrameEnd() {
+  in_frame_ = false;
+
   if (!enabled_) {
     return;
   }
@@ -94,7 +103,6 @@ void GPUTracerVK::MarkFrameEnd() {
   FML_DCHECK(state.pending_buffers == 0u);
   state.pending_buffers = 0;
   state.current_index = 0;
-  in_frame_ = false;
 }
 
 std::unique_ptr<GPUProbe> GPUTracerVK::CreateGPUProbe() {

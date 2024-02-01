@@ -452,7 +452,8 @@ void ContextVK::Setup(Settings settings) {
 
   // Create the GPU Tracer later because it depends on state from
   // the ContextVK.
-  gpu_tracer_ = std::make_shared<GPUTracerVK>(weak_from_this());
+  gpu_tracer_ = std::make_shared<GPUTracerVK>(weak_from_this(),
+                                              settings.enable_gpu_tracing);
   gpu_tracer_->InitializeQueryPool(*this);
 
   //----------------------------------------------------------------------------
@@ -564,6 +565,11 @@ ContextVK::CreateGraphicsCommandEncoderFactory() const {
 
 std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
   return gpu_tracer_;
+}
+
+std::shared_ptr<DescriptorPoolRecyclerVK> ContextVK::GetDescriptorPoolRecycler()
+    const {
+  return descriptor_pool_recycler_;
 }
 
 std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {

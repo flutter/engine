@@ -153,15 +153,67 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
          "has_depth_stencil_attachments="
       << has_depth_stencil_attachments;
   if (maybe_stencil.has_value()) {
-    StencilAttachmentDescriptor stencil = maybe_stencil.value();
-    stencil.stencil_compare = stencil_compare;
-    stencil.depth_stencil_pass = stencil_operation;
-    desc.SetStencilAttachmentDescriptors(stencil);
+    StencilAttachmentDescriptor front_stencil = maybe_stencil.value();
+    StencilAttachmentDescriptor back_stencil = front_stencil;
+
+    switch (stencil_mode) {
+      case StencilMode::kIgnore:
+        front_stencil.stencil_compare = CompareFunction::kAlways;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kSetToRef:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kNonZeroWrite:
+        front_stencil.stencil_compare = CompareFunction::kAlways;
+        front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
+        back_stencil.stencil_compare = CompareFunction::kAlways;
+        back_stencil.depth_stencil_pass = StencilOperation::kDecrementWrap;
+        desc.SetStencilAttachmentDescriptors(front_stencil, back_stencil);
+        break;
+      case StencilMode::kEvenOddWrite:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
+        front_stencil.stencil_failure = StencilOperation::kDecrementWrap;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kCoverCompare:
+        front_stencil.stencil_compare = CompareFunction::kNotEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipRestore:
+        front_stencil.stencil_compare = CompareFunction::kLess;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipIncrement:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kIncrementClamp;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipDecrement:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kDecrementClamp;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipCompare:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+    }
   }
   if (maybe_depth.has_value()) {
     DepthAttachmentDescriptor depth = maybe_depth.value();
-    depth.depth_compare = CompareFunction::kAlways;
-    depth.depth_write_enabled = false;
+    depth.depth_write_enabled = depth_write_enabled;
+    depth.depth_compare = depth_compare;
+    desc.SetDepthStencilAttachmentDescriptor(depth);
   }
 
   desc.SetPrimitiveType(primitive_type);
@@ -240,64 +292,49 @@ ContentContext::ContentContext(
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
     framebuffer_blend_color_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal});
     framebuffer_blend_colorburn_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kColorBurn), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kColorBurn), supports_decal});
     framebuffer_blend_colordodge_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kColorDodge), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kColorDodge), supports_decal});
     framebuffer_blend_darken_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kDarken), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kDarken), supports_decal});
     framebuffer_blend_difference_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kDifference), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kDifference), supports_decal});
     framebuffer_blend_exclusion_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kExclusion), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kExclusion), supports_decal});
     framebuffer_blend_hardlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kHardLight), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kHardLight), supports_decal});
     framebuffer_blend_hue_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kHue), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kHue), supports_decal});
     framebuffer_blend_lighten_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
     framebuffer_blend_multiply_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kMultiply), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kMultiply), supports_decal});
     framebuffer_blend_overlay_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kOverlay), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kOverlay), supports_decal});
     framebuffer_blend_saturation_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kSaturation), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kSaturation), supports_decal});
     framebuffer_blend_screen_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kScreen), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kScreen), supports_decal});
     framebuffer_blend_softlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
   }
 
   blend_color_pipelines_.CreateDefault(
