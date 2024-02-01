@@ -126,8 +126,6 @@ impeller_component("entity") {
     "contents/content_context.h",
     "contents/contents.cc",
     "contents/contents.h",
-    "contents/contents_rendering.cc",
-    "contents/contents_rendering.h",
     "contents/filters/blend_filter_contents.cc",
     "contents/filters/blend_filter_contents.h",
     "contents/filters/border_mask_blur_filter_contents.cc",

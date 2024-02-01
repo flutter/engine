@@ -4,9 +4,7 @@
 
 #include "solid_color_contents.h"
 
-#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/contents_rendering.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
@@ -55,14 +53,13 @@ bool SolidColorContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
-  const ColorSourceContents& contents = *this;
 
-  return DrawPositions<VS>(contents, renderer, entity, pass,
-                           &ContentContext::GetSolidFillPipeline, frame_info,
-                           [](RenderPass& pass) {
-                             pass.SetCommandLabel("Solid Fill");
-                             return true;
-                           });
+  return ColorSourceContents::DrawPositions<VS>(
+      renderer, entity, pass, &ContentContext::GetSolidFillPipeline, frame_info,
+      [](RenderPass& pass) {
+        pass.SetCommandLabel("Solid Fill");
+        return true;
+      });
 }
 
 std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
