@@ -82,6 +82,8 @@ void GPUTracerVK::MarkFrameStart() {
 }
 
 void GPUTracerVK::MarkFrameEnd() {
+  in_frame_ = false;
+
   if (!enabled_) {
     return;
   }
@@ -98,7 +100,6 @@ void GPUTracerVK::MarkFrameEnd() {
   FML_DCHECK(state.pending_buffers == 0u);
   state.pending_buffers = 0;
   state.current_index = 0;
-  in_frame_ = false;
 }
 
 std::unique_ptr<GPUProbe> GPUTracerVK::CreateGPUProbe() {
