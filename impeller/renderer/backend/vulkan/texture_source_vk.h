@@ -65,19 +65,20 @@ class TextureSourceVK {
   /// Whether or not this is a swapchain image.
   virtual bool IsSwapchainImage() const = 0;
 
-  virtual void SetFramebuffer(
-      const SharedHandleVK<vk::Framebuffer>& framebuffer) const {}
-
-  virtual void SetRenderPass(
-      const SharedHandleVK<vk::RenderPass>& renderpass) const {}
-
-  virtual SharedHandleVK<vk::Framebuffer> GetFramebuffer() const {
-    return nullptr;
+  void SetFramebuffer(
+      const SharedHandleVK<vk::Framebuffer>& framebuffer) const {
+    framebuffer_ = framebuffer;
   }
 
-  virtual SharedHandleVK<vk::RenderPass> GetRenderPass() const {
-    return nullptr;
+  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass) const {
+    renderpass_ = renderpass;
   }
+
+  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const {
+    return framebuffer_;
+  }
+
+  SharedHandleVK<vk::RenderPass> GetRenderPass() const { return renderpass_; }
 
  protected:
   const TextureDescriptor desc_;
@@ -88,6 +89,8 @@ class TextureSourceVK {
   mutable RWMutex layout_mutex_;
   mutable vk::ImageLayout layout_ IPLR_GUARDED_BY(layout_mutex_) =
       vk::ImageLayout::eUndefined;
+  mutable SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
+  mutable SharedHandleVK<vk::RenderPass> renderpass_ = nullptr;
 };
 
 }  // namespace impeller

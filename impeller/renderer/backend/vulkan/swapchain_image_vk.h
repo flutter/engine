@@ -44,29 +44,9 @@ class SwapchainImageVK final : public TextureSourceVK {
 
   bool IsSwapchainImage() const override { return true; }
 
-  void SetFramebuffer(
-      const SharedHandleVK<vk::Framebuffer>& framebuffer) const override {
-    framebuffer_ = framebuffer;
-  }
-
-  void SetRenderPass(
-      const SharedHandleVK<vk::RenderPass>& renderpass) const override {
-    renderpass_ = renderpass;
-  }
-
-  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const override {
-    return framebuffer_;
-  }
-
-  SharedHandleVK<vk::RenderPass> GetRenderPass() const override {
-    return renderpass_;
-  }
-
  private:
   vk::Image image_ = VK_NULL_HANDLE;
   vk::UniqueImageView image_view_ = {};
-  mutable SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
-  mutable SharedHandleVK<vk::RenderPass> renderpass_ = nullptr;
   std::shared_ptr<Texture> msaa_tex_;
   bool is_valid_ = false;
 
