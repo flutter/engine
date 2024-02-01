@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMAGE_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMAGE_VK_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
@@ -38,7 +37,11 @@ class SwapchainImageVK final : public TextureSourceVK {
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
 
+  vk::ImageView GetRenderTargetView() const override;
+
   void SetMSAATexture(std::shared_ptr<Texture> msaa_tex);
+
+  bool IsSwapchainImage() const override { return true; }
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;

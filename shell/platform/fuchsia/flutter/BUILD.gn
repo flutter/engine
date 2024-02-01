@@ -168,7 +168,6 @@ template("runner_sources") {
              "$fuchsia_sdk_root/pkg:async-loop-cpp",
              "$fuchsia_sdk_root/pkg:fdio",
              "$fuchsia_sdk_root/pkg:fidl_cpp",
-             "$fuchsia_sdk_root/pkg:syslog",
              "$fuchsia_sdk_root/pkg:trace",
              "$fuchsia_sdk_root/pkg:trace-engine",
              "$fuchsia_sdk_root/pkg:trace-provider-so",
@@ -352,18 +351,8 @@ template("jit_runner") {
       },
       {
         path = rebase_path(
-                "$snapshot_gen_dir/vm_snapshot_instructions${product_suffix}.bin")
-        dest = "vm_snapshot_instructions.bin"
-      },
-      {
-        path = rebase_path(
                 "$snapshot_gen_dir/isolate_snapshot${product_suffix}.bin")
         dest = "isolate_core_snapshot_data.bin"
-      },
-      {
-        path = rebase_path(
-                "$snapshot_gen_dir/isolate_snapshot_instructions${product_suffix}.bin")
-        dest = "isolate_core_snapshot_instructions.bin"
       },
     ]
 

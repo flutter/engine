@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_GPU_TRACER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_GPU_TRACER_VK_H_
+
 #include <memory>
 #include <thread>
 
@@ -15,9 +18,14 @@ class GPUProbe;
 
 /// @brief A class that uses timestamp queries to record the approximate GPU
 /// execution time.
+///
+/// To enable, add the following metadata to the application's Android manifest:
+///   <meta-data
+///       android:name="io.flutter.embedding.android.EnableVulkanGPUTracing"
+///       android:value="false" />
 class GPUTracerVK : public std::enable_shared_from_this<GPUTracerVK> {
  public:
-  explicit GPUTracerVK(std::weak_ptr<ContextVK> context);
+  GPUTracerVK(std::weak_ptr<ContextVK> context, bool enable_gpu_tracing);
 
   ~GPUTracerVK() = default;
 
@@ -115,3 +123,5 @@ class GPUProbe {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_GPU_TRACER_VK_H_

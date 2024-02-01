@@ -17,7 +17,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (CanUseCompute(renderer)) {
+  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
   auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
@@ -40,7 +40,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (CanUseCompute(renderer)) {
+  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
   }
@@ -200,6 +200,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
 
     using UV = UvComputeShader;
 
+    compute_pass->AddBufferMemoryBarrier();
     compute_pass->SetCommandLabel("UV Geometry");
     compute_pass->SetPipeline(renderer.GetUvComputePipeline());
 
@@ -219,9 +220,10 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     output = geometry_uv_buffer;
   }
 
-  if (!compute_pass->EncodeCommands() || !cmd_buffer->SubmitCommands()) {
+  if (!compute_pass->EncodeCommands()) {
     return {};
   }
+  renderer.RecordCommandBuffer(std::move(cmd_buffer));
 
   return {
       .type = PrimitiveType::kTriangle,
@@ -262,14 +264,6 @@ size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
 // |Geometry|
 GeometryVertexType PointFieldGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
-}
-
-// Compute is disabled for Vulkan because the barriers are incorrect, see
-// also: https://github.com/flutter/flutter/issues/140798 .
-bool PointFieldGeometry::CanUseCompute(const ContentContext& renderer) {
-  return renderer.GetDeviceCapabilities().SupportsCompute() &&
-         renderer.GetContext()->GetBackendType() ==
-             Context::BackendType::kMetal;
 }
 
 // |Geometry|

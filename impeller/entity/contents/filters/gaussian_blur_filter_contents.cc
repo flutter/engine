@@ -19,6 +19,8 @@ namespace impeller {
 using GaussianBlurVertexShader = KernelPipeline::VertexShader;
 using GaussianBlurFragmentShader = KernelPipeline::FragmentShader;
 
+const int32_t GaussianBlurFilterContents::kBlurFilterRequiredMipCount = 4;
+
 namespace {
 
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
@@ -205,7 +207,10 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
   if (sigma <= 4) {
     return 1.0;
   }
-  return 4.0 / sigma;
+  Scalar result = 4.0 / sigma;
+  // Round to the nearest 1/(2^n) to get the best quality down scaling.
+  Scalar rounded = pow(2.0f, round(log2(result)));
+  return rounded;
 };
 
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
@@ -269,9 +274,18 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     expanded_coverage_hint = coverage_hint->Expand(local_padding);
   }
 
+  int32_t mip_count = kBlurFilterRequiredMipCount;
+  if (renderer.GetContext()->GetBackendType() ==
+      Context::BackendType::kOpenGLES) {
+    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
+    // generation on opengles.
+    mip_count = 1;
+  }
+
   std::optional<Snapshot> input_snapshot =
       inputs[0]->GetSnapshot("GaussianBlur", renderer, entity,
-                             /*coverage_limit=*/expanded_coverage_hint);
+                             /*coverage_limit=*/expanded_coverage_hint,
+                             /*mip_count=*/mip_count);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }

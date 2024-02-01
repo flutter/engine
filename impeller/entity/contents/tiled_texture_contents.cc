@@ -65,11 +65,12 @@ std::shared_ptr<Texture> TiledTextureContents::CreateFilterTexture(
   }
   auto color_filter_contents = color_filter_(FilterInput::Make(texture_));
   auto snapshot = color_filter_contents->RenderToSnapshot(
-      renderer,                          // renderer
-      Entity(),                          // entity
-      std::nullopt,                      // coverage_limit
-      std::nullopt,                      // sampler_descriptor
-      true,                              // msaa_enabled
+      renderer,      // renderer
+      Entity(),      // entity
+      std::nullopt,  // coverage_limit
+      std::nullopt,  // sampler_descriptor
+      true,          // msaa_enabled
+      /*mip_count=*/1,
       "TiledTextureContents Snapshot");  // label
   if (snapshot.has_value()) {
     return snapshot.value().texture;
@@ -137,6 +138,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = GetOpacityFactor();
@@ -151,8 +153,8 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
   options.primitive_type = geometry_result.type;
 
@@ -236,6 +238,7 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   if (GetInverseEffectTransform().IsIdentity() &&
       GetGeometry()->IsAxisAlignedRect()) {
@@ -260,7 +263,8 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
       std::nullopt,                                      // coverage_limit
       sampler_descriptor.value_or(sampler_descriptor_),  // sampler_descriptor
       true,                                              // msaa_enabled
-      label);                                            // label
+      /*mip_count=*/1,
+      label);  // label
 }
 
 }  // namespace impeller
