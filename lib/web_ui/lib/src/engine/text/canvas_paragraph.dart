@@ -298,7 +298,7 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   @override
-  ui.FontInfo? debugGetFontInfoAt(int codeUnitOffset) => null;
+  ui.FontInfo? debugGetFontAt(int codeUnitOffset) => null;
 
   bool _disposed = false;
 

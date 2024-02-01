@@ -738,7 +738,7 @@ abstract class Paragraph {
   LineMetrics? getLineMetricsAt(int lineNumber);
   int get numberOfLines;
   int? getLineNumberAt(int codeUnitOffset);
-  FontInfo? debugGetFontInfoAt(int codeUnitOffset);
+  FontInfo? debugGetFontAt(int codeUnitOffset);
   void dispose();
   bool get debugDisposed;
 }

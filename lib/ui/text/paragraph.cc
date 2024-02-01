@@ -251,12 +251,13 @@ int Paragraph::getLineNumberAt(size_t utf16Offset) const {
 Dart_Handle Paragraph::getFontInfoAt(unsigned utf16Offset,
                                      Dart_Handle constructor) const {
   const SkFont font = m_paragraph_->GetFontAt(utf16Offset);
-  const SkTypeface* typeface = font.getTypeface();
-  // SkParagraph returns SkFont() for out-of-bounds indices.
-  if (typeface == nullptr) {
+  // SkParagraph returns SkFont() for out-of-bound indices.
+  const static SkFont emptyFont = SkFont();
+  if (font == emptyFont) {
     return Dart_Null();
   }
 
+  const SkTypeface* typeface = font.getTypeface();
   SkString familyName;
   typeface->getFamilyName(&familyName);
   std::array<Dart_Handle, 4> arguments = {

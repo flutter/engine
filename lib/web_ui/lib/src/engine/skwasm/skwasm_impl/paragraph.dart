@@ -263,7 +263,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   }
 
   @override
-  ui.FontInfo? debugGetFontInfoAt(int codeUnitOffset) => null;
+  ui.FontInfo? debugGetFontAt(int codeUnitOffset) => null;
 }
 
 void withScopedFontList(

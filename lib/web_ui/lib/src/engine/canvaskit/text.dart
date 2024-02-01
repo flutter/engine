@@ -980,7 +980,7 @@ class CkParagraph implements ui.Paragraph {
   }
 
   @override
-  ui.FontInfo? debugGetFontInfoAt(int codeUnitOffset) {
+  ui.FontInfo? debugGetFontAt(int codeUnitOffset) {
     assert(!_disposed, 'Paragraph has been disposed.');
     return null;
   }

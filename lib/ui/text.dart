@@ -3145,7 +3145,7 @@ abstract class Paragraph {
   /// layout library does not support this feature. Null is also returned if the
   /// given `codeUnitOffset` is not within the visible lines of text, or is
   /// ellipsized.
-  FontInfo? debugGetFontInfoAt(int codeUnitOffset);
+  FontInfo? debugGetFontAt(int codeUnitOffset);
 
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
@@ -3352,15 +3352,14 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   external int _getLineNumber(int codeUnitOffset);
 
   @override
-  FontInfo? debugGetFontInfoAt(int codeUnitOffset) {
+  FontInfo? debugGetFontAt(int codeUnitOffset) {
     FontInfo? returnValue;
     assert(() {
-      returnValue = _getFontInfoAt(codeUnitOffset, FontInfo._);
+      returnValue = codeUnitOffset < 0 ? null : _getFontInfoAt(codeUnitOffset, FontInfo._);
       return true;
     }());
     return returnValue;
   }
-  FontInfo? getFontInfoAt(int codeUnitOffset) => _getFontInfoAt(codeUnitOffset, FontInfo._);
   @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
   external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
 
