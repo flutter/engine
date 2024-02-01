@@ -1121,7 +1121,10 @@ def run_impeller_golden_tests(build_dir: str):
     num_generated_files = len(os.listdir(temp_dir))
     if num_generated_files != _NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES:
       raise Exception(
-          f'`impeller_golden_tests` was expected to generate {_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES} files, {num_generated_files} were generated. If this is expected, update _NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES.'
+          '`impeller_golden_tests` was expected to generate '
+          f'{_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES} files, '
+          f'{num_generated_files} were generated. If this is expected, update '
+          '_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES.'
       )
 
     with DirectoryChange(harvester_path):
