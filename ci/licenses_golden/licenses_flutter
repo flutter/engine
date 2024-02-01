@@ -5478,6 +5478,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.cc + ../..
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk.cc + ../../../flutter/LICENSE
@@ -5857,7 +5859,6 @@ ORIGIN: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc + ../../../f
 ORIGIN: ../../../flutter/lib/ui/text/asset_manager_font_provider.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/font_collection.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/font_collection.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/text/line_metrics.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/paragraph_builder.cc + ../../../flutter/LICENSE
@@ -5964,7 +5965,6 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart + ../../../
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/configuration.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/display.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/dom.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/embedder.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/font_fallback_data.dart + ../../../flutter/LICENSE
@@ -5998,6 +5998,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/platform_view.dart + ../
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/recording_canvas.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/render_vertices.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/renderer.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/resource_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/scene.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/scene_builder.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/html/shader_mask.dart + ../../../flutter/LICENSE
@@ -6142,6 +6143,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strat
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/full_page_embedding_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/flutter_view_manager.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/global_html_attributes.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/hot_restart_cache_handler.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/style_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/window.dart + ../../../flutter/LICENSE
@@ -8334,6 +8336,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/queue_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/render_pass_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk.cc
@@ -8717,7 +8721,6 @@ FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.h
 FILE: ../../../flutter/lib/ui/text/font_collection.cc
 FILE: ../../../flutter/lib/ui/text/font_collection.h
-FILE: ../../../flutter/lib/ui/text/line_metrics.h
 FILE: ../../../flutter/lib/ui/text/paragraph.cc
 FILE: ../../../flutter/lib/ui/text/paragraph.h
 FILE: ../../../flutter/lib/ui/text/paragraph_builder.cc
@@ -8825,7 +8828,6 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/color_filter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/configuration.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/display.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/dom.dart
-FILE: ../../../flutter/lib/web_ui/lib/src/engine/embedder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/engine_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_change_util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/font_fallback_data.dart
@@ -8859,6 +8861,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/platform_view.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/recording_canvas.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/render_vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/resource_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/scene.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/scene_builder.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/html/shader_mask.dart
@@ -9003,6 +9006,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strateg
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/full_page_embedding_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/flutter_view_manager.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/global_html_attributes.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/hot_restart_cache_handler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/style_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/window.dart
