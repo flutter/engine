@@ -1177,7 +1177,7 @@ public class TextInputPluginTest {
 
   @SuppressWarnings("deprecation")
   // DartExecutor.send is deprecated.
-  private void verifyInputConnection(TextInputChannel.TextInputType textInputType) 
+  private void verifyInputConnection(TextInputChannel.TextInputType textInputType)
       throws JSONException {
     TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
@@ -1232,7 +1232,7 @@ public class TextInputPluginTest {
         "TextInputClient.performAction",
         new String[] {"0", "TextInputAction.done"});
   }
-  
+
   @Test
   public void inputConnection_createsActionFromEnter() throws JSONException {
     verifyInputConnection(TextInputChannel.TextInputType.TEXT);
