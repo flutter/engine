@@ -94,8 +94,8 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   # https://github.com/flutter/flutter/issues/140179.
   tests = list(
       filter(
-          lambda test: not 'run_with_dart_aot' in test or test['run_with_dart_aot'] !=              'true',
-              tests
+          lambda test: not 'run_with_dart_aot' in test or test[
+              'run_with_dart_aot'] != 'true', tests
       )
   )
   tests = list(
