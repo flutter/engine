@@ -600,14 +600,15 @@ public class FlutterRendererTest {
     assertEquals(1, produced.getHeight());
     assertEquals(2, texture.numImageReaders());
     assertEquals(2, texture.numImages());
-    // Acquire second frame. This should result in closing the first ImageReader.
+    // Acquire second frame. This won't result in the first reader being closed because it has
+    // an active image from it.
     produced = texture.acquireLatestImage();
     assertNotNull(produced);
     assertEquals(1, produced.getWidth());
     assertEquals(1, produced.getHeight());
-    assertEquals(1, texture.numImageReaders());
+    assertEquals(2, texture.numImageReaders());
     assertEquals(1, texture.numImages());
-    // Acquire third frame. We should not close the active ImageReader.
+    // Acquire third frame. We will now close the first reader.
     produced = texture.acquireLatestImage();
     assertNotNull(produced);
     assertEquals(4, produced.getWidth());

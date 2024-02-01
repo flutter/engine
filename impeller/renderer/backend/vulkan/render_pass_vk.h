@@ -48,7 +48,7 @@ class RenderPassVK final : public RenderPass {
   bool has_index_buffer_ = false;
   bool has_label_ = false;
   bool pipeline_valid_ = false;
-  vk::Pipeline last_pipeline_;
+  bool pipeline_uses_input_attachments_ = false;
   vk::DescriptorSet descriptor_set_ = {};
   vk::PipelineLayout pipeline_layout_ = {};
 
@@ -124,9 +124,8 @@ class RenderPassVK final : public RenderPass {
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
-      const std::shared_ptr<CommandBufferVK>& command_buffer,
-      bool has_subpass_dependency,
-      const SharedHandleVK<vk::RenderPass>& old_pass) const;
+      const SharedHandleVK<vk::RenderPass>& old_renderpass,
+      const std::shared_ptr<CommandBufferVK>& command_buffer) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,

@@ -19,6 +19,7 @@ impeller_component("vulkan_unittests") {
     "test/mock_vulkan.cc",
     "test/mock_vulkan.h",
     "test/mock_vulkan_unittests.cc",
+    "test/swapchain_unittests.cc",
   ]
   deps = [
     ":vulkan",
@@ -46,6 +47,8 @@ impeller_component("vulkan") {
     "command_encoder_vk.h",
     "command_pool_vk.cc",
     "command_pool_vk.h",
+    "command_queue_vk.cc",
+    "command_queue_vk.h",
     "compute_pass_vk.cc",
     "compute_pass_vk.h",
     "compute_pipeline_vk.cc",
@@ -73,6 +76,8 @@ impeller_component("vulkan") {
     "pipeline_vk.h",
     "queue_vk.cc",
     "queue_vk.h",
+    "render_pass_builder_vk.cc",
+    "render_pass_builder_vk.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
     "resource_manager_vk.cc",

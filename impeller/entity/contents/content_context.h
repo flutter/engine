@@ -18,6 +18,7 @@
 #include "impeller/core/host_buffer.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
@@ -267,6 +268,12 @@ using TiledTextureExternalPipeline =
     RenderPipelineT<TextureFillVertexShader,
                     TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
+
+// A struct used to isolate command buffer storage from the content
+// context options to preserve const-ness.
+struct PendingCommandBuffers {
+  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
+};
 
 /// Pipeline state configuration.
 ///
@@ -715,6 +722,10 @@ class ContentContext {
 
   void SetWireframe(bool wireframe);
 
+  void RecordCommandBuffer(std::shared_ptr<CommandBuffer> command_buffer) const;
+
+  void FlushCommandBuffers() const;
+
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
@@ -724,7 +735,8 @@ class ContentContext {
       const std::string& label,
       ISize texture_size,
       const SubpassCallback& subpass_callback,
-      bool msaa_enabled = true) const;
+      bool msaa_enabled = true,
+      int32_t mip_count = 1) const;
 
   /// Makes a subpass that will render to `subpass_target`.
   fml::StatusOr<RenderTarget> MakeSubpass(
@@ -814,15 +826,13 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<Scalar>& constants = {},
-                       UseSubpassInput subpass_input = UseSubpassInput::kNo) {
+                       const std::initializer_list<Scalar>& constants = {}) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
-      desc->SetUseSubpassInput(subpass_input);
       options.ApplyToPipelineDescriptor(*desc);
       SetDefault(options, std::make_unique<PipelineT>(context, desc));
     }
@@ -1005,6 +1015,7 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
+  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;
