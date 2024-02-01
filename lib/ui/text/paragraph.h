@@ -57,7 +57,7 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
   int getLineNumberAt(size_t utf16Offset) const;
 
   Dart_Handle getFontInfoAt(unsigned utf16Offset,
-                             Dart_Handle constructor) const;
+                            Dart_Handle constructor) const;
 
   void dispose();
 

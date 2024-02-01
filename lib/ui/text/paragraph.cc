@@ -248,7 +248,8 @@ int Paragraph::getLineNumberAt(size_t utf16Offset) const {
   return m_paragraph_->GetLineNumberAt(utf16Offset);
 }
 
-Dart_Handle Paragraph::getFontInfoAt(unsigned utf16Offset, Dart_Handle constructor) const {
+Dart_Handle Paragraph::getFontInfoAt(unsigned utf16Offset,
+                                     Dart_Handle constructor) const {
   const SkFont font = m_paragraph_->GetFontAt(utf16Offset);
   const SkTypeface* typeface = font.getTypeface();
   // SkParagraph returns SkFont() for out-of-bounds indices.
