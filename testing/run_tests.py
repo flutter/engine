@@ -44,7 +44,7 @@ FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 ENCODING = 'UTF-8'
 
 # This number must be updated when adding new golden tests to impeller.
-_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 566
+_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 551
 
 logger = logging.getLogger(__name__)
 logger_handler = logging.StreamHandler()
@@ -567,7 +567,8 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         shuffle_flags + [
             '--enable_vulkan_validation',
-            '--gtest_filter=-*OpenGLES',  # TODO(tbd)
+            # TODO(https://github.com/flutter/flutter/issues/142642): Remove this.
+            '--gtest_filter=-*OpenGLES',
         ],
         coverage=coverage,
         extra_env=extra_env,
