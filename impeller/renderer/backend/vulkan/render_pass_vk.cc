@@ -162,10 +162,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
         encoder->Track(attachment.resolve_texture);
         return true;
       });
-  auto maybe_render_pass =
-      TextureVK::Cast(*resolve_image_vk_).GetTextureSource()->GetRenderPass();
-  auto maybe_framebuffer =
-      TextureVK::Cast(*resolve_image_vk_).GetTextureSource()->GetFramebuffer();
+  auto maybe_render_pass = TextureVK::Cast(*resolve_image_vk_).GetRenderPass();
+  auto maybe_framebuffer = TextureVK::Cast(*resolve_image_vk_).GetFramebuffer();
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
@@ -189,12 +187,8 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
     is_valid_ = false;
     return;
   }
-  TextureVK::Cast(*resolve_image_vk_)
-      .GetTextureSource()
-      ->SetFramebuffer(framebuffer);
-  TextureVK::Cast(*resolve_image_vk_)
-      .GetTextureSource()
-      ->SetRenderPass(render_pass_);
+  TextureVK::Cast(*resolve_image_vk_).SetFramebuffer(framebuffer);
+  TextureVK::Cast(*resolve_image_vk_).SetRenderPass(render_pass_);
 
   auto clear_values = GetVKClearValues(render_target_);
 

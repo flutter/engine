@@ -44,9 +44,20 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   bool IsSwapchainImage() const { return source_->IsSwapchainImage(); }
 
+  // These methods should only be used by render_pass_vk.h
+  void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer);
+
+  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass);
+
+  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
+
+  SharedHandleVK<vk::RenderPass> GetRenderPass() const;
+
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
+  SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
+  SharedHandleVK<vk::RenderPass> renderpass_ = nullptr;
 
   // |Texture|
   void SetLabel(std::string_view label) override;

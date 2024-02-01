@@ -65,15 +65,6 @@ class TextureSourceVK {
   /// Whether or not this is a swapchain image.
   virtual bool IsSwapchainImage() const = 0;
 
-  // These methods should only be used by render_pass_vk.h
-  void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer) const;
-
-  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass) const;
-
-  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
-
-  SharedHandleVK<vk::RenderPass> GetRenderPass() const;
-
  protected:
   const TextureDescriptor desc_;
 
@@ -83,8 +74,6 @@ class TextureSourceVK {
   mutable RWMutex layout_mutex_;
   mutable vk::ImageLayout layout_ IPLR_GUARDED_BY(layout_mutex_) =
       vk::ImageLayout::eUndefined;
-  mutable SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
-  mutable SharedHandleVK<vk::RenderPass> renderpass_ = nullptr;
 };
 
 }  // namespace impeller
