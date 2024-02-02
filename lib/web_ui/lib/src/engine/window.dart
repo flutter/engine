@@ -15,6 +15,7 @@ import 'configuration.dart';
 import 'display.dart';
 import 'dom.dart';
 import 'initialization.dart';
+import 'js_interop/js_app.dart';
 import 'mouse/context_menu.dart';
 import 'mouse/cursor.dart';
 import 'navigation/history.dart';
@@ -50,7 +51,9 @@ base class EngineFlutterView implements ui.FlutterView {
   /// the Flutter view will be rendered.
   factory EngineFlutterView(
     EnginePlatformDispatcher platformDispatcher,
-    DomElement hostElement,
+    DomElement hostElement, {
+      JsViewConstraints? viewConstraints,
+    }
   ) = _EngineFlutterViewImpl;
 
   EngineFlutterView._(
@@ -59,8 +62,11 @@ base class EngineFlutterView implements ui.FlutterView {
     // This is nullable to accommodate the legacy `EngineFlutterWindow`. In
     // multi-view mode, the host element is required for each view (as reflected
     // by the public `EngineFlutterView` constructor).
-    DomElement? hostElement,
-  )   : embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
+    DomElement? hostElement, {
+      JsViewConstraints? viewConstraints,
+    }
+  )   : _jsViewConstraints = viewConstraints,
+        embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
         dimensionsProvider = DimensionsProvider.create(hostElement: hostElement) {
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
@@ -144,9 +150,13 @@ base class EngineFlutterView implements ui.FlutterView {
 
   late final PointerBinding pointerBinding;
 
-  // TODO(goderbauer): Provide API to configure constraints. See also TODO in "render".
   @override
-  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
+  ViewConstraints get physicalConstraints {
+    final ui.Size currentSize = _computePhysicalSize();
+    return ViewConstraints.fromJs(_jsViewConstraints, currentSize);
+  }
+
+  final JsViewConstraints? _jsViewConstraints;
 
   late final EngineSemanticsOwner semantics = EngineSemanticsOwner(dom.semanticsHost);
 
@@ -156,6 +166,7 @@ base class EngineFlutterView implements ui.FlutterView {
   }
 
   void resize(ui.Size newPhysicalSize) {
+    // The browser wants logical sizes!
     final ui.Size logicalSize = newPhysicalSize / devicePixelRatio;
     dom.rootElement.style
       ..width = '${logicalSize.width}px'
@@ -284,8 +295,10 @@ base class EngineFlutterView implements ui.FlutterView {
 final class _EngineFlutterViewImpl extends EngineFlutterView {
   _EngineFlutterViewImpl(
     EnginePlatformDispatcher platformDispatcher,
-    DomElement hostElement,
-  ) : super._(_nextViewId++, platformDispatcher, hostElement);
+    DomElement hostElement, {
+      JsViewConstraints? viewConstraints,
+    }
+  ) : super._(_nextViewId++, platformDispatcher, hostElement, viewConstraints: viewConstraints);
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
@@ -714,6 +727,21 @@ class ViewConstraints implements ui.ViewConstraints {
       minHeight = size.height,
       maxHeight = size.height;
 
+  factory ViewConstraints.fromJs(JsViewConstraints? constraints, ui.Size? size) {
+    if (size == null) {
+      return const ViewConstraints();
+    }
+    if (constraints == null) {
+      return ViewConstraints.tight(size);
+    }
+    return ViewConstraints(
+      minWidth: _computeMinConstraintValue(constraints.minWidth, size.width),
+      minHeight: _computeMinConstraintValue(constraints.minHeight, size.height),
+      maxWidth: _computeMaxConstraintValue(constraints.maxWidth, size.width),
+      maxHeight: _computeMaxConstraintValue(constraints.maxHeight, size.height),
+    );
+  }
+
   @override
   final double minWidth;
   @override
@@ -779,4 +807,29 @@ class ViewConstraints implements ui.ViewConstraints {
     final String height = describe(minHeight, maxHeight, 'h');
     return 'ViewConstraints($width, $height)';
   }
+}
+
+// Computes the "min" value for a constraint that takes into account user configuration
+// and the actual available size.
+//
+// Returns the configured userValue, unless it's null (not passed) in which it returns
+// the actual physicalSize.
+double _computeMinConstraintValue(double? desired, double available) {
+  assert(desired == null || desired >= 0, 'Minimum constraint cannot be less than 0');
+  return desired ?? available;
+}
+
+// Computes the "max" value for a constraint that takes into account user configuration
+// and the available size.
+//
+// Returns the configured userValue unless:
+//  * It is null, in which case it returns the physicalSize
+//  * It is `-1`, in which case it returns "infinity" / unconstrained.
+double _computeMaxConstraintValue(double? desired, double available) {
+  assert(desired == null || desired >= -1, 'Maximum constraint must be greater than 0 (or -1 for unconstrained)');
+  return switch (desired) {
+    null => available,
+    -1 => double.infinity,
+    _ => desired,
+  };
 }
