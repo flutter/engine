@@ -79,16 +79,18 @@ bool ClipContents::Render(const ContentContext& renderer,
   using VS = ClipPipeline::VertexShader;
 
   VS::FrameInfo info;
+  info.depth = entity.GetShaderClipDepth();
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;
   pass.SetStencilReference(entity.GetClipDepth());
-  options.stencil_compare = CompareFunction::kEqual;
-  options.stencil_operation = StencilOperation::kIncrementClamp;
 
   if (clip_op_ == Entity::ClipOperation::kDifference) {
     {
       pass.SetCommandLabel("Difference Clip (Increment)");
+
+      options.stencil_mode =
+          ContentContextOptions::StencilMode::kLegacyClipIncrement;
 
       auto points = Rect::MakeSize(pass.GetRenderTargetSize()).GetPoints();
       auto vertices =
@@ -111,14 +113,14 @@ bool ClipContents::Render(const ContentContext& renderer,
       pass.SetCommandLabel("Difference Clip (Punch)");
       pass.SetStencilReference(entity.GetClipDepth() + 1);
 
-      options.stencil_compare = CompareFunction::kEqual;
-      options.stencil_operation = StencilOperation::kDecrementClamp;
+      options.stencil_mode =
+          ContentContextOptions::StencilMode::kLegacyClipDecrement;
     }
   } else {
     pass.SetCommandLabel("Intersect Clip");
 
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
 
   auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
@@ -177,8 +179,7 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   pass.SetCommandLabel("Restore Clip");
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;
-  options.stencil_compare = CompareFunction::kLess;
-  options.stencil_operation = StencilOperation::kSetToReferenceValue;
+  options.stencil_mode = ContentContextOptions::StencilMode::kLegacyClipRestore;
   options.primitive_type = PrimitiveType::kTriangleStrip;
   pass.SetPipeline(renderer.GetClipPipeline(options));
   pass.SetStencilReference(entity.GetClipDepth());

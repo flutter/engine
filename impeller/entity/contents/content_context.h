@@ -18,6 +18,7 @@
 #include "impeller/core/host_buffer.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
@@ -268,6 +269,12 @@ using TiledTextureExternalPipeline =
                     TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
+// A struct used to isolate command buffer storage from the content
+// context options to preserve const-ness.
+struct PendingCommandBuffers {
+  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
+};
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -279,13 +286,45 @@ using TiledTextureExternalPipeline =
 /// Flutter application may easily require building hundreds of PSOs in total,
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
+  enum class StencilMode : uint8_t {
+    // Operations used for stencil-then-cover
+
+    /// Turn the stencil test off. Used when drawing without stencil-then-cover.
+    kIgnore,
+    /// Overwrite the stencil content to the ref value. Used for resetting the
+    /// stencil buffer after a stencil-then-cover operation.
+    kSetToRef,
+    /// Draw the stencil for the nonzero fill path rule.
+    kNonZeroWrite,
+    /// Draw the stencil for the evenoff fill path rule.
+    kEvenOddWrite,
+    /// Used for draw calls which fill in the stenciled area. Intended to be
+    /// used after `kNonZeroWrite` or `kEvenOddWrite` is used to set up the
+    /// stencil buffer.
+    kCoverCompare,
+
+    // Operations to control the legacy clip implementation, which forms a
+    // heightmap on the stencil buffer.
+
+    /// Slice the clip heightmap to a new maximum height.
+    kLegacyClipRestore,
+    /// Increment the stencil heightmap.
+    kLegacyClipIncrement,
+    /// Decrement the stencil heightmap (used for difference clipping only).
+    kLegacyClipDecrement,
+    /// Used for applying clips to all non-clip draw calls.
+    kLegacyClipCompare,
+  };
+
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
-  CompareFunction stencil_compare = CompareFunction::kEqual;
-  StencilOperation stencil_operation = StencilOperation::kKeep;
+  CompareFunction depth_compare = CompareFunction::kAlways;
+  StencilMode stencil_mode =
+      ContentContextOptions::StencilMode::kLegacyClipCompare;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_depth_stencil_attachments = true;
+  bool depth_write_enabled = false;
   bool wireframe = false;
   bool is_for_rrect_blur_clear = false;
 
@@ -294,21 +333,22 @@ struct ContentContextOptions {
       static_assert(sizeof(o.sample_count) == 1);
       static_assert(sizeof(o.blend_mode) == 1);
       static_assert(sizeof(o.sample_count) == 1);
-      static_assert(sizeof(o.stencil_compare) == 1);
-      static_assert(sizeof(o.stencil_operation) == 1);
+      static_assert(sizeof(o.depth_compare) == 1);
+      static_assert(sizeof(o.stencil_mode) == 1);
       static_assert(sizeof(o.primitive_type) == 1);
       static_assert(sizeof(o.color_attachment_pixel_format) == 1);
 
       return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
              (o.wireframe ? 1llu : 0llu) << 1 |
              (o.has_depth_stencil_attachments ? 1llu : 0llu) << 2 |
+             (o.depth_write_enabled ? 1llu : 0llu) << 3 |
              // enums
-             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
-             static_cast<uint64_t>(o.primitive_type) << 24 |
-             static_cast<uint64_t>(o.stencil_operation) << 32 |
-             static_cast<uint64_t>(o.stencil_compare) << 40 |
-             static_cast<uint64_t>(o.blend_mode) << 48 |
-             static_cast<uint64_t>(o.sample_count) << 56;
+             static_cast<uint64_t>(o.color_attachment_pixel_format) << 8 |
+             static_cast<uint64_t>(o.primitive_type) << 16 |
+             static_cast<uint64_t>(o.stencil_mode) << 24 |
+             static_cast<uint64_t>(o.depth_compare) << 32 |
+             static_cast<uint64_t>(o.blend_mode) << 40 |
+             static_cast<uint64_t>(o.sample_count) << 48;
     }
   };
 
@@ -317,8 +357,9 @@ struct ContentContextOptions {
                               const ContentContextOptions& rhs) const {
       return lhs.sample_count == rhs.sample_count &&
              lhs.blend_mode == rhs.blend_mode &&
-             lhs.stencil_compare == rhs.stencil_compare &&
-             lhs.stencil_operation == rhs.stencil_operation &&
+             lhs.depth_write_enabled == rhs.depth_write_enabled &&
+             lhs.depth_compare == rhs.depth_compare &&
+             lhs.stencil_mode == rhs.stencil_mode &&
              lhs.primitive_type == rhs.primitive_type &&
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
@@ -715,6 +756,10 @@ class ContentContext {
 
   void SetWireframe(bool wireframe);
 
+  void RecordCommandBuffer(std::shared_ptr<CommandBuffer> command_buffer) const;
+
+  void FlushCommandBuffers() const;
+
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
@@ -724,7 +769,8 @@ class ContentContext {
       const std::string& label,
       ISize texture_size,
       const SubpassCallback& subpass_callback,
-      bool msaa_enabled = true) const;
+      bool msaa_enabled = true,
+      int32_t mip_count = 1) const;
 
   /// Makes a subpass that will render to `subpass_target`.
   fml::StatusOr<RenderTarget> MakeSubpass(
@@ -814,15 +860,13 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<Scalar>& constants = {},
-                       UseSubpassInput subpass_input = UseSubpassInput::kNo) {
+                       const std::initializer_list<Scalar>& constants = {}) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
-      desc->SetUseSubpassInput(subpass_input);
       options.ApplyToPipelineDescriptor(*desc);
       SetDefault(options, std::make_unique<PipelineT>(context, desc));
     }
@@ -1005,6 +1049,7 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
+  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;
