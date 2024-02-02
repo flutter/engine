@@ -476,11 +476,26 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     clipView.maskView = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
+
+  // Flatten all transforms into one, to be applied to clipping logic.
+  auto transformIter = mutators_stack.Begin();
+  while (transformIter != mutators_stack.End()) {
+    switch ((*transformIter)->GetType()) {
+      case kTransform: {
+        transformMatrix.preConcat((*transformIter)->GetMatrix());
+        break;
+      }
+      default:
+        break;
+    }
+    ++transformIter;
+  }
+
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
       case kTransform: {
-        transformMatrix.preConcat((*iter)->GetMatrix());
+        // Already handled above.
         break;
       }
       case kClipRect: {
