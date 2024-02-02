@@ -166,6 +166,8 @@
 ../../../flutter/impeller/geometry/size_unittests.cc
 ../../../flutter/impeller/geometry/trig_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
+../../../flutter/impeller/golden_tests_harvester/.dart_tool
+../../../flutter/impeller/golden_tests_harvester/pubspec.lock
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/test
@@ -990,7 +992,7 @@
 ../../../flutter/third_party/skia/src/encode/BUILD.bazel
 ../../../flutter/third_party/skia/src/fonts/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/BUILD.bazel
-../../../flutter/third_party/skia/src/gpu/android/BUILD.bazel
+../../../flutter/third_party/skia/src/gpu/dawn/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/effects/BUILD.bazel
