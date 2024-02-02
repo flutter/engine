@@ -3969,7 +3969,32 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 }
 
 // b/323402168
-TEST_P(AiksTest, GaussianBlurTinyMipMap) {
+TEST_P(AiksTest, GaussianBlurSolidColorTinyMipMap) {
+  for (int32_t i = 1; i < 5; ++i) {
+    Canvas canvas;
+    Scalar fi = i;
+    canvas.DrawPath(
+        PathBuilder{}
+            .MoveTo({100, 100})
+            .LineTo({100.f + fi, 100.f + fi})
+            .TakePath(),
+        {.color = Color::Chartreuse(),
+         .image_filter = ImageFilter::MakeBlur(
+             Sigma(0.1), Sigma(0.1), FilterContents::BlurStyle::kNormal,
+             Entity::TileMode::kClamp)});
+
+    Picture picture = canvas.EndRecordingAsPicture();
+    std::shared_ptr<RenderTargetCache> cache =
+        std::make_shared<RenderTargetCache>(
+            GetContext()->GetResourceAllocator());
+    AiksContext aiks_context(GetContext(), nullptr, cache);
+    std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
+    EXPECT_TRUE(image) << " length " << i;
+  }
+}
+
+// b/323402168
+TEST_P(AiksTest, GaussianBlurBackdropTinyMipMap) {
   for (int32_t i = 0; i < 5; ++i) {
     Canvas canvas;
     ISize clip_size = ISize(i, i);
@@ -3991,7 +4016,7 @@ TEST_P(AiksTest, GaussianBlurTinyMipMap) {
             GetContext()->GetResourceAllocator());
     AiksContext aiks_context(GetContext(), nullptr, cache);
     std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
-    EXPECT_TRUE(image) << "clip rect " << i;
+    EXPECT_TRUE(image) << " clip rect " << i;
   }
 }
 
