@@ -46,26 +46,26 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   // These methods should only be used by render_pass_vk.h
 
-  /// @brief Store the last framebuffer object used with this texture.
+  /// Store the last framebuffer object used with this texture.
   ///
   /// This field is only set if this texture is used as the resolve texture
   /// of a render pass. By construction, this framebuffer should be compatible
   /// with any future render passes.
   void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer);
 
-  /// @brief Store the last render pass object used with this texture.
+  /// Store the last render pass object used with this texture.
   ///
   /// This field is only set if this texture is used as the resolve texture
   /// of a render pass. By construction, this framebuffer should be compatible
   /// with any future render passes.
-  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass);
+  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& render_pass);
 
-  /// @brief Retrieve the last framebuffer object used with this texture.
+  /// Retrieve the last framebuffer object used with this texture.
   ///
   /// May be nullptr if no previous framebuffer existed.
   SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
 
-  /// @brief Retrieve the last render pass object used with this texture.
+  /// Retrieve the last render pass object used with this texture.
   ///
   /// May be nullptr if no previous render pass existed.
   SharedHandleVK<vk::RenderPass> GetRenderPass() const;
@@ -74,7 +74,7 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
   SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
-  SharedHandleVK<vk::RenderPass> renderpass_ = nullptr;
+  SharedHandleVK<vk::RenderPass> render_pass_ = nullptr;
 
   // |Texture|
   void SetLabel(std::string_view label) override;

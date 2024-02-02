@@ -179,8 +179,8 @@ void TextureVK::SetFramebuffer(
 }
 
 void TextureVK::SetRenderPass(
-    const SharedHandleVK<vk::RenderPass>& renderpass) {
-  renderpass_ = renderpass;
+    const SharedHandleVK<vk::RenderPass>& render_pass) {
+  render_pass_ = render_pass;
 }
 
 SharedHandleVK<vk::Framebuffer> TextureVK::GetFramebuffer() const {
@@ -188,7 +188,7 @@ SharedHandleVK<vk::Framebuffer> TextureVK::GetFramebuffer() const {
 }
 
 SharedHandleVK<vk::RenderPass> TextureVK::GetRenderPass() const {
-  return renderpass_;
+  return render_pass_;
 }
 
 }  // namespace impeller
