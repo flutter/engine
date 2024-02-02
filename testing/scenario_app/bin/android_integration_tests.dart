@@ -205,6 +205,9 @@ Future<void> _run({
       if (exitCode != 0) {
         panic(<String>['instrumented tests failed to run']);
       }
+      // Unfortunately adb shell am instrument does not return a non-zero exit
+      // code when tests fail, but it does seem to print "FAILURES!!!" to
+      // stdout, so we can use that as a signal that something went wrong.
       if (out.toString().contains('FAILURES!!!')) {
         stdout.write(out);
         panic(<String>['1 or more tests failed']);
