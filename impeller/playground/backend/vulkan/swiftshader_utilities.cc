@@ -6,9 +6,14 @@
 
 #include <cstdlib>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+
+#if FML_OS_WIN
+#include <Windows.h>
+#endif  // FML_OS_WIN
 
 namespace impeller {
 
@@ -26,11 +31,18 @@ static void FindSwiftShaderICDAtKnownPaths() {
   if (fml::FileExists(executable_directory, kSwiftShaderICDJSON)) {
     const auto icd_path = fml::paths::JoinPaths(
         {executable_directory_path.second, kSwiftShaderICDJSON});
-    auto result = setenv(kVulkanICDFileNamesEnvVariableKey,  //
-                         icd_path.c_str(),                   //
-                         1                                   // overwrite
-    );
-    FML_CHECK(result == 0)
+#if FML_OS_WIN
+    const auto success =
+        ::SetEnvironmentVariable(kVulkanICDFileNamesEnvVariableKey,  //
+                                 icd_path.c_str(),                   //
+                                 ) != 0;
+#else   // FML_OS_WIN
+    const auto success = ::setenv(kVulkanICDFileNamesEnvVariableKey,  //
+                                  icd_path.c_str(),                   //
+                                  1  // overwrite
+                                  ) == 0;
+#endif  // FML_OS_WIN
+    FML_CHECK(success)
         << "Could not set the environment variable to use SwiftShader.";
   } else {
     FML_CHECK(false)
@@ -50,7 +62,7 @@ void SetupSwiftshaderOnce(bool use_swiftshader) {
   });
   FML_CHECK(swiftshader_preference == use_swiftshader)
       << "The option to use SwiftShader in a process can only be set once and "
-         "may be changed later.";
+         "may not be changed later.";
 }
 
 }  // namespace impeller
