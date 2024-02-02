@@ -336,7 +336,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   TaskObserverAdd old_task_observer_add = settings.task_observer_add;
   settings.task_observer_add = [old_task_observer_add, platform_task_runner,
                                 platform_isolate_manager](
-                                   intptr_t key, fml::closure callback) {
+                                   intptr_t key, const fml::closure& callback) {
     platform_task_runner->PostTask([old_task_observer_add,
                                     platform_isolate_manager, key, callback]() {
       if (platform_isolate_manager->IsShutdown()) {
