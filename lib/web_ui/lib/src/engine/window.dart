@@ -123,7 +123,10 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   void render(ui.Scene scene, {ui.Size? size}) {
     assert(!isDisposed, 'Trying to render a disposed EngineFlutterView.');
-    platformDispatcher.render(scene, view: this, size: size);
+    if (size != null) {
+      resize(size);
+    }
+    platformDispatcher.render(scene, view: this);
   }
 
   @override
@@ -171,6 +174,9 @@ base class EngineFlutterView implements ui.FlutterView {
     dom.rootElement.style
       ..width = '${logicalSize.width}px'
       ..height = '${logicalSize.height}px';
+
+    // Force an update of the physicalSize so it's ready for the renderer.
+    _computePhysicalSize();
   }
 
   /// Lazily populated and cleared at the end of the frame.
