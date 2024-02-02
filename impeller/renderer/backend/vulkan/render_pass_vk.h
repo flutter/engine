@@ -124,13 +124,12 @@ class RenderPassVK final : public RenderPass {
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
-      const SharedHandleVK<vk::RenderPass>& old_renderpass,
+      const SharedHandleVK<vk::RenderPass>& recycled_renderpass,
       const std::shared_ptr<CommandBufferVK>& command_buffer) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,
-      const vk::RenderPass& pass,
-      const SharedHandleVK<vk::Framebuffer>& old_framebuffer) const;
+      const vk::RenderPass& pass) const;
 
   RenderPassVK(const RenderPassVK&) = delete;
 

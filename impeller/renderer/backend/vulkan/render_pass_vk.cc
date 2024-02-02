@@ -80,7 +80,7 @@ static std::vector<vk::ClearValue> GetVKClearValues(
 
 SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     const ContextVK& context,
-    const SharedHandleVK<vk::RenderPass>& old_renderpass,
+    const SharedHandleVK<vk::RenderPass>& recycled_renderpass,
     const std::shared_ptr<CommandBufferVK>& command_buffer) const {
   BarrierVK barrier;
   barrier.new_layout = vk::ImageLayout::eGeneral;
@@ -128,8 +128,14 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     );
     TextureVK::Cast(*stencil->texture).SetLayout(barrier);
   }
-  if (old_renderpass != nullptr) {
-    return old_renderpass;
+
+  // There may exist a previous recycled render pass that we can continue using.
+  // This is probably compatible with the render pass we are about to construct,
+  // but I have not conclusively proven this. If there are scenarios that
+  // produce validation warnings, we could use them to determine if we need
+  // additional checks at this point to determine reusability.
+  if (recycled_renderpass != nullptr) {
+    return recycled_renderpass;
   }
 
   auto pass = builder.Build(context.GetDevice());
@@ -163,25 +169,27 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
         encoder->Track(attachment.resolve_texture);
         return true;
       });
-  SharedHandleVK<vk::RenderPass> maybe_render_pass;
-  SharedHandleVK<vk::Framebuffer> maybe_framebuffer;
+
+  SharedHandleVK<vk::RenderPass> recycled_render_pass;
+  SharedHandleVK<vk::Framebuffer> recycled_framebuffer;
   if (resolve_image_vk_) {
-    maybe_render_pass = TextureVK::Cast(*resolve_image_vk_).GetRenderPass();
-    maybe_framebuffer = TextureVK::Cast(*resolve_image_vk_).GetFramebuffer();
+    recycled_render_pass = TextureVK::Cast(*resolve_image_vk_).GetRenderPass();
+    recycled_framebuffer = TextureVK::Cast(*resolve_image_vk_).GetFramebuffer();
   }
 
   const auto& target_size = render_target_.GetRenderTargetSize();
 
   render_pass_ =
-      CreateVKRenderPass(vk_context, maybe_render_pass, command_buffer_);
+      CreateVKRenderPass(vk_context, recycled_render_pass, command_buffer_);
   if (!render_pass_) {
     VALIDATION_LOG << "Could not create renderpass.";
     is_valid_ = false;
     return;
   }
 
-  auto framebuffer =
-      CreateVKFramebuffer(vk_context, *render_pass_, maybe_framebuffer);
+  auto framebuffer = (recycled_framebuffer == nullptr)
+                         ? CreateVKFramebuffer(vk_context, *render_pass_)
+                         : recycled_framebuffer;
   if (!framebuffer) {
     VALIDATION_LOG << "Could not create framebuffer.";
     is_valid_ = false;
@@ -245,8 +253,7 @@ void RenderPassVK::OnSetLabel(std::string label) {
 
 SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
     const ContextVK& context,
-    const vk::RenderPass& pass,
-    const SharedHandleVK<vk::Framebuffer>& old_framebuffer) const {
+    const vk::RenderPass& pass) const {
   vk::FramebufferCreateInfo fb_info;
 
   fb_info.renderPass = pass;
@@ -281,10 +288,6 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   }
 
   fb_info.setAttachments(attachments);
-
-  if (old_framebuffer != nullptr) {
-    return old_framebuffer;
-  }
 
   auto [result, framebuffer] =
       context.GetDevice().createFramebufferUnique(fb_info);

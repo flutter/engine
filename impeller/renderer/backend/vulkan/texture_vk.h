@@ -45,12 +45,29 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   bool IsSwapchainImage() const { return source_->IsSwapchainImage(); }
 
   // These methods should only be used by render_pass_vk.h
+
+  /// @brief Store the last framebuffer object used with this texture.
+  ///
+  /// This field is only set if this texture is used as the resolve texture
+  /// of a render pass. By construction, this framebuffer should be compatible
+  /// with any future render passes.
   void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer);
 
+  /// @brief Store the last render pass object used with this texture.
+  ///
+  /// This field is only set if this texture is used as the resolve texture
+  /// of a render pass. By construction, this framebuffer should be compatible
+  /// with any future render passes.
   void SetRenderPass(const SharedHandleVK<vk::RenderPass>& renderpass);
 
+  /// @brief Retrieve the last framebuffer object used with this texture.
+  ///
+  /// May be nullptr if no previous framebuffer existed.
   SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
 
+  /// @brief Retrieve the last render pass object used with this texture.
+  ///
+  /// May be nullptr if no previous render pass existed.
   SharedHandleVK<vk::RenderPass> GetRenderPass() const;
 
  private:
