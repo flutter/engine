@@ -1507,6 +1507,17 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   SkMatrix finalMatrix;
   finalMatrix.setConcat(screenScaleMatrix, rotateMatrix);
 
+  // The childclippingview's frame is set based on flow, but the platform view's frame is set based
+  // on quartz. Although they should be the same, we should tolerate small floating point
+  // errors.
+  // Push clip rects the same size as the platform view but faking a floating point error.
+  SkRect clipRectSmaller =
+      SkRect::MakeXYWH(0, 0, 300 - kFloatCompareEpsilon, 300 - kFloatCompareEpsilon);
+  stack.PushClipRect(clipRectSmaller);
+  SkRect clipRectLarger =
+      SkRect::MakeXYWH(0, 0, 300 + kFloatCompareEpsilon, 300 + kFloatCompareEpsilon);
+  stack.PushClipRect(clipRectLarger);
+
   auto embeddedViewParams =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
 
@@ -1516,9 +1527,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                                                  toView:mockFlutterView];
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
-  // The childclippingview's frame is set based on flow, but the platform view's frame is set based
-  // on quartz. Although they should be the same, but we should tolerate small floating point
-  // errors.
+  // See above comment about tolerating small floating point errors.
   XCTAssertLessThan(fabs(platformViewRectInFlutterView.origin.x - childClippingView.frame.origin.x),
                     kFloatCompareEpsilon);
   XCTAssertLessThan(fabs(platformViewRectInFlutterView.origin.y - childClippingView.frame.origin.y),
@@ -1529,6 +1538,8 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertLessThan(
       fabs(platformViewRectInFlutterView.size.height - childClippingView.frame.size.height),
       kFloatCompareEpsilon);
+
+  XCTAssertNil(childClippingView.maskView);
 }
 
 - (void)testClipsDoNotInterceptWithPlatformViewShouldNotAddMaskView {
