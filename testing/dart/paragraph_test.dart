@@ -322,7 +322,6 @@ void main() {
     const double fontSize = 10.0;
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
       fontSize: fontSize,
-      fontWeight: FontWeight.w500,
     ));
     builder.addText('Test\nTest');
     final Paragraph paragraph = builder.build();
@@ -330,7 +329,7 @@ void main() {
 
     expect(paragraph.debugGetFontAt(0)?.fontSize, equals(fontSize));
     expect(paragraph.debugGetFontAt(0)?.style, equals(FontStyle.normal));
-    expect(paragraph.debugGetFontAt(0)?.weight, equals(500));
+    expect(paragraph.debugGetFontAt(0)?.weight, equals(400));
     expect(paragraph.debugGetFontAt(0)?.fontFamily, equals('MingLiU'));
 
     expect(paragraph.debugGetFontAt(-1), equals(null));
