@@ -33,9 +33,9 @@ static void FindSwiftShaderICDAtKnownPaths() {
         {executable_directory_path.second, kSwiftShaderICDJSON});
 #if FML_OS_WIN
     const auto success =
-        ::SetEnvironmentVariable(kVulkanICDFileNamesEnvVariableKey,  //
-                                 icd_path.c_str()                    //
-                                 ) != 0;
+        ::SetEnvironmentVariableA(kVulkanICDFileNamesEnvVariableKey,  //
+                                  icd_path.c_str()                    //
+                                  ) != 0;
 #else   // FML_OS_WIN
     const auto success = ::setenv(kVulkanICDFileNamesEnvVariableKey,  //
                                   icd_path.c_str(),                   //

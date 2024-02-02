@@ -10,7 +10,7 @@ namespace impeller {
 //------------------------------------------------------------------------------
 /// @brief      Find and setup the installable client driver for a locally built
 ///             SwiftShader at known paths. The option to use SwiftShader can
-///             only be used one in the process. While calling this method
+///             only be used once in the process. While calling this method
 ///             multiple times is fine, specifying a different use_swiftshader
 ///             value will trip an assertion.
 ///
