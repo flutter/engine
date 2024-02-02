@@ -3968,5 +3968,32 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   }
 }
 
+// b/323402168
+TEST_P(AiksTest, GaussianBlurTinyMipMap) {
+  for (int32_t i = 0; i < 5; ++i) {
+    Canvas canvas;
+    ISize clip_size = ISize(i, i);
+    canvas.ClipRect(
+        Rect::MakeXYWH(400, 400, clip_size.width, clip_size.height));
+    canvas.DrawCircle(
+        {400, 400}, 200,
+        {
+            .color = Color::Green(),
+            .image_filter = ImageFilter::MakeBlur(
+                Sigma(0.1), Sigma(0.1), FilterContents::BlurStyle::kNormal,
+                Entity::TileMode::kDecal),
+        });
+    canvas.Restore();
+
+    Picture picture = canvas.EndRecordingAsPicture();
+    std::shared_ptr<RenderTargetCache> cache =
+        std::make_shared<RenderTargetCache>(
+            GetContext()->GetResourceAllocator());
+    AiksContext aiks_context(GetContext(), nullptr, cache);
+    std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
+    EXPECT_TRUE(image) << "clip rect " << i;
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller
