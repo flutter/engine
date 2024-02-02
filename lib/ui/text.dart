@@ -1252,7 +1252,8 @@ final class FontInfo {
 
   /// The thickness of the strokes used to draw the glyphs in the font.
   ///
-  /// This value has the same meaning as the integer value [FontWeight.value].
+  /// This is the same measurement as [FontWeight.value]: a [weight] value of
+  /// 400 is equivalent to [FontWeight.w400].
   final int weight;
 
   /// The size of the font in logical pixels.
@@ -1265,7 +1266,7 @@ final class FontInfo {
   /// font.
   ///
   /// This value may not be the same value as the family name used to register
-  /// the font, either via the `FontLoader` API, or in the pubspec.yaml file.
+  /// (either via the `FontLoader` API, or in the pubspec.yaml file) the font.
   ///
   /// The text layout library may not provide a meaningful family name for every
   /// font. For example, on Android a system fallback font may have a family name
@@ -3140,6 +3141,12 @@ abstract class Paragraph {
 
   /// Returns the information of the font used to render the glyph at the given
   /// `codeUnitOffset`, for debugging purposes.
+  ///
+  /// This method should typically only be used to debug your application. Tests
+  /// or application code should avoid relying on the return value of this method
+  /// as it may not be stable. The font may change when the application decides
+  /// to download more suitable fonts, as is common in web apps. Operating
+  /// systems may not provide meaningful and stable names for certain fonts.
   ///
   /// This method always returns null when asserts are disabled, or when the text
   /// layout library does not support this feature. Null is also returned if the
