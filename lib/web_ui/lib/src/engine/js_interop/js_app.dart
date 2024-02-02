@@ -25,7 +25,27 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
     return _hostElement!;
   }
 
+  @JS('viewConstraints')
+  external JsViewConstraints? get _viewConstraints;
+  JsViewConstraints? get viewConstraints {
+    // Assert constraints are valid?
+    return _viewConstraints;
+  }
+
   external JSAny? get initialData;
+}
+
+/// The JS bindings for a [ViewConstraints] object.
+@JS()
+@staticInterop
+class JsViewConstraints {}
+
+/// The attributes of a [JsViewConstraints] object.
+extension JsViewConstraintsExtension on JsViewConstraints {
+  external double? get maxHeight;
+  external double? get maxWidth;
+  external double? get minHeight;
+  external double? get minWidth;
 }
 
 /// The public JS API of a running Flutter Web App.
