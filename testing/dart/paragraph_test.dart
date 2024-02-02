@@ -327,10 +327,20 @@ void main() {
     final Paragraph paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
 
-    expect(paragraph.debugGetFontAt(0)?.fontSize, equals(fontSize));
-    expect(paragraph.debugGetFontAt(0)?.style, equals(FontStyle.normal));
-    expect(paragraph.debugGetFontAt(0)?.weight, equals(400));
-    expect(paragraph.debugGetFontAt(0)?.fontFamily, equals('MingLiU'));
+    bool assertsEnabled = false;
+    assert(() {
+      assertsEnabled = true;
+      return true;
+    }());
+
+    if (assertsEnabled) {
+      expect(paragraph.debugGetFontAt(0)?.fontSize, equals(fontSize));
+      expect(paragraph.debugGetFontAt(0)?.style, equals(FontStyle.normal));
+      expect(paragraph.debugGetFontAt(0)?.weight, equals(400));
+      expect(paragraph.debugGetFontAt(0)?.fontFamily, equals('MingLiU'));
+    } else {
+      expect(paragraph.debugGetFontAt(0), equals(null));
+    }
 
     expect(paragraph.debugGetFontAt(-1), equals(null));
     expect(paragraph.debugGetFontAt(99), equals(null));
