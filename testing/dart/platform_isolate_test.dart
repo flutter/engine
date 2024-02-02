@@ -285,6 +285,20 @@ void main() {
     });
   });
 
+  test('PlatformIsolate.spawn, scheduleMicrotask', () async {
+    final resultCompleter = Completer();
+    final resultPort =
+        RawReceivePort((message) => resultCompleter.complete(message));
+    final isolate = await PlatformIsolate.spawn(
+        (port) {
+          scheduleMicrotask(() => port.send(PlatformIsolate.isRunningOnPlatformThread()));
+        },
+        resultPort.sendPort);
+    print("\n\nMicrotask on platform thread: ${await resultCompleter.future}\n\n");
+    expect(await resultCompleter.future, isTrue);
+    resultPort.close();
+  });
+
   // TODO(flutter/flutter#136314): At the moment this works, but logs a spurious
   // error. We need to silence that error.
   /*test('PlatformIsolate.spawn, onExit, self exit', () async {

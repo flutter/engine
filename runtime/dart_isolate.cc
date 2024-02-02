@@ -331,6 +331,24 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     return true;
   };
 
+  // The platform isolate task observer must be added on the platform thread. So
+  // schedule the add function on the platform task runner.
+  TaskObserverAdd old_task_observer_add = settings.task_observer_add;
+  settings.task_observer_add = [old_task_observer_add, platform_task_runner,
+                               platform_isolate_manager](
+                                  intptr_t key, fml::closure callback) {
+    platform_task_runner->PostTask([old_task_observer_add,
+                                    platform_isolate_manager, key, callback]() {
+      if (platform_isolate_manager->IsShutdown()) {
+        // Shutdown happened in between this task being posted, and it running.
+        // platform_isolate has already been shut down. Do nothing.
+        FML_LOG(INFO) << "Shutdown before platform isolate task observer added";
+        return;
+      }
+      old_task_observer_add(key, callback);
+    });
+  };
+
   UIDartState::Context context(task_runners);
   context.advisory_script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
   context.advisory_script_entrypoint =
