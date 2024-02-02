@@ -60,6 +60,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
@@ -79,8 +80,9 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     }
   }
 
+  ISize subpass_size = ISize::Ceil(coverage->GetSize());
   fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
-      label, ISize::Ceil(coverage->GetSize()),
+      label, subpass_size,
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
@@ -90,7 +92,8 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
             entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
-      msaa_enabled);
+      msaa_enabled,
+      std::min(mip_count, static_cast<int32_t>(subpass_size.MipCount())));
 
   if (!render_target.ok()) {
     return std::nullopt;

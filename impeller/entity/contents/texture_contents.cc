@@ -79,6 +79,7 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   // Passthrough textures that have simple rectangle paths and complete source
   // rects.
@@ -101,7 +102,8 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
       std::nullopt,                                      // coverage_limit
       sampler_descriptor.value_or(sampler_descriptor_),  // sampler_descriptor
       true,                                              // msaa_enabled
-      label);                                            // label
+      /*mip_count=*/mip_count,
+      label);  // label
 }
 
 bool TextureContents::Render(const ContentContext& renderer,
@@ -140,6 +142,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = pass.GetOrthographicTransform() *
                    capture.AddMatrix("Transform", entity.GetTransform());
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
@@ -155,7 +158,7 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   auto pipeline_options = OptionsFromPassAndEntity(pass, entity);
   if (!stencil_enabled_) {
-    pipeline_options.stencil_compare = CompareFunction::kAlways;
+    pipeline_options.stencil_mode = ContentContextOptions::StencilMode::kIgnore;
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
