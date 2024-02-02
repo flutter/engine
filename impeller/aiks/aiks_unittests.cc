@@ -3968,7 +3968,9 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   }
 }
 
-// b/323402168
+// This addresses a bug where tiny blurs could result in mip maps that beyond
+// the limits for the textures used for blurring.
+// See also: b/323402168
 TEST_P(AiksTest, GaussianBlurSolidColorTinyMipMap) {
   for (int32_t i = 1; i < 5; ++i) {
     Canvas canvas;
@@ -3993,7 +3995,9 @@ TEST_P(AiksTest, GaussianBlurSolidColorTinyMipMap) {
   }
 }
 
-// b/323402168
+// This addresses a bug where tiny blurs could result in mip maps that beyond
+// the limits for the textures used for blurring.
+// See also: b/323402168
 TEST_P(AiksTest, GaussianBlurBackdropTinyMipMap) {
   for (int32_t i = 0; i < 5; ++i) {
     Canvas canvas;
