@@ -773,10 +773,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     scheduleFrameCallback!();
   }
 
-  /// Updates the [view]'s rendering on the GPU with the newly provided [scene]
-  /// of physical [size].
-  ///
-  /// This function must be called within the scope of the
+  /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
   /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
   /// is called a second time during a single [onBeginFrame]/[onDrawFrame]
@@ -800,9 +797,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  Future<void> render(ui.Scene scene, {
-      ui.FlutterView? view,
-  }) async {
+  Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
     final EngineFlutterView? target = (view ?? implicitView) as EngineFlutterView?;
     assert(target != null, 'Calling render without a FlutterView');
     if (target == null) {

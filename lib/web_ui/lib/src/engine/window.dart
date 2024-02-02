@@ -126,7 +126,7 @@ base class EngineFlutterView implements ui.FlutterView {
     if (size != null) {
       resize(size);
     }
-    platformDispatcher.render(scene, view: this);
+    platformDispatcher.render(scene, this);
   }
 
   @override
