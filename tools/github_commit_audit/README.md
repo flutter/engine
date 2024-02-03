@@ -19,10 +19,20 @@ Either:
 
 ```bash
 # Assuming you're in the root of the repository.
-dart ./tools/header_guard_check/bin/main.dart
+dart ./tools/github_commit_audit/bin/main.dart
 ```
 
 ## Options
 
 - `--help`: Show help message.
 - `--repo`: The repository to audit. Defaults to `flutter/engine`.
+- `--include-label`: Skip PRs that don't have this label.
+- `--exclude-label`: Skip PRs that have this label.
+
+## Examples
+
+```bash
+dart ./tools/github_commit_audit/bin/main.dart \
+  --repo flutter/engine \
+  --exclude-label "platform-web"
+```

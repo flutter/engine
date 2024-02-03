@@ -17,14 +17,12 @@ final class GithubClient {
   final String _token;
 
   Future<Object> _fetchJson(Uri url) async {
-    final http.Response response =
-        await _client.get(url, headers: <String, String>{
+    final http.Response response = await _client.get(url, headers: <String, String>{
       'Accept': 'application/vnd.github.v3+json',
       'Authorization': _token,
     });
     if (response.statusCode != 200) {
-      throw StateError(
-          'Failed to fetch $url: ${response.statusCode} ${response.reasonPhrase}');
+      throw StateError('Failed to fetch $url: ${response.statusCode} ${response.reasonPhrase}');
     }
     return json.decode(response.body) as Object;
   }
@@ -52,10 +50,10 @@ final class GithubClient {
       <String, String>{
         'base': base,
         'state': state?.name ?? 'all',
+        'per_page': '$max',
       },
     );
-    final List<Object> json =
-        (await _fetchJson(url) as List<Object?>).cast<Object>();
+    final List<Object> json = (await _fetchJson(url) as List<Object?>).cast<Object>();
     for (final Object pr in json) {
       yield PullRequest.fromJson(pr as Map<String, Object?>);
     }
@@ -63,11 +61,11 @@ final class GithubClient {
 
   /// Fetches every commit for the given pull request.
   Stream<PullRequestCommit> fetchCommits(
-      String repository, int pullRequest) async* {
-    final Uri url = Uri.https(
-        'api.github.com', '/repos/$repository/pulls/$pullRequest/commits');
-    final List<Object> json =
-        (await _fetchJson(url) as List<Object?>).cast<Object>();
+    String repository,
+    int pullRequest,
+  ) async* {
+    final Uri url = Uri.https('api.github.com', '/repos/$repository/pulls/$pullRequest/commits');
+    final List<Object> json = (await _fetchJson(url) as List<Object?>).cast<Object>();
     for (final Object commit in json) {
       yield PullRequestCommit.fromJson(commit as Map<String, Object?>);
     }
@@ -75,11 +73,11 @@ final class GithubClient {
 
   /// Fetches the name and status of each check for the given commit.
   Stream<PullRequestCommitCheck> fetchCommitStatus(
-      String repository, String commit) async* {
-    final Uri url = Uri.https(
-        'api.github.com', '/repos/$repository/commits/$commit/check-runs');
-    final Map<String, Object> json =
-        (await _fetchJson(url) as Map<String, Object?>).cast<String, Object>();
+    String repository,
+    String commit,
+  ) async* {
+    final Uri url = Uri.https('api.github.com', '/repos/$repository/commits/$commit/check-runs');
+    final Map<String, Object> json = (await _fetchJson(url) as Map<String, Object?>).cast<String, Object>();
     final List<Object?> checks = json['check_runs']! as List<Object?>;
     for (final Object? check in checks) {
       final Map<String, Object?> checkMap = check! as Map<String, Object?>;
@@ -241,6 +239,7 @@ enum CheckRunConclusion {
 final class PullRequestCommitCheck {
   /// Creates a pull request commit check with the given properties.
   const PullRequestCommitCheck({
+    required this.url,
     required this.name,
     required this.conclusion,
     required this.startedAt,
@@ -250,6 +249,7 @@ final class PullRequestCommitCheck {
   /// Parses a pull request commit check from a JSON map.
   factory PullRequestCommitCheck.fromJson(Map<String, Object?> json) {
     return PullRequestCommitCheck(
+      url: json['html_url']! as String,
       name: json['name']! as String,
       conclusion: CheckRunConclusion.fromJson(json['conclusion']! as String),
       startedAt: json['started_at'] == null
@@ -260,6 +260,9 @@ final class PullRequestCommitCheck {
           : DateTime.parse(json['completed_at']! as String),
     );
   }
+
+  /// The URL of the check.
+  final String url;
 
   /// The name of the check.
   final String name;
