@@ -733,10 +733,7 @@ class ViewConstraints implements ui.ViewConstraints {
       minHeight = size.height,
       maxHeight = size.height;
 
-  factory ViewConstraints.fromJs(JsViewConstraints? constraints, ui.Size? size) {
-    if (size == null) {
-      return const ViewConstraints();
-    }
+  factory ViewConstraints.fromJs(JsViewConstraints? constraints, ui.Size size) {
     if (constraints == null) {
       return ViewConstraints.tight(size);
     }
@@ -821,21 +818,22 @@ class ViewConstraints implements ui.ViewConstraints {
 // Returns the configured userValue, unless it's null (not passed) in which it returns
 // the actual physicalSize.
 double _computeMinConstraintValue(double? desired, double available) {
-  assert(desired == null || desired >= 0, 'Minimum constraint cannot be less than 0');
+  assert(desired == null || desired >= 0, 'Minimum constraint must be >= 0 if set.');
+  assert(desired == null || desired.isFinite, 'Minimum constraint must be finite.');
+  // Do we need to max/min the values, or just trust the user?
   return desired ?? available;
 }
 
-// Computes the "max" value for a constraint that takes into account user configuration
-// and the available size.
+// Computes the "max" value for a constraint that takes into account user `desired`
+// configuration and the `available` size.
 //
-// Returns the configured userValue unless:
-//  * It is null, in which case it returns the physicalSize
-//  * It is `-1`, in which case it returns "infinity" / unconstrained.
+// Returns the `desired` value unless it is `null`, in which case it returns the
+// `available` size.
+//
+// A `desired` value of `Infinity` or `Number.POSITIVE_INFINITY` (from JS) means
+// "unconstrained".
 double _computeMaxConstraintValue(double? desired, double available) {
-  assert(desired == null || desired >= -1, 'Maximum constraint must be greater than 0 (or -1 for unconstrained)');
-  return switch (desired) {
-    null => available,
-    -1 => double.infinity,
-    _ => desired,
-  };
+  assert(desired == null || desired >= 0, 'Maximum constraint must be >= 0 if set.');
+  // Do we need to max/min the values, or just trust the user?
+  return desired ?? available;
 }
