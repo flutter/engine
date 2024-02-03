@@ -607,7 +607,7 @@ Future<void> testMain() async {
       expect(view.physicalSize, const ui.Size(25.0, 25.0));
       expect(metricsChangedCount, 0);
 
-      // Resize the host to 20x20.
+      // Simulate the browser resizing the host to 20x20.
       host.style
         ..width = '20px'
         ..height = '20px';
@@ -631,6 +631,28 @@ Future<void> testMain() async {
       await view.onResize.first;
       // The view should maintain the debugPhysicalSizeOverride.
       expect(view.physicalSize, const ui.Size(100.0, 100.0));
+    });
+
+    test('can resize host', () async {
+      // Reset host style, so it tightly wraps the rootElement of the view.
+      // This style change will trigger a "onResize" event when all the DOM
+      // operations settle that we must await before taking measurements.
+      host.style
+        ..display = 'inline-block'
+        ..width = 'auto'
+        ..height = 'auto';
+
+      // Resize the host to 20x20 (physical pixels).
+      view.resize(const ui.Size.square(50));
+
+      await view.onResize.first;
+
+      // The host tightly wraps the rootElement:
+      expect(view.physicalSize, const ui.Size(50.0, 50.0));
+
+      // Inspect the rootElement directly:
+      expect(view.dom.rootElement.clientWidth, 50 / 2.5);
+      expect(view.dom.rootElement.clientHeight, 50 / 2.5);
     });
   });
 }
