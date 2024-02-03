@@ -16,7 +16,7 @@ void main(List<String> args) async {
   // Determine what repository to fetch pull requests from.
   final ArgParser parser = ArgParser()
     ..addOption(
-      'repository',
+      'repo',
       abbr: 'r',
       defaultsTo: 'flutter/engine',
       help: 'The repository to fetch pull requests from.',
@@ -49,7 +49,7 @@ void main(List<String> args) async {
     );
 
   final ArgResults results = parser.parse(args);
-  final String repository = results['repository'] as String;
+  final String repository = results['repo'] as String;
   final int max = int.parse(results['max'] as String);
   final List<String> includeLabels = List<String>.from(results['include-label'] as List<Object?>);
   final List<String> excludeLabels = List<String>.from(results['exclude-label'] as List<Object?>);

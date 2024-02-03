@@ -215,7 +215,7 @@ enum CheckRunConclusion {
   /// Parses a check run conclusion from a JSON string.
   ///
   /// Returns `null` if the value is not a recognized conclusion (still valid).
-  static CheckRunConclusion? fromJson(String value) {
+  static CheckRunConclusion? fromJson(String? value) {
     switch (value) {
       case 'success':
         return CheckRunConclusion.success;
@@ -251,7 +251,7 @@ final class PullRequestCommitCheck {
     return PullRequestCommitCheck(
       url: json['html_url']! as String,
       name: json['name']! as String,
-      conclusion: CheckRunConclusion.fromJson(json['conclusion']! as String),
+      conclusion: CheckRunConclusion.fromJson(json['conclusion'] as String?),
       startedAt: json['started_at'] == null
           ? null
           : DateTime.parse(json['started_at']! as String),
