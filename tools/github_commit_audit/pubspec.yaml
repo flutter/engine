@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-name: header_guard_check
+name: github_commit_audit
 publish_to: none
 
 # Do not add any dependencies that require more than what is provided in
