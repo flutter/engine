@@ -138,6 +138,28 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderAdvancedBlendColorFilterWithSaveLayer) {
+  Canvas canvas;
+
+  Rect layer_rect = Rect::MakeXYWH(0, 0, 500, 500);
+  canvas.ClipRect(layer_rect);
+
+  canvas.SaveLayer(
+      {
+          .color_filter = ColorFilter::MakeBlend(BlendMode::kDifference,
+                                                 Color(0, 1, 0, 0.5)),
+      },
+      layer_rect);
+
+  Paint paint;
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300),
+                  {.color = Color::White()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 namespace {
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
@@ -3966,6 +3988,101 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_EQ(actual[i], expected[i]) << "Index: " << i;
   }
+}
+
+// This addresses a bug where tiny blurs could result in mip maps that beyond
+// the limits for the textures used for blurring.
+// See also: b/323402168
+TEST_P(AiksTest, GaussianBlurSolidColorTinyMipMap) {
+  for (int32_t i = 1; i < 5; ++i) {
+    Canvas canvas;
+    Scalar fi = i;
+    canvas.DrawPath(
+        PathBuilder{}
+            .MoveTo({100, 100})
+            .LineTo({100.f + fi, 100.f + fi})
+            .TakePath(),
+        {.color = Color::Chartreuse(),
+         .image_filter = ImageFilter::MakeBlur(
+             Sigma(0.1), Sigma(0.1), FilterContents::BlurStyle::kNormal,
+             Entity::TileMode::kClamp)});
+
+    Picture picture = canvas.EndRecordingAsPicture();
+    std::shared_ptr<RenderTargetCache> cache =
+        std::make_shared<RenderTargetCache>(
+            GetContext()->GetResourceAllocator());
+    AiksContext aiks_context(GetContext(), nullptr, cache);
+    std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
+    EXPECT_TRUE(image) << " length " << i;
+  }
+}
+
+// This addresses a bug where tiny blurs could result in mip maps that beyond
+// the limits for the textures used for blurring.
+// See also: b/323402168
+TEST_P(AiksTest, GaussianBlurBackdropTinyMipMap) {
+  for (int32_t i = 0; i < 5; ++i) {
+    Canvas canvas;
+    ISize clip_size = ISize(i, i);
+    canvas.ClipRect(
+        Rect::MakeXYWH(400, 400, clip_size.width, clip_size.height));
+    canvas.DrawCircle(
+        {400, 400}, 200,
+        {
+            .color = Color::Green(),
+            .image_filter = ImageFilter::MakeBlur(
+                Sigma(0.1), Sigma(0.1), FilterContents::BlurStyle::kNormal,
+                Entity::TileMode::kDecal),
+        });
+    canvas.Restore();
+
+    Picture picture = canvas.EndRecordingAsPicture();
+    std::shared_ptr<RenderTargetCache> cache =
+        std::make_shared<RenderTargetCache>(
+            GetContext()->GetResourceAllocator());
+    AiksContext aiks_context(GetContext(), nullptr, cache);
+    std::shared_ptr<Image> image = picture.ToImage(aiks_context, {1024, 768});
+    EXPECT_TRUE(image) << " clip rect " << i;
+  }
+}
+
+TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
+  // This test is for checking out how stable rendering is when content is
+  // translated underneath a blur.  Animating under a blur can cause
+  // *shimmering* to happen as a result of pixel alignment.
+  // See also: https://github.com/flutter/flutter/issues/140193
+  auto boston = std::make_shared<Image>(
+      CreateTextureForFixture("boston.jpg", /*enable_mipmapping=*/true));
+  ASSERT_TRUE(boston);
+  int64_t count = 0;
+  Scalar sigma = 20.0;
+  Scalar freq = 0.1;
+  Scalar amp = 50.0;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 200);
+      ImGui::SliderFloat("Frequency", &freq, 0.01, 2.0);
+      ImGui::SliderFloat("Amplitude", &amp, 1, 100);
+    }
+    ImGui::End();
+
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    Scalar y = amp * sin(freq * 2.0 * M_PI * count / 60);
+    canvas.DrawImage(boston,
+                     Point(1024 / 2 - boston->GetSize().width / 2,
+                           (768 / 2 - boston->GetSize().height / 2) + y),
+                     {});
+    canvas.ClipRect(Rect::MakeLTRB(100, 100, 900, 700));
+    canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                     ImageFilter::MakeBlur(Sigma(sigma), Sigma(sigma),
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kClamp));
+    count += 1;
+    return canvas.EndRecordingAsPicture();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 }  // namespace testing
