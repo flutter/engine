@@ -35,11 +35,29 @@ dependency_overrides:
     path: ../../../third_party/dart/third_party/pkg/async
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
+  collection:
+    path: ../../../third_party/dart/third_party/pkg/collection
   expect:
     path: ../../../third_party/dart/pkg/expect
+  http:
+    path: ../../../third_party/dart/third_party/pkg/http/pkgs/http
+  http_parser:
+    path: ../../../third_party/dart/third_party/pkg/http_parser
+  path:
+    path: ../../../third_party/dart/third_party/pkg/path
   litetest:
     path: ../../testing/litetest
   meta:
     path: ../../../third_party/dart/pkg/meta
   smith:
     path: ../../../third_party/dart/pkg/smith
+  source_span:
+    path: ../../../third_party/dart/third_party/pkg/source_span
+  string_scanner:
+    path: ../../../third_party/dart/third_party/pkg/string_scanner
+  term_glyph:
+    path: ../../../third_party/dart/third_party/pkg/term_glyph
+  typed_data:
+    path: ../../../third_party/dart/third_party/pkg/typed_data
+  web:
+    path: ../../../third_party/dart/third_party/pkg/web

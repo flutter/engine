@@ -240,6 +240,7 @@ vars = {
   "upstream_vector_math": "https://github.com/google/vector_math.dart.git",
   "upstream_VulkanMemoryAllocator": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git",
   "upstream_watcher": "https://github.com/dart-lang/watcher.git",
+  "upstream_web": "https://github.com/dart-lang/web.git",
   "upstream_web_socket_channel": "https://github.com/dart-lang/web_socket_channel.git",
   "upstream_webdev": "https://github.com/dart-lang/webdev.git",
   "upstream_webkit_inspection_protocol": "https://github.com/google/webkit_inspection_protocol.dart.git",
@@ -493,6 +494,9 @@ deps = {
 
   'src/third_party/dart/third_party/pkg/watcher':
    Var('dart_git') + '/watcher.git' + '@' + Var('dart_watcher_rev'),
+
+  'src/third_party/dart/third_party/pkg/web':
+   Var('dart_git') + '/web.git@393ed8301ceb1c0557dd1916c17d16c0a3a73003',
 
   'src/third_party/dart/third_party/pkg/web_socket_channel':
    Var('dart_git') + '/web_socket_channel.git@5241175e7c66271850d6e75fb9ec90068f9dd3c4',
