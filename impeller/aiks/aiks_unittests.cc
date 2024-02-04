@@ -708,7 +708,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   Paint text_paint;
   text_paint.color = options.color;
   text_paint.mask_blur_descriptor = options.mask_blur_descriptor;
-  canvas.DrawTextFrame(frame, options.position, text_paint);
+  canvas.DrawTextFrame(frame, options.position, 1.0, text_paint);
   return true;
 }
 
@@ -738,7 +738,7 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
 
   Paint text_paint;
   text_paint.color = options.color;
-  canvas.DrawTextFrame(frame, options.position, text_paint);
+  canvas.DrawTextFrame(frame, options.position, 1.0, text_paint);
   return true;
 }
 
@@ -906,7 +906,7 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
       auto frame = MakeTextFrameFromTextBlobSkia(blob);
-      canvas.DrawTextFrame(frame, Point(), text_paint);
+      canvas.DrawTextFrame(frame, Point(), 1.0, text_paint);
     }
     canvas.Restore();
   }
@@ -3008,7 +3008,7 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
   auto blob = SkTextBlob::MakeFromString("Hello", sk_font);
   ASSERT_NE(blob, nullptr);
   auto frame = MakeTextFrameFromTextBlobSkia(blob);
-  canvas.DrawTextFrame(frame, Point(), text_paint);
+  canvas.DrawTextFrame(frame, Point(), 1.0, text_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

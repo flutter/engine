@@ -732,6 +732,7 @@ void Canvas::SaveLayer(const Paint& paint,
 
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
+                           Scalar scale,
                            const Paint& paint) {
   Entity entity;
   entity.SetClipDepth(GetClipDepth());
@@ -739,6 +740,7 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
+  text_contents->SetScale(scale);
   text_contents->SetColor(paint.color);
   text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
 

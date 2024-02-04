@@ -364,14 +364,6 @@ bool EntityPass::Render(ContentContext& renderer,
                   Rect::MakeSize(root_render_target.GetRenderTargetSize()),
                   {.readonly = true});
 
-  const auto& lazy_glyph_atlas = renderer.GetLazyGlyphAtlas();
-  IterateAllEntities([&lazy_glyph_atlas](const Entity& entity) {
-    if (const auto& contents = entity.GetContents()) {
-      contents->PopulateGlyphAtlas(lazy_glyph_atlas, entity.DeriveTextScale());
-    }
-    return true;
-  });
-
   ClipCoverageStack clip_coverage_stack = {ClipCoverageLayer{
       .coverage = Rect::MakeSize(root_render_target.GetRenderTargetSize()),
       .clip_depth = 0}};

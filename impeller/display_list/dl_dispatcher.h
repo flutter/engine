@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
+#include "impeller/aiks/aiks_context.h"
 #include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/paint.h"
 
@@ -13,11 +14,11 @@ namespace impeller {
 
 class DlDispatcher final : public flutter::DlOpReceiver {
  public:
-  DlDispatcher();
+  explicit DlDispatcher(const std::shared_ptr<AiksContext>& context);
 
-  explicit DlDispatcher(Rect cull_rect);
+  DlDispatcher(const std::shared_ptr<AiksContext>& context, Rect cull_rect);
 
-  explicit DlDispatcher(IRect cull_rect);
+  DlDispatcher(const std::shared_ptr<AiksContext>& context, IRect cull_rect);
 
   ~DlDispatcher();
 
@@ -225,6 +226,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   Paint paint_;
   CanvasType canvas_;
   Matrix initial_matrix_;
+  std::shared_ptr<AiksContext> context_;
 
   static void SimplifyOrDrawPath(CanvasType& canvas,
                                  const SkPath& path,

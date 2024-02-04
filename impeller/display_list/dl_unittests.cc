@@ -916,7 +916,8 @@ TEST_P(DisplayListTest,
                        flutter::DlPaint(flutter::DlColor::kRed()));
   auto display_list = sub_builder.Build();
 
-  DlDispatcher dispatcher(Rect::MakeLTRB(0, 0, 2400, 1800));
+  auto context = std::make_shared<AiksContext>(GetContext(), nullptr);
+  DlDispatcher dispatcher(context, Rect::MakeLTRB(0, 0, 2400, 1800));
   dispatcher.scale(2.0, 2.0);
   dispatcher.translate(-93.0, 0.0);
   // clang-format off
@@ -945,7 +946,8 @@ TEST_P(DisplayListTest,
 }
 
 TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
-  DlDispatcher dispatcher;
+  auto context = std::make_shared<AiksContext>(GetContext(), nullptr);
+  DlDispatcher dispatcher(context);
   dispatcher.save();
   dispatcher.scale(1.618, 1.618);
   dispatcher.drawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
@@ -1768,7 +1770,7 @@ TEST(DisplayListTest, RRectBoundsComputation) {
   builder.DrawPath(path, paint);
   auto display_list = builder.Build();
 
-  DlDispatcher dispatcher;
+  DlDispatcher dispatcher(nullptr);
   display_list->Dispatch(dispatcher);
   auto picture = dispatcher.EndRecordingAsPicture();
 
@@ -1790,7 +1792,7 @@ TEST(DisplayListTest, CircleBoundsComputation) {
   builder.DrawPath(path, paint);
   auto display_list = builder.Build();
 
-  DlDispatcher dispatcher;
+  DlDispatcher dispatcher(nullptr);
   display_list->Dispatch(dispatcher);
   auto picture = dispatcher.EndRecordingAsPicture();
 

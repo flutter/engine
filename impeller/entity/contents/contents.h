@@ -56,12 +56,6 @@ class Contents {
 
   virtual ~Contents();
 
-  /// @brief  Add any text data to the specified lazy atlas. The scale parameter
-  ///         must be used again later when drawing the text.
-  virtual void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) {}
-
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
                       RenderPass& pass) const = 0;

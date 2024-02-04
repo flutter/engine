@@ -49,7 +49,7 @@ class DlMetalSurfaceProvider : public DlSurfaceProvider {
   std::unique_ptr<TestMetalContext> metal_context_;
   std::shared_ptr<DlSurfaceInstance> metal_surface_;
   mutable std::unique_ptr<MetalScreenshotter> snapshotter_;
-  mutable std::unique_ptr<impeller::AiksContext> aiks_context_;
+  mutable std::shared_ptr<impeller::AiksContext> aiks_context_;
 
   void InitScreenShotter() const;
 };

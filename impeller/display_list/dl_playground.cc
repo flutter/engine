@@ -33,8 +33,8 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
     return true;
   }
 
-  AiksContext context(GetContext(), TypographerContextSkia::Make());
-  if (!context.IsValid()) {
+  std::shared_ptr<AiksContext> context = std::make_shared<AiksContext>(GetContext(), TypographerContextSkia::Make());
+  if (!context->IsValid()) {
     return false;
   }
   return Playground::OpenPlaygroundHere(
@@ -42,16 +42,16 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
         static bool wireframe = false;
         if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
           wireframe = !wireframe;
-          context.GetContentContext().SetWireframe(wireframe);
+          context->GetContentContext().SetWireframe(wireframe);
         }
 
         auto list = callback();
 
-        DlDispatcher dispatcher;
+        DlDispatcher dispatcher(context);
         list->Dispatch(dispatcher);
         auto picture = dispatcher.EndRecordingAsPicture();
 
-        return context.Render(picture, render_target, true);
+        return context->Render(picture, render_target, true);
       });
 }
 

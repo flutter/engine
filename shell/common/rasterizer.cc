@@ -880,7 +880,7 @@ ScreenshotLayerTreeAsImageImpeller(
   RenderFrameForScreenshot(compositor_context, &builder, tree, nullptr,
                            aiks_context);
 
-  impeller::DlDispatcher dispatcher;
+  impeller::DlDispatcher dispatcher(aiks_context);
   builder.Build()->Dispatch(dispatcher);
   const auto& picture = dispatcher.EndRecordingAsPicture();
   const auto& image = picture.ToImage(

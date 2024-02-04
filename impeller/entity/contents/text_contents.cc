@@ -14,7 +14,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/typographer/glyph_atlas.h"
-#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -50,15 +49,12 @@ void TextContents::SetForceTextColor(bool value) {
   force_text_color_ = value;
 }
 
-std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
-  return frame_->GetBounds().TransformBounds(entity.GetTransform());
+void TextContents::SetScale(Scalar scale) {
+  scale_ = scale;
 }
 
-void TextContents::PopulateGlyphAtlas(
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-    Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale);
-  scale_ = scale;
+std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
+  return frame_->GetBounds().TransformBounds(entity.GetTransform());
 }
 
 bool TextContents::Render(const ContentContext& renderer,

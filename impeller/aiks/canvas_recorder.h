@@ -281,9 +281,10 @@ class CanvasRecorder {
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
+                     Scalar scale,
                      const Paint& paint) {
     return ExecuteAndSerialize(FLT_CANVAS_RECORDER_OP_ARG(DrawTextFrame),
-                               text_frame, position, paint);
+                               text_frame, position, scale, paint);
   }
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,

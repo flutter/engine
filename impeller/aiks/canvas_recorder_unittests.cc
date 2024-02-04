@@ -229,7 +229,7 @@ TEST(CanvasRecorder, ClipRRect) {
 
 TEST(CanvasRecorder, DrawTextFrame) {
   CanvasRecorder<Serializer> recorder;
-  recorder.DrawTextFrame({}, {}, {});
+  recorder.DrawTextFrame({}, {}, {}, {});
   ASSERT_EQ(recorder.GetSerializer().last_op_,
             CanvasRecorderOp::kDrawTextFrame);
 }

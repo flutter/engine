@@ -88,7 +88,7 @@ sk_sp<DlPixelData> DlMetalSurfaceProvider::ImpellerSnapshot(
     int width,
     int height) const {
   InitScreenShotter();
-  impeller::DlDispatcher dispatcher;
+  impeller::DlDispatcher dispatcher(aiks_context_);
   dispatcher.drawColor(flutter::DlColor::kTransparent(),
                        flutter::DlBlendMode::kSrc);
   list->Dispatch(dispatcher);
@@ -102,7 +102,7 @@ sk_sp<DlImage> DlMetalSurfaceProvider::MakeImpellerImage(
     int width,
     int height) const {
   InitScreenShotter();
-  impeller::DlDispatcher dispatcher;
+  impeller::DlDispatcher dispatcher(aiks_context_);
   dispatcher.drawColor(flutter::DlColor::kTransparent(),
                        flutter::DlBlendMode::kSrc);
   list->Dispatch(dispatcher);

@@ -36,11 +36,16 @@ namespace impeller {
 #define UNIMPLEMENTED \
   FML_DLOG(ERROR) << "Unimplemented detail in " << __FUNCTION__;
 
-DlDispatcher::DlDispatcher() = default;
+DlDispatcher::DlDispatcher(const std::shared_ptr<AiksContext>& context)
+    : context_(context) {}
 
-DlDispatcher::DlDispatcher(Rect cull_rect) : canvas_(cull_rect) {}
+DlDispatcher::DlDispatcher(const std::shared_ptr<AiksContext>& context,
+                           Rect cull_rect)
+    : canvas_(cull_rect), context_(context) {}
 
-DlDispatcher::DlDispatcher(IRect cull_rect) : canvas_(cull_rect) {}
+DlDispatcher::DlDispatcher(const std::shared_ptr<AiksContext>& context,
+                           IRect cull_rect)
+    : canvas_(cull_rect), context_(context) {}
 
 DlDispatcher::~DlDispatcher() = default;
 
@@ -1050,8 +1055,14 @@ void DlDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DlDispatcher::drawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                                  SkScalar x,
                                  SkScalar y) {
+  Scalar scale = canvas_.GetCurrentTransform().GetMaxBasisLengthXY();
+  if (context_) {
+    context_->GetContentContext().GetLazyGlyphAtlas()->AddTextFrame(*text_frame,
+                                                                    scale);
+  }
   canvas_.DrawTextFrame(text_frame,             //
                         impeller::Point{x, y},  //
+                        scale,                  //
                         paint_                  //
   );
 }

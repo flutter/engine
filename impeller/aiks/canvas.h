@@ -160,6 +160,7 @@ class Canvas {
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
+                     Scalar scale,
                      const Paint& paint);
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,

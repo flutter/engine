@@ -104,7 +104,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     dl_builder.SetTransform(&surface_transformation_);
     slice_->render_into(&dl_builder);
 
-    auto dispatcher = impeller::DlDispatcher();
+    auto dispatcher = impeller::DlDispatcher(aiks_context);
     dispatcher.drawDisplayList(dl_builder.Build(), 1);
     return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
                                 *impeller_target, /*reset_host_buffer=*/true);

@@ -7,8 +7,6 @@
 
 #include <memory>
 #include <optional>
-#include <variant>
-#include <vector>
 
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -118,11 +116,6 @@ class FilterContents : public Contents {
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  void PopulateGlyphAtlas(
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
-      Scalar scale) override;
 
   // |Contents|
   std::optional<Snapshot> RenderToSnapshot(
