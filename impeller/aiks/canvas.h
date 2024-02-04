@@ -107,7 +107,7 @@ class Canvas {
 
   void Rotate(Radians radians);
 
-  void DrawPath(Path path, const Paint& paint);
+  void DrawPath(const Path& path, const Paint& paint);
 
   void DrawPaint(const Paint& paint);
 
@@ -142,7 +142,7 @@ class Canvas {
       SourceRectConstraint src_rect_constraint = SourceRectConstraint::kFast);
 
   void ClipPath(
-      Path path,
+      const Path& path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void ClipRect(
