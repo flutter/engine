@@ -69,6 +69,7 @@ class DlOpReceiver {
     explicit CacheablePath(const SkPath& path) : sk_path(path) {}
 
     const SkPath sk_path;
+    mutable impeller::Path cached_impeller_path;
 
     bool operator==(const CacheablePath& other) const {
       return sk_path == other.sk_path;

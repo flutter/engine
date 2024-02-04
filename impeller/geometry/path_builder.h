@@ -26,6 +26,8 @@ class PathBuilder {
 
   ~PathBuilder();
 
+  Path CopyPath(FillType fill = FillType::kNonZero);
+
   Path TakePath(FillType fill = FillType::kNonZero);
 
   /// @brief Reserve [point_size] points and [verb_size] verbs in the underlying
@@ -154,7 +156,7 @@ class PathBuilder {
  private:
   Point subpath_start_;
   Point current_;
-  std::unique_ptr<Path::Data> prototype_ = std::make_unique<Path::Data>();
+  Path::Data prototype_;
 
   PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
 
