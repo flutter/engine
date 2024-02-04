@@ -33,7 +33,8 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
     return true;
   }
 
-  std::shared_ptr<AiksContext> context = std::make_shared<AiksContext>(GetContext(), TypographerContextSkia::Make());
+  std::shared_ptr<AiksContext> context = std::make_shared<AiksContext>(
+      GetContext(), TypographerContextSkia::Make());
   if (!context->IsValid()) {
     return false;
   }
