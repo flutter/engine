@@ -745,11 +745,8 @@ void DlDispatcher::clipPath(const SkPath& path, ClipOp sk_op, bool is_aa) {
   UNIMPLEMENTED;
 }
 
-const Path& DlDispatcher::GetOrCachePath(const CacheablePath& cache) {
-  if (cache.cached_impeller_path.IsEmpty() && !cache.sk_path.isEmpty()) {
-    cache.cached_impeller_path = skia_conversions::ToPath(cache.sk_path);
-  }
-  return cache.cached_impeller_path;
+const Path DlDispatcher::GetOrCachePath(const CacheablePath& cache) {
+  return skia_conversions::ToPath(cache.sk_path);
 }
 
 // |flutter::DlOpReceiver|

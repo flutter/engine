@@ -244,7 +244,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   CanvasType canvas_;
   Matrix initial_matrix_;
 
-  static const Path& GetOrCachePath(const CacheablePath& cache);
+  static const Path GetOrCachePath(const CacheablePath& cache);
 
   static void SimplifyOrDrawPath(CanvasType& canvas,
                                  const CacheablePath& cache,

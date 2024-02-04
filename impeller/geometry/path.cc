@@ -15,7 +15,7 @@ namespace impeller {
 
 Path::Path() : data_(new Data()) {}
 
-Path::Path(const Data& data) : data_(new Data(data)) {
+Path::Path(std::unique_ptr<Data> data) : data_(std::move(data)) {
   FML_DCHECK(data_->points.size() == data_->points.capacity());
   FML_DCHECK(data_->components.size() == data_->components.capacity());
   FML_DCHECK(data_->contours.size() == data_->contours.capacity());

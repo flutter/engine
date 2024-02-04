@@ -213,6 +213,11 @@ class Tessellator {
   ///
   std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Create a temporary polyline. Only one can exist at a time.
+  ///
+  Path::Polyline CreateTempPolyline(const Path& path, Scalar tolerance);
+
   /// @brief   The pixel tolerance used by the algorighm to determine how
   ///          many divisions to create for a circle.
   ///

@@ -14,20 +14,15 @@ PathBuilder::PathBuilder() {
 
 PathBuilder::~PathBuilder() = default;
 
-Path PathBuilder::CopyPath(FillType fill) {
-  prototype_.fill = fill;
-  return Path(prototype_);
-}
-
 Path PathBuilder::TakePath(FillType fill) {
-  prototype_.fill = fill;
+  prototype_->fill = fill;
   UpdateBounds();
-  return Path(prototype_);
+  return Path(std::move(prototype_));
 }
 
 void PathBuilder::Reserve(size_t point_size, size_t verb_size) {
-  prototype_.points.reserve(point_size);
-  prototype_.components.reserve(verb_size);
+  prototype_->points.reserve(point_size);
+  prototype_->components.reserve(verb_size);
 }
 
 PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
@@ -78,7 +73,7 @@ PathBuilder& PathBuilder::QuadraticCurveTo(Point controlPoint,
 }
 
 PathBuilder& PathBuilder::SetConvexity(Convexity value) {
-  prototype_.convexity = value;
+  prototype_->convexity = value;
   return *this;
 }
 
@@ -258,8 +253,8 @@ PathBuilder& PathBuilder::AddRoundedRectBottomLeft(Rect rect,
 
 void PathBuilder::AddContourComponent(const Point& destination,
                                       bool is_closed) {
-  auto& components = prototype_.components;
-  auto& contours = prototype_.contours;
+  auto& components = prototype_->components;
+  auto& contours = prototype_->contours;
   if (components.size() > 0 &&
       components.back().type == Path::ComponentType::kContour) {
     // Never insert contiguous contours.
@@ -268,46 +263,46 @@ void PathBuilder::AddContourComponent(const Point& destination,
     contours.emplace_back(ContourComponent(destination, is_closed));
     components.emplace_back(Path::ComponentType::kContour, contours.size() - 1);
   }
-  prototype_.bounds.reset();
+  prototype_->bounds.reset();
 }
 
 void PathBuilder::AddLinearComponent(const Point& p1, const Point& p2) {
-  auto& points = prototype_.points;
+  auto& points = prototype_->points;
   auto index = points.size();
   points.emplace_back(p1);
   points.emplace_back(p2);
-  prototype_.components.emplace_back(Path::ComponentType::kLinear, index);
-  prototype_.bounds.reset();
+  prototype_->components.emplace_back(Path::ComponentType::kLinear, index);
+  prototype_->bounds.reset();
 }
 
 void PathBuilder::AddQuadraticComponent(const Point& p1,
                                         const Point& cp,
                                         const Point& p2) {
-  auto& points = prototype_.points;
+  auto& points = prototype_->points;
   auto index = points.size();
   points.emplace_back(p1);
   points.emplace_back(cp);
   points.emplace_back(p2);
-  prototype_.components.emplace_back(Path::ComponentType::kQuadratic, index);
-  prototype_.bounds.reset();
+  prototype_->components.emplace_back(Path::ComponentType::kQuadratic, index);
+  prototype_->bounds.reset();
 }
 
 void PathBuilder::AddCubicComponent(const Point& p1,
                                     const Point& cp1,
                                     const Point& cp2,
                                     const Point& p2) {
-  auto& points = prototype_.points;
+  auto& points = prototype_->points;
   auto index = points.size();
   points.emplace_back(p1);
   points.emplace_back(cp1);
   points.emplace_back(cp2);
   points.emplace_back(p2);
-  prototype_.components.emplace_back(Path::ComponentType::kCubic, index);
-  prototype_.bounds.reset();
+  prototype_->components.emplace_back(Path::ComponentType::kCubic, index);
+  prototype_->bounds.reset();
 }
 
 void PathBuilder::SetContourClosed(bool is_closed) {
-  prototype_.contours.back().is_closed = is_closed;
+  prototype_->contours.back().is_closed = is_closed;
 }
 
 PathBuilder& PathBuilder::AddArc(const Rect& oval_bounds,
@@ -440,39 +435,39 @@ PathBuilder& PathBuilder::AddPath(const Path& path) {
 }
 
 PathBuilder& PathBuilder::Shift(Point offset) {
-  for (auto& point : prototype_.points) {
+  for (auto& point : prototype_->points) {
     point += offset;
   }
-  for (auto& contour : prototype_.contours) {
+  for (auto& contour : prototype_->contours) {
     contour.destination += offset;
   }
-  prototype_.bounds.reset();
+  prototype_->bounds.reset();
   return *this;
 }
 
 PathBuilder& PathBuilder::SetBounds(Rect bounds) {
-  prototype_.bounds = bounds;
+  prototype_->bounds = bounds;
   return *this;
 }
 
 void PathBuilder::UpdateBounds() {
-  if (!prototype_.bounds.has_value()) {
+  if (!prototype_->bounds.has_value()) {
     auto min_max = GetMinMaxCoveragePoints();
     if (!min_max.has_value()) {
-      prototype_.bounds.reset();
+      prototype_->bounds.reset();
       return;
     }
     auto min = min_max->first;
     auto max = min_max->second;
     const auto difference = max - min;
-    prototype_.bounds =
+    prototype_->bounds =
         Rect::MakeXYWH(min.x, min.y, difference.x, difference.y);
   }
 }
 
 std::optional<std::pair<Point, Point>> PathBuilder::GetMinMaxCoveragePoints()
     const {
-  auto& points = prototype_.points;
+  auto& points = prototype_->points;
 
   if (points.empty()) {
     return std::nullopt;
@@ -494,7 +489,7 @@ std::optional<std::pair<Point, Point>> PathBuilder::GetMinMaxCoveragePoints()
     }
   };
 
-  for (const auto& component : prototype_.components) {
+  for (const auto& component : prototype_->components) {
     switch (component.type) {
       case Path::ComponentType::kLinear: {
         auto* linear = reinterpret_cast<const LinearPathComponent*>(

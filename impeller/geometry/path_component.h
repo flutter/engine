@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
 #define FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
 
+#include <functional>
 #include <type_traits>
 #include <variant>
 #include <vector>
@@ -66,6 +67,11 @@ struct QuadraticPathComponent {
 
   Point SolveDerivative(Scalar time) const;
 
+  using PointVisitor = std::function<void(const Point&)>;
+
+  void VisitPolylinePoints(Scalar scale_factor,
+                           const PointVisitor& visitor) const;
+
   // Uses the algorithm described by Raph Levien in
   // https://raphlinus.github.io/graphics/curves/2019/12/23/flatten-quadbez.html.
   //
@@ -124,6 +130,12 @@ struct CubicPathComponent {
   void AppendPolylinePoints(Scalar scale, std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
+
+  using PointVisitor = std::function<void(const Point&)>;
+
+  void VisitQuadradicPathComponentsForPolyline(
+      Scalar accuracy,
+      const PointVisitor& visitor) const;
 
   std::vector<QuadraticPathComponent> ToQuadraticPathComponents(
       Scalar accuracy) const;

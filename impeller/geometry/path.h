@@ -211,11 +211,9 @@ class Path {
     std::vector<ContourComponent> contours;
 
     std::optional<Rect> bounds;
-
-    bool locked = false;
   };
 
-  explicit Path(const Data& data);
+  explicit Path(std::unique_ptr<Data> data);
 
   std::shared_ptr<const Data> data_;
 };

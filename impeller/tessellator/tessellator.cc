@@ -170,6 +170,17 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
   return Result::kSuccess;
 }
 
+Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
+                                               Scalar tolerance) {
+  point_buffer_->clear();
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [this](Path::Polyline::PointBufferPtr point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
+  return polyline;
+}
+
 std::vector<Point> Tessellator::TessellateConvex(const Path& path,
                                                  Scalar tolerance) {
   std::vector<Point> output;
