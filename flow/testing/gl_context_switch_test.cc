@@ -4,8 +4,6 @@
 
 #include "gl_context_switch_test.h"
 
-#include "flutter/fml/thread_local.h"
-
 namespace flutter {
 namespace testing {
 
