@@ -309,8 +309,8 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   FML_DCHECK(platform_task_runner);
 
   auto isolate_group_data = std::shared_ptr<DartIsolateGroupData>(
-              *static_cast<std::shared_ptr<DartIsolateGroupData>*>(
-                  Dart_IsolateGroupData(parent_isolate)));
+      *static_cast<std::shared_ptr<DartIsolateGroupData>*>(
+          Dart_IsolateGroupData(parent_isolate)));
 
   Settings settings(isolate_group_data->GetSettings());
 
