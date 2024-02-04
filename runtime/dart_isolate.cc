@@ -308,13 +308,11 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
       task_runners.GetPlatformTaskRunner();
   FML_DCHECK(platform_task_runner);
 
-  auto isolate_group_data =
-      std::make_unique<std::shared_ptr<DartIsolateGroupData>>(
-          std::shared_ptr<DartIsolateGroupData>(
+  auto isolate_group_data = std::shared_ptr<DartIsolateGroupData>(
               *static_cast<std::shared_ptr<DartIsolateGroupData>*>(
-                  Dart_IsolateGroupData(parent_isolate))));
+                  Dart_IsolateGroupData(parent_isolate)));
 
-  Settings settings((*isolate_group_data)->GetSettings());
+  Settings settings(isolate_group_data->GetSettings());
 
   // PlatformIsolate.spawn should behave like Isolate.spawn when unhandled
   // exceptions happen (log the exception, but don't terminate the app). But the
@@ -350,9 +348,9 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   };
 
   UIDartState::Context context(task_runners);
-  context.advisory_script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
+  context.advisory_script_uri = isolate_group_data->GetAdvisoryScriptURI();
   context.advisory_script_entrypoint =
-      (*isolate_group_data)->GetAdvisoryScriptEntrypoint();
+      isolate_group_data->GetAdvisoryScriptEntrypoint();
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
       std::shared_ptr<DartIsolate>(new DartIsolate(settings,  // settings
                                                    false,     // is_root_isolate
@@ -362,7 +360,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
 
   IsolateMaker isolate_maker =
       [parent_isolate, debug_name](
-          std::shared_ptr<DartIsolateGroupData>* isolate_group_data,
+          std::shared_ptr<DartIsolateGroupData>* unused_isolate_group_data,
           std::shared_ptr<DartIsolate>* isolate_data, Dart_IsolateFlags* flags,
           char** error) {
         return Dart_CreateIsolateInGroup(
@@ -378,8 +376,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
             /*error=*/error);
       };
   Dart_Isolate platform_isolate = CreateDartIsolateGroup(
-      std::move(isolate_group_data), std::move(isolate_data), nullptr, error,
-      isolate_maker);
+      nullptr, std::move(isolate_data), nullptr, error, isolate_maker);
 
   Dart_EnterIsolate(parent_isolate);
 
