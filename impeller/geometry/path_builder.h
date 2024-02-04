@@ -26,13 +26,15 @@ class PathBuilder {
 
   ~PathBuilder();
 
-  Path CopyPath(FillType fill = FillType::kNonZero);
+  Path CopyPath(FillType fill = FillType::kNonZero) const;
 
   Path TakePath(FillType fill = FillType::kNonZero);
 
   /// @brief Reserve [point_size] points and [verb_size] verbs in the underlying
   ///        path buffer.
   void Reserve(size_t point_size, size_t verb_size);
+
+  const Path& GetCurrentPath() const;
 
   PathBuilder& SetConvexity(Convexity value);
 
@@ -156,7 +158,9 @@ class PathBuilder {
  private:
   Point subpath_start_;
   Point current_;
-  Path::Data prototype_;
+  Path prototype_;
+  Convexity convexity_;
+  bool did_compute_bounds_ = false;
 
   PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
 
@@ -165,26 +169,6 @@ class PathBuilder {
   PathBuilder& AddRoundedRectBottomRight(Rect rect, RoundingRadii radii);
 
   PathBuilder& AddRoundedRectBottomLeft(Rect rect, RoundingRadii radii);
-
-  void AddContourComponent(const Point& destination, bool is_closed = false);
-
-  void SetContourClosed(bool is_closed);
-
-  void AddLinearComponent(const Point& p1, const Point& p2);
-
-  void AddQuadraticComponent(const Point& p1, const Point& cp, const Point& p2);
-
-  void AddCubicComponent(const Point& p1,
-                         const Point& cp1,
-                         const Point& cp2,
-                         const Point& p2);
-
-  /// Compute the bounds of the path unless they are already computed or
-  /// set by an external source, such as |SetBounds|. Any call which mutates
-  /// the path data can invalidate the computed/set bounds.
-  void UpdateBounds();
-
-  std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
 
   PathBuilder(const PathBuilder&) = delete;
   PathBuilder& operator=(const PathBuilder&&) = delete;

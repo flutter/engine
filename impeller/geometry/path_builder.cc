@@ -8,45 +8,49 @@
 
 namespace impeller {
 
-PathBuilder::PathBuilder() {
-  AddContourComponent({});
-}
+PathBuilder::PathBuilder() = default;
 
 PathBuilder::~PathBuilder() = default;
 
-Path PathBuilder::CopyPath(FillType fill) {
-  prototype_.fill = fill;
-  return Path(prototype_);
+Path PathBuilder::CopyPath(FillType fill) const {
+  auto path = prototype_.Clone();
+  path.SetFillType(fill);
+  return path;
 }
 
 Path PathBuilder::TakePath(FillType fill) {
-  prototype_.fill = fill;
-  UpdateBounds();
-  return Path(prototype_);
+  auto path = std::move(prototype_);
+  path.SetFillType(fill);
+  path.SetConvexity(convexity_);
+  if (!did_compute_bounds_) {
+    path.ComputeBounds();
+  }
+  did_compute_bounds_ = false;
+  return path;
 }
 
 void PathBuilder::Reserve(size_t point_size, size_t verb_size) {
-  prototype_.points.reserve(point_size);
-  prototype_.components.reserve(verb_size);
+  prototype_.points_.reserve(point_size);
+  prototype_.points_.reserve(verb_size);
 }
 
 PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
   current_ = relative ? current_ + point : point;
   subpath_start_ = current_;
-  AddContourComponent(current_);
+  prototype_.AddContourComponent(current_);
   return *this;
 }
 
 PathBuilder& PathBuilder::Close() {
   LineTo(subpath_start_);
-  SetContourClosed(true);
-  AddContourComponent(current_);
+  prototype_.SetContourClosed(true);
+  prototype_.AddContourComponent(current_);
   return *this;
 }
 
 PathBuilder& PathBuilder::LineTo(Point point, bool relative) {
   point = relative ? current_ + point : point;
-  AddLinearComponent(current_, point);
+  prototype_.AddLinearComponent(current_, point);
   current_ = point;
   return *this;
 }
@@ -54,7 +58,7 @@ PathBuilder& PathBuilder::LineTo(Point point, bool relative) {
 PathBuilder& PathBuilder::HorizontalLineTo(Scalar x, bool relative) {
   Point endpoint =
       relative ? Point{current_.x + x, current_.y} : Point{x, current_.y};
-  AddLinearComponent(current_, endpoint);
+  prototype_.AddLinearComponent(current_, endpoint);
   current_ = endpoint;
   return *this;
 }
@@ -62,7 +66,7 @@ PathBuilder& PathBuilder::HorizontalLineTo(Scalar x, bool relative) {
 PathBuilder& PathBuilder::VerticalLineTo(Scalar y, bool relative) {
   Point endpoint =
       relative ? Point{current_.x, current_.y + y} : Point{current_.x, y};
-  AddLinearComponent(current_, endpoint);
+  prototype_.AddLinearComponent(current_, endpoint);
   current_ = endpoint;
   return *this;
 }
@@ -72,13 +76,13 @@ PathBuilder& PathBuilder::QuadraticCurveTo(Point controlPoint,
                                            bool relative) {
   point = relative ? current_ + point : point;
   controlPoint = relative ? current_ + controlPoint : controlPoint;
-  AddQuadraticComponent(current_, controlPoint, point);
+  prototype_.AddQuadraticComponent(current_, controlPoint, point);
   current_ = point;
   return *this;
 }
 
 PathBuilder& PathBuilder::SetConvexity(Convexity value) {
-  prototype_.convexity = value;
+  convexity_ = value;
   return *this;
 }
 
@@ -89,14 +93,14 @@ PathBuilder& PathBuilder::CubicCurveTo(Point controlPoint1,
   controlPoint1 = relative ? current_ + controlPoint1 : controlPoint1;
   controlPoint2 = relative ? current_ + controlPoint2 : controlPoint2;
   point = relative ? current_ + point : point;
-  AddCubicComponent(current_, controlPoint1, controlPoint2, point);
+  prototype_.AddCubicComponent(current_, controlPoint1, controlPoint2, point);
   current_ = point;
   return *this;
 }
 
 PathBuilder& PathBuilder::AddQuadraticCurve(Point p1, Point cp, Point p2) {
   MoveTo(p1);
-  AddQuadraticComponent(p1, cp, p2);
+  prototype_.AddQuadraticComponent(p1, cp, p2);
   return *this;
 }
 
@@ -105,7 +109,7 @@ PathBuilder& PathBuilder::AddCubicCurve(Point p1,
                                         Point cp2,
                                         Point p2) {
   MoveTo(p1);
-  AddCubicComponent(p1, cp1, cp2, p2);
+  prototype_.AddCubicComponent(p1, cp1, cp2, p2);
   return *this;
 }
 
@@ -157,7 +161,7 @@ PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {
   //----------------------------------------------------------------------------
   // Top line.
   //
-  AddLinearComponent(
+  prototype_.AddLinearComponent(
       {rect_origin.x + radii.top_left.x, rect_origin.y},
       {rect_origin.x + rect_size.width - radii.top_right.x, rect_origin.y});
 
@@ -169,7 +173,7 @@ PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {
   //----------------------------------------------------------------------------
   // Right line.
   //
-  AddLinearComponent(
+  prototype_.AddLinearComponent(
       {rect_origin.x + rect_size.width, rect_origin.y + radii.top_right.y},
       {rect_origin.x + rect_size.width,
        rect_origin.y + rect_size.height - radii.bottom_right.y});
@@ -182,7 +186,7 @@ PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {
   //----------------------------------------------------------------------------
   // Bottom line.
   //
-  AddLinearComponent(
+  prototype_.AddLinearComponent(
       {rect_origin.x + rect_size.width - radii.bottom_right.x,
        rect_origin.y + rect_size.height},
       {rect_origin.x + radii.bottom_left.x, rect_origin.y + rect_size.height});
@@ -195,7 +199,7 @@ PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {
   //----------------------------------------------------------------------------
   // Left line.
   //
-  AddLinearComponent(
+  prototype_.AddLinearComponent(
       {rect_origin.x, rect_origin.y + rect_size.height - radii.bottom_left.y},
       {rect_origin.x, rect_origin.y + radii.top_left.y});
 
@@ -213,10 +217,11 @@ PathBuilder& PathBuilder::AddRoundedRectTopLeft(Rect rect,
                                                 RoundingRadii radii) {
   const auto magic_top_left = radii.top_left * kArcApproximationMagic;
   const auto corner = rect.GetOrigin();
-  AddCubicComponent({corner.x, corner.y + radii.top_left.y},
-                    {corner.x, corner.y + radii.top_left.y - magic_top_left.y},
-                    {corner.x + radii.top_left.x - magic_top_left.x, corner.y},
-                    {corner.x + radii.top_left.x, corner.y});
+  prototype_.AddCubicComponent(
+      {corner.x, corner.y + radii.top_left.y},
+      {corner.x, corner.y + radii.top_left.y - magic_top_left.y},
+      {corner.x + radii.top_left.x - magic_top_left.x, corner.y},
+      {corner.x + radii.top_left.x, corner.y});
   return *this;
 }
 
@@ -224,7 +229,7 @@ PathBuilder& PathBuilder::AddRoundedRectTopRight(Rect rect,
                                                  RoundingRadii radii) {
   const auto magic_top_right = radii.top_right * kArcApproximationMagic;
   const auto corner = rect.GetOrigin() + Point{rect.GetWidth(), 0};
-  AddCubicComponent(
+  prototype_.AddCubicComponent(
       {corner.x - radii.top_right.x, corner.y},
       {corner.x - radii.top_right.x + magic_top_right.x, corner.y},
       {corner.x, corner.y + radii.top_right.y - magic_top_right.y},
@@ -236,7 +241,7 @@ PathBuilder& PathBuilder::AddRoundedRectBottomRight(Rect rect,
                                                     RoundingRadii radii) {
   const auto magic_bottom_right = radii.bottom_right * kArcApproximationMagic;
   const auto corner = rect.GetOrigin() + rect.GetSize();
-  AddCubicComponent(
+  prototype_.AddCubicComponent(
       {corner.x, corner.y - radii.bottom_right.y},
       {corner.x, corner.y - radii.bottom_right.y + magic_bottom_right.y},
       {corner.x - radii.bottom_right.x + magic_bottom_right.x, corner.y},
@@ -248,66 +253,12 @@ PathBuilder& PathBuilder::AddRoundedRectBottomLeft(Rect rect,
                                                    RoundingRadii radii) {
   const auto magic_bottom_left = radii.bottom_left * kArcApproximationMagic;
   const auto corner = rect.GetOrigin() + Point{0, rect.GetHeight()};
-  AddCubicComponent(
+  prototype_.AddCubicComponent(
       {corner.x + radii.bottom_left.x, corner.y},
       {corner.x + radii.bottom_left.x - magic_bottom_left.x, corner.y},
       {corner.x, corner.y - radii.bottom_left.y + magic_bottom_left.y},
       {corner.x, corner.y - radii.bottom_left.y});
   return *this;
-}
-
-void PathBuilder::AddContourComponent(const Point& destination,
-                                      bool is_closed) {
-  auto& components = prototype_.components;
-  auto& contours = prototype_.contours;
-  if (components.size() > 0 &&
-      components.back().type == Path::ComponentType::kContour) {
-    // Never insert contiguous contours.
-    contours.back() = ContourComponent(destination, is_closed);
-  } else {
-    contours.emplace_back(ContourComponent(destination, is_closed));
-    components.emplace_back(Path::ComponentType::kContour, contours.size() - 1);
-  }
-  prototype_.bounds.reset();
-}
-
-void PathBuilder::AddLinearComponent(const Point& p1, const Point& p2) {
-  auto& points = prototype_.points;
-  auto index = points.size();
-  points.emplace_back(p1);
-  points.emplace_back(p2);
-  prototype_.components.emplace_back(Path::ComponentType::kLinear, index);
-  prototype_.bounds.reset();
-}
-
-void PathBuilder::AddQuadraticComponent(const Point& p1,
-                                        const Point& cp,
-                                        const Point& p2) {
-  auto& points = prototype_.points;
-  auto index = points.size();
-  points.emplace_back(p1);
-  points.emplace_back(cp);
-  points.emplace_back(p2);
-  prototype_.components.emplace_back(Path::ComponentType::kQuadratic, index);
-  prototype_.bounds.reset();
-}
-
-void PathBuilder::AddCubicComponent(const Point& p1,
-                                    const Point& cp1,
-                                    const Point& cp2,
-                                    const Point& p2) {
-  auto& points = prototype_.points;
-  auto index = points.size();
-  points.emplace_back(p1);
-  points.emplace_back(cp1);
-  points.emplace_back(cp2);
-  points.emplace_back(p2);
-  prototype_.components.emplace_back(Path::ComponentType::kCubic, index);
-  prototype_.bounds.reset();
-}
-
-void PathBuilder::SetContourClosed(bool is_closed) {
-  prototype_.contours.back().is_closed = is_closed;
 }
 
 PathBuilder& PathBuilder::AddArc(const Rect& oval_bounds,
@@ -353,7 +304,7 @@ PathBuilder& PathBuilder::AddArc(const Rect& oval_bounds,
     Point cp1 = p1 + Vector2(-p1_unit.y, p1_unit.x) * arc_cp_lengths;
     Point cp2 = p2 + Vector2(p2_unit.y, -p2_unit.x) * arc_cp_lengths;
 
-    AddCubicComponent(p1, cp1, cp2, p2);
+    prototype_.AddCubicComponent(p1, cp1, cp2, p2);
     current_ = p2;
 
     start.radians += quadrant_angle;
@@ -378,37 +329,37 @@ PathBuilder& PathBuilder::AddOval(const Rect& container) {
   //----------------------------------------------------------------------------
   // Top right arc.
   //
-  AddCubicComponent({c.x, c.y - r.y},        // p1
-                    {c.x + m.x, c.y - r.y},  // cp1
-                    {c.x + r.x, c.y - m.y},  // cp2
-                    {c.x + r.x, c.y}         // p2
+  prototype_.AddCubicComponent({c.x, c.y - r.y},        // p1
+                               {c.x + m.x, c.y - r.y},  // cp1
+                               {c.x + r.x, c.y - m.y},  // cp2
+                               {c.x + r.x, c.y}         // p2
   );
 
   //----------------------------------------------------------------------------
   // Bottom right arc.
   //
-  AddCubicComponent({c.x + r.x, c.y},        // p1
-                    {c.x + r.x, c.y + m.y},  // cp1
-                    {c.x + m.x, c.y + r.y},  // cp2
-                    {c.x, c.y + r.y}         // p2
+  prototype_.AddCubicComponent({c.x + r.x, c.y},        // p1
+                               {c.x + r.x, c.y + m.y},  // cp1
+                               {c.x + m.x, c.y + r.y},  // cp2
+                               {c.x, c.y + r.y}         // p2
   );
 
   //----------------------------------------------------------------------------
   // Bottom left arc.
   //
-  AddCubicComponent({c.x, c.y + r.y},        // p1
-                    {c.x - m.x, c.y + r.y},  // cp1
-                    {c.x - r.x, c.y + m.y},  // cp2
-                    {c.x - r.x, c.y}         // p2
+  prototype_.AddCubicComponent({c.x, c.y + r.y},        // p1
+                               {c.x - m.x, c.y + r.y},  // cp1
+                               {c.x - r.x, c.y + m.y},  // cp2
+                               {c.x - r.x, c.y}         // p2
   );
 
   //----------------------------------------------------------------------------
   // Top left arc.
   //
-  AddCubicComponent({c.x - r.x, c.y},        // p1
-                    {c.x - r.x, c.y - m.y},  // cp1
-                    {c.x - m.x, c.y - r.y},  // cp2
-                    {c.x, c.y - r.y}         // p2
+  prototype_.AddCubicComponent({c.x - r.x, c.y},        // p1
+                               {c.x - r.x, c.y - m.y},  // cp1
+                               {c.x - m.x, c.y - r.y},  // cp2
+                               {c.x, c.y - r.y}         // p2
   );
 
   Close();
@@ -418,116 +369,40 @@ PathBuilder& PathBuilder::AddOval(const Rect& container) {
 
 PathBuilder& PathBuilder::AddLine(const Point& p1, const Point& p2) {
   MoveTo(p1);
-  AddLinearComponent(p1, p2);
+  prototype_.AddLinearComponent(p1, p2);
   return *this;
+}
+
+const Path& PathBuilder::GetCurrentPath() const {
+  return prototype_;
 }
 
 PathBuilder& PathBuilder::AddPath(const Path& path) {
   auto linear = [&](size_t index, const LinearPathComponent& l) {
-    AddLinearComponent(l.p1, l.p2);
+    prototype_.AddLinearComponent(l.p1, l.p2);
   };
   auto quadratic = [&](size_t index, const QuadraticPathComponent& q) {
-    AddQuadraticComponent(q.p1, q.cp, q.p2);
+    prototype_.AddQuadraticComponent(q.p1, q.cp, q.p2);
   };
   auto cubic = [&](size_t index, const CubicPathComponent& c) {
-    AddCubicComponent(c.p1, c.cp1, c.cp2, c.p2);
+    prototype_.AddCubicComponent(c.p1, c.cp1, c.cp2, c.p2);
   };
   auto move = [&](size_t index, const ContourComponent& m) {
-    AddContourComponent(m.destination);
+    prototype_.AddContourComponent(m.destination);
   };
   path.EnumerateComponents(linear, quadratic, cubic, move);
   return *this;
 }
 
 PathBuilder& PathBuilder::Shift(Point offset) {
-  for (auto& point : prototype_.points) {
-    point += offset;
-  }
-  for (auto& contour : prototype_.contours) {
-    contour.destination += offset;
-  }
-  prototype_.bounds.reset();
+  prototype_.Shift(offset);
   return *this;
 }
 
 PathBuilder& PathBuilder::SetBounds(Rect bounds) {
-  prototype_.bounds = bounds;
+  prototype_.SetBounds(bounds);
+  did_compute_bounds_ = true;
   return *this;
-}
-
-void PathBuilder::UpdateBounds() {
-  if (!prototype_.bounds.has_value()) {
-    auto min_max = GetMinMaxCoveragePoints();
-    if (!min_max.has_value()) {
-      prototype_.bounds.reset();
-      return;
-    }
-    auto min = min_max->first;
-    auto max = min_max->second;
-    const auto difference = max - min;
-    prototype_.bounds =
-        Rect::MakeXYWH(min.x, min.y, difference.x, difference.y);
-  }
-}
-
-std::optional<std::pair<Point, Point>> PathBuilder::GetMinMaxCoveragePoints()
-    const {
-  auto& points = prototype_.points;
-
-  if (points.empty()) {
-    return std::nullopt;
-  }
-
-  std::optional<Point> min, max;
-
-  auto clamp = [&min, &max](const Point& point) {
-    if (min.has_value()) {
-      min = min->Min(point);
-    } else {
-      min = point;
-    }
-
-    if (max.has_value()) {
-      max = max->Max(point);
-    } else {
-      max = point;
-    }
-  };
-
-  for (const auto& component : prototype_.components) {
-    switch (component.type) {
-      case Path::ComponentType::kLinear: {
-        auto* linear = reinterpret_cast<const LinearPathComponent*>(
-            &points[component.index]);
-        clamp(linear->p1);
-        clamp(linear->p2);
-        break;
-      }
-      case Path::ComponentType::kQuadratic:
-        for (const auto& extrema :
-             reinterpret_cast<const QuadraticPathComponent*>(
-                 &points[component.index])
-                 ->Extrema()) {
-          clamp(extrema);
-        }
-        break;
-      case Path::ComponentType::kCubic:
-        for (const auto& extrema : reinterpret_cast<const CubicPathComponent*>(
-                                       &points[component.index])
-                                       ->Extrema()) {
-          clamp(extrema);
-        }
-        break;
-      case Path::ComponentType::kContour:
-        break;
-    }
-  }
-
-  if (!min.has_value() || !max.has_value()) {
-    return std::nullopt;
-  }
-
-  return std::make_pair(min.value(), max.value());
 }
 
 }  // namespace impeller
