@@ -45,7 +45,13 @@ class PersistedScene extends PersistedContainerSurface {
 
   @override
   void recomputeTransformAndClip() {
-    // The scene clip is the size of the entire window (Logical pixels).
+    // The scene clip is the size of the entire window **in Logical pixels**.
+    //
+    // Even though the majority of the engine uses `physicalSize`, there are some
+    // bits (like the HTML renderer, or dynamic view sizing) that are implemented
+    // using CSS, and CSS operates in logical pixels.
+    //
+    // See also: [EngineFlutterView.resize].
     final ui.Size bounds = window.physicalSize / window.devicePixelRatio;
     localClipBounds = ui.Rect.fromLTRB(0, 0, bounds.width, bounds.height);
     projectedClip = null;
