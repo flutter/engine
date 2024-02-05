@@ -14,18 +14,18 @@ abstract final class PlatformIsolate {
   /// This method can only be invoked from the main isolate.
   ///
   /// See [Isolate.spawn] for details.
-  static Future<Isolate> spawn<T>(void entryPoint(T message), T message,
+  static Future<Isolate> spawn<T>(void Function(T) entryPoint, T message,
       {bool errorsAreFatal = true,
       SendPort? onExit,
       SendPort? onError,
       String? debugName}) {
-    final isolateCompleter = Completer<Isolate>();
-    final isolateReadyPort = RawReceivePort();
-    isolateReadyPort.handler = (readyMessage) {
+    final Completer<Isolate> isolateCompleter = Completer<Isolate>();
+    final RawReceivePort isolateReadyPort = RawReceivePort();
+    isolateReadyPort.handler = (Object readyMessage) {
       isolateReadyPort.close();
 
       if (readyMessage is _PlatformIsolateReadyMessage) {
-        final isolate = Isolate(readyMessage.controlPort,
+        final Isolate isolate = Isolate(readyMessage.controlPort,
             pauseCapability: readyMessage.pauseCapability,
             terminateCapability: readyMessage.terminateCapability);
         if (onError != null) {
@@ -45,23 +45,23 @@ abstract final class PlatformIsolate {
       } else {
         // This shouldn't happen.
         isolateCompleter.completeError(IsolateSpawnException(
-            "Internal error: unexpected format for ready message: "
+            'Internal error: unexpected format for ready message: '
             "'$readyMessage'"));
       }
     };
     _spawn(_platformIsolateMain<T>, isolateReadyPort.sendPort,
-        debugName ?? "PlatformIsolate", errorsAreFatal);
+        debugName ?? 'PlatformIsolate', errorsAreFatal);
     return isolateCompleter.future;
   }
 
   static void _platformIsolateMain<T>(SendPort isolateReadyPort) {
-    final entryPointPort = RawReceivePort();
-    entryPointPort.handler = (entryPointAndMessage) {
+    final RawReceivePort entryPointPort = RawReceivePort();
+    entryPointPort.handler = ((void Function(T), T) entryPointAndMessage) {
       entryPointPort.close();
       final (void Function(T) entryPoint, T message) = entryPointAndMessage;
       entryPoint(message);
     };
-    final isolate = Isolate.current;
+    final Isolate isolate = Isolate.current;
     isolateReadyPort.send(_PlatformIsolateReadyMessage(
         isolate.controlPort,
         isolate.pauseCapability,
@@ -80,20 +80,21 @@ abstract final class PlatformIsolate {
   /// This method can only be invoked from the main isolate.
   ///
   /// See [Isolate.run] for details.
-  static FutureOr<R> run<R>(FutureOr<R> computation(), {String? debugName}) {
-    final resultCompleter = Completer<R>();
-    final resultPort = RawReceivePort();
+  static FutureOr<R> run<R>(FutureOr<R> Function() computation,
+      {String? debugName}) {
+    final Completer<R> resultCompleter = Completer<R>();
+    final RawReceivePort resultPort = RawReceivePort();
     resultPort.handler =
         ((R? result, Object? remoteError, Object? remoteStack)? response) {
       resultPort.close();
       if (response == null) {
         // onExit handler message, isolate terminated without sending result.
         resultCompleter.completeError(
-            RemoteError("Computation ended without result", ""),
+            RemoteError('Computation ended without result', ''),
             StackTrace.empty);
         return;
       }
-      final (result, remoteError, remoteStack) = response;
+      final (R? result, Object? remoteError, Object? remoteStack) = response;
       if (remoteStack != null) {
         if (remoteStack is StackTrace) {
           // Typed error.
@@ -101,7 +102,7 @@ abstract final class PlatformIsolate {
         } else {
           // onError handler message, uncaught async error.
           // Both values are strings, so calling `toString` is efficient.
-          final error =
+          final RemoteError error =
               RemoteError(remoteError!.toString(), remoteStack.toString());
           resultCompleter.completeError(error, error.stackTrace);
         }
@@ -110,7 +111,7 @@ abstract final class PlatformIsolate {
       }
     };
     try {
-      PlatformIsolate.spawn(_remoteRun, (computation, resultPort.sendPort),
+      PlatformIsolate.spawn(_remoteRun<R>, (computation, resultPort.sendPort),
           debugName: debugName);
     } on Object {
       resultPort.close();
@@ -119,19 +120,20 @@ abstract final class PlatformIsolate {
     return resultCompleter.future;
   }
 
-  static void _remoteRun<R>(
+  static Future<void> _remoteRun<R>(
       (FutureOr<R> Function() computation, SendPort resultPort) args) async {
-    final (computation, resultPort) = args;
-    late final result;
+    final (FutureOr<R> Function() computation, SendPort resultPort) = args;
+    late final R result;
     try {
-      final potentiallyAsyncResult = computation();
+      final FutureOr<R> potentiallyAsyncResult = computation();
       if (potentiallyAsyncResult is Future<R>) {
         result = await potentiallyAsyncResult;
       } else {
         result = potentiallyAsyncResult;
       }
-      // TODO(flutter/flutter#136314): Use Isolate.exit. At the moment this
-      // works, but logs a spurious error. We need to silence that error.
+      // TODO(liamappelbe): Use Isolate.exit. At the moment this works, but logs
+      // a spurious error. We need to silence that error.
+      // https://github.com/flutter/flutter/issues/136314
       //Isolate.exit(resultPort, (result, null, null));
       resultPort.send((result, null, null));
     } catch (e, s) {
@@ -148,11 +150,11 @@ abstract final class PlatformIsolate {
 }
 
 class _PlatformIsolateReadyMessage {
+  _PlatformIsolateReadyMessage(this.controlPort, this.pauseCapability,
+      this.terminateCapability, this.entryPointPort);
+
   final SendPort controlPort;
   final Capability? pauseCapability;
   final Capability? terminateCapability;
   final SendPort entryPointPort;
-
-  _PlatformIsolateReadyMessage(this.controlPort, this.pauseCapability,
-      this.terminateCapability, this.entryPointPort);
 }
