@@ -19,10 +19,22 @@ const int tcpPort = 3001;
 
 void main(List<String> args) async {
   final ArgParser parser = ArgParser()
-    ..addOption('adb', help: 'absolute path to the adb tool', mandatory: true)
-    ..addOption('out-dir', help: 'out directory', mandatory: true)
-    ..addFlag('smoke-test',
-        help: 'runs a single test to verify the setup', negatable: false);
+    ..addOption(
+      'adb',
+      help: 'absolute path to the adb tool',
+      mandatory: true,
+    )
+    ..addOption(
+      'out-dir',
+      help: 'out directory',
+      mandatory: true,
+    )
+    ..addFlag(
+      'smoke-test',
+      help: 'runs a single test to verify the setup',
+      negatable: false,
+      defaultsTo: true,
+    );
 
   runZonedGuarded(
     () async {
@@ -199,7 +211,7 @@ Future<void> _run({
         'instrument',
         '-w',
         if (smokeTest)
-          '-e class dev.flutter.scenarios.EngineLaunchE2ETest.java',
+          '-e class dev.flutter.scenarios.EngineLaunchE2ETest',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
       ]);
       if (exitCode != 0) {
