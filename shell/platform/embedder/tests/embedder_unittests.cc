@@ -1995,7 +1995,7 @@ SW_PIXFMT_TEST_F(RedBGRA8888x00x00xFFxFF,
 SW_PIXFMT_TEST_F(RedGray8x36,
                  draw_solid_red,
                  kFlutterSoftwarePixelFormatGray8,
-                 (uint8_t)0x36);
+                 (uint8_t)0x35);
 
 SW_PIXFMT_TEST_F(GreenRGB565x07E0,
                  draw_solid_green,
