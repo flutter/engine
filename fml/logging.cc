@@ -27,8 +27,8 @@ namespace fml {
 namespace {
 
 #if !defined(OS_FUCHSIA)
-const char* const kLogSeverityNames[kLogNumSeverities] = {"INFO", "WARNING",
-                                                          "ERROR", "FATAL"};
+const char* const kLogSeverityNames[kLogNumSeverities] = {
+    "INFO", "WARNING", "ERROR", "FATAL", "IMPORTANT"};
 
 const char* GetNameForLogSeverity(LogSeverity severity) {
   if (severity >= kLogInfo && severity < kLogNumSeverities) {
@@ -153,6 +153,7 @@ LogMessage::~LogMessage() {
     android_LogPriority priority =
         (severity_ < 0) ? ANDROID_LOG_VERBOSE : ANDROID_LOG_UNKNOWN;
     switch (severity_) {
+      case kLogImportant:
       case kLogInfo:
         priority = ANDROID_LOG_INFO;
         break;
@@ -172,6 +173,7 @@ LogMessage::~LogMessage() {
 #elif defined(OS_FUCHSIA)
     FuchsiaLogSeverity severity;
     switch (severity_) {
+      case kLogImportant:
       case kLogInfo:
         severity = FUCHSIA_LOG_INFO;
         break;

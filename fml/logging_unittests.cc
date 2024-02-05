@@ -7,10 +7,15 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/log_settings.h"
 #include "flutter/fml/logging.h"
+#include "fml/log_level.h"
 #include "gtest/gtest.h"
 
 namespace fml {
 namespace testing {
+
+static_assert(fml::kLogFatal == fml::kLogNumSeverities - 1);
+static_assert(fml::kLogImportant < fml::kLogFatal);
+static_assert(fml::kLogImportant > fml::kLogError);
 
 #ifndef OS_FUCHSIA
 class MakeSureFmlLogDoesNotSegfaultWhenStaticallyCalled {
