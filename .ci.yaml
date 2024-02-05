@@ -197,7 +197,7 @@ targets:
     # being penetrated by cold goma / rbclient cache.
     # TODO(zijiehe-google-com): Drop the timeout to 60 minutes once the release
     # builder can finish within a reasonable time.
-    # https://github.com/flutter/flutter/issues/140179
+    # https://github.com/flutter/flutter/issues/142932
     timeout: 75
     properties:
       release_build: "true"
