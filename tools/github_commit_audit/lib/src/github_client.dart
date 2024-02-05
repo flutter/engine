@@ -235,7 +235,37 @@ enum CheckRunConclusion {
   }
 }
 
+/// ...
+@immutable
+final class PullRequestCommitCheckoutput {
+  /// Creates a pull request commit check output with the given properties.
+  const PullRequestCommitCheckoutput({
+    required this.title,
+    required this.summary,
+    required this.text,
+  });
+
+  /// Parses a pull request commit check output from a JSON map.
+  factory PullRequestCommitCheckoutput.fromJson(Map<String, Object?> json) {
+    return PullRequestCommitCheckoutput(
+      title: json['title'] as String?,
+      summary: json['summary'] as String?,
+      text: json['text'] as String?,
+    );
+  }
+
+  /// ...
+  final String? title;
+
+  /// ...
+  final String? summary;
+
+  /// ...
+  final String? text;
+}
+
 /// https://docs.github.com/en/rest/checks/runs?apiVersion=2022-11-28#list-check-runs-for-a-git-reference
+@immutable
 final class PullRequestCommitCheck {
   /// Creates a pull request commit check with the given properties.
   const PullRequestCommitCheck({
@@ -244,6 +274,7 @@ final class PullRequestCommitCheck {
     required this.conclusion,
     required this.startedAt,
     required this.completedAt,
+    required this.output,
   });
 
   /// Parses a pull request commit check from a JSON map.
@@ -258,6 +289,7 @@ final class PullRequestCommitCheck {
       completedAt: json['completed_at'] == null
           ? null
           : DateTime.parse(json['completed_at']! as String),
+      output: PullRequestCommitCheckoutput.fromJson(json['output']! as Map<String, Object?>),
     );
   }
 
@@ -275,4 +307,7 @@ final class PullRequestCommitCheck {
 
   /// When the check was completed.
   final DateTime? completedAt;
+
+  /// Output of the check run.
+  final PullRequestCommitCheckoutput output;
 }

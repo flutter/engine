@@ -38,6 +38,11 @@ void main(List<String> args) async {
       valueHelp: 'label',
     )
     ..addFlag(
+      'skip-failed-newer-commit-available',
+      help: 'Skip failed checks with an output summary that contains "Newer commit available".',
+      defaultsTo: true,
+    )
+    ..addFlag(
       'verbose',
       abbr: 'v',
       help: 'Print verbose output.',
@@ -53,6 +58,7 @@ void main(List<String> args) async {
   final int max = int.parse(results['max'] as String);
   final List<String> includeLabels = List<String>.from(results['include-label'] as List<Object?>);
   final List<String> excludeLabels = List<String>.from(results['exclude-label'] as List<Object?>);
+  final bool skipFailedNewerCommitAvailable = results['skip-failed-newer-commit-available'] as bool;
   final bool verbose = results['verbose'] as bool;
   final bool help = results['help'] as bool;
 
@@ -119,7 +125,13 @@ void main(List<String> args) async {
         for (final PullRequestCommitCheck status in statuses) {
           vprint('    - ${status.name}: ${status.conclusion?.name ?? 'null'}');
           checkCounts[status.name] = (checkCounts[status.name] ?? 0) + 1;
+
           if (status.conclusion == CheckRunConclusion.failure) {
+            // If the output contains "Newer commit available", skip it.
+            if (skipFailedNewerCommitAvailable && (status.output.summary?.contains('Newer commit available') ?? false)) {
+              vprint('      - Skipping due to "Newer commit available"');
+              continue;
+            }
             checkFailures[status.name] = (checkFailures[status.name] ?? 0) + 1;
           }
         }
