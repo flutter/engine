@@ -156,15 +156,17 @@ void StrokePathGeometry::CreateRoundJoin(VertexWriter& vtx_builder,
   Point start_handle = start_offset + Point(start_offset.y, -start_offset.x) *
                                           PathBuilder::kArcApproximationMagic *
                                           alignment * dir;
+  std::vector<Point> arc_points;
+  CubicPathComponent(start_offset, start_handle, middle_handle, middle)
+      .AppendPolylinePoints(scale, arc_points);
 
   VS::PerVertexData vtx;
-  CubicPathComponent(start_offset, start_handle, middle_handle, middle)
-      .VisitQuadradicPathComponentsForPolyline(scale, [&](const Point& point) {
-        vtx.position = position + point * dir;
-        vtx_builder.AppendVertex(vtx.position);
-        vtx.position = position + (-point * dir).Reflect(middle_normal);
-        vtx_builder.AppendVertex(vtx.position);
-      });
+  for (const auto& point : arc_points) {
+    vtx.position = position + point * dir;
+    vtx_builder.AppendVertex(vtx.position);
+    vtx.position = position + (-point * dir).Reflect(middle_normal);
+    vtx_builder.AppendVertex(vtx.position);
+  }
 }
 
 // static
@@ -231,14 +233,14 @@ void StrokePathGeometry::CreateRoundCap(VertexWriter& vtx_builder,
   vtx = position - orientation;
   vtx_builder.AppendVertex(vtx);
 
-  arc.VisitQuadradicPathComponentsForPolyline(
-      scale,
-      [&vtx, &vtx_builder, &forward_normal, &position](const Point& point) {
-        vtx = position + point;
-        vtx_builder.AppendVertex(vtx);
-        vtx = position + (-point).Reflect(forward_normal);
-        vtx_builder.AppendVertex(vtx);
-      });
+  std::vector<Point> arc_points;
+  arc.AppendPolylinePoints(scale, arc_points);
+  for (const auto& point : arc_points) {
+    vtx = position + point;
+    vtx_builder.AppendVertex(vtx);
+    vtx = position + (-point).Reflect(forward_normal);
+    vtx_builder.AppendVertex(vtx);
+  }
 }
 
 // static

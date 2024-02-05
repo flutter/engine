@@ -45,7 +45,6 @@ class StrokePathGeometry final : public Geometry {
                                       Scalar miter_limit,
                                       Scalar scale)>;
 
-
  private:
   using VS = SolidFillVertexShader;
 
