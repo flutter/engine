@@ -8,6 +8,7 @@
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache_util.h"
+#include "third_party/abseil-cpp/absl/base/no_destructor.h"
 
 namespace flutter {
 
@@ -23,7 +24,7 @@ namespace flutter {
 // quickly and cheaply when no externally supplied delegates are present.
 class DummyDelegate : public LayerStateStack::Delegate {
  public:
-  static const std::shared_ptr<DummyDelegate> kInstance;
+  static const absl::NoDestructor<std::shared_ptr<DummyDelegate>> kInstance;
 
   void decommission() override {}
 
@@ -69,8 +70,8 @@ class DummyDelegate : public LayerStateStack::Delegate {
     FML_DCHECK(false) << "LayerStateStack state queried without a delegate";
   }
 };
-const std::shared_ptr<DummyDelegate> DummyDelegate::kInstance =
-    std::make_shared<DummyDelegate>();
+const absl::NoDestructor<std::shared_ptr<DummyDelegate>>
+    DummyDelegate::kInstance(std::make_shared<DummyDelegate>());
 
 class DlCanvasDelegate : public LayerStateStack::Delegate {
  public:
@@ -614,11 +615,13 @@ void MutatorContext::clipPath(const SkPath& path, bool is_aa) {
 // LayerStateStack methods
 // ==============================================================
 
-LayerStateStack::LayerStateStack() : delegate_(DummyDelegate::kInstance) {}
+LayerStateStack::LayerStateStack() : delegate_(*DummyDelegate::kInstance) {}
 
 void LayerStateStack::clear_delegate() {
-  delegate_->decommission();
-  delegate_ = DummyDelegate::kInstance;
+  if (delegate_) {
+    delegate_->decommission();
+  }
+  delegate_ = *DummyDelegate::kInstance;
 }
 
 void LayerStateStack::set_delegate(DlCanvas* canvas) {

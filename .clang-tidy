@@ -27,7 +27,8 @@ Checks: >-
   performance-move-const-arg,
   performance-move-constructor-init,
   performance-unnecessary-copy-initialization,
-  performance-unnecessary-value-param
+  performance-unnecessary-value-param,
+  fuchsia-statically-constructed-objects
 
 CheckOptions:
   - key: modernize-use-default-member-init.UseAssignment

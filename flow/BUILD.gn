@@ -97,7 +97,10 @@ source_set("flow") {
     "//flutter/third_party/txt",
   ]
 
-  deps = [ "//flutter/skia" ]
+  deps = [
+    "//flutter/skia",
+    "//third_party/abseil-cpp/absl/base:no_destructor",
+  ]
 
   if (impeller_supports_rendering) {
     deps += [
