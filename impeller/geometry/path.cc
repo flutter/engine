@@ -15,7 +15,7 @@ namespace impeller {
 
 Path::Path() : data_(new Data()) {}
 
-Path::Path(std::unique_ptr<Data> data) : data_(std::move(data)) {
+Path::Path(Data data) : data_(std::make_shared<Data>(std::move(data))) {
   FML_DCHECK(data_->points.size() == data_->points.capacity());
   FML_DCHECK(data_->components.size() == data_->components.capacity());
   FML_DCHECK(data_->contours.size() == data_->contours.capacity());
@@ -351,6 +351,10 @@ std::optional<Rect> Path::GetTransformedBoundingBox(
     return std::nullopt;
   }
   return bounds->TransformBounds(transform);
+}
+
+Path::Data Path::Data::Clone() const {
+  return Path::Data(*this);
 }
 
 }  // namespace impeller

@@ -12,8 +12,6 @@ namespace impeller {
 class VertexWriter {
  public:
   virtual void AppendVertex(const Point& point);
-
-  virtual size_t GetLength() const { return 0u; }
 };
 
 /// @brief A geometry that is created from a stroked path object.
@@ -35,9 +33,6 @@ class StrokePathGeometry final : public Geometry {
 
   Join GetStrokeJoin() const;
 
- private:
-  using VS = SolidFillVertexShader;
-
   using CapProc = std::function<void(VertexWriter& vtx_builder,
                                      const Point& position,
                                      const Point& offset,
@@ -49,6 +44,10 @@ class StrokePathGeometry final : public Geometry {
                                       const Point& end_offset,
                                       Scalar miter_limit,
                                       Scalar scale)>;
+
+
+ private:
+  using VS = SolidFillVertexShader;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,

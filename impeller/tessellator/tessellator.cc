@@ -172,24 +172,30 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
 
 Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
                                                Scalar tolerance) {
+  FML_DCHECK(!polyline_active_);
+  polyline_active_ = true;
   point_buffer_->clear();
   auto polyline =
       path.CreatePolyline(tolerance, std::move(point_buffer_),
                           [this](Path::Polyline::PointBufferPtr point_buffer) {
                             point_buffer_ = std::move(point_buffer);
+                            polyline_active_ = false;
                           });
   return polyline;
 }
 
 std::vector<Point> Tessellator::TessellateConvex(const Path& path,
                                                  Scalar tolerance) {
-  std::vector<Point> output;
+  FML_DCHECK(!polyline_active_);
+  polyline_active_ = true;
 
+  std::vector<Point> output;
   point_buffer_->clear();
   auto polyline =
       path.CreatePolyline(tolerance, std::move(point_buffer_),
                           [this](Path::Polyline::PointBufferPtr point_buffer) {
                             point_buffer_ = std::move(point_buffer);
+                            polyline_active_ = false;
                           });
 
   output.reserve(polyline.points->size() +

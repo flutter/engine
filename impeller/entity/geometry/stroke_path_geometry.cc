@@ -5,59 +5,48 @@
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 
 #include "impeller/core/formats.h"
+#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
 
 namespace impeller {
 
-class LengthWriter : public VertexWriter {
- public:
-  void AppendVertex(const Point& point) override { length_++; }
-
-  size_t GetLength() const override { return length_; }
-
- private:
-  size_t length_ = 0;
-};
-
 class PositionWriter : public VertexWriter {
  public:
-  explicit PositionWriter(SolidFillVertexShader::PerVertexData* vtx_contents)
-      : vtx_contents_(vtx_contents) {}
-
   void AppendVertex(const Point& point) override {
-    SolidFillVertexShader::PerVertexData data = {.position = point};
-    std::memcpy(vtx_contents_++, &data,
-                sizeof(SolidFillVertexShader::PerVertexData));
+    data_.emplace_back(SolidFillVertexShader::PerVertexData{.position = point});
+  }
+
+  const std::vector<SolidFillVertexShader::PerVertexData>& GetData() const {
+    return data_;
   }
 
  private:
-  SolidFillVertexShader::PerVertexData* vtx_contents_;
+  std::vector<SolidFillVertexShader::PerVertexData> data_ = {};
 };
 
 class PositionUVWriter : public VertexWriter {
  public:
-  PositionUVWriter(TextureFillVertexShader::PerVertexData* vtx_contents,
-                   Point texture_origin,
+  PositionUVWriter(Point texture_origin,
                    Size texture_coverage,
                    const Matrix& effect_transform)
-      : vtx_contents_(vtx_contents),
-        texture_origin_(texture_origin),
+      : texture_origin_(texture_origin),
         texture_coverage_(texture_coverage),
         effect_transform_(effect_transform) {}
 
+  const std::vector<TextureFillVertexShader::PerVertexData>& GetData() const {
+    return data_;
+  }
+
   void AppendVertex(const Point& point) override {
-    TextureFillVertexShader::PerVertexData data = {
+    data_.emplace_back(TextureFillVertexShader::PerVertexData{
         .position = point,
         .texture_coords =
-            effect_transform_ * (point - texture_origin_) / texture_coverage_,
-    };
-    std::memcpy(vtx_contents_++, &data,
-                sizeof(TextureFillVertexShader::PerVertexData));
+            effect_transform_ * (point - texture_origin_) / texture_coverage_});
   }
 
  private:
-  TextureFillVertexShader::PerVertexData* vtx_contents_;
+  std::vector<TextureFillVertexShader::PerVertexData> data_ = {};
   const Point texture_origin_;
   const Size texture_coverage_;
   const Matrix effect_transform_;
@@ -97,15 +86,14 @@ Scalar StrokePathGeometry::CreateBevelAndGetDirection(VertexWriter& vtx_builder,
                                                       const Point& position,
                                                       const Point& start_offset,
                                                       const Point& end_offset) {
-  SolidFillVertexShader::PerVertexData vtx;
-  vtx.position = position;
-  vtx_builder.AppendVertex(vtx.position);
+  Point vtx = position;
+  vtx_builder.AppendVertex(vtx);
 
   Scalar dir = start_offset.Cross(end_offset) > 0 ? -1 : 1;
-  vtx.position = position + start_offset * dir;
-  vtx_builder.AppendVertex(vtx.position);
-  vtx.position = position + end_offset * dir;
-  vtx_builder.AppendVertex(vtx.position);
+  vtx = position + start_offset * dir;
+  vtx_builder.AppendVertex(vtx);
+  vtx = position + end_offset * dir;
+  vtx_builder.AppendVertex(vtx);
 
   return dir;
 }
@@ -222,7 +210,6 @@ void StrokePathGeometry::CreateRoundCap(VertexWriter& vtx_builder,
                                         Scalar scale,
                                         bool reverse) {
   Point orientation = offset * (reverse ? -1 : 1);
-  VS::PerVertexData vtx;
   Point forward(offset.y, -offset.x);
   Point forward_normal = forward.Normalize();
 
@@ -239,17 +226,19 @@ void StrokePathGeometry::CreateRoundCap(VertexWriter& vtx_builder,
         forward + orientation * PathBuilder::kArcApproximationMagic, forward);
   }
 
-  vtx.position = position + orientation;
-  vtx_builder.AppendVertex(vtx.position);
-  vtx.position = position - orientation;
-  vtx_builder.AppendVertex(vtx.position);
+  Point vtx = position + orientation;
+  vtx_builder.AppendVertex(vtx);
+  vtx = position - orientation;
+  vtx_builder.AppendVertex(vtx);
 
-  arc.VisitQuadradicPathComponentsForPolyline(scale, [&](const Point& point) {
-    vtx.position = position + point;
-    vtx_builder.AppendVertex(vtx.position);
-    vtx.position = position + (-point).Reflect(forward_normal);
-    vtx_builder.AppendVertex(vtx.position);
-  });
+  arc.VisitQuadradicPathComponentsForPolyline(
+      scale,
+      [&vtx, &vtx_builder, &forward_normal, &position](const Point& point) {
+        vtx = position + point;
+        vtx_builder.AppendVertex(vtx);
+        vtx = position + (-point).Reflect(forward_normal);
+        vtx_builder.AppendVertex(vtx);
+      });
 }
 
 // static
@@ -259,17 +248,16 @@ void StrokePathGeometry::CreateSquareCap(VertexWriter& vtx_builder,
                                          Scalar scale,
                                          bool reverse) {
   Point orientation = offset * (reverse ? -1 : 1);
-  VS::PerVertexData vtx;
   Point forward(offset.y, -offset.x);
 
-  vtx.position = position + orientation;
-  vtx_builder.AppendVertex(vtx.position);
-  vtx.position = position - orientation;
-  vtx_builder.AppendVertex(vtx.position);
-  vtx.position = position + orientation + forward;
-  vtx_builder.AppendVertex(vtx.position);
-  vtx.position = position - orientation + forward;
-  vtx_builder.AppendVertex(vtx.position);
+  Point vtx = position + orientation;
+  vtx_builder.AppendVertex(vtx);
+  vtx = position - orientation;
+  vtx_builder.AppendVertex(vtx);
+  vtx = position + orientation + forward;
+  vtx_builder.AppendVertex(vtx);
+  vtx = position - orientation + forward;
+  vtx_builder.AppendVertex(vtx);
 }
 
 // static
@@ -284,29 +272,122 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
   }
 }
 
-// static
-void StrokePathGeometry::CreateSolidStrokeVertices(
-    VertexWriter& vtx_builder,
-    const Path::Polyline& polyline,
-    Scalar stroke_width,
-    Scalar scaled_miter_limit,
-    const StrokePathGeometry::JoinProc& join_proc,
-    const CapProc& cap_proc,
-    Scalar scale) {
-  VS::PerVertexData vtx;
+struct StrokeGenerator {
+  StrokeGenerator(const Path::Polyline& p_polyline,
+                  const Scalar p_stroke_width,
+                  const Scalar p_scaled_miter_limit,
+                  const StrokePathGeometry::JoinProc& p_join_proc,
+                  const StrokePathGeometry::CapProc& p_cap_proc,
+                  const Scalar p_scale,
+                  VertexWriter& p_vtx_builder)
+      : polyline(p_polyline),
+        stroke_width(p_stroke_width),
+        scaled_miter_limit(p_scaled_miter_limit),
+        join_proc(p_join_proc),
+        cap_proc(p_cap_proc),
+        scale(p_scale),
+        vtx_builder(p_vtx_builder) {}
 
-  // Offset state.
-  Point offset;
-  Point previous_offset;  // Used for computing joins.
+  void Generate() {
+    for (size_t contour_i = 0; contour_i < polyline.contours.size();
+         contour_i++) {
+      auto contour = polyline.contours[contour_i];
+      size_t contour_start_point_i, contour_end_point_i;
+      std::tie(contour_start_point_i, contour_end_point_i) =
+          polyline.GetContourPointBounds(contour_i);
+
+      switch (contour_end_point_i - contour_start_point_i) {
+        case 1: {
+          Point p = polyline.GetPoint(contour_start_point_i);
+          cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale, false);
+          cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale, false);
+          continue;
+        }
+        case 0:
+          continue;  // This contour has no renderable content.
+        default:
+          break;
+      }
+
+      ComputeOffset(contour_start_point_i, contour_start_point_i,
+                    contour_end_point_i, contour);
+      const Point contour_first_offset = offset;
+
+      if (contour_i > 0) {
+        // This branch only executes when we've just finished drawing a contour
+        // and are switching to a new one.
+        // We're drawing a triangle strip, so we need to "pick up the pen" by
+        // appending two vertices at the end of the previous contour and two
+        // vertices at the start of the new contour (thus connecting the two
+        // contours with two zero volume triangles, which will be discarded by
+        // the rasterizer).
+        vtx.position = polyline.GetPoint(contour_start_point_i - 1);
+        // Append two vertices when "picking up" the pen so that the triangle
+        // drawn when moving to the beginning of the new contour will have zero
+        // volume.
+        vtx_builder.AppendVertex(vtx.position);
+        vtx_builder.AppendVertex(vtx.position);
+
+        vtx.position = polyline.GetPoint(contour_start_point_i);
+        // Append two vertices at the beginning of the new contour, which
+        // appends  two triangles of zero area.
+        vtx_builder.AppendVertex(vtx.position);
+        vtx_builder.AppendVertex(vtx.position);
+      }
+
+      // Generate start cap.
+      if (!polyline.contours[contour_i].is_closed) {
+        auto cap_offset =
+            Vector2(-contour.start_direction.y, contour.start_direction.x) *
+            stroke_width * 0.5;  // Counterclockwise normal
+        cap_proc(vtx_builder, polyline.GetPoint(contour_start_point_i),
+                 cap_offset, scale, true);
+      }
+
+      for (size_t contour_component_i = 0;
+           contour_component_i < contour.components.size();
+           contour_component_i++) {
+        auto component = contour.components[contour_component_i];
+        auto is_last_component =
+            contour_component_i == contour.components.size() - 1;
+
+        auto component_start_index = component.component_start_index;
+        auto component_end_index =
+            is_last_component ? contour_end_point_i - 1
+                              : contour.components[contour_component_i + 1]
+                                    .component_start_index;
+        if (component.is_curve) {
+          AddVerticesForCurveComponent(
+              component_start_index, component_end_index, contour_start_point_i,
+              contour_end_point_i, contour);
+        } else {
+          AddVerticesForLinearComponent(
+              component_start_index, component_end_index, contour_start_point_i,
+              contour_end_point_i, contour);
+        }
+      }
+
+      // Generate end cap or join.
+      if (!contour.is_closed) {
+        auto cap_offset =
+            Vector2(-contour.end_direction.y, contour.end_direction.x) *
+            stroke_width * 0.5;  // Clockwise normal
+        cap_proc(vtx_builder, polyline.GetPoint(contour_end_point_i - 1),
+                 cap_offset, scale, false);
+      } else {
+        join_proc(vtx_builder, polyline.GetPoint(contour_start_point_i), offset,
+                  contour_first_offset, scaled_miter_limit, scale);
+      }
+    }
+  }
 
   // Computes offset by calculating the direction from point_i - 1 to point_i if
   // point_i is within `contour_start_point_i` and `contour_end_point_i`;
   // Otherwise, it uses direction from contour.
-  auto compute_offset = [&polyline, &offset, &previous_offset, &stroke_width](
-                            const size_t point_i,
-                            const size_t contour_start_point_i,
-                            const size_t contour_end_point_i,
-                            const Path::PolylineContour& contour) {
+  void ComputeOffset(const size_t point_i,
+                     const size_t contour_start_point_i,
+                     const size_t contour_end_point_i,
+                     const Path::PolylineContour& contour) {
     Point direction;
     if (point_i >= contour_end_point_i) {
       direction = contour.end_direction;
@@ -318,170 +399,101 @@ void StrokePathGeometry::CreateSolidStrokeVertices(
     }
     previous_offset = offset;
     offset = Vector2{-direction.y, direction.x} * stroke_width * 0.5;
-  };
+  }
 
-  auto add_vertices_for_linear_component =
-      [&vtx_builder, &offset, &previous_offset, &vtx, &polyline,
-       &compute_offset, scaled_miter_limit, scale, &join_proc](
-          const size_t component_start_index, const size_t component_end_index,
-          const size_t contour_start_point_i, const size_t contour_end_point_i,
-          const Path::PolylineContour& contour) {
-        auto is_last_component =
-            component_start_index ==
-            contour.components.back().component_start_index;
+  void AddVerticesForLinearComponent(const size_t component_start_index,
+                                     const size_t component_end_index,
+                                     const size_t contour_start_point_i,
+                                     const size_t contour_end_point_i,
+                                     const Path::PolylineContour& contour) {
+    auto is_last_component = component_start_index ==
+                             contour.components.back().component_start_index;
 
-        for (size_t point_i = component_start_index;
-             point_i < component_end_index; point_i++) {
-          auto is_end_of_component = point_i == component_end_index - 1;
-          vtx.position = polyline.GetPoint(point_i) + offset;
-          vtx_builder.AppendVertex(vtx.position);
-          vtx.position = polyline.GetPoint(point_i) - offset;
-          vtx_builder.AppendVertex(vtx.position);
+    for (size_t point_i = component_start_index; point_i < component_end_index;
+         point_i++) {
+      auto is_end_of_component = point_i == component_end_index - 1;
+      vtx.position = polyline.GetPoint(point_i) + offset;
+      vtx_builder.AppendVertex(vtx.position);
+      vtx.position = polyline.GetPoint(point_i) - offset;
+      vtx_builder.AppendVertex(vtx.position);
 
-          // For line components, two additional points need to be appended
-          // prior to appending a join connecting the next component.
-          vtx.position = polyline.GetPoint(point_i + 1) + offset;
-          vtx_builder.AppendVertex(vtx.position);
-          vtx.position = polyline.GetPoint(point_i + 1) - offset;
-          vtx_builder.AppendVertex(vtx.position);
+      // For line components, two additional points need to be appended
+      // prior to appending a join connecting the next component.
+      vtx.position = polyline.GetPoint(point_i + 1) + offset;
+      vtx_builder.AppendVertex(vtx.position);
+      vtx.position = polyline.GetPoint(point_i + 1) - offset;
+      vtx_builder.AppendVertex(vtx.position);
 
-          compute_offset(point_i + 2, contour_start_point_i,
-                         contour_end_point_i, contour);
-          if (!is_last_component && is_end_of_component) {
-            // Generate join from the current line to the next line.
-            join_proc(vtx_builder, polyline.GetPoint(point_i + 1),
-                      previous_offset, offset, scaled_miter_limit, scale);
-          }
-        }
-      };
-
-  auto add_vertices_for_curve_component =
-      [&vtx_builder, &offset, &previous_offset, &vtx, &polyline,
-       &compute_offset, scaled_miter_limit, scale, &join_proc](
-          const size_t component_start_index, const size_t component_end_index,
-          const size_t contour_start_point_i, const size_t contour_end_point_i,
-          const Path::PolylineContour& contour) {
-        auto is_last_component =
-            component_start_index ==
-            contour.components.back().component_start_index;
-
-        for (size_t point_i = component_start_index;
-             point_i < component_end_index; point_i++) {
-          auto is_end_of_component = point_i == component_end_index - 1;
-
-          vtx.position = polyline.GetPoint(point_i) + offset;
-          vtx_builder.AppendVertex(vtx.position);
-          vtx.position = polyline.GetPoint(point_i) - offset;
-          vtx_builder.AppendVertex(vtx.position);
-
-          compute_offset(point_i + 2, contour_start_point_i,
-                         contour_end_point_i, contour);
-          // For curve components, the polyline is detailed enough such that
-          // it can avoid worrying about joins altogether.
-          if (is_end_of_component) {
-            vtx.position = polyline.GetPoint(point_i + 1) + offset;
-            vtx_builder.AppendVertex(vtx.position);
-            vtx.position = polyline.GetPoint(point_i + 1) - offset;
-            vtx_builder.AppendVertex(vtx.position);
-            // Generate join from the current line to the next line.
-            if (!is_last_component) {
-              join_proc(vtx_builder, polyline.GetPoint(point_i + 1),
-                        previous_offset, offset, scaled_miter_limit, scale);
-            }
-          }
-        }
-      };
-
-  for (size_t contour_i = 0; contour_i < polyline.contours.size();
-       contour_i++) {
-    auto contour = polyline.contours[contour_i];
-    size_t contour_start_point_i, contour_end_point_i;
-    std::tie(contour_start_point_i, contour_end_point_i) =
-        polyline.GetContourPointBounds(contour_i);
-
-    switch (contour_end_point_i - contour_start_point_i) {
-      case 1: {
-        Point p = polyline.GetPoint(contour_start_point_i);
-        cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale, false);
-        cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale, false);
-        continue;
+      ComputeOffset(point_i + 2, contour_start_point_i, contour_end_point_i,
+                    contour);
+      if (!is_last_component && is_end_of_component) {
+        // Generate join from the current line to the next line.
+        join_proc(vtx_builder, polyline.GetPoint(point_i + 1), previous_offset,
+                  offset, scaled_miter_limit, scale);
       }
-      case 0:
-        continue;  // This contour has no renderable content.
-      default:
-        break;
-    }
-
-    compute_offset(contour_start_point_i, contour_start_point_i,
-                   contour_end_point_i, contour);
-    const Point contour_first_offset = offset;
-
-    if (contour_i > 0) {
-      // This branch only executes when we've just finished drawing a contour
-      // and are switching to a new one.
-      // We're drawing a triangle strip, so we need to "pick up the pen" by
-      // appending two vertices at the end of the previous contour and two
-      // vertices at the start of the new contour (thus connecting the two
-      // contours with two zero volume triangles, which will be discarded by
-      // the rasterizer).
-      vtx.position = polyline.GetPoint(contour_start_point_i - 1);
-      // Append two vertices when "picking up" the pen so that the triangle
-      // drawn when moving to the beginning of the new contour will have zero
-      // volume.
-      vtx_builder.AppendVertex(vtx.position);
-      vtx_builder.AppendVertex(vtx.position);
-
-      vtx.position = polyline.GetPoint(contour_start_point_i);
-      // Append two vertices at the beginning of the new contour, which
-      // appends  two triangles of zero area.
-      vtx_builder.AppendVertex(vtx.position);
-      vtx_builder.AppendVertex(vtx.position);
-    }
-
-    // Generate start cap.
-    if (!polyline.contours[contour_i].is_closed) {
-      auto cap_offset =
-          Vector2(-contour.start_direction.y, contour.start_direction.x) *
-          stroke_width * 0.5;  // Counterclockwise normal
-      cap_proc(vtx_builder, polyline.GetPoint(contour_start_point_i),
-               cap_offset, scale, true);
-    }
-
-    for (size_t contour_component_i = 0;
-         contour_component_i < contour.components.size();
-         contour_component_i++) {
-      auto component = contour.components[contour_component_i];
-      auto is_last_component =
-          contour_component_i == contour.components.size() - 1;
-
-      auto component_start_index = component.component_start_index;
-      auto component_end_index =
-          is_last_component ? contour_end_point_i - 1
-                            : contour.components[contour_component_i + 1]
-                                  .component_start_index;
-      if (component.is_curve) {
-        add_vertices_for_curve_component(
-            component_start_index, component_end_index, contour_start_point_i,
-            contour_end_point_i, contour);
-      } else {
-        add_vertices_for_linear_component(
-            component_start_index, component_end_index, contour_start_point_i,
-            contour_end_point_i, contour);
-      }
-    }
-
-    // Generate end cap or join.
-    if (!contour.is_closed) {
-      auto cap_offset =
-          Vector2(-contour.end_direction.y, contour.end_direction.x) *
-          stroke_width * 0.5;  // Clockwise normal
-      cap_proc(vtx_builder, polyline.GetPoint(contour_end_point_i - 1),
-               cap_offset, scale, false);
-    } else {
-      join_proc(vtx_builder, polyline.GetPoint(contour_start_point_i), offset,
-                contour_first_offset, scaled_miter_limit, scale);
     }
   }
+
+  void AddVerticesForCurveComponent(const size_t component_start_index,
+                                    const size_t component_end_index,
+                                    const size_t contour_start_point_i,
+                                    const size_t contour_end_point_i,
+                                    const Path::PolylineContour& contour) {
+    auto is_last_component = component_start_index ==
+                             contour.components.back().component_start_index;
+
+    for (size_t point_i = component_start_index; point_i < component_end_index;
+         point_i++) {
+      auto is_end_of_component = point_i == component_end_index - 1;
+
+      vtx.position = polyline.GetPoint(point_i) + offset;
+      vtx_builder.AppendVertex(vtx.position);
+      vtx.position = polyline.GetPoint(point_i) - offset;
+      vtx_builder.AppendVertex(vtx.position);
+
+      ComputeOffset(point_i + 2, contour_start_point_i, contour_end_point_i,
+                    contour);
+      // For curve components, the polyline is detailed enough such that
+      // it can avoid worrying about joins altogether.
+      if (is_end_of_component) {
+        vtx.position = polyline.GetPoint(point_i + 1) + offset;
+        vtx_builder.AppendVertex(vtx.position);
+        vtx.position = polyline.GetPoint(point_i + 1) - offset;
+        vtx_builder.AppendVertex(vtx.position);
+        // Generate join from the current line to the next line.
+        if (!is_last_component) {
+          join_proc(vtx_builder, polyline.GetPoint(point_i + 1),
+                    previous_offset, offset, scaled_miter_limit, scale);
+        }
+      }
+    }
+  }
+
+  const Path::Polyline& polyline;
+  const Scalar stroke_width;
+  const Scalar scaled_miter_limit;
+  const StrokePathGeometry::JoinProc& join_proc;
+  const StrokePathGeometry::CapProc& cap_proc;
+  const Scalar scale;
+
+  VertexWriter& vtx_builder;
+  Point previous_offset;
+  Point offset;
+  SolidFillVertexShader::PerVertexData vtx;
+};
+
+// static
+void StrokePathGeometry::CreateSolidStrokeVertices(
+    VertexWriter& vtx_builder,
+    const Path::Polyline& polyline,
+    Scalar stroke_width,
+    Scalar scaled_miter_limit,
+    const StrokePathGeometry::JoinProc& join_proc,
+    const CapProc& cap_proc,
+    Scalar scale) {
+  StrokeGenerator stroke_generator(polyline, stroke_width, scaled_miter_limit,
+                                   join_proc, cap_proc, scale, vtx_builder);
+  stroke_generator.Generate();
 }
 
 GeometryResult StrokePathGeometry::GetPositionBuffer(
@@ -502,29 +514,25 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   auto& host_buffer = renderer.GetTransientsBuffer();
   auto scale = entity.GetTransform().GetMaxBasisLength();
 
-  LengthWriter length_writer;
+  PositionWriter position_writer;
   auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
-  CreateSolidStrokeVertices(
-      length_writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5,
-      GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), scale);
+  CreateSolidStrokeVertices(position_writer, polyline, stroke_width,
+                            miter_limit_ * stroke_width_ * 0.5,
+                            GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
+                            scale);
 
-  auto length = length_writer.GetLength();
-  auto buffer_view = host_buffer.Emplace(
-      length * sizeof(SolidFillVertexShader::PerVertexData),
-      alignof(SolidFillVertexShader::PerVertexData), [&](uint8_t* data) {
-        PositionWriter writer(
-            reinterpret_cast<SolidFillVertexShader::PerVertexData*>(data));
-        CreateSolidStrokeVertices(
-            writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5,
-            GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), scale);
-      });
+  auto buffer_view =
+      host_buffer.Emplace(position_writer.GetData().data(),
+                          position_writer.GetData().size() *
+                              sizeof(SolidFillVertexShader::PerVertexData),
+                          alignof(SolidFillVertexShader::PerVertexData));
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = buffer_view,
-              .vertex_count = length,
+              .vertex_count = position_writer.GetData().size(),
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
@@ -549,32 +557,27 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar stroke_width = std::max(stroke_width_, min_size);
 
-  // TODO.
   auto& host_buffer = renderer.GetTransientsBuffer();
   auto scale = entity.GetTransform().GetMaxBasisLength();
   auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
-  LengthWriter length_writer;
+
+  PositionUVWriter writer(Point{0, 0}, texture_coverage.GetSize(),
+                          effect_transform);
   CreateSolidStrokeVertices(
-      length_writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5,
+      writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), scale);
 
-  auto length = length_writer.GetLength();
   auto buffer_view = host_buffer.Emplace(
-      length * sizeof(SolidFillVertexShader::PerVertexData),
-      alignof(SolidFillVertexShader::PerVertexData), [&](uint8_t* data) {
-        PositionWriter writer(
-            reinterpret_cast<SolidFillVertexShader::PerVertexData*>(data));
-        CreateSolidStrokeVertices(
-            writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5,
-            GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), scale);
-      });
+      writer.GetData().data(),
+      writer.GetData().size() * sizeof(TextureFillVertexShader::PerVertexData),
+      alignof(TextureFillVertexShader::PerVertexData));
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = buffer_view,
-              .vertex_count = length,
+              .vertex_count = writer.GetData().size(),
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
