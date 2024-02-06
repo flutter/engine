@@ -116,7 +116,6 @@
 ../../../flutter/fml/synchronization/sync_switch_unittest.cc
 ../../../flutter/fml/synchronization/waitable_event_unittest.cc
 ../../../flutter/fml/task_source_unittests.cc
-../../../flutter/fml/thread_local_unittests.cc
 ../../../flutter/fml/thread_unittests.cc
 ../../../flutter/fml/time/time_delta_unittest.cc
 ../../../flutter/fml/time/time_point_unittest.cc
@@ -124,6 +123,7 @@
 ../../../flutter/impeller/.clang-format
 ../../../flutter/impeller/.gitignore
 ../../../flutter/impeller/README.md
+../../../flutter/impeller/aiks/aiks_blur_unittests.cc
 ../../../flutter/impeller/aiks/aiks_gradient_unittests.cc
 ../../../flutter/impeller/aiks/aiks_path_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.cc
@@ -176,6 +176,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/render_pass_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/blit_pass_unittests.cc
