@@ -43,6 +43,7 @@ void main(List<String> args) async {
       final File adb = File(results['adb'] as String);
       final bool smokeTest = results['smoke-test'] as bool;
       await _run(outDir: outDir, adb: adb, smokeTest: smokeTest);
+      exit(0);
     },
     (Object error, StackTrace stackTrace) {
       if (error is! Panic) {
