@@ -1281,7 +1281,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       activeDomElement.setAttribute('type', 'password');
     }
 
-    if (config.inputType == EngineInputType.none || config.inputType == EngineInputType.multilineNone) {
+    if (config.inputType.inputmodeAttribute == 'none') {
       activeDomElement.setAttribute('inputmode', 'none');
     }
 
