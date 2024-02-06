@@ -85,6 +85,7 @@ impeller_component("context_spy") {
 template("aiks_unittests_component") {
   target_name = invoker.target_name
   predefined_sources = [
+    "aiks_blur_unittests.cc",
     "aiks_gradient_unittests.cc",
     "aiks_path_unittests.cc",
     "aiks_unittests.cc",
@@ -98,7 +99,11 @@ template("aiks_unittests_component") {
     testonly = true
     if (defined(invoker.defines)) {
       defines = invoker.defines
+    } else {
+      defines = []
     }
+    defines += [ "_USE_MATH_DEFINES" ]
+
     sources = predefined_sources + additional_sources
     deps = [
       ":aiks",
