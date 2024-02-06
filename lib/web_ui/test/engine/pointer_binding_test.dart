@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../../lib/src/engine.dart';
 import 'keyboard_converter_test.dart';
 
 const int _kNoButtonChange = -1;
@@ -2913,8 +2914,8 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
       semanticsActions,
       isEmpty,
     );
-  });
-
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/142991.
+  }, skip: operatingSystem == OperatingSystem.windows);
 
   testWithSemantics('Forwards click if enough time passed after the last flushed pointerup', () async {
     expect(EnginePlatformDispatcher.instance.semanticsEnabled, true);
