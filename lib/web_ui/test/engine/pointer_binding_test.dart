@@ -9,7 +9,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../lib/src/engine.dart';
 import 'keyboard_converter_test.dart';
 
 const int _kNoButtonChange = -1;
@@ -2621,8 +2620,9 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
 
   void testWithSemantics(
     String description,
-    Future<void> Function() body,
-  ) {
+    Future<void> Function() body, {
+    Object? skip,
+  }) {
     test(
       description,
       () async {
@@ -2632,6 +2632,7 @@ void _testClickDebouncer({required PointerBinding Function() getBinding}) {
         await body();
         EngineSemantics.instance.semanticsEnabled = false;
       },
+      skip: skip,
     );
   }
 
