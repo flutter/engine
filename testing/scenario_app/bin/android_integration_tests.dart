@@ -33,6 +33,11 @@ void main(List<String> args) async {
       'smoke-test',
       help: 'runs a single test to verify the setup',
       valueHelp: 'empty to run dev.flutter.scenarios.EngineLaunchE2ETest, or specify a class',
+    )
+    ..addFlag(
+      'use-skia-gold',
+      help: 'use Skia Gold to compare screenshots. Disable for local testing.',
+      defaultsTo: true,
     );
 
   runZonedGuarded(
@@ -40,11 +45,17 @@ void main(List<String> args) async {
       final ArgResults results = parser.parse(args);
       final Directory outDir = Directory(results['out-dir'] as String);
       final File adb = File(results['adb'] as String);
+      final bool useSkiaGold = results['use-skia-gold'] as bool;
       String? smokeTest = results['smoke-test'] as String?;
       if (results.wasParsed('smoke-test') && smokeTest!.isEmpty) {
         smokeTest = 'dev.flutter.scenarios.EngineLaunchE2ETest';
       }
-      await _run(outDir: outDir, adb: adb, smokeTestFullPath: smokeTest);
+      await _run(
+        outDir: outDir,
+        adb: adb,
+        smokeTestFullPath: smokeTest,
+        useSkiaGold: useSkiaGold,
+      );
       exit(0);
     },
     (Object error, StackTrace stackTrace) {
@@ -61,6 +72,7 @@ Future<void> _run({
   required Directory outDir,
   required File adb,
   required String? smokeTestFullPath,
+  required bool useSkiaGold,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -181,7 +193,11 @@ Future<void> _run({
         await skiaGoldClient!.auth();
         log('skia gold client is available');
       } else {
-        log('skia gold client is unavailable');
+        if (useSkiaGold) {
+          panic(<String>['skia gold client is unavailable']);
+        } else {
+          log('skia gold client is unavaialble');
+        }
       }
     });
 
