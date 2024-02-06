@@ -29,10 +29,10 @@ void main(List<String> args) async {
       help: 'out directory',
       mandatory: true,
     )
-    ..addFlag(
+    ..addOption(
       'smoke-test',
       help: 'runs a single test to verify the setup',
-      negatable: false,
+      valueHelp: 'empty to run dev.flutter.scenarios.EngineLaunchE2ETest, or specify a class',
     );
 
   runZonedGuarded(
@@ -40,7 +40,10 @@ void main(List<String> args) async {
       final ArgResults results = parser.parse(args);
       final Directory outDir = Directory(results['out-dir'] as String);
       final File adb = File(results['adb'] as String);
-      final bool smokeTest = results['smoke-test'] as bool;
+      String? smokeTest = results['smoke-test'] as String?;
+      if (results.wasParsed('smoke-test') && smokeTest!.isEmpty) {
+        smokeTest = 'dev.flutter.scenarios.EngineLaunchE2ETest';
+      }
       await _run(outDir: outDir, adb: adb, smokeTest: smokeTest);
       exit(0);
     },
@@ -57,7 +60,7 @@ void main(List<String> args) async {
 Future<void> _run({
   required Directory outDir,
   required File adb,
-  required bool smokeTest,
+  required String? smokeTestFullPath,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -210,8 +213,8 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-        if (smokeTest)
-          '-e class dev.flutter.scenarios.EngineLaunchE2ETest',
+        if (smokeTestFullPath != null)
+          '-e class ${smokeTestFullPath}',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
       ]);
       if (exitCode != 0) {
