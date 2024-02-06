@@ -11,7 +11,7 @@ namespace impeller {
 
 class VertexWriter {
  public:
-  virtual void AppendVertex(const Point& point);
+  virtual void AppendVertex(const Point& point) = 0;
 };
 
 /// @brief A geometry that is created from a stroked path object.
