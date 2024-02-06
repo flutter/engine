@@ -25,12 +25,11 @@ void ImageExternalTexture::Paint(PaintContext& context,
   if (state_ == AttachmentState::kDetached) {
     return;
   }
+  latest_bounds_ = bounds;
   Attach(context);
-  const bool should_process_frame =
-      (!freeze && new_frame_ready_) || dl_image_ == nullptr;
+  const bool should_process_frame = !freeze;
   if (should_process_frame) {
     ProcessFrame(context, bounds);
-    new_frame_ready_ = false;
   }
   if (dl_image_) {
     context.canvas->DrawImageRect(
@@ -48,7 +47,7 @@ void ImageExternalTexture::Paint(PaintContext& context,
 
 // Implementing flutter::Texture.
 void ImageExternalTexture::MarkNewFrameAvailable() {
-  new_frame_ready_ = true;
+  // NOOP.
 }
 
 // Implementing flutter::Texture.
@@ -63,6 +62,7 @@ void ImageExternalTexture::OnGrContextCreated() {
 void ImageExternalTexture::OnGrContextDestroyed() {
   if (state_ == AttachmentState::kAttached) {
     dl_image_.reset();
+    image_lru_.Clear();
     Detach();
   }
   state_ = AttachmentState::kDetached;

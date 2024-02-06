@@ -258,6 +258,18 @@ std::optional<nlohmann::json> Reflector::GenerateTemplateArguments() const {
     std::set<spirv_cross::ID> known_structs;
     ir_->for_each_typed_id<spirv_cross::SPIRType>(
         [&](uint32_t, const spirv_cross::SPIRType& type) {
+          if (type.basetype != spirv_cross::SPIRType::BaseType::Struct) {
+            return;
+          }
+          // Skip structs that do not have layout offset decorations.
+          // These structs are used internally within the shader and are not
+          // part of the shader's interface.
+          for (size_t i = 0; i < type.member_types.size(); i++) {
+            if (!compiler_->has_member_decoration(type.self, i,
+                                                  spv::DecorationOffset)) {
+              return;
+            }
+          }
           if (known_structs.find(type.self) != known_structs.end()) {
             // Iterating over types this way leads to duplicates which may cause
             // duplicate struct definitions.
@@ -1308,6 +1320,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(uniform_buffer.name);
+    proto.descriptor_type = "DescriptorType::kUniformBuffer";
     {
       std::stringstream stream;
       stream << "Bind uniform buffer for resource named " << uniform_buffer.name
@@ -1327,6 +1340,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(storage_buffer.name);
+    proto.descriptor_type = "DescriptorType::kStorageBuffer";
     {
       std::stringstream stream;
       stream << "Bind storage buffer for resource named " << storage_buffer.name
@@ -1346,6 +1360,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(sampled_image.name);
+    proto.descriptor_type = "DescriptorType::kSampledImage";
     {
       std::stringstream stream;
       stream << "Bind combined image sampler for resource named "
@@ -1361,7 +1376,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
         .argument_name = "texture",
     });
     proto.args.push_back(BindPrototypeArgument{
-        .type_name = "std::shared_ptr<const Sampler>",
+        .type_name = "const std::unique_ptr<const Sampler>&",
         .argument_name = "sampler",
     });
   }
@@ -1369,6 +1384,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(separate_image.name);
+    proto.descriptor_type = "DescriptorType::kImage";
     {
       std::stringstream stream;
       stream << "Bind separate image for resource named " << separate_image.name
@@ -1388,6 +1404,7 @@ std::vector<Reflector::BindPrototype> Reflector::ReflectBindPrototypes(
     auto& proto = prototypes.emplace_back(BindPrototype{});
     proto.return_type = "bool";
     proto.name = ToCamelCase(separate_sampler.name);
+    proto.descriptor_type = "DescriptorType::kSampler";
     {
       std::stringstream stream;
       stream << "Bind separate sampler for resource named "
@@ -1416,6 +1433,7 @@ nlohmann::json::array_t Reflector::EmitBindPrototypes(
     item["return_type"] = res.return_type;
     item["name"] = res.name;
     item["docstring"] = res.docstring;
+    item["descriptor_type"] = res.descriptor_type;
     auto& args = item["args"] = nlohmann::json::array_t{};
     for (const auto& arg : res.args) {
       auto& json_arg = args.emplace_back(nlohmann::json::object_t{});

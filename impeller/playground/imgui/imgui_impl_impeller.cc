@@ -36,10 +36,14 @@
 #include "impeller/renderer/render_pass.h"
 
 struct ImGui_ImplImpeller_Data {
+  explicit ImGui_ImplImpeller_Data(
+      const std::unique_ptr<const impeller::Sampler>& p_sampler)
+      : sampler(p_sampler) {}
+
   std::shared_ptr<impeller::Context> context;
   std::shared_ptr<impeller::Texture> font_texture;
   std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
-  std::shared_ptr<const impeller::Sampler> sampler;
+  const std::unique_ptr<const impeller::Sampler>& sampler;
 };
 
 static ImGui_ImplImpeller_Data* ImGui_ImplImpeller_GetBackendData() {
@@ -56,7 +60,8 @@ bool ImGui_ImplImpeller_Init(
             "Already initialized a renderer backend!");
 
   // Setup backend capabilities flags
-  auto* bd = new ImGui_ImplImpeller_Data();
+  auto* bd =
+      new ImGui_ImplImpeller_Data(context->GetSamplerLibrary()->GetSampler({}));
   io.BackendRendererUserData = reinterpret_cast<void*>(bd);
   io.BackendRendererName = "imgui_impl_impeller";
   io.BackendFlags |=
@@ -105,8 +110,6 @@ bool ImGui_ImplImpeller_Init(
     bd->pipeline =
         context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
-
-    bd->sampler = context->GetSamplerLibrary()->GetSampler({});
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui sampler.");
   }
 
@@ -126,7 +129,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
     return;  // Nothing to render.
   }
   auto host_buffer = impeller::HostBuffer::Create(
-      render_pass.GetContext().lock()->GetResourceAllocator());
+      render_pass.GetContext()->GetResourceAllocator());
 
   using VS = impeller::ImguiRasterVertexShader;
   using FS = impeller::ImguiRasterFragmentShader;
@@ -239,7 +242,7 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         render_pass.SetCommandLabel(impeller::SPrintF(
             "ImGui draw list %d (command %d)", draw_list_i, cmd_i));
         render_pass.SetViewport(viewport);
-        render_pass.SetScissor(impeller::IRect(clip_rect));
+        render_pass.SetScissor(impeller::IRect::RoundOut(clip_rect));
         render_pass.SetPipeline(bd->pipeline);
         VS::BindUniformBuffer(render_pass, vtx_uniforms);
         FS::BindTex(render_pass, bd->font_texture, bd->sampler);

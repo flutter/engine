@@ -1,4 +1,4 @@
-Signature: 7e833d89e9dfe743ef3cae39ed5d23a3
+Signature: 0e884b19b5e1bcb7c825c49d51b71a32
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -10272,6 +10272,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/stream_config.fid
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/stream_config_connector.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/light.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/admin.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/power.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/hwinfo.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_pipe2.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/descriptor.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -10697,6 +10698,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/stream_config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/stream_config_connector.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/light.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/admin.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/power.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/hwinfo.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.images/image_pipe2.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/descriptor.fidl
@@ -12266,6 +12268,13 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any.h + ../../
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/internal/inline_any.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/input_report_reader/reader.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/component.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/component.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/service.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/testing.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/tree_handler_settings.h + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/service.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/testing.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/include/lib/inspect/service/cpp/tree_handler_settings.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/fake_flatland.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/fake_flatland_types.cc + ../../../fuchsia/sdk/linux/LICENSE
@@ -12580,6 +12589,13 @@ FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/inline_any.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fit/include/lib/fit/internal/inline_any.h
 FILE: ../../../fuchsia/sdk/linux/pkg/input_report_reader/reader.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/client.shard.cml
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/component.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/component.h
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/service.h
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/testing.h
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/include/lib/inspect/component/cpp/tree_handler_settings.h
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/service.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/inspect_component_cpp/testing.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/include/lib/inspect/service/cpp/tree_handler_settings.h
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/fake_flatland.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp_testing/fake_flatland_types.cc
@@ -12654,6 +12670,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/device_type.fidl 
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/plug.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/ring_buffer_format.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/history.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/config.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/trippoint.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.inspect/inspect_sink.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/symlink.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -12745,6 +12762,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/device_type.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/plug.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/ring_buffer_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/history.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/trippoint.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.inspect/inspect_sink.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.io/symlink.fidl
@@ -12843,8 +12861,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/overview.fidl
 ----------------------------------------------------------------------------------------------------
 Copyright 2024 The Fuchsia Authors. All rights reserved.
 

@@ -339,6 +339,10 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   @JS('getElementById')
   external DomElement? _getElementById(JSString id);
   DomElement? getElementById(String id) => _getElementById(id.toJS);
+
+  @JS('visibilityState')
+  external JSString get _visibilityState;
+  String get visibilityState => _visibilityState.toDart;
 }
 
 @JS('document')
@@ -2931,6 +2935,11 @@ DomFileReader createDomFileReader() => DomFileReader();
 class DomDocumentFragment extends DomNode {}
 
 extension DomDocumentFragmentExtension on DomDocumentFragment {
+  external DomElement? get firstElementChild;
+  external DomElement? get lastElementChild;
+
+  external JSVoid prepend(DomNode node);
+
   @JS('querySelector')
   external DomElement? _querySelector(JSString selectors);
   DomElement? querySelector(String selectors) => _querySelector(selectors.toJS);

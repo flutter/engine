@@ -168,16 +168,12 @@ float FlutterWindow::GetDpiScale() {
   return static_cast<float>(GetCurrentDPI()) / static_cast<float>(base_dpi);
 }
 
-bool FlutterWindow::IsVisible() {
-  return IsWindowVisible(GetWindowHandle());
-}
-
 PhysicalWindowBounds FlutterWindow::GetPhysicalWindowBounds() {
   return {GetCurrentWidth(), GetCurrentHeight()};
 }
 
 void FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
-  current_cursor_ = GetCursorByName(cursor_name);
+  SetFlutterCursor(GetCursorByName(cursor_name));
 }
 
 void FlutterWindow::SetFlutterCursor(HCURSOR cursor) {

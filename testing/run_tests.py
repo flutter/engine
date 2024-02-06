@@ -43,6 +43,9 @@ FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
 
+# This number must be updated when adding new golden tests to impeller.
+_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 554
+
 logger = logging.getLogger(__name__)
 logger_handler = logging.StreamHandler()
 
@@ -518,12 +521,16 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
           'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
       })
+    mac_impeller_unittests_flags = shuffle_flags + [
+        '--enable_vulkan_validation',
+        '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
+    ]
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags + ['--enable_vulkan_validation'],
+        mac_impeller_unittests_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(https://github.com/flutter/flutter/issues/123733): Remove this allowlist.
@@ -558,7 +565,11 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         build_dir,
         'impeller_dart_unittests',
         executable_filter,
-        shuffle_flags + ['--enable_vulkan_validation'],
+        shuffle_flags + [
+            '--enable_vulkan_validation',
+            # TODO(https://github.com/flutter/flutter/issues/142642): Remove this.
+            '--gtest_filter=-*OpenGLES',
+        ],
         coverage=coverage,
         extra_env=extra_env,
     )
@@ -1001,6 +1012,7 @@ def build_dart_host_test_list(build_dir):
           ],
       ),
       (os.path.join('flutter', 'tools', 'githooks'), []),
+      (os.path.join('flutter', 'tools', 'header_guard_check'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'), []),
@@ -1102,11 +1114,20 @@ def run_impeller_golden_tests(build_dir: str):
         'Cannot find the "impeller_golden_tests" executable in "%s". You may need to build it.'
         % (build_dir)
     )
-  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('impeller').joinpath(
+  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('tools').joinpath(
       'golden_tests_harvester'
   )
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    run_cmd([tests_path, '--working_dir=%s' % temp_dir])
+    run_cmd([tests_path, '--working_dir=%s' % temp_dir], cwd=build_dir)
+    num_generated_files = len(os.listdir(temp_dir))
+    if num_generated_files != _NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES:
+      raise Exception(
+          '`impeller_golden_tests` was expected to generate '
+          f'{_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES} files, '
+          f'{num_generated_files} were generated. If this is expected, update '
+          '_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES.'
+      )
+
     with DirectoryChange(harvester_path):
       run_cmd(['dart', 'pub', 'get'])
       bin_path = Path('.').joinpath('bin'
