@@ -50,6 +50,16 @@ abstract class DimensionsProvider {
   );
 
   /// Returns a Stream with the changes to [ui.Size] (when cheap to get).
+  ///
+  /// Currently this Stream always returns `null` measurements because the
+  /// resize event that we use for [FullPageDimensionsProvider] does not contain
+  /// the new size, so users of this Stream everywhere immediately retrieve the
+  /// new `physicalSize` from the window.
+  ///
+  /// The [CustomElementDimensionsProvider] *could* broadcast the new size, but
+  /// to keep both implementations consistent (and their consumers), for now all
+  /// events from this Stream are going to be `null` (until we find a performant
+  /// way to retrieve the dimensions in full-page mode).
   Stream<ui.Size?> get onResize;
 
   /// Whether the [DimensionsProvider] instance has been closed or not.
