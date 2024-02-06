@@ -178,7 +178,6 @@ Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
       path.CreatePolyline(tolerance, std::move(point_buffer_),
                           [this](Path::Polyline::PointBufferPtr point_buffer) {
                             point_buffer_ = std::move(point_buffer);
-                            polyline_active_ = false;
                           });
   return polyline;
 }
@@ -192,7 +191,6 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
       path.CreatePolyline(tolerance, std::move(point_buffer_),
                           [this](Path::Polyline::PointBufferPtr point_buffer) {
                             point_buffer_ = std::move(point_buffer);
-                            polyline_active_ = false;
                           });
 
   output.reserve(polyline.points->size() +
