@@ -265,6 +265,7 @@ Future<void> _run({
 
     await step('Flush logcat...', () async {
       await logcat.flush();
+      await logcat.close();
     });
   }
 }
