@@ -525,12 +525,12 @@ TEST(PathTest, PathBuilderDoesNotMutateTakenPaths) {
           }
         };
 
-        auto path1 = builder.TakePath();
+        auto path1 = builder.CopyPath();
         verify_path(path1, false, false, {},
                     "Initial Path1 state before " + label);
 
         for (int i = 0; i < 10; i++) {
-          auto path = builder.TakePath();
+          auto path = builder.CopyPath();
           verify_path(
               path, false, false, {},
               "Extra TakePath #" + std::to_string(i + 1) + " for " + label);
