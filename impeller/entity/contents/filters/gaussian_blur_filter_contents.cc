@@ -227,8 +227,9 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
     Scalar rounded_plus = powf(2.0f, exponent + 1);
     Scalar blur_radius = CalculateBlurRadius(sigma);
     int kernel_size_plus = (ScaleBlurRadius(blur_radius, rounded_plus) * 2) + 1;
-    // This constant was picked by looking at the results in to make sure no
-    // shimmering was introduced.
+    // This constant was picked by looking at the results to make sure no
+    // shimmering was introduced at the highest sigma values that downscale to
+    // 1/16th.
     static constexpr int32_t kEighthDownsampleKernalWidthMax = 41;
     result = kernel_size_plus <= kEighthDownsampleKernalWidthMax ? rounded_plus
                                                                  : rounded;
