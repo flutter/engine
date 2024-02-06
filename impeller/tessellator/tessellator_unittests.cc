@@ -484,6 +484,7 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
        Rect::MakeXYWH(5000, 10000, 2000, 3000), {50, 70});
 }
 
+#if !NDEBUG
 TEST(TessellatorTest, ChecksConcurrentPolylineUsage) {
   auto tessellator = std::make_shared<Tessellator>();
   PathBuilder builder;
@@ -492,8 +493,9 @@ TEST(TessellatorTest, ChecksConcurrentPolylineUsage) {
 
   auto polyline = tessellator->CreateTempPolyline(path, 0.1);
   EXPECT_DEBUG_DEATH(tessellator->CreateTempPolyline(path, 0.1),
-                     "!polyline_active_");
+                     "point_buffer_");
 }
+#endif  // NDEBUG
 
 }  // namespace testing
 }  // namespace impeller

@@ -297,7 +297,6 @@ class Tessellator {
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
   CTessellator c_tessellator_;
-  bool polyline_active_ = false;
 
   // Data for variouos Circle/EllipseGenerator classes, cached per
   // Tessellator instance which is usually the foreground life of an app
