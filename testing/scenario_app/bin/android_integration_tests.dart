@@ -44,7 +44,7 @@ void main(List<String> args) async {
       if (results.wasParsed('smoke-test') && smokeTest!.isEmpty) {
         smokeTest = 'dev.flutter.scenarios.EngineLaunchE2ETest';
       }
-      await _run(outDir: outDir, adb: adb, smokeTest: smokeTest);
+      await _run(outDir: outDir, adb: adb, smokeTestFullPath: smokeTest);
       exit(0);
     },
     (Object error, StackTrace stackTrace) {
@@ -214,7 +214,7 @@ Future<void> _run({
         'instrument',
         '-w',
         if (smokeTestFullPath != null)
-          '-e class ${smokeTestFullPath}',
+          '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
       ]);
       if (exitCode != 0) {
