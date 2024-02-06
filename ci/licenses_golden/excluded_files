@@ -166,6 +166,8 @@
 ../../../flutter/impeller/geometry/size_unittests.cc
 ../../../flutter/impeller/geometry/trig_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
+../../../flutter/impeller/golden_tests_harvester/.dart_tool
+../../../flutter/impeller/golden_tests_harvester/pubspec.lock
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/test
@@ -1432,6 +1434,7 @@
 ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/vfs_internal/meta.json
 ../../../fuchsia/sdk/linux/pkg/virtgralloc_headers/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
