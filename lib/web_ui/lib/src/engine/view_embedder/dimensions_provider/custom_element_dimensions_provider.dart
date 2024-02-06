@@ -6,13 +6,16 @@ import 'dart:async';
 
 import 'package:ui/src/engine/display.dart';
 import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/view_embedder/display_dpr_stream.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
 import 'dimensions_provider.dart';
 
 /// This class provides observable, real-time dimensions of a host element.
+///
+/// This class needs a `Stream` of `devicePixelRatio` changes, like the one
+/// provided by [DisplayDprStream], because html resize observers do not report
+/// DPR changes.
 ///
 /// All the measurements returned from this class are potentially *expensive*,
 /// and should be cached as needed. Every call to every method on this class
@@ -24,9 +27,11 @@ import 'dimensions_provider.dart';
 /// to be effective.
 class CustomElementDimensionsProvider extends DimensionsProvider {
   /// Creates a [CustomElementDimensionsProvider] from a [_hostElement].
-  CustomElementDimensionsProvider(this._hostElement) {
+  CustomElementDimensionsProvider(this._hostElement, {
+    Stream<double>? onDprChange,
+  }) {
     // Send a resize event when the page DPR changes.
-    _dprChangeStreamSubscription = DisplayDprStream.instance.dprChanged.listen((_) {
+    _dprChangeStreamSubscription = onDprChange?.listen((_) {
       _broadcastSize(null);
     });
 

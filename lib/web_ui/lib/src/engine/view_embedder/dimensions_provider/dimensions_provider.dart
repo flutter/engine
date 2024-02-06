@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:meta/meta.dart';
 import 'package:ui/src/engine/dom.dart';
+import 'package:ui/src/engine/view_embedder/display_dpr_stream.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
@@ -31,7 +32,10 @@ abstract class DimensionsProvider {
   /// Creates the appropriate DimensionsProvider depending on the incoming [hostElement].
   factory DimensionsProvider.create({DomElement? hostElement}) {
     if (hostElement != null) {
-      return CustomElementDimensionsProvider(hostElement);
+      return CustomElementDimensionsProvider(
+        hostElement,
+        onDprChange: DisplayDprStream.instance.dprChanged,
+      );
     } else {
       return FullPageDimensionsProvider();
     }
