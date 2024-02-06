@@ -127,7 +127,8 @@
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
-                "release"
+                "release",
+                "--no-lto"
             ],
             "name": "fuchsia_release_x64",
             "ninja": {
