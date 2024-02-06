@@ -981,25 +981,34 @@ MakeRenderTargetFromBackingStoreImpeller(
   color0.load_action = impeller::LoadAction::kClear;
   color0.store_action = impeller::StoreAction::kStore;
 
-  impeller::TextureDescriptor stencil0_tex;
-  stencil0_tex.type = impeller::TextureType::kTexture2D;
-  stencil0_tex.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
-  stencil0_tex.size = size;
-  stencil0_tex.usage = static_cast<impeller::TextureUsageMask>(
+  impeller::TextureDescriptor depth_stencil_texture_desc;
+  depth_stencil_texture_desc.type = impeller::TextureType::kTexture2D;
+  depth_stencil_texture_desc.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
+  depth_stencil_texture_desc.size = size;
+  depth_stencil_texture_desc.usage = static_cast<impeller::TextureUsageMask>(
       impeller::TextureUsage::kRenderTarget);
-  stencil0_tex.sample_count = impeller::SampleCount::kCount1;
+  depth_stencil_texture_desc.sample_count = impeller::SampleCount::kCount1;
+
+  auto depth_stencil_tex = std::make_shared<impeller::TextureGLES>(
+      gl_context.GetReactor(), depth_stencil_texture_desc,
+      impeller::TextureGLES::IsWrapped::kWrapped);
+
+  impeller::DepthAttachment depth0;
+  depth0.clear_depth = 0;
+  depth0.texture = depth_stencil_tex;
+  depth0.load_action = impeller::LoadAction::kClear;
+  depth0.store_action = impeller::StoreAction::kDontCare;
 
   impeller::StencilAttachment stencil0;
   stencil0.clear_stencil = 0;
-  stencil0.texture = std::make_shared<impeller::TextureGLES>(
-      gl_context.GetReactor(), stencil0_tex,
-      impeller::TextureGLES::IsWrapped::kWrapped);
+  stencil0.texture = depth_stencil_tex;
   stencil0.load_action = impeller::LoadAction::kClear;
   stencil0.store_action = impeller::StoreAction::kDontCare;
 
   impeller::RenderTarget render_target_desc;
 
   render_target_desc.SetColorAttachment(color0, 0u);
+  render_target_desc.SetDepthAttachment(depth0);
   render_target_desc.SetStencilAttachment(stencil0);
 
   return std::make_unique<flutter::EmbedderRenderTargetImpeller>(
