@@ -6,7 +6,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/synchronization/semaphore.h"
-#include "flutter/fml/trace_event.h"
 
 #include "impeller/renderer/backend/metal/blit_pass_mtl.h"
 #include "impeller/renderer/backend/metal/compute_pass_mtl.h"
@@ -159,6 +158,13 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
 }
 
 bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
+  auto context = context_.lock();
+  if (!context) {
+    return false;
+  }
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(*context).GetGPUTracer()->RecordCmdBuffer(buffer_);
+#endif  // IMPELLER_DEBUG
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -176,58 +182,6 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   return true;
 }
 
-bool CommandBufferMTL::SubmitCommandsAsync(
-    std::shared_ptr<RenderPass> render_pass) {
-  TRACE_EVENT0("impeller", "CommandBufferMTL::SubmitCommandsAsync");
-  if (!IsValid() || !render_pass->IsValid()) {
-    return false;
-  }
-  auto context = context_.lock();
-  if (!context) {
-    return false;
-  }
-  [buffer_ enqueue];
-  auto buffer = buffer_;
-  buffer_ = nil;
-
-  auto worker_task_runner = ContextMTL::Cast(*context).GetWorkerTaskRunner();
-  auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
-
-  // Render command encoder creation has been observed to exceed the stack size
-  // limit for worker threads, and therefore is intentionally constructed on the
-  // raster thread.
-  auto render_command_encoder =
-      [buffer renderCommandEncoderWithDescriptor:mtl_render_pass->desc_];
-  if (!render_command_encoder) {
-    return false;
-  }
-
-  auto task = fml::MakeCopyable(
-      [render_pass, buffer, render_command_encoder, weak_context = context_]() {
-        auto context = weak_context.lock();
-        if (!context) {
-          [render_command_encoder endEncoding];
-          return;
-        }
-
-        auto mtl_render_pass = static_cast<RenderPassMTL*>(render_pass.get());
-        if (!mtl_render_pass->label_.empty()) {
-          [render_command_encoder setLabel:@(mtl_render_pass->label_.c_str())];
-        }
-
-        auto result = mtl_render_pass->EncodeCommands(
-            context->GetResourceAllocator(), render_command_encoder);
-        [render_command_encoder endEncoding];
-        if (result) {
-          [buffer commit];
-        } else {
-          VALIDATION_LOG << "Failed to encode command buffer";
-        }
-      });
-  worker_task_runner->PostTask(task);
-  return true;
-}
-
 void CommandBufferMTL::OnWaitUntilScheduled() {}
 
 std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
@@ -236,8 +190,12 @@ std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
     return nullptr;
   }
 
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
   auto pass = std::shared_ptr<RenderPassMTL>(
-      new RenderPassMTL(context_, target, buffer_));
+      new RenderPassMTL(context, target, buffer_));
   if (!pass->IsValid()) {
     return nullptr;
   }
@@ -262,9 +220,13 @@ std::shared_ptr<ComputePass> CommandBufferMTL::OnCreateComputePass() {
   if (!buffer_) {
     return nullptr;
   }
+  auto context = context_.lock();
+  if (!context) {
+    return nullptr;
+  }
 
   auto pass =
-      std::shared_ptr<ComputePassMTL>(new ComputePassMTL(context_, buffer_));
+      std::shared_ptr<ComputePassMTL>(new ComputePassMTL(context, buffer_));
   if (!pass->IsValid()) {
     return nullptr;
   }

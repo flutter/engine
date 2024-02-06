@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
 
 #include <type_traits>
 #include <variant>
@@ -14,9 +15,9 @@
 
 namespace impeller {
 
-// The default tolerance value for QuadraticCurveComponent::CreatePolyline and
-// CubicCurveComponent::CreatePolyline. It also impacts the number of quadratics
-// created when flattening a cubic curve to a polyline.
+// The default tolerance value for QuadraticCurveComponent::AppendPolylinePoints
+// and CubicCurveComponent::AppendPolylinePoints. It also impacts the number of
+// quadratics created when flattening a cubic curve to a polyline.
 //
 // Smaller numbers mean more points. This number seems suitable for particularly
 // curvy curves at scales close to 1.0. As the scale increases, this number
@@ -34,7 +35,7 @@ struct LinearPathComponent {
 
   Point Solve(Scalar time) const;
 
-  std::vector<Point> CreatePolyline() const;
+  void AppendPolylinePoints(std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
 
@@ -47,9 +48,13 @@ struct LinearPathComponent {
   std::optional<Vector2> GetEndDirection() const;
 };
 
+// A component that represets a Quadratic Bézier curve.
 struct QuadraticPathComponent {
+  // Start point.
   Point p1;
+  // Control point.
   Point cp;
+  // End point.
   Point p2;
 
   QuadraticPathComponent() {}
@@ -71,10 +76,8 @@ struct QuadraticPathComponent {
   //   making it trivially parallelizable.
   //
   // See also the implementation in kurbo: https://github.com/linebender/kurbo.
-  std::vector<Point> CreatePolyline(Scalar scale) const;
-
-  void FillPointsForPolyline(std::vector<Point>& points,
-                             Scalar scale_factor) const;
+  void AppendPolylinePoints(Scalar scale_factor,
+                            std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
 
@@ -87,15 +90,20 @@ struct QuadraticPathComponent {
   std::optional<Vector2> GetEndDirection() const;
 };
 
+// A component that represets a Cubic Bézier curve.
 struct CubicPathComponent {
+  // Start point.
   Point p1;
+  // The first control point.
   Point cp1;
+  // The second control point.
   Point cp2;
+  // End point.
   Point p2;
 
   CubicPathComponent() {}
 
-  CubicPathComponent(const QuadraticPathComponent& q)
+  explicit CubicPathComponent(const QuadraticPathComponent& q)
       : p1(q.p1),
         cp1(q.p1 + (q.cp - q.p1) * (2.0 / 3.0)),
         cp2(q.p2 + (q.cp - q.p2) * (2.0 / 3.0)),
@@ -111,8 +119,9 @@ struct CubicPathComponent {
   // This method approximates the cubic component with quadratics, and then
   // generates a polyline from those quadratics.
   //
-  // See the note on QuadraticPathComponent::CreatePolyline for references.
-  std::vector<Point> CreatePolyline(Scalar scale) const;
+  // See the note on QuadraticPathComponent::AppendPolylinePoints for
+  // references.
+  void AppendPolylinePoints(Scalar scale, std::vector<Point>& points) const;
 
   std::vector<Point> Extrema() const;
 
@@ -140,7 +149,7 @@ struct ContourComponent {
 
   ContourComponent() {}
 
-  ContourComponent(Point p, bool is_closed = false)
+  explicit ContourComponent(Point p, bool is_closed = false)
       : destination(p), is_closed(is_closed) {}
 
   bool operator==(const ContourComponent& other) const {
@@ -176,3 +185,5 @@ static_assert(!std::is_polymorphic<QuadraticPathComponent>::value);
 static_assert(!std::is_polymorphic<CubicPathComponent>::value);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_

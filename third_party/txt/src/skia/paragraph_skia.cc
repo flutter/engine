@@ -301,6 +301,11 @@ std::vector<LineMetrics>& ParagraphSkia::GetLineMetrics() {
   return line_metrics_.value();
 }
 
+bool ParagraphSkia::GetLineMetricsAt(int lineNumber,
+                                     skt::LineMetrics* lineMetrics) const {
+  return paragraph_->getLineMetricsAt(lineNumber, lineMetrics);
+};
+
 double ParagraphSkia::GetMinIntrinsicWidth() {
   return SkScalarToDouble(paragraph_->getMinIntrinsicWidth());
 }
@@ -373,9 +378,30 @@ Paragraph::PositionWithAffinity ParagraphSkia::GetGlyphPositionAtCoordinate(
       skia_pos.position, static_cast<Affinity>(skia_pos.affinity));
 }
 
+bool ParagraphSkia::GetGlyphInfoAt(
+    unsigned offset,
+    skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const {
+  return paragraph_->getGlyphInfoAtUTF16Offset(offset, glyphInfo);
+}
+
+bool ParagraphSkia::GetClosestGlyphInfoAtCoordinate(
+    double dx,
+    double dy,
+    skia::textlayout::Paragraph::GlyphInfo* glyphInfo) const {
+  return paragraph_->getClosestUTF16GlyphInfoAt(dx, dy, glyphInfo);
+};
+
 Paragraph::Range<size_t> ParagraphSkia::GetWordBoundary(size_t offset) {
   skt::SkRange<size_t> range = paragraph_->getWordBoundary(offset);
   return Paragraph::Range<size_t>(range.start, range.end);
+}
+
+size_t ParagraphSkia::GetNumberOfLines() const {
+  return paragraph_->lineNumber();
+}
+
+int ParagraphSkia::GetLineNumberAt(size_t codeUnitIndex) const {
+  return paragraph_->getLineNumberAtUTF16Offset(codeUnitIndex);
 }
 
 TextStyle ParagraphSkia::SkiaToTxt(const skt::TextStyle& skia) {

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONICAL_GRADIENT_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONICAL_GRADIENT_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -45,8 +46,6 @@ class ConicalGradientContents final : public ColorSourceContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
-  void SetDither(bool dither);
-
   void SetFocus(std::optional<Point> focus, Scalar radius);
 
  private:
@@ -65,9 +64,12 @@ class ConicalGradientContents final : public ColorSourceContents {
   Color decal_border_color_ = Color::BlackTransparent();
   std::optional<Point> focus_;
   Scalar focus_radius_ = 0.0f;
-  bool dither_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ConicalGradientContents);
+  ConicalGradientContents(const ConicalGradientContents&) = delete;
+
+  ConicalGradientContents& operator=(const ConicalGradientContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONICAL_GRADIENT_CONTENTS_H_

@@ -525,7 +525,7 @@ final List<RegExp> csReferencesByType = <RegExp>[
   ),
 
   // MPL
-  // root_certificates
+  // fallback_root_certificates
   RegExp(
     r'/\* This Source Code Form is subject to the terms of the Mozilla Public *\n'
     r'^( \*)( )License, v\. 2\.0\. +If a copy of the MPL was not distributed with this *\n'
@@ -1608,7 +1608,7 @@ final List<RegExp> csStrayCopyrights = <RegExp>[
     multiLine: true,
   ),
 
-  // third_party/inja/third_party/include/hayai/hayai_clock.hpp
+  // flutter/third_party/inja/third_party/include/hayai/hayai_clock.hpp
   // Advice was to just ignore these copyright notices given the LICENSE.md file
   // in the same directory.
   RegExp(

@@ -12,6 +12,7 @@
 #include "gmock/gmock.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/display_list/skia_conversions.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/fixtures/golden_paths.h"
@@ -23,7 +24,6 @@
 #include "impeller/geometry/path_component.h"
 #include "impeller/playground/compute_playground_test.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
 #include "impeller/renderer/compute_tessellator.h"
 #include "impeller/renderer/path_polyline.comp.h"
@@ -70,10 +70,9 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
                                                            "VertexCount");
 
   auto callback = [&](RenderPass& pass) -> bool {
-    ::memset(vertex_buffer_count->AsBufferView().contents, 0,
+    ::memset(vertex_buffer_count->OnGetContents(), 0,
              sizeof(SS::VertexBufferCount));
-    ::memset(vertex_buffer->AsBufferView().contents, 0,
-             sizeof(SS::VertexBuffer<2048>));
+    ::memset(vertex_buffer->OnGetContents(), 0, sizeof(SS::VertexBuffer<2048>));
     const auto* main_viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(
         ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20));
@@ -88,21 +87,22 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
       auto future = promise.get_future();
 
       auto path = skia_conversions::ToPath(sk_path);
+      auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
       auto status =
           ComputeTessellator{}
               .SetStrokeWidth(stroke_width)
-              .Tessellate(
-                  path, context, vertex_buffer->AsBufferView(),
-                  vertex_buffer_count->AsBufferView(),
-                  [vertex_buffer_count, &vertex_count,
-                   &promise](CommandBuffer::Status status) {
-                    vertex_count =
-                        reinterpret_cast<SS::VertexBufferCount*>(
-                            vertex_buffer_count->AsBufferView().contents)
-                            ->count;
-                    promise.set_value(status ==
-                                      CommandBuffer::Status::kCompleted);
-                  });
+              .Tessellate(path, *host_buffer, context,
+                          DeviceBuffer::AsBufferView(vertex_buffer),
+                          DeviceBuffer::AsBufferView(vertex_buffer_count),
+                          [vertex_buffer_count, &vertex_count,
+                           &promise](CommandBuffer::Status status) {
+                            vertex_count =
+                                reinterpret_cast<SS::VertexBufferCount*>(
+                                    vertex_buffer_count->OnGetContents())
+                                    ->count;
+                            promise.set_value(
+                                status == CommandBuffer::Status::kCompleted);
+                          });
       switch (status) {
         case ComputeTessellator::Status::kCommandInvalid:
           ImGui::Text("Failed to submit compute job (invalid command)");
@@ -132,46 +132,40 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
 
     using VS = SolidFillPipeline::VertexShader;
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
-    cmd.stencil_reference = 0;
+    pass.SetCommandLabel("Draw Stroke");
+    pass.SetStencilReference(0);
 
     ContentContextOptions options;
     options.sample_count = pass.GetRenderTarget().GetSampleCount();
     options.color_attachment_pixel_format =
         pass.GetRenderTarget().GetRenderTargetPixelFormat();
-    options.has_stencil_attachment =
+    options.has_depth_stencil_attachments =
         pass.GetRenderTarget().GetStencilAttachment().has_value();
     options.blend_mode = BlendMode::kSourceIn;
     options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
 
-    cmd.pipeline = renderer.GetSolidFillPipeline(options);
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
+
+    pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
-                     vertex_buffer_count->AsBufferView().contents)
+                     vertex_buffer_count->OnGetContents())
                      ->count;
 
-    VertexBuffer render_vertex_buffer{
-        .vertex_buffer = vertex_buffer->AsBufferView(),
-        .vertex_count = count,
-        .index_type = IndexType::kNone};
-    cmd.BindVertices(render_vertex_buffer);
+    pass.SetVertexBuffer(
+        VertexBuffer{.vertex_buffer = DeviceBuffer::AsBufferView(vertex_buffer),
+                     .vertex_count = count,
+                     .index_type = IndexType::kNone});
 
     VS::FrameInfo frame_info;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
-    frame_info.mvp =
-        Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+    frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    VS::BindFrameInfo(
+        pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
-      return false;
-    }
-
-    return true;
+    return pass.Draw().ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -313,69 +307,63 @@ TEST_P(ComputeSubgroupTest, LargePath) {
           .TakePath();
 
   auto callback = [&](RenderPass& pass) -> bool {
-    ::memset(vertex_buffer_count->AsBufferView().contents, 0,
+    ::memset(vertex_buffer_count->OnGetContents(), 0,
              sizeof(SS::VertexBufferCount));
-    ::memset(vertex_buffer->AsBufferView().contents, 0,
-             sizeof(SS::VertexBuffer<2048>));
-
-    ComputeTessellator{}
-        .SetStrokeWidth(stroke_width)
-        .Tessellate(
-            complex_path, context, vertex_buffer->AsBufferView(),
-            vertex_buffer_count->AsBufferView(),
-            [vertex_buffer_count, &vertex_count](CommandBuffer::Status status) {
-              vertex_count = reinterpret_cast<SS::VertexBufferCount*>(
-                                 vertex_buffer_count->AsBufferView().contents)
-                                 ->count;
-            });
+    ::memset(vertex_buffer->OnGetContents(), 0, sizeof(SS::VertexBuffer<2048>));
 
     ContentContext renderer(context, nullptr);
     if (!renderer.IsValid()) {
       return false;
     }
 
+    ComputeTessellator{}
+        .SetStrokeWidth(stroke_width)
+        .Tessellate(
+            complex_path, renderer.GetTransientsBuffer(), context,
+            DeviceBuffer::AsBufferView(vertex_buffer),
+            DeviceBuffer::AsBufferView(vertex_buffer_count),
+            [vertex_buffer_count, &vertex_count](CommandBuffer::Status status) {
+              vertex_count = reinterpret_cast<SS::VertexBufferCount*>(
+                                 vertex_buffer_count->OnGetContents())
+                                 ->count;
+            });
+
     using VS = SolidFillPipeline::VertexShader;
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
-    cmd.stencil_reference = 0;
+    pass.SetCommandLabel("Draw Stroke");
+    pass.SetStencilReference(0);
 
     ContentContextOptions options;
     options.sample_count = pass.GetRenderTarget().GetSampleCount();
     options.color_attachment_pixel_format =
         pass.GetRenderTarget().GetRenderTargetPixelFormat();
-    options.has_stencil_attachment =
+    options.has_depth_stencil_attachments =
         pass.GetRenderTarget().GetStencilAttachment().has_value();
     options.blend_mode = BlendMode::kSourceIn;
     options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
 
-    cmd.pipeline = renderer.GetSolidFillPipeline(options);
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
+
+    pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
-                     vertex_buffer_count->AsBufferView().contents)
+                     vertex_buffer_count->OnGetContents())
                      ->count;
 
-    VertexBuffer render_vertex_buffer{
-        .vertex_buffer = vertex_buffer->AsBufferView(),
-        .vertex_count = count,
-        .index_type = IndexType::kNone};
-    cmd.BindVertices(render_vertex_buffer);
+    pass.SetVertexBuffer(
+        VertexBuffer{.vertex_buffer = DeviceBuffer::AsBufferView(vertex_buffer),
+                     .vertex_count = count,
+                     .index_type = IndexType::kNone});
 
     VS::FrameInfo frame_info;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
-    frame_info.mvp =
-        Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+    frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    VS::BindFrameInfo(
+        pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
-      return false;
-    }
-
-    return true;
+    return pass.Draw().ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -402,9 +390,10 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
 
   fml::AutoResetWaitableEvent latch;
 
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
   auto status = tessellator.Tessellate(
-      path, context, vertex_buffer->AsBufferView(),
-      vertex_buffer_count->AsBufferView(),
+      path, *host_buffer, context, DeviceBuffer::AsBufferView(vertex_buffer),
+      DeviceBuffer::AsBufferView(vertex_buffer_count),
       [&latch](CommandBuffer::Status status) {
         EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
         latch.Signal();
@@ -420,46 +409,40 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
 
     using VS = SolidFillPipeline::VertexShader;
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "Draw Stroke");
-    cmd.stencil_reference = 0;
+    pass.SetCommandLabel("Draw Stroke");
+    pass.SetStencilReference(0);
 
     ContentContextOptions options;
     options.sample_count = pass.GetRenderTarget().GetSampleCount();
     options.color_attachment_pixel_format =
         pass.GetRenderTarget().GetRenderTargetPixelFormat();
-    options.has_stencil_attachment =
+    options.has_depth_stencil_attachments =
         pass.GetRenderTarget().GetStencilAttachment().has_value();
     options.blend_mode = BlendMode::kSourceIn;
     options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
 
-    cmd.pipeline = renderer.GetSolidFillPipeline(options);
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
+
+    pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
     auto count = reinterpret_cast<SS::VertexBufferCount*>(
-                     vertex_buffer_count->AsBufferView().contents)
+                     vertex_buffer_count->OnGetContents())
                      ->count;
 
-    VertexBuffer render_vertex_buffer{
-        .vertex_buffer = vertex_buffer->AsBufferView(),
-        .vertex_count = count,
-        .index_type = IndexType::kNone};
-    cmd.BindVertices(render_vertex_buffer);
+    pass.SetVertexBuffer(
+        VertexBuffer{.vertex_buffer = DeviceBuffer::AsBufferView(vertex_buffer),
+                     .vertex_count = count,
+                     .index_type = IndexType::kNone});
 
     VS::FrameInfo frame_info;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
-    frame_info.mvp =
-        Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
+    frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
-    VS::BindFrameInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+    VS::BindFrameInfo(
+        pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    if (!pass.AddCommand(std::move(cmd))) {
-      return false;
-    }
-
-    return true;
+    return pass.Draw().ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 
@@ -471,11 +454,11 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
   latch.Wait();
 
   auto vertex_count = reinterpret_cast<SS::VertexBufferCount*>(
-                          vertex_buffer_count->AsBufferView().contents)
+                          vertex_buffer_count->OnGetContents())
                           ->count;
   EXPECT_EQ(vertex_count, golden_cubic_and_quad_points.size());
-  auto vertex_buffer_data = reinterpret_cast<SS::VertexBuffer<2048>*>(
-      vertex_buffer->AsBufferView().contents);
+  auto vertex_buffer_data =
+      reinterpret_cast<SS::VertexBuffer<2048>*>(vertex_buffer->OnGetContents());
   for (size_t i = 0; i < vertex_count; i++) {
     EXPECT_LT(std::abs(golden_cubic_and_quad_points[i].x -
                        vertex_buffer_data->position[i].x),

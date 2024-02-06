@@ -6,6 +6,7 @@ import 'dart:io' as io show Directory, File, Platform, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
+import 'package:clang_tidy/src/lint_target.dart';
 import 'package:clang_tidy/src/options.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:litetest/litetest.dart';
@@ -31,7 +32,7 @@ final class Fixture {
       errSink: errBuffer,
       processManager: processManager,
       engine: engine,
-    ), errBuffer, outBuffer);
+    ), errBuffer);
   }
 
   /// Simulates running the tool with the given [options].
@@ -43,26 +44,21 @@ final class Fixture {
     final StringBuffer errBuffer = StringBuffer();
     return Fixture._(ClangTidy(
       buildCommandsPath: options.buildCommandsPath,
-      lintAll: options.lintAll,
-      lintHead: options.lintHead,
+      lintTarget: options.lintTarget,
       fix: options.fix,
       outSink: outBuffer,
       errSink: errBuffer,
       processManager: processManager,
-    ), errBuffer, outBuffer);
+    ), errBuffer);
   }
 
   Fixture._(
     this.tool,
     this.errBuffer,
-    this.outBuffer,
   );
 
   /// The `clang-tidy` tool.
   final ClangTidy tool;
-
-  /// Captured `stdout` from the tool.
-  final StringBuffer outBuffer;
 
   /// Captured `stderr` from the tool.
   final StringBuffer errBuffer;
@@ -214,6 +210,23 @@ Future<int> main(List<String> args) async {
     });
   });
 
+  test('clang-tidy specified', () async {
+    _withTempFile('shard-id-valid', (String path) {
+      final Options options = Options.fromCommandLine( <String>[
+          '--clang-tidy=foo/bar',
+        ],);
+      expect(options.clangTidyPath, isNotNull);
+      expect(options.clangTidyPath!.path, equals('foo/bar'));
+    });
+  });
+
+  test('clang-tidy unspecified', () async {
+    _withTempFile('shard-id-valid', (String path) {
+      final Options options = Options.fromCommandLine( <String>[],);
+      expect(options.clangTidyPath, isNull);
+    });
+  });
+
   test('shard-id invalid', () async {
     _withTempFile('shard-id-valid', (String path) {
       final StringBuffer errBuffer = StringBuffer();
@@ -275,7 +288,24 @@ Future<int> main(List<String> args) async {
 
     expect(result, equals(1));
     expect(fixture.errBuffer.toString(), contains(
-      'ERROR: At most one of --lint-all and --lint-head can be passed.',
+      'ERROR: At most one of --lint-all, --lint-head, --lint-regex can be passed.',
+    ));
+  });
+
+  test('Error when --lint-all and --lint-regex are used together', () async {
+    final Fixture fixture = Fixture.fromCommandLine(
+      <String>[
+        '--compile-commands',
+        '/unused',
+        '--lint-all',
+        '--lint-regex=".*"',
+      ],
+    );
+    final int result = await fixture.tool.run();
+
+    expect(result, equals(1));
+    expect(fixture.errBuffer.toString(), contains(
+      'ERROR: At most one of --lint-all, --lint-head, --lint-regex can be passed.',
     ));
   });
 
@@ -283,7 +313,7 @@ Future<int> main(List<String> args) async {
     final Fixture fixture = Fixture.fromOptions(
       Options(
         buildCommandsPath: io.File(buildCommands),
-        lintAll: true,
+        lintTarget: const LintAll(),
       ),
     );
     final List<io.File> fileList = await fixture.tool.computeFilesOfInterest();
@@ -296,7 +326,7 @@ Future<int> main(List<String> args) async {
         buildCommandsPath: io.File(buildCommands),
         // Intentional:
         // ignore: avoid_redundant_argument_values
-        lintAll: false,
+        lintTarget: const LintChanged(),
       ),
       processManager: FakeProcessManager(
         onStart: (List<String> command) {
@@ -312,11 +342,31 @@ Future<int> main(List<String> args) async {
     expect(fileList.length, lessThan(300));
   });
 
+  test('lintAll=pattern checks based on a RegEx', () async {
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintTarget: const LintRegex(r'.*test.*\.cc$'),
+      ),
+      processManager: FakeProcessManager(
+        onStart: (List<String> command) {
+          if (command.first == 'git') {
+            // This just allows git to not actually be called.
+            return FakeProcess();
+          }
+          return FakeProcessManager.unhandledStart(command);
+        },
+      ),
+    );
+    final List<io.File> fileList = await fixture.tool.computeFilesOfInterest();
+    expect(fileList.length, lessThan(1000));
+  });
+
   test('Sharding', () async {
     final Fixture fixture = Fixture.fromOptions(
       Options(
         buildCommandsPath: io.File(buildCommands),
-        lintAll: true,
+        lintTarget: const LintAll(),
       ),
       processManager: FakeProcessManager(
         onStart: (List<String> command) {
@@ -392,7 +442,7 @@ Future<int> main(List<String> args) async {
     final Fixture fixture = Fixture.fromOptions(
       Options(
         buildCommandsPath: io.File(buildCommands),
-        lintAll: true,
+        lintTarget: const LintAll(),
       ),
     );
 
@@ -418,7 +468,7 @@ Future<int> main(List<String> args) async {
     final Fixture fixture = Fixture.fromOptions(
       Options(
         buildCommandsPath: io.File(buildCommands),
-        lintAll: true,
+        lintTarget: const LintAll(),
       ),
     );
 
@@ -523,6 +573,17 @@ Future<int> main(List<String> args) async {
     );
 
     expect(lintAction, equals(LintAction.lint));
+  });
+
+  test('Command filters out sed command after a compile command', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          '../../buildtools/mac-x64/clang/bin/clang filename '
+          "&& sed -i 's@/b/f/w@../..@g' filename",
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
   });
 
   return 0;

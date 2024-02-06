@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_
 
 #include <Metal/Metal.h>
 
 #include <optional>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
@@ -398,3 +400,5 @@ MTLDepthStencilDescriptor* ToMTLDepthStencilDescriptor(
 MTLTextureDescriptor* ToMTLTextureDescriptor(const TextureDescriptor& desc);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_

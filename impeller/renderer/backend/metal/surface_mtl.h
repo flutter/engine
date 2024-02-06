@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_
 
 #include <QuartzCore/CAMetalLayer.h>
 #include <memory>
@@ -81,7 +82,11 @@ class SurfaceMTL final : public Surface {
              bool requires_blit,
              std::optional<IRect> clip_rect);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceMTL);
+  SurfaceMTL(const SurfaceMTL&) = delete;
+
+  SurfaceMTL& operator=(const SurfaceMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SURFACE_MTL_H_

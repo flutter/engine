@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_
+
 #import <Cocoa/Cocoa.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
 @class FlutterTextField;
-
-@interface NSView (ClipsToBounds)
-// This property is available since macOS 10.9 but only declared in macOS 14 SDK.
-@property BOOL clipsToBounds API_AVAILABLE(macos(10.9));
-@end
 
 /**
  * A plugin to handle text input.
@@ -72,3 +70,5 @@
 @property(nonatomic) NSTextInputContext* textInputContext;
 @property(readwrite, nonatomic) NSString* customRunLoopMode;
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

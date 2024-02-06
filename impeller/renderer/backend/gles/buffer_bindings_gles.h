@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BUFFER_BINDINGS_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BUFFER_BINDINGS_GLES_H_
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 
-#include "flutter/fml/macros.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/renderer/backend/gles/gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 #include "impeller/renderer/command.h"
-#include "impeller/renderer/vertex_descriptor.h"
 
 namespace impeller {
 
@@ -38,7 +38,7 @@ class BufferBindingsGLES {
   bool BindUniformData(const ProcTableGLES& gl,
                        Allocator& transients_allocator,
                        const Bindings& vertex_bindings,
-                       const Bindings& fragment_bindings) const;
+                       const Bindings& fragment_bindings);
 
   bool UnbindVertexAttributes(const ProcTableGLES& gl) const;
 
@@ -55,17 +55,31 @@ class BufferBindingsGLES {
     GLsizei offset = 0u;
   };
   std::vector<VertexAttribPointer> vertex_attrib_arrays_;
-  std::map<std::string, GLint> uniform_locations_;
+
+  std::unordered_map<std::string, GLint> uniform_locations_;
+
+  using BindingMap = std::unordered_map<std::string, std::vector<GLint>>;
+  BindingMap binding_map_ = {};
+
+  const std::vector<GLint>& ComputeUniformLocations(
+      const ShaderMetadata* metadata);
+
+  GLint ComputeTextureLocation(const ShaderMetadata* metadata);
 
   bool BindUniformBuffer(const ProcTableGLES& gl,
                          Allocator& transients_allocator,
-                         const BufferResource& buffer) const;
+                         const BufferResource& buffer);
 
-  bool BindTextures(const ProcTableGLES& gl,
-                    const Bindings& bindings,
-                    ShaderStage stage) const;
+  std::optional<size_t> BindTextures(const ProcTableGLES& gl,
+                                     const Bindings& bindings,
+                                     ShaderStage stage,
+                                     size_t unit_start_index = 0);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(BufferBindingsGLES);
+  BufferBindingsGLES(const BufferBindingsGLES&) = delete;
+
+  BufferBindingsGLES& operator=(const BufferBindingsGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BUFFER_BINDINGS_GLES_H_

@@ -76,6 +76,9 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   bool is_safe = is_ui_thread_safe_;
   bool affects_transparency = current_layer_->affects_transparent_layer();
 
+  sk_sp<DlRTree> rtree = this->rtree();
+  SkRect bounds = rtree ? rtree->bounds() : this->bounds();
+
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   is_ui_thread_safe_ = true;
@@ -86,8 +89,8 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   current_ = DlPaint();
 
   return sk_sp<DisplayList>(new DisplayList(
-      std::move(storage_), bytes, count, nested_bytes, nested_count, bounds(),
-      compatible, is_safe, affects_transparency, rtree()));
+      std::move(storage_), bytes, count, nested_bytes, nested_count, bounds,
+      compatible, is_safe, affects_transparency, std::move(rtree)));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
@@ -122,10 +125,6 @@ SkImageInfo DisplayListBuilder::GetImageInfo() const {
 void DisplayListBuilder::onSetAntiAlias(bool aa) {
   current_.setAntiAlias(aa);
   Push<SetAntiAliasOp>(0, 0, aa);
-}
-void DisplayListBuilder::onSetDither(bool dither) {
-  current_.setDither(dither);
-  Push<SetDitherOp>(0, 0, dither);
 }
 void DisplayListBuilder::onSetInvertColors(bool invert) {
   current_.setInvertColors(invert);
@@ -346,9 +345,6 @@ void DisplayListBuilder::SetAttributesFromPaint(
     const DisplayListAttributeFlags flags) {
   if (flags.applies_anti_alias()) {
     setAntiAlias(paint.isAntiAlias());
-  }
-  if (flags.applies_dither()) {
-    setDither(paint.isDither());
   }
   if (flags.applies_alpha_or_color()) {
     setColor(paint.getColor());

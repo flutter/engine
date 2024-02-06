@@ -11,8 +11,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import 'package:web_engine_tester/golden_tester.dart';
-
 import 'common.dart';
 
 void main() {
@@ -23,7 +21,7 @@ const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 500, 250);
 
 void testMain() {
   group('CkCanvas', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     setUp(() {
       renderer.fontCollection.debugResetFallbackFonts();
@@ -146,25 +144,22 @@ void testMain() {
       final LayerSceneBuilder builder = LayerSceneBuilder();
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, picture);
-      final LayerTree layerTree = builder.build().layerTree;
-      CanvasKitRenderer.instance.rasterizer.draw(layerTree);
+      final LayerScene scene = builder.build();
+      await renderScene(scene);
 
       // Now draw an empty layer tree and confirm that the red rectangle is
       // no longer drawn.
       final LayerSceneBuilder emptySceneBuilder = LayerSceneBuilder();
       emptySceneBuilder.pushOffset(0, 0);
-      final LayerTree emptyLayerTree = emptySceneBuilder.build().layerTree;
-      CanvasKitRenderer.instance.rasterizer.draw(emptyLayerTree);
-
-      await matchGoldenFile('canvaskit_empty_scene.png',
+      final LayerScene emptyScene = emptySceneBuilder.build();
+      await matchSceneGolden('canvaskit_empty_scene.png', emptyScene,
           region: const ui.Rect.fromLTRB(0, 0, 100, 100));
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/121758
-    test('resources used in temporary surfaces for Image.toByteData can cross to rendering overlays', () async {
-      final Rasterizer rasterizer = CanvasKitRenderer.instance.rasterizer;
-      SurfaceFactory.instance.debugClear();
-
+    test(
+        'resources used in temporary surfaces for Image.toByteData can cross to rendering overlays',
+        () async {
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -212,9 +207,8 @@ void testMain() {
       sb.pop();
 
       // The below line should not throw an error.
-      rasterizer.draw(sb.build().layerTree);
-
-      await matchGoldenFile('cross_overlay_resources.png', region: const ui.Rect.fromLTRB(0, 0, 100, 100));
+      await matchSceneGolden('cross_overlay_resources.png', sb.build(),
+          region: const ui.Rect.fromLTRB(0, 0, 100, 100));
     });
   });
 }

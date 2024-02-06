@@ -10,12 +10,16 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  ensureFlutterViewEmbedderInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
+  });
 
   group('PlatformDispatcher', () {
     test('reports at least one display', () {
@@ -35,6 +39,95 @@ void testMain() {
       expect(engineDispatcher.accessibilityFeatures.highContrast, isFalse);
 
       engineDispatcher.dispose();
+    });
+
+    test('AppLifecycleState transitions through all states', () {
+      final List<ui.AppLifecycleState> states = <ui.AppLifecycleState>[];
+      void listener(ui.AppLifecycleState state) {
+        states.add(state);
+      }
+
+      final MockAppLifecycleState mockAppLifecycleState =
+          MockAppLifecycleState();
+
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.resumed);
+
+      mockAppLifecycleState.addListener(listener);
+      expect(mockAppLifecycleState.activeCallCount, 1);
+
+      expect(
+          states, equals(<ui.AppLifecycleState>[ui.AppLifecycleState.resumed]));
+
+      mockAppLifecycleState.inactive();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.inactive);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive
+          ]));
+
+      // consecutive same states are skipped
+      mockAppLifecycleState.inactive();
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive
+          ]));
+
+      mockAppLifecycleState.hidden();
+      expect(
+          mockAppLifecycleState.appLifecycleState, ui.AppLifecycleState.hidden);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden
+          ]));
+
+      mockAppLifecycleState.resume();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.resumed);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed
+          ]));
+
+      mockAppLifecycleState.detach();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.detached);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.detached
+          ]));
+
+      mockAppLifecycleState.removeListener(listener);
+      expect(mockAppLifecycleState.deactivateCallCount, 1);
+
+      // No more states should be recorded after the listener is removed.
+      mockAppLifecycleState.resume();
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.detached
+          ]));
     });
 
     test('responds to flutter/skia Skia.setResourceCacheMaxBytes', () async {
@@ -200,6 +293,115 @@ void testMain() {
       expect(ui.PlatformDispatcher.instance.textScaleFactor,
           findBrowserTextScaleFactor());
     });
+
+    test('disposes all its views', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view3 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2)
+        ..registerView(view3);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+      expect(view3.isDisposed, isFalse);
+
+      dispatcher.dispose();
+      expect(view1.isDisposed, isTrue);
+      expect(view2.isDisposed, isTrue);
+      expect(view3.isDisposed, isTrue);
+    });
+
+    test('connects view disposal to metrics changed event', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      expect(onMetricsChangedCalled, isFalse);
+
+      dispatcher.viewManager.disposeAndUnregisterView(view2.viewId);
+
+      expect(onMetricsChangedCalled, isTrue, reason: 'onMetricsChanged should have been called.');
+
+      dispatcher.dispose();
+    });
+
+    test('disconnects view disposal event on dispose', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager.registerView(view1);
+
+      expect(view1.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      dispatcher.dispose();
+
+      expect(onMetricsChangedCalled, isFalse);
+      expect(view1.isDisposed, isTrue);
+    });
+
+    test('invokeOnViewFocusChange calls onViewFocusChange', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final List<ui.ViewFocusEvent> dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
+      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+        viewId: 0,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+
+      dispatcher.onViewFocusChange = dispatchedViewFocusEvents.add;
+      dispatcher.invokeOnViewFocusChange(viewFocusEvent);
+
+      expect(dispatchedViewFocusEvents, hasLength(1));
+      expect(dispatchedViewFocusEvents.single, viewFocusEvent);
+    });
+
+    test('invokeOnViewFocusChange preserves the zone', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final Zone zone1 = Zone.current.fork();
+      final Zone zone2 = Zone.current.fork();
+      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+        viewId: 0,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+
+      zone1.runGuarded(() {
+        dispatcher.onViewFocusChange = (_) {
+          expect(Zone.current, zone1);
+        };
+      });
+
+      zone2.runGuarded(() {
+        dispatcher.invokeOnViewFocusChange(viewFocusEvent);
+      });
+    });
   });
 }
 
@@ -225,5 +427,36 @@ class MockHighContrastSupport implements HighContrastSupport {
   @override
   void removeListener(HighContrastListener listener) {
     _listeners.remove(listener);
+  }
+}
+
+class MockAppLifecycleState extends AppLifecycleState {
+  int activeCallCount = 0;
+  int deactivateCallCount = 0;
+
+  void detach() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.detached);
+  }
+
+  void resume() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.resumed);
+  }
+
+  void inactive() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.inactive);
+  }
+
+  void hidden() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.hidden);
+  }
+
+  @override
+  void activate() {
+    activeCallCount++;
+  }
+
+  @override
+  void deactivate() {
+    deactivateCallCount++;
   }
 }

@@ -13,8 +13,6 @@ void main() {
 }
 
 Future<void> testMain() async {
-  ensureFlutterViewEmbedderInitialized();
-
   String? getCssThemeColor() {
     final DomHTMLMetaElement? theme =
         domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
@@ -31,7 +29,7 @@ Future<void> testMain() async {
       expect(domDocument.title, '');
       expect(getCssThemeColor(), isNull);
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',
@@ -48,7 +46,7 @@ Future<void> testMain() async {
       expect(domDocument.title, 'Title Test');
       expect(getCssThemeColor(), expectedPrimaryColor.toCssString());
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',
@@ -75,7 +73,7 @@ Future<void> testMain() async {
       domDocument.title = 'Something Else';
       expect(domDocument.title, 'Something Else');
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',
@@ -93,7 +91,7 @@ Future<void> testMain() async {
       domDocument.title = 'Something Else';
       expect(domDocument.title, 'Something Else');
 
-      ui.window.sendPlatformMessage(
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setApplicationSwitcherDescription',

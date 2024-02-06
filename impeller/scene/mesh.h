@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_MESH_H_
+#define FLUTTER_IMPELLER_SCENE_MESH_H_
 
 #include <memory>
 #include <type_traits>
@@ -40,8 +41,12 @@ class Mesh final {
  private:
   std::vector<Primitive> primitives_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Mesh);
+  Mesh(const Mesh&) = delete;
+
+  Mesh& operator=(const Mesh&) = delete;
 };
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_MESH_H_

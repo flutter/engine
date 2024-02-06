@@ -9,7 +9,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -73,12 +73,12 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
                             yuv_color_space = yuv_color_space_](
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
-    Command cmd;
-    DEBUG_COMMAND_INFO(cmd, "YUV to RGB Filter");
-    cmd.stencil_reference = entity.GetClipDepth();
+    pass.SetCommandLabel("YUV to RGB Filter");
+    pass.SetStencilReference(entity.GetClipDepth());
 
     auto options = OptionsFromPassAndEntity(pass, entity);
-    cmd.pipeline = renderer.GetYUVToRGBFilterPipeline(options);
+    options.primitive_type = PrimitiveType::kTriangleStrip;
+    pass.SetPipeline(renderer.GetYUVToRGBFilterPipeline(options));
 
     auto size = y_input_snapshot->texture->GetSize();
 
@@ -86,19 +86,16 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     vtx_builder.AddVertices({
         {Point(0, 0)},
         {Point(1, 0)},
-        {Point(1, 1)},
-        {Point(0, 0)},
-        {Point(1, 1)},
         {Point(0, 1)},
+        {Point(1, 1)},
     });
 
-    auto& host_buffer = pass.GetTransientsBuffer();
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-    cmd.BindVertices(vtx_buffer);
+    auto& host_buffer = renderer.GetTransientsBuffer();
+    pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
     VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransformation() * y_input_snapshot->transform *
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform() *
+                     y_input_snapshot->transform *
                      Matrix::MakeScale(Vector2(size));
     frame_info.texture_sampler_y_coord_scale =
         y_input_snapshot->texture->GetYCoordScale();
@@ -114,19 +111,20 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
         break;
     }
 
-    auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
-    FS::BindYTexture(cmd, y_input_snapshot->texture, sampler);
-    FS::BindUvTexture(cmd, uv_input_snapshot->texture, sampler);
+    const std::unique_ptr<const Sampler>& sampler =
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
+    FS::BindYTexture(pass, y_input_snapshot->texture, sampler);
+    FS::BindUvTexture(pass, uv_input_snapshot->texture, sampler);
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+    FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+    VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.Draw().ok();
   };
 
   CoverageProc coverage_proc =
       [coverage](const Entity& entity) -> std::optional<Rect> {
-    return coverage.TransformBounds(entity.GetTransformation());
+    return coverage.TransformBounds(entity.GetTransform());
   };
 
   auto contents = AnonymousContents::Make(render_proc, coverage_proc);
@@ -136,6 +134,12 @@ std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
   sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
+}
+
+std::optional<Rect> YUVToRGBFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return output_limit;
 }
 
 }  // namespace impeller

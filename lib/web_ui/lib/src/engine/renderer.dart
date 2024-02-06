@@ -45,7 +45,6 @@ abstract class Renderer {
   FlutterFontCollection get fontCollection;
 
   FutureOr<void> initialize();
-  void reset(FlutterViewEmbedder embedder);
 
   ui.Paint createPaint();
 
@@ -222,5 +221,5 @@ abstract class Renderer {
 
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style);
 
-  FutureOr<void> renderScene(ui.Scene scene);
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view);
 }

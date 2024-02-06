@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import <Foundation/Foundation.h>
-#import <OCMock/OCMock.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
@@ -14,10 +13,10 @@
 @interface TestKeyEvent : NSObject
 @property(nonatomic) FlutterKeyEvent* data;
 @property(nonatomic) FlutterKeyEventCallback callback;
-@property(nonatomic) _VoidPtr userData;
+@property(nonatomic) void* userData;
 - (nonnull instancetype)initWithEvent:(const FlutterKeyEvent*)event
                              callback:(nullable FlutterKeyEventCallback)callback
-                             userData:(nullable _VoidPtr)userData;
+                             userData:(nullable void*)userData;
 - (BOOL)hasCallback;
 - (void)respond:(BOOL)handled;
 @end
@@ -25,7 +24,7 @@
 @implementation TestKeyEvent
 - (instancetype)initWithEvent:(const FlutterKeyEvent*)event
                      callback:(nullable FlutterKeyEventCallback)callback
-                     userData:(nullable _VoidPtr)userData {
+                     userData:(nullable void*)userData {
   self = [super init];
   _data = new FlutterKeyEvent(*event);
   if (event->character != nullptr) {
@@ -123,7 +122,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -137,6 +136,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->timestamp, 123000000.0f);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
@@ -159,6 +159,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeRepeat);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -180,6 +181,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, BasicKeyEvent) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->timestamp, 124000000.0f);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
@@ -201,7 +203,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -214,6 +216,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalAltRight);
   EXPECT_EQ(event->logical, kLogicalAltRight);
@@ -228,6 +231,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyW);
   EXPECT_EQ(event->logical, kLogicalKeyW);
@@ -242,6 +246,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalAltRight);
   EXPECT_EQ(event->logical, kLogicalAltRight);
@@ -256,6 +261,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, NonAsciiCharacters) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyW);
   EXPECT_EQ(event->logical, kLogicalKeyW);
@@ -271,7 +277,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -283,6 +289,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, 0x1400000000ull);
@@ -297,6 +304,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, MultipleCharacters) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, 0x1400000000ull);
@@ -313,7 +321,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeForDuplicateDownEvent) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -327,6 +335,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeForDuplicateDownEvent) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -347,6 +356,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeForDuplicateDownEvent) {
   EXPECT_EQ([events count], 2u);
 
   event = [events firstObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -354,6 +364,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeForDuplicateDownEvent) {
   EXPECT_EQ(event->synthesized, true);
 
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, 0xE0ull /* à */);
@@ -372,7 +383,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -387,6 +398,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IgnoreDuplicateUpEvent) {
   EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->physical, 0ull);
   EXPECT_EQ(event->logical, 0ull);
   EXPECT_FALSE([[events lastObject] hasCallback]);
@@ -402,7 +414,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertAbruptRepeatEventsToDown) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -416,6 +428,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertAbruptRepeatEventsToDown) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -438,7 +451,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -451,6 +464,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->timestamp, 123000000.0f);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
@@ -467,6 +481,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -482,6 +497,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeRepeat);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -498,6 +514,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
   EXPECT_EQ(event->logical, kLogicalShiftRight);
@@ -513,6 +530,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeRepeat);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -527,6 +545,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ToggleModifiersDuringKeyTap) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -548,7 +567,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -564,6 +583,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalNumpad1);
   EXPECT_EQ(event->logical, kLogicalNumpad1);
@@ -581,6 +601,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalF1);
   EXPECT_EQ(event->logical, kLogicalF1);
@@ -597,6 +618,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -614,6 +636,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -630,6 +653,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalNumpad1);
   EXPECT_EQ(event->logical, kLogicalNumpad1);
@@ -647,6 +671,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalF1);
   EXPECT_EQ(event->logical, kLogicalF1);
@@ -663,6 +688,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -680,6 +706,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SpecialModiferFlags) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -696,7 +723,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -709,6 +736,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -725,6 +753,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
   EXPECT_EQ(event->logical, kLogicalShiftRight);
@@ -741,6 +770,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -757,6 +787,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, IdentifyLeftAndRightModifiers) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
   EXPECT_EQ(event->logical, kLogicalShiftRight);
@@ -782,7 +813,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -798,6 +829,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -817,8 +849,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
          callback:keyEventCallback];
 
   EXPECT_EQ([events count], 1u);
-  EXPECT_EQ([events lastObject].data->physical, 0u);
-  EXPECT_EQ([events lastObject].data->logical, 0u);
+  event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
+  EXPECT_EQ(event->physical, 0u);
+  EXPECT_EQ(event->logical, 0u);
   EXPECT_FALSE([[events lastObject] hasCallback]);
   EXPECT_EQ(last_handled, TRUE);
   [events removeAllObjects];
@@ -830,6 +864,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -853,8 +888,10 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
          callback:keyEventCallback];
 
   EXPECT_EQ([events count], 1u);
-  EXPECT_EQ([events lastObject].data->physical, 0u);
-  EXPECT_EQ([events lastObject].data->logical, 0u);
+  event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
+  EXPECT_EQ(event->physical, 0u);
+  EXPECT_EQ(event->logical, 0u);
   EXPECT_FALSE([[events lastObject] hasCallback]);
   EXPECT_EQ(last_handled, TRUE);
   [events removeAllObjects];
@@ -870,6 +907,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -890,6 +928,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -913,6 +952,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -933,6 +973,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 1u);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
   EXPECT_EQ(event->logical, kLogicalShiftRight);
@@ -953,6 +994,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -962,6 +1004,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEvents) {
   EXPECT_FALSE([[events firstObject] hasCallback]);
 
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftRight);
   EXPECT_EQ(event->logical, kLogicalShiftRight);
@@ -986,7 +1029,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -1001,6 +1044,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -1009,6 +1053,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
   EXPECT_FALSE([[events firstObject] hasCallback]);
 
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -1028,6 +1073,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
 
   EXPECT_EQ([events count], 2u);
   event = [events firstObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalShiftLeft);
   EXPECT_EQ(event->logical, kLogicalShiftLeft);
@@ -1036,6 +1082,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynthesizeMissedModifierEventsInNorma
   EXPECT_FALSE([[events firstObject] hasCallback]);
 
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);
@@ -1060,7 +1107,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -1076,6 +1123,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   EXPECT_EQ([events count], 2u);
 
   event = [events firstObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalCapsLock);
   EXPECT_EQ(event->logical, kLogicalCapsLock);
@@ -1084,6 +1132,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   EXPECT_TRUE([[events firstObject] hasCallback]);
 
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalCapsLock);
   EXPECT_EQ(event->logical, kLogicalCapsLock);
@@ -1106,6 +1155,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   EXPECT_EQ([events count], 2u);
 
   event = [events firstObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalCapsLock);
   EXPECT_EQ(event->logical, kLogicalCapsLock);
@@ -1114,6 +1164,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, ConvertCapsLockEvents) {
   EXPECT_TRUE([[events firstObject] hasCallback]);
 
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalCapsLock);
   EXPECT_EQ(event->logical, kLogicalCapsLock);
@@ -1139,7 +1190,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -1154,6 +1205,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnCapsLock) {
   EXPECT_EQ([events count], 1u);
   EXPECT_EQ(last_handled, TRUE);
   event = [events lastObject].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->physical, 0ull);
   EXPECT_EQ(event->logical, 0ull);
   EXPECT_FALSE([[events lastObject] hasCallback]);
@@ -1173,7 +1225,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
 
   FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
       initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
+                          void* _Nullable user_data) {
         [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
                                                      callback:callback
                                                      userData:user_data]];
@@ -1186,6 +1238,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
   EXPECT_EQ([events count], 3u);
 
   event = events[0].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalCapsLock);
   EXPECT_EQ(event->logical, kLogicalCapsLock);
@@ -1194,6 +1247,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
   EXPECT_FALSE([events[0] hasCallback]);
 
   event = events[1].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
   EXPECT_EQ(event->physical, kPhysicalCapsLock);
   EXPECT_EQ(event->logical, kLogicalCapsLock);
@@ -1202,6 +1256,7 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
   EXPECT_FALSE([events[1] hasCallback]);
 
   event = events[2].data;
+  ASSERT_NE(event, nullptr);
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalKeyA);
   EXPECT_EQ(event->logical, kLogicalKeyA);

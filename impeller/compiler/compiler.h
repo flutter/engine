@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_COMPILER_H_
+#define FLUTTER_IMPELLER_COMPILER_COMPILER_H_
 
 #include <initializer_list>
 #include <sstream>
@@ -57,8 +58,12 @@ class Compiler {
 
   std::string GetDependencyNames(const std::string& separator) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Compiler);
+  Compiler(const Compiler&) = delete;
+
+  Compiler& operator=(const Compiler&) = delete;
 };
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_COMPILER_H_

@@ -2,10 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+#include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/command_queue.h"
+
 #include "impeller/aiks/testing/context_spy.h"
 
 namespace impeller {
 namespace testing {
+
+fml::Status NoopCommandQueue::Submit(
+    const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
+    const CompletionCallback& completion_callback) {
+  if (completion_callback) {
+    completion_callback(CommandBuffer::Status::kCompleted);
+  }
+  return fml::Status();
+}
 
 std::shared_ptr<ContextSpy> ContextSpy::Make() {
   return std::shared_ptr<ContextSpy>(new ContextSpy());
@@ -48,6 +61,10 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
     return real_context->GetPipelineLibrary();
   });
 
+  ON_CALL(*mock_context, GetCommandQueue).WillByDefault([shared_this]() {
+    return shared_this->command_queue_;
+  });
+
   ON_CALL(*mock_context, CreateCommandBuffer)
       .WillByDefault([real_context, shared_this]() {
         auto real_buffer = real_context->CreateCommandBuffer();
@@ -63,21 +80,18 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
               return real_buffer->SetLabel(label);
             });
 
-        ON_CALL(*spy, SubmitCommandsAsync)
-            .WillByDefault([real_buffer](
-                               std::shared_ptr<RenderPass> render_pass) {
-              return real_buffer->SubmitCommandsAsync(std::move(render_pass));
-            });
-
         ON_CALL(*spy, OnCreateRenderPass)
-            .WillByDefault(
-                [real_buffer, shared_this](const RenderTarget& render_target) {
-                  std::shared_ptr<RenderPass> result =
-                      CommandBufferMock::ForwardOnCreateRenderPass(
-                          real_buffer.get(), render_target);
-                  shared_this->render_passes_.push_back(result);
-                  return result;
-                });
+            .WillByDefault([real_buffer, shared_this,
+                            real_context](const RenderTarget& render_target) {
+              std::shared_ptr<RenderPass> result =
+                  CommandBufferMock::ForwardOnCreateRenderPass(
+                      real_buffer.get(), render_target);
+              std::shared_ptr<RecordingRenderPass> recorder =
+                  std::make_shared<RecordingRenderPass>(result, real_context,
+                                                        render_target);
+              shared_this->render_passes_.push_back(recorder);
+              return recorder;
+            });
 
         ON_CALL(*spy, OnCreateBlitPass).WillByDefault([real_buffer]() {
           return CommandBufferMock::ForwardOnCreateBlitPass(real_buffer.get());

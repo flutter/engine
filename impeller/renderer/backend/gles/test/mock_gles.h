@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEST_MOCK_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEST_MOCK_GLES_H_
+
 #include <memory>
 #include <optional>
 #include "fml/macros.h"
@@ -53,8 +56,12 @@ class MockGLES final {
   const ProcTableGLES proc_table_;
   std::vector<std::string> captured_calls_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(MockGLES);
+  MockGLES(const MockGLES&) = delete;
+
+  MockGLES& operator=(const MockGLES&) = delete;
 };
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEST_MOCK_GLES_H_

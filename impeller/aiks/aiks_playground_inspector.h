@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_INSPECTOR_H_
+#define FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_INSPECTOR_H_
+
 #include <functional>
 #include <optional>
 
@@ -42,7 +45,11 @@ class AiksInspector {
   CaptureElement* selected_element_ = nullptr;
   std::optional<Picture> last_picture_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AiksInspector);
+  AiksInspector(const AiksInspector&) = delete;
+
+  AiksInspector& operator=(const AiksInspector&) = delete;
 };
 
 };  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_INSPECTOR_H_

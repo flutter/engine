@@ -22,8 +22,8 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+void ClipContents::SetGeometry(const std::shared_ptr<Geometry>& geometry) {
+  geometry_ = geometry;
 }
 
 void ClipContents::SetClipOperation(Entity::ClipOperation clip_op) {
@@ -50,7 +50,7 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
       if (!geometry_) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
-      auto coverage = geometry_->GetCoverage(entity.GetTransformation());
+      auto coverage = geometry_->GetCoverage(entity.GetTransform());
       if (!coverage.has_value() || !current_clip_coverage.has_value()) {
         return {.type = ClipCoverage::Type::kAppend, .coverage = std::nullopt};
       }
@@ -62,9 +62,8 @@ Contents::ClipCoverage ClipContents::GetClipCoverage(
   FML_UNREACHABLE();
 }
 
-bool ClipContents::ShouldRender(
-    const Entity& entity,
-    const std::optional<Rect>& clip_coverage) const {
+bool ClipContents::ShouldRender(const Entity& entity,
+                                const std::optional<Rect> clip_coverage) const {
   return true;
 }
 
@@ -80,59 +79,60 @@ bool ClipContents::Render(const ContentContext& renderer,
   using VS = ClipPipeline::VertexShader;
 
   VS::FrameInfo info;
-
-  Command cmd;
+  info.depth = entity.GetShaderClipDepth();
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;
-  cmd.stencil_reference = entity.GetClipDepth();
-  options.stencil_compare = CompareFunction::kEqual;
-  options.stencil_operation = StencilOperation::kIncrementClamp;
+  pass.SetStencilReference(entity.GetClipDepth());
 
   if (clip_op_ == Entity::ClipOperation::kDifference) {
     {
-      DEBUG_COMMAND_INFO(cmd, "Difference Clip (Increment)");
+      pass.SetCommandLabel("Difference Clip (Increment)");
 
-      auto points = Rect(Size(pass.GetRenderTargetSize())).GetPoints();
+      options.stencil_mode =
+          ContentContextOptions::StencilMode::kLegacyClipIncrement;
+
+      auto points = Rect::MakeSize(pass.GetRenderTargetSize()).GetPoints();
       auto vertices =
           VertexBufferBuilder<VS::PerVertexData>{}
               .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
-              .CreateVertexBuffer(pass.GetTransientsBuffer());
-      cmd.BindVertices(vertices);
+              .CreateVertexBuffer(renderer.GetTransientsBuffer());
 
-      info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-      VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+      pass.SetVertexBuffer(std::move(vertices));
+
+      info.mvp = pass.GetOrthographicTransform();
+      VS::BindFrameInfo(pass,
+                        renderer.GetTransientsBuffer().EmplaceUniform(info));
 
       options.primitive_type = PrimitiveType::kTriangleStrip;
-      cmd.pipeline = renderer.GetClipPipeline(options);
-      pass.AddCommand(Command(cmd));
+      pass.SetPipeline(renderer.GetClipPipeline(options));
+      pass.Draw();
     }
 
     {
-      DEBUG_COMMAND_INFO(cmd, "Difference Clip (Punch)");
+      pass.SetCommandLabel("Difference Clip (Punch)");
+      pass.SetStencilReference(entity.GetClipDepth() + 1);
 
-      cmd.stencil_reference = entity.GetClipDepth() + 1;
-      options.stencil_compare = CompareFunction::kEqual;
-      options.stencil_operation = StencilOperation::kDecrementClamp;
+      options.stencil_mode =
+          ContentContextOptions::StencilMode::kLegacyClipDecrement;
     }
   } else {
-    DEBUG_COMMAND_INFO(cmd, "Intersect Clip");
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    pass.SetCommandLabel("Intersect Clip");
+
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
 
   auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetClipPipeline(options);
+  pass.SetPipeline(renderer.GetClipPipeline(options));
 
-  auto allocator = renderer.GetContext()->GetResourceAllocator();
-  cmd.BindVertices(geometry_result.vertex_buffer);
+  pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+  VS::BindFrameInfo(pass, renderer.GetTransientsBuffer().EmplaceUniform(info));
 
-  pass.AddCommand(std::move(cmd));
-  return true;
+  return pass.Draw().ok();
 }
 
 /*******************************************************************************
@@ -161,7 +161,7 @@ Contents::ClipCoverage ClipRestoreContents::GetClipCoverage(
 
 bool ClipRestoreContents::ShouldRender(
     const Entity& entity,
-    const std::optional<Rect>& clip_coverage) const {
+    const std::optional<Rect> clip_coverage) const {
   return true;
 }
 
@@ -176,20 +176,19 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "Restore Clip");
+  pass.SetCommandLabel("Restore Clip");
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;
-  options.stencil_compare = CompareFunction::kLess;
-  options.stencil_operation = StencilOperation::kSetToReferenceValue;
+  options.stencil_mode = ContentContextOptions::StencilMode::kLegacyClipRestore;
   options.primitive_type = PrimitiveType::kTriangleStrip;
-  cmd.pipeline = renderer.GetClipPipeline(options);
-  cmd.stencil_reference = entity.GetClipDepth();
+  pass.SetPipeline(renderer.GetClipPipeline(options));
+  pass.SetStencilReference(entity.GetClipDepth());
 
   // Create a rect that covers either the given restore area, or the whole
   // render target texture.
-  auto ltrb = restore_coverage_.value_or(Rect(Size(pass.GetRenderTargetSize())))
-                  .GetLTRB();
+  auto ltrb =
+      restore_coverage_.value_or(Rect::MakeSize(pass.GetRenderTargetSize()))
+          .GetLTRB();
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.AddVertices({
       {Point(ltrb[0], ltrb[1])},
@@ -197,14 +196,14 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
       {Point(ltrb[0], ltrb[3])},
       {Point(ltrb[2], ltrb[3])},
   });
-  cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
+  pass.SetVertexBuffer(
+      vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()));
 
   VS::FrameInfo info;
-  info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
+  info.mvp = pass.GetOrthographicTransform();
+  VS::BindFrameInfo(pass, renderer.GetTransientsBuffer().EmplaceUniform(info));
 
-  pass.AddCommand(std::move(cmd));
-  return true;
+  return pass.Draw().ok();
 }
 
 };  // namespace impeller

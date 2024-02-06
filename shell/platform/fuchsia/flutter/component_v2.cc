@@ -259,8 +259,13 @@ ComponentV2::ComponentV2(
   fdio_service_connect_at(directory_ptr_.channel().get(), "svc",
                           request.release());
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
   auto composed_service_dir = std::make_unique<vfs::ComposedServiceDir>();
   composed_service_dir->set_fallback(std::move(flutter_public_dir));
+
+#pragma clang diagnostic pop
 
   // Clone and check if client is servicing the directory.
   directory_ptr_->Clone(fuchsia::io::OpenFlags::DESCRIBE |
@@ -409,18 +414,9 @@ ComponentV2::ComponentV2(
       return MakeFileMapping("/pkg/data/vm_snapshot_data.bin",
                              false /* executable */);
     };
-    settings_.vm_snapshot_instr = []() {
-      return MakeFileMapping("/pkg/data/vm_snapshot_instructions.bin",
-                             true /* executable */);
-    };
-
     settings_.isolate_snapshot_data = []() {
       return MakeFileMapping("/pkg/data/isolate_core_snapshot_data.bin",
                              false /* executable */);
-    };
-    settings_.isolate_snapshot_instr = [] {
-      return MakeFileMapping("/pkg/data/isolate_core_snapshot_instructions.bin",
-                             true /* executable */);
     };
   }
 
@@ -487,10 +483,6 @@ ComponentV2::ComponentV2(
 
   settings_.dart_flags = {};
 
-  // Run in unsound null safety mode as some packages used in Integration
-  // testing have not been migrated yet.
-  settings_.dart_flags.push_back("--no-sound-null-safety");
-
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");
 
@@ -545,7 +537,7 @@ const std::string& ComponentV2::GetDebugLabel() const {
 }
 
 void ComponentV2::Kill() {
-  FML_VLOG(-1) << "received Kill event";
+  FML_VLOG(1) << "received Kill event";
 
   // From the documentation for ComponentController, ZX_OK should be sent when
   // the ComponentController receives a termination request. However, if the
@@ -582,7 +574,7 @@ void ComponentV2::KillWithEpitaph(zx_status_t epitaph_status) {
 }
 
 void ComponentV2::Stop() {
-  FML_VLOG(-1) << "received Stop event";
+  FML_VLOG(1) << "received Stop event";
 
   // TODO(fxb/89162): Any other cleanup logic we should do that's appropriate
   // for Stop but not for Kill?
@@ -617,8 +609,8 @@ void ComponentV2::OnEngineTerminate(const Engine* shell_holder) {
   shell_holders_.erase(found);
 
   if (shell_holders_.empty()) {
-    FML_VLOG(-1) << "Killing component because all shell holders have been "
-                    "terminated.";
+    FML_VLOG(1) << "Killing component because all shell holders have been "
+                   "terminated.";
     Kill();
     // WARNING: Don't do anything past this point because the delegate may have
     // collected this instance via the termination callback.

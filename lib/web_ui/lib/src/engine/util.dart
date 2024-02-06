@@ -14,6 +14,7 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
+import 'services.dart';
 import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
@@ -627,6 +628,27 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 }
 
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Throws if the view ID is not present or if [arguments] is not a map.
+int readViewId(Object? arguments) {
+  final int? viewId = tryViewId(arguments);
+  if (viewId == null) {
+    throw Exception('Could not find a `viewId` in the arguments: $arguments');
+  }
+  return viewId;
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Returns null if the view ID is not present or if [arguments] is not a map.
+int? tryViewId(Object? arguments) {
+  if (arguments is Map) {
+    return arguments.tryInt('viewId');
+  }
+  return null;
+}
+
 /// Prints a list of bytes in hex format.
 ///
 /// Bytes are separated by one space and are padded on the left to always show
@@ -830,5 +852,19 @@ class LruCache<K extends Object, V extends Object> {
     final bool didRemove = _itemMap.remove(_itemQueue.last.key) != null;
     assert(didRemove);
     _itemQueue.removeLast();
+  }
+}
+
+/// Returns the VM-compatible string for the tile mode.
+String tileModeString(ui.TileMode tileMode) {
+  switch (tileMode) {
+    case ui.TileMode.clamp:
+      return 'clamp';
+    case ui.TileMode.mirror:
+      return 'mirror';
+    case ui.TileMode.repeated:
+      return 'repeated';
+    case ui.TileMode.decal:
+      return 'decal';
   }
 }

@@ -31,7 +31,7 @@
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
-#include "flutter/shell/platform/android/hardware_buffer_external_texture_gl.h"
+#include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
@@ -51,8 +51,8 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_java_weak_reference_class =
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_texture_wrapper_class = nullptr;
 
-static fml::jni::ScopedJavaGlobalRef<jclass>* g_image_texture_entry_class =
-    nullptr;
+static fml::jni::ScopedJavaGlobalRef<jclass>*
+    g_image_consumer_texture_registry_interface = nullptr;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_image_class = nullptr;
 
@@ -110,6 +110,8 @@ static jmethodID g_on_end_frame_method = nullptr;
 static jmethodID g_java_weak_reference_get_method = nullptr;
 
 static jmethodID g_attach_to_gl_context_method = nullptr;
+
+static jmethodID g_surface_texture_wrapper_should_update = nullptr;
 
 static jmethodID g_update_tex_image_method = nullptr;
 
@@ -483,11 +485,6 @@ static jboolean GetIsSoftwareRendering(JNIEnv* env, jobject jcaller) {
   return FlutterMain::Get().GetSettings().enable_software_rendering;
 }
 
-static jboolean GetDisableImageReaderPlatformViews(JNIEnv* env,
-                                                   jobject jcaller) {
-  return FlutterMain::Get().GetSettings().disable_image_reader_platform_views;
-}
-
 static void RegisterTexture(JNIEnv* env,
                             jobject jcaller,
                             jlong shell_holder,
@@ -524,6 +521,10 @@ static void MarkTextureFrameAvailable(JNIEnv* env,
                                       jlong texture_id) {
   ANDROID_SHELL_HOLDER->GetPlatformView()->MarkTextureFrameAvailable(
       static_cast<int64_t>(texture_id));
+}
+
+static void ScheduleFrame(JNIEnv* env, jobject jcaller, jlong shell_holder) {
+  ANDROID_SHELL_HOLDER->GetPlatformView()->ScheduleFrame();
 }
 
 static void InvokePlatformMessageResponseCallback(JNIEnv* env,
@@ -784,11 +785,6 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&GetIsSoftwareRendering),
       },
       {
-          .name = "nativeGetDisableImageReaderPlatformViews",
-          .signature = "()Z",
-          .fnPtr = reinterpret_cast<void*>(&GetDisableImageReaderPlatformViews),
-      },
-      {
           .name = "nativeRegisterTexture",
           .signature = "(JJLjava/lang/ref/"
                        "WeakReference;)V",
@@ -806,11 +802,15 @@ bool RegisterApi(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&MarkTextureFrameAvailable),
       },
       {
+          .name = "nativeScheduleFrame",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&ScheduleFrame),
+      },
+      {
           .name = "nativeUnregisterTexture",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&UnregisterTexture),
       },
-
       // Methods for Dart callback functionality.
       {
           .name = "nativeLookupCallbackInformation",
@@ -1169,6 +1169,15 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     return false;
   }
 
+  g_surface_texture_wrapper_should_update =
+      env->GetMethodID(g_texture_wrapper_class->obj(), "shouldUpdate", "()Z");
+
+  if (g_surface_texture_wrapper_should_update == nullptr) {
+    FML_LOG(ERROR)
+        << "Could not locate SurfaceTextureWrapper.shouldUpdate method";
+    return false;
+  }
+
   g_update_tex_image_method =
       env->GetMethodID(g_texture_wrapper_class->obj(), "updateTexImage", "()V");
 
@@ -1192,25 +1201,26 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
     FML_LOG(ERROR) << "Could not locate detachFromGlContext method";
     return false;
   }
-  g_image_texture_entry_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
-      env, env->FindClass("io/flutter/view/TextureRegistry$ImageTextureEntry"));
-  if (g_image_texture_entry_class->is_null()) {
-    FML_LOG(ERROR) << "Could not locate ImageTextureEntry class";
+  g_image_consumer_texture_registry_interface =
+      new fml::jni::ScopedJavaGlobalRef<jclass>(
+          env, env->FindClass("io/flutter/view/TextureRegistry$ImageConsumer"));
+  if (g_image_consumer_texture_registry_interface->is_null()) {
+    FML_LOG(ERROR) << "Could not locate TextureRegistry.ImageConsumer class";
     return false;
   }
 
   g_acquire_latest_image_method =
-      env->GetMethodID(g_image_texture_entry_class->obj(), "acquireLatestImage",
-                       "()Landroid/media/Image;");
+      env->GetMethodID(g_image_consumer_texture_registry_interface->obj(),
+                       "acquireLatestImage", "()Landroid/media/Image;");
   if (g_acquire_latest_image_method == nullptr) {
     FML_LOG(ERROR) << "Could not locate acquireLatestImage on "
-                      "ImageTextureEntry class";
+                      "TextureRegistry.ImageConsumer class";
     return false;
   }
 
   g_image_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
       env, env->FindClass("android/media/Image"));
-  if (g_image_texture_entry_class->is_null()) {
+  if (g_image_class->is_null()) {
     FML_LOG(ERROR) << "Could not locate Image class";
     return false;
   }
@@ -1462,6 +1472,29 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureAttachToGLContext(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
+bool PlatformViewAndroidJNIImpl::SurfaceTextureShouldUpdate(
+    JavaLocalRef surface_texture) {
+  JNIEnv* env = fml::jni::AttachCurrentThread();
+
+  if (surface_texture.is_null()) {
+    return false;
+  }
+
+  fml::jni::ScopedJavaLocalRef<jobject> surface_texture_local_ref(
+      env, env->CallObjectMethod(surface_texture.obj(),
+                                 g_java_weak_reference_get_method));
+  if (surface_texture_local_ref.is_null()) {
+    return false;
+  }
+
+  jboolean shouldUpdate = env->CallBooleanMethod(
+      surface_texture_local_ref.obj(), g_surface_texture_wrapper_should_update);
+
+  FML_CHECK(fml::jni::CheckException(env));
+
+  return shouldUpdate;
+}
+
 void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
     JavaLocalRef surface_texture) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
@@ -1561,28 +1594,29 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-JavaLocalRef PlatformViewAndroidJNIImpl::ImageTextureEntryAcquireLatestImage(
-    JavaLocalRef image_texture_entry) {
+JavaLocalRef
+PlatformViewAndroidJNIImpl::ImageProducerTextureEntryAcquireLatestImage(
+    JavaLocalRef image_producer_texture_entry) {
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
-  if (image_texture_entry.is_null()) {
+  if (image_producer_texture_entry.is_null()) {
     // Return null.
     return JavaLocalRef();
   }
 
   // Convert the weak reference to ImageTextureEntry into a strong local
   // reference.
-  fml::jni::ScopedJavaLocalRef<jobject> image_texture_entry_local_ref(
-      env, env->CallObjectMethod(image_texture_entry.obj(),
+  fml::jni::ScopedJavaLocalRef<jobject> image_producer_texture_entry_local_ref(
+      env, env->CallObjectMethod(image_producer_texture_entry.obj(),
                                  g_java_weak_reference_get_method));
 
-  if (image_texture_entry_local_ref.is_null()) {
+  if (image_producer_texture_entry_local_ref.is_null()) {
     // Return null.
     return JavaLocalRef();
   }
 
   JavaLocalRef r = JavaLocalRef(
-      env, env->CallObjectMethod(image_texture_entry_local_ref.obj(),
+      env, env->CallObjectMethod(image_producer_texture_entry_local_ref.obj(),
                                  g_acquire_latest_image_method));
   FML_CHECK(fml::jni::CheckException(env));
   return r;

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_FORMATS_H_
+#define FLUTTER_IMPELLER_CORE_FORMATS_H_
 
 #include <cstdint>
 #include <functional>
@@ -12,12 +13,16 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 
 namespace impeller {
+
+enum class WindingOrder {
+  kClockwise,
+  kCounterClockwise,
+};
 
 class Texture;
 
@@ -91,7 +96,7 @@ constexpr const char* StorageModeToString(StorageMode mode) {
 ///             esoteric formats and use blit passes to convert to a
 ///             non-esoteric pass.
 ///
-enum class PixelFormat {
+enum class PixelFormat : uint8_t {
   kUnknown,
   kA8UNormInt,
   kR8UNormInt,
@@ -110,6 +115,27 @@ enum class PixelFormat {
   kD24UnormS8Uint,
   kD32FloatS8UInt,
 };
+
+constexpr bool IsDepthWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
+
+constexpr bool IsStencilWritable(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    default:
+      return false;
+  }
+}
 
 constexpr const char* PixelFormatToString(PixelFormat format) {
   switch (format) {
@@ -266,7 +292,7 @@ constexpr bool IsMultisampleCapable(TextureType type) {
   return false;
 }
 
-enum class SampleCount {
+enum class SampleCount : uint8_t {
   kCount1 = 1,
   kCount4 = 4,
 };
@@ -325,11 +351,33 @@ enum class IndexType {
   kNone,
 };
 
-enum class PrimitiveType {
+/// Decides how backend draws pixels based on input vertices.
+enum class PrimitiveType : uint8_t {
+  /// Draws a triage for each separate set of three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, DEF].
   kTriangle,
+
+  /// Draws a triage for every adjacent three vertices.
+  ///
+  /// Vertices [A, B, C, D, E, F] will produce triages
+  /// [ABC, BCD, CDE, DEF].
   kTriangleStrip,
+
+  /// Draws a line for each separate set of two vertices.
+  ///
+  /// Vertices [A, B, C] will produce discontinued line
+  /// [AB, BC].
   kLine,
+
+  /// Draws a continuous line that connect every input vertices
+  ///
+  /// Vertices [A, B, C] will produce one continuous line
+  /// [ABC].
   kLineStrip,
+
+  /// Draws a point at each input vertex.
   kPoint,
   // Triangle fans are implementation dependent and need extra extensions
   // checks. Hence, they are not supported here.
@@ -483,7 +531,7 @@ struct ColorAttachmentDescriptor {
   }
 };
 
-enum class CompareFunction {
+enum class CompareFunction : uint8_t {
   /// Comparison test never passes.
   kNever,
   /// Comparison test passes always passes.
@@ -502,7 +550,7 @@ enum class CompareFunction {
   kGreaterEqual,
 };
 
-enum class StencilOperation {
+enum class StencilOperation : uint8_t {
   /// Don't modify the current stencil value.
   kKeep,
   /// Reset the stencil value to zero.
@@ -637,3 +685,5 @@ struct hash<impeller::StencilAttachmentDescriptor> {
 };
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_CORE_FORMATS_H_

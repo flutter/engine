@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
 
 #include <cstddef>
 
@@ -77,6 +78,9 @@ class CapabilitiesGLES final
   bool SupportsOffscreenMSAA() const override;
 
   // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override;
+
+  // |Capabilities|
   bool SupportsSSBO() const override;
 
   // |Capabilities|
@@ -93,9 +97,6 @@ class CapabilitiesGLES final
 
   // |Capabilities|
   bool SupportsComputeSubgroups() const override;
-
-  // |Capabilities|
-  bool SupportsReadFromOnscreenTexture() const override;
 
   // |Capabilities|
   bool SupportsReadFromResolve() const override;
@@ -116,7 +117,12 @@ class CapabilitiesGLES final
   PixelFormat GetDefaultDepthStencilFormat() const override;
 
  private:
+  bool supports_framebuffer_fetch_ = false;
   bool supports_decal_sampler_address_mode_ = false;
+  bool supports_offscreen_msaa_ = false;
+  bool supports_implicit_msaa_ = false;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_

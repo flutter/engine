@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/glfw/glfw_args.gni")
+import("//flutter/third_party/glfw/glfw_args.gni")
 import("tools/impeller.gni")
 
 config("impeller_public_config") {
@@ -32,6 +32,10 @@ config("impeller_public_config") {
 
   if (impeller_enable_vulkan) {
     defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
+  }
+
+  if (impeller_enable_vulkan_playgrounds) {
+    defines += [ "IMPELLER_ENABLE_VULKAN_PLAYGROUNDS=1" ]
   }
 
   if (impeller_trace_all_gl_calls) {
@@ -79,13 +83,14 @@ impeller_component("impeller_unittests") {
   deps = [
     "archivist:archivist_unittests",
     "base:base_unittests",
-    "blobcat:blobcat_unittests",
     "compiler:compiler_unittests",
     "core:allocator_unittests",
     "display_list:skia_conversions_unittests",
     "geometry:geometry_unittests",
+    "renderer/backend/metal:metal_unittests",
     "runtime_stage:runtime_stage_unittests",
     "scene/importer:importer_unittests",
+    "shader_archive:shader_archive_unittests",
     "tessellator:tessellator_unittests",
   ]
 
@@ -94,7 +99,6 @@ impeller_component("impeller_unittests") {
       "aiks:aiks_unittests",
       "display_list:display_list_unittests",
       "entity:entity_unittests",
-      "entity:render_target_cache_unittests",
       "fixtures",
       "geometry:geometry_unittests",
       "image:image_unittests",
@@ -115,7 +119,7 @@ impeller_component("impeller_unittests") {
 
   if (glfw_vulkan_library != "") {
     deps += [
-      "//third_party/swiftshader",
+      "//flutter/third_party/swiftshader",
       "//third_party/vulkan-deps/vulkan-loader/src:libvulkan",
       "//third_party/vulkan_validation_layers",
       "//third_party/vulkan_validation_layers:vulkan_gen_json_files",

@@ -101,7 +101,6 @@ class DisplayListTestBase : public BaseT {
     DlPaint defaults;
 
     EXPECT_EQ(builder_paint.isAntiAlias(), defaults.isAntiAlias());
-    EXPECT_EQ(builder_paint.isDither(), defaults.isDither());
     EXPECT_EQ(builder_paint.isInvertColors(), defaults.isInvertColors());
     EXPECT_EQ(builder_paint.getColor(), defaults.getColor());
     EXPECT_EQ(builder_paint.getBlendMode(), defaults.getBlendMode());
@@ -384,10 +383,6 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   DlOpReceiver& receiver = ToReceiver(builder);
 
   receiver.setAntiAlias(true);
-  builder.Build();
-  check_defaults(builder, cull_rect);
-
-  receiver.setDither(true);
   builder.Build();
   check_defaults(builder, cull_rect);
 
@@ -1060,11 +1055,9 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
   };
 
 #define RUN_TESTS(body) \
-  run_tests(            \
-      #body, [](DlOpReceiver& receiver) { body }, true, false)
+  run_tests(#body, [](DlOpReceiver& receiver) { body }, true, false)
 #define RUN_TESTS2(body, expect) \
-  run_tests(                     \
-      #body, [](DlOpReceiver& receiver) { body }, expect, expect)
+  run_tests(#body, [](DlOpReceiver& receiver) { body }, expect, expect)
 
   RUN_TESTS(receiver.drawPaint(););
   RUN_TESTS2(receiver.drawColor(DlColor(SK_ColorRED), DlBlendMode::kSrcOver);
@@ -1082,7 +1075,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
       SkPath().addOval({0, 0, 10, 10}).addOval({5, 5, 15, 15})););
   RUN_TESTS(receiver.drawArc({0, 0, 10, 10}, 0, math::kPi, true););
   RUN_TESTS2(
-      receiver.drawPoints(PointMode::kPoints, TestPointCount, TestPoints);
+      receiver.drawPoints(PointMode::kPoints, TestPointCount, kTestPoints);
       , false);
   RUN_TESTS2(receiver.drawVertices(TestVertices1.get(), DlBlendMode::kSrc);
              , false);
@@ -1121,7 +1114,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
     static auto display_list = builder.Build();
     RUN_TESTS2(receiver.drawDisplayList(display_list);, false);
   }
-  RUN_TESTS2(receiver.drawTextBlob(TestBlob1, 0, 0);, false);
+  RUN_TESTS2(receiver.drawTextBlob(GetTestTextBlob(1), 0, 0);, false);
   RUN_TESTS2(
       receiver.drawShadow(kTestPath1, DlColor(SK_ColorBLACK), 1.0, false, 1.0);
       , false);
@@ -1561,7 +1554,7 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   // This is the more practical result. The bounds are "almost" 0,0,100x100
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
-  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 352u);
+  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 384u);
 }
 
 TEST_F(DisplayListTest, TranslateAffectsCurrentTransform) {
@@ -3152,7 +3145,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawAtlas(TestImage1, xforms, rects, nullptr, 2,
                             DlBlendMode::kSrcOver, DlImageSampling::kLinear,
                             nullptr, &paint);
-          builder.DrawTextBlob(TestBlob1, 10, 10, paint);
+          builder.DrawTextBlob(GetTestTextBlob(1), 10, 10, paint);
 
           // Dst mode eliminates most rendering ops except for
           // the following two, so we'll prune those manually...
@@ -3244,6 +3237,98 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
               builder.SaveLayer(nullptr, &save_paint);
               builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear);
             });
+}
+
+TEST_F(DisplayListTest, ImpellerPathPreferenceIsHonored) {
+  class Tester : virtual public DlOpReceiver,
+                 public IgnoreClipDispatchHelper,
+                 public IgnoreDrawDispatchHelper,
+                 public IgnoreAttributeDispatchHelper,
+                 public IgnoreTransformDispatchHelper {
+   public:
+    explicit Tester(bool prefer_impeller_paths)
+        : prefer_impeller_paths_(prefer_impeller_paths) {}
+
+    bool PrefersImpellerPaths() const override {
+      return prefer_impeller_paths_;
+    }
+
+    void drawPath(const SkPath& path) override { skia_draw_path_calls_++; }
+
+    void drawPath(const CacheablePath& cache) override {
+      impeller_draw_path_calls_++;
+    }
+
+    void clipPath(const SkPath& path, ClipOp op, bool is_aa) override {
+      skia_clip_path_calls_++;
+    }
+
+    void clipPath(const CacheablePath& cache, ClipOp op, bool is_aa) override {
+      impeller_clip_path_calls_++;
+    }
+
+    virtual void drawShadow(const SkPath& sk_path,
+                            const DlColor color,
+                            const SkScalar elevation,
+                            bool transparent_occluder,
+                            SkScalar dpr) override {
+      skia_draw_shadow_calls_++;
+    }
+
+    virtual void drawShadow(const CacheablePath& cache,
+                            const DlColor color,
+                            const SkScalar elevation,
+                            bool transparent_occluder,
+                            SkScalar dpr) override {
+      impeller_draw_shadow_calls_++;
+    }
+
+    int skia_draw_path_calls() const { return skia_draw_path_calls_; }
+    int skia_clip_path_calls() const { return skia_draw_path_calls_; }
+    int skia_draw_shadow_calls() const { return skia_draw_path_calls_; }
+    int impeller_draw_path_calls() const { return impeller_draw_path_calls_; }
+    int impeller_clip_path_calls() const { return impeller_draw_path_calls_; }
+    int impeller_draw_shadow_calls() const { return impeller_draw_path_calls_; }
+
+   private:
+    const bool prefer_impeller_paths_;
+    int skia_draw_path_calls_ = 0;
+    int skia_clip_path_calls_ = 0;
+    int skia_draw_shadow_calls_ = 0;
+    int impeller_draw_path_calls_ = 0;
+    int impeller_clip_path_calls_ = 0;
+    int impeller_draw_shadow_calls_ = 0;
+  };
+
+  DisplayListBuilder builder;
+  builder.DrawPath(SkPath::Rect(SkRect::MakeLTRB(0, 0, 100, 100)), DlPaint());
+  builder.ClipPath(SkPath::Rect(SkRect::MakeLTRB(0, 0, 100, 100)),
+                   ClipOp::kIntersect, true);
+  builder.DrawShadow(SkPath::Rect(SkRect::MakeLTRB(20, 20, 80, 80)),
+                     DlColor::kBlue(), 1.0f, true, 1.0f);
+  auto display_list = builder.Build();
+
+  {
+    Tester skia_tester(false);
+    display_list->Dispatch(skia_tester);
+    EXPECT_EQ(skia_tester.skia_draw_path_calls(), 1);
+    EXPECT_EQ(skia_tester.skia_clip_path_calls(), 1);
+    EXPECT_EQ(skia_tester.skia_draw_shadow_calls(), 1);
+    EXPECT_EQ(skia_tester.impeller_draw_path_calls(), 0);
+    EXPECT_EQ(skia_tester.impeller_clip_path_calls(), 0);
+    EXPECT_EQ(skia_tester.impeller_draw_shadow_calls(), 0);
+  }
+
+  {
+    Tester impeller_tester(true);
+    display_list->Dispatch(impeller_tester);
+    EXPECT_EQ(impeller_tester.skia_draw_path_calls(), 0);
+    EXPECT_EQ(impeller_tester.skia_clip_path_calls(), 0);
+    EXPECT_EQ(impeller_tester.skia_draw_shadow_calls(), 0);
+    EXPECT_EQ(impeller_tester.impeller_draw_path_calls(), 1);
+    EXPECT_EQ(impeller_tester.impeller_clip_path_calls(), 1);
+    EXPECT_EQ(impeller_tester.impeller_draw_shadow_calls(), 1);
+  }
 }
 
 }  // namespace testing

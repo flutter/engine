@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_PROPERTY_RESOLVER_H_
+#define FLUTTER_IMPELLER_SCENE_ANIMATION_PROPERTY_RESOLVER_H_
 
 #include <memory>
 #include <string>
@@ -87,7 +88,10 @@ class TranslationTimelineResolver final : public TimelineResolver {
 
   std::vector<Vector3> values_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TranslationTimelineResolver);
+  TranslationTimelineResolver(const TranslationTimelineResolver&) = delete;
+
+  TranslationTimelineResolver& operator=(const TranslationTimelineResolver&) =
+      delete;
 
   friend PropertyResolver;
 };
@@ -106,7 +110,9 @@ class RotationTimelineResolver final : public TimelineResolver {
 
   std::vector<Quaternion> values_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RotationTimelineResolver);
+  RotationTimelineResolver(const RotationTimelineResolver&) = delete;
+
+  RotationTimelineResolver& operator=(const RotationTimelineResolver&) = delete;
 
   friend PropertyResolver;
 };
@@ -125,10 +131,14 @@ class ScaleTimelineResolver final : public TimelineResolver {
 
   std::vector<Vector3> values_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ScaleTimelineResolver);
+  ScaleTimelineResolver(const ScaleTimelineResolver&) = delete;
+
+  ScaleTimelineResolver& operator=(const ScaleTimelineResolver&) = delete;
 
   friend PropertyResolver;
 };
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_ANIMATION_PROPERTY_RESOLVER_H_

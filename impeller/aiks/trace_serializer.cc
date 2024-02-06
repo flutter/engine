@@ -51,27 +51,55 @@ std::ostream& operator<<(std::ostream& os,
   return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const ColorSource& color_source) {
+  os << "{ type: ";
+  switch (color_source.GetType()) {
+    case ColorSource::Type::kColor:
+      os << "kColor";
+      break;
+    case ColorSource::Type::kImage:
+      os << "kImage";
+      break;
+    case ColorSource::Type::kLinearGradient:
+      os << "kLinearGradient";
+      break;
+    case ColorSource::Type::kRadialGradient:
+      os << "kRadialGradient";
+      break;
+    case ColorSource::Type::kConicalGradient:
+      os << "kConicalGradient";
+      break;
+    case ColorSource::Type::kSweepGradient:
+      os << "kSweepGradient";
+      break;
+    case ColorSource::Type::kRuntimeEffect:
+      os << "kRuntimeEffect";
+      break;
+    case ColorSource::Type::kScene:
+      os << "kScene";
+      break;
+  }
+  os << " }";
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, const Paint& paint) {
   os << "{" << std::endl;
   os << "  color: [" << paint.color << "]" << std::endl;
-  os << "  color_source:"
-     << "[ColorSource]" << std::endl;
+  os << "  color_source:" << "[" << paint.color_source << "]" << std::endl;
   os << "  dither: [" << paint.dither << "]" << std::endl;
   os << "  stroke_width: [" << paint.stroke_width << "]" << std::endl;
-  os << "  stroke_cap: "
-     << "[Paint::Cap]" << std::endl;
-  os << "  stroke_join: "
-     << "[Paint::Join]" << std::endl;
+  os << "  stroke_cap: " << "[Paint::Cap]" << std::endl;
+  os << "  stroke_join: " << "[Paint::Join]" << std::endl;
   os << "  stroke_miter: [" << paint.stroke_miter << "]" << std::endl;
-  os << "  style:"
-     << "[Paint::Style]" << std::endl;
+  os << "  style:" << "[Paint::Style]" << std::endl;
   os << "  blend_mode: [" << BlendModeToString(paint.blend_mode) << "]"
      << std::endl;
   os << "  invert_colors: [" << paint.invert_colors << "]" << std::endl;
   os << "  image_filter: " << paint.image_filter << std::endl;
   os << "  color_filter: " << paint.color_filter << std::endl;
-  os << "  mask_blur_descriptor: "
-     << "[std::optional<MaskBlurDescriptor>]" << std::endl;
+  os << "  mask_blur_descriptor: " << "[std::optional<MaskBlurDescriptor>]"
+     << std::endl;
   os << "}";
   return os;
 }
@@ -84,35 +112,37 @@ std::ostream& operator<<(std::ostream& os, const Paint& paint) {
 namespace {
 std::string_view CanvasRecorderOpToString(CanvasRecorderOp op) {
   switch (op) {
-    FLT_CANVAS_RECORDER_OP_TO_STRING(New);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Save);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(SaveLayer);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Restore);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(RestoreToCount);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(ResetTransform);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Transform);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Concat);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(PreConcat);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Translate);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Scale2);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Scale3);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Skew);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(Rotate);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawPath);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawPaint);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawRect);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawRRect);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawCircle);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawPoints);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawImage);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawImageRect);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(ClipPath);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(ClipRect);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(ClipRRect);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawPicture);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawTextFrame);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawVertices);
-    FLT_CANVAS_RECORDER_OP_TO_STRING(DrawAtlas);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kNew);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kSave);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kSaveLayer);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kRestore);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kRestoreToCount);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kResetTransform);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kTransform);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kConcat);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kPreConcat);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kTranslate);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kScale2);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kScale3);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kSkew);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kRotate);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawPath);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawPaint);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawLine);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawRect);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawOval);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawRRect);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawCircle);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawPoints);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawImage);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawImageRect);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kClipPath);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kClipRect);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kClipOval);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kClipRRect);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawTextFrame);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawVertices);
+    FLT_CANVAS_RECORDER_OP_TO_STRING(kDrawAtlas);
   }
 }
 }  // namespace
@@ -120,7 +150,7 @@ std::string_view CanvasRecorderOpToString(CanvasRecorderOp op) {
 TraceSerializer::TraceSerializer() {}
 
 void TraceSerializer::Write(CanvasRecorderOp op) {
-  if (op == CanvasRecorderOp::New) {
+  if (op == CanvasRecorderOp::kNew) {
     FML_LOG(ERROR) << "######################################################";
   } else {
     FML_LOG(ERROR) << CanvasRecorderOpToString(op) << ":" << buffer_.str();
@@ -223,4 +253,9 @@ void TraceSerializer::Write(const std::vector<Rect>& matrices) {
 void TraceSerializer::Write(const std::vector<Color>& matrices) {
   buffer_ << "[std::vector<Color>] ";
 }
+
+void TraceSerializer::Write(const SourceRectConstraint& src_rect_constraint) {
+  buffer_ << "[SourceRectConstraint] ";
+}
+
 }  // namespace impeller

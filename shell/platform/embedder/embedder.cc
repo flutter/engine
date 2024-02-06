@@ -102,7 +102,7 @@ extern const intptr_t kPlatformStrongDillSize;
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
-static constexpr int64_t kFlutterImplicitViewId = 0;
+static constexpr FlutterViewId kFlutterImplicitViewId = 0;
 
 // A message channel to send platform-independent FlutterKeyData to the
 // framework.
@@ -1978,16 +1978,16 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
     FlutterThreadPriority priority = FlutterThreadPriority::kNormal;
     switch (config.priority) {
-      case fml::Thread::ThreadPriority::BACKGROUND:
+      case fml::Thread::ThreadPriority::kBackground:
         priority = FlutterThreadPriority::kBackground;
         break;
-      case fml::Thread::ThreadPriority::NORMAL:
+      case fml::Thread::ThreadPriority::kNormal:
         priority = FlutterThreadPriority::kNormal;
         break;
-      case fml::Thread::ThreadPriority::DISPLAY:
+      case fml::Thread::ThreadPriority::kDisplay:
         priority = FlutterThreadPriority::kDisplay;
         break;
-      case fml::Thread::ThreadPriority::RASTER:
+      case fml::Thread::ThreadPriority::kRaster:
         priority = FlutterThreadPriority::kRaster;
         break;
     }
@@ -2326,6 +2326,8 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.pan_delta_y = 0.0;
     pointer_data.scale = SAFE_ACCESS(current, scale, 0.0);
     pointer_data.rotation = SAFE_ACCESS(current, rotation, 0.0);
+    pointer_data.view_id =
+        SAFE_ACCESS(current, view_id, kFlutterImplicitViewId);
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
@@ -2350,6 +2352,23 @@ static inline flutter::KeyEventType MapKeyEventType(
       return flutter::KeyEventType::kRepeat;
   }
   return flutter::KeyEventType::kUp;
+}
+
+static inline flutter::KeyEventDeviceType MapKeyEventDeviceType(
+    FlutterKeyEventDeviceType event_kind) {
+  switch (event_kind) {
+    case kFlutterKeyEventDeviceTypeKeyboard:
+      return flutter::KeyEventDeviceType::kKeyboard;
+    case kFlutterKeyEventDeviceTypeDirectionalPad:
+      return flutter::KeyEventDeviceType::kDirectionalPad;
+    case kFlutterKeyEventDeviceTypeGamepad:
+      return flutter::KeyEventDeviceType::kGamepad;
+    case kFlutterKeyEventDeviceTypeJoystick:
+      return flutter::KeyEventDeviceType::kJoystick;
+    case kFlutterKeyEventDeviceTypeHdmi:
+      return flutter::KeyEventDeviceType::kHdmi;
+  }
+  return flutter::KeyEventDeviceType::kKeyboard;
 }
 
 // Send a platform message to the framework.
@@ -2414,6 +2433,9 @@ FlutterEngineResult FlutterEngineSendKeyEvent(FLUTTER_API_SYMBOL(FlutterEngine)
   key_data.physical = SAFE_ACCESS(event, physical, 0);
   key_data.logical = SAFE_ACCESS(event, logical, 0);
   key_data.synthesized = SAFE_ACCESS(event, synthesized, false);
+  key_data.device_type = MapKeyEventDeviceType(SAFE_ACCESS(
+      event, device_type,
+      FlutterKeyEventDeviceType::kFlutterKeyEventDeviceTypeKeyboard));
 
   auto packet = std::make_unique<flutter::KeyDataPacket>(key_data, character);
 
@@ -2728,7 +2750,7 @@ FlutterEngineResult FlutterEngineReloadSystemFonts(
 
 void FlutterEngineTraceEventDurationBegin(const char* name) {
   fml::tracing::TraceEvent0("flutter", name, /*flow_id_count=*/0,
-                            /*flow_id=*/nullptr);
+                            /*flow_ids=*/nullptr);
 }
 
 void FlutterEngineTraceEventDurationEnd(const char* name) {
@@ -2737,7 +2759,7 @@ void FlutterEngineTraceEventDurationEnd(const char* name) {
 
 void FlutterEngineTraceEventInstant(const char* name) {
   fml::tracing::TraceEventInstant0("flutter", name, /*flow_id_count=*/0,
-                                   /*flow_id=*/nullptr);
+                                   /*flow_ids=*/nullptr);
 }
 
 FlutterEngineResult FlutterEnginePostRenderThreadTask(

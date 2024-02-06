@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TILED_TEXTURE_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_TILED_TEXTURE_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -45,7 +46,7 @@ class TiledTextureContents final : public ColorSourceContents {
   /// @param color_filter
   ///
   /// When applying a color filter to a tiled texture, we can reduce the
-  /// size and number of the subpasses required and the shader workloadby
+  /// size and number of the subpasses required and the shader workload by
   /// applying the filter to the untiled image and absorbing the opacity before
   /// tiling it into the final location.
   ///
@@ -60,13 +61,15 @@ class TiledTextureContents final : public ColorSourceContents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Tiled Texture Snapshot") const override;
 
  private:
   std::shared_ptr<Texture> CreateFilterTexture(
       const ContentContext& renderer) const;
 
-  SamplerDescriptor CreateDescriptor(const Capabilities& capabilities) const;
+  SamplerDescriptor CreateSamplerDescriptor(
+      const Capabilities& capabilities) const;
 
   bool UsesEmulatedTileMode(const Capabilities& capabilities) const;
 
@@ -76,7 +79,11 @@ class TiledTextureContents final : public ColorSourceContents {
   Entity::TileMode y_tile_mode_ = Entity::TileMode::kClamp;
   ColorFilterProc color_filter_ = nullptr;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TiledTextureContents);
+  TiledTextureContents(const TiledTextureContents&) = delete;
+
+  TiledTextureContents& operator=(const TiledTextureContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TILED_TEXTURE_CONTENTS_H_

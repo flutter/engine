@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_DATABASE_H_
+#define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_DATABASE_H_
 
 #include <map>
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "impeller/archivist/archive_transaction.h"
 
 namespace impeller {
@@ -22,7 +22,7 @@ struct ArchiveDef;
 ///
 class ArchiveDatabase {
  public:
-  ArchiveDatabase(const std::string& filename);
+  explicit ArchiveDatabase(const std::string& filename);
 
   ~ArchiveDatabase();
 
@@ -48,7 +48,11 @@ class ArchiveDatabase {
 
   ArchiveStatement CreateStatement(const std::string& statementString) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveDatabase);
+  ArchiveDatabase(const ArchiveDatabase&) = delete;
+
+  ArchiveDatabase& operator=(const ArchiveDatabase&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_DATABASE_H_

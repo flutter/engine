@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/testing/dart/compile_test.gni")
+import("//flutter/build/dart/rules.gni")
 
 tests = [
   "assets_test.dart",
@@ -38,20 +38,33 @@ tests = [
   "paragraph_test.dart",
   "path_test.dart",
   "picture_test.dart",
+  "platform_dispatcher_test.dart",
   "platform_view_test.dart",
   "plugin_utilities_test.dart",
   "semantics_test.dart",
   "serial_gc_test.dart",
+  "spawn_helper.dart",
+  "spawn_test.dart",
   "task_order_test.dart",
   "text_test.dart",
   "window_test.dart",
 ]
 
 foreach(test, tests) {
-  compile_flutter_dart_test("compile_$test") {
-    dart_file = test
-    dart_kernel = "$root_gen_dir/$test.dill"
-    packages = ".dart_tool/package_config.json"
+  flutter_build_dir = rebase_path("$root_gen_dir")
+  flutter_src_dir = rebase_path("$root_out_dir/../../flutter")
+  skia_gold_work_dir = rebase_path("$root_gen_dir/skia_gold_$test")
+  flutter_frontend_server("compile_$test") {
+    main_dart = test
+    kernel_output = "$root_gen_dir/$test.dill"
+    extra_args = [
+      "-DkFlutterSrcDirectory=$flutter_src_dir",
+      "-DkFlutterBuildDirectory=$flutter_build_dir",
+      "-DkSkiaGoldWorkDirectory=$skia_gold_work_dir",
+    ]
+    package_config = ".dart_tool/package_config.json"
+    deps = [ "//flutter/third_party/txt:txt_fixtures" ]
+    testonly = true
   }
 }
 

@@ -5,6 +5,9 @@
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_receiver.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
 
 namespace flutter {
 namespace testing {
@@ -48,11 +51,6 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        {
            {0, 8, 0, 0, [](DlOpReceiver& r) { r.setAntiAlias(true); }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setAntiAlias(false); }},
-       }},
-      {"SetDither",
-       {
-           {0, 8, 0, 0, [](DlOpReceiver& r) { r.setDither(true); }},
-           {0, 0, 0, 0, [](DlOpReceiver& r) { r.setDither(false); }},
        }},
       {"SetInvertColors",
        {
@@ -468,27 +466,27 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
        }},
       {"ClipPath",
        {
-           {1, 24, 1, 24,
+           {1, 40, 1, 40,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 24, 1, 24,
+           {1, 40, 1, 40,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath2, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 24, 1, 24,
+           {1, 40, 1, 40,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath3, DlCanvas::ClipOp::kIntersect, true);
             }},
-           {1, 24, 1, 24,
+           {1, 40, 1, 40,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kIntersect, false);
             }},
-           {1, 24, 1, 24,
+           {1, 40, 1, 40,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kDifference, true);
             }},
-           {1, 24, 1, 24,
+           {1, 40, 1, 40,
             [](DlOpReceiver& r) {
               r.clipPath(kTestPath1, DlCanvas::ClipOp::kDifference, false);
             }},
@@ -619,11 +617,11 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        }},
       {"DrawPath",
        {
-           {1, 24, 1, 24, [](DlOpReceiver& r) { r.drawPath(kTestPath1); }},
-           {1, 24, 1, 24, [](DlOpReceiver& r) { r.drawPath(kTestPath2); }},
-           {1, 24, 1, 24, [](DlOpReceiver& r) { r.drawPath(kTestPath3); }},
-           {1, 24, 1, 24, [](DlOpReceiver& r) { r.drawPath(kTestPathRect); }},
-           {1, 24, 1, 24, [](DlOpReceiver& r) { r.drawPath(kTestPathOval); }},
+           {1, 40, 1, 40, [](DlOpReceiver& r) { r.drawPath(kTestPath1); }},
+           {1, 40, 1, 40, [](DlOpReceiver& r) { r.drawPath(kTestPath2); }},
+           {1, 40, 1, 40, [](DlOpReceiver& r) { r.drawPath(kTestPath3); }},
+           {1, 40, 1, 40, [](DlOpReceiver& r) { r.drawPath(kTestPathRect); }},
+           {1, 40, 1, 40, [](DlOpReceiver& r) { r.drawPath(kTestPathOval); }},
        }},
       {"DrawArc",
        {
@@ -645,22 +643,22 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kPoints, TestPointCount,
-                           TestPoints);
+                           kTestPoints);
             }},
            {1, 8 + (TestPointCount - 1) * 8, 1, 8 + (TestPointCount - 1) * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kPoints, TestPointCount - 1,
-                           TestPoints);
+                           kTestPoints);
             }},
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kLines, TestPointCount,
-                           TestPoints);
+                           kTestPoints);
             }},
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DlOpReceiver& r) {
               r.drawPoints(DlCanvas::PointMode::kPolygon, TestPointCount,
-                           TestPoints);
+                           kTestPoints);
             }},
        }},
       {"DrawVertices",
@@ -906,13 +904,21 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
       {"DrawTextBlob",
        {
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob1, 10, 10); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(1), 10, 10);
+            }},
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob1, 20, 10); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(1), 20, 10);
+            }},
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob1, 10, 20); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(1), 10, 20);
+            }},
            {1, 24, 1, 24,
-            [](DlOpReceiver& r) { r.drawTextBlob(TestBlob2, 10, 10); }},
+            [](DlOpReceiver& r) {
+              r.drawTextBlob(GetTestTextBlob(2), 10, 10);
+            }},
        }},
       // The -1 op counts below are to indicate to the framework not to test
       // SkCanvas conversion of these ops as it converts the operation into a
@@ -923,27 +929,27 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            // cv shadows are turned into an opaque ShadowRec which is not
            // exposed
-           {1, 32, -1, 32,
+           {1, 48, -1, 48,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, false, 1.0);
             }},
-           {1, 32, -1, 32,
+           {1, 48, -1, 48,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath2, DlColor(SK_ColorGREEN), 1.0, false, 1.0);
             }},
-           {1, 32, -1, 32,
+           {1, 48, -1, 48,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorBLUE), 1.0, false, 1.0);
             }},
-           {1, 32, -1, 32,
+           {1, 48, -1, 48,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 2.0, false, 1.0);
             }},
-           {1, 32, -1, 32,
+           {1, 48, -1, 48,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, true, 1.0);
             }},
-           {1, 32, -1, 32,
+           {1, 48, -1, 48,
             [](DlOpReceiver& r) {
               r.drawShadow(kTestPath1, DlColor(SK_ColorGREEN), 1.0, false, 2.5);
             }},
@@ -969,6 +975,27 @@ std::vector<DisplayListInvocationGroup> CreateAllGroups() {
   std::move(all_rendering_ops.begin(), all_rendering_ops.end(),
             std::back_inserter(result));
   return result;
+}
+
+SkFont CreateTestFontOfSize(SkScalar scalar) {
+  static constexpr const char* kTestFontFixture = "Roboto-Regular.ttf";
+  auto mapping = flutter::testing::OpenFixtureAsSkData(kTestFontFixture);
+  FML_CHECK(mapping);
+  return SkFont{txt::GetDefaultFontManager()->makeFromData(mapping), scalar};
+}
+
+sk_sp<SkTextBlob> GetTestTextBlob(int index) {
+  static std::map<int, sk_sp<SkTextBlob>> text_blobs;
+  auto it = text_blobs.find(index);
+  if (it != text_blobs.end()) {
+    return it->second;
+  }
+  std::string text = "TestBlob" + std::to_string(index);
+  sk_sp<SkTextBlob> blob =
+      SkTextBlob::MakeFromText(text.c_str(), text.size(),
+                               CreateTestFontOfSize(20), SkTextEncoding::kUTF8);
+  text_blobs.insert(std::make_pair(index, blob));
+  return blob;
 }
 
 }  // namespace testing

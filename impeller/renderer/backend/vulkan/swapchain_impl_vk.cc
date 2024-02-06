@@ -4,12 +4,16 @@
 
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
 
+#include "fml/synchronization/semaphore.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/context.h"
 #include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
@@ -26,11 +30,13 @@ struct FrameSynchronizer {
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
   std::shared_ptr<CommandBuffer> final_cmd_buffer;
+  /// @brief A latch that is signaled _after_ a given swapchain image is
+  ///        presented.
+  std::shared_ptr<fml::Semaphore> present_semaphore;
   bool is_valid = false;
 
   explicit FrameSynchronizer(const vk::Device& device) {
-    auto acquire_res = device.createFenceUnique(
-        vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
+    auto acquire_res = device.createFenceUnique({});
     auto render_res = device.createSemaphoreUnique({});
     auto present_res = device.createSemaphoreUnique({});
     if (acquire_res.result != vk::Result::eSuccess ||
@@ -48,6 +54,15 @@ struct FrameSynchronizer {
   ~FrameSynchronizer() = default;
 
   bool WaitForFence(const vk::Device& device) {
+    if (!present_semaphore) {
+      return true;
+    }
+
+    if (!present_semaphore->Wait()) {
+      VALIDATION_LOG << "Present semaphore wait failed";
+      return false;
+    }
+    present_semaphore.reset();
     if (auto result = device.waitForFences(
             *acquire,                             // fence
             true,                                 // wait all
@@ -130,24 +145,26 @@ static std::optional<vk::Queue> ChoosePresentQueue(
 std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
-    vk::SwapchainKHR old_swapchain,
-    vk::SurfaceTransformFlagBitsKHR last_transform) {
+    const ISize& size,
+    bool enable_msaa,
+    vk::SwapchainKHR old_swapchain) {
   return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
-      context, std::move(surface), old_swapchain, last_transform));
+      context, std::move(surface), size, enable_msaa, old_swapchain));
 }
 
-SwapchainImplVK::SwapchainImplVK(
-    const std::shared_ptr<Context>& context,
-    vk::UniqueSurfaceKHR surface,
-    vk::SwapchainKHR old_swapchain,
-    vk::SurfaceTransformFlagBitsKHR last_transform) {
+SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
+                                 vk::UniqueSurfaceKHR surface,
+                                 const ISize& size,
+                                 bool enable_msaa,
+                                 vk::SwapchainKHR old_swapchain) {
   if (!context) {
+    VALIDATION_LOG << "Cannot create a swapchain without a context.";
     return;
   }
 
   auto& vk_context = ContextVK::Cast(*context);
 
-  auto [caps_result, caps] =
+  const auto [caps_result, surface_caps] =
       vk_context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface);
   if (caps_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Could not get surface capabilities: "
@@ -172,7 +189,7 @@ SwapchainImplVK::SwapchainImplVK(
   vk_context.SetOffscreenFormat(ToPixelFormat(format.value().format));
 
   const auto composite =
-      ChooseAlphaCompositionMode(caps.supportedCompositeAlpha);
+      ChooseAlphaCompositionMode(surface_caps.supportedCompositeAlpha);
   if (!composite.has_value()) {
     VALIDATION_LOG << "No composition mode supported.";
     return;
@@ -193,22 +210,26 @@ SwapchainImplVK::SwapchainImplVK(
   swapchain_info.imageColorSpace = format.value().colorSpace;
   swapchain_info.presentMode = vk::PresentModeKHR::eFifo;
   swapchain_info.imageExtent = vk::Extent2D{
-      std::clamp(caps.currentExtent.width, caps.minImageExtent.width,
-                 caps.maxImageExtent.width),
-      std::clamp(caps.currentExtent.height, caps.minImageExtent.height,
-                 caps.maxImageExtent.height),
+      std::clamp(static_cast<uint32_t>(size.width),
+                 surface_caps.minImageExtent.width,
+                 surface_caps.maxImageExtent.width),
+      std::clamp(static_cast<uint32_t>(size.height),
+                 surface_caps.minImageExtent.height,
+                 surface_caps.maxImageExtent.height),
   };
-  swapchain_info.minImageCount = std::clamp(
-      caps.minImageCount + 1u,  // preferred image count
-      caps.minImageCount,       // min count cannot be zero
-      caps.maxImageCount == 0u ? caps.minImageCount + 1u
-                               : caps.maxImageCount  // max zero means no limit
-  );
+  swapchain_info.minImageCount =
+      std::clamp(surface_caps.minImageCount + 1u,  // preferred image count
+                 surface_caps.minImageCount,       // min count cannot be zero
+                 surface_caps.maxImageCount == 0u
+                     ? surface_caps.minImageCount + 1u
+                     : surface_caps.maxImageCount  // max zero means no limit
+      );
   swapchain_info.imageArrayLayers = 1u;
-  // Swapchain images are primarily used as color attachments (via resolve) or
-  // blit targets.
+  // Swapchain images are primarily used as color attachments (via resolve),
+  // blit targets, or input attachments.
   swapchain_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment |
-                              vk::ImageUsageFlagBits::eTransferDst;
+                              vk::ImageUsageFlagBits::eTransferDst |
+                              vk::ImageUsageFlagBits::eInputAttachment;
   swapchain_info.preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
   swapchain_info.compositeAlpha = composite.value();
   // If we set the clipped value to true, Vulkan expects we will never read back
@@ -284,12 +305,17 @@ SwapchainImplVK::SwapchainImplVK(
   images_ = std::move(swapchain_images);
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
+  size_ = size;
+  enable_msaa_ = enable_msaa;
   is_valid_ = true;
-  transform_if_changed_discard_swapchain_ = last_transform;
 }
 
 SwapchainImplVK::~SwapchainImplVK() {
   DestroySwapchain();
+}
+
+const ISize& SwapchainImplVK::GetSize() const {
+  return size_;
 }
 
 bool SwapchainImplVK::IsValid() const {
@@ -317,10 +343,6 @@ vk::Format SwapchainImplVK::GetSurfaceFormat() const {
   return surface_format_;
 }
 
-vk::SurfaceTransformFlagBitsKHR SwapchainImplVK::GetLastTransform() const {
-  return transform_if_changed_discard_swapchain_;
-}
-
 std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
   return context_.lock();
 }
@@ -328,7 +350,7 @@ std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
 SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   auto context_strong = context_.lock();
   if (!context_strong) {
-    return {};
+    return SwapchainImplVK::AcquireResult{};
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
@@ -342,27 +364,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   ///
   if (!sync->WaitForFence(context.GetDevice())) {
     VALIDATION_LOG << "Could not wait for fence.";
-    return {};
-  }
-
-  //----------------------------------------------------------------------------
-  /// Poll to see if the orientation has changed.
-  ///
-  /// https://developer.android.com/games/optimize/vulkan-prerotation#using_polling
-  current_transform_poll_count_++;
-  if (current_transform_poll_count_ >= kPollFramesForOrientation) {
-    current_transform_poll_count_ = 0u;
-    auto [caps_result, caps] =
-        context.GetPhysicalDevice().getSurfaceCapabilitiesKHR(*surface_);
-    if (caps_result != vk::Result::eSuccess) {
-      VALIDATION_LOG << "Could not get surface capabilities: "
-                     << vk::to_string(caps_result);
-      return {};
-    }
-    if (caps.currentTransform != transform_if_changed_discard_swapchain_) {
-      transform_if_changed_discard_swapchain_ = caps.currentTransform;
-      return AcquireResult{true /* out of date */};
-    }
+    return SwapchainImplVK::AcquireResult{};
   }
 
   //----------------------------------------------------------------------------
@@ -393,8 +395,11 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
 
   if (index >= images_.size()) {
     VALIDATION_LOG << "Swapchain returned an invalid image index.";
-    return {};
+    return SwapchainImplVK::AcquireResult{};
   }
+
+  /// Record all subsequent cmd buffers as part of the current frame.
+  context.GetGPUTracer()->MarkFrameStart();
 
   auto image = images_[index % images_.size()];
   uint32_t image_index = index;
@@ -407,7 +412,8 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
           return false;
         }
         return swapchain->Present(image, image_index);
-      }  // swap callback
+      },            // swap callback
+      enable_msaa_  //
       )};
 }
 
@@ -420,6 +426,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
 
   const auto& context = ContextVK::Cast(*context_strong);
   const auto& sync = synchronizers_[current_frame_];
+  context.GetGPUTracer()->MarkFrameEnd();
 
   //----------------------------------------------------------------------------
   /// Transition the image to color-attachment-optimal.
@@ -488,7 +495,10 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     present_info.setImageIndices(indices);
     present_info.setWaitSemaphores(*sync->present_ready);
 
-    switch (auto result = present_queue_.presentKHR(present_info)) {
+    auto result = present_queue_.presentKHR(present_info);
+    sync->present_semaphore->Signal();
+
+    switch (result) {
       case vk::Result::eErrorOutOfDateKHR:
         // Caller will recreate the impl on acquisition, not submission.
         [[fallthrough]];
@@ -510,10 +520,12 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     }
     FML_UNREACHABLE();
   };
+
+  sync->present_semaphore = std::make_shared<fml::Semaphore>(0u);
   if (context.GetSyncPresentation()) {
     task();
   } else {
-    context.GetConcurrentWorkerTaskRunner()->PostTask(task);
+    context.GetQueueSubmitRunner()->PostTask(task);
   }
   return true;
 }

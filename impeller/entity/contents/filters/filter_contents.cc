@@ -16,6 +16,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
+#include "impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
@@ -49,18 +50,19 @@ std::shared_ptr<FilterContents> FilterContents::MakeDirectionalGaussianBlur(
   return blur;
 }
 
+const int32_t FilterContents::kBlurFilterRequiredMipCount =
+    GaussianBlurFilterContents::kBlurFilterRequiredMipCount;
+
 std::shared_ptr<FilterContents> FilterContents::MakeGaussianBlur(
     const FilterInput::Ref& input,
     Sigma sigma_x,
     Sigma sigma_y,
     BlurStyle blur_style,
     Entity::TileMode tile_mode) {
-  auto x_blur = MakeDirectionalGaussianBlur(
-      input, sigma_x, Point(1, 0), BlurStyle::kNormal, tile_mode, false, {});
-  auto y_blur = MakeDirectionalGaussianBlur(FilterInput::Make(x_blur), sigma_y,
-                                            Point(0, 1), blur_style, tile_mode,
-                                            true, sigma_x);
-  return y_blur;
+  auto blur = std::make_shared<GaussianBlurFilterContents>(
+      sigma_x.sigma, sigma_y.sigma, tile_mode);
+  blur->SetInputs({input});
+  return blur;
 }
 
 std::shared_ptr<FilterContents> FilterContents::MakeBorderMaskBlur(
@@ -161,6 +163,7 @@ bool FilterContents::Render(const ContentContext& renderer,
   if (!maybe_entity.has_value()) {
     return true;
   }
+  maybe_entity->SetNewClipDepth(entity.GetNewClipDepth());
   return maybe_entity->Render(renderer, pass);
 }
 
@@ -176,9 +179,8 @@ std::optional<Rect> FilterContents::GetLocalCoverage(
 }
 
 std::optional<Rect> FilterContents::GetCoverage(const Entity& entity) const {
-  Entity entity_with_local_transform = entity;
-  entity_with_local_transform.SetTransformation(
-      GetTransform(entity.GetTransformation()));
+  Entity entity_with_local_transform = entity.Clone();
+  entity_with_local_transform.SetTransform(GetTransform(entity.GetTransform()));
 
   return GetLocalCoverage(entity_with_local_transform);
 }
@@ -218,13 +220,34 @@ std::optional<Rect> FilterContents::GetFilterCoverage(
   return result;
 }
 
+std::optional<Rect> FilterContents::GetSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto filter_input_coverage =
+      GetFilterSourceCoverage(effect_transform_, output_limit);
+
+  if (!filter_input_coverage.has_value()) {
+    return std::nullopt;
+  }
+
+  std::optional<Rect> inputs_coverage;
+  for (const auto& input : inputs_) {
+    auto input_coverage = input->GetSourceCoverage(
+        effect_transform, filter_input_coverage.value());
+    if (!input_coverage.has_value()) {
+      return std::nullopt;
+    }
+    inputs_coverage = Rect::Union(inputs_coverage, input_coverage.value());
+  }
+  return inputs_coverage;
+}
+
 std::optional<Entity> FilterContents::GetEntity(
     const ContentContext& renderer,
     const Entity& entity,
     const std::optional<Rect>& coverage_hint) const {
-  Entity entity_with_local_transform = entity;
-  entity_with_local_transform.SetTransformation(
-      GetTransform(entity.GetTransformation()));
+  Entity entity_with_local_transform = entity.Clone();
+  entity_with_local_transform.SetTransform(GetTransform(entity.GetTransform()));
 
   auto coverage = GetLocalCoverage(entity_with_local_transform);
   if (!coverage.has_value() || coverage->IsEmpty()) {
@@ -241,6 +264,7 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   // Resolve the render instruction (entity) from the filter and render it to a
   // snapshot.
@@ -253,7 +277,8 @@ std::optional<Snapshot> FilterContents::RenderToSnapshot(
         coverage_limit,  // coverage_limit
         std::nullopt,    // sampler_descriptor
         true,            // msaa_enabled
-        label);          // label
+        /*mip_count=*/mip_count,
+        label);  // label
   }
 
   return std::nullopt;

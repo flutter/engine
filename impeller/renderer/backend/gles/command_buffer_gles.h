@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_COMMAND_BUFFER_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_COMMAND_BUFFER_GLES_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
@@ -46,7 +47,11 @@ class CommandBufferGLES final : public CommandBuffer {
   // |CommandBuffer|
   std::shared_ptr<ComputePass> OnCreateComputePass() override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferGLES);
+  CommandBufferGLES(const CommandBufferGLES&) = delete;
+
+  CommandBufferGLES& operator=(const CommandBufferGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_COMMAND_BUFFER_GLES_H_

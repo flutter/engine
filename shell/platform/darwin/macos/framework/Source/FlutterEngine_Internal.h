@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
 #import <Cocoa/Cocoa.h>
@@ -66,6 +69,15 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
                                result:(nullable FlutterResult)result;
 @end
 
+/**
+ * An NSPasteboard wrapper object to allow for substitution of a fake in unit tests.
+ */
+@interface FlutterPasteboard : NSObject
+- (NSInteger)clearContents;
+- (NSString*)stringForType:(NSPasteboardType)dataType;
+- (BOOL)setString:(NSString*)string forType:(NSPasteboardType)dataType;
+@end
+
 @interface FlutterEngine ()
 
 /**
@@ -98,7 +110,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 /**
  * This just returns the NSPasteboard so that it can be mocked in the tests.
  */
-@property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
+@property(nonatomic, nonnull) FlutterPasteboard* pasteboard;
 
 /**
  * The command line arguments array for the engine.
@@ -210,3 +222,5 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_

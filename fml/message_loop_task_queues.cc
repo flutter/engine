@@ -13,7 +13,6 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/task_source.h"
-#include "flutter/fml/thread_local.h"
 
 namespace fml {
 
@@ -32,7 +31,7 @@ class TaskSourceGradeHolder {
 };
 }  // namespace
 
-FML_THREAD_LOCAL ThreadLocalUniquePtr<TaskSourceGradeHolder>
+static thread_local std::unique_ptr<TaskSourceGradeHolder>
     tls_task_source_grade;
 
 TaskQueueEntry::TaskQueueEntry(TaskQueueId created_for_arg)
@@ -55,8 +54,7 @@ TaskQueueId MessageLoopTaskQueues::CreateTaskQueue() {
   return loop_id;
 }
 
-MessageLoopTaskQueues::MessageLoopTaskQueues()
-    : task_queue_id_counter_(0), order_(0) {
+MessageLoopTaskQueues::MessageLoopTaskQueues() : order_(0) {
   tls_task_source_grade.reset(
       new TaskSourceGradeHolder{TaskSourceGrade::kUnspecified});
 }

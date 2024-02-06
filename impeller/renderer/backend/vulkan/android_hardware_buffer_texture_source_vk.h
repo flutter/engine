@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ANDROID_HARDWARE_BUFFER_TEXTURE_SOURCE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ANDROID_HARDWARE_BUFFER_TEXTURE_SOURCE_VK_H_
 
 #include "flutter/fml/build_config.h"
 #include "vulkan/vulkan_core.h"
@@ -37,7 +38,12 @@ class AndroidHardwareBufferTextureSourceVK final : public TextureSourceVK {
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
 
+  // |TextureSourceVK|
+  vk::ImageView GetRenderTargetView() const override;
+
   bool IsValid() const;
+
+  bool IsSwapchainImage() const override { return false; }
 
  private:
   const vk::Device& device_;
@@ -47,9 +53,15 @@ class AndroidHardwareBufferTextureSourceVK final : public TextureSourceVK {
 
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AndroidHardwareBufferTextureSourceVK);
+  AndroidHardwareBufferTextureSourceVK(
+      const AndroidHardwareBufferTextureSourceVK&) = delete;
+
+  AndroidHardwareBufferTextureSourceVK& operator=(
+      const AndroidHardwareBufferTextureSourceVK&) = delete;
 };
 
 }  // namespace impeller
 
 #endif
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ANDROID_HARDWARE_BUFFER_TEXTURE_SOURCE_VK_H_

@@ -23,6 +23,8 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
+#include "fml/logging.h"
+#include "impeller/renderer/command_queue.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -63,6 +65,10 @@ class TestImpellerContext : public impeller::Context {
 
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
     return nullptr;
+  }
+
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override {
+    FML_UNREACHABLE();
   }
 
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
@@ -238,7 +244,7 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
                                       manager.GetWeakIOManager(),
                                       std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("ThisDoesNotExist.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("ThisDoesNotExist.jpg");
     ASSERT_FALSE(data);
 
     fml::RefPtr<ImageDescriptor> image_descriptor =
@@ -279,7 +285,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
         settings, runners, loop->GetTaskRunner(),
         io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
@@ -398,7 +404,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
-  auto data = OpenFixtureAsSkData("DisplayP3Logo.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("DisplayP3Logo.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
@@ -450,7 +456,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNonWideGamut) {
-  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
@@ -501,7 +507,7 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
         settings, runners, loop->GetTaskRunner(),
         io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("Horizontal.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
 
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
@@ -562,7 +568,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
         settings, runners, loop->GetTaskRunner(),
         io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
@@ -597,9 +603,10 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
 }
 
 TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
-  const auto image_dimensions = SkImages::DeferredFromEncodedData(
-                                    OpenFixtureAsSkData("DashInNooglerHat.jpg"))
-                                    ->dimensions();
+  const auto image_dimensions =
+      SkImages::DeferredFromEncodedData(
+          flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg"))
+          ->dimensions();
 
   ASSERT_FALSE(image_dimensions.isEmpty());
 
@@ -635,7 +642,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
                           uint32_t target_height) -> SkISize {
     SkISize final_size = SkISize::MakeEmpty();
     runners.GetUITaskRunner()->PostTask([&]() {
-      auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
+      auto data = flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
       ASSERT_TRUE(data);
       ASSERT_GE(data->size(), 0u);
@@ -676,8 +683,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
 // Flutter.
 TEST(ImageDecoderTest,
      VerifyCodecRepeatCountsForGifAndWebPAreConsistentWithLoopCounts) {
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
-  auto webp_mapping = OpenFixtureAsSkData("hello_loop_2.webp");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
+  auto webp_mapping =
+      flutter::testing::OpenFixtureAsSkData("hello_loop_2.webp");
 
   ASSERT_TRUE(gif_mapping);
   ASSERT_TRUE(webp_mapping);
@@ -696,7 +704,7 @@ TEST(ImageDecoderTest,
 }
 
 TEST(ImageDecoderTest, VerifySimpleDecoding) {
-  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(600, image->width());
@@ -733,7 +741,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 }
 
 TEST(ImageDecoderTest, ImagesWithTransparencyArePremulAlpha) {
-  auto data = OpenFixtureAsSkData("heart_end.png");
+  auto data = flutter::testing::OpenFixtureAsSkData("heart_end.png");
   ASSERT_TRUE(data);
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -751,7 +759,7 @@ TEST(ImageDecoderTest, ImagesWithTransparencyArePremulAlpha) {
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
-  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
 
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -776,7 +784,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
         fml::tracing::TraceFlow(""));
   };
 
-  auto expected_data = OpenFixtureAsSkData("Horizontal.png");
+  auto expected_data = flutter::testing::OpenFixtureAsSkData("Horizontal.png");
   ASSERT_TRUE(expected_data != nullptr);
   ASSERT_FALSE(expected_data->isEmpty());
 
@@ -809,7 +817,7 @@ TEST_F(ImageDecoderFixtureTest,
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
 
   ASSERT_TRUE(gif_mapping);
 
@@ -878,7 +886,7 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
 
   ASSERT_TRUE(gif_mapping);
 
@@ -962,7 +970,7 @@ TEST_F(ImageDecoderFixtureTest,
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
 
   ASSERT_TRUE(gif_mapping);
 

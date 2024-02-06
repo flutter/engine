@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_FORMATS_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_FORMATS_GLES_H_
 
 #include <optional>
 
@@ -185,7 +186,7 @@ constexpr std::optional<GLenum> ToTextureTarget(TextureType type) {
     case TextureType::kTexture2D:
       return GL_TEXTURE_2D;
     case TextureType::kTexture2DMultisample:
-      return std::nullopt;
+      return GL_TEXTURE_2D;
     case TextureType::kTextureCube:
       return GL_TEXTURE_CUBE_MAP;
     case TextureType::kTextureExternalOES:
@@ -194,4 +195,8 @@ constexpr std::optional<GLenum> ToTextureTarget(TextureType type) {
   FML_UNREACHABLE();
 }
 
+std::string DebugToFramebufferError(int status);
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_FORMATS_GLES_H_

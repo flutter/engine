@@ -15,9 +15,6 @@
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/gradient.h"
 #include "impeller/geometry/half.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/path_builder.h"
-#include "impeller/geometry/path_component.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
@@ -591,121 +588,6 @@ TEST(GeometryTest, QuaternionVectorMultiply) {
   }
 }
 
-TEST(GeometryTest, EmptyPath) {
-  auto path = PathBuilder{}.TakePath();
-  ASSERT_EQ(path.GetComponentCount(), 1u);
-
-  ContourComponent c;
-  path.GetContourComponentAtIndex(0, c);
-  ASSERT_POINT_NEAR(c.destination, Point());
-
-  Path::Polyline polyline = path.CreatePolyline(1.0f);
-  ASSERT_TRUE(polyline.points.empty());
-  ASSERT_TRUE(polyline.contours.empty());
-}
-
-TEST(GeometryTest, SimplePath) {
-  PathBuilder builder;
-
-  auto path = builder.AddLine({0, 0}, {100, 100})
-                  .AddQuadraticCurve({100, 100}, {200, 200}, {300, 300})
-                  .AddCubicCurve({300, 300}, {400, 400}, {500, 500}, {600, 600})
-                  .TakePath();
-
-  ASSERT_EQ(path.GetComponentCount(), 6u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kQuadratic), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kCubic), 1u);
-  ASSERT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 3u);
-
-  path.EnumerateComponents(
-      [](size_t index, const LinearPathComponent& linear) {
-        Point p1(0, 0);
-        Point p2(100, 100);
-        ASSERT_EQ(index, 1u);
-        ASSERT_EQ(linear.p1, p1);
-        ASSERT_EQ(linear.p2, p2);
-      },
-      [](size_t index, const QuadraticPathComponent& quad) {
-        Point p1(100, 100);
-        Point cp(200, 200);
-        Point p2(300, 300);
-        ASSERT_EQ(index, 3u);
-        ASSERT_EQ(quad.p1, p1);
-        ASSERT_EQ(quad.cp, cp);
-        ASSERT_EQ(quad.p2, p2);
-      },
-      [](size_t index, const CubicPathComponent& cubic) {
-        Point p1(300, 300);
-        Point cp1(400, 400);
-        Point cp2(500, 500);
-        Point p2(600, 600);
-        ASSERT_EQ(index, 5u);
-        ASSERT_EQ(cubic.p1, p1);
-        ASSERT_EQ(cubic.cp1, cp1);
-        ASSERT_EQ(cubic.cp2, cp2);
-        ASSERT_EQ(cubic.p2, p2);
-      },
-      [](size_t index, const ContourComponent& contour) {
-        // There is an initial countour added for each curve.
-        if (index == 0u) {
-          Point p1(0, 0);
-          ASSERT_EQ(contour.destination, p1);
-        } else if (index == 2u) {
-          Point p1(100, 100);
-          ASSERT_EQ(contour.destination, p1);
-        } else if (index == 4u) {
-          Point p1(300, 300);
-          ASSERT_EQ(contour.destination, p1);
-        } else {
-          ASSERT_FALSE(true);
-        }
-        ASSERT_FALSE(contour.is_closed);
-      });
-}
-
-TEST(GeometryTest, BoundingBoxCubic) {
-  PathBuilder builder;
-  auto path =
-      builder.AddCubicCurve({120, 160}, {25, 200}, {220, 260}, {220, 40})
-          .TakePath();
-  auto box = path.GetBoundingBox();
-  Rect expected(93.9101, 40, 126.09, 158.862);
-  ASSERT_TRUE(box.has_value());
-  ASSERT_RECT_NEAR(box.value(), expected);
-}
-
-TEST(GeometryTest, BoundingBoxOfCompositePathIsCorrect) {
-  PathBuilder builder;
-  builder.AddRoundedRect({{10, 10}, {300, 300}}, {50, 50, 50, 50});
-  auto path = builder.TakePath();
-  auto actual = path.GetBoundingBox();
-  Rect expected(10, 10, 300, 300);
-  ASSERT_TRUE(actual.has_value());
-  ASSERT_RECT_NEAR(actual.value(), expected);
-}
-
-TEST(GeometryTest, ExtremaOfCubicPathComponentIsCorrect) {
-  CubicPathComponent cubic{{11.769268, 252.883148},
-                           {-6.2857933, 204.356461},
-                           {-4.53997231, 156.552902},
-                           {17.0067291, 109.472488}};
-  auto points = cubic.Extrema();
-  ASSERT_EQ(points.size(), static_cast<size_t>(3));
-  ASSERT_POINT_NEAR(points[2], cubic.Solve(0.455916));
-}
-
-TEST(GeometryTest, PathGetBoundingBoxForCubicWithNoDerivativeRootsIsCorrect) {
-  PathBuilder builder;
-  // Straight diagonal line.
-  builder.AddCubicCurve({0, 1}, {2, 3}, {4, 5}, {6, 7});
-  auto path = builder.TakePath();
-  auto actual = path.GetBoundingBox();
-  auto expected = Rect::MakeLTRB(0, 1, 6, 7);
-  ASSERT_TRUE(actual.has_value());
-  ASSERT_RECT_NEAR(actual.value(), expected);
-}
-
 TEST(GeometryTest, CanGenerateMipCounts) {
   ASSERT_EQ((Size{128, 128}.MipCount()), 7u);
   ASSERT_EQ((Size{128, 256}.MipCount()), 8u);
@@ -739,15 +621,6 @@ TEST(GeometryTest, CanConvertTTypesExplicitly) {
     Point p1 = static_cast<Point>(s1);
     ASSERT_EQ(p1.x, 1u);
     ASSERT_EQ(p1.y, 2u);
-  }
-
-  {
-    Rect r1(1.0, 2.0, 3.0, 4.0);
-    IRect r2 = static_cast<IRect>(r1);
-    ASSERT_EQ(r2.origin.x, 1u);
-    ASSERT_EQ(r2.origin.y, 2u);
-    ASSERT_EQ(r2.size.width, 3u);
-    ASSERT_EQ(r2.size.height, 4u);
   }
 }
 
@@ -1558,6 +1431,158 @@ TEST(GeometryTest, ColorSRGBToLinear) {
   }
 }
 
+struct ColorBlendTestData {
+  static constexpr Color kDestinationColor =
+      Color::CornflowerBlue().WithAlpha(0.75);
+  static constexpr Color kSourceColors[] = {Color::White().WithAlpha(0.75),
+                                            Color::LimeGreen().WithAlpha(0.75),
+                                            Color::Black().WithAlpha(0.75)};
+
+  // THIS RESULT TABLE IS GENERATED!
+  //
+  // Uncomment the `GenerateColorBlendResults` test below to print a new table
+  // after making changes to `Color::Blend`.
+  static constexpr Color kExpectedResults
+      [sizeof(kSourceColors)]
+      [static_cast<std::underlying_type_t<BlendMode>>(BlendMode::kLast) + 1] = {
+          {
+              {0, 0, 0, 0},                            // Clear
+              {1, 1, 1, 0.75},                         // Source
+              {0.392157, 0.584314, 0.929412, 0.75},    // Destination
+              {0.878431, 0.916863, 0.985882, 0.9375},  // SourceOver
+              {0.513726, 0.667451, 0.943529, 0.9375},  // DestinationOver
+              {1, 1, 1, 0.5625},                       // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},  // DestinationIn
+              {1, 1, 1, 0.1875},                       // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},  // DestinationOut
+              {0.848039, 0.896078, 0.982353, 0.75},    // SourceATop
+              {0.544118, 0.688235, 0.947059, 0.75},    // DestinationATop
+              {0.696078, 0.792157, 0.964706, 0.375},   // Xor
+              {1, 1, 1, 1},                            // Plus
+              {0.392157, 0.584314, 0.929412, 0.5625},  // Modulate
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Screen
+              {0.74902, 0.916863, 0.985882, 0.9375},   // Overlay
+              {0.513726, 0.667451, 0.943529, 0.9375},  // Darken
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Lighten
+              {0.878431, 0.916863, 0.985882, 0.9375},  // ColorDodge
+              {0.513725, 0.667451, 0.943529, 0.9375},  // ColorBurn
+              {0.878431, 0.916863, 0.985882, 0.9375},  // HardLight
+              {0.654166, 0.775505, 0.964318, 0.9375},  // SoftLight
+              {0.643137, 0.566275, 0.428235, 0.9375},  // Difference
+              {0.643137, 0.566275, 0.428235, 0.9375},  // Exclusion
+              {0.513726, 0.667451, 0.943529, 0.9375},  // Multiply
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Hue
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Saturation
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Color
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Luminosity
+          },
+          {
+              {0, 0, 0, 0},                             // Clear
+              {0.196078, 0.803922, 0.196078, 0.75},     // Source
+              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
+              {0.235294, 0.76, 0.342745, 0.9375},       // SourceOver
+              {0.352941, 0.628235, 0.782745, 0.9375},   // DestinationOver
+              {0.196078, 0.803922, 0.196078, 0.5625},   // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
+              {0.196078, 0.803922, 0.196078, 0.1875},   // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
+              {0.245098, 0.74902, 0.379412, 0.75},      // SourceATop
+              {0.343137, 0.639216, 0.746078, 0.75},     // DestinationATop
+              {0.294118, 0.694118, 0.562745, 0.375},    // Xor
+              {0.441176, 1, 0.844118, 1},               // Plus
+              {0.0768935, 0.469742, 0.182238, 0.5625},  // Modulate
+              {0.424452, 0.828743, 0.79105, 0.9375},    // Screen
+              {0.209919, 0.779839, 0.757001, 0.9375},   // Overlay
+              {0.235294, 0.628235, 0.342745, 0.9375},   // Darken
+              {0.352941, 0.76, 0.782745, 0.9375},       // Lighten
+              {0.41033, 0.877647, 0.825098, 0.9375},    // ColorDodge
+              {0.117647, 0.567403, 0.609098, 0.9375},   // ColorBurn
+              {0.209919, 0.779839, 0.443783, 0.9375},   // HardLight
+              {0.266006, 0.693915, 0.758818, 0.9375},   // SoftLight
+              {0.235294, 0.409412, 0.665098, 0.9375},   // Difference
+              {0.378316, 0.546897, 0.681707, 0.9375},   // Exclusion
+              {0.163783, 0.559493, 0.334441, 0.9375},   // Multiply
+              {0.266235, 0.748588, 0.373686, 0.9375},   // Hue
+              {0.339345, 0.629787, 0.811502, 0.9375},   // Saturation
+              {0.241247, 0.765953, 0.348698, 0.9375},   // Color
+              {0.346988, 0.622282, 0.776792, 0.9375},   // Luminosity
+          },
+          {
+              {0, 0, 0, 0},                             // Clear
+              {0, 0, 0, 0.75},                          // Source
+              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // SourceOver
+              {0.313726, 0.467451, 0.743529, 0.9375},   // DestinationOver
+              {0, 0, 0, 0.5625},                        // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
+              {0, 0, 0, 0.1875},                        // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
+              {0.0980392, 0.146078, 0.232353, 0.75},    // SourceATop
+              {0.294118, 0.438235, 0.697059, 0.75},     // DestinationATop
+              {0.196078, 0.292157, 0.464706, 0.375},    // Xor
+              {0.294118, 0.438235, 0.697059, 1},        // Plus
+              {0, 0, 0, 0.5625},                        // Modulate
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Screen
+              {0.0784314, 0.218039, 0.701176, 0.9375},  // Overlay
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Darken
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Lighten
+              {0.313726, 0.467451, 0.743529, 0.9375},   // ColorDodge
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // ColorBurn
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // HardLight
+              {0.170704, 0.321716, 0.704166, 0.9375},   // SoftLight
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Difference
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Exclusion
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Multiply
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Hue
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Saturation
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Color
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Luminosity
+          },
+  };
+};
+
+/// To print a new ColorBlendTestData::kExpectedResults table, uncomment this
+/// test and run with:
+/// --gtest_filter="GeometryTest.GenerateColorBlendResults"
+/*
+TEST(GeometryTest, GenerateColorBlendResults) {
+  auto& o = std::cout;
+  using BlendT = std::underlying_type_t<BlendMode>;
+  o << "{";
+  for (const auto& source : ColorBlendTestData::kSourceColors) {
+    o << "{";
+    for (BlendT blend_i = 0;
+         blend_i < static_cast<BlendT>(BlendMode::kLast) + 1; blend_i++) {
+      auto blend = static_cast<BlendMode>(blend_i);
+      Color c = ColorBlendTestData::kDestinationColor.Blend(source, blend);
+      o << "{" << c.red << "," << c.green << "," << c.blue << "," << c.alpha
+        << "}, // " << BlendModeToString(blend) << std::endl;
+    }
+    o << "},";
+  }
+  o << "};" << std::endl;
+}
+*/
+
+#define _BLEND_MODE_RESULT_CHECK(blend_mode)                          \
+  blend_i = static_cast<BlendT>(BlendMode::k##blend_mode);            \
+  expected = ColorBlendTestData::kExpectedResults[source_i][blend_i]; \
+  EXPECT_COLOR_NEAR(dst.Blend(src, BlendMode::k##blend_mode), expected);
+
+TEST(GeometryTest, ColorBlendReturnsExpectedResults) {
+  using BlendT = std::underlying_type_t<BlendMode>;
+  Color dst = ColorBlendTestData::kDestinationColor;
+  for (size_t source_i = 0;
+       source_i < sizeof(ColorBlendTestData::kSourceColors) / sizeof(Color);
+       source_i++) {
+    Color src = ColorBlendTestData::kSourceColors[source_i];
+
+    size_t blend_i;
+    Color expected;
+    IMPELLER_FOR_EACH_BLEND_MODE(_BLEND_MODE_RESULT_CHECK)
+  }
+}
+
 #define _BLEND_MODE_NAME_CHECK(blend_mode) \
   case BlendMode::k##blend_mode:           \
     ASSERT_STREQ(result, #blend_mode);     \
@@ -1578,611 +1603,6 @@ TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
     Radians rad = deg;
     ASSERT_FLOAT_EQ(rad.radians, kPiOver2);
   }
-}
-
-TEST(GeometryTest, RectMakeSize) {
-  {
-    Size s(100, 200);
-    Rect r = Rect::MakeSize(s);
-    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
-    ASSERT_RECT_NEAR(r, expected);
-  }
-
-  {
-    ISize s(100, 200);
-    Rect r = Rect::MakeSize(s);
-    Rect expected = Rect::MakeLTRB(0, 0, 100, 200);
-    ASSERT_RECT_NEAR(r, expected);
-  }
-
-  {
-    Size s(100, 200);
-    IRect r = IRect::MakeSize(s);
-    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
-    ASSERT_EQ(r, expected);
-  }
-
-  {
-    ISize s(100, 200);
-    IRect r = IRect::MakeSize(s);
-    IRect expected = IRect::MakeLTRB(0, 0, 100, 200);
-    ASSERT_EQ(r, expected);
-  }
-}
-
-TEST(GeometryTest, RectUnion) {
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(0, 0, 0, 0);
-    auto u = a.Union(b);
-    auto expected = Rect(0, 0, 200, 200);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(10, 10, 0, 0);
-    auto u = a.Union(b);
-    auto expected = Rect(10, 10, 190, 190);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(10, 10, 100, 100);
-    auto u = a.Union(b);
-    auto expected = Rect(0, 0, 110, 110);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(100, 100, 100, 100);
-    auto u = a.Union(b);
-    auto expected = Rect(0, 0, 200, 200);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-}
-
-TEST(GeometryTest, RectIntersection) {
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(0, 0, 0, 0);
-
-    auto u = a.Intersection(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(10, 10, 0, 0);
-    auto u = a.Intersection(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(10, 10, 100, 100);
-    auto u = a.Intersection(b);
-    ASSERT_TRUE(u.has_value());
-    auto expected = Rect(10, 10, 90, 90);
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(100, 100, 100, 100);
-    auto u = a.Intersection(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b(10, 10, 300, 300);
-    auto u = a.Intersection(b);
-    ASSERT_TRUE(u);
-    ASSERT_RECT_NEAR(u.value(), b);
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeMaximum();
-    auto u = a.Intersection(b);
-    ASSERT_TRUE(u);
-    ASSERT_EQ(u, Rect::MakeMaximum());
-  }
-}
-
-TEST(GeometryTest, RectIntersectsWithRect) {
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(0, 0, 0, 0);
-    ASSERT_FALSE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(10, 10, 0, 0);
-    ASSERT_FALSE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(10, 10, 100, 100);
-    ASSERT_TRUE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(100, 100, 100, 100);
-    ASSERT_FALSE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b(10, 10, 100, 100);
-    ASSERT_TRUE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeMaximum();
-    ASSERT_TRUE(a.IntersectsWithRect(b));
-  }
-}
-
-TEST(GeometryTest, RectCutout) {
-  // No cutout.
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(0, 0, 50, 50);
-    auto u = a.Cutout(b);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), a);
-  }
-
-  // Full cutout.
-  {
-    Rect a(0, 0, 100, 100);
-    Rect b(-10, -10, 120, 120);
-    auto u = a.Cutout(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  // Cutout from top.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(-10, -10, 110, 90);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(0, 90, 100, 100);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  // Cutout from bottom.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(-10, 10, 110, 110);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(0, 0, 100, 10);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  // Cutout from left.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(-10, -10, 90, 110);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(90, 0, 100, 100);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  // Cutout from right.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(10, -10, 110, 110);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(0, 0, 10, 100);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-}
-
-TEST(GeometryTest, RectContainsPoint) {
-  {
-    // Origin is inclusive
-    Rect r(100, 100, 100, 100);
-    Point p(100, 100);
-    ASSERT_TRUE(r.Contains(p));
-  }
-  {
-    // Size is exclusive
-    Rect r(100, 100, 100, 100);
-    Point p(200, 200);
-    ASSERT_FALSE(r.Contains(p));
-  }
-  {
-    Rect r(100, 100, 100, 100);
-    Point p(99, 99);
-    ASSERT_FALSE(r.Contains(p));
-  }
-  {
-    Rect r(100, 100, 100, 100);
-    Point p(199, 199);
-    ASSERT_TRUE(r.Contains(p));
-  }
-
-  {
-    Rect r = Rect::MakeMaximum();
-    Point p(199, 199);
-    ASSERT_TRUE(r.Contains(p));
-  }
-}
-
-TEST(GeometryTest, RectContainsRect) {
-  {
-    Rect a(100, 100, 100, 100);
-    ASSERT_TRUE(a.Contains(a));
-  }
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(0, 0, 0, 0);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(150, 150, 20, 20);
-    ASSERT_TRUE(a.Contains(b));
-  }
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(150, 150, 100, 100);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(50, 50, 100, 100);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a(100, 100, 100, 100);
-    Rect b(0, 0, 300, 300);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b(0, 0, 300, 300);
-    ASSERT_TRUE(a.Contains(b));
-  }
-}
-
-TEST(GeometryTest, RectGetPoints) {
-  {
-    Rect r(100, 200, 300, 400);
-    auto points = r.GetPoints();
-    ASSERT_POINT_NEAR(points[0], Point(100, 200));
-    ASSERT_POINT_NEAR(points[1], Point(400, 200));
-    ASSERT_POINT_NEAR(points[2], Point(100, 600));
-    ASSERT_POINT_NEAR(points[3], Point(400, 600));
-  }
-
-  {
-    Rect r = Rect::MakeMaximum();
-    auto points = r.GetPoints();
-    ASSERT_EQ(points[0], Point(-std::numeric_limits<float>::infinity(),
-                               -std::numeric_limits<float>::infinity()));
-    ASSERT_EQ(points[1], Point(std::numeric_limits<float>::infinity(),
-                               -std::numeric_limits<float>::infinity()));
-    ASSERT_EQ(points[2], Point(-std::numeric_limits<float>::infinity(),
-                               std::numeric_limits<float>::infinity()));
-    ASSERT_EQ(points[3], Point(std::numeric_limits<float>::infinity(),
-                               std::numeric_limits<float>::infinity()));
-  }
-}
-
-TEST(GeometryTest, RectShift) {
-  auto r = Rect::MakeLTRB(0, 0, 100, 100);
-
-  ASSERT_EQ(r.Shift(Point(10, 5)), Rect::MakeLTRB(10, 5, 110, 105));
-  ASSERT_EQ(r.Shift(Point(-10, -5)), Rect::MakeLTRB(-10, -5, 90, 95));
-}
-
-TEST(GeometryTest, RectGetTransformedPoints) {
-  Rect r(100, 200, 300, 400);
-  auto points = r.GetTransformedPoints(Matrix::MakeTranslation({10, 20}));
-  ASSERT_POINT_NEAR(points[0], Point(110, 220));
-  ASSERT_POINT_NEAR(points[1], Point(410, 220));
-  ASSERT_POINT_NEAR(points[2], Point(110, 620));
-  ASSERT_POINT_NEAR(points[3], Point(410, 620));
-}
-
-TEST(GeometryTest, RectMakePointBounds) {
-  {
-    std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
-    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
-    auto expected = Rect(0, -1, 4, 7);
-    ASSERT_RECT_NEAR(r, expected);
-  }
-  {
-    std::vector<Point> points;
-    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
-    ASSERT_FALSE(r.has_value());
-  }
-}
-
-TEST(GeometryTest, RectExpand) {
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(1);
-    auto expected = Rect::MakeLTRB(99, 99, 201, 201);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(-1);
-    auto expected = Rect::MakeLTRB(101, 101, 199, 199);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(1, 2, 3, 4);
-    auto expected = Rect::MakeLTRB(99, 98, 203, 204);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(-1, -2, -3, -4);
-    auto expected = Rect::MakeLTRB(101, 102, 197, 196);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-}
-
-TEST(GeometryTest, RectGetPositive) {
-  {
-    Rect r{100, 200, 300, 400};
-    auto actual = r.GetPositive();
-    ASSERT_RECT_NEAR(r, actual);
-  }
-  {
-    Rect r{100, 200, -100, -100};
-    auto actual = r.GetPositive();
-    Rect expected(0, 100, 100, 100);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-}
-
-TEST(GeometryTest, RectScale) {
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(0);
-    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(-2);
-    auto expected = Rect::MakeLTRB(200, 200, -200, -200);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(Point{0, 0});
-    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(Size{-1, -2});
-    auto expected = Rect::MakeLTRB(100, 200, -100, -200);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-}
-
-TEST(GeometryTest, RectDirections) {
-  auto r = Rect::MakeLTRB(1, 2, 3, 4);
-
-  ASSERT_EQ(r.GetLeft(), 1);
-  ASSERT_EQ(r.GetTop(), 2);
-  ASSERT_EQ(r.GetRight(), 3);
-  ASSERT_EQ(r.GetBottom(), 4);
-
-  ASSERT_POINT_NEAR(r.GetLeftTop(), Point(1, 2));
-  ASSERT_POINT_NEAR(r.GetRightTop(), Point(3, 2));
-  ASSERT_POINT_NEAR(r.GetLeftBottom(), Point(1, 4));
-  ASSERT_POINT_NEAR(r.GetRightBottom(), Point(3, 4));
-}
-
-TEST(GeometryTest, RectProject) {
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Project(r);
-    auto expected = Rect::MakeLTRB(0, 0, 1, 1);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Project(Rect::MakeLTRB(0, 0, 100, 100));
-    auto expected = Rect::MakeLTRB(0.5, 0.5, 1, 1);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-}
-
-TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
-  CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  auto polyline = component.CreatePolyline(1.0f);
-  ASSERT_NE(polyline.front().x, 10);
-  ASSERT_NE(polyline.front().y, 10);
-  ASSERT_EQ(polyline.back().x, 40);
-  ASSERT_EQ(polyline.back().y, 40);
-}
-
-TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
-  PathBuilder builder;
-  builder.MoveTo({10, 10});
-  builder.LineTo({20, 20});
-  builder.LineTo({30, 30});
-  builder.MoveTo({40, 40});
-  builder.LineTo({50, 50});
-
-  auto polyline = builder.TakePath().CreatePolyline(1.0f);
-
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.points.size(), 5u);
-  ASSERT_EQ(polyline.points[0].x, 10);
-  ASSERT_EQ(polyline.points[1].x, 20);
-  ASSERT_EQ(polyline.points[2].x, 30);
-  ASSERT_EQ(polyline.points[3].x, 40);
-  ASSERT_EQ(polyline.points[4].x, 50);
-}
-
-TEST(GeometryTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
-  // Closed shapes.
-  {
-    Path path = PathBuilder{}.AddCircle({100, 100}, 50).TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(100, 50));
-    ASSERT_TRUE(contour.is_closed);
-  }
-
-  {
-    Path path = PathBuilder{}.AddOval(Rect(100, 100, 100, 100)).TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(150, 100));
-    ASSERT_TRUE(contour.is_closed);
-  }
-
-  {
-    Path path = PathBuilder{}.AddRect(Rect(100, 100, 100, 100)).TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(100, 100));
-    ASSERT_TRUE(contour.is_closed);
-  }
-
-  {
-    Path path =
-        PathBuilder{}.AddRoundedRect(Rect(100, 100, 100, 100), 10).TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(110, 100));
-    ASSERT_TRUE(contour.is_closed);
-  }
-
-  // Open shapes.
-  {
-    Point p(100, 100);
-    Path path = PathBuilder{}.AddLine(p, {200, 100}).TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, p);
-    ASSERT_FALSE(contour.is_closed);
-  }
-
-  {
-    Path path =
-        PathBuilder{}
-            .AddCubicCurve({100, 100}, {100, 50}, {100, 150}, {200, 100})
-            .TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(100, 100));
-    ASSERT_FALSE(contour.is_closed);
-  }
-
-  {
-    Path path = PathBuilder{}
-                    .AddQuadraticCurve({100, 100}, {100, 50}, {200, 100})
-                    .TakePath();
-    ContourComponent contour;
-    path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(100, 100));
-    ASSERT_FALSE(contour.is_closed);
-  }
-}
-
-TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
-  Path::Polyline polyline = PathBuilder{}
-                                .AddLine({100, 100}, {200, 100})
-                                .MoveTo({100, 200})
-                                .LineTo({150, 250})
-                                .LineTo({200, 200})
-                                .Close()
-                                .TakePath()
-                                .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.points.size(), 6u);
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.contours[0].is_closed, false);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_EQ(polyline.contours[1].is_closed, true);
-  ASSERT_EQ(polyline.contours[1].start_index, 2u);
-}
-
-TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
-  Path::Polyline polyline = PathBuilder{}
-                                .AddLine({100, 100}, {200, 100})
-                                .MoveTo({100, 200})
-                                .LineTo({150, 250})
-                                .LineTo({200, 200})
-                                .Close()
-                                .TakePath()
-                                .CreatePolyline(1.0f);
-  size_t a1, a2, b1, b2;
-  std::tie(a1, a2) = polyline.GetContourPointBounds(0);
-  std::tie(b1, b2) = polyline.GetContourPointBounds(1);
-  ASSERT_EQ(a1, 0u);
-  ASSERT_EQ(a2, 2u);
-  ASSERT_EQ(b1, 2u);
-  ASSERT_EQ(b2, 6u);
-}
-
-TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
-  Path::Polyline polyline = PathBuilder{}
-                                .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
-                                .TakePath()
-                                .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.contours.size(), 1u);
-  ASSERT_TRUE(polyline.contours[0].is_closed);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_EQ(polyline.points.size(), 5u);
-  ASSERT_EQ(polyline.points[0], Point(50, 60));
-  ASSERT_EQ(polyline.points[1], Point(70, 60));
-  ASSERT_EQ(polyline.points[2], Point(70, 80));
-  ASSERT_EQ(polyline.points[3], Point(50, 80));
-  ASSERT_EQ(polyline.points[4], Point(50, 60));
-}
-
-TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
-  Path::Polyline polyline =
-      PathBuilder{}
-          .MoveTo({50, 50})
-          .LineTo({50, 50})  // Insert duplicate at beginning of contour.
-          .LineTo({100, 50})
-          .LineTo({100, 50})  // Insert duplicate at contour join.
-          .LineTo({100, 100})
-          .Close()  // Implicitly insert duplicate {50, 50} across contours.
-          .LineTo({0, 50})
-          .LineTo({0, 100})
-          .LineTo({0, 100})  // Insert duplicate at end of contour.
-          .TakePath()
-          .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_TRUE(polyline.contours[0].is_closed);
-  ASSERT_EQ(polyline.contours[1].start_index, 4u);
-  ASSERT_FALSE(polyline.contours[1].is_closed);
-  ASSERT_EQ(polyline.points.size(), 7u);
-  ASSERT_EQ(polyline.points[0], Point(50, 50));
-  ASSERT_EQ(polyline.points[1], Point(100, 50));
-  ASSERT_EQ(polyline.points[2], Point(100, 100));
-  ASSERT_EQ(polyline.points[3], Point(50, 50));
-  ASSERT_EQ(polyline.points[4], Point(50, 50));
-  ASSERT_EQ(polyline.points[5], Point(0, 50));
-  ASSERT_EQ(polyline.points[6], Point(0, 100));
 }
 
 TEST(GeometryTest, MatrixPrinting) {
@@ -2353,10 +1773,8 @@ TEST(GeometryTest, Gradient) {
 }
 
 TEST(GeometryTest, HalfConversions) {
-#ifdef FML_OS_WIN
-  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
-                  "unavailable on Windows.";
-#else
+#if defined(FML_OS_MACOSX) || defined(FML_OS_IOS) || \
+    defined(FML_OS_IOS_SIMULATOR)
   ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
   ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
   ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
@@ -2383,62 +1801,10 @@ TEST(GeometryTest, HalfConversions) {
   ASSERT_EQ(Half(0.5f), Half(0.5f16));
   ASSERT_EQ(Half(0.5), Half(0.5f16));
   ASSERT_EQ(Half(5), Half(5.0f16));
-#endif  // FML_OS_WIN
-}
-
-TEST(GeometryTest, PathShifting) {
-  PathBuilder builder{};
-  auto path =
-      builder.AddLine(Point(0, 0), Point(10, 10))
-          .AddQuadraticCurve(Point(10, 10), Point(15, 15), Point(20, 20))
-          .AddCubicCurve(Point(20, 20), Point(25, 25), Point(-5, -5),
-                         Point(30, 30))
-          .Close()
-          .Shift(Point(1, 1))
-          .TakePath();
-
-  ContourComponent contour;
-  LinearPathComponent linear;
-  QuadraticPathComponent quad;
-  CubicPathComponent cubic;
-
-  ASSERT_TRUE(path.GetContourComponentAtIndex(0, contour));
-  ASSERT_TRUE(path.GetLinearComponentAtIndex(1, linear));
-  ASSERT_TRUE(path.GetQuadraticComponentAtIndex(3, quad));
-  ASSERT_TRUE(path.GetCubicComponentAtIndex(5, cubic));
-
-  ASSERT_EQ(contour.destination, Point(1, 1));
-
-  ASSERT_EQ(linear.p1, Point(1, 1));
-  ASSERT_EQ(linear.p2, Point(11, 11));
-
-  ASSERT_EQ(quad.cp, Point(16, 16));
-  ASSERT_EQ(quad.p1, Point(11, 11));
-  ASSERT_EQ(quad.p2, Point(21, 21));
-
-  ASSERT_EQ(cubic.cp1, Point(26, 26));
-  ASSERT_EQ(cubic.cp2, Point(-4, -4));
-  ASSERT_EQ(cubic.p1, Point(21, 21));
-  ASSERT_EQ(cubic.p2, Point(31, 31));
-}
-
-TEST(GeometryTest, PathBuilderWillComputeBounds) {
-  PathBuilder builder;
-  auto path_1 = builder.AddLine({0, 0}, {1, 1}).TakePath();
-
-  ASSERT_EQ(path_1.GetBoundingBox().value(), Rect::MakeLTRB(0, 0, 1, 1));
-
-  auto path_2 = builder.AddLine({-1, -1}, {1, 1}).TakePath();
-
-  // Verify that PathBuilder recomputes the bounds.
-  ASSERT_EQ(path_2.GetBoundingBox().value(), Rect::MakeLTRB(-1, -1, 1, 1));
-
-  // PathBuilder can set the bounds to whatever it wants
-  auto path_3 = builder.AddLine({0, 0}, {1, 1})
-                    .SetBounds(Rect::MakeLTRB(0, 0, 100, 100))
-                    .TakePath();
-
-  ASSERT_EQ(path_3.GetBoundingBox().value(), Rect::MakeLTRB(0, 0, 100, 100));
+#else
+  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
+                  "only used on Apple platforms.";
+#endif  // FML_OS_MACOSX || FML_OS_IOS || FML_OS_IOS_SIMULATOR
 }
 
 }  // namespace testing

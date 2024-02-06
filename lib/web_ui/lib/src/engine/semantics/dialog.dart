@@ -16,6 +16,39 @@ class Dialog extends PrimaryRoleManager {
     // names its own route an `aria-label` is used instead of `aria-describedby`.
     addFocusManagement();
     addLiveRegion();
+
+    // When a route/dialog shows up it is expected that the screen reader will
+    // focus on something inside it. There could be two possibilities:
+    //
+    // 1. The framework explicitly marked a node inside the dialog as focused
+    //    via the `isFocusable` and `isFocused` flags. In this case, the node
+    //    will request focus directly and there's nothing to do on top of that.
+    // 2. No node inside the route takes focus explicitly. In this case, the
+    //    expectation is to look through all nodes in traversal order and focus
+    //    on the first one.
+    semanticsObject.owner.addOneTimePostUpdateCallback(() {
+      if (semanticsObject.owner.hasNodeRequestingFocus) {
+        // Case 1: a node requested explicit focus. Nothing extra to do.
+        return;
+      }
+
+      // Case 2: nothing requested explicit focus. Focus on the first descendant.
+      _setDefaultFocus();
+    });
+  }
+
+  void _setDefaultFocus() {
+    semanticsObject.visitDepthFirstInTraversalOrder((SemanticsObject node) {
+      final PrimaryRoleManager? roleManager = node.primaryRole;
+      if (roleManager == null) {
+        return true;
+      }
+
+      // If the node does not take focus (e.g. focusing on it does not make
+      // sense at all). Despair not. Keep looking.
+      final bool didTakeFocus = roleManager.focusAsRouteDefault();
+      return !didTakeFocus;
+    });
   }
 
   @override
@@ -38,8 +71,8 @@ class Dialog extends PrimaryRoleManager {
         }
         return true;
       }());
-      semanticsObject.element.setAttribute('aria-label', label ?? '');
-      semanticsObject.setAriaRole('dialog');
+      setAttribute('aria-label', label ?? '');
+      setAriaRole('dialog');
     }
   }
 
@@ -51,17 +84,27 @@ class Dialog extends PrimaryRoleManager {
       return;
     }
 
-    semanticsObject.setAriaRole('dialog');
-    semanticsObject.element.setAttribute(
+    setAriaRole('dialog');
+    setAttribute(
       'aria-describedby',
       routeName.semanticsObject.element.id,
     );
+  }
+
+  @override
+  bool focusAsRouteDefault() {
+    // Dialogs are the ones that look inside themselves to find elements to
+    // focus on. It doesn't make sense to focus on the dialog itself.
+    return false;
   }
 }
 
 /// Supplies a description for the nearest ancestor [Dialog].
 class RouteName extends RoleManager {
-  RouteName(SemanticsObject semanticsObject) : super(Role.routeName, semanticsObject);
+  RouteName(
+    SemanticsObject semanticsObject,
+    PrimaryRoleManager owner,
+  ) : super(Role.routeName, semanticsObject, owner);
 
   Dialog? _dialog;
 

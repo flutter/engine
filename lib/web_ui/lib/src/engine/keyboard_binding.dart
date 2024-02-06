@@ -13,6 +13,7 @@ import 'browser_detection.dart';
 import 'dom.dart';
 import 'key_map.g.dart';
 import 'platform_dispatcher.dart';
+import 'raw_keyboard.dart';
 import 'semantics.dart';
 
 typedef _VoidCallback = void Function();
@@ -104,9 +105,12 @@ class KeyboardBinding {
     _addEventListener('keydown', (DomEvent domEvent) {
       final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
       _converter.handleEvent(event);
+      RawKeyboard.instance?.handleHtmlEvent(domEvent);
     });
-    _addEventListener('keyup', (DomEvent event) {
-      _converter.handleEvent(FlutterHtmlKeyboardEvent(event as DomKeyboardEvent));
+    _addEventListener('keyup', (DomEvent domEvent) {
+      final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
+      _converter.handleEvent(event);
+      RawKeyboard.instance?.handleHtmlEvent(domEvent);
     });
   }
 
@@ -144,7 +148,7 @@ class KeyboardBinding {
       if (_debugLogKeyEvents) {
         print(event.type);
       }
-      if (EngineSemanticsOwner.instance.receiveGlobalEvent(event)) {
+      if (EngineSemantics.instance.receiveGlobalEvent(event)) {
         handler(event);
       }
     }
@@ -209,6 +213,7 @@ class FlutterHtmlKeyboardEvent {
 
   bool getModifierState(String key) => _event.getModifierState(key);
   void preventDefault() => _event.preventDefault();
+  void stopPropagation() => _event.stopPropagation();
   bool get defaultPrevented => _event.defaultPrevented;
 }
 
@@ -253,6 +258,7 @@ class KeyboardConverter {
   bool _disposed = false;
   void dispose() {
     _disposed = true;
+    clearPressedKeys();
   }
 
   // On macOS, CapsLock behaves differently in that, a keydown event occurs when
@@ -466,7 +472,7 @@ class KeyboardConverter {
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
             physical: physicalKey,
-            logical: logicalKey(),
+            logical: _pressingRecords[physicalKey]!,
             character: null,
             synthesized: true,
           ));
@@ -693,5 +699,9 @@ class KeyboardConverter {
 
   bool keyIsPressed(int physical) {
     return _pressingRecords.containsKey(physical);
+  }
+
+  void clearPressedKeys() {
+    _pressingRecords.clear();
   }
 }

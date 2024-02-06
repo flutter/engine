@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_SRGB_TO_LINEAR_FILTER_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_SRGB_TO_LINEAR_FILTER_CONTENTS_H_
 
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -25,7 +26,12 @@ class SrgbToLinearFilterContents final : public ColorFilterContents {
       const Rect& coverage,
       const std::optional<Rect>& coverage_hint) const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SrgbToLinearFilterContents);
+  SrgbToLinearFilterContents(const SrgbToLinearFilterContents&) = delete;
+
+  SrgbToLinearFilterContents& operator=(const SrgbToLinearFilterContents&) =
+      delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_SRGB_TO_LINEAR_FILTER_CONTENTS_H_

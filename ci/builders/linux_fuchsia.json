@@ -72,7 +72,22 @@
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "fuchsia_tests"
                 ]
-            }
+            },
+            "tests": [
+                {
+                    "name": "Upload to Symbol Server for arch: arm64",
+                    "language": "python3",
+                    "contexts": ["depot_tools_on_path"],
+                    "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
+                    "parameters": [
+                        "--symbol-dir",
+                        "out/fuchsia_debug_arm64/.build-id",
+                        "--engine-version",
+                        "${REVISION}",
+                        "--upload"
+                    ]
+                }
+            ]
         },
         {
             "drone_dimensions": [
@@ -123,10 +138,12 @@
         {
             "drone_dimensions": [
                 "device_type=none",
+                "kvm=1",
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
             },
             "gn": [
                 "--fuchsia",
@@ -143,7 +160,30 @@
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "fuchsia_tests"
                 ]
-            }
+            },
+            "tests": [
+                {
+                    "name": "Upload to Symbol Server for arch: x64",
+                    "language": "python3",
+                    "contexts": ["depot_tools_on_path"],
+                    "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
+                    "parameters": [
+                        "--symbol-dir",
+                        "out/fuchsia_debug_x64/.build-id",
+                        "--engine-version",
+                        "${REVISION}",
+                        "--upload"
+                    ]
+                },
+                {
+                    "name": "x64 emulator based tests",
+                    "language": "python3",
+                    "script": "flutter/tools/fuchsia/with_envs.py",
+                    "parameters": [
+                        "testing/fuchsia/run_tests.py"
+                    ]
+                }
+            ]
         }
     ],
     "generators": {
@@ -164,7 +204,7 @@
                 "parameters": [
                     "--engine-version",
                     "${REVISION}",
-		    "--upload",
+                    "--upload",
                     "--target-arch",
                     "arm64",
                     "--out-dir",
@@ -182,7 +222,7 @@
                 "parameters": [
                     "--engine-version",
                     "${REVISION}",
-		    "--upload",
+                    "--upload",
                     "--target-arch",
                     "x64",
                     "--out-dir",

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEST_MOCK_VULKAN_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEST_MOCK_VULKAN_H_
 
 #include <functional>
 #include <memory>
@@ -49,7 +50,9 @@ class MockFence final {
  private:
   std::atomic<vk::Result> result_ = vk::Result::eSuccess;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(MockFence);
+  MockFence(const MockFence&) = delete;
+
+  MockFence& operator=(const MockFence&) = delete;
 };
 
 class MockVulkanContextBuilder {
@@ -91,5 +94,10 @@ class MockVulkanContextBuilder {
   std::vector<std::string> instance_layers_;
 };
 
+/// @brief Override the image size returned by all swapchain images.
+void SetSwapchainImageSize(ISize size);
+
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_TEST_MOCK_VULKAN_H_

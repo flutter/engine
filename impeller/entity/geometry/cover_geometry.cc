@@ -10,20 +10,18 @@ namespace impeller {
 
 CoverGeometry::CoverGeometry() = default;
 
-CoverGeometry::~CoverGeometry() = default;
-
 GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
-                                                RenderPass& pass) {
-  auto rect = Rect(Size(pass.GetRenderTargetSize()));
+                                                RenderPass& pass) const {
+  auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           {
               .vertex_buffer = host_buffer.Emplace(
-                  rect.GetTransformedPoints(entity.GetTransformation().Invert())
+                  rect.GetTransformedPoints(entity.GetTransform().Invert())
                       .data(),
                   8 * sizeof(float), alignof(float)),
               .index_buffer = host_buffer.Emplace(
@@ -31,8 +29,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = 4,
               .index_type = IndexType::k16bit,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -43,8 +40,8 @@ GeometryResult CoverGeometry::GetPositionUVBuffer(
     Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass) {
-  auto rect = Rect(Size(pass.GetRenderTargetSize()));
+    RenderPass& pass) const {
+  auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   return ComputeUVGeometryForRect(rect, texture_coverage, effect_transform,
                                   renderer, entity, pass);
 }

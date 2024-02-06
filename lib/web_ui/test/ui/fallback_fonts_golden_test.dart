@@ -23,6 +23,7 @@ const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 100, 100);
 void testMain() {
   group('Font fallbacks', () {
     setUpUnitTests(
+      withImplicitView: true,
       emulateTesterEnvironment: false,
       setUpTestViewDimensions: false,
     );
@@ -31,7 +32,7 @@ void testMain() {
       debugDisableFontFallbacks = false;
     });
 
-    /// Used to save and restore [ui.window.onPlatformMessage] after each test.
+    /// Used to save and restore [ui.PlatformDispatcher.onPlatformMessage] after each test.
     ui.PlatformMessageCallback? savedCallback;
 
     final List<String> downloadedFontFamilies = <String>[];
@@ -41,12 +42,12 @@ void testMain() {
       renderer.fontCollection.fontFallbackManager!.downloadQueue.fallbackFontUrlPrefixOverride = 'assets/fallback_fonts/';
       renderer.fontCollection.fontFallbackManager!.downloadQueue.debugOnLoadFontFamily
         = (String family) => downloadedFontFamilies.add(family);
-      savedCallback = ui.window.onPlatformMessage;
+      savedCallback = ui.PlatformDispatcher.instance.onPlatformMessage;
     });
 
     tearDown(() {
       downloadedFontFamilies.clear();
-      ui.window.onPlatformMessage = savedCallback;
+      ui.PlatformDispatcher.instance.onPlatformMessage = savedCallback;
     });
 
     test('Roboto is always a fallback font', () {
@@ -165,59 +166,55 @@ void testMain() {
       // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
     });
 
+    /// Attempts to render [text] and verifies that [expectedFamilies] are downloaded.
+    ///
+    /// Then it does the same, but asserts that the families aren't downloaded again
+    /// (because they already exist in memory).
+    Future<void> checkDownloadedFamiliesForString(String text, List<String> expectedFamilies) async {
+      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
+      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      pb.addText(text);
+      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
+
+      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+      expect(
+        downloadedFontFamilies,
+        expectedFamilies,
+      );
+
+      // Do the same thing but this time with loaded fonts.
+      downloadedFontFamilies.clear();
+      pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      pb.addText(text);
+      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
+
+      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
+      expect(downloadedFontFamilies, isEmpty);
+    }
+
     // Regression test for https://github.com/flutter/flutter/issues/75836
     // When we had this bug our font fallback resolution logic would end up in an
     // infinite loop and this test would freeze and time out.
     test(
-        'Can find fonts for two adjacent unmatched code points from different fonts',
+        'can find fonts for two adjacent unmatched code points from different fonts',
         () async {
-      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
-
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('ヽಠ');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(
-        downloadedFontFamilies,
-        <String>[
-          'Noto Sans SC',
-          'Noto Sans Kannada',
-        ],
-      );
-
-      // Do the same thing but this time with loaded fonts.
-      downloadedFontFamilies.clear();
-      pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('ヽಠ');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(downloadedFontFamilies, isEmpty);
+      await checkDownloadedFamiliesForString('ヽಠ', <String>[
+        'Noto Sans SC',
+        'Noto Sans Kannada',
+      ]);
     });
 
     test('can find glyph for 2/3 symbol', () async {
-      // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
+      await checkDownloadedFamiliesForString('⅔', <String>[
+        'Noto Sans',
+      ]);
+    });
 
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('⅔');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(
-        downloadedFontFamilies,
-        <String>[
-          'Noto Sans',
-        ],
-      );
-
-      // Do the same thing but this time with loaded fonts.
-      downloadedFontFamilies.clear();
-      pb = ui.ParagraphBuilder(ui.ParagraphStyle());
-      pb.addText('⅔');
-      pb.build().layout(const ui.ParagraphConstraints(width: 1000));
-
-      await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
-      expect(downloadedFontFamilies, isEmpty);
+    // https://github.com/flutter/devtools/issues/6149
+    test('can find glyph for treble clef', () async {
+      await checkDownloadedFamiliesForString('𝄞', <String>[
+        'Noto Music',
+      ]);
     });
 
     test('findMinimumFontsForCodePoints for all supported code points', () async {
@@ -248,8 +245,9 @@ void testMain() {
       expect(
           testedFonts,
           unorderedEquals(<String>{
-            'Noto Sans',
             'Noto Color Emoji',
+            'Noto Music',
+            'Noto Sans',
             'Noto Sans Symbols',
             'Noto Sans Symbols 2',
             'Noto Sans Adlam',

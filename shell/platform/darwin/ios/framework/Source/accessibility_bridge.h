@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
 
 #import <UIKit/UIKit.h>
 
@@ -99,7 +99,7 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
   int32_t last_focused_semantics_object_id_;
   fml::scoped_nsobject<NSMutableDictionary<NSNumber*, SemanticsObject*>> objects_;
   fml::scoped_nsprotocol<FlutterBasicMessageChannel*> accessibility_channel_;
-  int32_t previous_route_id_;
+  int32_t previous_route_id_ = 0;
   std::unordered_map<int32_t, flutter::CustomAccessibilityAction> actions_;
   std::vector<int32_t> previous_routes_;
   std::unique_ptr<IosDelegate> ios_delegate_;
@@ -109,4 +109,4 @@ class AccessibilityBridge final : public AccessibilityBridgeIos {
 
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_ACCESSIBILITY_BRIDGE_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_ATLAS_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_ATLAS_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -87,7 +88,9 @@ class AtlasContents final : public Contents {
   SamplerDescriptor sampler_descriptor_ = {};
   mutable std::optional<Rect> bounding_box_cache_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AtlasContents);
+  AtlasContents(const AtlasContents&) = delete;
+
+  AtlasContents& operator=(const AtlasContents&) = delete;
 };
 
 class AtlasTextureContents final : public Contents {
@@ -122,7 +125,9 @@ class AtlasTextureContents final : public Contents {
   bool use_destination_ = false;
   std::shared_ptr<SubAtlasResult> subatlas_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AtlasTextureContents);
+  AtlasTextureContents(const AtlasTextureContents&) = delete;
+
+  AtlasTextureContents& operator=(const AtlasTextureContents&) = delete;
 };
 
 class AtlasColorContents final : public Contents {
@@ -151,7 +156,11 @@ class AtlasColorContents final : public Contents {
   Rect coverage_;
   std::shared_ptr<SubAtlasResult> subatlas_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AtlasColorContents);
+  AtlasColorContents(const AtlasColorContents&) = delete;
+
+  AtlasColorContents& operator=(const AtlasColorContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_ATLAS_CONTENTS_H_

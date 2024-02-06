@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_IMAGE_COMPRESSED_IMAGE_H_
+#define FLUTTER_IMPELLER_IMAGE_COMPRESSED_IMAGE_H_
 
 #include <memory>
 
@@ -26,7 +27,9 @@ class CompressedImage {
  protected:
   const std::shared_ptr<const fml::Mapping> source_;
 
-  CompressedImage(std::shared_ptr<const fml::Mapping> allocation);
+  explicit CompressedImage(std::shared_ptr<const fml::Mapping> allocation);
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_IMAGE_COMPRESSED_IMAGE_H_

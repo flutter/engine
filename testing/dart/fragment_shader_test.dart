@@ -12,6 +12,7 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 
+import 'impeller_enabled.dart';
 import 'shader_test_file_utils.dart';
 
 void main() async {
@@ -29,16 +30,35 @@ void main() async {
     expect(rawData is Map<String, Object?>, true);
 
     final Map<String, Object?> data = rawData! as Map<String, Object?>;
-    expect(data['sksl'] is String, true);
-    expect(data['uniforms'] is List<Object?>, true);
+    expect(data.keys.toList(), <String>['sksl']);
+    expect(data['sksl'] is Map<String, Object?>, true);
 
-    final Object? rawUniformData = (data['uniforms']! as List<Object?>)[0];
+    final Map<String, Object?> skslData = data['sksl']! as Map<String, Object?>;
+    expect(skslData['uniforms'] is List<Object?>, true);
+
+    final Object? rawUniformData = (skslData['uniforms']! as List<Object?>)[0];
 
     expect(rawUniformData is Map<String, Object?>, true);
 
     final Map<String, Object?> uniformData = rawUniformData! as Map<String, Object?>;
 
     expect(uniformData['location'] is int, true);
+  });
+
+  if (impellerEnabled) {
+    // https://github.com/flutter/flutter/issues/122823
+    return;
+  }
+
+  test('FragmentProgram objects are cached.', () async {
+    final FragmentProgram programA = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+    final FragmentProgram programB = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+
+    expect(identical(programA, programB), true);
   });
 
   test('FragmentShader setSampler throws with out-of-bounds index', () async {
@@ -172,6 +192,10 @@ void main() async {
   });
 
   test('FragmentShader simple shader renders correctly', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'functions.frag.iplr',
     );
@@ -182,6 +206,10 @@ void main() async {
   });
 
   test('Reused FragmentShader simple shader renders correctly', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'functions.frag.iplr',
     );
@@ -196,6 +224,10 @@ void main() async {
   });
 
   test('FragmentShader blue-green image renders green', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
@@ -208,6 +240,10 @@ void main() async {
   });
 
   test('FragmentShader blue-green image renders green - GPU image', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
@@ -220,6 +256,10 @@ void main() async {
   });
 
   test('FragmentShader with uniforms renders correctly', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'uniforms.frag.iplr',
     );
@@ -246,6 +286,10 @@ void main() async {
   });
 
   test('FragmentShader shader with array uniforms renders correctly', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'uniform_arrays.frag.iplr',
     );
@@ -260,6 +304,10 @@ void main() async {
   });
 
   test('FragmentShader The ink_sparkle shader is accepted', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'ink_sparkle.frag.iplr',
     );
@@ -273,6 +321,10 @@ void main() async {
   });
 
   test('FragmentShader Uniforms are sorted correctly', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'uniforms_sorted.frag.iplr',
     );
@@ -314,6 +366,10 @@ void main() async {
   });
 
   test('FragmentShader user defined functions do not redefine builtins', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'no_builtin_redefinition.frag.iplr',
     );
@@ -324,6 +380,10 @@ void main() async {
   });
 
   test('FragmentShader fromAsset accepts a shader with no uniforms', () async {
+    if (impellerEnabled) {
+      print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+      return;
+    }
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'no_uniforms.frag.iplr',
     );
@@ -331,6 +391,11 @@ void main() async {
     await _expectShaderRendersGreen(shader);
     shader.dispose();
   });
+
+  if (impellerEnabled) {
+    print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
+    return;
+  }
 
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
   final Map<String, FragmentProgram> iplrSupportedGLSLOpShaders = await _loadShaderAssets(
@@ -483,9 +548,4 @@ Image _createBlueGreenImageSync() {
   } finally {
     picture.dispose();
   }
-}
-
-// Ignore invalid utf8 since file is not actually text.
-String readAsStringLossy(File file) {
-  return convert.utf8.decode(file.readAsBytesSync(), allowMalformed: true);
 }

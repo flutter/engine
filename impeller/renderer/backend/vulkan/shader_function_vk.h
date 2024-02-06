@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_FUNCTION_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_FUNCTION_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
@@ -34,7 +35,11 @@ class ShaderFunctionVK final
                    ShaderStage stage,
                    vk::UniqueShaderModule module);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderFunctionVK);
+  ShaderFunctionVK(const ShaderFunctionVK&) = delete;
+
+  ShaderFunctionVK& operator=(const ShaderFunctionVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_FUNCTION_VK_H_

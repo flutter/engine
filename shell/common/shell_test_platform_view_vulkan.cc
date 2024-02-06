@@ -14,15 +14,12 @@
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
 
 #if OS_FUCHSIA
 #define VULKAN_SO_PATH "libvulkan.so"
-#elif FML_OS_MACOSX
-#define VULKAN_SO_PATH "libvk_swiftshader.dylib"
-#elif FML_OS_WIN
-#define VULKAN_SO_PATH "vk_swiftshader.dll"
 #else
-#define VULKAN_SO_PATH "libvk_swiftshader.so"
+#include "flutter/vulkan/swiftshader_path.h"
 #endif
 
 namespace flutter {
@@ -79,8 +76,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
     fml::RefPtr<vulkan::VulkanProcTable> vk,
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder)
-    : valid_(false),
-      vk_(std::move(vk)),
+    : vk_(std::move(vk)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)) {
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
@@ -142,7 +138,7 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
       MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
 
   sk_sp<GrDirectContext> context =
-      GrDirectContext::MakeVulkan(backend_context, options);
+      GrDirectContexts::MakeVulkan(backend_context, options);
 
   if (context == nullptr) {
     FML_DLOG(ERROR) << "Failed to create GrDirectContext";

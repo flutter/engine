@@ -233,7 +233,7 @@ public class FlutterView extends FrameLayout
       renderSurface = flutterTextureView;
     } else {
       throw new IllegalArgumentException(
-          String.format("RenderMode not supported with this constructor: %s", renderMode));
+          "RenderMode not supported with this constructor: " + renderMode);
     }
 
     init();
@@ -327,7 +327,7 @@ public class FlutterView extends FrameLayout
       renderSurface = flutterTextureView;
     } else {
       throw new IllegalArgumentException(
-          String.format("RenderMode not supported with this constructor: %s", renderMode));
+          "RenderMode not supported with this constructor: " + renderMode);
     }
 
     init();
@@ -1369,9 +1369,9 @@ public class FlutterView extends FrameLayout
       onDone.run();
       return;
     }
-    // Start rendering on the previous surface.
+    // Resume rendering to the previous surface.
     // This surface is typically `FlutterSurfaceView` or `FlutterTextureView`.
-    renderSurface.attachToRenderer(renderer);
+    renderSurface.resume();
 
     // Install a Flutter UI listener to wait until the first frame is rendered
     // in the new surface to call the `onDone` callback.

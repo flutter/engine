@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_HALF_H_
+#define FLUTTER_IMPELLER_GEOMETRY_HALF_H_
 
 #include <cstdint>
 
@@ -13,10 +14,13 @@
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vector.h"
 
-#ifdef FML_OS_WIN
-using InternalHalf = uint16_t;
-#else
+// NOLINTBEGIN(google-explicit-constructor)
+
+#if defined(FML_OS_MACOSX) || defined(FML_OS_IOS) || \
+    defined(FML_OS_IOS_SIMULATOR)
 using InternalHalf = _Float16;
+#else
+using InternalHalf = uint16_t;
 #endif
 
 namespace impeller {
@@ -185,4 +189,8 @@ inline std::ostream& operator<<(std::ostream& out,
   return out;
 }
 
+// NOLINTEND(google-explicit-constructor)
+
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_HALF_H_

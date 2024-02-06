@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
 
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
+#include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
@@ -19,6 +20,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 namespace impeller {
@@ -32,6 +34,9 @@ class DebugReportVK;
 class FenceWaiterVK;
 class ResourceManagerVK;
 class SurfaceContextVK;
+class GPUTracerVK;
+class DescriptorPoolRecyclerVK;
+class CommandQueueVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -42,6 +47,7 @@ class ContextVK final : public Context,
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
     bool enable_validation = false;
+    bool enable_gpu_tracing = false;
 
     Settings() = default;
 
@@ -132,6 +138,18 @@ class ContextVK final : public Context,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
+  /// @brief A single-threaded task runner that should only be used for
+  ///        submitKHR.
+  ///
+  /// SubmitKHR will block until all previously submitted command buffers have
+  /// been scheduled. If there are no platform views in the scene (excluding
+  /// texture backed platform views). Then it is safe for SwapchainImpl::Present
+  /// to return before submit has completed. To do so, we offload the submit
+  /// command to a specialized single threaded task runner. The single thread
+  /// ensures that we do not queue up too much work and that the submissions
+  /// proceed in order.
+  const fml::RefPtr<fml::TaskRunner> GetQueueSubmitRunner() const;
+
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
   const std::shared_ptr<QueueVK>& GetGraphicsQueue() const;
@@ -143,6 +161,14 @@ class ContextVK final : public Context,
   std::shared_ptr<ResourceManagerVK> GetResourceManager() const;
 
   std::shared_ptr<CommandPoolRecyclerVK> GetCommandPoolRecycler() const;
+
+  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const;
+
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
+
+  std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
+
+  void RecordFrameEndTime() const;
 
  private:
   struct DeviceHolderImpl : public DeviceHolder {
@@ -171,6 +197,11 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
+  std::unique_ptr<fml::Thread> queue_submit_thread_;
+  std::shared_ptr<GPUTracerVK> gpu_tracer_;
+  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
+  std::shared_ptr<CommandQueue> command_queue_vk_;
+
   bool sync_presentation_ = false;
   const uint64_t hash_;
 
@@ -183,7 +214,11 @@ class ContextVK final : public Context,
   std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory()
       const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
+  ContextVK(const ContextVK&) = delete;
+
+  ContextVK& operator=(const ContextVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_

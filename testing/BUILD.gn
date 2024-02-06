@@ -25,6 +25,8 @@ source_set("testing_lib") {
     "mock_canvas.h",
     "post_task_sync.cc",
     "post_task_sync.h",
+    "stream_capture.cc",
+    "stream_capture.h",
     "test_args.cc",
     "test_args.h",
     "test_timeout_listener.cc",
@@ -49,6 +51,11 @@ source_set("testing") {
 
   sources = [ "run_all_unittests.cc" ]
 
+  if (is_linux) {
+    # So that we can call gtk_init in main().
+    configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  }
+
   public_deps = [ ":testing_lib" ]
   public_configs = [ ":dynamic_symbols" ]
 }
@@ -70,9 +77,9 @@ source_set("dart") {
     "//flutter/common",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
+    "//flutter/skia",
     "//flutter/third_party/tonic",
     "//third_party/dart/runtime/bin:elf_loader",
-    "//third_party/skia",
   ]
 }
 
@@ -87,7 +94,7 @@ source_set("skia") {
 
   public_deps = [
     ":testing_lib",
-    "//third_party/skia",
+    "//flutter/skia",
   ]
 }
 
@@ -124,6 +131,19 @@ source_set("fixture_test") {
   }
 }
 
+if (is_mac || is_ios) {
+  source_set("autoreleasepool_test") {
+    testonly = true
+
+    sources = [ "autoreleasepool_test.h" ]
+
+    deps = [
+      "//flutter/fml",
+      "//third_party/googletest:gtest",
+    ]
+  }
+}
+
 if (enable_unittests && shell_enable_vulkan) {
   source_set("vulkan") {
     testonly = true
@@ -149,8 +169,8 @@ if (enable_unittests && shell_enable_vulkan) {
     ]
 
     if (!is_fuchsia) {
-      deps += [ "//third_party/swiftshader" ]
-      configs += [ "//third_party/swiftshader:swiftshader_config" ]
+      deps += [ "//flutter/third_party/swiftshader" ]
+      configs += [ "//flutter/third_party/swiftshader:swiftshader_config" ]
     }
   }
 }
@@ -240,12 +260,12 @@ if (use_swiftshader) {
     configs -= [ "//build/config/clang:extra_warnings" ]
     configs += [
       "//third_party/angle:gl_prototypes",
-      "//third_party/swiftshader:swiftshader_config",
+      "//flutter/third_party/swiftshader:swiftshader_config",
     ]
     deps += [
+      "//flutter/third_party/swiftshader",
       "//third_party/angle:libEGL_static",
       "//third_party/angle:libGLESv2_static",
-      "//third_party/swiftshader",
     ]
   }
 }

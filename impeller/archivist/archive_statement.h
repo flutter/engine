@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_
+#define FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_
 
 #include <memory>
 #include <type_traits>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 
 namespace impeller {
@@ -90,7 +90,11 @@ class ArchiveStatement {
 
   bool ColumnIntegral(size_t index, int64_t& item);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ArchiveStatement);
+  ArchiveStatement(const ArchiveStatement&) = delete;
+
+  ArchiveStatement& operator=(const ArchiveStatement&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ARCHIVIST_ARCHIVE_STATEMENT_H_

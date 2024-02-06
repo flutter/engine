@@ -179,11 +179,6 @@ void DlDispatcher::setAntiAlias(bool aa) {
   // Nothing to do because AA is implicit.
 }
 
-// |flutter::DlOpReceiver|
-void DlDispatcher::setDither(bool dither) {
-  paint_.dither = dither;
-}
-
 static Paint::Style ToStyle(flutter::DlDrawStyle style) {
   switch (style) {
     case flutter::DlDrawStyle::kFill:
@@ -698,14 +693,14 @@ void DlDispatcher::transformFullPerspective(SkScalar mxx,
   // The order of arguments is row-major but Impeller matrices are
   // column-major.
   // clang-format off
-  auto xformation = Matrix{
+  auto transform = Matrix{
     mxx, myx, mzx, mwx,
     mxy, myy, mzy, mwy,
     mxz, myz, mzz, mwz,
     mxt, myt, mzt, mwt
   };
   // clang-format on
-  canvas_.Transform(xformation);
+  canvas_.Transform(transform);
 }
 
 // |flutter::DlOpReceiver|
@@ -730,18 +725,54 @@ void DlDispatcher::clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) {
-  if (rrect.isSimple()) {
+void DlDispatcher::clipRRect(const SkRRect& rrect, ClipOp sk_op, bool is_aa) {
+  auto clip_op = ToClipOperation(sk_op);
+  if (rrect.isRect()) {
+    canvas_.ClipRect(skia_conversions::ToRect(rrect.rect()), clip_op);
+  } else if (rrect.isOval()) {
+    canvas_.ClipOval(skia_conversions::ToRect(rrect.rect()), clip_op);
+  } else if (rrect.isSimple()) {
     canvas_.ClipRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, ToClipOperation(clip_op));
+                      skia_conversions::ToSize(rrect.getSimpleRadii()),
+                      clip_op);
   } else {
-    canvas_.ClipPath(skia_conversions::ToPath(rrect), ToClipOperation(clip_op));
+    canvas_.ClipPath(skia_conversions::ToPath(rrect), clip_op);
   }
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher::clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) {
-  canvas_.ClipPath(skia_conversions::ToPath(path), ToClipOperation(clip_op));
+void DlDispatcher::clipPath(const SkPath& path, ClipOp sk_op, bool is_aa) {
+  UNIMPLEMENTED;
+}
+
+const Path& DlDispatcher::GetOrCachePath(const CacheablePath& cache) {
+  if (cache.cached_impeller_path.IsEmpty() && !cache.sk_path.isEmpty()) {
+    cache.cached_impeller_path = skia_conversions::ToPath(cache.sk_path);
+  }
+  return cache.cached_impeller_path;
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcher::clipPath(const CacheablePath& cache,
+                            ClipOp sk_op,
+                            bool is_aa) {
+  auto clip_op = ToClipOperation(sk_op);
+
+  SkRect rect;
+  if (cache.sk_path.isRect(&rect)) {
+    canvas_.ClipRect(skia_conversions::ToRect(rect), clip_op);
+  } else if (cache.sk_path.isOval(&rect)) {
+    canvas_.ClipOval(skia_conversions::ToRect(rect), clip_op);
+  } else {
+    SkRRect rrect;
+    if (cache.sk_path.isRRect(&rrect) && rrect.isSimple()) {
+      canvas_.ClipRRect(skia_conversions::ToRect(rrect.rect()),
+                        skia_conversions::ToSize(rrect.getSimpleRadii()),
+                        clip_op);
+    } else {
+      canvas_.ClipPath(GetOrCachePath(cache), clip_op);
+    }
+  }
 }
 
 // |flutter::DlOpReceiver|
@@ -760,14 +791,8 @@ void DlDispatcher::drawPaint() {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
-  auto path =
-      PathBuilder{}
-          .AddLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1))
-          .SetConvexity(Convexity::kConvex)
-          .TakePath();
-  Paint paint = paint_;
-  paint.style = Paint::Style::kStroke;
-  canvas_.DrawPath(path, paint);
+  canvas_.DrawLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1),
+                   paint_);
 }
 
 // |flutter::DlOpReceiver|
@@ -777,16 +802,7 @@ void DlDispatcher::drawRect(const SkRect& rect) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawOval(const SkRect& bounds) {
-  if (bounds.width() == bounds.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(bounds.center()),
-                       bounds.width() * 0.5, paint_);
-  } else {
-    auto path = PathBuilder{}
-                    .AddOval(skia_conversions::ToRect(bounds))
-                    .SetConvexity(Convexity::kConvex)
-                    .TakePath();
-    canvas_.DrawPath(path, paint_);
-  }
+  canvas_.DrawOval(skia_conversions::ToRect(bounds), paint_);
 }
 
 // |flutter::DlOpReceiver|
@@ -798,7 +814,7 @@ void DlDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
 void DlDispatcher::drawRRect(const SkRRect& rrect) {
   if (rrect.isSimple()) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint_);
+                      skia_conversions::ToSize(rrect.getSimpleRadii()), paint_);
   } else {
     canvas_.DrawPath(skia_conversions::ToPath(rrect), paint_);
   }
@@ -814,30 +830,40 @@ void DlDispatcher::drawDRRect(const SkRRect& outer, const SkRRect& inner) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcher::drawPath(const SkPath& path) {
+  UNIMPLEMENTED;
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcher::drawPath(const CacheablePath& cache) {
+  SimplifyOrDrawPath(canvas_, cache, paint_);
+}
+
+void DlDispatcher::SimplifyOrDrawPath(CanvasType& canvas,
+                                      const CacheablePath& cache,
+                                      const Paint& paint) {
   SkRect rect;
 
   // We can't "optimize" a path into a rectangle if it's open.
   bool closed;
-  if (path.isRect(&rect, &closed) && closed) {
-    canvas_.DrawRect(skia_conversions::ToRect(rect), paint_);
+  if (cache.sk_path.isRect(&rect, &closed) && closed) {
+    canvas.DrawRect(skia_conversions::ToRect(rect), paint);
     return;
   }
 
   SkRRect rrect;
-  if (path.isRRect(&rrect) && rrect.isSimple()) {
-    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint_);
+  if (cache.sk_path.isRRect(&rrect) && rrect.isSimple()) {
+    canvas.DrawRRect(skia_conversions::ToRect(rrect.rect()),
+                     skia_conversions::ToSize(rrect.getSimpleRadii()), paint);
     return;
   }
 
   SkRect oval;
-  if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
-                       oval.width() * 0.5, paint_);
+  if (cache.sk_path.isOval(&oval)) {
+    canvas.DrawOval(skia_conversions::ToRect(oval), paint);
     return;
   }
 
-  canvas_.DrawPath(skia_conversions::ToPath(path), paint_);
+  canvas.DrawPath(GetOrCachePath(cache), paint);
 }
 
 // |flutter::DlOpReceiver|
@@ -873,8 +899,7 @@ void DlDispatcher::drawPoints(PointMode mode,
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = skia_conversions::ToPoint(points[i - 1]);
         Point p1 = skia_conversions::ToPoint(points[i]);
-        auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
-        canvas_.DrawPath(path, paint);
+        canvas_.DrawLine(p0, p1, paint);
       }
       break;
     case flutter::DlCanvas::PointMode::kPolygon:
@@ -882,8 +907,7 @@ void DlDispatcher::drawPoints(PointMode mode,
         Point p0 = skia_conversions::ToPoint(points[0]);
         for (uint32_t i = 1; i < count; i++) {
           Point p1 = skia_conversions::ToPoint(points[i]);
-          auto path = PathBuilder{}.AddLine(p0, p1).TakePath();
-          canvas_.DrawPath(path, paint);
+          canvas_.DrawLine(p0, p1, paint);
           p0 = p1;
         }
       }
@@ -991,7 +1015,7 @@ void DlDispatcher::drawDisplayList(
   // Matrix and clip are left untouched, the current
   // transform is saved as the new base matrix, and paint
   // values are reset to defaults.
-  initial_matrix_ = canvas_.GetCurrentTransformation();
+  initial_matrix_ = canvas_.GetCurrentTransform();
   paint_ = Paint();
 
   // Handle passed opacity in the most brute-force way by using
@@ -1057,6 +1081,15 @@ void DlDispatcher::drawShadow(const SkPath& path,
                               const SkScalar elevation,
                               bool transparent_occluder,
                               SkScalar dpr) {
+  UNIMPLEMENTED;
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcher::drawShadow(const CacheablePath& cache,
+                              const flutter::DlColor color,
+                              const SkScalar elevation,
+                              bool transparent_occluder,
+                              SkScalar dpr) {
   Color spot_color = skia_conversions::ToColor(color);
   spot_color.alpha *= 0.25;
 
@@ -1098,27 +1131,14 @@ void DlDispatcher::drawShadow(const SkPath& path,
   paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
       .style = FilterContents::BlurStyle::kNormal,
       .sigma = Radius{kLightRadius * occluder_z /
-                      canvas_.GetCurrentTransformation().GetScale().y},
+                      canvas_.GetCurrentTransform().GetScale().y},
   };
 
   canvas_.Save();
   canvas_.PreConcat(
       Matrix::MakeTranslation(Vector2(0, -occluder_z * light_position.y)));
 
-  SkRect rect;
-  SkRRect rrect;
-  SkRect oval;
-  if (path.isRect(&rect)) {
-    canvas_.DrawRect(skia_conversions::ToRect(rect), paint);
-  } else if (path.isRRect(&rrect) && rrect.isSimple()) {
-    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
-                      rrect.getSimpleRadii().fX, paint);
-  } else if (path.isOval(&oval) && oval.width() == oval.height()) {
-    canvas_.DrawCircle(skia_conversions::ToPoint(oval.center()),
-                       oval.width() * 0.5, paint);
-  } else {
-    canvas_.DrawPath(skia_conversions::ToPath(path), paint);
-  }
+  SimplifyOrDrawPath(canvas_, cache, paint);
 
   canvas_.Restore();
 }

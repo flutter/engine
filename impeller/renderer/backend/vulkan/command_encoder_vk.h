@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_ENCODER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_ENCODER_VK_H_
 
+#include <cstdint>
 #include <functional>
 #include <optional>
-#include <set>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
@@ -26,10 +27,12 @@ class Texture;
 class TextureSourceVK;
 class TrackedObjectsVK;
 class FenceWaiterVK;
+class GPUProbe;
 
 class CommandEncoderFactoryVK {
  public:
-  CommandEncoderFactoryVK(const std::weak_ptr<const ContextVK>& context);
+  explicit CommandEncoderFactoryVK(
+      const std::weak_ptr<const ContextVK>& context);
 
   std::shared_ptr<CommandEncoderVK> Create();
 
@@ -39,7 +42,9 @@ class CommandEncoderFactoryVK {
   std::weak_ptr<const ContextVK> context_;
   std::optional<std::string> label_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandEncoderFactoryVK);
+  CommandEncoderFactoryVK(const CommandEncoderFactoryVK&) = delete;
+
+  CommandEncoderFactoryVK& operator=(const CommandEncoderFactoryVK&) = delete;
 };
 
 class CommandEncoderVK {
@@ -56,13 +61,11 @@ class CommandEncoderVK {
 
   bool IsValid() const;
 
-  bool Submit(SubmitCallback callback = {});
-
   bool Track(std::shared_ptr<SharedObjectVK> object);
 
-  bool Track(std::shared_ptr<const Buffer> buffer);
+  bool Track(std::shared_ptr<const DeviceBuffer> buffer);
 
-  bool IsTracking(const std::shared_ptr<const Buffer>& texture) const;
+  bool IsTracking(const std::shared_ptr<const DeviceBuffer>& texture) const;
 
   bool Track(const std::shared_ptr<const Texture>& texture);
 
@@ -72,28 +75,36 @@ class CommandEncoderVK {
 
   vk::CommandBuffer GetCommandBuffer() const;
 
-  void PushDebugGroup(const char* label) const;
+  void PushDebugGroup(std::string_view label) const;
 
   void PopDebugGroup() const;
 
-  void InsertDebugMarker(const char* label) const;
+  void InsertDebugMarker(std::string_view label) const;
 
-  std::optional<vk::DescriptorSet> AllocateDescriptorSet(
+  bool EndCommandBuffer() const;
+
+  fml::StatusOr<vk::DescriptorSet> AllocateDescriptorSets(
       const vk::DescriptorSetLayout& layout,
-      size_t command_count);
+      const ContextVK& context);
 
  private:
   friend class ContextVK;
+  friend class CommandQueueVK;
 
   std::weak_ptr<const DeviceHolder> device_holder_;
   std::shared_ptr<TrackedObjectsVK> tracked_objects_;
   std::shared_ptr<QueueVK> queue_;
   const std::shared_ptr<FenceWaiterVK> fence_waiter_;
+  std::shared_ptr<HostBuffer> host_buffer_;
   bool is_valid_ = true;
 
   void Reset();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandEncoderVK);
+  CommandEncoderVK(const CommandEncoderVK&) = delete;
+
+  CommandEncoderVK& operator=(const CommandEncoderVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_ENCODER_VK_H_

@@ -19,11 +19,9 @@ namespace impeller {
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   ContentContextOptions opts;
-  opts.sample_count = pass.GetRenderTarget().GetSampleCount();
-  opts.color_attachment_pixel_format =
-      pass.GetRenderTarget().GetRenderTargetPixelFormat();
-  opts.has_stencil_attachment =
-      pass.GetRenderTarget().GetStencilAttachment().has_value();
+  opts.sample_count = pass.GetSampleCount();
+  opts.color_attachment_pixel_format = pass.GetRenderTargetPixelFormat();
+  opts.has_depth_stencil_attachments = pass.HasStencilAttachment();
   return opts;
 }
 
@@ -62,6 +60,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     std::optional<Rect> coverage_limit,
     const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled,
+    int32_t mip_count,
     const std::string& label) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
@@ -81,26 +80,28 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
     }
   }
 
-  auto texture = renderer.MakeSubpass(
-      label, ISize::Ceil(coverage->size),
+  ISize subpass_size = ISize::Ceil(coverage->GetSize());
+  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
+      label, subpass_size,
       [&contents = *this, &entity, &coverage](const ContentContext& renderer,
                                               RenderPass& pass) -> bool {
         Entity sub_entity;
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-coverage->origin)) *
-            entity.GetTransformation());
+        sub_entity.SetTransform(
+            Matrix::MakeTranslation(Vector3(-coverage->GetOrigin())) *
+            entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
-      msaa_enabled);
+      msaa_enabled,
+      std::min(mip_count, static_cast<int32_t>(subpass_size.MipCount())));
 
-  if (!texture) {
+  if (!render_target.ok()) {
     return std::nullopt;
   }
 
   auto snapshot = Snapshot{
-      .texture = texture,
-      .transform = Matrix::MakeTranslation(coverage->origin),
+      .texture = render_target.value().GetRenderTargetTexture(),
+      .transform = Matrix::MakeTranslation(coverage->GetOrigin()),
   };
   if (sampler_descriptor.has_value()) {
     snapshot.sampler_descriptor = sampler_descriptor.value();
@@ -133,11 +134,10 @@ bool Contents::ApplyColorFilter(
 }
 
 bool Contents::ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const {
+                            const std::optional<Rect> clip_coverage) const {
   if (!clip_coverage.has_value()) {
     return false;
   }
-
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return false;

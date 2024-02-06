@@ -8,29 +8,30 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/fml/backtrace.h"
-#include "flutter/fml/command_line.h"
 #include "flutter/lib/gpu/context.h"
-#include "flutter/lib/ui/ui_dart_state.h"
+#include "flutter/lib/gpu/shader_library.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/runtime/isolate_configuration.h"
 #include "flutter/testing/dart_fixture.h"
 #include "flutter/testing/dart_isolate_runner.h"
-#include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
-#include "impeller/fixtures/box_fade.frag.h"
-#include "impeller/fixtures/box_fade.vert.h"
+#include "fml/memory/ref_ptr.h"
 #include "impeller/playground/playground_test.h"
-#include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 #include "gtest/gtest.h"
 #include "third_party/imgui/imgui.h"
 
 namespace impeller {
 namespace testing {
+
+static void InstantiateTestShaderLibrary(Context::BackendType backend_type) {
+  auto fixture =
+      flutter::testing::OpenFixtureAsMapping("playground.shaderbundle");
+  auto library = flutter::gpu::ShaderLibrary::MakeFromFlatbuffer(
+      backend_type, std::move(fixture));
+  flutter::gpu::ShaderLibrary::SetOverride(library);
+}
 
 class RendererDartTest : public PlaygroundTest,
                          public flutter::testing::DartFixture {
@@ -50,7 +51,9 @@ class RendererDartTest : public PlaygroundTest,
   flutter::testing::AutoIsolateShutdown* GetIsolate() {
     // Sneak the context into the Flutter GPU API.
     assert(GetContext() != nullptr);
-    flutter::Context::SetOverrideContext(GetContext());
+    flutter::gpu::Context::SetOverrideContext(GetContext());
+
+    InstantiateTestShaderLibrary(GetContext()->GetBackendType());
 
     return isolate_.get();
   }
@@ -111,19 +114,40 @@ TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
   ASSERT_TRUE(result);
 }
 
-TEST_P(RendererDartTest, CanEmplaceHostBuffer) {
-  auto isolate = GetIsolate();
-  bool result = isolate->RunInIsolateScope([]() -> bool {
-    if (tonic::CheckAndHandleError(
-            ::Dart_Invoke(Dart_RootLibrary(),
-                          tonic::ToDart("canEmplaceHostBuffer"), 0, nullptr))) {
-      return false;
-    }
-    return true;
-  });
+#define DART_TEST_CASE(name)                                            \
+  TEST_P(RendererDartTest, name) {                                      \
+    auto isolate = GetIsolate();                                        \
+    bool result = isolate->RunInIsolateScope([]() -> bool {             \
+      if (tonic::CheckAndHandleError(::Dart_Invoke(                     \
+              Dart_RootLibrary(), tonic::ToDart(#name), 0, nullptr))) { \
+        return false;                                                   \
+      }                                                                 \
+      return true;                                                      \
+    });                                                                 \
+    ASSERT_TRUE(result);                                                \
+  }
 
-  ASSERT_TRUE(result);
-}
+/// These test entries correspond to Dart functions located in
+/// `flutter/impeller/fixtures/dart_tests.dart`
+
+DART_TEST_CASE(canEmplaceHostBuffer);
+
+DART_TEST_CASE(canCreateDeviceBuffer);
+DART_TEST_CASE(canOverwriteDeviceBuffer);
+DART_TEST_CASE(deviceBufferOverwriteFailsWhenOutOfBounds);
+DART_TEST_CASE(deviceBufferOverwriteThrowsForNegativeDestinationOffset);
+
+DART_TEST_CASE(canCreateTexture);
+DART_TEST_CASE(canOverwriteTexture);
+DART_TEST_CASE(textureOverwriteThrowsForWrongBufferSize);
+DART_TEST_CASE(textureAsImageReturnsAValidUIImageHandle);
+DART_TEST_CASE(textureAsImageThrowsWhenNotShaderReadable);
+
+DART_TEST_CASE(canCreateShaderLibrary);
+DART_TEST_CASE(canReflectUniformStructs);
+DART_TEST_CASE(uniformBindFailsForInvalidHostBufferOffset);
+
+DART_TEST_CASE(canCreateRenderPassAndSubmit);
 
 }  // namespace testing
 }  // namespace impeller

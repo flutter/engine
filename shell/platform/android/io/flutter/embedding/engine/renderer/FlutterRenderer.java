@@ -6,10 +6,13 @@ package io.flutter.embedding.engine.renderer;
 
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
+import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.hardware.HardwareBuffer;
 import android.hardware.SyncFence;
 import android.media.Image;
+import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
 import android.view.Surface;
@@ -19,15 +22,15 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
-import io.flutter.embedding.engine.renderer.FlutterRenderer.ImageTextureRegistryEntry;
 import io.flutter.view.TextureRegistry;
-import io.flutter.view.TextureRegistry.ImageTextureEntry;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -46,6 +49,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * io.flutter.embedding.android.FlutterTextureView} are implementations of {@link RenderSurface}.
  */
 public class FlutterRenderer implements TextureRegistry {
+  /**
+   * Whether to always use GL textures for {@link FlutterRenderer#createSurfaceProducer()}.
+   *
+   * <p>This is a debug-only API intended for local development. For example, when using a newer
+   * Android device (that normally would use {@link ImageReaderSurfaceProducer}, but wanting to test
+   * the OpenGLES/{@link SurfaceTextureSurfaceProducer} code branch. This flag has undefined
+   * behavior if set to true while running in a Vulkan (Impeller) context.
+   */
+  @VisibleForTesting static boolean debugForceSurfaceProducerGlTextures = false;
+
   private static final String TAG = "FlutterRenderer";
 
   @NonNull private final FlutterJNI flutterJNI;
@@ -53,7 +66,7 @@ public class FlutterRenderer implements TextureRegistry {
   @Nullable private Surface surface;
   private boolean isDisplayingFlutterUi = false;
   private int isRenderingToImageViewCount = 0;
-  private Handler handler = new Handler();
+  private final Handler handler = new Handler();
 
   @NonNull
   private final Set<WeakReference<TextureRegistry.OnTrimMemoryListener>> onTrimMemoryListeners =
@@ -153,10 +166,60 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   // ------ START TextureRegistry IMPLEMENTATION -----
+
+  /**
+   * Creates and returns a new external texture {@link SurfaceProducer} managed by the Flutter
+   * engine that is also made available to Flutter code.
+   */
+  @NonNull
+  @Override
+  public SurfaceProducer createSurfaceProducer() {
+    // Prior to Impeller, Flutter on Android *only* ran on OpenGLES (via Skia). That
+    // meant that
+    // plugins (i.e. end-users) either explicitly created a SurfaceTexture (via
+    // createX/registerX) or an ImageTexture (via createX/registerX).
+    //
+    // In an Impeller world, which for the first time uses (if available) a Vulkan
+    // rendering
+    // backend, it is no longer possible (at least not trivially) to render an
+    // OpenGLES-provided
+    // texture (SurfaceTexture) in a Vulkan context.
+    //
+    // This function picks the "best" rendering surface based on the Android
+    // runtime, and
+    // provides a consumer-agnostic SurfaceProducer (which in turn vends a Surface),
+    // and has
+    // plugins (i.e. end-users) use the Surface instead, letting us "hide" the
+    // consumer-side
+    // of the implementation.
+    //
+    // tl;dr: If ImageTexture is available, we use it, otherwise we use a
+    // SurfaceTexture.
+    // Coincidentally, if ImageTexture is available, we are also on an Android
+    // version that is
+    // running Vulkan, so we don't have to worry about it not being supported.
+    final long id = nextTextureId.getAndIncrement();
+    final SurfaceProducer entry;
+    if (!debugForceSurfaceProducerGlTextures && Build.VERSION.SDK_INT >= 29) {
+      final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
+      registerImageTexture(id, producer);
+      Log.v(TAG, "New ImageReaderSurfaceProducer ID: " + id);
+      entry = producer;
+    } else {
+      final SurfaceTextureSurfaceProducer producer =
+          new SurfaceTextureSurfaceProducer(id, handler, flutterJNI);
+      registerSurfaceTexture(id, producer.getSurfaceTexture());
+      Log.v(TAG, "New SurfaceTextureSurfaceProducer ID: " + id);
+      entry = producer;
+    }
+    return entry;
+  }
+
   /**
    * Creates and returns a new {@link SurfaceTexture} managed by the Flutter engine that is also
    * made available to Flutter code.
    */
+  @NonNull
   @Override
   public SurfaceTextureEntry createSurfaceTexture() {
     Log.v(TAG, "Creating a SurfaceTexture.");
@@ -168,17 +231,32 @@ public class FlutterRenderer implements TextureRegistry {
    * Registers and returns a {@link SurfaceTexture} managed by the Flutter engine that is also made
    * available to Flutter code.
    */
+  @NonNull
   @Override
   public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
+    return registerSurfaceTexture(nextTextureId.getAndIncrement(), surfaceTexture);
+  }
+
+  /**
+   * Similar to {@link FlutterRenderer#registerSurfaceTexture} but with an existing @{code
+   * textureId}.
+   *
+   * @param surfaceTexture Surface texture to wrap.
+   * @param textureId A texture ID already created that should be assigned to the surface texture.
+   */
+  @NonNull
+  private SurfaceTextureEntry registerSurfaceTexture(
+      long textureId, @NonNull SurfaceTexture surfaceTexture) {
     surfaceTexture.detachFromGLContext();
     final SurfaceTextureRegistryEntry entry =
-        new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
+        new SurfaceTextureRegistryEntry(textureId, surfaceTexture);
     Log.v(TAG, "New SurfaceTexture ID: " + entry.id());
     registerTexture(entry.id(), entry.textureWrapper());
     addOnTrimMemoryListener(entry);
     return entry;
   }
 
+  @NonNull
   @Override
   public ImageTextureEntry createImageTexture() {
     final ImageTextureRegistryEntry entry =
@@ -210,20 +288,33 @@ public class FlutterRenderer implements TextureRegistry {
     private boolean released;
     @Nullable private OnTrimMemoryListener trimMemoryListener;
     @Nullable private OnFrameConsumedListener frameConsumedListener;
-    private final Runnable onFrameConsumed =
-        new Runnable() {
-          @Override
-          public void run() {
-            if (frameConsumedListener != null) {
-              frameConsumedListener.onFrameConsumed();
-            }
-          }
-        };
 
     SurfaceTextureRegistryEntry(long id, @NonNull SurfaceTexture surfaceTexture) {
       this.id = id;
+      Runnable onFrameConsumed =
+          () -> {
+            if (frameConsumedListener != null) {
+              frameConsumedListener.onFrameConsumed();
+            }
+          };
       this.textureWrapper = new SurfaceTextureWrapper(surfaceTexture, onFrameConsumed);
 
+      // Even though we make sure to unregister the callback before releasing, as of
+      // Android O, SurfaceTexture has a data race when accessing the callback, so the
+      // callback may still be called by a stale reference after released==true and
+      // mNativeView==null.
+      SurfaceTexture.OnFrameAvailableListener onFrameListener =
+          texture -> {
+            if (released || !flutterJNI.isAttached()) {
+              // Even though we make sure to unregister the callback before releasing, as of
+              // Android O, SurfaceTexture has a data race when accessing the callback, so the
+              // callback may still be called by a stale reference after released==true and
+              // mNativeView==null.
+              return;
+            }
+            textureWrapper.markDirty();
+            scheduleEngineFrame();
+          };
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // The callback relies on being executed on the UI thread (unsynchronised read
         // of
@@ -248,21 +339,6 @@ public class FlutterRenderer implements TextureRegistry {
         trimMemoryListener.onTrimMemory(level);
       }
     }
-
-    private SurfaceTexture.OnFrameAvailableListener onFrameListener =
-        new SurfaceTexture.OnFrameAvailableListener() {
-          @Override
-          public void onFrameAvailable(@NonNull SurfaceTexture texture) {
-            if (released || !flutterJNI.isAttached()) {
-              // Even though we make sure to unregister the callback before releasing, as of
-              // Android O, SurfaceTexture has a data race when accessing the callback, so the
-              // callback may still be called by a stale reference after released==true and
-              // mNativeView==null.
-              return;
-            }
-            markTextureFrameAvailable(id);
-          }
-        };
 
     private void removeListener() {
       removeOnTrimMemoryListener(this);
@@ -339,11 +415,437 @@ public class FlutterRenderer implements TextureRegistry {
     }
   }
 
+  // Keep a queue of ImageReaders.
+  // Each ImageReader holds acquired Images.
+  // When we acquire the next image, close any ImageReaders that don't have any
+  // more pending images.
   @Keep
-  final class ImageTextureRegistryEntry implements TextureRegistry.ImageTextureEntry {
+  @TargetApi(29)
+  final class ImageReaderSurfaceProducer
+      implements TextureRegistry.SurfaceProducer, TextureRegistry.ImageConsumer {
+    private static final String TAG = "ImageReaderSurfaceProducer";
+    private static final int MAX_IMAGES = 4;
+
+    // Flip when debugging to see verbose logs.
+    private static final boolean VERBOSE_LOGS = false;
+
+    private final long id;
+
+    private boolean released;
+    // Will be true in tests and on Android API < 33.
+    private boolean ignoringFence = false;
+
+    // The requested width and height are updated by setSize.
+    private int requestedWidth = 1;
+    private int requestedHeight = 1;
+    // Whenever the requested width and height change we set this to be true so we
+    // create a new ImageReader (inside getSurface) with the correct width and height.
+    // We use this flag so that we lazily create the ImageReader only when a frame
+    // will be produced at that size.
+    private boolean createNewReader = true;
+
+    // State held to track latency of various stages.
+    private long lastDequeueTime = 0;
+    private long lastQueueTime = 0;
+    private long lastScheduleTime = 0;
+
+    private Object lock = new Object();
+    // REQUIRED: The following fields must only be accessed when lock is held.
+    private final LinkedList<PerImageReader> imageReaderQueue = new LinkedList<PerImageReader>();
+    private final HashMap<ImageReader, PerImageReader> perImageReaders =
+        new HashMap<ImageReader, PerImageReader>();
+    private PerImageReader lastReaderDequeuedFrom = null;
+
+    /** Internal class: state held per Image produced by ImageReaders. */
+    private class PerImage {
+      public final Image image;
+      public final long queuedTime;
+
+      public PerImage(Image image, long queuedTime) {
+        this.image = image;
+        this.queuedTime = queuedTime;
+      }
+    }
+
+    /** Internal class: state held per ImageReader. */
+    private class PerImageReader {
+      public final ImageReader reader;
+      private final LinkedList<PerImage> imageQueue = new LinkedList<PerImage>();
+      private boolean closed = false;
+
+      private final ImageReader.OnImageAvailableListener onImageAvailableListener =
+          reader -> {
+            Image image = null;
+            try {
+              image = reader.acquireLatestImage();
+            } catch (IllegalStateException e) {
+              Log.e(TAG, "onImageAvailable acquireLatestImage failed: " + e);
+            }
+            if (released || closed) {
+              return;
+            }
+            if (image == null) {
+              return;
+            }
+            onImage(reader, image);
+          };
+
+      public PerImageReader(ImageReader reader) {
+        this.reader = reader;
+        reader.setOnImageAvailableListener(onImageAvailableListener, new Handler());
+      }
+
+      PerImage queueImage(Image image) {
+        if (closed) {
+          return null;
+        }
+        PerImage perImage = new PerImage(image, System.nanoTime());
+        imageQueue.add(perImage);
+        // If we fall too far behind we will skip some frames.
+        while (imageQueue.size() > 2) {
+          PerImage r = imageQueue.removeFirst();
+          r.image.close();
+        }
+        return perImage;
+      }
+
+      PerImage dequeueImage() {
+        if (imageQueue.size() == 0) {
+          return null;
+        }
+        PerImage r = imageQueue.removeFirst();
+        return r;
+      }
+
+      /** returns true if we can prune this reader */
+      boolean canPrune() {
+        return imageQueue.size() == 0 && lastReaderDequeuedFrom != this;
+      }
+
+      void close() {
+        closed = true;
+        if (VERBOSE_LOGS) {
+          Log.i(TAG, "Closing reader=" + reader.hashCode());
+        }
+        reader.close();
+        imageQueue.clear();
+      }
+    }
+
+    double deltaMillis(long deltaNanos) {
+      double ms = (double) deltaNanos / (double) 1000000.0;
+      return ms;
+    }
+
+    PerImageReader getOrCreatePerImageReader(ImageReader reader) {
+      PerImageReader r = perImageReaders.get(reader);
+      if (r == null) {
+        r = new PerImageReader(reader);
+        perImageReaders.put(reader, r);
+        imageReaderQueue.add(r);
+      }
+      return r;
+    }
+
+    void pruneImageReaderQueue() {
+      if (VERBOSE_LOGS) {
+        Log.i(TAG, "Pruning image reader queue length=" + imageReaderQueue.size());
+      }
+      // Prune nodes from the head of the ImageReader queue.
+      while (imageReaderQueue.size() > 1) {
+        PerImageReader r = imageReaderQueue.peekFirst();
+        if (!r.canPrune()) {
+          // No more ImageReaders can be pruned this round.
+          break;
+        }
+        imageReaderQueue.removeFirst();
+        perImageReaders.remove(r.reader);
+        r.close();
+      }
+      if (VERBOSE_LOGS) {
+        Log.i(TAG, "Pruned image reader queue length=" + imageReaderQueue.size());
+      }
+    }
+
+    void onImage(ImageReader reader, Image image) {
+      PerImage queuedImage = null;
+      synchronized (lock) {
+        PerImageReader perReader = getOrCreatePerImageReader(reader);
+        queuedImage = perReader.queueImage(image);
+      }
+      if (queuedImage == null) {
+        // We got a late image.
+        return;
+      }
+      if (VERBOSE_LOGS) {
+        if (lastQueueTime != 0) {
+          long now = System.nanoTime();
+          long queueDelta = now - lastQueueTime;
+          Log.i(
+              TAG,
+              "enqueued image="
+                  + queuedImage.image.hashCode()
+                  + " queueDelta="
+                  + deltaMillis(queueDelta));
+          lastQueueTime = now;
+        } else {
+          lastQueueTime = System.nanoTime();
+        }
+      }
+      scheduleEngineFrame();
+    }
+
+    PerImage dequeueImage() {
+      PerImage r = null;
+      synchronized (lock) {
+        for (PerImageReader reader : imageReaderQueue) {
+          r = reader.dequeueImage();
+          if (r == null) {
+            // This reader is probably about to get pruned.
+            continue;
+          }
+          if (VERBOSE_LOGS) {
+            if (lastDequeueTime != 0) {
+              long now = System.nanoTime();
+              long dequeueDelta = now - lastDequeueTime;
+              long queuedFor = now - r.queuedTime;
+              long scheduleDelay = now - lastScheduleTime;
+              Log.i(
+                  TAG,
+                  "dequeued image="
+                      + r.image.hashCode()
+                      + " queuedFor= "
+                      + deltaMillis(queuedFor)
+                      + " dequeueDelta="
+                      + deltaMillis(dequeueDelta)
+                      + " scheduleDelay="
+                      + deltaMillis(scheduleDelay));
+              lastDequeueTime = now;
+            } else {
+              lastDequeueTime = System.nanoTime();
+            }
+          }
+          // We have dequeued the first image from reader.
+          lastReaderDequeuedFrom = reader;
+          break;
+        }
+        pruneImageReaderQueue();
+      }
+      return r;
+    }
+
+    private void releaseInternal() {
+      released = true;
+      for (PerImageReader pir : perImageReaders.values()) {
+        pir.close();
+      }
+      perImageReaders.clear();
+      imageReaderQueue.clear();
+    }
+
+    @TargetApi(33)
+    private void waitOnFence(Image image) {
+      try {
+        SyncFence fence = image.getFence();
+        boolean signaled = fence.awaitForever();
+        if (!signaled) {
+          Log.e(TAG, "acquireLatestImage image's fence was never signalled.");
+        }
+      } catch (IOException e) {
+        // Drop.
+      }
+    }
+
+    private void maybeWaitOnFence(Image image) {
+      if (image == null) {
+        return;
+      }
+      if (ignoringFence) {
+        return;
+      }
+      if (Build.VERSION.SDK_INT >= 33) {
+        // The fence API is only available on Android >= 33.
+        waitOnFence(image);
+        return;
+      }
+      // Log once per ImageTextureEntry.
+      ignoringFence = true;
+      Log.w(TAG, "ImageTextureEntry can't wait on the fence on Android < 33");
+    }
+
+    ImageReaderSurfaceProducer(long id) {
+      this.id = id;
+    }
+
+    @Override
+    public long id() {
+      return id;
+    }
+
+    @Override
+    public void release() {
+      if (released) {
+        return;
+      }
+      releaseInternal();
+      unregisterTexture(id);
+    }
+
+    @Override
+    public void setSize(int width, int height) {
+      // Clamp to a minimum of 1. A 0x0 texture is a runtime exception in ImageReader.
+      width = Math.max(1, width);
+      height = Math.max(1, height);
+
+      if (requestedWidth == width && requestedHeight == height) {
+        // No size change.
+        return;
+      }
+      this.createNewReader = true;
+      this.requestedHeight = height;
+      this.requestedWidth = width;
+    }
+
+    @Override
+    public int getWidth() {
+      return this.requestedWidth;
+    }
+
+    @Override
+    public int getHeight() {
+      return this.requestedHeight;
+    }
+
+    @Override
+    public Surface getSurface() {
+      PerImageReader pir = getActiveReader();
+      return pir.reader.getSurface();
+    }
+
+    @Override
+    public void scheduleFrame() {
+      if (VERBOSE_LOGS) {
+        long now = System.nanoTime();
+        if (lastScheduleTime != 0) {
+          long delta = now - lastScheduleTime;
+          Log.v(TAG, "scheduleFrame delta=" + deltaMillis(delta));
+        }
+        lastScheduleTime = now;
+      }
+      scheduleEngineFrame();
+    }
+
+    @Override
+    @TargetApi(29)
+    public Image acquireLatestImage() {
+      PerImage r = dequeueImage();
+      if (r == null) {
+        return null;
+      }
+      maybeWaitOnFence(r.image);
+      return r.image;
+    }
+
+    private PerImageReader getActiveReader() {
+      synchronized (lock) {
+        if (createNewReader) {
+          createNewReader = false;
+          // Create a new ImageReader and add it to the queue.
+          return getOrCreatePerImageReader(createImageReader());
+        }
+        return imageReaderQueue.peekLast();
+      }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+      try {
+        if (released) {
+          return;
+        }
+        releaseInternal();
+        handler.post(new TextureFinalizerRunnable(id, flutterJNI));
+      } finally {
+        super.finalize();
+      }
+    }
+
+    @TargetApi(33)
+    private ImageReader createImageReader33() {
+      final ImageReader.Builder builder = new ImageReader.Builder(requestedWidth, requestedHeight);
+      // Allow for double buffering.
+      builder.setMaxImages(MAX_IMAGES);
+      // Use PRIVATE image format so that we can support video decoding.
+      // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our
+      // ability to read back texture data. If we don't always want to use it, how do
+      // we
+      // decide when to use it or not? Perhaps PlatformViews can indicate if they may
+      // contain
+      // DRM'd content.
+      // I need to investigate how PRIVATE impacts our ability to take screenshots or
+      // capture
+      // the output of Flutter application.
+      builder.setImageFormat(ImageFormat.PRIVATE);
+      // Hint that consumed images will only be read by GPU.
+      builder.setUsage(HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+      final ImageReader reader = builder.build();
+      return reader;
+    }
+
+    @TargetApi(29)
+    private ImageReader createImageReader29() {
+      final ImageReader reader =
+          ImageReader.newInstance(
+              requestedWidth,
+              requestedHeight,
+              ImageFormat.PRIVATE,
+              MAX_IMAGES,
+              HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+      return reader;
+    }
+
+    private ImageReader createImageReader() {
+      if (Build.VERSION.SDK_INT >= 33) {
+        return createImageReader33();
+      } else if (Build.VERSION.SDK_INT >= 29) {
+        return createImageReader29();
+      }
+      throw new UnsupportedOperationException(
+          "ImageReaderPlatformViewRenderTarget requires API version 29+");
+    }
+
+    @VisibleForTesting
+    public void disableFenceForTest() {
+      // Roboelectric's implementation of SyncFence is borked.
+      ignoringFence = true;
+    }
+
+    @VisibleForTesting
+    public int numImageReaders() {
+      synchronized (lock) {
+        return imageReaderQueue.size();
+      }
+    }
+
+    @VisibleForTesting
+    public int numImages() {
+      int r = 0;
+      synchronized (lock) {
+        for (PerImageReader reader : imageReaderQueue) {
+          r += reader.imageQueue.size();
+        }
+      }
+      return r;
+    }
+  }
+
+  @Keep
+  final class ImageTextureRegistryEntry
+      implements TextureRegistry.ImageTextureEntry, TextureRegistry.ImageConsumer {
     private static final String TAG = "ImageTextureRegistryEntry";
     private final long id;
     private boolean released;
+    private boolean ignoringFence = false;
     private Image image;
 
     ImageTextureRegistryEntry(long id) {
@@ -372,40 +874,64 @@ public class FlutterRenderer implements TextureRegistry {
     @Override
     @TargetApi(19)
     public void pushImage(Image image) {
+      if (released) {
+        return;
+      }
       Image toClose;
       synchronized (this) {
         toClose = this.image;
         this.image = image;
-        if (image != null) {
-          // Mark that we have a new frame available.
-          markTextureFrameAvailable(id);
-        }
       }
       // Close the previously pushed buffer.
       if (toClose != null) {
+        Log.e(TAG, "Dropping PlatformView Frame");
         toClose.close();
+      }
+      if (image != null) {
+        scheduleEngineFrame();
       }
     }
 
-    @Override
     @TargetApi(33)
+    private void waitOnFence(Image image) {
+      try {
+        SyncFence fence = image.getFence();
+        boolean signaled = fence.awaitForever();
+        if (!signaled) {
+          Log.e(TAG, "acquireLatestImage image's fence was never signalled.");
+        }
+      } catch (IOException e) {
+        // Drop.
+      }
+    }
+
+    @TargetApi(29)
+    private void maybeWaitOnFence(Image image) {
+      if (image == null) {
+        return;
+      }
+      if (ignoringFence) {
+        return;
+      }
+      if (Build.VERSION.SDK_INT >= 33) {
+        // The fence API is only available on Android >= 33.
+        waitOnFence(image);
+        return;
+      }
+      // Log once per ImageTextureEntry.
+      ignoringFence = true;
+      Log.w(TAG, "ImageTextureEntry can't wait on the fence on Android < 33");
+    }
+
+    @Override
+    @TargetApi(29)
     public Image acquireLatestImage() {
       Image r;
       synchronized (this) {
         r = this.image;
         this.image = null;
       }
-      if (r != null) {
-        try {
-          SyncFence fence = r.getFence();
-          boolean signaled = fence.awaitForever();
-          if (!signaled) {
-            Log.e(TAG, "acquireLatestImage failed to wait on image fence.");
-          }
-        } catch (IOException e) {
-          Log.e(TAG, "acquireLatestImage failed calling Image.getFence: " + e);
-        }
-      }
+      maybeWaitOnFence(r);
       return r;
     }
 
@@ -444,20 +970,27 @@ public class FlutterRenderer implements TextureRegistry {
    * android.view.TextureView.SurfaceTextureListener}
    *
    * @param surface The render surface.
-   * @param keepCurrentSurface True if the current active surface should not be released.
+   * @param onlySwap True if the current active surface should not be detached.
    */
-  public void startRenderingToSurface(@NonNull Surface surface, boolean keepCurrentSurface) {
-    // Don't stop rendering the surface if it's currently paused.
-    // Stop rendering to the surface releases the associated native resources, which
-    // causes a glitch when showing platform views.
-    // For more, https://github.com/flutter/flutter/issues/95343
-    if (this.surface != null && !keepCurrentSurface) {
+  public void startRenderingToSurface(@NonNull Surface surface, boolean onlySwap) {
+    if (!onlySwap) {
+      // Stop rendering to the surface releases the associated native resources, which
+      // causes a glitch when toggling between rendering to an image view (hybrid
+      // composition) and
+      // rendering directly to a Surface or Texture view. For more,
+      // https://github.com/flutter/flutter/issues/95343
       stopRenderingToSurface();
     }
 
     this.surface = surface;
 
-    flutterJNI.onSurfaceCreated(surface);
+    if (onlySwap) {
+      // In the swap case we are just swapping the surface that we render to.
+      flutterJNI.onSurfaceWindowChanged(surface);
+    } else {
+      // In the non-swap case we are creating a new surface to render to.
+      flutterJNI.onSurfaceCreated(surface);
+    }
   }
 
   /**
@@ -616,8 +1149,12 @@ public class FlutterRenderer implements TextureRegistry {
   }
 
   private void registerImageTexture(
-      long textureId, @NonNull TextureRegistry.ImageTextureEntry textureEntry) {
-    flutterJNI.registerImageTexture(textureId, textureEntry);
+      long textureId, @NonNull TextureRegistry.ImageConsumer imageTexture) {
+    flutterJNI.registerImageTexture(textureId, imageTexture);
+  }
+
+  private void scheduleEngineFrame() {
+    flutterJNI.scheduleFrame();
   }
 
   // TODO(mattcarroll): describe the native behavior that this invokes
@@ -687,7 +1224,7 @@ public class FlutterRenderer implements TextureRegistry {
       return width > 0 && height > 0 && devicePixelRatio > 0;
     }
 
-    public List<DisplayFeature> displayFeatures = new ArrayList<DisplayFeature>();
+    public List<DisplayFeature> displayFeatures = new ArrayList<>();
   }
 
   /**

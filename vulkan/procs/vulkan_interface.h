@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_VULKAN_PROCS_VULKAN_INTERFACE_H_
+#define FLUTTER_VULKAN_PROCS_VULKAN_INTERFACE_H_
 
 #include <string>
 
@@ -26,15 +27,19 @@
 
 #include <vulkan/vulkan.h>
 
-#define VK_CALL_LOG_ERROR(expression)                     \
-  ({                                                      \
-    __typeof__(expression) _rc = (expression);            \
-    if (_rc != VK_SUCCESS) {                              \
-      FML_LOG(INFO) << "Vulkan call '" << #expression     \
-                    << "' failed with error "             \
-                    << vulkan::VulkanResultToString(_rc); \
-    }                                                     \
-    _rc;                                                  \
+#define VK_CALL_LOG_ERROR(expression) VK_CALL_LOG(expression, ERROR)
+
+#define VK_CALL_LOG_FATAL(expression) VK_CALL_LOG(expression, FATAL)
+
+#define VK_CALL_LOG(expression, severity)                     \
+  ({                                                          \
+    __typeof__(expression) _rc = (expression);                \
+    if (_rc != VK_SUCCESS) {                                  \
+      FML_LOG(severity) << "Vulkan call '" << #expression     \
+                        << "' failed with error "             \
+                        << vulkan::VulkanResultToString(_rc); \
+    }                                                         \
+    _rc;                                                      \
   })
 
 namespace vulkan {
@@ -42,3 +47,5 @@ namespace vulkan {
 std::string VulkanResultToString(VkResult result);
 
 }  // namespace vulkan
+
+#endif  // FLUTTER_VULKAN_PROCS_VULKAN_INTERFACE_H_

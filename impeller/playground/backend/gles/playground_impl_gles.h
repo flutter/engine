@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_BACKEND_GLES_PLAYGROUND_IMPL_GLES_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_BACKEND_GLES_PLAYGROUND_IMPL_GLES_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_impl.h"
@@ -15,6 +16,9 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
 
   ~PlaygroundImplGLES();
 
+  fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities) override;
+
  private:
   class ReactorWorker;
 
@@ -22,6 +26,8 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
   using UniqueHandle = std::unique_ptr<void, decltype(&DestroyWindowHandle)>;
   UniqueHandle handle_;
   std::shared_ptr<ReactorWorker> worker_;
+  const bool use_angle_;
+  void* angle_glesv2_;
 
   // |PlaygroundImpl|
   std::shared_ptr<Context> GetContext() const override;
@@ -33,7 +39,11 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
   std::unique_ptr<Surface> AcquireSurfaceFrame(
       std::shared_ptr<Context> context) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(PlaygroundImplGLES);
+  PlaygroundImplGLES(const PlaygroundImplGLES&) = delete;
+
+  PlaygroundImplGLES& operator=(const PlaygroundImplGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_BACKEND_GLES_PLAYGROUND_IMPL_GLES_H_

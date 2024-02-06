@@ -23,10 +23,11 @@ wasm_toolchain("canvaskit") {
 
 copy("canvaskit_group") {
   visibility = [ "//flutter/web_sdk:*" ]
-  public_deps = [ "//third_party/skia/modules/canvaskit(:canvaskit)" ]
+  public_deps = [ "//flutter/skia/modules/canvaskit(:canvaskit)" ]
 
   sources = [
     "$root_out_dir/canvaskit/canvaskit.js",
+    "$root_out_dir/canvaskit/canvaskit.js.symbols",
     "$root_out_dir/canvaskit/canvaskit.wasm",
   ]
   outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
@@ -57,10 +58,11 @@ wasm_toolchain("canvaskit_chromium") {
 
 copy("canvaskit_chromium_group") {
   visibility = [ "//flutter/web_sdk:*" ]
-  public_deps = [ "//third_party/skia/modules/canvaskit(:canvaskit_chromium)" ]
+  public_deps = [ "//flutter/skia/modules/canvaskit(:canvaskit_chromium)" ]
 
   sources = [
     "$root_out_dir/canvaskit_chromium/canvaskit.js",
+    "$root_out_dir/canvaskit_chromium/canvaskit.js.symbols",
     "$root_out_dir/canvaskit_chromium/canvaskit.wasm",
   ]
   outputs = [
@@ -97,6 +99,7 @@ copy("skwasm_group") {
 
   sources = [
     "$root_out_dir/skwasm/skwasm.js",
+    "$root_out_dir/skwasm/skwasm.js.symbols",
     "$root_out_dir/skwasm/skwasm.wasm",
     "$root_out_dir/skwasm/skwasm.worker.js",
   ]

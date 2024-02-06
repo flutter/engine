@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_COMMON_SHELL_H_
-#define SHELL_COMMON_SHELL_H_
+#ifndef FLUTTER_SHELL_COMMON_SHELL_H_
+#define FLUTTER_SHELL_COMMON_SHELL_H_
 
 #include <functional>
 #include <mutex>
@@ -40,11 +40,13 @@
 #include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/resource_cache_limit_calculator.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace flutter {
 
 /// Error exit codes for the Dart isolate.
 enum class DartErrorCode {
+  // NOLINTBEGIN(readability-identifier-naming)
   /// No error has occurred.
   NoError = 0,
   /// The Dart error code for an API error.
@@ -53,6 +55,7 @@ enum class DartErrorCode {
   CompilationError = 254,
   /// The Dart error code for an unknown error.
   UnknownError = 255
+  // NOLINTEND(readability-identifier-naming)
 };
 
 /// Values for |Shell::SetGpuAvailability|.
@@ -127,7 +130,8 @@ class Shell final : public PlatformView::Delegate,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
       fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)>
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+      impeller::RuntimeStageBackend runtime_stage_type)>
       EngineCreateCallback;
 
   //----------------------------------------------------------------------------
@@ -445,6 +449,10 @@ class Shell final : public PlatformView::Delegate,
   // falls back to the one VM was launched with.
   //
   // This function is what Shell::Create uses to infer snapshot settings.
+  //
+  // TODO(dkwingsmt): Extracting this method is part of a bigger change. If the
+  // entire change is not eventually landed, we should merge this method back
+  // to Create. https://github.com/flutter/flutter/issues/136826
   static std::pair<DartVMRef, fml::RefPtr<const DartSnapshot>>
   InferVmInitDataFromSettings(Settings& settings);
 
@@ -454,9 +462,9 @@ class Shell final : public PlatformView::Delegate,
                          rapidjson::Document*)>;
 
   /// A collection of message channels (by name) that have sent at least one
-  /// message from a non-platform thread. Used to prevent printing the error log
-  /// more than once per channel, as a badly behaving plugin may send multiple
-  /// messages per second indefinitely.
+  /// message from a non-platform thread. Used to prevent printing the error
+  /// log more than once per channel, as a badly behaving plugin may send
+  /// multiple messages per second indefinitely.
   std::mutex misbehaving_message_channels_mutex_;
   std::set<std::string> misbehaving_message_channels_;
   const TaskRunners task_runners_;
@@ -507,19 +515,20 @@ class Shell final : public PlatformView::Delegate,
   bool frame_timings_report_scheduled_ = false;
 
   // Vector of FrameTiming::kCount * n timestamps for n frames whose timings
-  // have not been reported yet. Vector of ints instead of FrameTiming is stored
-  // here for easier conversions to Dart objects.
+  // have not been reported yet. Vector of ints instead of FrameTiming is
+  // stored here for easier conversions to Dart objects.
   std::vector<int64_t> unreported_timings_;
 
-  /// Manages the displays. This class is thread safe, can be accessed from any
-  /// of the threads.
+  /// Manages the displays. This class is thread safe, can be accessed from
+  /// any of the threads.
   std::unique_ptr<DisplayManager> display_manager_;
 
   // protects expected_frame_size_ which is set on platform thread and read on
   // raster thread
   std::mutex resize_mutex_;
 
-  // used to discard wrong size layer tree produced during interactive resizing
+  // used to discard wrong size layer tree produced during interactive
+  // resizing
   std::unordered_map<int64_t, SkISize> expected_frame_sizes_;
 
   // Used to communicate the right frame bounds via service protocol.
@@ -756,7 +765,8 @@ class Shell final : public PlatformView::Delegate,
 
   // Service protocol handler
   //
-  // The returned SkSLs are base64 encoded. Decode before storing them to files.
+  // The returned SkSLs are base64 encoded. Decode before storing them to
+  // files.
   bool OnServiceProtocolGetSkSLs(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
@@ -777,8 +787,8 @@ class Shell final : public PlatformView::Delegate,
 
   // Service protocol handler
   //
-  // Forces the FontCollection to reload the font manifest. Used to support hot
-  // reload for fonts.
+  // Forces the FontCollection to reload the font manifest. Used to support
+  // hot reload for fonts.
   bool OnServiceProtocolReloadAssetFonts(
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
@@ -807,4 +817,4 @@ class Shell final : public PlatformView::Delegate,
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SHELL_H_
+#endif  // FLUTTER_SHELL_COMMON_SHELL_H_

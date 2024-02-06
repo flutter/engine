@@ -5,6 +5,8 @@
 import("//build/toolchain/wasm.gni")
 
 wasm_lib("skwasm") {
+  public_configs = [ "//flutter:config" ]
+
   sources = [
     "canvas.cpp",
     "contour_measure.cpp",
@@ -66,7 +68,7 @@ wasm_lib("skwasm") {
   }
 
   deps = [
-    "//third_party/skia",
-    "//third_party/skia/modules/skparagraph",
+    "//flutter/skia",
+    "//flutter/skia/modules/skparagraph",
   ]
 }

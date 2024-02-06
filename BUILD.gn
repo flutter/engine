@@ -19,7 +19,10 @@ declare_args() {
 }
 
 config("config") {
-  include_dirs = [ ".." ]
+  include_dirs = [
+    "..",
+    ".",
+  ]
   cflags = []
   if (is_win) {
     if (current_cpu != "x86") {
@@ -41,6 +44,23 @@ config("export_dynamic_symbols") {
     ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
   } else if (is_mac) {
     inputs = [ "//flutter/common/exported_symbols_mac.sym" ]
+    ldflags = [
+      "-Xlinker",
+      "-exported_symbols_list",
+      "-Xlinker",
+      rebase_path(inputs[0], root_build_dir),
+    ]
+  }
+}
+
+config("export_dynamic_test_symbols") {
+  # See comment in :export_dynamic_symbols.
+  # This config exposes an additional symbol meant for flutter_tester.
+  if (is_linux || is_fuchsia) {
+    inputs = [ "//flutter/common/exported_test_symbols.sym" ]
+    ldflags = [ "-Wl,--dynamic-list=" + rebase_path(inputs[0], root_build_dir) ]
+  } else if (is_mac) {
+    inputs = [ "//flutter/common/exported_test_symbols_mac.sym" ]
     ldflags = [
       "-Xlinker",
       "-exported_symbols_list",
@@ -111,7 +131,7 @@ group("flutter") {
     public_deps += [
       "//flutter/shell/testing",
       "//flutter/tools/const_finder",
-      "//flutter/tools/font-subset",
+      "//flutter/tools/font_subset",
     ]
   }
 
@@ -122,6 +142,7 @@ group("flutter") {
       "//flutter/display_list:display_list_builder_benchmarks",
       "//flutter/display_list:display_list_region_benchmarks",
       "//flutter/fml:fml_benchmarks",
+      "//flutter/impeller/aiks:canvas_benchmarks",
       "//flutter/impeller/geometry:geometry_benchmarks",
       "//flutter/lib/ui:ui_benchmarks",
       "//flutter/shell/common:shell_benchmarks",
@@ -159,6 +180,7 @@ group("unittests") {
       "//flutter/display_list:display_list_rendertests",
       "//flutter/display_list:display_list_unittests",
       "//flutter/flow:flow_unittests",
+      "//flutter/fml:fml_arc_unittests",
       "//flutter/fml:fml_unittests",
       "//flutter/lib/ui:ui_unittests",
       "//flutter/runtime:dart_plugin_registrant_unittests",
@@ -195,6 +217,8 @@ group("unittests") {
     if (is_mac) {
       public_deps += [
         "//flutter/impeller/golden_tests:impeller_golden_tests",
+        "//flutter/shell/gpu:gpu_surface_metal_unittests",
+        "//flutter/shell/platform/darwin/common:availability_version_check_unittests",
         "//flutter/shell/platform/darwin/common:framework_common_unittests",
         "//flutter/third_party/spring_animation:spring_animation_unittests",
       ]

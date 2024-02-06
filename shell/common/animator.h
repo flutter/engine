@@ -53,6 +53,13 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_trees = true);
 
+  //--------------------------------------------------------------------------
+  /// @brief    Tells the Animator that this frame needs to render another view.
+  ///
+  ///           This method must be called during a vsync callback, or
+  ///           technically, between Animator::BeginFrame and Animator::EndFrame
+  ///           (both private methods). Otherwise, this call will be ignored.
+  ///
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio);
 

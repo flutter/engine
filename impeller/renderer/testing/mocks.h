@@ -2,21 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_
+#define FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_
 
 #include "gmock/gmock.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 namespace testing {
 
 class MockDeviceBuffer : public DeviceBuffer {
  public:
-  MockDeviceBuffer(const DeviceBufferDescriptor& desc) : DeviceBuffer(desc) {}
+  explicit MockDeviceBuffer(const DeviceBufferDescriptor& desc)
+      : DeviceBuffer(desc) {}
 
   MOCK_METHOD(bool, SetLabel, (const std::string& label), (override));
 
@@ -85,10 +91,23 @@ class MockBlitPass : public BlitPass {
               (override));
 };
 
+class MockRenderPass : public RenderPass {
+ public:
+  MockRenderPass(std::shared_ptr<const Context> context,
+                 const RenderTarget& target)
+      : RenderPass(std::move(context), target) {}
+  MOCK_METHOD(bool, IsValid, (), (const, override));
+  MOCK_METHOD(bool,
+              OnEncodeCommands,
+              (const Context& context),
+              (const, override));
+  MOCK_METHOD(void, OnSetLabel, (std::string label), (override));
+};
+
 class MockCommandBuffer : public CommandBuffer {
  public:
-  MockCommandBuffer(std::weak_ptr<const Context> context)
-      : CommandBuffer(context) {}
+  explicit MockCommandBuffer(std::weak_ptr<const Context> context)
+      : CommandBuffer(std::move(context)) {}
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(void, SetLabel, (const std::string& label), (const, override));
   MOCK_METHOD(std::shared_ptr<BlitPass>, OnCreateBlitPass, (), (override));
@@ -146,11 +165,16 @@ class MockImpellerContext : public Context {
               GetCapabilities,
               (),
               (const, override));
+
+  MOCK_METHOD(std::shared_ptr<CommandQueue>,
+              GetCommandQueue,
+              (),
+              (const, override));
 };
 
 class MockTexture : public Texture {
  public:
-  MockTexture(const TextureDescriptor& desc) : Texture(desc) {}
+  explicit MockTexture(const TextureDescriptor& desc) : Texture(desc) {}
   MOCK_METHOD(void, SetLabel, (std::string_view label), (override));
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(ISize, GetSize, (), (const, override));
@@ -164,5 +188,47 @@ class MockTexture : public Texture {
               (override));
 };
 
+class MockCapabilities : public Capabilities {
+ public:
+  MOCK_METHOD(bool, SupportsOffscreenMSAA, (), (const, override));
+  MOCK_METHOD(bool, SupportsImplicitResolvingMSAA, (), (const, override));
+  MOCK_METHOD(bool, SupportsSSBO, (), (const, override));
+  MOCK_METHOD(bool, SupportsBufferToTextureBlits, (), (const, override));
+  MOCK_METHOD(bool, SupportsTextureToTextureBlits, (), (const, override));
+  MOCK_METHOD(bool, SupportsFramebufferFetch, (), (const, override));
+  MOCK_METHOD(bool, SupportsCompute, (), (const, override));
+  MOCK_METHOD(bool, SupportsComputeSubgroups, (), (const, override));
+  MOCK_METHOD(bool, SupportsReadFromResolve, (), (const, override));
+  MOCK_METHOD(bool, SupportsDecalSamplerAddressMode, (), (const, override));
+  MOCK_METHOD(bool, SupportsDeviceTransientTextures, (), (const, override));
+  MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
+  MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
+  MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
+};
+
+class MockCommandQueue : public CommandQueue {
+ public:
+  MOCK_METHOD(fml::Status,
+              Submit,
+              (const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
+               const CompletionCallback& cb),
+              (override));
+};
+
+class MockSamplerLibrary : public SamplerLibrary {
+ public:
+  MOCK_METHOD(const std::unique_ptr<const Sampler>&,
+              GetSampler,
+              (SamplerDescriptor descriptor),
+              (override));
+};
+
+class MockSampler : public Sampler {
+ public:
+  explicit MockSampler(const SamplerDescriptor& desc) : Sampler(desc) {}
+};
+
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_TESTING_MOCKS_H_

@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_BASE_ALLOCATION_H_
+#define FLUTTER_IMPELLER_BASE_ALLOCATION_H_
 
-#include <limits>
+#include <cstdint>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
 namespace impeller {
@@ -37,7 +37,9 @@ class Allocation {
 
   [[nodiscard]] bool ReserveNPOT(size_t reserved);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Allocation);
+  Allocation(const Allocation&) = delete;
+
+  Allocation& operator=(const Allocation&) = delete;
 };
 
 std::shared_ptr<fml::Mapping> CreateMappingWithCopy(const uint8_t* contents,
@@ -52,3 +54,5 @@ std::shared_ptr<fml::Mapping> CreateMappingWithString(
 std::shared_ptr<fml::Mapping> CreateMappingWithString(std::string string);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_BASE_ALLOCATION_H_

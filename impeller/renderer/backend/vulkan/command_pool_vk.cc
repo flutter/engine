@@ -8,10 +8,9 @@
 #include <optional>
 #include <utility>
 
-#include "fml/macros.h"
-#include "fml/thread_local.h"
-#include "fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
+
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 #include "vulkan/vulkan_structs.hpp"
 
@@ -40,12 +39,15 @@ class BackgroundCommandPoolVK final {
     if (!recycler) {
       return;
     }
+    buffers_.clear();
 
     recycler->Reclaim(std::move(pool_));
   }
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(BackgroundCommandPoolVK);
+  BackgroundCommandPoolVK(const BackgroundCommandPoolVK&) = delete;
+
+  BackgroundCommandPoolVK& operator=(const BackgroundCommandPoolVK&) = delete;
 
   vk::UniqueCommandPool pool_;
 
@@ -55,8 +57,6 @@ class BackgroundCommandPoolVK final {
   std::vector<vk::UniqueCommandBuffer> buffers_;
   std::weak_ptr<CommandPoolRecyclerVK> recycler_;
 };
-
-static bool kResetOnBackgroundThread = false;
 
 CommandPoolVK::~CommandPoolVK() {
   if (!pool_) {
@@ -75,10 +75,8 @@ CommandPoolVK::~CommandPoolVK() {
   auto reset_pool_when_dropped = BackgroundCommandPoolVK(
       std::move(pool_), std::move(collected_buffers_), recycler);
 
-  if (kResetOnBackgroundThread) {
-    UniqueResourceVKT<BackgroundCommandPoolVK> pool(
-        context->GetResourceManager(), std::move(reset_pool_when_dropped));
-  }
+  UniqueResourceVKT<BackgroundCommandPoolVK> pool(
+      context->GetResourceManager(), std::move(reset_pool_when_dropped));
 }
 
 // TODO(matanlurey): Return a status_or<> instead of {} when we have one.
@@ -131,14 +129,15 @@ void CommandPoolVK::Destroy() {
 // Associates a resource with a thread and context.
 using CommandPoolMap =
     std::unordered_map<uint64_t, std::shared_ptr<CommandPoolVK>>;
-FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<CommandPoolMap> tls_command_pool_map;
+static thread_local std::unique_ptr<CommandPoolMap> tls_command_pool_map;
 
 // Map each context to a list of all thread-local command pools associated
 // with that context.
 static Mutex g_all_pools_map_mutex;
-static std::unordered_map<const ContextVK*,
-                          std::vector<std::weak_ptr<CommandPoolVK>>>
-    g_all_pools_map IPLR_GUARDED_BY(g_all_pools_map_mutex);
+static std::unordered_map<
+    const ContextVK*,
+    std::vector<std::weak_ptr<CommandPoolVK>>> g_all_pools_map
+    IPLR_GUARDED_BY(g_all_pools_map_mutex);
 
 // TODO(matanlurey): Return a status_or<> instead of nullptr when we have one.
 std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::Get() {
@@ -214,8 +213,6 @@ std::optional<vk::UniqueCommandPool> CommandPoolRecyclerVK::Reuse() {
 }
 
 void CommandPoolRecyclerVK::Reclaim(vk::UniqueCommandPool&& pool) {
-  TRACE_EVENT0("impeller", "ReclaimCommandPool");
-
   // Reset the pool on a background thread.
   auto strong_context = context_.lock();
   if (!strong_context) {

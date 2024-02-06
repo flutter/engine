@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -120,10 +121,11 @@ class Contents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Snapshot") const;
 
   virtual bool ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& clip_coverage) const;
+                            const std::optional<Rect> clip_coverage) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Return the color source's intrinsic size, if available.
@@ -195,7 +197,11 @@ class Contents {
   std::optional<Rect> coverage_hint_;
   std::optional<Size> color_source_size_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Contents);
+  Contents(const Contents&) = delete;
+
+  Contents& operator=(const Contents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_

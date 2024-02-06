@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_
 
 #include <map>
 #include <string>
@@ -32,7 +33,9 @@ class GoldenDigest {
   bool Write(WorkingDirectory* working_directory);
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(GoldenDigest);
+  GoldenDigest(const GoldenDigest&) = delete;
+
+  GoldenDigest& operator=(const GoldenDigest&) = delete;
   GoldenDigest();
   struct Entry {
     std::string test_name;
@@ -49,3 +52,5 @@ class GoldenDigest {
 };
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_

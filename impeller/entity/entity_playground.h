@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_ENTITY_ENTITY_PLAYGROUND_H_
 
 #include "impeller/playground/playground_test.h"
 
@@ -32,10 +33,16 @@ class EntityPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(EntityPlaygroundCallback callback);
 
+  std::shared_ptr<ContentContext> GetContentContext() const;
+
  private:
   std::shared_ptr<TypographerContext> typographer_context_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(EntityPlayground);
+  EntityPlayground(const EntityPlayground&) = delete;
+
+  EntityPlayground& operator=(const EntityPlayground&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_ENTITY_PLAYGROUND_H_

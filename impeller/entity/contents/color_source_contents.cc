@@ -6,7 +6,6 @@
 
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -44,7 +43,7 @@ bool ColorSourceContents::IsSolidColor() const {
 
 std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
-  return geometry_->GetCoverage(entity.GetTransformation());
+  return geometry_->GetCoverage(entity.GetTransform());
 };
 
 bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {

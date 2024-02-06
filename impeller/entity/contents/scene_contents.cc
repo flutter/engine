@@ -44,23 +44,46 @@ bool SceneContents::Render(const ContentContext& renderer,
     coverage = Rect::MakeSize(pass.GetRenderTargetSize());
   }
 
-  RenderTarget subpass_target = RenderTarget::CreateOffscreenMSAA(
-      *renderer.GetContext(),            // context
-      *renderer.GetRenderTargetCache(),  // allocator
-      ISize(coverage.value().size),      // size
-      "SceneContents",                   // label
-      RenderTarget::AttachmentConfigMSAA{
-          .storage_mode = StorageMode::kDeviceTransient,
-          .resolve_storage_mode = StorageMode::kDevicePrivate,
-          .load_action = LoadAction::kClear,
-          .store_action = StoreAction::kMultisampleResolve,
-      },  // color_attachment_config
-      RenderTarget::AttachmentConfig{
-          .storage_mode = StorageMode::kDeviceTransient,
-          .load_action = LoadAction::kDontCare,
-          .store_action = StoreAction::kDontCare,
-      }  // stencil_attachment_config
-  );
+  RenderTarget subpass_target;
+  if (renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
+    subpass_target = RenderTarget::CreateOffscreenMSAA(
+        *renderer.GetContext(),             // context
+        *renderer.GetRenderTargetCache(),   // allocator
+        ISize(coverage.value().GetSize()),  // size
+        /*mip_count=*/1,
+        "SceneContents",  // label
+        RenderTarget::AttachmentConfigMSAA{
+            .storage_mode = StorageMode::kDeviceTransient,
+            .resolve_storage_mode = StorageMode::kDevicePrivate,
+            .load_action = LoadAction::kClear,
+            .store_action = StoreAction::kMultisampleResolve,
+        },  // color_attachment_config
+        RenderTarget::AttachmentConfig{
+            .storage_mode = StorageMode::kDeviceTransient,
+            .load_action = LoadAction::kDontCare,
+            .store_action = StoreAction::kDontCare,
+        }  // stencil_attachment_config
+    );
+  } else {
+    subpass_target = RenderTarget::CreateOffscreen(
+        *renderer.GetContext(),             // context
+        *renderer.GetRenderTargetCache(),   // allocator
+        ISize(coverage.value().GetSize()),  // size
+        /*mip_count=*/1,
+        "SceneContents",  // label
+        RenderTarget::AttachmentConfig{
+            .storage_mode = StorageMode::kDevicePrivate,
+            .load_action = LoadAction::kClear,
+            .store_action = StoreAction::kStore,
+        },  // color_attachment_config
+        RenderTarget::AttachmentConfig{
+            .storage_mode = StorageMode::kDeviceTransient,
+            .load_action = LoadAction::kClear,
+            .store_action = StoreAction::kDontCare,
+        }  // stencil_attachment_config
+    );
+  }
+
   if (!subpass_target.IsValid()) {
     return false;
   }
@@ -77,7 +100,7 @@ bool SceneContents::Render(const ContentContext& renderer,
   contents.SetGeometry(GetGeometry());
   contents.SetTexture(subpass_target.GetRenderTargetTexture());
   contents.SetEffectTransform(
-      Matrix::MakeScale(1 / entity.GetTransformation().GetScale()));
+      Matrix::MakeScale(1 / entity.GetTransform().GetScale()));
   return contents.Render(renderer, entity, pass);
 }
 

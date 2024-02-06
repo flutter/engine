@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_STROKE_PATH_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_STROKE_PATH_GEOMETRY_H_
 
 #include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
 
 /// @brief A geometry that is created from a stroked path object.
-class StrokePathGeometry : public Geometry {
+class StrokePathGeometry final : public Geometry {
  public:
   StrokePathGeometry(const Path& path,
                      Scalar stroke_width,
@@ -47,14 +48,14 @@ class StrokePathGeometry : public Geometry {
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
-                                   RenderPass& pass) override;
+                                   RenderPass& pass) const override;
 
   // |Geometry|
   GeometryResult GetPositionUVBuffer(Rect texture_coverage,
                                      Matrix effect_transform,
                                      const ContentContext& renderer,
                                      const Entity& entity,
-                                     RenderPass& pass) override;
+                                     RenderPass& pass) const override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -88,7 +89,11 @@ class StrokePathGeometry : public Geometry {
   Cap stroke_cap_;
   Join stroke_join_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(StrokePathGeometry);
+  StrokePathGeometry(const StrokePathGeometry&) = delete;
+
+  StrokePathGeometry& operator=(const StrokePathGeometry&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_STROKE_PATH_GEOMETRY_H_

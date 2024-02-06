@@ -60,6 +60,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
   auto& context_vk = impeller::SurfaceContextVK::Cast(*impeller_context_);
   std::unique_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
 
+  if (!surface) {
+    FML_LOG(ERROR) << "No surface available.";
+    return nullptr;
+  }
+
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
@@ -89,7 +94,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
             fml::MakeCopyable(
                 [aiks_context, picture = std::move(picture)](
                     impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
+                  return aiks_context->Render(picture, render_target,
+                                              /*reset_host_buffer=*/true);
                 }));
       });
 

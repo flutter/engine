@@ -2,19 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_
+#define FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_
 
-#include <functional>
-#include <future>
 #include <map>
 #include <memory>
 #include <string>
-#include <string_view>
-#include <type_traits>
-#include <unordered_map>
 
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -131,6 +125,10 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   PolygonMode GetPolygonMode() const;
 
+  void SetSpecializationConstants(std::vector<Scalar> values);
+
+  const std::vector<Scalar>& GetSpecializationConstants() const;
+
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -149,6 +147,9 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       back_stencil_attachment_descriptor_;
   PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
   PolygonMode polygon_mode_ = PolygonMode::kFill;
+  std::vector<Scalar> specialization_constants_;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_PIPELINE_DESCRIPTOR_H_

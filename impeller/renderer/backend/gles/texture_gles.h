@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -17,6 +17,7 @@ class TextureGLES final : public Texture,
  public:
   enum class Type {
     kTexture,
+    kTextureMultisampled,
     kRenderBuffer,
     kRenderBufferMultisampled,
   };
@@ -40,14 +41,14 @@ class TextureGLES final : public Texture,
 
   [[nodiscard]] bool GenerateMipmap();
 
-  enum class AttachmentPoint {
+  enum class AttachmentType {
     kColor0,
     kDepth,
     kStencil,
   };
-  [[nodiscard]] bool SetAsFramebufferAttachment(GLenum target,
-                                                GLuint fbo,
-                                                AttachmentPoint point) const;
+  [[nodiscard]] bool SetAsFramebufferAttachment(
+      GLenum target,
+      AttachmentType attachment_type) const;
 
   Type GetType() const;
 
@@ -90,7 +91,11 @@ class TextureGLES final : public Texture,
 
   void InitializeContentsIfNecessary() const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TextureGLES);
+  TextureGLES(const TextureGLES&) = delete;
+
+  TextureGLES& operator=(const TextureGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_

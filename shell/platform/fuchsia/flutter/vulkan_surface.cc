@@ -9,6 +9,7 @@
 
 #include <algorithm>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "runtime/dart/utils/inlines.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -490,10 +491,10 @@ void VulkanSurface::SignalWritesFinished(
     return;
   }
 
-  dart_utils::Check(pending_on_writes_committed_ == nullptr,
-                    "Attempted to signal a write on the surface when the "
-                    "previous write has not yet been acknowledged by the "
-                    "compositor.");
+  FML_CHECK(pending_on_writes_committed_ == nullptr)
+      << "Attempted to signal a write on the surface when the "
+         "previous write has not yet been acknowledged by the "
+         "compositor.";
 
   pending_on_writes_committed_ = on_writes_committed;
 }
@@ -508,7 +509,7 @@ void VulkanSurface::Reset() {
   VkFence fence = command_buffer_fence_;
 
   if (command_buffer_) {
-    VK_CALL_LOG_ERROR(vulkan_provider_.vk().WaitForFences(
+    VK_CALL_LOG_FATAL(vulkan_provider_.vk().WaitForFences(
         vulkan_provider_.vk_device(), 1, &fence, VK_TRUE, UINT64_MAX));
     command_buffer_.reset();
   }

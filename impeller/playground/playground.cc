@@ -21,6 +21,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
 #include "impeller/image/compressed_image.h"
+#include "impeller/playground/backend/vulkan/swiftshader_utilities.h"
 #include "impeller/playground/imgui/imgui_impl_impeller.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_impl.h"
@@ -48,42 +49,46 @@ std::string PlaygroundBackendToString(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-struct Playground::GLFWInitializer {
-  GLFWInitializer() {
-    // This guard is a hack to work around a problem where glfwCreateWindow
-    // hangs when opening a second window after GLFW has been reinitialized (for
-    // example, when flipping through multiple playground tests).
-    //
-    // Explanation:
-    //  * glfwCreateWindow calls [NSApp run], which begins running the event
-    //    loop on the current thread.
-    //  * GLFW then immediately stops the loop when
-    //    applicationDidFinishLaunching is fired.
-    //  * applicationDidFinishLaunching is only ever fired once during the
-    //    application's lifetime, so subsequent calls to [NSApp run] will always
-    //    hang with this setup.
-    //  * glfwInit resets the flag that guards against [NSApp run] being
-    //    called a second time, which causes the subsequent `glfwCreateWindow`
-    //    to hang indefinitely in the event loop, because
-    //    applicationDidFinishLaunching is never fired.
-    static std::once_flag sOnceInitializer;
-    std::call_once(sOnceInitializer, []() {
-      ::glfwSetErrorCallback([](int code, const char* description) {
-        FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code
-                       << ").";
-      });
-      FML_CHECK(::glfwInit() == GLFW_TRUE);
+static void InitializeGLFWOnce() {
+  // This guard is a hack to work around a problem where glfwCreateWindow
+  // hangs when opening a second window after GLFW has been reinitialized (for
+  // example, when flipping through multiple playground tests).
+  //
+  // Explanation:
+  //  * glfwCreateWindow calls [NSApp run], which begins running the event
+  //    loop on the current thread.
+  //  * GLFW then immediately stops the loop when
+  //    applicationDidFinishLaunching is fired.
+  //  * applicationDidFinishLaunching is only ever fired once during the
+  //    application's lifetime, so subsequent calls to [NSApp run] will always
+  //    hang with this setup.
+  //  * glfwInit resets the flag that guards against [NSApp run] being
+  //    called a second time, which causes the subsequent `glfwCreateWindow`
+  //    to hang indefinitely in the event loop, because
+  //    applicationDidFinishLaunching is never fired.
+  static std::once_flag sOnceInitializer;
+  std::call_once(sOnceInitializer, []() {
+    ::glfwSetErrorCallback([](int code, const char* description) {
+      FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code << ").";
     });
-  }
-};
+    FML_CHECK(::glfwInit() == GLFW_TRUE);
+  });
+}
 
-Playground::Playground(PlaygroundSwitches switches)
-    : switches_(switches),
-      glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
+Playground::Playground(PlaygroundSwitches switches) : switches_(switches) {
+  InitializeGLFWOnce();
+  SetupSwiftshaderOnce(switches_.use_swiftshader);
+}
 
 Playground::~Playground() = default;
 
 std::shared_ptr<Context> Playground::GetContext() const {
+  return context_;
+}
+
+std::shared_ptr<Context> Playground::MakeContext() const {
+  // Playgrounds are already making a context for each test, so we can just
+  // return the `context_`.
   return context_;
 }
 
@@ -102,7 +107,7 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
       return false;
 #endif  // IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kVulkan:
-#if IMPELLER_ENABLE_VULKAN
+#if IMPELLER_ENABLE_VULKAN && IMPELLER_ENABLE_VULKAN_PLAYGROUNDS
       return true;
 #else   // IMPELLER_ENABLE_VULKAN
       return false;
@@ -300,7 +305,7 @@ bool Playground::OpenPlaygroundHere(
         ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass);
 
         pass->EncodeCommands();
-        if (!buffer->SubmitCommands()) {
+        if (!renderer->GetContext()->GetCommandQueue()->Submit({buffer}).ok()) {
           return false;
         }
       }
@@ -344,7 +349,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
         }
 
         pass->EncodeCommands();
-        if (!buffer->SubmitCommands()) {
+        if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
           return false;
         }
         return true;
@@ -385,29 +390,26 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     const std::shared_ptr<Context>& context,
     DecompressedImage& decompressed_image,
     bool enable_mipmapping) {
-  // TODO(https://github.com/flutter/flutter/issues/123468): copying buffers to
-  // textures is not implemented for GLES.
-  if (context->GetCapabilities()->SupportsBufferToTextureBlits()) {
-    impeller::TextureDescriptor texture_descriptor;
-    texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
-    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-    texture_descriptor.size = decompressed_image.GetSize();
-    texture_descriptor.mip_count =
-        enable_mipmapping ? decompressed_image.GetSize().MipCount() : 1u;
+  auto texture_descriptor = TextureDescriptor{};
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_descriptor.size = decompressed_image.GetSize();
+  texture_descriptor.mip_count =
+      enable_mipmapping ? decompressed_image.GetSize().MipCount() : 1u;
 
-    auto dest_texture =
-        context->GetResourceAllocator()->CreateTexture(texture_descriptor);
-    if (!dest_texture) {
-      FML_DLOG(ERROR) << "Could not create Impeller texture.";
-      return nullptr;
-    }
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
+  if (!texture) {
+    VALIDATION_LOG << "Could not allocate texture for fixture.";
+    return nullptr;
+  }
 
-    auto buffer = context->GetResourceAllocator()->CreateBufferWithCopy(
-        *decompressed_image.GetAllocation().get());
-
-    dest_texture->SetLabel(
-        impeller::SPrintF("ui.Image(%p)", dest_texture.get()).c_str());
-
+  auto uploaded = texture->SetContents(decompressed_image.GetAllocation());
+  if (!uploaded) {
+    VALIDATION_LOG << "Could not upload texture to device memory for fixture.";
+    return nullptr;
+  }
+  if (enable_mipmapping) {
     auto command_buffer = context->CreateCommandBuffer();
     if (!command_buffer) {
       FML_DLOG(ERROR)
@@ -415,47 +417,16 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
       return nullptr;
     }
     command_buffer->SetLabel("Mipmap Command Buffer");
-
     auto blit_pass = command_buffer->CreateBlitPass();
-    if (!blit_pass) {
-      FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
-      return nullptr;
-    }
     blit_pass->SetLabel("Mipmap Blit Pass");
-    blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
-    if (enable_mipmapping) {
-      blit_pass->GenerateMipmap(dest_texture);
-    }
-
+    blit_pass->GenerateMipmap(texture);
     blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!command_buffer->SubmitCommands()) {
+    if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
       FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
       return nullptr;
     }
-    return dest_texture;
-  } else {  // Doesn't support buffer-to-texture blits.
-    auto texture_descriptor = TextureDescriptor{};
-    texture_descriptor.storage_mode = StorageMode::kHostVisible;
-    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-    texture_descriptor.size = decompressed_image.GetSize();
-    texture_descriptor.mip_count =
-        enable_mipmapping ? decompressed_image.GetSize().MipCount() : 1u;
-
-    auto texture =
-        context->GetResourceAllocator()->CreateTexture(texture_descriptor);
-    if (!texture) {
-      VALIDATION_LOG << "Could not allocate texture for fixture.";
-      return nullptr;
-    }
-
-    auto uploaded = texture->SetContents(decompressed_image.GetAllocation());
-    if (!uploaded) {
-      VALIDATION_LOG
-          << "Could not upload texture to device memory for fixture.";
-      return nullptr;
-    }
-    return texture;
   }
+  return texture;
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForMapping(
@@ -530,6 +501,15 @@ void Playground::SetWindowSize(ISize size) {
 
 bool Playground::ShouldKeepRendering() const {
   return true;
+}
+
+fml::Status Playground::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return impl_->SetCapabilities(capabilities);
+}
+
+bool Playground::WillRenderSomething() const {
+  return switches_.enable_playground;
 }
 
 }  // namespace impeller

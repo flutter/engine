@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_BASE_VALIDATION_H_
+#define FLUTTER_IMPELLER_BASE_VALIDATION_H_
 
 #ifndef IMPELLER_ENABLE_VALIDATION
 #ifdef IMPELLER_DEBUG
@@ -11,8 +12,6 @@
 #endif
 
 #include <sstream>
-
-#include "flutter/fml/macros.h"
 
 namespace impeller {
 
@@ -27,7 +26,13 @@ class ValidationLog {
  private:
   std::ostringstream stream_;
 
-  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ValidationLog);
+  ValidationLog(const ValidationLog&) = delete;
+
+  ValidationLog(ValidationLog&&) = delete;
+
+  ValidationLog& operator=(const ValidationLog&) = delete;
+
+  ValidationLog& operator=(ValidationLog&&) = delete;
 };
 
 void ImpellerValidationBreak(const char* message);
@@ -39,7 +44,9 @@ struct ScopedValidationDisable {
 
   ~ScopedValidationDisable();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ScopedValidationDisable);
+  ScopedValidationDisable(const ScopedValidationDisable&) = delete;
+
+  ScopedValidationDisable& operator=(const ScopedValidationDisable&) = delete;
 };
 
 }  // namespace impeller
@@ -58,3 +65,5 @@ struct ScopedValidationDisable {
 ///   happens in test environments.
 ///
 #define VALIDATION_LOG ::impeller::ValidationLog{}.GetStream()
+
+#endif  // FLUTTER_IMPELLER_BASE_VALIDATION_H_

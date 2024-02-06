@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_TYPOGRAPHER_CONTEXT_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_TYPOGRAPHER_CONTEXT_H_
 
 #include <memory>
 
@@ -34,7 +35,7 @@ class TypographerContext {
   virtual std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,
       GlyphAtlas::Type type,
-      std::shared_ptr<GlyphAtlasContext> atlas_context,
+      const std::shared_ptr<GlyphAtlasContext>& atlas_context,
       const FontGlyphMap& font_glyph_map) const = 0;
 
  protected:
@@ -47,7 +48,11 @@ class TypographerContext {
  private:
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(TypographerContext);
+  TypographerContext(const TypographerContext&) = delete;
+
+  TypographerContext& operator=(const TypographerContext&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_TYPOGRAPHER_CONTEXT_H_

@@ -4,9 +4,7 @@
 
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import '../util.dart';
 import 'slots.dart';
 
@@ -40,8 +38,7 @@ class PlatformViewManager {
 
   /// The shared instance of PlatformViewManager shared across the engine to handle
   /// rendering of PlatformViews into the web app.
-  // TODO(dit): How to make this overridable from tests?
-  static final PlatformViewManager instance = PlatformViewManager();
+  static PlatformViewManager instance = PlatformViewManager();
 
   // The factory functions, indexed by the viewType
   final Map<String, Function> _factories = <String, Function>{};
@@ -65,6 +62,20 @@ class PlatformViewManager {
   /// rendered.
   bool knowsViewId(int viewId) {
     return _contents.containsKey(viewId);
+  }
+
+  /// Returns the cached contents of [viewId], to be injected into the DOM.
+  ///
+  /// This is only used by the active `Renderer` object when a platform view needs
+  /// to be injected in the DOM, through `FlutterView.DomManager.injectPlatformView`.
+  ///
+  /// This may return null, if [renderContent] was not called before this. The
+  /// framework seems to allow/need this for some tests, so it is allowed here
+  /// as well.
+  ///
+  /// App programmers should not access this directly, and instead use [getViewById].
+  DomElement? getSlottedContent(int viewId) {
+    return _contents[viewId];
   }
 
   /// Returns the HTML element created by a registered factory for [viewId].
@@ -106,9 +117,8 @@ class PlatformViewManager {
 
   /// Creates the HTML markup for the `contents` of a Platform View.
   ///
-  /// The result of this call is cached in the `_contents` Map. This is only
-  /// cached so it can be disposed of later by [clearPlatformView]. _Note that
-  /// there's no `getContents` function in this class._
+  /// The result of this call is cached in the `_contents` Map, so the active
+  /// renderer can inject it as needed.
   ///
   /// The resulting DOM for the `contents` of a Platform View looks like this:
   ///
@@ -161,38 +171,11 @@ class PlatformViewManager {
 
   /// Removes a PlatformView by its `viewId` from the manager, and from the DOM.
   ///
-  /// Once a view has been cleared, calls [knowsViewId] will fail, as if it had
+  /// Once a view has been cleared, calls to [knowsViewId] will fail, as if it had
   /// never been rendered before.
   void clearPlatformView(int viewId) {
     // Remove from our cache, and then from the DOM...
-    final DomElement? element = _contents.remove(viewId);
-    _safelyRemoveSlottedElement(element);
-  }
-
-  // We need to remove slotted elements like this because of a Safari bug that
-  // gets triggered when a slotted element is removed in a JS event different
-  // than its slot (after the slot is removed).
-  //
-  // TODO(web): Cleanup https://github.com/flutter/flutter/issues/85816
-  void _safelyRemoveSlottedElement(DomElement? element) {
-    if (element == null) {
-      return;
-    }
-    if (browserEngine != BrowserEngine.webkit) {
-      element.remove();
-      return;
-    }
-    final String tombstoneName = "tombstone-${element.getAttribute('slot')}";
-    // Create and inject a new slot in the shadow root
-    final DomElement slot = domDocument.createElement('slot')
-      ..style.display = 'none'
-      ..setAttribute('name', tombstoneName);
-    flutterViewEmbedder.glassPaneShadow.append(slot);
-    // Link the element to the new slot
-    element.setAttribute('slot', tombstoneName);
-    // Delete both the element, and the new slot
-    element.remove();
-    slot.remove();
+    _contents.remove(viewId)?.remove();
   }
 
   /// Attempt to ensure that the contents of the user-supplied DOM element will
@@ -230,16 +213,12 @@ class PlatformViewManager {
   bool isVisible(int viewId) => !isInvisible(viewId);
 
   /// Clears the state. Used in tests.
-  ///
-  /// Returns the set of know view ids, so they can be cleaned up.
-  Set<int> debugClear() {
-    final Set<int> result = _contents.keys.toSet();
-    result.forEach(clearPlatformView);
+  void debugClear() {
+    _contents.keys.toList().forEach(clearPlatformView);
     _factories.clear();
     _contents.clear();
     _invisibleViews.clear();
     _viewIdToType.clear();
-    return result;
   }
 }
 
@@ -249,5 +228,7 @@ DomElement _defaultFactory(
 }) {
   params!;
   params as Map<Object?, Object?>;
-  return domDocument.createElement(params.readString('tagName'));
+  return domDocument.createElement(params.readString('tagName'))
+    ..style.width = '100%'
+    ..style.height = '100%';
 }

@@ -1,7 +1,6 @@
 package io.flutter.plugin.platform;
 
 import android.annotation.TargetApi;
-import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.hardware.HardwareBuffer;
 import android.media.Image;
@@ -12,14 +11,14 @@ import android.view.Surface;
 import io.flutter.Log;
 import io.flutter.view.TextureRegistry.ImageTextureEntry;
 
-@TargetApi(33)
+@TargetApi(29)
 public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTarget {
   private ImageTextureEntry textureEntry;
   private ImageReader reader;
   private int bufferWidth = 0;
   private int bufferHeight = 0;
   private static final String TAG = "ImageReaderPlatformViewRenderTarget";
-  private static final int MAX_IMAGES = 3;
+  private static final int MAX_IMAGES = 4;
 
   private void closeReader() {
     if (this.reader != null) {
@@ -40,7 +39,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
           try {
             image = reader.acquireLatestImage();
           } catch (IllegalStateException e) {
-            Log.e(TAG, "New image available but it could not be acquired: " + e.toString());
+            Log.e(TAG, "onImageAvailable acquireLatestImage failed: " + e.toString());
           }
           if (image == null) {
             return;
@@ -72,18 +71,33 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
     return reader;
   }
 
+  @TargetApi(29)
+  protected ImageReader createImageReader29() {
+    final ImageReader reader =
+        ImageReader.newInstance(
+            bufferWidth,
+            bufferHeight,
+            ImageFormat.PRIVATE,
+            MAX_IMAGES,
+            HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
+    reader.setOnImageAvailableListener(this.onImageAvailableListener, onImageAvailableHandler);
+    return reader;
+  }
+
   protected ImageReader createImageReader() {
     if (Build.VERSION.SDK_INT >= 33) {
       return createImageReader33();
+    } else if (Build.VERSION.SDK_INT >= 29) {
+      return createImageReader29();
     }
     throw new UnsupportedOperationException(
-        "ImageReaderPlatformViewRenderTarget requires API version 33+");
+        "ImageReaderPlatformViewRenderTarget requires API version 29+");
   }
 
   public ImageReaderPlatformViewRenderTarget(ImageTextureEntry textureEntry) {
-    if (Build.VERSION.SDK_INT < 33) {
+    if (Build.VERSION.SDK_INT < 29) {
       throw new UnsupportedOperationException(
-          "ImageReaderPlatformViewRenderTarget requires API version 33+");
+          "ImageReaderPlatformViewRenderTarget requires API version 29+");
     }
     this.textureEntry = textureEntry;
   }
@@ -105,14 +119,6 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
 
   public int getHeight() {
     return this.bufferHeight;
-  }
-
-  public Canvas lockHardwareCanvas() {
-    return getSurface().lockHardwareCanvas();
-  }
-
-  public void unlockCanvasAndPost(Canvas canvas) {
-    getSurface().unlockCanvasAndPost(canvas);
   }
 
   public long getId() {

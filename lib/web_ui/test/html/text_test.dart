@@ -22,7 +22,7 @@ void main() {
 Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
-  setUpUnitTests();
+  setUpUnitTests(withImplicitView: true);
 
   late String fallback;
   setUp(() {
@@ -79,10 +79,6 @@ Future<void> testMain() async {
       expect(paragraph.height, fontSize * 2.0); // because it wraps
       expect(paragraph.width, fontSize * 5.0);
       expect(paragraph.minIntrinsicWidth, fontSize * 4.0);
-
-      // TODO(yjbanov): due to https://github.com/flutter/flutter/issues/21965
-      //                Flutter reports a different number. Ours is correct
-      //                though.
       expect(paragraph.maxIntrinsicWidth, fontSize * 9.0);
       expect(paragraph.alphabeticBaseline, fontSize * .8);
       expect(
@@ -93,6 +89,116 @@ Future<void> testMain() async {
       );
     }
   });
+
+  test('Basic line related metrics', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+
+    expect(paragraph.numberOfLines, 1);
+
+    expect(paragraph.getLineMetricsAt(-1), isNull);
+    expect(paragraph.getLineMetricsAt(0)?.lineNumber, 0);
+    expect(paragraph.getLineMetricsAt(1), isNull);
+
+    expect(paragraph.getLineNumberAt(-1), isNull);
+    expect(paragraph.getLineNumberAt(0), 0);
+    expect(paragraph.getLineNumberAt(6), 0);
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getLineNumberAt(7), isNull);
+  });
+
+  test('Basic glyph metrics', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+
+    expect(paragraph.getGlyphInfoAt(-1), isNull);
+
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 1));
+    expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange, const TextRange(start: 6, end: 7));
+    expect(paragraph.getGlyphInfoAt(7), isNull);
+    expect(paragraph.getGlyphInfoAt(200), isNull);
+  });
+
+  test('Basic glyph metrics - hit test', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      fontFamily: 'FlutterTest',
+    ))..addText('Test\nTest');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    final GlyphInfo? last = paragraph.getGlyphInfoAt(8);
+    expect(bottomRight, equals(last));
+    expect(bottomRight, isNot(paragraph.getGlyphInfoAt(0)));
+
+    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(30, 10, 10, 10));
+    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 8, end: 9));
+    expect(bottomRight?.writingDirection, TextDirection.ltr);
+  });
+
+  test('Basic glyph metrics - hit test - center aligned text in separate fragments', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      textAlign: TextAlign.center,
+      fontFamily: 'FlutterTest',
+    ))..addText('12345\n')
+      ..addText('1')
+      ..addText('2')
+      ..addText('3');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 50));
+
+    final GlyphInfo? bottomCenter = paragraph.getClosestGlyphInfoForOffset(const Offset(25.0, 99.0));
+    final GlyphInfo? expected = paragraph.getGlyphInfoAt(7);
+    expect(bottomCenter, equals(expected));
+    expect(bottomCenter, isNot(paragraph.getGlyphInfoAt(8)));
+
+    expect(bottomCenter?.graphemeClusterLayoutBounds, const Rect.fromLTWH(20, 10, 10, 10));
+    expect(bottomCenter?.graphemeClusterCodeUnitRange, const TextRange(start: 7, end: 8));
+    expect(bottomCenter?.writingDirection, TextDirection.ltr);
+  });
+
+  test('Glyph metrics with grapheme split into different runs', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontStyle: FontStyle.normal,
+      fontWeight: FontWeight.normal,
+      fontSize: fontSize,
+      maxLines: 1,
+    ))..addText('A') // The base charater A.
+      ..addText('̀'); // The diacritical grave accent, which should combine with the base character to form a single grapheme.
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
+    expect(paragraph.getGlyphInfoAt(1)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
+    expect(paragraph.getGlyphInfoAt(1)?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
+
+    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
+    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
+  }, skip: domIntl.v8BreakIterator == null); // Intended: Intl.v8breakiterator is needed for correctly breaking grapheme clusters.
 
   test('Can disable rounding hack', () {
     if (!ParagraphBuilder.shouldDisableRoundingHack) {
@@ -389,7 +495,9 @@ Future<void> testMain() async {
   group('test fonts in flutterTester environment', () {
     final bool resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
     ui_web.debugEmulateFlutterTesterEnvironment = true;
-    tearDownAll(() => ui_web.debugEmulateFlutterTesterEnvironment = resetValue);
+    tearDownAll(() {
+      ui_web.debugEmulateFlutterTesterEnvironment = resetValue;
+    });
     const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
 
     test('The default test font is used when a non-test fontFamily is specified, or fontFamily is not specified', () {

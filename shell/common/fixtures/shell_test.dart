@@ -9,6 +9,11 @@ import 'dart:ui';
 
 void main() {}
 
+@pragma('vm:entry-point')
+void mainNotifyNative() {
+  notifyNative();
+}
+
 @pragma('vm:external-name', 'NativeReportTimingsCallback')
 external void nativeReportTimingsCallback(List<int> timings);
 @pragma('vm:external-name', 'NativeOnBeginFrame')
@@ -219,29 +224,6 @@ void callNotifyDestroyed() {
 
 @pragma('vm:external-name', 'NotifyMessage')
 external void notifyMessage(String string);
-
-@pragma('vm:entry-point')
-void canConvertMappings() {
-  sendFixtureMapping(getFixtureMapping());
-}
-
-@pragma('vm:external-name', 'GetFixtureMapping')
-external List<int> getFixtureMapping();
-@pragma('vm:external-name', 'SendFixtureMapping')
-external void sendFixtureMapping(List<int> list);
-
-@pragma('vm:entry-point')
-void canDecompressImageFromAsset() {
-  decodeImageFromList(
-    Uint8List.fromList(getFixtureImage()),
-    (Image result) {
-      notifyWidthHeight(result.width, result.height);
-    },
-  );
-}
-
-@pragma('vm:external-name', 'GetFixtureImage')
-external List<int> getFixtureImage();
 
 @pragma('vm:entry-point')
 void canRegisterImageDecoders() {
@@ -530,7 +512,7 @@ List<int> getCurrentViewWidths() {
   final List<int> result = <int>[];
   for (final FlutterView view in PlatformDispatcher.instance.views) {
     result.add(view.viewId);
-    result.add(view.physicalGeometry.width.round());
+    result.add(view.physicalSize.width.round());
   }
   return result;
 }

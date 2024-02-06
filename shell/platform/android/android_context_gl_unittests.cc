@@ -6,8 +6,10 @@
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_environment_gl.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
+#include "fml/logging.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "shell/platform/android/context/android_context.h"
 
 namespace flutter {
 namespace testing {
@@ -27,6 +29,69 @@ TaskRunners MakeTaskRunners(const std::string& thread_label,
 }
 }  // namespace
 
+class TestImpellerContext : public impeller::Context {
+ public:
+  TestImpellerContext() {}
+
+  ~TestImpellerContext() {}
+
+  impeller::Context::BackendType GetBackendType() const override {
+    return impeller::Context::BackendType::kOpenGLES;
+  }
+
+  std::string DescribeGpuModel() const override { return ""; }
+
+  bool IsValid() const override { return true; }
+
+  const std::shared_ptr<const impeller::Capabilities>& GetCapabilities()
+      const override {
+    FML_UNREACHABLE();
+  }
+
+  bool UpdateOffscreenLayerPixelFormat(impeller::PixelFormat format) override {
+    FML_UNREACHABLE();
+  }
+
+  std::shared_ptr<impeller::Allocator> GetResourceAllocator() const override {
+    FML_UNREACHABLE();
+  }
+
+  std::shared_ptr<impeller::ShaderLibrary> GetShaderLibrary() const override {
+    FML_UNREACHABLE();
+  }
+
+  std::shared_ptr<impeller::SamplerLibrary> GetSamplerLibrary() const override {
+    FML_UNREACHABLE();
+  }
+
+  std::shared_ptr<impeller::PipelineLibrary> GetPipelineLibrary()
+      const override {
+    FML_UNREACHABLE();
+  }
+
+  std::shared_ptr<impeller::CommandBuffer> CreateCommandBuffer()
+      const override {
+    FML_UNREACHABLE();
+  }
+
+  std::shared_ptr<impeller::CommandQueue> GetCommandQueue() const override {
+    FML_UNREACHABLE();
+  }
+
+  void Shutdown() override { did_shutdown = true; }
+
+  bool did_shutdown = false;
+};
+
+class TestAndroidContext : public AndroidContext {
+ public:
+  TestAndroidContext(const std::shared_ptr<impeller::Context>& impeller_context,
+                     AndroidRenderingAPI rendering_api)
+      : AndroidContext(rendering_api) {
+    SetImpellerContext(impeller_context);
+  }
+};
+
 TEST(AndroidContextGl, Create) {
   GrMockOptions main_context_options;
   sk_sp<GrDirectContext> main_context =
@@ -36,8 +101,8 @@ TEST(AndroidContextGl, Create) {
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      thread_label,
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
+      thread_label, ThreadHost::Type::kUi | ThreadHost::Type::kRaster |
+                        ThreadHost::Type::kIo));
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto context = std::make_unique<AndroidContextGLSkia>(
       AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);
@@ -45,6 +110,17 @@ TEST(AndroidContextGl, Create) {
   EXPECT_NE(context.get(), nullptr);
   context.reset();
   EXPECT_TRUE(main_context->abandoned());
+}
+
+TEST(AndroidContextGl, CreateImpeller) {
+  auto impeller_context = std::make_shared<TestImpellerContext>();
+  auto android_context = std::make_unique<TestAndroidContext>(
+      impeller_context, AndroidRenderingAPI::kOpenGLES);
+  EXPECT_FALSE(impeller_context->did_shutdown);
+
+  android_context.reset();
+
+  EXPECT_TRUE(impeller_context->did_shutdown);
 }
 
 TEST(AndroidContextGl, CreateSingleThread) {
@@ -76,8 +152,8 @@ TEST(AndroidSurfaceGL, CreateSnapshopSurfaceWhenOnscreenSurfaceIsNotNull) {
   std::string thread_label =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      thread_label,
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
+      thread_label, ThreadHost::Type::kUi | ThreadHost::Type::kRaster |
+                        ThreadHost::Type::kIo));
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto android_context = std::make_shared<AndroidContextGLSkia>(
       AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);
@@ -101,7 +177,7 @@ TEST(AndroidSurfaceGL, CreateSnapshopSurfaceWhenOnscreenSurfaceIsNull) {
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
   auto mask =
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO;
+      ThreadHost::Type::kUi | ThreadHost::Type::kRaster | ThreadHost::Type::kIo;
   flutter::ThreadHost::ThreadHostConfig host_config(mask);
 
   ThreadHost thread_host(host_config);
@@ -125,8 +201,8 @@ TEST(AndroidContextGl, DISABLED_MSAAx4) {
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      thread_label,
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
+      thread_label, ThreadHost::Type::kUi | ThreadHost::Type::kRaster |
+                        ThreadHost::Type::kIo));
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto context = std::make_unique<AndroidContextGLSkia>(
       AndroidRenderingAPI::kOpenGLES, environment, task_runners, 4);
@@ -147,8 +223,8 @@ TEST(AndroidContextGl, EnsureMakeCurrentChecksCurrentContextStatus) {
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
 
   ThreadHost thread_host(ThreadHost::ThreadHostConfig(
-      thread_label,
-      ThreadHost::Type::UI | ThreadHost::Type::RASTER | ThreadHost::Type::IO));
+      thread_label, ThreadHost::Type::kUi | ThreadHost::Type::kRaster |
+                        ThreadHost::Type::kIo));
   TaskRunners task_runners = MakeTaskRunners(thread_label, thread_host);
   auto context = std::make_unique<AndroidContextGLSkia>(
       AndroidRenderingAPI::kOpenGLES, environment, task_runners, 0);

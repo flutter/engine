@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.platform;
 
 import static org.junit.Assert.*;
@@ -8,7 +12,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.SurfaceTexture;
 import android.view.Surface;
 import android.view.View;
@@ -22,34 +25,6 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class SurfaceTexturePlatformViewRenderTargetTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
-
-  @Test
-  public void create_clearsTexture() {
-    final Canvas canvas = mock(Canvas.class);
-    final Surface surface = mock(Surface.class);
-    when(surface.lockHardwareCanvas()).thenReturn(canvas);
-    when(surface.isValid()).thenReturn(true);
-    final SurfaceTexture surfaceTexture = mock(SurfaceTexture.class);
-    final SurfaceTextureEntry surfaceTextureEntry = mock(SurfaceTextureEntry.class);
-    when(surfaceTextureEntry.surfaceTexture()).thenReturn(surfaceTexture);
-    when(surfaceTexture.isReleased()).thenReturn(false);
-
-    // Test.
-    final SurfaceTexturePlatformViewRenderTarget renderTarget =
-        new SurfaceTexturePlatformViewRenderTarget(surfaceTextureEntry) {
-          @Override
-          protected Surface createSurface() {
-            return surface;
-          }
-        };
-
-    // Verify.
-    verify(surface, times(1)).lockHardwareCanvas();
-    verify(surface, times(1)).unlockCanvasAndPost(canvas);
-    verify(canvas, times(1)).drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-    verifyNoMoreInteractions(surface);
-    verifyNoMoreInteractions(canvas);
-  }
 
   @Test
   public void viewDraw_writesToBuffer() {
@@ -84,15 +59,15 @@ public class SurfaceTexturePlatformViewRenderTargetTest {
     platformView.layout(0, 0, size, size);
 
     // Test.
-    final Canvas c = renderTarget.lockHardwareCanvas();
+    final Surface s = renderTarget.getSurface();
+    final Canvas c = s.lockHardwareCanvas();
     platformView.draw(c);
-    renderTarget.unlockCanvasAndPost(c);
+    s.unlockCanvasAndPost(c);
 
     // Verify.
-    verify(canvas, times(1)).drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
     verify(canvas, times(1)).drawColor(Color.RED);
-    verify(surface, times(2)).lockHardwareCanvas();
-    verify(surface, times(2)).unlockCanvasAndPost(canvas);
+    verify(surface, times(1)).lockHardwareCanvas();
+    verify(surface, times(1)).unlockCanvasAndPost(canvas);
     verifyNoMoreInteractions(surface);
   }
 
@@ -113,6 +88,10 @@ public class SurfaceTexturePlatformViewRenderTargetTest {
             return surface;
           }
         };
+
+    final Surface s = renderTarget.getSurface();
+    final Canvas c = s.lockHardwareCanvas();
+    s.unlockCanvasAndPost(c);
 
     reset(surface);
     reset(surfaceTexture);

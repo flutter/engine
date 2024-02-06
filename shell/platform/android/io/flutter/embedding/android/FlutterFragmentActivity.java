@@ -572,8 +572,7 @@ public class FlutterFragmentActivity extends FragmentActivity
               + shouldAttachEngineToActivity());
 
       if (getCachedEngineGroupId() != null) {
-        return flutterFragment
-            .withNewEngineInGroup(getCachedEngineGroupId())
+        return FlutterFragment.withNewEngineInGroup(getCachedEngineGroupId())
             .dartEntrypoint(getDartEntrypointFunctionName())
             .initialRoute(getInitialRoute())
             .handleDeeplinking(shouldHandleDeeplinking())
@@ -636,6 +635,7 @@ public class FlutterFragmentActivity extends FragmentActivity
   }
 
   @Override
+  @SuppressWarnings("MissingSuperCall")
   public void onUserLeaveHint() {
     flutterFragment.onUserLeaveHint();
   }

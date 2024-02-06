@@ -58,12 +58,17 @@ source_set("flutter_framework_source_arc") {
   public_configs = [ "//flutter:config" ]
 
   sources = [
+    "framework/Source/FlutterMetalLayer.h",
+    "framework/Source/FlutterMetalLayer.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
   ]
 
-  frameworks = [ "UIKit.framework" ]
+  frameworks = [
+    "UIKit.framework",
+    "IOSurface.framework",
+  ]
 }
 
 source_set("flutter_framework_source") {
@@ -74,6 +79,9 @@ source_set("flutter_framework_source") {
   deps = []
 
   sources = [
+    # iOS embedder is migrating to ARC.
+    # New files are highly encouraged to be in ARC.
+    # To add new files in ARC, add them to the `flutter_framework_source_arc` target.
     "framework/Source/FlutterAppDelegate.mm",
     "framework/Source/FlutterCallbackCache.mm",
     "framework/Source/FlutterCallbackCache_Internal.h",
@@ -193,8 +201,8 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/darwin/common:framework_common",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/profiling:profiling",
+    "//flutter/skia",
     "//flutter/third_party/spring_animation",
-    "//third_party/skia",
   ]
 
   public_configs = [
@@ -218,58 +226,6 @@ source_set("flutter_framework_source") {
 
 platform_frameworks_path =
     rebase_path("$ios_sdk_path/../../Library/Frameworks/")
-
-# For tests that rely on manual reference counting.
-source_set("ios_test_flutter_mrc") {
-  visibility = [ ":*" ]
-  cflags = [
-    "-fvisibility=default",
-    "-F$platform_frameworks_path",
-    "-mios-simulator-version-min=$ios_testing_deployment_target",
-  ]
-
-  # XCode 15 beta has a bug where iOS 17 API usage is not guarded.
-  # This bug results engine build failure since the engine treats warnings as errors.
-  # The `-Wno-unguarded-availability-new` can be removed when the XCode bug is fixed.
-  # See details in https://github.com/flutter/flutter/issues/128958.
-  cflags_objcc = [ "-Wno-unguarded-availability-new" ]
-  sources = [
-    "framework/Source/FlutterEnginePlatformViewTest.mm",
-    "framework/Source/FlutterEngineTest_mrc.mm",
-    "framework/Source/FlutterPlatformPluginTest.mm",
-    "framework/Source/FlutterPlatformViewsTest.mm",
-    "framework/Source/FlutterTouchInterceptingView_Test.h",
-    "framework/Source/FlutterViewControllerTest_mrc.mm",
-    "framework/Source/FlutterViewTest.mm",
-    "framework/Source/SemanticsObjectTestMocks.h",
-    "framework/Source/SemanticsObjectTest_mrc.mm",
-    "framework/Source/VsyncWaiterIosTest.mm",
-    "framework/Source/accessibility_bridge_test.mm",
-    "platform_message_handler_ios_test.mm",
-  ]
-  deps = [
-    ":flutter_framework_source",
-    ":flutter_framework_source_arc",
-    "//flutter/common:common",
-    "//flutter/lib/ui:ui",
-    "//flutter/shell/common:common",
-    "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/embedder:embedder_as_internal_library",
-    "//flutter/third_party/tonic",
-    "//flutter/third_party/txt",
-    "//third_party/ocmock:ocmock_shared",
-    "//third_party/rapidjson",
-    "//third_party/skia",
-  ]
-
-  if (shell_enable_vulkan) {
-    deps += [ "//flutter/vulkan" ]
-  }
-
-  if (darwin_extension_safe) {
-    defines = [ "APPLICATION_EXTENSION_API_ONLY=1" ]
-  }
-}
 
 shared_library("ios_test_flutter") {
   testonly = true
@@ -301,38 +257,48 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterDartProjectTest.mm",
     "framework/Source/FlutterEmbedderKeyResponderTest.mm",
     "framework/Source/FlutterEngineGroupTest.mm",
+    "framework/Source/FlutterEnginePlatformViewTest.mm",
     "framework/Source/FlutterEngineTest.mm",
     "framework/Source/FlutterFakeKeyEvents.h",
     "framework/Source/FlutterFakeKeyEvents.mm",
     "framework/Source/FlutterKeyboardManagerTest.mm",
+    "framework/Source/FlutterMetalLayerTest.mm",
+    "framework/Source/FlutterPlatformPluginTest.mm",
+    "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
     "framework/Source/FlutterRestorationPluginTest.mm",
     "framework/Source/FlutterSpellCheckPluginTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterTextureRegistryRelayTest.mm",
+    "framework/Source/FlutterTouchInterceptingView_Test.h",
     "framework/Source/FlutterUndoManagerPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
+    "framework/Source/FlutterViewTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
+    "framework/Source/SemanticsObjectTestMocks.h",
     "framework/Source/UIViewController_FlutterScreenAndSceneIfLoadedTest.mm",
+    "framework/Source/VsyncWaiterIosTest.mm",
+    "framework/Source/accessibility_bridge_test.mm",
+    "framework/Source/availability_version_check_test.mm",
     "framework/Source/connection_collection_test.mm",
+    "platform_message_handler_ios_test.mm",
   ]
   deps = [
     ":flutter_framework",
     ":flutter_framework_source",
     ":flutter_framework_source_arc",
     ":ios_gpu_configuration",
-    ":ios_test_flutter_mrc",
     "//flutter/common:common",
     "//flutter/lib/ui:ui",
     "//flutter/shell/platform/darwin/common:framework_common",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
+    "//flutter/skia",
+    "//flutter/third_party/ocmock:ocmock_shared",
+    "//flutter/third_party/rapidjson",
     "//flutter/third_party/spring_animation",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
-    "//third_party/ocmock:ocmock_shared",
-    "//third_party/rapidjson",
-    "//third_party/skia",
   ]
   public_configs = [
     ":ios_gpu_configuration_config",
@@ -413,6 +379,15 @@ copy("copy_framework_module_map") {
   outputs = [ "$_flutter_framework_dir/Modules/module.modulemap" ]
 }
 
+# Copy privacy manifest. This file is required by Apple for third-party SDKs,
+# and documents engine and third_party usage of timestamps and boot time APIs.
+# See https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
+copy("copy_framework_privacy_manifest") {
+  visibility = [ ":*" ]
+  sources = [ "framework/PrivacyInfo.xcprivacy" ]
+  outputs = [ "$_flutter_framework_dir/PrivacyInfo.xcprivacy" ]
+}
+
 action("copy_framework_headers") {
   script = "//flutter/sky/tools/install_framework_headers.py"
   visibility = [ ":*" ]
@@ -455,6 +430,7 @@ shared_library("copy_and_verify_framework_module") {
     ":copy_framework_headers",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
+    ":copy_framework_privacy_manifest",
   ]
 
   if (darwin_extension_safe) {
@@ -477,6 +453,7 @@ group("universal_flutter_framework") {
     ":copy_framework_icu",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
+    ":copy_framework_privacy_manifest",
     ":copy_license",
   ]
 

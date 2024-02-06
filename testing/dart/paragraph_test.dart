@@ -219,6 +219,105 @@ void main() {
     expect(line.end, 10);
   });
 
+  test('getLineMetricsAt', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      textDirection: TextDirection.rtl,
+      height: 2.0,
+    ));
+    builder.addText('Test\npppp');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+    final LineMetrics? line = paragraph.getLineMetricsAt(1);
+    expect(line?.hardBreak, isTrue);
+    expect(line?.ascent, 15.0);
+    expect(line?.descent, 5.0);
+    expect(line?.height, 20.0);
+    expect(line?.width, 4 * 10.0);
+    expect(line?.left, 100.0 - 40.0);
+    expect(line?.baseline, 20.0 + 15.0);
+    expect(line?.lineNumber, 1);
+  });
+
+  test('line number', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
+    builder.addText('Test\n\nTest');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100.0));
+    expect(paragraph.numberOfLines, 3);
+    expect(paragraph.getLineNumberAt(4), 0); // first LF
+    expect(paragraph.getLineNumberAt(5), 1); // second LF
+    expect(paragraph.getLineNumberAt(6), 2); // "T" in the second "Test"
+  });
+
+  test('empty paragraph', () {
+    const double fontSize = 10.0;
+    final Paragraph paragraph = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+    )).build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    expect(paragraph.getClosestGlyphInfoForOffset(Offset.zero), isNull);
+    expect(paragraph.getGlyphInfoAt(0), isNull);
+
+    expect(paragraph.getLineMetricsAt(0), isNull);
+    expect(paragraph.numberOfLines, 0);
+    expect(paragraph.getLineNumberAt(0), isNull);
+
+    expect(paragraph.getGlyphInfoAt(0), isNull);
+    expect(paragraph.getClosestGlyphInfoForOffset(Offset.zero), isNull);
+  });
+
+  test('OOB indices as input', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      maxLines: 1,
+      ellipsis: 'BBB',
+    ))..addText('A' * 100);
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 100));
+
+    expect(paragraph.numberOfLines, 1);
+
+    expect(paragraph.getLineMetricsAt(-1), isNull);
+    expect(paragraph.getLineMetricsAt(0)?.lineNumber, 0);
+    expect(paragraph.getLineMetricsAt(1), isNull);
+
+    expect(paragraph.getLineNumberAt(-1), isNull);
+    expect(paragraph.getLineNumberAt(0), 0);
+    expect(paragraph.getLineNumberAt(6), 0);
+    // The last 3 characters on the first line are ellipsized with BBB.
+    expect(paragraph.getLineMetricsAt(7), isNull);
+
+    expect(paragraph.getGlyphInfoAt(-1), isNull);
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 1));
+    expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange, const TextRange(start: 6, end: 7));
+    expect(paragraph.getGlyphInfoAt(7), isNull);
+    expect(paragraph.getGlyphInfoAt(200), isNull);
+  });
+
+  test('querying glyph info', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+    ));
+    builder.addText('Test\nTest');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+
+    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    final GlyphInfo? last = paragraph.getGlyphInfoAt(8);
+    expect(bottomRight, equals(last));
+    expect(bottomRight, notEquals(paragraph.getGlyphInfoAt(0)));
+
+    expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(30, 10, 10, 10));
+    expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 8, end: 9));
+    expect(bottomRight?.writingDirection, TextDirection.ltr);
+  });
+
   test('painting a disposed paragraph does not crash', () {
     final Paragraph paragraph = ParagraphBuilder(ParagraphStyle()).build();
     paragraph.dispose();

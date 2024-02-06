@@ -142,7 +142,20 @@ public class FlutterJNI {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
 
-    System.loadLibrary("flutter");
+    try {
+      System.loadLibrary("flutter");
+    } catch (UnsatisfiedLinkError e) {
+      // Sniff if this because libflutter.so couldn't be found.
+      if (e.toString().contains("couldn't find \"libflutter.so\"")) {
+        throw new UnsupportedOperationException(
+            "Could not load libflutter.so this is likely because the application"
+                + " is running on an architecture that Flutter Android does not support (e.g. x86)"
+                + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
+                + " for more detail.",
+            e);
+      }
+      throw e;
+    }
     FlutterJNI.loadLibraryCalled = true;
   }
 
@@ -151,9 +164,10 @@ public class FlutterJNI {
   private static native void nativePrefetchDefaultFontManager();
 
   /**
-   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   * Prefetch the default font manager provided by txt::GetDefaultFontManager() which is a
+   * process-wide singleton owned by Skia. Note that, the first call to txt::GetDefaultFontManager()
+   * will take noticeable time, but later calls will return a reference to the preexisting font
+   * manager.
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
@@ -237,17 +251,6 @@ public class FlutterJNI {
     return nativeGetIsSoftwareRenderingEnabled();
   }
 
-  private native boolean nativeGetDisableImageReaderPlatformViews();
-
-  /**
-   * Checks launch settings for whether image reader platform views are disabled.
-   *
-   * <p>The value is the same per program.
-   */
-  @UiThread
-  public boolean getDisableImageReaderPlatformViews() {
-    return nativeGetDisableImageReaderPlatformViews();
-  }
   /**
    * VM Service URI for the VM instance.
    *
@@ -931,19 +934,19 @@ public class FlutterJNI {
    */
   @UiThread
   public void registerImageTexture(
-      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+      long textureId, @NonNull TextureRegistry.ImageConsumer imageTexture) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRegisterImageTexture(
         nativeShellHolderId,
         textureId,
-        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+        new WeakReference<TextureRegistry.ImageConsumer>(imageTexture));
   }
 
   private native void nativeRegisterImageTexture(
       long nativeShellHolderId,
       long textureId,
-      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
+      @NonNull WeakReference<TextureRegistry.ImageConsumer> imageTexture);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -960,6 +963,16 @@ public class FlutterJNI {
   }
 
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
+
+  /** Schedule the engine to draw a frame but does not invalidate the layout tree. */
+  @UiThread
+  public void scheduleFrame() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeScheduleFrame(nativeShellHolderId);
+  }
+
+  private native void nativeScheduleFrame(long nativeShellHolderId);
 
   /**
    * Unregisters a texture that was registered with {@link #registerTexture(long,

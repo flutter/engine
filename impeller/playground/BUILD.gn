@@ -15,6 +15,10 @@ impeller_component("playground") {
     "switches.h",
     "widgets.cc",
     "widgets.h",
+
+    # Swiftshader is Vulkan backend specific but the utilities are not.
+    "backend/vulkan/swiftshader_utilities.cc",
+    "backend/vulkan/swiftshader_utilities.h",
   ]
 
   deps = [ "../renderer/backend" ]
@@ -47,8 +51,8 @@ impeller_component("playground") {
     "../scene/shaders",
     "imgui:imgui_impeller_backend",
     "//flutter/fml",
-    "//third_party/glfw",
-    "//third_party/imgui:imgui_glfw",
+    "//flutter/third_party/glfw",
+    "//flutter/third_party/imgui:imgui_glfw",
   ]
 
   if (impeller_supports_rendering) {

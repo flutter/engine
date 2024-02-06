@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMPUTE_PIPELINE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMPUTE_PIPELINE_VK_H_
 
 #include <memory>
 
@@ -47,7 +48,11 @@ class ComputePipelineVK final
   // |Pipeline|
   bool IsValid() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ComputePipelineVK);
+  ComputePipelineVK(const ComputePipelineVK&) = delete;
+
+  ComputePipelineVK& operator=(const ComputePipelineVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMPUTE_PIPELINE_VK_H_

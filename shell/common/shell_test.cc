@@ -24,8 +24,8 @@ constexpr int64_t kImplicitViewId = 0;
 
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
-                   ThreadHost::Type::Platform | ThreadHost::Type::IO |
-                       ThreadHost::Type::UI | ThreadHost::Type::RASTER) {}
+                   ThreadHost::Type::kPlatform | ThreadHost::Type::kIo |
+                       ThreadHost::Type::kUi | ThreadHost::Type::kRaster) {}
 
 void ShellTest::SendPlatformMessage(Shell* shell,
                                     std::unique_ptr<PlatformMessage> message) {
@@ -380,6 +380,10 @@ size_t ShellTest::GetLiveTrackedPathCount(
       [](const std::weak_ptr<VolatilePathTracker::TrackedPath>& path) {
         return path.lock();
       });
+}
+
+void ShellTest::TurnOffGPU(Shell* shell, bool value) {
+  shell->is_gpu_disabled_sync_switch_->SetSwitch(value);
 }
 
 }  // namespace testing

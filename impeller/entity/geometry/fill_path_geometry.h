@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_
 
 #include <optional>
 
@@ -12,12 +13,12 @@
 namespace impeller {
 
 /// @brief A geometry that is created from a filled path object.
-class FillPathGeometry : public Geometry {
+class FillPathGeometry final : public Geometry {
  public:
   explicit FillPathGeometry(const Path& path,
                             std::optional<Rect> inner_rect = std::nullopt);
 
-  ~FillPathGeometry();
+  ~FillPathGeometry() = default;
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
@@ -26,7 +27,7 @@ class FillPathGeometry : public Geometry {
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
-                                   RenderPass& pass) override;
+                                   RenderPass& pass) const override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -39,12 +40,16 @@ class FillPathGeometry : public Geometry {
                                      Matrix effect_transform,
                                      const ContentContext& renderer,
                                      const Entity& entity,
-                                     RenderPass& pass) override;
+                                     RenderPass& pass) const override;
 
   Path path_;
   std::optional<Rect> inner_rect_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FillPathGeometry);
+  FillPathGeometry(const FillPathGeometry&) = delete;
+
+  FillPathGeometry& operator=(const FillPathGeometry&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_FILL_PATH_GEOMETRY_H_

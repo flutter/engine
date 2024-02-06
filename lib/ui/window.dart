@@ -138,27 +138,42 @@ class FlutterView {
   ///    The value here is equal to the value exposed on [display].
   double get devicePixelRatio => _viewConfiguration.devicePixelRatio;
 
-  /// The dimensions and location of the rectangle into which the scene rendered
-  /// in this view will be drawn on the screen, in physical pixels.
+  /// The sizing constraints in physical pixels for this view.
+  ///
+  /// The view can take on any [Size] that fulfills these constraints. These
+  /// constraints are typically used by an UI framework as the input for its
+  /// layout algorithm to determine an approrpiate size for the view. To size
+  /// the view, the selected size must be provided to the [render] method and it
+  /// must satisfy the constraints.
   ///
   /// When this changes, [PlatformDispatcher.onMetricsChanged] is called.
   ///
-  /// At startup, the size and location of the view may not be known before Dart
-  /// code runs. If this value is observed early in the application lifecycle,
-  /// it may report [Rect.zero].
+  /// At startup, the constraints for the view may not be known before Dart code
+  /// runs. If this value is observed early in the application lifecycle, it may
+  /// report constraints with all dimensions set to zero.
   ///
   /// This value does not take into account any on-screen keyboards or other
-  /// system UI. The [padding] and [viewInsets] properties provide a view into
-  /// how much of each side of the view may be obscured by system UI.
+  /// system UI. If the constraints are tight, the [padding] and [viewInsets]
+  /// properties provide information about how much of each side of the view may
+  /// be obscured by system UI. If the constraints are loose, this information
+  /// is not known upfront.
   ///
   /// See also:
   ///
-  ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
-  ///    observe when this value changes.
-  Rect get physicalGeometry => _viewConfiguration.geometry;
+  ///  * [physicalSize], which returns the current size of the view.
+  // TODO(goderbauer): Wire this up so embedders can configure it. This will
+  //   also require to message the size provided to the render call back to the
+  //   embedder.
+  ViewConstraints get physicalConstraints => ViewConstraints.tight(physicalSize);
 
-  /// The dimensions of the rectangle into which the scene rendered in this view
-  /// will be drawn on the screen, in physical pixels.
+  /// The current dimensions of the rectangle as last reported by the platform
+  /// into which scenes rendered in this view are drawn.
+  ///
+  /// If the view is configured with loose [physicalConstraints] this value
+  /// may be outdated by a few frames as it only updates when the size chosen
+  /// for a frame (as provided to the [render] method) is processed by the
+  /// platform. Because of this, [physicalConstraints] should be used instead of
+  /// this value as the root input to the layout algorithm of UI frameworks.
   ///
   /// When this changes, [PlatformDispatcher.onMetricsChanged] is called. When
   /// using the Flutter framework, using [MediaQuery.of] to obtain the size (via
@@ -175,15 +190,11 @@ class FlutterView {
   /// system UI. The [padding] and [viewInsets] properties provide information
   /// about how much of each side of the view may be obscured by system UI.
   ///
-  /// This value is the same as the `size` member of [physicalGeometry].
-  ///
   /// See also:
   ///
-  ///  * [physicalGeometry], which reports the location of the view as well as
-  ///    its size.
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
-  Size get physicalSize => _viewConfiguration.geometry.size;
+  Size get physicalSize => _viewConfiguration.size;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -327,21 +338,14 @@ class FlutterView {
 
   /// Updates the view's rendering on the GPU with the newly provided [Scene].
   ///
-  /// ## Requirement for calling this method
-  ///
-  /// This method must be called within the synchronous scope of the
+  /// This function must be called within the scope of the
   /// [PlatformDispatcher.onBeginFrame] or [PlatformDispatcher.onDrawFrame]
-  /// callbacks. Calls out of this scope will be ignored. To use this method,
-  /// create a callback that calls this method instead, and assign it to either
-  /// of the fields above; then schedule a frame, which is done typically with
-  /// [PlatformDispatcher.scheduleFrame]. Also, make sure the callback does not
-  /// have `await` before the `FlutterWindow.render` call.
+  /// callbacks being invoked.
   ///
-  /// Additionally, this method can only be called once for each view during a
-  /// single [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
-  /// callback sequence. Duplicate calls will be ignored in production.
-  ///
-  /// ## How to record a scene
+  /// If this function is called a second time during a single
+  /// [PlatformDispatcher.onBeginFrame]/[PlatformDispatcher.onDrawFrame]
+  /// callback sequence or called outside the scope of those callbacks, the call
+  /// will be ignored.
   ///
   /// To record graphical operations, first create a [PictureRecorder], then
   /// construct a [Canvas], passing that [PictureRecorder] to its constructor.
@@ -354,23 +358,25 @@ class FlutterView {
   /// then obtain a [Scene] object, which you can display to the user via this
   /// [render] function.
   ///
+  /// If the view is configured with loose [physicalConstraints] (i.e.
+  /// [ViewConstraints.isTight] returns false) a `size` satisfying those
+  /// constraints must be provided. This method does not check that the provided
+  /// `size` actually meets the constraints (this should be done in a higher
+  /// level), but an illegal `size` may result in undefined rendering behavior.
+  /// If no `size` is provided, [physicalSize] is used instead.
+  ///
   /// See also:
   ///
   /// * [SchedulerBinding], the Flutter framework class which manages the
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) {
-    if (platformDispatcher._renderedViews?.add(this) != true) {
-      // Duplicated calls or calls outside of onBeginFrame/onDrawFrame
-      // (indicated by _renderedViews being null) are ignored, as documented.
-      return;
-    }
-    _render(scene as _NativeScene);
+  void render(Scene scene, {Size? size}) {
+    _render(viewId, scene as _NativeScene, size?.width ?? physicalSize.width, size?.height ?? physicalSize.height);
   }
 
-  @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::Render')
-  external static void _render(_NativeScene scene);
+  @Native<Void Function(Int64, Pointer<Void>, Double, Double)>(symbol: 'PlatformConfigurationNativeApi::Render')
+  external static void _render(int viewId, _NativeScene scene, double width, double height);
 
   /// Change the retained semantics data about this [FlutterView].
   ///

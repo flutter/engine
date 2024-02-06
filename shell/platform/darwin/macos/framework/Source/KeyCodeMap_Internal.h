@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_KEYCODEMAP_INTERNAL_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_KEYCODEMAP_INTERNAL_H_
+
 #import <Cocoa/Cocoa.h>
 #include <cinttypes>
 #include <vector>
@@ -93,7 +96,7 @@ typedef struct {
   uint16_t keyCode;
 
   // The printable string to derive logical key for.
-  uint8_t keyChar;
+  uint64_t keyChar;
 
   // If the goal is mandatory, the keyboard manager will make sure to find a
   // logical key for this character, falling back to the US keyboard layout.
@@ -107,3 +110,5 @@ typedef struct {
 extern const std::vector<LayoutGoal> kLayoutGoals;
 
 }  // namespace flutter
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_KEYCODEMAP_INTERNAL_H_

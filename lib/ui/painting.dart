@@ -1090,11 +1090,7 @@ enum Clip {
 class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  Paint() {
-    if (enableDithering) {
-      _dither = true;
-    }
-  }
+  Paint();
 
   // Paint objects are encoded in two buffers:
   //
@@ -1127,7 +1123,6 @@ class Paint {
   static const int _kMaskFilterBlurStyleIndex = 10;
   static const int _kMaskFilterSigmaIndex = 11;
   static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1142,9 +1137,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-  static const int _kDitherOffset = _kDitherIndex << 2;
+
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
+  static const int _kDataByteCount = 52; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1479,27 +1474,6 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
-  bool get _dither {
-    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
-  }
-  set _dither(bool value) {
-    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
-  }
-
-  /// Whether to dither the output when drawing some elements such as gradients.
-  ///
-  /// It is not expected that this flag will be used in the future; please leave
-  /// feedback in <https://github.com/flutter/flutter/issues/112498> if there is
-  /// a use case for this flag to remain long term.
-  @Deprecated(
-    'Dithering is now enabled by default on some elements (such as gradients) '
-    'and further support for dithering is expected to be handled by custom '
-    'shaders, so this flag is being removed: '
-    'https://github.com/flutter/flutter/issues/112498.'
-    'This feature was deprecated after 3.14.0-0.1.pre.'
-  )
-  static bool enableDithering = true;
-
   @override
   String toString() {
     if (const bool.fromEnvironment('dart.vm.product')) {
@@ -1527,7 +1501,7 @@ class Paint {
       }
       semicolon = '; ';
     }
-    if (isAntiAlias != true) {
+    if (!isAntiAlias) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
@@ -1561,9 +1535,6 @@ class Paint {
     }
     if (invertColors) {
       result.write('${semicolon}invert: $invertColors');
-    }
-    if (_dither) {
-      result.write('${semicolon}dither: $_dither');
     }
     result.write(')');
     return result.toString();
@@ -1956,16 +1927,20 @@ base class _Image extends NativeFieldWrapperClass1 {
   external int get height;
 
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
-    return _futurize((_Callback<ByteData> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded!.buffer.asByteData());
+    return _futurizeWithError((_CallbackWithError<ByteData?> callback) {
+      return _toByteData(format.index, (Uint8List? encoded, String? error) {
+        if (error == null && encoded != null) {
+          callback(encoded.buffer.asByteData(), null);
+        } else {
+          callback(null, error);
+        }
       });
     });
   }
 
   /// Returns an error message on failure, null on success.
   @Native<Handle Function(Pointer<Void>, Int32, Handle)>(symbol: 'Image::toByteData')
-  external String? _toByteData(int format, _Callback<Uint8List?> callback);
+  external String? _toByteData(int format, void Function(Uint8List?, String?) callback);
 
   bool _disposed = false;
   void dispose() {
@@ -1993,6 +1968,11 @@ base class _Image extends NativeFieldWrapperClass1 {
 
   @override
   String toString() => '[$width\u00D7$height]';
+}
+
+@pragma('vm:entry-point')
+Image _wrapImage(_Image image) {
+  return Image._(image, image.width, image.height);
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -4485,35 +4465,31 @@ base class FragmentProgram extends NativeFieldWrapperClass1 {
     // the same encoding here so that users can load assets with the same
     // key they have written in the pubspec.
     final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
-    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    final FragmentProgram? program = _shaderRegistry[encodedKey];
     if (program != null) {
       return Future<FragmentProgram>.value(program);
     }
     return Future<FragmentProgram>.microtask(() {
       final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
-      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      _shaderRegistry[encodedKey] = program;
       return program;
     });
   }
 
   // This is a cache of shaders that have been loaded by
-  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
-  // so that the case where an in-use program is requested again can be fast,
-  // but programs that are no longer referenced are not retained because of the
-  // cache.
-  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
-      <String, WeakReference<FragmentProgram>>{};
+  // FragmentProgram.fromAsset. It holds a strong reference to theFragmentPrograms
+  // The native engine will retain the resources associated with this shader
+  // program (PSO variants) until shutdown, so maintaining a strong reference
+  // here ensures we do not perform extra work if the dart object is continually
+  // re-initialized.
+  static final Map<String, FragmentProgram> _shaderRegistry =
+      <String, FragmentProgram>{};
 
   static void _reinitializeShader(String assetKey) {
     // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
-    final WeakReference<FragmentProgram>? programRef = _shaderRegistry[assetKey];
-    if (programRef == null) {
-      return;
-    }
-
-    final FragmentProgram? program = programRef.target;
+    final FragmentProgram? program = _shaderRegistry[assetKey];
     if (program == null) {
       return;
     }
@@ -5794,6 +5770,18 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
   external void save();
 
+  static Rect _sorted(Rect rect) {
+    if (rect.isEmpty) {
+      rect = Rect.fromLTRB(
+        math.min(rect.left, rect.right),
+        math.min(rect.top, rect.bottom),
+        math.max(rect.left, rect.right),
+        math.max(rect.top, rect.bottom),
+      );
+    }
+    return rect;
+  }
+
   @override
   void saveLayer(Rect? bounds, Paint paint) {
     if (bounds == null) {
@@ -5864,6 +5852,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
+    rect = _sorted(rect);
+    // Even if rect is still empty - which implies it has a zero dimension -
+    // we still need to perform the clipRect operation as it will effectively
+    // nullify any further rendering until the next restore call.
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
@@ -5936,7 +5928,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
@@ -5964,7 +5959,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
@@ -6884,9 +6882,7 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
       targetHeight = height;
     } else if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (width / height)).round();
-      targetHeight = targetHeight;
     } else if (targetHeight == null && targetWidth != null) {
-      targetWidth = targetWidth;
       targetHeight = targetWidth ~/ (width / height);
     }
     assert(targetWidth != null);
@@ -6904,11 +6900,18 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
 /// Generic callback signature, used by [_futurize].
 typedef _Callback<T> = void Function(T result);
 
+/// Generic callback signature, used by [_futurizeWithError].
+typedef _CallbackWithError<T> = void Function(T result, String? error);
+
 /// Signature for a method that receives a [_Callback].
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
 typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
+
+/// Signature for a method that receives a [_CallbackWithError].
+/// See also: [_Callbacker]
+typedef _CallbackerWithError<T> = String? Function(_CallbackWithError<T?> callback);
 
 // Converts a method that receives a value-returning callback to a method that
 // returns a Future.
@@ -6952,6 +6955,31 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
       }
     } else {
       completer.complete(t);
+    }
+  });
+  isSync = false;
+  if (error != null) {
+    throw Exception(error);
+  }
+  return completer.future;
+}
+
+/// A variant of `_futurize` that can communicate specific errors.
+Future<T> _futurizeWithError<T>(_CallbackerWithError<T> callbacker) {
+  final Completer<T> completer = Completer<T>.sync();
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool isSync = true;
+  final String? error = callbacker((T? t, String? error) {
+    if (t != null) {
+      completer.complete(t);
+    } else {
+      if (isSync) {
+        throw Exception(error ?? 'operation failed');
+      } else {
+        completer.completeError(Exception(error ?? 'operation failed'));
+      }
     }
   });
   isSync = false;

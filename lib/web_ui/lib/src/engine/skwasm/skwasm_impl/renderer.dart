@@ -14,7 +14,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
   late SkwasmSurface surface;
-  late EngineSceneView sceneView;
+  EngineSceneView? _sceneView;
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -348,7 +348,6 @@ class SkwasmRenderer implements Renderer {
   @override
   FutureOr<void> initialize() {
     surface = SkwasmSurface();
-    sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
   }
 
   @override
@@ -391,23 +390,35 @@ class SkwasmRenderer implements Renderer {
     }
     final SkwasmImageDecoder decoder = SkwasmImageDecoder(
       contentType: contentType,
-      dataSource: response.body,
+      dataSource: response.body as JSObject,
       debugSource: uri.toString(),
     );
     await decoder.initialize();
     return decoder;
   }
 
+  // TODO(harryterkelsen): Add multiview support,
+  // https://github.com/flutter/flutter/issues/137073.
   @override
-  Future<void> renderScene(ui.Scene scene) => sceneView.renderScene(scene as EngineScene);
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
+    view as EngineFlutterView;
+    assert(view is EngineFlutterWindow, 'Skwasm does not support multi-view mode yet');
+    final EngineSceneView sceneView = _getSceneViewForView(view);
+    return sceneView.renderScene(scene as EngineScene);
+  }
+
+  EngineSceneView _getSceneViewForView(EngineFlutterView view) {
+    // TODO(mdebbar): Support multi-view mode.
+    if (_sceneView == null) {
+      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
+      final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+      implicitView.dom.setScene(_sceneView!.sceneElement);
+    }
+    return _sceneView!;
+  }
 
   @override
   String get rendererTag => 'skwasm';
-
-  @override
-  void reset(FlutterViewEmbedder embedder) {
-    embedder.addSceneToSceneHost(sceneView.sceneElement);
-  }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
 
@@ -452,7 +463,7 @@ class SkwasmRenderer implements Renderer {
   @override
   ui.Image createImageFromImageBitmap(DomImageBitmap imageSource) {
     return SkwasmImage(imageCreateFromTextureSource(
-      imageSource,
+      imageSource as JSObject,
       imageSource.width.toDartInt,
       imageSource.height.toDartInt,
       surface.handle,

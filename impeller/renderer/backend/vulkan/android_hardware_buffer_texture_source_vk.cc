@@ -3,6 +3,9 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h"
+
+#include <cstdint>
+
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 
 #ifdef FML_OS_ANDROID
@@ -194,6 +197,13 @@ vk::Image AndroidHardwareBufferTextureSourceVK::GetImage() const {
 
 // |TextureSourceVK|
 vk::ImageView AndroidHardwareBufferTextureSourceVK::GetImageView() const {
+  FML_CHECK(IsValid());
+  return image_view_.get();
+}
+
+// |TextureSourceVK|
+vk::ImageView AndroidHardwareBufferTextureSourceVK::GetRenderTargetView()
+    const {
   FML_CHECK(IsValid());
   return image_view_.get();
 }

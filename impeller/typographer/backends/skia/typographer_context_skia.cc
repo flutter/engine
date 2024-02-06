@@ -57,7 +57,7 @@ static size_t PairsFitInAtlasOfSize(
     const auto& pair = *it;
 
     const auto glyph_size =
-        ISize::Ceil(pair.glyph.bounds.size * pair.scaled_font.scale);
+        ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -95,7 +95,7 @@ static bool CanAppendToExistingAtlas(
     const FontGlyphPair& pair = extra_pairs[i];
 
     const auto glyph_size =
-        ISize::Ceil(pair.glyph.bounds.size * pair.scaled_font.scale);
+        ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -158,8 +158,8 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Rect& location,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(location.origin.x / scaled_font.scale,
-                                      location.origin.y / scaled_font.scale);
+  const auto position = SkPoint::Make(location.GetX() / scaled_font.scale,
+                                      location.GetY() / scaled_font.scale);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -313,7 +313,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const FontGlyphMap& font_glyph_map) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!IsValid()) {
@@ -445,6 +445,20 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     return nullptr;
   }
   atlas_context_skia.UpdateBitmap(bitmap);
+
+  // If the new atlas size is the same size as the previous texture, reuse the
+  // texture and treat this as an updated that replaces all glyphs.
+  if (last_atlas && last_atlas->GetTexture()) {
+    std::shared_ptr<Texture> last_texture = last_atlas->GetTexture();
+    if (atlas_size == last_texture->GetSize()) {
+      if (!UpdateGlyphTextureAtlas(bitmap, last_texture)) {
+        return nullptr;
+      }
+
+      glyph_atlas->SetTexture(last_texture);
+      return glyph_atlas;
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Step 7b: Upload the atlas as a texture.

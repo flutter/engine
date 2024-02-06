@@ -13,9 +13,10 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
+import '../../common/rendering.dart';
+import '../../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -23,7 +24,8 @@ void main() {
 
 void testMain() {
   setUpAll(() async {
-    await ui_web.bootstrapEngine();
+    await bootstrapAndRunApp(withImplicitView: true);
+    setUpRenderingForTests();
   });
 
   group('SceneBuilder', () {
@@ -477,7 +479,7 @@ void testMain() {
     // Pump an empty scene to reset it, otherwise the first frame will attempt
     // to diff left-overs from a previous test, which results in unpredictable
     // DOM mutations.
-    window.render(SurfaceSceneBuilder().build());
+    await renderScene(SurfaceSceneBuilder().build());
 
     // Renders a `string` by breaking it up into individual characters and
     // rendering each character into its own layer.
@@ -487,7 +489,7 @@ void testMain() {
 
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
-      final DomMutationObserver observer = createDomMutationObserver((JSArray mutations, _) {
+      final DomMutationObserver observer = createDomMutationObserver((JSArray<JSAny?> mutations, _) {
         for (final DomMutationRecord record in mutations.toDart.cast<DomMutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);

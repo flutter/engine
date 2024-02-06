@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_QUEUE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_QUEUE_VK_H_
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
@@ -39,7 +39,7 @@ class QueueVK {
   vk::Result Submit(const vk::SubmitInfo& submit_info,
                     const vk::Fence& fence) const;
 
-  void InsertDebugMarker(const char* label) const;
+  void InsertDebugMarker(std::string_view label) const;
 
  private:
   mutable Mutex queue_mutex_;
@@ -47,7 +47,9 @@ class QueueVK {
   const QueueIndexVK index_;
   const vk::Queue queue_ IPLR_GUARDED_BY(queue_mutex_);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(QueueVK);
+  QueueVK(const QueueVK&) = delete;
+
+  QueueVK& operator=(const QueueVK&) = delete;
 };
 
 //------------------------------------------------------------------------------
@@ -70,3 +72,5 @@ struct QueuesVK {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_QUEUE_VK_H_

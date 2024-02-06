@@ -57,7 +57,7 @@ PlatformViewIOS::PlatformViewIOS(
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
     const flutter::TaskRunners& task_runners,
     const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
-    std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch)
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch)
     : PlatformViewIOS(
           delegate,
           IOSContext::Create(
@@ -65,7 +65,7 @@ PlatformViewIOS::PlatformViewIOS(
               delegate.OnPlatformViewGetSettings().enable_impeller ? IOSRenderingBackend::kImpeller
                                                                    : IOSRenderingBackend::kSkia,
               static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples),
-              std::move(is_gpu_disabled_sync_switch)),
+              is_gpu_disabled_sync_switch),
           platform_views_controller,
           task_runners) {}
 
@@ -76,12 +76,12 @@ void PlatformViewIOS::HandlePlatformMessage(std::unique_ptr<flutter::PlatformMes
   platform_message_handler_->HandlePlatformMessage(std::move(message));
 }
 
-fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
+fml::WeakNSObject<FlutterViewController> PlatformViewIOS::GetOwnerViewController() const {
   return owner_controller_;
 }
 
 void PlatformViewIOS::SetOwnerViewController(
-    const fml::WeakPtr<FlutterViewController>& owner_controller) {
+    const fml::WeakNSObject<FlutterViewController>& owner_controller) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (ios_surface_ || !owner_controller) {
@@ -250,7 +250,7 @@ std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolv
   return out;
 }
 
-PlatformViewIOS::ScopedObserver::ScopedObserver() : observer_(nil) {}
+PlatformViewIOS::ScopedObserver::ScopedObserver() {}
 
 PlatformViewIOS::ScopedObserver::~ScopedObserver() {
   if (observer_) {

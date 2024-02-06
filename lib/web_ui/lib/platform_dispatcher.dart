@@ -5,6 +5,7 @@
 part of ui;
 
 typedef VoidCallback = void Function();
+typedef ViewFocusChangeCallback = void Function(ViewFocusEvent viewFocusEvent);
 typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
@@ -39,6 +40,15 @@ abstract class PlatformDispatcher {
 
   VoidCallback? get onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback);
+
+  ViewFocusChangeCallback? get onViewFocusChange;
+  set onViewFocusChange(ViewFocusChangeCallback? callback);
+
+  void requestViewFocusChange({
+    required int viewId,
+    required ViewFocusState state,
+    required ViewFocusDirection direction,
+  });
 
   FrameCallback? get onBeginFrame;
   set onBeginFrame(FrameCallback? callback);
@@ -80,7 +90,7 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void render(Scene scene, [FlutterView view]);
+  Future<void> render(Scene scene, [FlutterView view]);
 
   AccessibilityFeatures get accessibilityFeatures;
 
@@ -286,6 +296,25 @@ abstract class ViewPadding {
   String toString() {
     return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
+}
+
+abstract class ViewConstraints {
+  const factory ViewConstraints({
+    double minWidth,
+    double maxWidth,
+    double minHeight,
+    double maxHeight,
+  }) = engine.ViewConstraints;
+
+  factory ViewConstraints.tight(Size size) = engine.ViewConstraints.tight;
+
+  double get minWidth;
+  double get maxWidth;
+  double get minHeight;
+  double get maxHeight;
+  bool isSatisfiedBy(Size size);
+  bool get isTight;
+  ViewConstraints operator/(double factor);
 }
 
 @Deprecated(
@@ -526,4 +555,37 @@ class SemanticsActionEvent {
       arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
     );
   }
+
+  @override
+  String toString() => 'SemanticsActionEvent($type, view: $viewId, node: $nodeId)';
+}
+
+final class ViewFocusEvent {
+  const ViewFocusEvent({
+    required this.viewId,
+    required this.state,
+    required this.direction,
+  });
+
+  final int viewId;
+
+  final ViewFocusState state;
+
+  final ViewFocusDirection direction;
+
+  @override
+  String toString() {
+    return 'ViewFocusEvent(viewId: $viewId, state: $state, direction: $direction)';
+  }
+}
+
+enum ViewFocusState {
+  unfocused,
+  focused,
+}
+
+enum ViewFocusDirection {
+  undefined,
+  forward,
+  backwards,
 }

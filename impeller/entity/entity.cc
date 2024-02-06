@@ -5,6 +5,7 @@
 #include "impeller/entity/entity.h"
 
 #include <algorithm>
+#include <limits>
 #include <optional>
 
 #include "impeller/base/validation.h"
@@ -37,7 +38,7 @@ std::optional<Entity> Entity::FromSnapshot(
   Entity entity;
   entity.SetBlendMode(blend_mode);
   entity.SetClipDepth(clip_depth);
-  entity.SetTransformation(snapshot->transform);
+  entity.SetTransform(snapshot->transform);
   entity.SetContents(contents);
   return entity;
 }
@@ -46,12 +47,16 @@ Entity::Entity() = default;
 
 Entity::~Entity() = default;
 
-const Matrix& Entity::GetTransformation() const {
-  return transformation_;
+Entity::Entity(Entity&&) = default;
+
+Entity::Entity(const Entity&) = default;
+
+const Matrix& Entity::GetTransform() const {
+  return transform_;
 }
 
-void Entity::SetTransformation(const Matrix& transformation) {
-  transformation_ = transformation;
+void Entity::SetTransform(const Matrix& transform) {
+  transform_ = transform;
 }
 
 std::optional<Rect> Entity::GetCoverage() const {
@@ -71,7 +76,11 @@ Contents::ClipCoverage Entity::GetClipCoverage(
 }
 
 bool Entity::ShouldRender(const std::optional<Rect>& clip_coverage) const {
+#ifdef IMPELLER_CONTENT_CULLING
   return contents_->ShouldRender(*this, clip_coverage);
+#else
+  return true;
+#endif  // IMPELLER_CONTENT_CULLING
 }
 
 void Entity::SetContents(std::shared_ptr<Contents> contents) {
@@ -82,12 +91,26 @@ const std::shared_ptr<Contents>& Entity::GetContents() const {
   return contents_;
 }
 
-void Entity::SetClipDepth(uint32_t depth) {
-  clip_depth_ = depth;
+void Entity::SetClipDepth(uint32_t clip_depth) {
+  clip_depth_ = clip_depth;
 }
 
 uint32_t Entity::GetClipDepth() const {
   return clip_depth_;
+}
+
+void Entity::SetNewClipDepth(uint32_t clip_depth) {
+  new_clip_depth_ = clip_depth;
+}
+
+uint32_t Entity::GetNewClipDepth() const {
+  return new_clip_depth_;
+}
+
+static const Scalar kDepthEpsilon = 1.0f / std::pow(2, 18);
+
+float Entity::GetShaderClipDepth() const {
+  return new_clip_depth_ * kDepthEpsilon;
 }
 
 void Entity::IncrementStencilDepth(uint32_t increment) {
@@ -167,11 +190,15 @@ bool Entity::Render(const ContentContext& renderer,
 }
 
 Scalar Entity::DeriveTextScale() const {
-  return GetTransformation().GetMaxBasisLengthXY();
+  return GetTransform().GetMaxBasisLengthXY();
 }
 
 Capture& Entity::GetCapture() const {
   return capture_;
+}
+
+Entity Entity::Clone() const {
+  return Entity(*this);
 }
 
 void Entity::SetCapture(Capture capture) const {

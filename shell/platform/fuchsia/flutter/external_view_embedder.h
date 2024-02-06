@@ -68,24 +68,29 @@ class ExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   flutter::PostPrerollResult PostPrerollAction(
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger)
+      override;
 
   // |ExternalViewEmbedder|
-  void BeginFrame(
-      SkISize frame_size,
+  void BeginFrame(GrDirectContext* context,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  void PrepareFlutterView(int64_t flutter_view_id,
+                          SkISize frame_size,
+                          double device_pixel_ratio) override;
+
+  // |ExternalViewEmbedder|
+  void EndFrame(bool should_resubmit_frame,
+                const fml::RefPtr<fml::RasterThreadMerger>&
+                    raster_thread_merger) override;
+
+  // |ExternalViewEmbedder|
+  void SubmitFlutterView(
       GrDirectContext* context,
-      double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
-
-  // |ExternalViewEmbedder|
-  void EndFrame(
-      bool should_resubmit_frame,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
-
-  // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context,
-                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override;
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
+      std::unique_ptr<flutter::SurfaceFrame> frame) override;
 
   // |ExternalViewEmbedder|
   void CancelFrame() override { Reset(); }

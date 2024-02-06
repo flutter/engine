@@ -69,6 +69,8 @@ source_set("fml") {
     "shared_thread_merger.cc",
     "shared_thread_merger.h",
     "size.h",
+    "status.h",
+    "status_or.h",
     "synchronization/atomic_object.h",
     "synchronization/count_down_latch.cc",
     "synchronization/count_down_latch.h",
@@ -86,8 +88,6 @@ source_set("fml") {
     "task_source.h",
     "thread.cc",
     "thread.h",
-    "thread_local.cc",
-    "thread_local.h",
     "time/time_delta.h",
     "time/time_point.cc",
     "time/time_point.h",
@@ -163,8 +163,12 @@ source_set("fml") {
       "platform/darwin/scoped_nsautorelease_pool.h",
       "platform/darwin/scoped_nsobject.h",
       "platform/darwin/scoped_nsobject.mm",
+      "platform/darwin/scoped_policy.h",
+      "platform/darwin/scoped_typeref.h",
       "platform/darwin/string_range_sanitization.h",
       "platform/darwin/string_range_sanitization.mm",
+      "platform/darwin/weak_nsobject.h",
+      "platform/darwin/weak_nsobject.mm",
     ]
 
     frameworks = [ "Foundation.framework" ]
@@ -208,6 +212,10 @@ source_set("fml") {
 
   if (is_fuchsia) {
     sources += [
+      "platform/fuchsia/log_interest_listener.cc",
+      "platform/fuchsia/log_interest_listener.h",
+      "platform/fuchsia/log_state.cc",
+      "platform/fuchsia/log_state.h",
       "platform/fuchsia/message_loop_fuchsia.cc",
       "platform/fuchsia/message_loop_fuchsia.h",
       "platform/fuchsia/paths_fuchsia.cc",
@@ -216,10 +224,13 @@ source_set("fml") {
     ]
 
     public_deps += [
+      "$fuchsia_sdk_root/fidl:fuchsia.diagnostics",
+      "$fuchsia_sdk_root/fidl:fuchsia.logger",
       "$fuchsia_sdk_root/pkg:async-cpp",
       "$fuchsia_sdk_root/pkg:async-loop-cpp",
       "$fuchsia_sdk_root/pkg:async-loop-default",
-      "$fuchsia_sdk_root/pkg:syslog",
+      "$fuchsia_sdk_root/pkg:component_incoming_cpp",
+      "$fuchsia_sdk_root/pkg:syslog_structured_backend",
       "$fuchsia_sdk_root/pkg:trace",
       "$fuchsia_sdk_root/pkg:trace-engine",
       "$fuchsia_sdk_root/pkg:zx",
@@ -348,7 +359,6 @@ if (enable_unittests) {
       "synchronization/sync_switch_unittest.cc",
       "synchronization/waitable_event_unittest.cc",
       "task_source_unittests.cc",
-      "thread_local_unittests.cc",
       "thread_unittests.cc",
       "time/chrono_timestamp_provider.cc",
       "time/chrono_timestamp_provider.h",
@@ -364,6 +374,17 @@ if (enable_unittests) {
       ]
     }
 
+    if (is_mac || is_ios) {
+      sources += [
+        "platform/darwin/scoped_nsobject_unittests.mm",
+        "platform/darwin/weak_nsobject_unittests.mm",
+      ]
+    }
+
+    if (is_fuchsia) {
+      sources += [ "platform/fuchsia/log_interest_listener_unittests.cc" ]
+    }
+
     if (is_win) {
       sources += [
         "platform/win/file_win_unittests.cc",
@@ -374,16 +395,37 @@ if (enable_unittests) {
     deps = [
       ":fml_fixtures",
       "//flutter/fml",
-      "//flutter/fml/dart",
       "//flutter/runtime",
       "//flutter/runtime:libdart",
       "//flutter/testing",
     ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
     if (is_fuchsia) {
+      deps += [
+        "$fuchsia_sdk_root/pkg:async-loop-testing",
+        "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
+      ]
+
+      # This is needed for //third_party/googletest for linking zircon symbols.
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
+  }
+
+  executable("fml_arc_unittests") {
+    testonly = true
+    if (is_mac || is_ios) {
+      cflags_objcc = flutter_cflags_objc_arc
+      sources = [
+        "platform/darwin/scoped_nsobject_arc_unittests.mm",
+        "platform/darwin/weak_nsobject_arc_unittests.mm",
+      ]
+    }
+
+    deps = [
+      ":fml_fixtures",
+      "//flutter/fml",
+      "//flutter/testing",
+    ]
   }
 }

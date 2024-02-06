@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_TEXTURE_H_
+#define FLUTTER_IMPELLER_CORE_TEXTURE_H_
 
 #include <string_view>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -45,6 +45,9 @@ class Texture {
 
   virtual Scalar GetYCoordScale() const;
 
+  /// Returns true if mipmaps have never been generated.
+  /// The contents of the mipmap may be out of date if the root texture has been
+  /// modified and the mipmaps hasn't been regenerated.
   bool NeedsMipmapGeneration() const;
 
  protected:
@@ -68,7 +71,11 @@ class Texture {
 
   bool IsSliceValid(size_t slice) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Texture);
+  Texture(const Texture&) = delete;
+
+  Texture& operator=(const Texture&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_TEXTURE_H_

@@ -25,6 +25,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/testing/stream_capture.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "gtest/gtest.h"
 
@@ -122,7 +123,7 @@ namespace flutter::testing {
 TEST_F(FlutterEngineTest, CanLaunch) {
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 }
 
 TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
@@ -189,23 +190,19 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
                     CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
 
   // Replace stdout stream buffer with our own.
-  std::stringstream buffer;
-  std::streambuf* old_buffer = std::cout.rdbuf();
-  std::cout.rdbuf(buffer.rdbuf());
+  StreamCapture stdout_capture(&std::cout);
 
   // Launch the test entrypoint.
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"canLogToStdout"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   latch.Wait();
 
-  // Restore old stdout stream buffer.
-  std::cout.rdbuf(old_buffer);
+  stdout_capture.Stop();
 
   // Verify hello world was written to stdout.
-  std::string logs = buffer.str();
-  EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
+  EXPECT_TRUE(stdout_capture.GetOutput().find("Hello logging") != std::string::npos);
 }
 
 // TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
@@ -227,7 +224,7 @@ TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
 
   // Launch the test entrypoint.
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -257,7 +254,7 @@ TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
 
   // Launch the test entrypoint.
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -479,7 +476,7 @@ TEST_F(FlutterEngineTest, NativeCallbacks) {
 
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   latch.Wait();
   ASSERT_TRUE(latch_called);
@@ -1098,6 +1095,57 @@ TEST_F(FlutterEngineTest, UnregistersPluginsOnEngineDestruction) {
   EXPECT_FALSE([fakeAppDelegate hasDelegate:plugin]);
 
   [NSApplication sharedApplication].delegate = previousDelegate;
+}
+
+TEST_F(FlutterEngineTest, RunWithEntrypointUpdatesDisplayConfig) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(updated);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:NSApplicationDidChangeScreenParametersNotification
+                    object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_set_viewport_metrics = engine.embedderAPI.SendWindowMetricsEvent;
+  engine.embedderAPI.SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&updated, &original_set_viewport_metrics](auto engine, auto* window_metrics) {
+        updated = YES;
+        return original_set_viewport_metrics(engine, window_metrics);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  // No VC.
+  EXPECT_FALSE(updated);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  EXPECT_TRUE(updated);
 }
 
 }  // namespace flutter::testing

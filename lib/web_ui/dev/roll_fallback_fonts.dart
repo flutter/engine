@@ -311,7 +311,6 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         description: 'A set of Noto fonts to fall back to for use in testing.',
         root: fontDir.path,
         version: versionString,
-        buildId: versionString,
         isDryRun: isDryRun,
       );
     }
@@ -334,6 +333,7 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans',
   'Noto Color Emoji',
   'Noto Emoji',
+  'Noto Music',
   'Noto Sans Symbols',
   'Noto Sans Symbols 2',
   'Noto Sans Adlam',

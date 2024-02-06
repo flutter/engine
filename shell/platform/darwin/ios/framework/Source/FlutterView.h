@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_
 
+#include <Metal/Metal.h>
 #import <UIKit/UIKit.h>
 
 #include <memory>
@@ -46,8 +47,11 @@
                           opaque:(BOOL)opaque
                  enableWideGamut:(BOOL)isWideGamutEnabled NS_DESIGNATED_INITIALIZER;
 
+- (UIScreen*)screen;
+- (MTLPixelFormat)pixelFormat;
+
 // Set by FlutterEngine or FlutterViewController to override software rendering.
 @property(class, nonatomic) BOOL forceSoftwareRendering;
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_

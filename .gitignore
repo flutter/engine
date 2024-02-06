@@ -28,9 +28,6 @@ pubspec.lock
 docs/doxygen/
 xcuserdata
 
-third_party/gn/
-third_party/ninja/ninja*
-
 # Miscellaneous
 *.class
 *.lock
@@ -133,3 +130,12 @@ app.*.symbols
 
 # Prebuilt binaries.
 /prebuilts/
+
+# GN build support for protobufs vended by Fuchsia.
+/build/secondary/third_party/protobuf
+
+# RBE support configurations and scripts vended from CIPD
+/build/rbe
+
+# The test-scripts from Chromium and managed by DEPS and gclient.
+/tools/fuchsia/test_scripts

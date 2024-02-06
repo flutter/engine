@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
-#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
+#ifndef FLUTTER_DISPLAY_LIST_DL_BUILDER_H_
+#define FLUTTER_DISPLAY_LIST_DL_BUILDER_H_
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_blend_mode.h"
@@ -267,12 +267,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void setAntiAlias(bool aa) override {
     if (current_.isAntiAlias() != aa) {
       onSetAntiAlias(aa);
-    }
-  }
-  // |DlOpReceiver|
-  void setDither(bool dither) override {
-    if (current_.isDither() != dither) {
-      onSetDither(dither);
     }
   }
   // |DlOpReceiver|
@@ -673,7 +667,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
 
   void onSetAntiAlias(bool aa);
-  void onSetDither(bool dither);
   void onSetInvertColors(bool invert);
   void onSetStrokeCap(DlStrokeCap cap);
   void onSetStrokeJoin(DlStrokeJoin join);
@@ -787,4 +780,4 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
+#endif  // FLUTTER_DISPLAY_LIST_DL_BUILDER_H_

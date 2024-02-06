@@ -12,6 +12,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' hide window;
 import 'package:ui/ui.dart' as ui;
 
+import '../../common/test_initialization.dart';
 import 'semantics_tester.dart';
 
 final InputConfiguration singlelineConfig = InputConfiguration();
@@ -21,7 +22,8 @@ final InputConfiguration multilineConfig = InputConfiguration(
   inputAction: 'TextInputAction.newline',
 );
 
-EngineSemanticsOwner semantics() => EngineSemanticsOwner.instance;
+EngineSemantics semantics() => EngineSemantics.instance;
+EngineSemanticsOwner owner() => EnginePlatformDispatcher.instance.implicitView!.semantics;
 
 const MethodCodec codec = JSONMethodCodec();
 
@@ -32,10 +34,12 @@ void main() {
 }
 
 void testMain() {
-  ensureFlutterViewEmbedderInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
+  });
 
   setUp(() {
-    EngineSemanticsOwner.debugResetSemantics();
+    EngineSemantics.debugResetSemantics();
   });
 
   group('$SemanticsTextEditingStrategy pre-initialization tests', () {
@@ -86,7 +90,7 @@ void testMain() {
   test('renders a text field', () {
     createTextFieldSemantics(value: 'hello');
 
-    expectSemanticsTree('''
+    expectSemanticsTree(owner(), '''
 <sem style="$rootSemanticStyle">
   <input value="hello" />
 </sem>''');
@@ -98,20 +102,20 @@ void testMain() {
       final SemanticsActionLogger logger = SemanticsActionLogger();
       createTextFieldSemantics(value: 'hello');
 
-      final DomElement textField = appHostNode
+      final DomElement textField = owner().semanticsHost
           .querySelector('input[data-semantics-role="text-field"]')!;
 
-      expect(appHostNode.ownerDocument?.activeElement, isNot(textField));
+      expect(owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
 
       textField.focus();
 
-      expect(appHostNode.ownerDocument?.activeElement, textField);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textField);
       expect(await logger.idLog.first, 0);
       expect(await logger.actionLog.first, ui.SemanticsAction.didGainAccessibilityFocus);
 
       textField.blur();
 
-      expect(appHostNode.ownerDocument?.activeElement, isNot(textField));
+      expect(owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
       expect(await logger.idLog.first, 0);
       expect(await logger.actionLog.first, ui.SemanticsAction.didLoseAccessibilityFocus);
     }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
@@ -119,7 +123,7 @@ void testMain() {
     skip: browserEngine != BrowserEngine.blink);
 
     test('Syncs semantic state from framework', () {
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       int changeCount = 0;
       int actionCount = 0;
@@ -142,7 +146,7 @@ void testMain() {
       );
 
       final TextField textField = textFieldSemantics.primaryRole! as TextField;
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
       expect(textField.activeEditableElement.getAttribute('aria-label'), 'greeting');
       expect(textField.activeEditableElement.style.width, '10px');
@@ -155,7 +159,7 @@ void testMain() {
         rect: const ui.Rect.fromLTWH(0, 0, 12, 17),
       );
 
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
       expect(strategy.domElement, null);
       expect(textField.activeEditableElement.getAttribute('aria-label'), 'farewell');
       expect(textField.activeEditableElement.style.width, '12px');
@@ -200,7 +204,7 @@ void testMain() {
     test(
         'Updates editing state when receiving framework messages from the text input channel',
         () {
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       strategy.enable(
         singlelineConfig,
@@ -243,7 +247,7 @@ void testMain() {
     });
 
     test('Gives up focus after DOM blur', () {
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       strategy.enable(
         singlelineConfig,
@@ -257,11 +261,11 @@ void testMain() {
 
       final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(textField.editableElement, strategy.domElement);
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       // The input should not refocus after blur.
       textField.activeEditableElement.blur();
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
       strategy.disable();
     });
 
@@ -281,17 +285,17 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.disable();
       expect(strategy.domElement, isNull);
 
       // It doesn't remove the DOM element.
       final TextField textField = textFieldSemantics.primaryRole! as TextField;
-      expect(appHostNode.contains(textField.editableElement), isTrue);
+      expect(owner().semanticsHost.contains(textField.editableElement), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
     });
 
     test('Refocuses when setting editing state', () {
@@ -306,11 +310,11 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       // Blur the element without telling the framework.
       strategy.activeDomElement.blur();
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       // The input will have focus after editing state is set and semantics updated.
       strategy.setEditingState(EditingState(text: 'foo'));
@@ -328,7 +332,7 @@ void testMain() {
         value: 'hello',
         isFocused: true,
       );
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.disable();
     });
@@ -348,7 +352,7 @@ void testMain() {
       final DomHTMLTextAreaElement textArea =
           strategy.domElement! as DomHTMLTextAreaElement;
 
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.enable(
         singlelineConfig,
@@ -357,11 +361,11 @@ void testMain() {
       );
 
       textArea.blur();
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       strategy.disable();
       // It doesn't remove the textarea from the DOM.
-      expect(appHostNode.contains(textArea), isTrue);
+      expect(owner().semanticsHost.contains(textArea), isTrue);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
     });
@@ -437,17 +441,17 @@ void testMain() {
 
       // Switch between the two fields a few times.
       for (int i = 0; i < 5; i++) {
-        final SemanticsTester tester = SemanticsTester(semantics());
+        final SemanticsTester tester = SemanticsTester(owner());
         createTwoFieldSemantics(tester, focusFieldId: 1);
         expect(tester.apply().length, 3);
 
-        expect(appHostNode.ownerDocument?.activeElement,
+        expect(owner().semanticsHost.ownerDocument?.activeElement,
             tester.getTextField(1).editableElement);
         expect(strategy.domElement, tester.getTextField(1).editableElement);
 
         createTwoFieldSemantics(tester, focusFieldId: 2);
         expect(tester.apply().length, 3);
-        expect(appHostNode.ownerDocument?.activeElement,
+        expect(owner().semanticsHost.ownerDocument?.activeElement,
             tester.getTextField(2).editableElement);
         expect(strategy.domElement, tester.getTextField(2).editableElement);
       }
@@ -478,16 +482,16 @@ void testMain() {
     });
 
     test('does not render a text field', () {
-      expect(appHostNode.querySelector('flt-semantics[role="textbox"]'), isNull);
+      expect(owner().semanticsHost.querySelector('flt-semantics[role="textbox"]'), isNull);
       createTextFieldSemanticsForIos(value: 'hello');
-      expect(appHostNode.querySelector('flt-semantics[role="textbox"]'), isNotNull);
+      expect(owner().semanticsHost.querySelector('flt-semantics[role="textbox"]'), isNotNull);
     });
 
     test('tap detection works', () async {
       final SemanticsActionLogger logger = SemanticsActionLogger();
       createTextFieldSemanticsForIos(value: 'hello');
 
-      final DomElement textField = appHostNode
+      final DomElement textField = owner().semanticsHost
           .querySelector('flt-semantics[role="textbox"]')!;
 
       simulateTap(textField);
@@ -496,7 +500,7 @@ void testMain() {
     });
 
     test('Syncs semantic state from framework', () {
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       int changeCount = 0;
       int actionCount = 0;
@@ -519,7 +523,7 @@ void testMain() {
       );
 
       final TextField textField = textFieldSemantics.primaryRole! as TextField;
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
       expect(textField.activeEditableElement.getAttribute('aria-label'), 'greeting');
       expect(textField.activeEditableElement.style.width, '10px');
@@ -532,10 +536,10 @@ void testMain() {
         rect: const ui.Rect.fromLTWH(0, 0, 12, 17),
       );
       final DomElement textBox =
-          appHostNode.querySelector('flt-semantics[role="textbox"]')!;
+          owner().semanticsHost.querySelector('flt-semantics[role="textbox"]')!;
 
       expect(strategy.domElement, null);
-      expect(appHostNode.ownerDocument?.activeElement, textBox);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textBox);
       expect(textBox.getAttribute('aria-label'), 'farewell');
 
       strategy.disable();
@@ -577,7 +581,7 @@ void testMain() {
     test(
         'Updates editing state when receiving framework messages from the text input channel',
         () {
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       strategy.enable(
         singlelineConfig,
@@ -620,7 +624,7 @@ void testMain() {
     });
 
     test('Gives up focus after DOM blur', () {
-      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, domDocument.body);
 
       strategy.enable(
         singlelineConfig,
@@ -634,13 +638,13 @@ void testMain() {
 
       final TextField textField = textFieldSemantics.primaryRole! as TextField;
       expect(textField.editableElement, strategy.domElement);
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       // The input should not refocus after blur.
       textField.activeEditableElement.blur();
       final DomElement textBox =
-          appHostNode.querySelector('flt-semantics[role="textbox"]')!;
-      expect(appHostNode.ownerDocument?.activeElement, textBox);
+          owner().semanticsHost.querySelector('flt-semantics[role="textbox"]')!;
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textBox);
 
       strategy.disable();
     });
@@ -661,20 +665,20 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.disable();
       expect(strategy.domElement, isNull);
 
       // It removes the DOM element.
       final TextField textField = textFieldSemantics.primaryRole! as TextField;
-      expect(appHostNode.contains(textField.editableElement), isFalse);
+      expect(owner().semanticsHost.contains(textField.editableElement), isFalse);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
       // Focus is on the semantic object
       final DomElement textBox =
-          appHostNode.querySelector('flt-semantics[role="textbox"]')!;
-      expect(appHostNode.ownerDocument?.activeElement, textBox);
+          owner().semanticsHost.querySelector('flt-semantics[role="textbox"]')!;
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textBox);
     });
 
     test('Refocuses when setting editing state', () {
@@ -689,13 +693,13 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       // Blur the element without telling the framework.
       strategy.activeDomElement.blur();
       final DomElement textBox =
-          appHostNode.querySelector('flt-semantics[role="textbox"]')!;
-      expect(appHostNode.ownerDocument?.activeElement, textBox);
+          owner().semanticsHost.querySelector('flt-semantics[role="textbox"]')!;
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textBox);
 
       // The input will have focus after editing state is set and semantics updated.
       strategy.setEditingState(EditingState(text: 'foo'));
@@ -713,7 +717,7 @@ void testMain() {
         value: 'hello',
         isFocused: true,
       );
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.disable();
     });
@@ -732,7 +736,7 @@ void testMain() {
 
       final DomHTMLTextAreaElement textArea =
           strategy.domElement! as DomHTMLTextAreaElement;
-      expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.enable(
         singlelineConfig,
@@ -740,17 +744,17 @@ void testMain() {
         onAction: (_) {},
       );
 
-      expect(appHostNode.contains(textArea), isTrue);
+      expect(owner().semanticsHost.contains(textArea), isTrue);
 
       textArea.blur();
       final DomElement textBox =
-          appHostNode.querySelector('flt-semantics[role="textbox"]')!;
+          owner().semanticsHost.querySelector('flt-semantics[role="textbox"]')!;
 
-      expect(appHostNode.ownerDocument?.activeElement, textBox);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textBox);
 
       strategy.disable();
       // It removes the textarea from the DOM.
-      expect(appHostNode.contains(textArea), isFalse);
+      expect(owner().semanticsHost.contains(textArea), isFalse);
       // Editing element is not enabled.
       expect(strategy.isEnabled, isFalse);
     });
@@ -805,17 +809,17 @@ void testMain() {
 
       // Switch between the two fields a few times.
       for (int i = 0; i < 1; i++) {
-        final SemanticsTester tester = SemanticsTester(semantics());
+        final SemanticsTester tester = SemanticsTester(owner());
         createTwoFieldSemanticsForIos(tester, focusFieldId: 1);
 
         expect(tester.apply().length, 3);
-        expect(appHostNode.ownerDocument?.activeElement,
+        expect(owner().semanticsHost.ownerDocument?.activeElement,
             tester.getTextField(1).editableElement);
         expect(strategy.domElement, tester.getTextField(1).editableElement);
 
         createTwoFieldSemanticsForIos(tester, focusFieldId: 2);
         expect(tester.apply().length, 3);
-        expect(appHostNode.ownerDocument?.activeElement,
+        expect(owner().semanticsHost.ownerDocument?.activeElement,
             tester.getTextField(2).editableElement);
         expect(strategy.domElement, tester.getTextField(2).editableElement);
       }
@@ -874,7 +878,7 @@ SemanticsObject createTextFieldSemantics({
   int textSelectionBase = 0,
   int textSelectionExtent = 0,
 }) {
-  final SemanticsTester tester = SemanticsTester(semantics());
+  final SemanticsTester tester = SemanticsTester(owner());
   tester.updateNode(
     id: 0,
     label: label,
@@ -976,7 +980,7 @@ Map<int, SemanticsObject> createTwoFieldSemanticsForIos(SemanticsTester builder,
   builder.apply();
   final String label = focusFieldId == 1 ? 'Hello' : 'World';
   final DomElement textBox =
-      appHostNode.querySelector('flt-semantics[aria-label="$label"]')!;
+      owner().semanticsHost.querySelector('flt-semantics[aria-label="$label"]')!;
 
   simulateTap(textBox);
 

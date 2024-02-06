@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_
-#define FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_
+#ifndef FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_H_
+#define FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_H_
 
 #include <string>
 #include <vector>
@@ -25,7 +25,7 @@ class PlatformMessage {
 
   const std::string& channel() const { return channel_; }
   const fml::MallocMapping& data() const { return data_; }
-  bool hasData() { return hasData_; }
+  bool hasData() { return has_data_; }
 
   const fml::RefPtr<PlatformMessageResponse>& response() const {
     return response_;
@@ -36,10 +36,10 @@ class PlatformMessage {
  private:
   std::string channel_;
   fml::MallocMapping data_;
-  bool hasData_;
+  bool has_data_;
   fml::RefPtr<PlatformMessageResponse> response_;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_LIB_UI_PLATFORM_PLATFORM_MESSAGE_H_
+#endif  // FLUTTER_LIB_UI_WINDOW_PLATFORM_MESSAGE_H_

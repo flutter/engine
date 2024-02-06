@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_IMAGE_H_
+#define FLUTTER_IMPELLER_AIKS_IMAGE_H_
 
 #include <memory>
 
@@ -13,7 +14,7 @@ namespace impeller {
 
 class Image {
  public:
-  Image(std::shared_ptr<Texture> texture);
+  explicit Image(std::shared_ptr<Texture> texture);
 
   ~Image();
 
@@ -24,7 +25,11 @@ class Image {
  private:
   const std::shared_ptr<Texture> texture_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Image);
+  Image(const Image&) = delete;
+
+  Image& operator=(const Image&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_IMAGE_H_

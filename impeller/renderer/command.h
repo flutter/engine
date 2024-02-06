@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMMAND_H_
+#define FLUTTER_IMPELLER_RENDERER_COMMAND_H_
 
-#include <map>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/resource_binder.h"
@@ -20,8 +19,6 @@
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -59,13 +56,12 @@ struct Resource {
 
 using BufferResource = Resource<BufferView>;
 using TextureResource = Resource<std::shared_ptr<const Texture>>;
-using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
 
 /// @brief combines the texture, sampler and sampler slot information.
 struct TextureAndSampler {
   SampledImageSlot slot;
   TextureResource texture;
-  SamplerResource sampler;
+  const std::unique_ptr<const Sampler>& sampler;
 };
 
 /// @brief combines the buffer resource and its uniform slot information.
@@ -75,10 +71,8 @@ struct BufferAndUniformSlot {
 };
 
 struct Bindings {
-  std::map<size_t, TextureAndSampler> sampled_images;
-  std::map<size_t, BufferAndUniformSlot> buffers;
-  // This is only valid for vertex bindings.
-  BufferAndUniformSlot vertex_buffer;
+  std::vector<TextureAndSampler> sampled_images;
+  std::vector<BufferAndUniformSlot> buffers;
 };
 
 //------------------------------------------------------------------------------
@@ -91,10 +85,9 @@ struct Bindings {
 ///             * Specify any stage bindings.
 ///             * (Optional) Specify a debug label.
 ///
-///             Command are very lightweight objects and can be created
-///             frequently and on demand. The resources referenced in commands
-///             views into buffers managed by other allocators and resource
-///             managers.
+///             Command can be created frequently and on demand. The resources
+///             referenced in commands views into buffers managed by other
+///             allocators and resource managers.
 ///
 struct Command : public ResourceBinder {
   //----------------------------------------------------------------------------
@@ -111,29 +104,6 @@ struct Command : public ResourceBinder {
   /// stage.
   ///
   Bindings fragment_bindings;
-  //----------------------------------------------------------------------------
-  /// The index buffer binding used by the vertex shader stage. Instead of
-  /// setting this directly, it usually easier to specify the vertex and index
-  /// buffer bindings directly via a single call to `BindVertices`.
-  ///
-  /// @see         `BindVertices`
-  ///
-  BufferView index_buffer;
-  //----------------------------------------------------------------------------
-  /// The number of vertices to draw.
-  ///
-  /// If the index_type is `IndexType::kNone`, this is a count into the vertex
-  /// buffer. Otherwise, it is a count into the index buffer. Set the vertex and
-  /// index buffers as well as the index count using a call to `BindVertices`.
-  ///
-  /// @see         `BindVertices`
-  ///
-  size_t vertex_count = 0u;
-  //----------------------------------------------------------------------------
-  /// The type of indices in the index buffer. The indices must be tightly
-  /// packed in the index buffer.
-  ///
-  IndexType index_type = IndexType::kUnknown;
 
 #ifdef IMPELLER_DEBUG
   //----------------------------------------------------------------------------
@@ -177,44 +147,50 @@ struct Command : public ResourceBinder {
   size_t instance_count = 1u;
 
   //----------------------------------------------------------------------------
+  /// The bound per-vertex data and optional index buffer.
+  VertexBuffer vertex_buffer;
+
+  //----------------------------------------------------------------------------
   /// @brief      Specify the vertex and index buffer to use for this command.
   ///
-  /// @param[in]  buffer  The vertex and index buffer definition.
+  /// @param[in]  buffer  The vertex and index buffer definition. If possible,
+  ///             this value should be moved and not copied.
   ///
   /// @return     returns if the binding was updated.
   ///
-  bool BindVertices(const VertexBuffer& buffer);
+  bool BindVertices(VertexBuffer buffer);
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
-                    const BufferView& view) override;
+                    BufferView view) override;
 
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,
-                    const BufferView& view);
+                    BufferView view);
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    const std::shared_ptr<const Texture>& texture,
-                    const std::shared_ptr<const Sampler>& sampler) override;
+                    std::shared_ptr<const Texture> texture,
+                    const std::unique_ptr<const Sampler>& sampler) override;
 
-  BufferView GetVertexBuffer() const;
-
-  constexpr explicit operator bool() const {
-    return pipeline && pipeline->IsValid();
-  }
+  bool IsValid() const { return pipeline && pipeline->IsValid(); }
 
  private:
   template <class T>
   bool DoBindResource(ShaderStage stage,
                       const ShaderUniformSlot& slot,
                       T metadata,
-                      const BufferView& view);
+                      BufferView view);
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMMAND_H_

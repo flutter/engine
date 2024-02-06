@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_
 
 #include <functional>
 #include <memory>
@@ -133,7 +134,9 @@ class GlyphAtlas {
 
   std::unordered_map<ScaledFont, FontGlyphAtlas> font_atlas_map_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlas);
+  GlyphAtlas(const GlyphAtlas&) = delete;
+
+  GlyphAtlas& operator=(const GlyphAtlas&) = delete;
 };
 
 //------------------------------------------------------------------------------
@@ -169,7 +172,9 @@ class GlyphAtlasContext {
   ISize atlas_size_;
   std::shared_ptr<RectanglePacker> rect_packer_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContext);
+  GlyphAtlasContext(const GlyphAtlasContext&) = delete;
+
+  GlyphAtlasContext& operator=(const GlyphAtlasContext&) = delete;
 };
 
 //------------------------------------------------------------------------------
@@ -194,7 +199,11 @@ class FontGlyphAtlas {
   friend class GlyphAtlas;
   std::unordered_map<Glyph, Rect> positions_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FontGlyphAtlas);
+  FontGlyphAtlas(const FontGlyphAtlas&) = delete;
+
+  FontGlyphAtlas& operator=(const FontGlyphAtlas&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_

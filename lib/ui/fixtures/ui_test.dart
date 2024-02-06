@@ -145,6 +145,7 @@ external void _validateVertices(Vertices vertices);
 @pragma('vm:entry-point')
 void sendSemanticsUpdate() {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
+  final String identifier = "identifier";
   final String label = "label";
   final List<StringAttribute> labelAttributes = <StringAttribute> [
     SpellOutStringAttribute(range: TextRange(start: 1, end: 2)),
@@ -171,6 +172,8 @@ void sendSemanticsUpdate() {
       locale: Locale('en', 'MX'), range: TextRange(start: 0, end: 1),
     ),
   ];
+
+  String tooltip = "tooltip";
 
   final Float64List transform = Float64List(16);
   final Int32List childrenInTraversalOrder = Int32List(0);
@@ -212,6 +215,7 @@ void sendSemanticsUpdate() {
     rect: Rect.fromLTRB(0, 0, 10, 10),
     elevation: 0,
     thickness: 0,
+    identifier: identifier,
     label: label,
     labelAttributes: labelAttributes,
     value: value,
@@ -222,6 +226,7 @@ void sendSemanticsUpdate() {
     decreasedValueAttributes: decreasedValueAttributes,
     hint: hint,
     hintAttributes: hintAttributes,
+    tooltip: tooltip,
     textDirection: TextDirection.ltr,
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
@@ -273,9 +278,16 @@ void platformMessagePortResponseTest() async {
 @pragma('vm:entry-point')
 void platformMessageResponseTest() {
   _callPlatformMessageResponseDart((ByteData? result) {
-    if (result is UnmodifiableByteDataView &&
-        result.lengthInBytes == 100) {
-      _finishCallResponse(true);
+    if (result is ByteData && result.lengthInBytes == 100) {
+      int value = result.getInt8(0);
+      bool didThrowOnModify = false;
+      try {
+        result.setInt8(0, value);
+      } catch (e) {
+        didThrowOnModify = true;
+      }
+      // This should be a read only buffer.
+      _finishCallResponse(didThrowOnModify);
     } else {
       _finishCallResponse(false);
     }
@@ -310,7 +322,7 @@ Future<void> encodeImageProducesExternalUint8List() async {
   canvas.drawCircle(c, 25.0, paint);
   final Picture picture = pictureRecorder.endRecording();
   final Image image = await picture.toImage(100, 100);
-  _encodeImage(image, ImageByteFormat.png.index, (Uint8List result) {
+  _encodeImage(image, ImageByteFormat.png.index, (Uint8List result, String? error) {
     // The buffer should be non-null and writable.
     result[0] = 0;
     // The buffer should be external typed data.
@@ -319,9 +331,65 @@ Future<void> encodeImageProducesExternalUint8List() async {
 }
 
 @pragma('vm:external-name', 'EncodeImage')
-external void _encodeImage(Image i, int format, void Function(Uint8List result));
+external void _encodeImage(Image i, int format, void Function(Uint8List result, String? error));
 @pragma('vm:external-name', 'ValidateExternal')
 external void _validateExternal(Uint8List result);
+@pragma('vm:external-name', 'ValidateError')
+external void _validateError(String? error);
+@pragma('vm:external-name', 'TurnOffGPU')
+external void _turnOffGPU(bool value);
+@pragma('vm:external-name', 'FlushGpuAwaitingTasks')
+external void _flushGpuAwaitingTasks();
+@pragma('vm:external-name', 'ValidateNotNull')
+external void _validateNotNull(Object? object);
+
+@pragma('vm:entry-point')
+Future<void> toByteDataWithoutGPU() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  final Image image = await picture.toImage(100, 100);
+  _turnOffGPU(true);
+  Timer flusher = Timer.periodic(Duration(milliseconds: 1), (timer) {
+    _flushGpuAwaitingTasks();
+  });
+  try {
+    ByteData? byteData = await image.toByteData();
+    _validateError(null);
+  } catch (error) {
+    _validateError(error.toString());
+  } finally {
+    flusher.cancel();
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> toByteDataRetries() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  final Image image = await picture.toImage(100, 100);
+  _turnOffGPU(true);
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  try {
+    ByteData? byteData = await image.toByteData();
+    _validateNotNull(byteData);
+  } catch (error) {
+    _validateNotNull(null);
+  }
+}
 
 @pragma('vm:entry-point')
 Future<void> pumpImage() async {
@@ -1076,45 +1144,3 @@ external void _callHook(
   Object? arg20,
   Object? arg21,
 ]);
-
-Scene _createRedBoxScene(Size size) {
-  final SceneBuilder builder = SceneBuilder();
-  builder.pushOffset(0.0, 0.0);
-  final Paint paint = Paint()
-    ..color = Color.fromARGB(255, 255, 0, 0)
-    ..style = PaintingStyle.fill;
-  final PictureRecorder baseRecorder = PictureRecorder();
-  final Canvas canvas = Canvas(baseRecorder);
-  canvas.drawRect(Rect.fromLTRB(0.0, 0.0, size.width, size.height), paint);
-  final Picture picture = baseRecorder.endRecording();
-  builder.addPicture(Offset(0.0, 0.0), picture);
-  builder.pop();
-  return builder.build();
-}
-
-@pragma('vm:entry-point')
-void incorrectImmediateRender() {
-  PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(2, 2)));
-  _finish();
-  // Don't schedule a frame here. This test only checks if the
-  // [FlutterView.render] call is propagated to PlatformConfiguration.render
-  // and thus doesn't need anything from `Animator` or `Engine`, which,
-  // besides, are not even created in the native side at all.
-}
-
-@pragma('vm:entry-point')
-void incorrectDoubleRender() {
-  PlatformDispatcher.instance.onBeginFrame = (Duration value) {
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(2, 2)));
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(3, 3)));
-  };
-  PlatformDispatcher.instance.onDrawFrame = () {
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(4, 4)));
-    PlatformDispatcher.instance.views.first.render(_createRedBoxScene(Size(5, 5)));
-  };
-  _finish();
-  // Don't schedule a frame here. This test only checks if the
-  // [FlutterView.render] call is propagated to PlatformConfiguration.render
-  // and thus doesn't need anything from `Animator` or `Engine`, which,
-  // besides, are not even created in the native side at all.
-}

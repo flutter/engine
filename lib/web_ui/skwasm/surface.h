@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_WEB_UI_SKWASM_SURFACE_H_
+#define FLUTTER_LIB_WEB_UI_SKWASM_SURFACE_H_
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
@@ -70,13 +71,15 @@ class Surface {
   std::unique_ptr<TextureSourceWrapper> createTextureSourceWrapper(
       SkwasmObject textureSource);
 
+  // Worker thread
+  void renderPictureOnWorker(SkPicture* picture, uint32_t callbackId);
+
  private:
   void _runWorker();
   void _init();
   void _dispose();
   void _resizeCanvasToFit(int width, int height);
   void _recreateSurface();
-  void _renderPicture(const SkPicture* picture, uint32_t callbackId);
   void _rasterizeImage(SkImage* image,
                        ImageByteFormat format,
                        uint32_t callbackId);
@@ -99,9 +102,6 @@ class Surface {
   pthread_t _thread;
 
   static void fDispose(Surface* surface);
-  static void fRenderPicture(Surface* surface,
-                             SkPicture* picture,
-                             uint32_t callbackId);
   static void fOnRenderComplete(Surface* surface,
                                 uint32_t callbackId,
                                 SkwasmObject imageBitmap);
@@ -114,3 +114,5 @@ class Surface {
                                    uint32_t callbackId);
 };
 }  // namespace Skwasm
+
+#endif  // FLUTTER_LIB_WEB_UI_SKWASM_SURFACE_H_

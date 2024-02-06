@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
 
 #include <memory>
 
@@ -20,7 +21,8 @@ class SurfaceVK final : public Surface {
   static std::unique_ptr<SurfaceVK> WrapSwapchainImage(
       const std::shared_ptr<Context>& context,
       std::shared_ptr<SwapchainImageVK>& swapchain_image,
-      SwapCallback swap_callback);
+      SwapCallback swap_callback,
+      bool enable_msaa = true);
 
   // |Surface|
   ~SurfaceVK() override;
@@ -33,7 +35,11 @@ class SurfaceVK final : public Surface {
   // |Surface|
   bool Present() const override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SurfaceVK);
+  SurfaceVK(const SurfaceVK&) = delete;
+
+  SurfaceVK& operator=(const SurfaceVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_

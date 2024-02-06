@@ -80,6 +80,7 @@
         @"platform_view_gesture_accept_with_overlapping_platform_views",
     @"--tap-status-bar" : @"tap_status_bar",
     @"--animated-color-square" : @"animated_color_square",
+    @"--solid-blue" : @"solid_blue",
     @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture",
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",
@@ -90,6 +91,7 @@
     @"--two-platform-view-clip-rect" : @"two_platform_view_clip_rect",
     @"--two-platform-view-clip-rrect" : @"two_platform_view_clip_rrect",
     @"--two-platform-view-clip-path" : @"two_platform_view_clip_path",
+    @"--darwin-system-font" : @"darwin_system_font",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap

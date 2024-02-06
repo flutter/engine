@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_COMMON_RASTERIZER_H_
-#define SHELL_COMMON_RASTERIZER_H_
+#ifndef FLUTTER_SHELL_COMMON_RASTERIZER_H_
+#define FLUTTER_SHELL_COMMON_RASTERIZER_H_
 
 #include <memory>
 #include <optional>
@@ -25,8 +25,8 @@
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #if IMPELLER_SUPPORTS_RENDERING
-// GN is having trouble understanding how this works in the Fuchsia builds.
 #include "impeller/aiks/aiks_context.h"  // nogncheck
+#include "impeller/core/formats.h"       // nogncheck
 #include "impeller/renderer/context.h"   // nogncheck
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"  // nogncheck
 #endif  // IMPELLER_SUPPORTS_RENDERING
@@ -344,6 +344,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///             rendered layer tree.
   ///
   enum class ScreenshotType {
+    // NOLINTBEGIN(readability-identifier-naming)
     //--------------------------------------------------------------------------
     /// A format used to denote a Skia picture. A Skia picture is a serialized
     /// representation of an `SkPicture` that can be used to introspect the
@@ -356,9 +357,10 @@ class Rasterizer final : public SnapshotDelegate,
     SkiaPicture,
 
     //--------------------------------------------------------------------------
-    /// A format used to denote uncompressed image data. This format
+    /// A format used to denote uncompressed image data. For Skia, this format
     /// is 32 bits per pixel, 8 bits per component and
-    /// denoted by the `kN32_SkColorType ` Skia color type.
+    /// denoted by the `kN32_SkColorType ` Skia color type. For Impeller, its
+    /// format is specified in Screenshot::pixel_format.
     ///
     UncompressedImage,
 
@@ -373,6 +375,19 @@ class Rasterizer final : public SnapshotDelegate,
     /// is determined from the surface. This is the only way to read wide gamut
     /// color data, but isn't supported everywhere.
     SurfaceData,
+    // NOLINTEND(readability-identifier-naming)
+  };
+
+  // Specifies the format of pixel data in a Screenshot.
+  enum class ScreenshotFormat {
+    // Unknown format, or Skia default.
+    kUnknown,
+    // RGBA 8 bits per channel.
+    kR8G8B8A8UNormInt,
+    // BGRA 8 bits per channel.
+    kB8G8R8A8UNormInt,
+    // RGBA 16 bit floating point per channel.
+    kR16G16B16A16Float,
   };
 
   //----------------------------------------------------------------------------
@@ -399,6 +414,13 @@ class Rasterizer final : public SnapshotDelegate,
     std::string format;
 
     //--------------------------------------------------------------------------
+    /// The pixel format of the data in `data`.
+    ///
+    /// If the impeller backend is not used, this value is always kUnknown and
+    /// the data is in RGBA8888 format.
+    ScreenshotFormat pixel_format = ScreenshotFormat::kUnknown;
+
+    //--------------------------------------------------------------------------
     /// @brief      Creates an empty screenshot
     ///
     Screenshot();
@@ -409,10 +431,12 @@ class Rasterizer final : public SnapshotDelegate,
     /// @param[in]  p_data  The screenshot data
     /// @param[in]  p_size  The screenshot size.
     /// @param[in]  p_format  The screenshot format.
+    /// @param[in]  p_pixel_format  The screenshot format.
     ///
     Screenshot(sk_sp<SkData> p_data,
                SkISize p_size,
-               const std::string& p_format);
+               const std::string& p_format,
+               ScreenshotFormat p_pixel_format);
 
     //--------------------------------------------------------------------------
     /// @brief      The copy constructor for a screenshot.
@@ -661,10 +685,9 @@ class Rasterizer final : public SnapshotDelegate,
     return delegate_.GetIsGpuDisabledSyncSwitch();
   }
 
-  sk_sp<SkData> ScreenshotLayerTreeAsImage(
+  std::pair<sk_sp<SkData>, ScreenshotFormat> ScreenshotLayerTreeAsImage(
       flutter::LayerTree* tree,
       flutter::CompositorContext& compositor_context,
-      GrDirectContext* surface_context,
       bool compressed);
 
   // This method starts with the frame timing recorder at build end. This
@@ -711,7 +734,7 @@ class Rasterizer final : public SnapshotDelegate,
   static bool ShouldResubmitFrame(const DoDrawResult& result);
   static DrawStatus ToDrawStatus(DoDrawStatus status);
 
-  bool is_torn_down_;
+  bool is_torn_down_ = false;
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::weak_ptr<impeller::Context> impeller_context_;
@@ -720,7 +743,7 @@ class Rasterizer final : public SnapshotDelegate,
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   std::unordered_map<int64_t, ViewRecord> view_records_;
   fml::closure next_frame_callback_;
-  bool user_override_resource_cache_bytes_;
+  bool user_override_resource_cache_bytes_ = false;
   std::optional<size_t> max_cache_bytes_;
   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
   std::shared_ptr<ExternalViewEmbedder> external_view_embedder_;
@@ -733,4 +756,4 @@ class Rasterizer final : public SnapshotDelegate,
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_RASTERIZER_H_
+#endif  // FLUTTER_SHELL_COMMON_RASTERIZER_H_

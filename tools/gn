@@ -106,16 +106,12 @@ def is_host_build(args):
 
 
 # Determines whether a prebuilt Dart SDK can be used instead of building one.
-# We can use a prebuilt Dart SDK when:
-# 1. It is a host build, a build targeting Fuchsia, or a build targeting desktop.
-# 2. The prebuilt SDK exists under //flutter/prebuilts/$OS-$ARCH.
 def can_use_prebuilt_dart(args):
   prebuilt = None
-  # In a Fuchsia build, we can use a prebuilt Dart SDK for the host to build
-  # platform agnostic artifacts (e.g. kernel snapshots), and a Dart SDK
-  # targeting Fuchsia is not needed. So, it is safe to say that the prebuilt
-  # Dart SDK in a Fuchsia build is the host prebuilt Dart SDK.
-  if args.target_os is None or args.target_os == 'fuchsia':
+  # When doing a 'host' build (args.target_os is None), or a build when the
+  # target OS and host OS are different, the prebuilt Dart SDK is the Dart SDK
+  # for the host system's OS and archetecture.
+  if args.target_os is None or args.target_os in ['android', 'ios', 'fuchsia']:
     if sys.platform.startswith(('cygwin', 'win')):
       prebuilt = 'windows-x64'
     elif sys.platform == 'darwin':
@@ -209,8 +205,6 @@ def buildtools_dir():
   host_cpu = get_host_cpu()
   if host_os == 'win':
     host_os = 'windows'
-  if host_os == 'mac' and host_cpu == 'arm64':
-    host_cpu = 'x64'
   return '%s-%s' % (host_os, host_cpu)
 
 
@@ -221,9 +215,10 @@ def setup_rbe(args):
   if not args.rbe:
     return rbe_gn_args
 
-  if get_host_os() not in ['linux']:
+  if get_host_os() not in ['linux', 'mac']:
     print(
-        'The --rbe flag has no effect. RBE is currently only supported on Linux.'
+        'The --rbe flag has no effect. RBE is currently only supported on '
+        'macOS and Linux.'
     )
     return rbe_gn_args
 
@@ -243,7 +238,9 @@ def setup_rbe(args):
     )
     bootstrap_path = os.path.join(cipd_reclient_dir, 'bootstrap')
     reproxy_path = os.path.join(cipd_reclient_dir, 'reproxy')
-    rbe_cfg_path = os.path.join(SRC_ROOT, 'build', 'rbe.cfg')
+    rbe_cfg_path = os.path.join(
+        SRC_ROOT, 'flutter', 'build', 'rbe', 'reclient.cfg'
+    )
     bootstrap_cmd = [
         bootstrap_path,
         '--re_proxy=' + reproxy_path,
@@ -264,8 +261,20 @@ def setup_rbe(args):
     rbe_gn_args['rbe_dial_timeout'] = args.rbe_dial_timeout
   if args.rbe_platform:
     rbe_gn_args['rbe_platform'] = args.rbe_platform
-  if args.rbe_dir:
-    rbe_gn_args['rbe_dir'] = args.rbe_dir
+
+  rbe_gn_args['rbe_dir'] = os.path.join(
+      SRC_ROOT, 'buildtools', buildtools_dir(), 'reclient'
+  )
+
+  rbe_gn_args['rbe_cfg'] = os.path.join(
+      SRC_ROOT, 'flutter', 'build', 'rbe',
+      'rewrapper-' + buildtools_dir() + '.cfg'
+  )
+
+  if sys.platform == 'darwin':
+    if (not running_on_luci or args.xcode_symlinks or
+        os.getenv('FLUTTER_GOMA_CREATE_XCODE_SYMLINKS', '0') == '1'):
+      rbe_gn_args['create_xcode_symlinks'] = True
 
   return rbe_gn_args
 
@@ -289,8 +298,16 @@ def setup_goma(args):
   # care of starting and stopping the compiler proxy.
   running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
 
+  # The GOMA client has no arm64 binary, so run the x64 binary through
+  # Rosetta.
+  buildtools_platform = buildtools_dir()
+  if buildtools_platform == 'mac-arm64':
+    buildtools_platform = 'mac-x64'
+
   # Prefer the goma fetched by gclient if it exists.
-  cipd_goma_dir = os.path.join(SRC_ROOT, 'buildtools', buildtools_dir(), 'goma')
+  cipd_goma_dir = os.path.join(
+      SRC_ROOT, 'buildtools', buildtools_platform, 'goma'
+  )
 
   # Next, if GOMA_DIR is set, use that install.
   goma_dir = os.environ.get('GOMA_DIR')
@@ -545,10 +562,6 @@ def to_gn_args(args):
     gn_args['skia_use_gl'] = False
     gn_args['shell_enable_metal'] = True
     gn_args['skia_use_metal'] = True
-    # Bitcode enabled builds using the current version of the toolchain leak
-    # C++ symbols decorated with the availability attribute. Disable these
-    # attributes in release modes till the toolchain is updated.
-    gn_args['skia_enable_api_available_macro'] = args.runtime_mode != 'release'
   else:
     gn_args['skia_use_gl'] = args.target_os != 'fuchsia'
 
@@ -704,9 +717,8 @@ def to_gn_args(args):
   # gen_snapshot, but the build defines otherwise make it look like the build is
   # for a host Windows build and make GN think we will be building ANGLE.
   # Angle is not used on Mac hosts as there are no tests for the OpenGL backend.
-  if (is_host_build(args) and
-      gn_args['host_os'] != 'mac') or (args.target_os == 'android' and
-                                       get_host_os() == 'win'):
+  if is_host_build(args) or (args.target_os == 'android' and
+                             get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     gn_args['angle_has_astc_encoder'] = False
@@ -715,6 +727,10 @@ def to_gn_args(args):
     # https://github.com/flutter/flutter/issues/114107
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
+    if get_host_os() == 'mac':
+      gn_args['angle_enable_metal'] = True
+      gn_args['angle_enable_gl'] = False
+      gn_args['angle_enable_vulkan'] = False
 
     # ANGLE and SwiftShader share build flags to enable X11 and Wayland,
     # but we only need these enabled for SwiftShader.
@@ -766,6 +782,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_use_zlib'] = True
   gn_args['skia_gl_standard'] = 'webgl'
   gn_args['skia_enable_ganesh'] = True
+  gn_args['skia_enable_skottie'] = False
   gn_args['skia_enable_sksl_tracing'] = False
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
@@ -775,14 +792,11 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_enable_fontmgr_custom_directory'] = False
   gn_args['skia_enable_fontmgr_custom_embedded'] = True
   gn_args['skia_enable_fontmgr_custom_empty'] = True
-  gn_args['skia_fontmgr_factory'
-         ] = '//third_party/skia:fontmgr_custom_empty_factory'
   gn_args['skia_enable_skshaper'] = True
   gn_args['skia_enable_skparagraph'] = True
   gn_args['skia_canvaskit_force_tracing'] = False
   gn_args['skia_canvaskit_enable_skp_serialization'] = True
   gn_args['skia_canvaskit_enable_effects_deserialization'] = False
-  gn_args['skia_canvaskit_enable_skottie'] = False
   gn_args['skia_canvaskit_include_viewer'] = False
   gn_args['skia_canvaskit_enable_pathops'] = True
   gn_args['skia_canvaskit_enable_rt_shader'] = True

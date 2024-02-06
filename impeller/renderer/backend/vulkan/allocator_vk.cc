@@ -12,6 +12,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -90,8 +91,6 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          const vk::Instance& instance,
                          const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
-  TRACE_EVENT0("impeller", "CreateAllocatorVK");
-
   auto limits = physical_device.getProperties().limits;
   max_texture_size_.width = max_texture_size_.height =
       limits.maxImageDimension2D;
@@ -187,6 +186,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
     } else {
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
     }
+    vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
   }
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
@@ -265,7 +265,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                            vk::Device device,
                            bool supports_memoryless_textures)
       : TextureSourceVK(desc), resource_(std::move(resource_manager)) {
-    TRACE_EVENT0("impeller", "CreateDeviceTexture");
+    FML_DCHECK(desc.format != PixelFormat::kUnknown);
     vk::ImageCreateInfo image_info;
     image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
@@ -348,8 +348,18 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                      << vk::to_string(result);
       return;
     }
+    // Create a specialized view for render target attachments.
+    view_info.subresourceRange.levelCount = 1u;
+    auto [rt_result, rt_image_view] = device.createImageViewUnique(view_info);
+    if (rt_result != vk::Result::eSuccess) {
+      VALIDATION_LOG << "Unable to create an image view for allocation: "
+                     << vk::to_string(rt_result);
+      return;
+    }
+
     resource_.Swap(ImageResource(ImageVMA{allocator, allocation, image},
-                                 std::move(image_view)));
+                                 std::move(image_view),
+                                 std::move(rt_image_view)));
     is_valid_ = true;
   }
 
@@ -363,34 +373,45 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     return resource_->image_view.get();
   }
 
+  vk::ImageView GetRenderTargetView() const override {
+    return resource_->rt_image_view.get();
+  }
+
+  bool IsSwapchainImage() const override { return false; }
+
  private:
   struct ImageResource {
     UniqueImageVMA image;
     vk::UniqueImageView image_view;
+    vk::UniqueImageView rt_image_view;
 
     ImageResource() = default;
 
-    ImageResource(ImageVMA p_image, vk::UniqueImageView p_image_view)
-        : image(p_image), image_view(std::move(p_image_view)) {}
+    ImageResource(ImageVMA p_image,
+                  vk::UniqueImageView p_image_view,
+                  vk::UniqueImageView p_rt_image_view)
+        : image(p_image),
+          image_view(std::move(p_image_view)),
+          rt_image_view(std::move(p_rt_image_view)) {}
 
-    ImageResource(ImageResource&& o) {
-      std::swap(image, o.image);
-      std::swap(image_view, o.image_view);
-    }
+    ImageResource(ImageResource&& o) = default;
 
-    FML_DISALLOW_COPY_AND_ASSIGN(ImageResource);
+    ImageResource(const ImageResource&) = delete;
+
+    ImageResource& operator=(const ImageResource&) = delete;
   };
 
   UniqueResourceVKT<ImageResource> resource_;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AllocatedTextureSourceVK);
+  AllocatedTextureSourceVK(const AllocatedTextureSourceVK&) = delete;
+
+  AllocatedTextureSourceVK& operator=(const AllocatedTextureSourceVK&) = delete;
 };
 
 // |Allocator|
 std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     const TextureDescriptor& desc) {
-  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateTexture");
   if (!IsValid()) {
     return nullptr;
   }
@@ -415,15 +436,9 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   return std::make_shared<TextureVK>(context_, std::move(source));
 }
 
-void AllocatorVK::DidAcquireSurfaceFrame() {
-  frame_count_++;
-  raster_thread_id_ = std::this_thread::get_id();
-}
-
 // |Allocator|
 std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
-  TRACE_EVENT0("impeller", "AllocatorVK::OnCreateBuffer");
   vk::BufferCreateInfo buffer_info;
   buffer_info.usage = vk::BufferUsageFlagBits::eVertexBuffer |
                       vk::BufferUsageFlagBits::eIndexBuffer |
@@ -441,8 +456,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
   allocation_info.preferredFlags = static_cast<VkMemoryPropertyFlags>(
       ToVKBufferMemoryPropertyFlags(desc.storage_mode));
   allocation_info.flags = ToVmaAllocationBufferCreateFlags(desc.storage_mode);
-  if (created_buffer_pool_ && desc.storage_mode == StorageMode::kHostVisible &&
-      raster_thread_id_ == std::this_thread::get_id()) {
+  if (created_buffer_pool_ && desc.storage_mode == StorageMode::kHostVisible) {
     allocation_info.pool = staging_buffer_pool_.get().pool;
   }
 

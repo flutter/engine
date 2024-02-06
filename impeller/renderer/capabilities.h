@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
+#define FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
 
 #include <memory>
 
@@ -18,6 +19,11 @@ class Capabilities {
   /// @brief  Whether the context backend supports attaching offscreen MSAA
   ///         color/stencil textures.
   virtual bool SupportsOffscreenMSAA() const = 0;
+
+  /// @brief  Whether the context backend supports multisampled rendering to
+  ///         the on-screen surface without requiring an explicit resolve of
+  ///         the MSAA color attachment.
+  virtual bool SupportsImplicitResolvingMSAA() const = 0;
 
   /// @brief  Whether the context backend supports binding Shader Storage Buffer
   ///         Objects (SSBOs) to pipelines.
@@ -58,10 +64,6 @@ class Capabilities {
   /// @brief  Whether the context backend supports configuring `ComputePass`
   ///         command subgroups.
   virtual bool SupportsComputeSubgroups() const = 0;
-
-  /// @brief  Whether the context backend supports binding the on-screen surface
-  ///         texture for shader reading.
-  virtual bool SupportsReadFromOnscreenTexture() const = 0;
 
   /// @brief  Whether the context backend supports binding the current
   ///         `RenderPass` attachments. This is supported if the backend can
@@ -106,7 +108,9 @@ class Capabilities {
  protected:
   Capabilities();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Capabilities);
+  Capabilities(const Capabilities&) = delete;
+
+  Capabilities& operator=(const Capabilities&) = delete;
 };
 
 class CapabilitiesBuilder {
@@ -128,8 +132,6 @@ class CapabilitiesBuilder {
   CapabilitiesBuilder& SetSupportsCompute(bool value);
 
   CapabilitiesBuilder& SetSupportsComputeSubgroups(bool value);
-
-  CapabilitiesBuilder& SetSupportsReadFromOnscreenTexture(bool value);
 
   CapabilitiesBuilder& SetSupportsReadFromResolve(bool value);
 
@@ -153,7 +155,6 @@ class CapabilitiesBuilder {
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
   bool supports_compute_subgroups_ = false;
-  bool supports_read_from_onscreen_texture_ = false;
   bool supports_read_from_resolve_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_device_transient_textures_ = false;
@@ -161,7 +162,11 @@ class CapabilitiesBuilder {
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
   std::optional<PixelFormat> default_depth_stencil_format_ = std::nullopt;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CapabilitiesBuilder);
+  CapabilitiesBuilder(const CapabilitiesBuilder&) = delete;
+
+  CapabilitiesBuilder& operator=(const CapabilitiesBuilder&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
