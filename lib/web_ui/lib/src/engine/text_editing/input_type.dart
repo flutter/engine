@@ -112,7 +112,7 @@ class NoTextInputType extends EngineInputType {
 /// For [NoTextInputType] (mapped to [TextInputType.none] with
 /// [isMultiline] = false), it creates an <input> element with the
 /// inputmode="none" attribute.
-class MultilineNoTextInputType extends EngineInputType {
+class MultilineNoTextInputType extends MultilineInputType {
   const MultilineNoTextInputType();
 
   @override
