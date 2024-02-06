@@ -1463,7 +1463,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       if (event.keyCode == _kReturnKeyCode) {
         onAction!(inputConfiguration.inputAction);
         // Prevent the browser from inserting a new line when it's not a multiline input.
-        if (inputConfiguration.inputType is! MultilineInputType && inputConfiguration.inputType is! MultilineNoTextInputType) {
+        if (inputConfiguration.inputType is! MultilineInputType) {
           event.preventDefault();
         }
       }
