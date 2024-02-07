@@ -3,38 +3,23 @@
 // found in the LICENSE file.
 part of dart.ui;
 
-/// Methods for constructing [Isolate]s that run on the Flutter platform thread.
+/// Methods for running code in [Isolate]s that run on the Flutter platform
+/// thread.
 ///
 /// This is an experimental API. It may be changed or removed in future versions
 /// based on user feedback.
 abstract final class PlatformIsolate {
-  /// Creates and spawns an isolate that shares the same code as the current
-  /// isolate. The spawned isolate runs on the Flutter platform thread.
-  ///
-  /// This method can only be invoked from the main isolate.
-  ///
-  /// See [Isolate.spawn] for details.
-  static Future<Isolate> spawn<T>(void Function(T) entryPoint, T message,
-      {bool errorsAreFatal = true,
-      SendPort? onExit,
-      SendPort? onError,
-      String? debugName}) {
+  static Future<Isolate> _spawn<T>(void Function(T) entryPoint, T message,
+      {SendPort? onExit}) {
     final Completer<Isolate> isolateCompleter = Completer<Isolate>();
-    final RawReceivePort isolateReadyPort = RawReceivePort();
-    isolateReadyPort.handler = (Object readyMessage) {
-      isolateReadyPort.close();
-
+    final RawReceivePort isolateReadyPort = _receiveOne((Object readyMessage) {
       if (readyMessage is _PlatformIsolateReadyMessage) {
         final Isolate isolate = Isolate(readyMessage.controlPort,
             pauseCapability: readyMessage.pauseCapability,
             terminateCapability: readyMessage.terminateCapability);
-        if (onError != null) {
-          isolate.addErrorListener(onError);
-        }
         if (onExit != null) {
           isolate.addOnExitListener(onExit);
         }
-        isolate.setErrorsFatal(errorsAreFatal);
 
         isolateCompleter.complete(isolate);
         readyMessage.entryPointPort.send((entryPoint, message));
@@ -48,19 +33,23 @@ abstract final class PlatformIsolate {
             'Internal error: unexpected format for ready message: '
             "'$readyMessage'"));
       }
-    };
-    _spawn(_platformIsolateMain<T>, isolateReadyPort.sendPort,
-        debugName ?? 'PlatformIsolate', errorsAreFatal);
+    });
+    try {
+      _nativeSpawn(_platformIsolateMain<T>, isolateReadyPort.sendPort,
+          'PlatformIsolate');
+    } on Object {
+      isolateReadyPort.close();
+      rethrow;
+    }
     return isolateCompleter.future;
   }
 
   static void _platformIsolateMain<T>(SendPort isolateReadyPort) {
-    final RawReceivePort entryPointPort = RawReceivePort();
-    entryPointPort.handler = ((void Function(T), T) entryPointAndMessage) {
-      entryPointPort.close();
+    final RawReceivePort entryPointPort = _receiveOne(
+        ((void Function(T), T) entryPointAndMessage) {
       final (void Function(T) entryPoint, T message) = entryPointAndMessage;
       entryPoint(message);
-    };
+    });
     final Isolate isolate = Isolate.current;
     isolateReadyPort.send(_PlatformIsolateReadyMessage(
         isolate.controlPort,
@@ -69,24 +58,39 @@ abstract final class PlatformIsolate {
         entryPointPort.sendPort));
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Bool)>(
+  @Native<Void Function(Handle, Handle, Handle)>(
       symbol: 'PlatformIsolateNativeApi::Spawn')
-  external static void _spawn(Function entryPoint, SendPort isolateReadyPort,
-      String debugName, bool errorsAreFatal);
+  external static void _nativeSpawn(Function entryPoint,
+      SendPort isolateReadyPort, String debugName);
 
-  /// Runs [computation] in a new isolate on the platform thread and returns the
+  static Future<SendPort>? _platformRunnerSendPort;
+
+  /// Runs [computation] in an isolate on the platform thread and returns the
   /// result.
   ///
   /// This method can only be invoked from the main isolate.
   ///
   /// See [Isolate.run] for details.
-  static FutureOr<R> run<R>(FutureOr<R> Function() computation,
-      {String? debugName}) {
+  static FutureOr<R> run<R>(FutureOr<R> Function() computation) {
+    if (_platformRunnerSendPort == null) {
+      final Completer<SendPort> sendPortCompleter = Completer<SendPort>();
+      _platformRunnerSendPort = sendPortCompleter.future;
+      final RawReceivePort portReceiver = _receiveOne(
+          (SendPort port) => sendPortCompleter.complete(port));
+      // TODO(liamappelbe): If there are any in-flight computations when onExit
+      // is triggered, complete them with errors.
+      final RawReceivePort onExit = _receiveOne((_) => _platformRunnerSendPort = null);
+      try {
+        _spawn(_remoteRun, portReceiver.sendPort, onExit: onExit.sendPort);
+      } on Object {
+        portReceiver.close();
+        onExit.close();
+        rethrow;
+      }
+    }
+
     final Completer<R> resultCompleter = Completer<R>();
-    final RawReceivePort resultPort = RawReceivePort();
-    resultPort.handler =
-        ((R? result, Object? remoteError, Object? remoteStack)? response) {
-      resultPort.close();
+    final RawReceivePort resultPort = _receiveOne(((R? result, Object? remoteError, Object? remoteStack)? response) {
       if (response == null) {
         // onExit handler message, isolate terminated without sending result.
         resultCompleter.completeError(
@@ -109,44 +113,52 @@ abstract final class PlatformIsolate {
       } else {
         resultCompleter.complete(result);
       }
-    };
-    try {
-      PlatformIsolate.spawn(_remoteRun<R>, (computation, resultPort.sendPort),
-          debugName: debugName);
-    } on Object {
-      resultPort.close();
-      rethrow;
-    }
+    });
+
+    _platformRunnerSendPort!.then(
+        (port) => port.send((computation, resultPort.sendPort)));
     return resultCompleter.future;
   }
 
-  static Future<void> _remoteRun<R>(
-      (FutureOr<R> Function() computation, SendPort resultPort) args) async {
-    final (FutureOr<R> Function() computation, SendPort resultPort) = args;
-    late final R result;
-    try {
-      final FutureOr<R> potentiallyAsyncResult = computation();
-      if (potentiallyAsyncResult is Future<R>) {
-        result = await potentiallyAsyncResult;
-      } else {
-        result = potentiallyAsyncResult;
+  static Future<void> _remoteRun<R>(SendPort portReceiver) async {
+    final RawReceivePort computationPort = RawReceivePort();
+    computationPort.handler =
+        ((FutureOr<R> Function() computation, SendPort resultPort) message) async {
+      // Once this isolate has handled at least one computation, allow it to
+      // close if there are no more incoming.
+      computationPort.keepIsolateAlive = false;
+
+      final (FutureOr<R> Function() computation, SendPort resultPort) = message;
+      try {
+        final FutureOr<R> potentiallyAsyncResult = computation();
+        late final R result;
+        if (potentiallyAsyncResult is Future<R>) {
+          result = await potentiallyAsyncResult;
+        } else {
+          result = potentiallyAsyncResult;
+        }
+        resultPort.send((result, null, null));
+      } catch (e, s) {
+        // If sending fails, the error becomes an uncaught error.
+        resultPort.send((null, e, s));
       }
-      // TODO(liamappelbe): Use Isolate.exit. At the moment this works, but logs
-      // a spurious error. We need to silence that error.
-      // https://github.com/flutter/flutter/issues/136314
-      //Isolate.exit(resultPort, (result, null, null));
-      resultPort.send((result, null, null));
-    } catch (e, s) {
-      // If sending fails, the error becomes an uncaught error.
-      //Isolate.exit(resultPort, (null, e, s));
-      resultPort.send((null, e, s));
-    }
+    };
+    portReceiver.send(computationPort.sendPort);
   }
 
   /// Returns whether the current isolate is running on the platform thread.
   @Native<Bool Function()>(
       symbol: 'PlatformIsolateNativeApi::IsRunningOnPlatformThread')
   external static bool isRunningOnPlatformThread();
+
+  static RawReceivePort _receiveOne<T>(void Function(T) then) {
+    final RawReceivePort port = RawReceivePort();
+    port.handler = (T value) {
+      port.close();
+      then(value);
+    };
+    return port;
+  }
 }
 
 class _PlatformIsolateReadyMessage {

@@ -13,8 +13,7 @@ class PlatformIsolateNativeApi {
  public:
   static void Spawn(Dart_Handle entry_point,
                     Dart_Handle isolate_ready_port,
-                    Dart_Handle debug_name,
-                    bool errors_are_fatal);
+                    Dart_Handle debug_name);
 
   static bool IsRunningOnPlatformThread();
 };

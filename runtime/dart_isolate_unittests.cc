@@ -795,7 +795,7 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAndShutdown) {
                 Dart_GetField(lib, tonic::ToDart("mainForPlatformIsolates"));
             char* error = nullptr;
             platform_isolate = root_isolate->CreatePlatformIsolate(
-                entry_point, port_id, "PlatformIsolate", true, &error);
+                entry_point, port_id, "PlatformIsolate", &error);
 
             EXPECT_FALSE(error);
             EXPECT_TRUE(platform_isolate);
@@ -865,7 +865,7 @@ TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
               Dart_GetField(lib, tonic::ToDart("emptyMain"));
           char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate", true, &error);
+              entry_point, port_id, "PlatformIsolate", &error);
 
           EXPECT_FALSE(error);
           EXPECT_TRUE(platform_isolate);
@@ -952,7 +952,7 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
               Dart_GetField(lib, tonic::ToDart("mainPlatformIsolateReplyPort"));
           char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate", true, &error);
+              entry_point, port_id, "PlatformIsolate", &error);
           EXPECT_FALSE(error);
           return true;
         }));
@@ -1035,7 +1035,7 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
               Dart_GetField(lib, tonic::ToDart("mainForPlatformIsolates"));
           char* error = nullptr;
           Dart_Isolate platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate", true, &error);
+              entry_point, port_id, "PlatformIsolate", &error);
 
           // Failed to create a platform isolate, but we've still re-entered the
           // root isolate.
@@ -1114,7 +1114,7 @@ TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
               Dart_GetField(lib, tonic::ToDart("mainForPlatformIsolates"));
           char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate", true, &error);
+              entry_point, port_id, "PlatformIsolate", &error);
 
           EXPECT_FALSE(error);
           EXPECT_TRUE(platform_isolate);
@@ -1191,7 +1191,7 @@ TEST_F(DartIsolateTest, PlatformIsolateMainThrowsError) {
               lib, tonic::ToDart("mainForPlatformIsolatesThrowError"));
           char* error = nullptr;
           platform_isolate = root_isolate->CreatePlatformIsolate(
-              entry_point, port_id, "PlatformIsolate", true, &error);
+              entry_point, port_id, "PlatformIsolate", &error);
 
           EXPECT_FALSE(error);
           EXPECT_TRUE(platform_isolate);
