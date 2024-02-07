@@ -40,9 +40,20 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   if (source) {
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
-  ::vmaFlushAllocation(resource_->buffer.get().allocator,
-                       resource_->buffer.get().allocation, offset,
-                       source_range.length);
+
+  vk::PhysicalDeviceMemoryProperties memory_properties;
+  device.getMemoryProperties(&memory_properties);
+
+  bool isHostCoherent =
+      memory_properties.memoryTypes[resource_->info.memoryType].propertyFlags &
+      vk::MemoryPropertyFlagBits::eHostCoherent;
+
+  if (!isHostCoherent) {
+    // Memory is not host coherent, need to flush to ensure consistency
+    ::vmaFlushAllocation(resource_->buffer.get().allocator,
+                         resource_->buffer.get().allocation, offset,
+                         source_range.length);
+  }
 
   return true;
 }
