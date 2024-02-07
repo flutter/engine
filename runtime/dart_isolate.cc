@@ -286,7 +286,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                                 Dart_Port port_id,
                                                 const char* debug_name,
-                                                bool errors_fatal,
                                                 char** error) {
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
@@ -319,13 +318,9 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   // default unhandled_exception_callback may terminate the app, because it is
   // only called for the root isolate (child isolates are managed by the VM and
   // have a different error code path). So override it to simply log the error.
-  settings.unhandled_exception_callback = [errors_fatal](
-                                              const std::string& error,
-                                              const std::string& stack_trace) {
+  settings.unhandled_exception_callback = [](const std::string& error,
+                                             const std::string& stack_trace) {
     FML_LOG(ERROR) << "Unhandled exception:\n" << error << "\n" << stack_trace;
-    if (errors_fatal) {
-      Dart_ShutdownIsolate();
-    }
     return true;
   };
 

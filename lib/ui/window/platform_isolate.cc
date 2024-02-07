@@ -15,8 +15,7 @@ namespace flutter {
 
 void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
                                      Dart_Handle isolate_ready_port,
-                                     Dart_Handle debug_name,
-                                     bool errors_are_fatal) {
+                                     Dart_Handle debug_name) {
   UIDartState* current_state = UIDartState::Current();
   FML_DCHECK(current_state != nullptr);
   if (!current_state->IsRootIsolate()) {
@@ -33,8 +32,7 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
 
   char* error = nullptr;
   current_state->CreatePlatformIsolate(entry_point, isolate_ready_port_id,
-                                       debug_name_cstr, errors_are_fatal,
-                                       &error);
+                                       debug_name_cstr, &error);
   if (error) {
     Dart_EnterScope();
     Dart_Handle error_handle = tonic::ToDart<const char*>(error);
@@ -43,7 +41,7 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   }
 }
 
-bool PlatformIsolateNativeApi::IsRunningOnPlatformThread() {
+bool PlatformIsolateNativeApi::IsRunningInPlatformThread() {
   UIDartState* current_state = UIDartState::Current();
   if (current_state == nullptr) {
     return false;
