@@ -41,7 +41,7 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   }
 }
 
-bool PlatformIsolateNativeApi::IsRunningOnPlatformThread() {
+bool PlatformIsolateNativeApi::IsRunningInPlatformThread() {
   UIDartState* current_state = UIDartState::Current();
   if (current_state == nullptr) {
     return false;

@@ -15,7 +15,7 @@ class PlatformIsolateNativeApi {
                     Dart_Handle isolate_ready_port,
                     Dart_Handle debug_name);
 
-  static bool IsRunningOnPlatformThread();
+  static bool IsRunningInPlatformThread();
 };
 
 }  // namespace flutter

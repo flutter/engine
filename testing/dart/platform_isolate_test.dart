@@ -9,29 +9,30 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 
 void main() {
-  test('PlatformIsolate.isRunningOnPlatformThread, false cases', () async {
+  test('PlatformIsolate isRunningInPlatformThread, false cases', () async {
     final bool isPlatThread =
-        await Isolate.run(() => PlatformIsolate.isRunningOnPlatformThread());
+        await Isolate.run(() => isRunningInPlatformThread());
     expect(isPlatThread, isFalse);
   });
 
-  test('PlatformIsolate.run', () async {
-    final bool isPlatThread = await PlatformIsolate.run(
-        () => PlatformIsolate.isRunningOnPlatformThread());
+  test('PlatformIsolate runInPlatformThread', () async {
+    final bool isPlatThread =
+        await runInPlatformThread(() => isRunningInPlatformThread());
     expect(isPlatThread, isTrue);
   });
 
-  test('PlatformIsolate.run, async operations', () async {
-    final bool isPlatThread = await PlatformIsolate.run(() async {
+  test('PlatformIsolate runInPlatformThread, async operations', () async {
+    final bool isPlatThread = await runInPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      return PlatformIsolate.isRunningOnPlatformThread();
+      return isRunningInPlatformThread();
     });
     expect(isPlatThread, isTrue);
   });
 
-  test('PlatformIsolate.run, send and receive messages', () async {
+  test('PlatformIsolate runInPlatformThread, send and receive messages',
+      () async {
     // Send numbers 1 to 10 to the platform isolate. The platform isolate
     // multiplies them by 100 and sends them back.
     int sum = 0;
@@ -45,7 +46,7 @@ void main() {
       }
     });
     final SendPort sendPort = recvPort.sendPort;
-    await PlatformIsolate.run(() async {
+    await runInPlatformThread(() async {
       final Completer<void> completer = Completer<void>();
       final RawReceivePort recvPort = RawReceivePort((Object message) {
         sendPort.send((message as int) * 100);
@@ -61,10 +62,10 @@ void main() {
     recvPort.close();
   });
 
-  test('PlatformIsolate.run, throws', () async {
+  test('PlatformIsolate runInPlatformThread, throws', () async {
     bool throws = false;
     try {
-      await PlatformIsolate.run(() => throw 'Oh no!');
+      await runInPlatformThread(() => throw 'Oh no!');
     } catch (error) {
       expect(error, 'Oh no!');
       throws = true;
@@ -72,10 +73,10 @@ void main() {
     expect(throws, true);
   });
 
-  test('PlatformIsolate.run, async throws', () async {
+  test('PlatformIsolate runInPlatformThread, async throws', () async {
     bool throws = false;
     try {
-      await PlatformIsolate.run(() async {
+      await runInPlatformThread(() async {
         await Future<void>.delayed(const Duration(milliseconds: 100));
         await Future<void>.delayed(const Duration(milliseconds: 100));
         await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -88,9 +89,9 @@ void main() {
     expect(throws, true);
   });
 
-  test('PlatformIsolate.run, root isolate only', () async {
+  test('PlatformIsolate runInPlatformThread, root isolate only', () async {
     await Isolate.run(() {
-      expect(() => PlatformIsolate.run(() => print('Unreachable')), throws);
+      expect(() => runInPlatformThread(() => print('Unreachable')), throws);
     });
   });
 }

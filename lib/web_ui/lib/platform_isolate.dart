@@ -3,20 +3,22 @@
 // found in the LICENSE file.
 part of dart.ui;
 
-/// Methods for constructing [Isolate]s that run on the Flutter platform thread.
+/// Runs [computation] in the platform thread and returns the result.
 ///
-/// This is an experimental API. It may be changed or removed in future versions
-/// based on user feedback.
-abstract final class PlatformIsolate {
-  /// Runs [computation] in an isolate on the platform thread and returns the
-  /// result.
-  ///
-  /// This method can only be invoked from the main isolate.
-  ///
-  /// See [Isolate.run] for details.
-  static FutureOr<R> run<R>(FutureOr<R> Function() computation,
-      {String? debugName}) => computation();
+/// If [computation] is asynchronous (returns a `Future<R>`) then
+/// that future is awaited in the new isolate, completing the entire
+/// asynchronous computation, before returning the result.
+///
+/// If [computation] throws, the `Future` returned by this function completes
+/// with that error.
+///
+/// The [computation] function and its result (or error) must be
+/// sendable between isolates. Objects that cannot be sent include open
+/// files and sockets (see [SendPort.send] for details).
+///
+/// This method can only be invoked from the main isolate.
+FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) =>
+    computation();
 
-  /// Returns whether the current isolate is running on the platform thread.
-  external static bool isRunningOnPlatformThread() => true;
-}
+/// Returns whether the current isolate is running in the platform thread.
+bool isRunningInPlatformThread() => true;
