@@ -38,7 +38,7 @@ with `gn format`.
 [objcc_style]: https://google.github.io/styleguide/objcguide.html#objective-c
 [java_style]: https://google.github.io/styleguide/javaguide.html
 
-### Fuchsia Contributions from Googlers
+## Fuchsia Contributions from Googlers
 
 Googlers contributing to Fuchsia should follow the additional steps at:
 go/flutter-fuchsia-pr-policy.
