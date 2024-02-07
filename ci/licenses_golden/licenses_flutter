@@ -5918,6 +5918,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/painting.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/path.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/path_metrics.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/platform_dispatcher.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/platform_isolate.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/pointer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/semantics.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine.dart + ../../../flutter/LICENSE
@@ -8788,6 +8789,7 @@ FILE: ../../../flutter/lib/web_ui/lib/painting.dart
 FILE: ../../../flutter/lib/web_ui/lib/path.dart
 FILE: ../../../flutter/lib/web_ui/lib/path_metrics.dart
 FILE: ../../../flutter/lib/web_ui/lib/platform_dispatcher.dart
+FILE: ../../../flutter/lib/web_ui/lib/platform_isolate.dart
 FILE: ../../../flutter/lib/web_ui/lib/pointer.dart
 FILE: ../../../flutter/lib/web_ui/lib/semantics.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine.dart
