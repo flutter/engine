@@ -200,9 +200,13 @@ class Path {
   // builder from affecting the existing taken paths.
   struct Data {
     Data() = default;
-    Data(const Data& other) = default;
+
+    Data(Data&& other) = default;
 
     ~Data() = default;
+
+    /// Eagerly copies all data into a new data struct.
+    Data Clone() const;
 
     FillType fill = FillType::kNonZero;
     Convexity convexity = Convexity::kUnknown;
@@ -212,10 +216,11 @@ class Path {
 
     std::optional<Rect> bounds;
 
-    bool locked = false;
+   private:
+    Data(const Data& other) = default;
   };
 
-  explicit Path(const Data& data);
+  explicit Path(Data data);
 
   std::shared_ptr<const Data> data_;
 };
