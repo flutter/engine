@@ -202,6 +202,8 @@ class Path {
 
     Data(Data&& other) = default;
 
+    Data(const Data& other) = default;
+
     ~Data() = default;
 
     /// Eagerly copies all data into a new data struct.
@@ -214,9 +216,6 @@ class Path {
     std::vector<ContourComponent> contours;
 
     std::optional<Rect> bounds;
-
-   private:
-    Data(const Data& other) = default;
   };
 
   explicit Path(Data data);
