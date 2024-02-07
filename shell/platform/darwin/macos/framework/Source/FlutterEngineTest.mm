@@ -1189,6 +1189,8 @@ TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   EXPECT_TRUE(updated);
+  [engine shutDownEngine];
+  engine = nil;
 }
 
 }  // namespace flutter::testing
