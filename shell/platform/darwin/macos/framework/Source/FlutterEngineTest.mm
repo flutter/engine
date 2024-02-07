@@ -1166,8 +1166,13 @@ TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
 }
 
 TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  project.rootIsolateCreateCallback = FlutterEngineTest::IsolateCreateCallback;
   MockableFlutterEngine* engine = [[MockableFlutterEngine alloc] initWithName:@"foobar"
-                                                                      project:nil
+                                                                      project:project
                                                        allowHeadlessExecution:true];
   BOOL updated = NO;
   auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
@@ -1175,11 +1180,14 @@ TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
       NotifyDisplayUpdate, ([&updated, &original_update_displays](
                                 auto engine, auto update_type, auto* displays, auto display_count) {
         EXPECT_EQ(display_count, 1UL);
-        // TODO: assert display size.
+        EXPECT_EQ(displays->display_id, 10UL);
+        EXPECT_EQ(displays->width, 60UL);
+        EXPECT_EQ(displays->height, 80UL);
+        EXPECT_EQ(displays->device_pixel_ratio, 2UL);
         updated = YES;
         return original_update_displays(engine, update_type, displays, display_count);
       }));
-  [engine updateDisplayConfig];
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   EXPECT_TRUE(updated);
 }
 

@@ -219,11 +219,6 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
  * Returns an array of screen objects representing all of the screens available on the system.
  */
 - (NSArray<NSScreen*>*)screens;
-
-/**
- * Reads information about the available displays from the platform.
- */
-- (void)updateDisplayConfig;
 @end
 
 @interface FlutterEngine (Tests)
