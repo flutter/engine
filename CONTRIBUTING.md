@@ -12,7 +12,7 @@ the Engine development environment][engine_dev_setup] on our wiki. Those
 instructions are part of the broader onboarding instructions described in the
 contributing guide.
 
-### Style
+## Style
 
 The Flutter engine follows Google style for the languages it uses:
 
