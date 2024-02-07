@@ -21,23 +21,23 @@ void main(List<String> args) async {
   final ArgParser parser = ArgParser()
     ..addOption(
       'adb',
-      help: 'absolute path to the adb tool',
+      help: 'Absolute path to the adb tool',
       mandatory: true,
     )
     ..addOption(
       'out-dir',
-      help: 'out directory',
+      help: 'Out directory',
       mandatory: true,
     )
     ..addOption(
       'smoke-test',
       help: 'runs a single test to verify the setup',
-      valueHelp: 'empty to run dev.flutter.scenarios.EngineLaunchE2ETest, or specify a class',
+      valueHelp: 'The class to execute, defaults to dev.flutter.scenarios.EngineLaunchE2ETest',
     )
     ..addFlag(
       'use-skia-gold',
-      help: 'use Skia Gold to compare screenshots. Disable for local testing.',
-      defaultsTo: true,
+      help: 'Use Skia Gold to compare screenshots.',
+      defaultsTo: isLuciEnv,
     );
 
   runZonedGuarded(
