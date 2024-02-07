@@ -3517,7 +3517,7 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   auto picture = canvas.EndRecordingAsPicture();
   std::array<uint32_t, 5> expected = {
       2,  // DrawRRect
-      5,  // ClipRRect
+      4,  // ClipRRect
       3,  // SaveLayer
       4,  // DrawRRect
       5,  // Restore (will be removed once we switch to the clip depth approach)
