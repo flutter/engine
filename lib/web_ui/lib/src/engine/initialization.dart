@@ -158,7 +158,19 @@ Future<void> initializeEngineServices({
     if (!waitingForAnimation) {
       waitingForAnimation = true;
       domWindow.requestAnimationFrame((JSNumber highResTime) {
-        frameTimingsOnVsync();
+        FrameTimingRecorder.startFrame();
+        final FrameTimingRecorder? recorder = FrameTimingRecorder.currentRecorder;
+        if (recorder != null) {
+          recorder.recordVsyncStart();
+
+          // In Flutter terminology "building a frame" consists of "beginning
+          // frame" and "drawing frame".
+          //
+          // We do not call `recordBuildFinish` from here because
+          // part of the rasterization process, particularly in the HTML
+          // renderer, takes place in the `SceneBuilder.build()`.
+          recorder.recordBuildStart();
+        }
 
         // Reset immediately, because `frameHandler` can schedule more frames.
         waitingForAnimation = false;
@@ -171,13 +183,6 @@ Future<void> initializeEngineServices({
         final int highResTimeMicroseconds =
             (1000 * highResTime.toDartDouble).toInt();
 
-        // In Flutter terminology "building a frame" consists of "beginning
-        // frame" and "drawing frame".
-        //
-        // We do not call `frameTimingsOnBuildFinish` from here because
-        // part of the rasterization process, particularly in the HTML
-        // renderer, takes place in the `SceneBuilder.build()`.
-        frameTimingsOnBuildStart();
         if (EnginePlatformDispatcher.instance.onBeginFrame != null) {
           EnginePlatformDispatcher.instance.invokeOnBeginFrame(
               Duration(microseconds: highResTimeMicroseconds));
