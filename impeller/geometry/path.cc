@@ -349,8 +349,4 @@ std::optional<Rect> Path::GetTransformedBoundingBox(
   return bounds->TransformBounds(transform);
 }
 
-Path::Data Path::Data::Clone() const {
-  return Path::Data(*this);
-}
-
 }  // namespace impeller

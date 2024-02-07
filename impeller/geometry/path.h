@@ -206,9 +206,6 @@ class Path {
 
     ~Data() = default;
 
-    /// Eagerly copies all data into a new data struct.
-    Data Clone() const;
-
     FillType fill = FillType::kNonZero;
     Convexity convexity = Convexity::kUnknown;
     std::vector<ComponentIndexPair> components;
