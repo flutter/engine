@@ -16,7 +16,7 @@ PathBuilder::~PathBuilder() = default;
 
 Path PathBuilder::CopyPath(FillType fill) {
   prototype_.fill = fill;
-  return Path(prototype_.Clone());
+  return Path(prototype_);
 }
 
 Path PathBuilder::TakePath(FillType fill) {

@@ -203,10 +203,9 @@ class Path {
 
     Data(Data&& other) = default;
 
-    ~Data() = default;
+    Data(const Data& other) = default;
 
-    /// Eagerly copies all data into a new data struct.
-    Data Clone() const;
+    ~Data() = default;
 
     FillType fill = FillType::kNonZero;
     Convexity convexity = Convexity::kUnknown;
@@ -215,9 +214,6 @@ class Path {
     std::vector<ContourComponent> contours;
 
     std::optional<Rect> bounds;
-
-   private:
-    Data(const Data& other) = default;
   };
 
   explicit Path(Data data);

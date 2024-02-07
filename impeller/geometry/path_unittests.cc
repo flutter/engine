@@ -486,7 +486,7 @@ TEST(PathTest, CanBeCloned) {
   }
 }
 
-TEST(PathTest, PathBuilderDoesNotMutateTakenPaths) {
+TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
   auto test_isolation =
       [](const std::function<void(PathBuilder & builder)>& mutator,
          bool will_close, Point mutation_offset, const std::string& label) {
