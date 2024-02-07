@@ -72,7 +72,7 @@ TEST(LoggingTest, UnreachableKillProcessWithMacro) {
   ASSERT_DEATH({ FML_UNREACHABLE(); }, "");
 }
 
-#if !OS_FUCHSIA
+#ifndef OS_FUCHSIA
 TEST(LoggingTest, SanityTests) {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   std::vector<std::string> severities = {"INFO", "WARNING", "ERROR",
