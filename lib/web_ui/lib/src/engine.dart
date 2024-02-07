@@ -39,6 +39,7 @@ export 'engine/canvaskit/multi_surface_rasterizer.dart';
 export 'engine/canvaskit/n_way_canvas.dart';
 export 'engine/canvaskit/native_memory.dart';
 export 'engine/canvaskit/offscreen_canvas_rasterizer.dart';
+export 'engine/canvaskit/overlay_scene_optimizer.dart';
 export 'engine/canvaskit/painting.dart';
 export 'engine/canvaskit/path.dart';
 export 'engine/canvaskit/path_metrics.dart';

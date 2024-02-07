@@ -24,26 +24,54 @@ class Rendering {
   void add(RenderingEntity entity) {
     entities.add(entity);
   }
+
+  List<RenderingRenderCanvas> get canvases =>
+      entities.whereType<RenderingRenderCanvas>().toList();
 }
 
-sealed class RenderingEntity {}
+/// An element of a [Rendering]. Either a render canvas or a platform view.
+sealed class RenderingEntity {
+  /// Returns [true] if this entity is equal to [other] for use in a rendering.
+  ///
+  /// For example, all [RenderingRenderCanvas] objects are equal to each other
+  /// for purposes of rendering since any canvas in that place in the rendering
+  /// will be equivalent. Platform views are only equal if they are for the same
+  /// view id.
+  bool equalForRendering(RenderingEntity other);
+}
 
 class RenderingRenderCanvas extends RenderingEntity {
   RenderingRenderCanvas({required this.requiredDueTo});
+
+  /// The [pictures] which should be rendered in this canvas.
   final List<CkPicture> pictures = <CkPicture>[];
 
   /// The index of the platform view that caused this render canvas to be
   /// required.
   final int requiredDueTo;
 
+  /// Adds the [picture] to the pictures that should be rendered in this canvas.
   void add(CkPicture picture) {
     pictures.add(picture);
   }
+
+  @override
+  bool equalForRendering(RenderingEntity other) {
+    return other is RenderingRenderCanvas;
+  }
 }
 
+/// A platform view to be rendered.
 class RenderingPlatformView extends RenderingEntity {
   RenderingPlatformView(this.viewId);
+
+  /// The [viewId] of the platform view to render.
   final int viewId;
+
+  @override
+  bool equalForRendering(RenderingEntity other) {
+    return other is RenderingPlatformView && other.viewId == viewId;
+  }
 }
 
 // Computes the bounds of the platform view from its associated parameters.
@@ -83,12 +111,29 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
   return transformedBounds.intersect(currentClipBounds);
 }
 
+/// Returns the optimized [Rendering] for a sequence of [pictures] and
+/// [platformViews].
+///
+/// [paramsForViews] is required to compute the bounds of the platform views.
 Rendering createOptimizedRendering(
   List<CkPicture> pictures,
   List<int> platformViews,
   Map<int, EmbeddedViewParams> paramsForViews,
 ) {
   assert(pictures.length == platformViews.length + 1);
+
+  final List<ui.Rect> pictureBounds = <ui.Rect>[];
+  for (final CkPicture picture in pictures) {
+    pictureBounds.add(picture.cullRect);
+  }
+  print(pictureBounds);
+
+  final List<ui.Rect> platformViewBounds = <ui.Rect>[];
+  for (final int viewId in platformViews) {
+    platformViewBounds.add(computePlatformViewBounds(paramsForViews[viewId]!));
+  }
+  print(platformViewBounds);
+
   final Map<CkPicture, int> overlayRequirement = <CkPicture, int>{};
   final Rendering result = Rendering();
   // The first render canvas is required due to the pseudo-platform view "V_0"
@@ -110,7 +155,7 @@ Rendering createOptimizedRendering(
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
       final ui.Rect platformViewBounds =
           computePlatformViewBounds(paramsForViews[platformViews[i]]!);
-      for (final int j = i + 1; i < pictures.length; i++) {
+      for (int j = i + 1; j < pictures.length; j++) {
         final ui.Rect pictureBounds = pictures[j].cullRect;
         if (platformViewBounds.overlaps(pictureBounds)) {
           overlayRequirement[pictures[j]] = i;
@@ -131,3 +176,7 @@ Rendering createOptimizedRendering(
   }
   return result;
 }
+
+/// Updates the DOM to display the [next] rendering by using the fewest
+/// DOM operations to rearrange the [current] rendering.
+void updateRendering(Rendering current, Rendering next) {}

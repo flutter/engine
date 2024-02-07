@@ -62,10 +62,9 @@ abstract class ViewRasterizer {
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
     sceneHost.prepend(displayFactory.baseCanvas.hostElement);
-    await rasterizeToCanvas(
-        displayFactory.baseCanvas, <CkPicture>[pictureRecorder.endRecording()]);
 
-    await viewEmbedder.submitFrame();
+    await viewEmbedder.submitFrame(
+        displayFactory.baseCanvas, pictureRecorder.endRecording());
   }
 
   /// Do some initialization to prepare to draw a frame.

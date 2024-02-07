@@ -14,6 +14,7 @@ import '../util.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
+import 'overlay_scene_optimizer.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
@@ -144,7 +145,8 @@ class HtmlViewEmbedder {
 
   void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
     // If we haven't seen this viewId yet, cache it for clips/transforms.
-    final ViewClipChain clipChain = _viewClipChains.putIfAbsent(platformViewId, () {
+    final ViewClipChain clipChain =
+        _viewClipChains.putIfAbsent(platformViewId, () {
       return ViewClipChain(view: createPlatformViewSlot(platformViewId));
     });
 
@@ -361,12 +363,20 @@ class HtmlViewEmbedder {
     sceneHost.append(_svgPathDefs!);
   }
 
-  Future<void> submitFrame() async {
+  Future<void> submitFrame(
+      DisplayCanvas baseCanvas, CkPicture basePicture) async {
+    final List<CkPicture> pictures = <CkPicture>[basePicture];
+    for (final CkPictureRecorder recorder in _context.pictureRecorders) {
+      pictures.add(recorder.endRecording());
+    }
+    final Rendering rendering = createOptimizedRendering(
+        pictures, _compositionOrder, _currentCompositionParams);
     final ViewListDiffResult? diffResult =
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
-    final List<OverlayGroup>? overlayGroups = _updateOverlays(diffResult);
+    final List<OverlayGroup>? overlayGroups =
+        _updateOverlays(rendering, diffResult);
     if (overlayGroups != null) {
       _activeOverlayGroups = overlayGroups;
     }
@@ -376,15 +386,19 @@ class HtmlViewEmbedder {
       '(${_context.pictureRecorders.length}) as overlays (${_overlays.length}).',
     );
 
-    int pictureRecorderIndex = 0;
+    final List<RenderingRenderCanvas> renderCanvases = rendering.canvases;
+    assert(renderCanvases.length == _activeOverlayGroups.length + 1);
+
+    await rasterizer.rasterizeToCanvas(baseCanvas, renderCanvases[0].pictures);
+
+    // The first render canvas is the base canvas, not an overlay, so skip it
+    // since we just rasterized to it above.
+    int renderCanvasIndex = 1;
     for (final OverlayGroup overlayGroup in _activeOverlayGroups) {
       final DisplayCanvas overlay = _overlays[overlayGroup.last]!;
-      final List<CkPicture> pictures = <CkPicture>[];
-      for (int i = 0; i < overlayGroup.visibleCount; i++) {
-        pictures.add(
-            _context.pictureRecorders[pictureRecorderIndex].endRecording());
-        pictureRecorderIndex++;
-      }
+      final List<CkPicture> pictures =
+          renderCanvases[renderCanvasIndex].pictures;
+      renderCanvasIndex++;
       await rasterizer.rasterizeToCanvas(overlay, pictures);
     }
     for (final CkPictureRecorder recorder
@@ -439,8 +453,7 @@ class HtmlViewEmbedder {
           sceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
           final DisplayCanvas? overlay = _overlays[viewId];
           if (overlay != null) {
-            sceneHost.insertBefore(
-                overlay.hostElement, elementToInsertBefore);
+            sceneHost.insertBefore(overlay.hostElement, elementToInsertBefore);
           }
         } else {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
@@ -547,7 +560,8 @@ class HtmlViewEmbedder {
   // composition order of the current and previous frame, respectively.
   //
   // TODO(hterkelsen): Test this more thoroughly.
-  List<OverlayGroup>? _updateOverlays(ViewListDiffResult? diffResult) {
+  List<OverlayGroup>? _updateOverlays(
+      Rendering rendering, ViewListDiffResult? diffResult) {
     if (diffResult != null &&
         diffResult.viewsToAdd.isEmpty &&
         diffResult.viewsToRemove.isEmpty) {
@@ -558,8 +572,7 @@ class HtmlViewEmbedder {
     // Group platform views from their composition order.
     // Each group contains one visible view, and any number of invisible views
     // before or after that visible view.
-    final List<OverlayGroup> overlayGroups =
-        getOverlayGroups(_compositionOrder);
+    final List<OverlayGroup> overlayGroups = getOverlayGroups(rendering);
     final List<int> viewsNeedingOverlays =
         overlayGroups.map((OverlayGroup group) => group.last).toList();
     if (diffResult == null) {
@@ -595,38 +608,22 @@ class HtmlViewEmbedder {
   // If there are more visible views than overlays, then the views which cannot
   // be assigned an overlay are grouped together and will be rendered on top of
   // the rest of the scene.
-  List<OverlayGroup> getOverlayGroups(List<int> views) {
+  List<OverlayGroup> getOverlayGroups(Rendering rendering) {
     final List<OverlayGroup> result = <OverlayGroup>[];
     OverlayGroup currentGroup = OverlayGroup();
 
-    for (int i = 0; i < views.length; i++) {
-      final int view = views[i];
-      if (PlatformViewManager.instance.isInvisible(view)) {
-        // We add as many invisible views as we find to the current group.
-        currentGroup.add(view);
-      } else {
-        // `view` is visible.
-        if (!currentGroup.hasVisibleView ||
-            result.length + 1 >= HtmlViewEmbedder.maximumOverlays) {
-          // If `view` is the first visible one of the group or we've reached
-          // the maximum number of overlays, add it.
-          currentGroup.add(view, visible: true);
-        } else {
-          // There's already a visible `view` in `currentGroup`, so a new
-          // OverlayGroup will be needed.
-          // Let's decide what to do with the `currentGroup` first:
-          if (currentGroup.hasVisibleView) {
-            // We only care about groups that have one visible view.
-            result.add(currentGroup);
-          }
+    for (int i = 0; i < rendering.entities.length; i++) {
+      final RenderingEntity entity = rendering.entities[i];
+
+      /// We are at an overlay, end the current group and start the next group.
+      if (entity is RenderingRenderCanvas) {
+        if (!currentGroup.isEmpty) {
+          result.add(currentGroup);
           currentGroup = OverlayGroup();
-          currentGroup.add(view, visible: true);
         }
+      } else if (entity is RenderingPlatformView) {
+        currentGroup.add(entity.viewId);
       }
-    }
-    // Handle the last group to be (maybe) returned.
-    if (currentGroup.hasVisibleView) {
-      result.add(currentGroup);
     }
     return result;
   }
@@ -703,6 +700,9 @@ class OverlayGroup {
 
   /// Returns the number of visible views in this overlay group.
   int get visibleCount => _visibleCount;
+
+  /// Returns [true] if this overlay group is empty.
+  bool get isEmpty => _group.isEmpty;
 }
 
 /// Represents a Clip Chain (for a view).
