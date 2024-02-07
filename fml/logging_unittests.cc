@@ -72,10 +72,8 @@ TEST(LoggingTest, UnreachableKillProcessWithMacro) {
   ASSERT_DEATH({ FML_UNREACHABLE(); }, "");
 }
 
+#if !OS_FUCHSIA
 TEST(LoggingTest, SanityTests) {
-#if OS_FUCHSIA
-  GTEST_SKIP() << "Fuchsia does this differently.";
-#endif  // OS_FUCHSIA
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   std::vector<std::string> severities = {"INFO", "WARNING", "ERROR",
                                          "IMPORTANT"};
@@ -97,6 +95,7 @@ TEST(LoggingTest, SanityTests) {
       },
       R"(\[FATAL:path/to/file.cc\(5\)\] Goodbye)");
 }
+#endif  // !OS_FUCHSIA
 
 }  // namespace testing
 }  // namespace fml
