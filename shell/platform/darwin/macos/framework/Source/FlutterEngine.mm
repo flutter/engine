@@ -824,13 +824,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self updateDisplayConfig];
 }
 
+- (NSArray<NSScreen*>*)screens {
+  return [NSScreen screens];
+}
+
 - (void)updateDisplayConfig {
   if (!_engine) {
     return;
   }
 
   std::vector<FlutterEngineDisplay> displays;
-  for (NSScreen* screen : [NSScreen screens]) {
+  for (NSScreen* screen : [self screens]) {
     CGDirectDisplayID displayID =
         static_cast<CGDirectDisplayID>([screen.deviceDescription[@"NSScreenNumber"] integerValue]);
 

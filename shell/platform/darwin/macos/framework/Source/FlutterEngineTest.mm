@@ -118,6 +118,23 @@ constexpr int64_t kImplicitViewId = 0ll;
 
 #pragma mark -
 
+@interface MockableFlutterEngine : FlutterEngine
+@end
+
+@implementation MockableFlutterEngine
+- (NSArray<NSScreen*>*)screens {
+  id mockScreen = OCMClassMock([NSScreen class]);
+  OCMStub([mockScreen backingScaleFactor]).andReturn(2.0);
+  OCMStub([mockScreen deviceDescription]).andReturn(@{
+    @"NSScreenNumber" : [NSNumber numberWithInt:10]
+  });
+  OCMStub([mockScreen frame]).andReturn(NSMakeRect(10, 20, 30, 40));
+  return [NSArray arrayWithObject:mockScreen];
+}
+@end
+
+#pragma mark -
+
 namespace flutter::testing {
 
 TEST_F(FlutterEngineTest, CanLaunch) {
@@ -1145,6 +1162,24 @@ TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
 
   [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
                                                       object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
+  MockableFlutterEngine* engine = [[MockableFlutterEngine alloc] initWithName:@"foobar"
+                                                                      project:nil
+                                                       allowHeadlessExecution:true];
+  BOOL updated = NO;
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        EXPECT_EQ(display_count, 1UL);
+        // TODO: assert display size.
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+  [engine updateDisplayConfig];
   EXPECT_TRUE(updated);
 }
 
