@@ -38,6 +38,12 @@ void main(List<String> args) async {
       'use-skia-gold',
       help: 'Use Skia Gold to compare screenshots.',
       defaultsTo: isLuciEnv,
+    )
+    ..addOption(
+      'android-graphics-backend',
+      help: 'The graphics backend to use for the Android app.',
+      allowed: <String>['skia', 'impeller-opengles', 'impeller-vulkan'],
+      defaultsTo: 'skia',
     );
 
   runZonedGuarded(
@@ -50,11 +56,16 @@ void main(List<String> args) async {
       if (results.wasParsed('smoke-test') && smokeTest!.isEmpty) {
         smokeTest = 'dev.flutter.scenarios.EngineLaunchE2ETest';
       }
+      final _AndroidGraphicsBackend? androidGraphicsBackend = _AndroidGraphicsBackend.tryParse(results['android-graphics-backend'] as String?);
+      if (androidGraphicsBackend == null) {
+        panic(<String>['invalid android-graphics-backend', results['android-graphics-backend'] as String? ?? '<null>']);
+      }
       await _run(
         outDir: outDir,
         adb: adb,
         smokeTestFullPath: smokeTest,
         useSkiaGold: useSkiaGold,
+        androidGraphicsBackend: androidGraphicsBackend,
       );
       exit(0);
     },
@@ -68,11 +79,31 @@ void main(List<String> args) async {
   );
 }
 
+enum _AndroidGraphicsBackend {
+  skia,
+  impellerOpengl,
+  impellerVulkan;
+
+  static _AndroidGraphicsBackend? tryParse(String? value) {
+    switch (value) {
+      case 'skia':
+        return _AndroidGraphicsBackend.skia;
+      case 'impeller-opengles':
+        return _AndroidGraphicsBackend.impellerOpengl;
+      case 'impeller-vulkan':
+        return _AndroidGraphicsBackend.impellerVulkan;
+      default:
+        return null;
+    }
+  }
+}
+
 Future<void> _run({
   required Directory outDir,
   required File adb,
   required String? smokeTestFullPath,
   required bool useSkiaGold,
+  required _AndroidGraphicsBackend androidGraphicsBackend,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
