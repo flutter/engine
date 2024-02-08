@@ -102,8 +102,7 @@ class ColorSourceContents : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
  protected:
-  virtual bool BindFragmentCallback(RenderPass& pass) const;
-
+  using BindFragmentCallback = std::function<bool(RenderPass& pass)>;
   using PipelineBuilderMethod = std::shared_ptr<Pipeline<PipelineDescriptor>> (
       impeller::ContentContext::*)(ContentContextOptions) const;
 
@@ -113,7 +112,8 @@ class ColorSourceContents : public Contents {
                     const Entity& entity,
                     RenderPass& pass,
                     const PipelineBuilderMethod& pipeline_builder,
-                    typename VertexShaderT::FrameInfo frame_info) const {
+                    typename VertexShaderT::FrameInfo frame_info,
+                    const BindFragmentCallback& bind_pipeline_callback) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
 
     // If overdraw prevention is enabled (like when drawing stroke paths), we
@@ -138,7 +138,7 @@ class ColorSourceContents : public Contents {
         (renderer.*pipeline_builder)(options);
     pass.SetPipeline(pipeline);
 
-    if (!BindFragmentCallback(pass)) {
+    if (!bind_pipeline_callback(pass)) {
       return false;
     }
 
@@ -162,27 +162,32 @@ class ColorSourceContents : public Contents {
                      const Entity& entity,
                      RenderPass& pass,
                      const PipelineBuilderMethod& pipeline_builder,
-                     typename VertexShaderT::FrameInfo frame_info) const {
+                     typename VertexShaderT::FrameInfo frame_info,
+                     const BindFragmentCallback& bind_pipeline_callback) const {
     auto geometry_result =
         GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
     return DrawGeometry<VertexShaderT>(geometry_result, renderer, entity, pass,
-                                       pipeline_builder, frame_info);
+                                       pipeline_builder, frame_info,
+                                       bind_pipeline_callback);
   }
 
   template <typename VertexShaderT>
-  bool DrawPositionsAndUVs(Rect texture_coverage,
-                           const Matrix& effect_transform,
-                           const ContentContext& renderer,
-                           const Entity& entity,
-                           RenderPass& pass,
-                           const PipelineBuilderMethod& pipeline_builder,
-                           typename VertexShaderT::FrameInfo frame_info) const {
+  bool DrawPositionsAndUVs(
+      Rect texture_coverage,
+      Matrix effect_transform,
+      const ContentContext& renderer,
+      const Entity& entity,
+      RenderPass& pass,
+      const PipelineBuilderMethod& pipeline_builder,
+      typename VertexShaderT::FrameInfo frame_info,
+      const BindFragmentCallback& bind_pipeline_callback) const {
     auto geometry_result = GetGeometry()->GetPositionUVBuffer(
         texture_coverage, effect_transform, renderer, entity, pass);
 
     return DrawGeometry<VertexShaderT>(geometry_result, renderer, entity, pass,
-                                       pipeline_builder, frame_info);
+                                       pipeline_builder, frame_info,
+                                       bind_pipeline_callback);
   }
 
  private:
