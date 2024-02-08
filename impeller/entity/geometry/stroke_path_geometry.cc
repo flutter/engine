@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
@@ -114,17 +115,17 @@ void StrokePathGeometry::CreateMiterJoin(VertexWriter& vtx_builder,
     return;
   }
 
-  Scalar dir = CreateBevelAndGetDirection(vtx_builder, position, start_offset,
-                                          end_offset);
+  Scalar direction = CreateBevelAndGetDirection(vtx_builder, position,
+                                                start_offset, end_offset);
 
-  Point miter_point = (start_offset + end_offset) / 2 / alignment;
+  Point miter_point = (((start_offset + end_offset) / 2) / alignment);
   if (miter_point.GetDistanceSquared({0, 0}) > miter_limit * miter_limit) {
     return;  // Convert to bevel when we exceed the miter limit.
   }
 
   // Outer miter point.
   VS::PerVertexData vtx;
-  vtx.position = position + miter_point * dir;
+  vtx.position = position + miter_point * direction;
   vtx_builder.AppendVertex(vtx.position);
 }
 // static
@@ -143,8 +144,8 @@ void StrokePathGeometry::CreateRoundJoin(VertexWriter& vtx_builder,
     return;
   }
 
-  Scalar dir = CreateBevelAndGetDirection(vtx_builder, position, start_offset,
-                                          end_offset);
+  Scalar direction = CreateBevelAndGetDirection(vtx_builder, position,
+                                                start_offset, end_offset);
 
   Point middle =
       (start_offset + end_offset).Normalize() * start_offset.GetLength();
@@ -152,18 +153,18 @@ void StrokePathGeometry::CreateRoundJoin(VertexWriter& vtx_builder,
 
   Point middle_handle = middle + Point(-middle.y, middle.x) *
                                      PathBuilder::kArcApproximationMagic *
-                                     alignment * dir;
+                                     alignment * direction;
   Point start_handle = start_offset + Point(start_offset.y, -start_offset.x) *
                                           PathBuilder::kArcApproximationMagic *
-                                          alignment * dir;
+                                          alignment * direction;
 
   VS::PerVertexData vtx;
   CubicPathComponent(start_offset, start_handle, middle_handle, middle)
-      .ToLinearPathComponents(scale, [&vtx_builder, dir, &vtx, position,
+      .ToLinearPathComponents(scale, [&vtx_builder, direction, &vtx, position,
                                       middle_normal](const Point& point) {
-        vtx.position = position + point * dir;
+        vtx.position = position + point * direction;
         vtx_builder.AppendVertex(vtx.position);
-        vtx.position = position + (-point * dir).Reflect(middle_normal);
+        vtx.position = position + (-point * direction).Reflect(middle_normal);
         vtx_builder.AppendVertex(vtx.position);
       });
 }
@@ -272,7 +273,8 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
   }
 }
 
-struct StrokeGenerator {
+class StrokeGenerator {
+ public:
   StrokeGenerator(const Path::Polyline& p_polyline,
                   const Scalar p_stroke_width,
                   const Scalar p_scaled_miter_limit,
@@ -291,7 +293,7 @@ struct StrokeGenerator {
   void Generate() {
     for (size_t contour_i = 0; contour_i < polyline.contours.size();
          contour_i++) {
-      auto contour = polyline.contours[contour_i];
+      const Path::PolylineContour& contour = polyline.contours[contour_i];
       size_t contour_start_point_i, contour_end_point_i;
       std::tie(contour_start_point_i, contour_end_point_i) =
           polyline.GetContourPointBounds(contour_i);
@@ -299,8 +301,10 @@ struct StrokeGenerator {
       switch (contour_end_point_i - contour_start_point_i) {
         case 1: {
           Point p = polyline.GetPoint(contour_start_point_i);
-          cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale, false);
-          cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale, false);
+          cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale,
+                   /*reverse=*/false);
+          cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale,
+                   /*reverse=*/false);
           continue;
         }
         case 0:
@@ -339,9 +343,9 @@ struct StrokeGenerator {
       if (!polyline.contours[contour_i].is_closed) {
         auto cap_offset =
             Vector2(-contour.start_direction.y, contour.start_direction.x) *
-            stroke_width * 0.5;  // Counterclockwise normal
+            stroke_width * 0.5f;  // Counterclockwise normal
         cap_proc(vtx_builder, polyline.GetPoint(contour_start_point_i),
-                 cap_offset, scale, true);
+                 cap_offset, scale, /*reverse=*/true);
       }
 
       for (size_t contour_component_i = 0;
@@ -371,9 +375,9 @@ struct StrokeGenerator {
       if (!contour.is_closed) {
         auto cap_offset =
             Vector2(-contour.end_direction.y, contour.end_direction.x) *
-            stroke_width * 0.5;  // Clockwise normal
+            stroke_width * 0.5f;  // Clockwise normal
         cap_proc(vtx_builder, polyline.GetPoint(contour_end_point_i - 1),
-                 cap_offset, scale, false);
+                 cap_offset, scale, /*reverse=*/false);
       } else {
         join_proc(vtx_builder, polyline.GetPoint(contour_start_point_i), offset,
                   contour_first_offset, scaled_miter_limit, scale);
@@ -381,9 +385,9 @@ struct StrokeGenerator {
     }
   }
 
-  // Computes offset by calculating the direction from point_i - 1 to point_i if
-  // point_i is within `contour_start_point_i` and `contour_end_point_i`;
-  // Otherwise, it uses direction from contour.
+  /// Computes offset by calculating the direction from point_i - 1 to point_i
+  /// if point_i is within `contour_start_point_i` and `contour_end_point_i`;
+  /// Otherwise, it uses direction from contour.
   void ComputeOffset(const size_t point_i,
                      const size_t contour_start_point_i,
                      const size_t contour_end_point_i,
@@ -398,7 +402,7 @@ struct StrokeGenerator {
                       .Normalize();
     }
     previous_offset = offset;
-    offset = Vector2{-direction.y, direction.x} * stroke_width * 0.5;
+    offset = Vector2{-direction.y, direction.x} * stroke_width * 0.5f;
   }
 
   void AddVerticesForLinearComponent(const size_t component_start_index,
@@ -517,11 +521,11 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   PositionWriter position_writer;
   auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
   CreateSolidStrokeVertices(position_writer, polyline, stroke_width,
-                            miter_limit_ * stroke_width_ * 0.5,
+                            miter_limit_ * stroke_width_ * 0.5f,
                             GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
                             scale);
 
-  auto buffer_view =
+  BufferView buffer_view =
       host_buffer.Emplace(position_writer.GetData().data(),
                           position_writer.GetData().size() *
                               sizeof(SolidFillVertexShader::PerVertexData),
@@ -564,10 +568,10 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
   PositionUVWriter writer(Point{0, 0}, texture_coverage.GetSize(),
                           effect_transform);
   CreateSolidStrokeVertices(
-      writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5,
+      writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5f,
       GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), scale);
 
-  auto buffer_view = host_buffer.Emplace(
+  BufferView buffer_view = host_buffer.Emplace(
       writer.GetData().data(),
       writer.GetData().size() * sizeof(TextureFillVertexShader::PerVertexData),
       alignof(TextureFillVertexShader::PerVertexData));
