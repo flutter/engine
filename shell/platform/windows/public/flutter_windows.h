@@ -203,6 +203,21 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
     VoidCallback callback,
     void* user_data);
 
+typedef struct {
+  size_t cb_size;
+  HWND parent_window;
+  const char* platform_view_type;
+  void* user_data;
+  int64_t platform_view_id;
+} FlutterPlatformViewCreationParameters;
+
+typedef HWND (*FlutterPlatformViewFactory)(const FlutterPlatformViewCreationParameters*);
+
+typedef struct {
+  FlutterPlatformViewFactory factory;
+  void* user_data;
+} FlutterPlatformViewTypeEntry;
+
 // ========== View ==========
 
 // Return backing HWND for manipulation in host application.
