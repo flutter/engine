@@ -153,10 +153,17 @@ VkResult vkEnumeratePhysicalDevices(VkInstance instance,
   return VK_SUCCESS;
 }
 
+static thread_local std::optional<VkFormatProperties>
+    g_format_properties_override;
+
 void vkGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice physicalDevice,
     VkFormat format,
     VkFormatProperties* pFormatProperties) {
+  if (g_format_properties_override.has_value()) {
+    *pFormatProperties = g_format_properties_override.value();
+    return;
+  }
   if (format == VK_FORMAT_B8G8R8A8_UNORM) {
     pFormatProperties->optimalTilingFeatures =
         static_cast<VkFormatFeatureFlags>(
@@ -824,6 +831,7 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   }
   g_instance_extensions = instance_extensions_;
   g_instance_layers = instance_layers_;
+  g_format_properties_override = format_properties_override_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
   return result;
 }

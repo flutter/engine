@@ -143,5 +143,21 @@ TEST(ContextVKTest, CanCreateContextWithValidationLayers) {
   ASSERT_TRUE(capabilites_vk->AreValidationsEnabled());
 }
 
+TEST(CapabilitiesVKTest, ContextInitializesWithoutDefaultTextureFormats) {
+  // This can happen for stencil-only. It will likely never happen for combined
+  // depth-stencil textures on the devices Flutter supports.
+  const std::shared_ptr<ContextVK> context =
+      MockVulkanContextBuilder()
+          .OverrideFormatProperties(
+              VkFormatProperties{.optimalTilingFeatures = {}})
+          .Build();
+  ASSERT_NE(context, nullptr);
+  const CapabilitiesVK* capabilites_vk =
+      reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+  ASSERT_EQ(capabilites_vk->GetDefaultStencilFormat(), PixelFormat::kUnknown);
+  ASSERT_EQ(capabilites_vk->GetDefaultDepthStencilFormat(),
+            PixelFormat::kUnknown);
+}
+
 }  // namespace testing
 }  // namespace impeller

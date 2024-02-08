@@ -12,6 +12,7 @@
 
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
@@ -88,10 +89,17 @@ class MockVulkanContextBuilder {
     return *this;
   }
 
+  MockVulkanContextBuilder& OverrideFormatProperties(
+      std::optional<VkFormatProperties> format_properties_override) {
+    format_properties_override_ = format_properties_override;
+    return *this;
+  }
+
  private:
   std::function<void(ContextVK::Settings&)> settings_callback_;
   std::vector<std::string> instance_extensions_;
   std::vector<std::string> instance_layers_;
+  std::optional<VkFormatProperties> format_properties_override_;
 };
 
 /// @brief Override the image size returned by all swapchain images.
