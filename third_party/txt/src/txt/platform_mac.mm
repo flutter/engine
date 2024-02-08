@@ -4,6 +4,7 @@
 
 #include <TargetConditionals.h>
 
+#include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "third_party/skia/include/ports/SkFontMgr_mac_ct.h"
 #include "third_party/skia/include/ports/SkTypeface_mac.h"
@@ -28,16 +29,6 @@ float kNormalWeightValue = 400;
 namespace txt {
 
 const FourCharCode kWeightTag = 'wght';
-using CTFontPtr =
-    std::unique_ptr<std::remove_pointer<CTFontRef>::type, decltype(&CFRelease)>;
-using CFMutableDictionaryPtr =
-    std::unique_ptr<std::remove_pointer<CFMutableDictionaryRef>::type,
-                    decltype(&CFRelease)>;
-using CFNumberPtr = std::unique_ptr<std::remove_pointer<CFNumberRef>::type,
-                                    decltype(&CFRelease)>;
-using CTFontDescriptorPtr =
-    std::unique_ptr<std::remove_pointer<CTFontDescriptorRef>::type,
-                    decltype(&CFRelease)>;
 
 std::vector<std::string> GetDefaultFontFamilies() {
   if (fml::IsPlatformVersionAtLeast(9)) {
@@ -52,51 +43,41 @@ sk_sp<SkFontMgr> GetDefaultFontManager(uint32_t font_initialization_data) {
   return mgr;
 }
 
-CTFontRef MatchSystemUIFont(float desired_weight, float size) {
-  CTFontPtr ct_font(
-      CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, size, nullptr),
-      &CFRelease);
+fml::CFRef<CTFontRef> MatchSystemUIFont(float desired_weight, float size) {
+  fml::CFRef<CTFontRef> ct_font(
+      CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, size, nullptr));
 
   if (desired_weight == kNormalWeightValue) {
-    return (CTFontRef)CFRetain(ct_font.get());
+    return ct_font;
   }
 
-  CFMutableDictionaryPtr variations(
-      CFDictionaryCreateMutable(kCFAllocatorDefault, 1,
-                                &kCFTypeDictionaryKeyCallBacks,
-                                &kCFTypeDictionaryValueCallBacks),
-      &CFRelease);
+  fml::CFRef<CFMutableDictionaryRef> variations(CFDictionaryCreateMutable(
+      kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
+      &kCFTypeDictionaryValueCallBacks));
 
   auto add_axis_to_variations = [&variations](const FourCharCode tag,
                                               float desired_value,
                                               float normal_value) {
     if (desired_value != normal_value) {
-      CFNumberPtr tag_number(
-          CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &tag),
-          &CFRelease);
-      CFNumberPtr value_number(
-          CFNumberCreate(kCFAllocatorDefault, kCFNumberFloatType,
-                         &desired_value),
-          &CFRelease);
-      CFDictionarySetValue(variations.get(), tag_number.get(),
-                           value_number.get());
+      fml::CFRef<CFNumberRef> tag_number(
+          CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &tag));
+      fml::CFRef<CFNumberRef> value_number(CFNumberCreate(
+          kCFAllocatorDefault, kCFNumberFloatType, &desired_value));
+      CFDictionarySetValue(variations, tag_number, value_number);
     }
   };
   add_axis_to_variations(kWeightTag, desired_weight, kNormalWeightValue);
 
-  CFMutableDictionaryPtr attributes(
-      CFDictionaryCreateMutable(kCFAllocatorDefault, 1,
-                                &kCFTypeDictionaryKeyCallBacks,
-                                &kCFTypeDictionaryValueCallBacks),
-      &CFRelease);
-  CFDictionarySetValue(attributes.get(), kCTFontVariationAttribute,
-                       variations.get());
+  fml::CFRef<CFMutableDictionaryRef> attributes(CFDictionaryCreateMutable(
+      kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
+      &kCFTypeDictionaryValueCallBacks));
+  CFDictionarySetValue(attributes, kCTFontVariationAttribute, variations);
 
-  CTFontDescriptorPtr var_font_desc(
-      CTFontDescriptorCreateWithAttributes(attributes.get()), &CFRelease);
+  fml::CFRef<CTFontDescriptorRef> var_font_desc(
+      CTFontDescriptorCreateWithAttributes(attributes));
 
-  return CTFontCreateCopyWithAttributes(ct_font.get(), size, nullptr,
-                                        var_font_desc.get());
+  return fml::CFRef<CTFontRef>(
+      CTFontCreateCopyWithAttributes(ct_font, size, nullptr, var_font_desc));
 }
 
 void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
@@ -117,9 +98,8 @@ void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
   // See https://www.wwdcnotes.com/notes/wwdc20/10175/ for Apple's document on
   // this topic.
   auto register_weighted_font = [&dynamic_font_manager](const int weight) {
-    sk_sp<SkTypeface> large_system_font_weighted =
-        SkMakeTypefaceFromCTFont((CTFontRef)CFAutorelease(
-            MatchSystemUIFont(weight, kSFProDisplayBreakPoint)));
+    sk_sp<SkTypeface> large_system_font_weighted = SkMakeTypefaceFromCTFont(
+        MatchSystemUIFont(weight, kSFProDisplayBreakPoint));
     if (large_system_font_weighted) {
       dynamic_font_manager.font_provider().RegisterTypeface(
           large_system_font_weighted, kSFProDisplayName);
