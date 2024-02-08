@@ -28,6 +28,16 @@ float kNormalWeightValue = 400;
 namespace txt {
 
 const FourCharCode kWeightTag = 'wght';
+using CTFontPtr =
+    std::unique_ptr<std::remove_pointer<CTFontRef>::type, decltype(&CFRelease)>;
+using CFMutableDictionaryPtr =
+    std::unique_ptr<std::remove_pointer<CFMutableDictionaryRef>::type,
+                    decltype(&CFRelease)>;
+using CFNumberPtr = std::unique_ptr<std::remove_pointer<CFNumberRef>::type,
+                                    decltype(&CFRelease)>;
+using CTFontDescriptorPtr =
+    std::unique_ptr<std::remove_pointer<CTFontDescriptorRef>::type,
+                    decltype(&CFRelease)>;
 
 std::vector<std::string> GetDefaultFontFamilies() {
   if (fml::IsPlatformVersionAtLeast(9)) {
@@ -43,39 +53,50 @@ sk_sp<SkFontMgr> GetDefaultFontManager(uint32_t font_initialization_data) {
 }
 
 CTFontRef MatchSystemUIFont(float desired_weight, float size) {
-  CTFontRef ct_font(
-      CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, size, nullptr));
+  CTFontPtr ct_font(
+      CTFontCreateUIFontForLanguage(kCTFontUIFontSystem, size, nullptr),
+      &CFRelease);
 
   if (desired_weight == kNormalWeightValue) {
-    return ct_font;
+    return (CTFontRef)CFRetain(ct_font.get());
   }
 
-  CFMutableDictionaryRef variations(CFDictionaryCreateMutable(
-      kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
-      &kCFTypeDictionaryValueCallBacks));
+  CFMutableDictionaryPtr variations(
+      CFDictionaryCreateMutable(kCFAllocatorDefault, 1,
+                                &kCFTypeDictionaryKeyCallBacks,
+                                &kCFTypeDictionaryValueCallBacks),
+      &CFRelease);
 
   auto add_axis_to_variations = [&variations](const FourCharCode tag,
                                               float desired_value,
                                               float normal_value) {
     if (desired_value != normal_value) {
-      CFNumberRef tag_number(
-          CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &tag));
-      CFNumberRef value_number(CFNumberCreate(
-          kCFAllocatorDefault, kCFNumberFloatType, &desired_value));
-      CFDictionarySetValue(variations, tag_number, value_number);
+      CFNumberPtr tag_number(
+          CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &tag),
+          &CFRelease);
+      CFNumberPtr value_number(
+          CFNumberCreate(kCFAllocatorDefault, kCFNumberFloatType,
+                         &desired_value),
+          &CFRelease);
+      CFDictionarySetValue(variations.get(), tag_number.get(),
+                           value_number.get());
     }
   };
   add_axis_to_variations(kWeightTag, desired_weight, kNormalWeightValue);
 
-  CFMutableDictionaryRef attributes(CFDictionaryCreateMutable(
-      kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
-      &kCFTypeDictionaryValueCallBacks));
-  CFDictionarySetValue(attributes, kCTFontVariationAttribute, variations);
+  CFMutableDictionaryPtr attributes(
+      CFDictionaryCreateMutable(kCFAllocatorDefault, 1,
+                                &kCFTypeDictionaryKeyCallBacks,
+                                &kCFTypeDictionaryValueCallBacks),
+      &CFRelease);
+  CFDictionarySetValue(attributes.get(), kCTFontVariationAttribute,
+                       variations.get());
 
-  CTFontDescriptorRef var_font_desc(
-      CTFontDescriptorCreateWithAttributes(attributes));
+  CTFontDescriptorPtr var_font_desc(
+      CTFontDescriptorCreateWithAttributes(attributes.get()), &CFRelease);
 
-  return CTFontCreateCopyWithAttributes(ct_font, size, nullptr, var_font_desc);
+  return CTFontCreateCopyWithAttributes(ct_font.get(), size, nullptr,
+                                        var_font_desc.get());
 }
 
 void RegisterSystemFonts(const DynamicFontManager& dynamic_font_manager) {
