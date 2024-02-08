@@ -8,8 +8,9 @@
 
 namespace flutter {
 
-CompositorSoftware::CompositorSoftware(FlutterWindowsEngine* engine)
-    : engine_(engine) {}
+CompositorSoftware::CompositorSoftware(std::unique_ptr<PlatformViewManager> manager,
+                                       FlutterWindowsEngine* engine)
+    : Compositor(std::move(manager)), engine_(engine) {}
 
 bool CompositorSoftware::CreateBackingStore(
     const FlutterBackingStoreConfig& config,

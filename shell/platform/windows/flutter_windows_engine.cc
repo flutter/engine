@@ -380,14 +380,15 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
   args.custom_task_runners = &custom_task_runners;
 
+  auto platform_view_manager = std::make_unique<PlatformViewManager>(task_runner_.get(), messenger_wrapper_.get());
   if (egl_manager_) {
     auto resolver = [](const char* name) -> void* {
       return reinterpret_cast<void*>(::eglGetProcAddress(name));
     };
 
-    compositor_ = std::make_unique<CompositorOpenGL>(this, resolver);
+    compositor_ = std::make_unique<CompositorOpenGL>(std::move(platform_view_manager), this, resolver);
   } else {
-    compositor_ = std::make_unique<CompositorSoftware>(this);
+    compositor_ = std::make_unique<CompositorSoftware>(std::move(platform_view_manager), this);
   }
 
   FlutterCompositor compositor = {};
