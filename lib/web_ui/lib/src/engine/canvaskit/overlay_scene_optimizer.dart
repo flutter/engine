@@ -27,6 +27,9 @@ class Rendering {
 
   List<RenderingRenderCanvas> get canvases =>
       entities.whereType<RenderingRenderCanvas>().toList();
+
+  List<ui.Rect>? debugPlatformViewBounds;
+  List<ui.Rect>? debugPictureBounds;
 }
 
 /// An element of a [Rendering]. Either a render canvas or a platform view.
@@ -122,20 +125,21 @@ Rendering createOptimizedRendering(
 ) {
   assert(pictures.length == platformViews.length + 1);
 
+  final Map<CkPicture, int> overlayRequirement = <CkPicture, int>{};
+  final Rendering result = Rendering();
+
   final List<ui.Rect> pictureBounds = <ui.Rect>[];
   for (final CkPicture picture in pictures) {
     pictureBounds.add(picture.cullRect);
   }
-  print(pictureBounds);
+  result.debugPictureBounds = pictureBounds;
 
   final List<ui.Rect> platformViewBounds = <ui.Rect>[];
   for (final int viewId in platformViews) {
     platformViewBounds.add(computePlatformViewBounds(paramsForViews[viewId]!));
   }
-  print(platformViewBounds);
+  result.debugPlatformViewBounds = platformViewBounds;
 
-  final Map<CkPicture, int> overlayRequirement = <CkPicture, int>{};
-  final Rendering result = Rendering();
   // The first render canvas is required due to the pseudo-platform view "V_0"
   // which is defined as a platform view that comes before all Flutter drawing
   // commands and intersects with everything.

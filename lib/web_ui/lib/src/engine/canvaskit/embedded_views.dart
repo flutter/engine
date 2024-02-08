@@ -15,6 +15,7 @@ import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'overlay_scene_optimizer.dart';
+import 'painting.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
@@ -64,6 +65,8 @@ class HtmlViewEmbedder {
 
   /// The most recent overlay groups.
   List<OverlayGroup> _activeOverlayGroups = <OverlayGroup>[];
+
+  DisplayCanvas? debugBoundsCanvas;
 
   /// The size of the frame, in physical pixels.
   late ui.Size _frameSize;
@@ -514,6 +517,34 @@ class HtmlViewEmbedder {
     _compositionOrder.clear();
 
     disposeViews(unusedViews);
+
+    if (rendering.debugPictureBounds != null &&
+        rendering.debugPlatformViewBounds != null) {
+      // Draw the rects for the computed bounds.
+      final CkPictureRecorder recorder = CkPictureRecorder();
+      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+
+      final CkPaint pictureBoundPaint = CkPaint()
+        ..color = const ui.Color.fromARGB(64, 0, 255, 0);
+      final CkPaint platformViewBoundPaint = CkPaint()
+        ..color = const ui.Color.fromARGB(64, 0, 0, 255);
+
+      for (final ui.Rect pictureBound in rendering.debugPictureBounds!) {
+        canvas.drawRect(pictureBound, pictureBoundPaint);
+      }
+
+      for (final ui.Rect platformViewBound
+          in rendering.debugPlatformViewBounds!) {
+        canvas.drawRect(platformViewBound, platformViewBoundPaint);
+      }
+
+      final CkPicture boundsPicture = recorder.endRecording();
+
+      debugBoundsCanvas ??= rasterizer.getOverlay();
+      await rasterizer
+          .rasterizeToCanvas(debugBoundsCanvas!, <CkPicture>[boundsPicture]);
+      sceneHost.append(debugBoundsCanvas!.hostElement);
+    }
 
     assert(
       debugInvalidViewIds == null || debugInvalidViewIds!.isEmpty,
