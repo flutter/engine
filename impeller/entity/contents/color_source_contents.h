@@ -175,7 +175,7 @@ class ColorSourceContents : public Contents {
   template <typename VertexShaderT>
   bool DrawPositionsAndUVs(
       Rect texture_coverage,
-      Matrix effect_transform,
+      const Matrix& effect_transform,
       const ContentContext& renderer,
       const Entity& entity,
       RenderPass& pass,
