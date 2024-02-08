@@ -70,11 +70,12 @@ class BundledTestRunner(TestRunner):
   def run_test(self) -> CompletedProcess:
     returncode = 0
     for test in self.tests:
-      # pylint: disable=protected-access
+      assert test.package.endswith('.cm')
       test_runner = ExecutableTestRunner(
           OUT_DIR, test.args.split(), test.package, self._target_id, None,
           self.logs_dir, [], None
       )
+      # pylint: disable=protected-access
       test_runner._package_deps = self._package_deps
       result = test_runner.run_test().returncode
       logging.info('Result of test %s is %s', test, result)
@@ -83,7 +84,7 @@ class BundledTestRunner(TestRunner):
     return CompletedProcess(args='', returncode=returncode)
 
 
-def extract_packages(tests: List[Any]) -> Set[str]:
+def resolve_packages(tests: List[Any]) -> Set[str]:
   packages = set()
   for test in tests:
     if 'package' in test:
@@ -111,9 +112,9 @@ def extract_packages(tests: List[Any]) -> Set[str]:
   return resolved_packages
 
 
-def build_test_cases(tests: List[Any]) -> List[TestCase]:
+def build_test_cases(tests: dict) -> List[TestCase]:
   test_cases = []
-  for test in tests:
+  for test in [t['test_command'] for t in tests]:
     assert test.startswith('test run ')
     test = test[len('test run '):]
     if ' -- ' in test:
@@ -131,14 +132,6 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'),
             'r') as file:
     tests = yaml.safe_load(file)
-  # TODO(zijiehe-google-com): Run tests with extra test arguments,
-  # https://github.com/flutter/flutter/issues/140179.
-  tests = list(
-      filter(
-          lambda test: test['test_command'].startswith('test run ') and test[
-              'test_command'].endswith('.cm'), tests
-      )
-  )
   # TODO(zijiehe-google-com): Run tests with dart aot,
   # https://github.com/flutter/flutter/issues/140179.
   tests = list(
@@ -154,7 +147,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
       )
   )
   return BundledTestRunner(
-      target_id, extract_packages(tests), build_test_cases(tests), log_dir
+      target_id, resolve_packages(tests), build_test_cases(tests), log_dir
   )
 
 
