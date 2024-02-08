@@ -4,6 +4,30 @@
 
 #include "flutter/shell/platform/windows/platform_view_manager.h"
 
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_method_codec.h"
+
 namespace flutter {
+
+namespace {
+constexpr char kChannelName[] = "";
+}
+
+PlatformViewManager::PlatformViewManager(TaskRunner* task_runner, BinaryMessenger* binary_messenger) : task_runner_(task_runner), channel_(std::make_unique<MethodChannel<EncodableValue>>(binary_messenger, kChannelName, &StandardMethodCodec::GetInstance())) {
+  channel_->SetMethodCallHandler([](const MethodCall<EncodableValue>& call, std::unique_ptr<MethodResult<EncodableValue>> result){
+    result->Success();
+  });
+}
+
+void PlatformViewManager::QueuePlatformViewCreation(std::string_view type_name, int64_t id) {}
+
+void PlatformViewManager::InstantiatePlatformView(int64_t id) {}
+
+void PlatformViewManager::RegisterPlatformViewType(std::string_view type_name, const FlutterPlatformViewTypeEntry& type) {}
+
+void PlatformViewManager::FocusPlatformView(int64_t id, FocusChangeDirection direction, bool focus) {}
+
+std::optional<HWND> PlatformViewManager::GetNativeHandleForId(int64_t id) const {
+  return std::nullopt;
+}
 
 }  // namespace flutter

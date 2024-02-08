@@ -214,6 +214,7 @@ typedef struct {
 typedef HWND (*FlutterPlatformViewFactory)(const FlutterPlatformViewCreationParameters*);
 
 typedef struct {
+  size_t cb_size;
   FlutterPlatformViewFactory factory;
   void* user_data;
 } FlutterPlatformViewTypeEntry;

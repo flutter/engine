@@ -5,17 +5,36 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PLATFORM_VIEW_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PLATFORM_VIEW_MANAGER_H_
 
+#include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/task_runner.h"
 
 namespace flutter {
 
+enum class FocusChangeDirection {
+  kProgrammatic,
+  kForward,
+  kBackward
+};
+
 class PlatformViewManager {
  public:
+  PlatformViewManager(TaskRunner* task_runner, BinaryMessenger* binary_messenger);
 
+  void QueuePlatformViewCreation(std::string_view type_name, int64_t id);
+
+  void InstantiatePlatformView(int64_t id);
+
+  void RegisterPlatformViewType(std::string_view type_name, const FlutterPlatformViewTypeEntry& type);
+
+  void FocusPlatformView(int64_t id, FocusChangeDirection direction, bool focus);
+
+  std::optional<HWND> GetNativeHandleForId(int64_t id) const;
  private:
   std::unique_ptr<MethodChannel<EncodableValue>> channel_;
 
@@ -23,7 +42,9 @@ class PlatformViewManager {
 
   std::map<int64_t, HWND> platform_views_;
 
-  std::map<int64_t, FlutterPlatformViewCreationParameters> pending_platform_views_;
+  std::map<int64_t, std::function<HWND()>> pending_platform_views_;
+
+  TaskRunner* task_runner_;
 };
 
 }  // namespace flutter
