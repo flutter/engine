@@ -67,7 +67,6 @@ group("impeller") {
       "aiks",
       "display_list",
       "entity",
-      "image:image_skia_backend",
       "renderer",
       "renderer/backend",
       "typographer/backends/skia:typographer_skia_backend",
