@@ -298,23 +298,21 @@ class StrokeGenerator {
       std::tie(contour_start_point_i, contour_end_point_i) =
           polyline.GetContourPointBounds(contour_i);
 
-      switch (contour_end_point_i - contour_start_point_i) {
-        case 1: {
-          Point p = polyline.GetPoint(contour_start_point_i);
-          cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale,
-                   /*reverse=*/false);
-          cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale,
-                   /*reverse=*/false);
-          continue;
-        }
-        case 0:
-          continue;  // This contour has no renderable content.
-        default:
-          break;
+      auto contour_delta = contour_end_point_i - contour_start_point_i;
+      if (contour_delta == 1) {
+        Point p = polyline.GetPoint(contour_start_point_i);
+        cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale,
+                 /*reverse=*/false);
+        cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale,
+                 /*reverse=*/false);
+        continue;
+      } else if (contour_delta == 0) {
+        continue;  // This contour has no renderable content.
       }
 
-      ComputeOffset(contour_start_point_i, contour_start_point_i,
-                    contour_end_point_i, contour);
+      previous_offset = offset;
+      offset = ComputeOffset(contour_start_point_i, contour_start_point_i,
+                             contour_end_point_i, contour);
       const Point contour_first_offset = offset;
 
       if (contour_i > 0) {
@@ -341,7 +339,7 @@ class StrokeGenerator {
 
       // Generate start cap.
       if (!polyline.contours[contour_i].is_closed) {
-        auto cap_offset =
+        Point cap_offset =
             Vector2(-contour.start_direction.y, contour.start_direction.x) *
             stroke_width * 0.5f;  // Counterclockwise normal
         cap_proc(vtx_builder, polyline.GetPoint(contour_start_point_i),
@@ -351,12 +349,13 @@ class StrokeGenerator {
       for (size_t contour_component_i = 0;
            contour_component_i < contour.components.size();
            contour_component_i++) {
-        auto component = contour.components[contour_component_i];
-        auto is_last_component =
+        const Path::PolylineContour::Component& component =
+            contour.components[contour_component_i];
+        bool is_last_component =
             contour_component_i == contour.components.size() - 1;
 
-        auto component_start_index = component.component_start_index;
-        auto component_end_index =
+        size_t component_start_index = component.component_start_index;
+        size_t component_end_index =
             is_last_component ? contour_end_point_i - 1
                               : contour.components[contour_component_i + 1]
                                     .component_start_index;
@@ -388,10 +387,10 @@ class StrokeGenerator {
   /// Computes offset by calculating the direction from point_i - 1 to point_i
   /// if point_i is within `contour_start_point_i` and `contour_end_point_i`;
   /// Otherwise, it uses direction from contour.
-  void ComputeOffset(const size_t point_i,
-                     const size_t contour_start_point_i,
-                     const size_t contour_end_point_i,
-                     const Path::PolylineContour& contour) {
+  Point ComputeOffset(const size_t point_i,
+                      const size_t contour_start_point_i,
+                      const size_t contour_end_point_i,
+                      const Path::PolylineContour& contour) const {
     Point direction;
     if (point_i >= contour_end_point_i) {
       direction = contour.end_direction;
@@ -401,8 +400,7 @@ class StrokeGenerator {
       direction = (polyline.GetPoint(point_i) - polyline.GetPoint(point_i - 1))
                       .Normalize();
     }
-    previous_offset = offset;
-    offset = Vector2{-direction.y, direction.x} * stroke_width * 0.5f;
+    return Vector2{-direction.y, direction.x} * stroke_width * 0.5f;
   }
 
   void AddVerticesForLinearComponent(const size_t component_start_index,
@@ -410,12 +408,12 @@ class StrokeGenerator {
                                      const size_t contour_start_point_i,
                                      const size_t contour_end_point_i,
                                      const Path::PolylineContour& contour) {
-    auto is_last_component = component_start_index ==
+    bool is_last_component = component_start_index ==
                              contour.components.back().component_start_index;
 
     for (size_t point_i = component_start_index; point_i < component_end_index;
          point_i++) {
-      auto is_end_of_component = point_i == component_end_index - 1;
+      bool is_end_of_component = point_i == component_end_index - 1;
       vtx.position = polyline.GetPoint(point_i) + offset;
       vtx_builder.AppendVertex(vtx.position);
       vtx.position = polyline.GetPoint(point_i) - offset;
@@ -428,8 +426,9 @@ class StrokeGenerator {
       vtx.position = polyline.GetPoint(point_i + 1) - offset;
       vtx_builder.AppendVertex(vtx.position);
 
-      ComputeOffset(point_i + 2, contour_start_point_i, contour_end_point_i,
-                    contour);
+      previous_offset = offset;
+      offset = ComputeOffset(point_i + 2, contour_start_point_i,
+                             contour_end_point_i, contour);
       if (!is_last_component && is_end_of_component) {
         // Generate join from the current line to the next line.
         join_proc(vtx_builder, polyline.GetPoint(point_i + 1), previous_offset,
@@ -443,20 +442,21 @@ class StrokeGenerator {
                                     const size_t contour_start_point_i,
                                     const size_t contour_end_point_i,
                                     const Path::PolylineContour& contour) {
-    auto is_last_component = component_start_index ==
+    bool is_last_component = component_start_index ==
                              contour.components.back().component_start_index;
 
     for (size_t point_i = component_start_index; point_i < component_end_index;
          point_i++) {
-      auto is_end_of_component = point_i == component_end_index - 1;
+      bool is_end_of_component = point_i == component_end_index - 1;
 
       vtx.position = polyline.GetPoint(point_i) + offset;
       vtx_builder.AppendVertex(vtx.position);
       vtx.position = polyline.GetPoint(point_i) - offset;
       vtx_builder.AppendVertex(vtx.position);
 
-      ComputeOffset(point_i + 2, contour_start_point_i, contour_end_point_i,
-                    contour);
+      previous_offset = offset;
+      offset = ComputeOffset(point_i + 2, contour_start_point_i,
+                             contour_end_point_i, contour);
       // For curve components, the polyline is detailed enough such that
       // it can avoid worrying about joins altogether.
       if (is_end_of_component) {
