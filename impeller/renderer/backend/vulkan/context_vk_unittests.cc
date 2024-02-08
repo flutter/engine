@@ -4,6 +4,7 @@
 
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/testing/testing.h"  // IWYU pragma: keep
+#include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
@@ -179,6 +180,7 @@ TEST(CapabilitiesVKTest, ContextInitializesWithNoStencilFormat) {
 // OpenGLES.
 TEST(CapabilitiesVKTest,
      ContextFailsInitializationForNoCombinedDepthStencilFormat) {
+  ScopedValidationDisable disable_validation;
   const std::shared_ptr<ContextVK> context =
       MockVulkanContextBuilder()
           .SetPhysicalDeviceFormatPropertiesCallback(
