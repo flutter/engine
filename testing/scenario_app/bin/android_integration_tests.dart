@@ -42,7 +42,7 @@ void main(List<String> args) async {
     ..addOption(
       'android-graphics-backend',
       help: 'The graphics backend to use for the Android app.',
-      allowed: <String>['skia', 'impeller-opengles', 'impeller-vulkan'],
+      allowed: <String>['skia', 'impeller-vulkan'],
       defaultsTo: 'skia',
     );
 
@@ -81,15 +81,12 @@ void main(List<String> args) async {
 
 enum _AndroidGraphicsBackend {
   skia,
-  impellerOpengl,
   impellerVulkan;
 
   static _AndroidGraphicsBackend? tryParse(String? value) {
     switch (value) {
       case 'skia':
         return _AndroidGraphicsBackend.skia;
-      case 'impeller-opengles':
-        return _AndroidGraphicsBackend.impellerOpengl;
       case 'impeller-vulkan':
         return _AndroidGraphicsBackend.impellerVulkan;
       default:
@@ -260,6 +257,8 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
+        if (androidGraphicsBackend != _AndroidGraphicsBackend.skia)
+          '-e enable-impeller',
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
