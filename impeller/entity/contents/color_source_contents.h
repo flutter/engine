@@ -113,7 +113,7 @@ class ColorSourceContents : public Contents {
                     RenderPass& pass,
                     const PipelineBuilderMethod& pipeline_builder,
                     typename VertexShaderT::FrameInfo frame_info,
-                    const BindFragmentCallback& bind_pipeline_callback) const {
+                    const BindFragmentCallback& bind_fragment_callback) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
 
     // If overdraw prevention is enabled (like when drawing stroke paths), we
@@ -128,6 +128,8 @@ class ColorSourceContents : public Contents {
     pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
     pass.SetStencilReference(entity.GetClipDepth());
 
+    // Take the pre-populated vertex shader uniform struct and set managed
+    // values.
     frame_info.depth = entity.GetShaderClipDepth();
     frame_info.mvp = geometry_result.transform;
 
@@ -138,7 +140,11 @@ class ColorSourceContents : public Contents {
         (renderer.*pipeline_builder)(options);
     pass.SetPipeline(pipeline);
 
-    if (!bind_pipeline_callback(pass)) {
+    // The reason we need to have a callback mechanism here is that this routine
+    // may insert draw calls before the main draw call below. For example, for
+    // sufficiently complex paths we may opt to use stencil-then-cover to avoid
+    // tessellation.
+    if (!bind_fragment_callback(pass)) {
       return false;
     }
 
