@@ -52,8 +52,8 @@ OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out', VARIANT)
 
 
 class TestCase(NamedTuple):
-    package: str = None
-    args: str = ''
+  package: str = None
+  args: str = ''
 
 
 class BundledTestRunner(TestRunner):
@@ -72,7 +72,8 @@ class BundledTestRunner(TestRunner):
     for test in self.tests:
       # pylint: disable=protected-access
       test_runner = ExecutableTestRunner(
-          OUT_DIR, test.args.split(), test.package, self._target_id, None, self.logs_dir, [], None
+          OUT_DIR, test.args.split(), test.package, self._target_id, None,
+          self.logs_dir, [], None
       )
       test_runner._package_deps = self._package_deps
       result = test_runner.run_test().returncode
@@ -113,13 +114,15 @@ def extract_packages(tests: List[Any]) -> Set[str]:
 def build_test_cases(tests: List[Any]) -> List[TestCase]:
   test_cases = []
   for test in tests:
-      assert test.startswith('test run ')
-      test = test[len('test run '):]
-      if ' -- ' in test:
-          index = test.index(' -- ')
-          test_cases.append(TestCase(package=test[:index], args=test[index + len(' -- '):]))
-      else:
-          test_cases.append(TestCase(package=test))
+    assert test.startswith('test run ')
+    test = test[len('test run '):]
+    if ' -- ' in test:
+      index = test.index(' -- ')
+      test_cases.append(
+          TestCase(package=test[:index], args=test[index + len(' -- '):])
+      )
+    else:
+      test_cases.append(TestCase(package=test))
   return test_cases
 
 
@@ -151,8 +154,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
       )
   )
   return BundledTestRunner(
-      target_id, extract_packages(tests),
-      build_test_cases(tests), log_dir
+      target_id, extract_packages(tests), build_test_cases(tests), log_dir
   )
 
 
