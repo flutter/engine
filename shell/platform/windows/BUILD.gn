@@ -222,6 +222,7 @@ executable("flutter_windows_unittests") {
     "testing/flutter_windows_engine_builder.cc",
     "testing/flutter_windows_engine_builder.h",
     "testing/mock_direct_manipulation.h",
+    "testing/mock_platform_view_manager.h",
     "testing/mock_text_input_manager.cc",
     "testing/mock_text_input_manager.h",
     "testing/mock_window.cc",

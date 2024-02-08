@@ -17,7 +17,7 @@ namespace flutter {
 // Enables the Flutter engine to render content on Windows using OpenGL.
 class CompositorOpenGL : public Compositor {
  public:
-  CompositorOpenGL(std::unique_ptr<PlatformViewManager> manager,
+  CompositorOpenGL(PlatformViewManager* manager,
                    FlutterWindowsEngine* engine,
                    impeller::ProcTableGLES::Resolver resolver);
 

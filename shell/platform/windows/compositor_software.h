@@ -15,7 +15,7 @@ namespace flutter {
 // rasterization and bitmaps.
 class CompositorSoftware : public Compositor {
  public:
-  CompositorSoftware(std::unique_ptr<PlatformViewManager> manager,
+  CompositorSoftware(PlatformViewManager* manager,
                      FlutterWindowsEngine* engine);
 
   /// |Compositor|

@@ -7,8 +7,6 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
-#include <memory>
-
 #include "flutter/shell/platform/windows/platform_view_manager.h"
 
 namespace flutter {
@@ -23,7 +21,7 @@ namespace flutter {
 // Platform views are not yet supported.
 class Compositor {
  public:
-  Compositor(std::unique_ptr<PlatformViewManager> manager) : platform_view_manager_(std::move(manager)) {}
+  Compositor(PlatformViewManager* manager) : platform_view_manager_(manager) {}
   virtual ~Compositor() = default;
 
   // Creates a backing store used for rendering Flutter content.
@@ -39,7 +37,7 @@ class Compositor {
   virtual bool Present(const FlutterLayer** layers, size_t layers_count) = 0;
 
  protected:
-  std::unique_ptr<PlatformViewManager> platform_view_manager_;
+  PlatformViewManager* platform_view_manager_;
 };
 
 }  // namespace flutter

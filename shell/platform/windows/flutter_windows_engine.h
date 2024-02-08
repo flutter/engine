@@ -137,6 +137,8 @@ class FlutterWindowsEngine {
 
   TaskRunner* task_runner() { return task_runner_.get(); }
 
+  BinaryMessenger* messenger_wrapper() { return messenger_wrapper_.get(); }
+
   FlutterWindowsTextureRegistrar* texture_registrar() {
     return texture_registrar_.get();
   }
@@ -426,6 +428,8 @@ class FlutterWindowsEngine {
   std::shared_ptr<WindowsProcTable> windows_proc_table_;
 
   std::shared_ptr<egl::ProcTable> gl_;
+
+  std::unique_ptr<PlatformViewManager> platform_view_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

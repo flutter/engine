@@ -34,10 +34,10 @@ int GetSupportedTextureFormat(const impeller::DescriptionGLES* description) {
 
 }  // namespace
 
-CompositorOpenGL::CompositorOpenGL(std::unique_ptr<PlatformViewManager> manager,
+CompositorOpenGL::CompositorOpenGL(PlatformViewManager* manager,
                                    FlutterWindowsEngine* engine,
                                    impeller::ProcTableGLES::Resolver resolver)
-    : Compositor(std::move(manager)), engine_(engine), resolver_(resolver) {}
+    : Compositor(manager), engine_(engine), resolver_(resolver) {}
 
 bool CompositorOpenGL::CreateBackingStore(
     const FlutterBackingStoreConfig& config,

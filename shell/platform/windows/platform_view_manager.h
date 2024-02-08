@@ -26,7 +26,7 @@ class PlatformViewManager {
  public:
   PlatformViewManager(TaskRunner* task_runner, BinaryMessenger* binary_messenger);
 
-  void QueuePlatformViewCreation(std::string_view type_name, int64_t id);
+  virtual void QueuePlatformViewCreation(std::string_view type_name, int64_t id);
 
   void InstantiatePlatformView(int64_t id);
 
