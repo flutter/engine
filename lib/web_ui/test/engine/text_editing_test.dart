@@ -8,16 +8,7 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/dom.dart';
-import 'package:ui/src/engine/raw_keyboard.dart';
-import 'package:ui/src/engine/services.dart';
-import 'package:ui/src/engine/text_editing/autofill_hint.dart';
-import 'package:ui/src/engine/text_editing/input_type.dart';
-import 'package:ui/src/engine/text_editing/text_editing.dart';
-import 'package:ui/src/engine/util.dart';
-import 'package:ui/src/engine/vector_math.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../common/spy.dart';
@@ -28,6 +19,9 @@ const int _kReturnKeyCode = 13;
 
 const MethodCodec codec = JSONMethodCodec();
 
+DomElement get defaultTextEditingRoot =>
+    EnginePlatformDispatcher.instance.implicitView!.dom.textEditingHost;
+
 /// Add unit tests for [FirefoxTextEditingStrategy].
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/46891
 
@@ -36,11 +30,14 @@ EditingState? lastEditingState;
 TextEditingDeltaState? editingDeltaState;
 String? lastInputAction;
 
-final InputConfiguration singlelineConfig = InputConfiguration();
+final InputConfiguration singlelineConfig = InputConfiguration(
+  viewId: kImplicitViewId,
+);
 final Map<String, dynamic> flutterSinglelineConfig =
     createFlutterConfig('text');
 
 final InputConfiguration multilineConfig = InputConfiguration(
+  viewId: kImplicitViewId,
   inputType: EngineInputType.multiline,
   inputAction: 'TextInputAction.newline',
 );
@@ -131,6 +128,7 @@ Future<void> testMain() async {
 
     test('Respects read-only config', () {
       final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
         readOnly: true,
       );
       editingStrategy!.enable(
@@ -148,6 +146,7 @@ Future<void> testMain() async {
 
     test('Knows how to create password fields', () {
       final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
         obscureText: true,
       );
       editingStrategy!.enable(
@@ -165,6 +164,7 @@ Future<void> testMain() async {
 
     test('Knows how to create non-default text actions', () {
       final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
         inputAction: 'TextInputAction.send'
       );
       editingStrategy!.enable(
@@ -186,6 +186,7 @@ Future<void> testMain() async {
 
     test('Knows to turn autocorrect off', () {
       final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
         autocorrect: false,
       );
       editingStrategy!.enable(
@@ -202,7 +203,7 @@ Future<void> testMain() async {
     });
 
     test('Knows to turn autocorrect on', () {
-      final InputConfiguration config = InputConfiguration();
+      final InputConfiguration config = InputConfiguration(viewId: kImplicitViewId);
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -217,7 +218,7 @@ Future<void> testMain() async {
     });
 
     test('Knows to turn autofill off', () {
-      final InputConfiguration config = InputConfiguration();
+      final InputConfiguration config = InputConfiguration(viewId: kImplicitViewId);
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -352,7 +353,7 @@ Future<void> testMain() async {
     });
 
     test('Triggers input action', () {
-      final InputConfiguration config = InputConfiguration();
+      final InputConfiguration config = InputConfiguration(viewId: kImplicitViewId);
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -382,7 +383,7 @@ Future<void> testMain() async {
       };
       RawKeyboard.initialize();
 
-      final InputConfiguration config = InputConfiguration();
+      final InputConfiguration config = InputConfiguration(viewId: kImplicitViewId);
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -418,6 +419,7 @@ Future<void> testMain() async {
 
     test('Triggers input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
         inputType: EngineInputType.multiline,
       );
       editingStrategy!.enable(
@@ -443,6 +445,7 @@ Future<void> testMain() async {
 
     test('Triggers input action in multiline-none mode', () {
       final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
         inputType: EngineInputType.multilineNone,
       );
       editingStrategy!.enable(
@@ -468,7 +471,7 @@ Future<void> testMain() async {
 
     test('Triggers input action and prevent new line key event for single line field', () {
       // Regression test for https://github.com/flutter/flutter/issues/113559
-      final InputConfiguration config = InputConfiguration();
+      final InputConfiguration config = InputConfiguration(viewId: kImplicitViewId);
       editingStrategy!.enable(
         config,
         onChange: trackEditingState,
@@ -2435,7 +2438,10 @@ Future<void> testMain() async {
           <String>['field1', 'field2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('username', 'field1'),
+        fields,
+      )!;
 
       // Number of elements if number of fields sent to the constructor minus
       // one (for the focused text element).
@@ -2492,7 +2498,10 @@ Future<void> testMain() async {
           <String>['zzyyxx', 'aabbcc', 'jjkkll']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('username', 'field1'),
+        fields,
+      )!;
 
       expect(autofillForm.formIdentifier, 'aabbcc*jjkkll*zzyyxx');
     });
@@ -2505,7 +2514,10 @@ Future<void> testMain() async {
           <String>['field1', 'fields2', 'field3']);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('username', 'field1'),
+        fields,
+      )!;
 
       final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
       autofillForm.placeForm(testInputElement);
@@ -2532,7 +2544,10 @@ Future<void> testMain() async {
       );
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('username', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('username', 'field1'),
+        fields,
+      )!;
 
       // The focused element is the only field. Form should be empty after
       // the initialization (focus element is appended later).
@@ -2557,7 +2572,7 @@ Future<void> testMain() async {
         <String>['field1'],
       );
       final EngineAutofillForm? autofillForm =
-          EngineAutofillForm.fromFrameworkMessage(null, fields);
+          EngineAutofillForm.fromFrameworkMessage(kImplicitViewId, null, fields);
 
       expect(autofillForm, isNull);
     });
@@ -2574,7 +2589,10 @@ Future<void> testMain() async {
       ]);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('email', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('email', 'field1'),
+        fields,
+      )!;
 
       expect(autofillForm.elements, hasLength(2));
 
@@ -2617,7 +2635,10 @@ Future<void> testMain() async {
       ]);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('email', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('email', 'field1'),
+        fields,
+      )!;
       final List<DomHTMLInputElement> formChildNodes =
           autofillForm.formElement.childNodes.toList()
               as List<DomHTMLInputElement>;
@@ -2649,7 +2670,10 @@ Future<void> testMain() async {
       ]);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('email', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('email', 'field1'),
+        fields,
+      )!;
       final List<DomHTMLInputElement> formChildNodes =
           autofillForm.formElement.childNodes.toList()
               as List<DomHTMLInputElement>;
@@ -2680,7 +2704,10 @@ Future<void> testMain() async {
       ]);
       final EngineAutofillForm autofillForm =
           EngineAutofillForm.fromFrameworkMessage(
-              createAutofillInfo('email', 'field1'), fields)!;
+        kImplicitViewId,
+        createAutofillInfo('email', 'field1'),
+        fields,
+      )!;
 
       final DomHTMLInputElement testInputElement = createDomHTMLInputElement();
       testInputElement.name = 'email';

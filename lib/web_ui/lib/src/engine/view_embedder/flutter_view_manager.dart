@@ -12,12 +12,19 @@ class FlutterViewManager {
 
   // A map of EngineFlutterViews indexed by their viewId.
   final Map<int, EngineFlutterView> _viewData = <int, EngineFlutterView>{};
+
   // A map of (optional) JsFlutterViewOptions, indexed by their viewId.
   final Map<int, JsFlutterViewOptions> _jsViewOptions =
       <int, JsFlutterViewOptions>{};
+
+  // A map of root elements to their corresponding EngineFlutterView.
+  final Map<DomElement, EngineFlutterView> _elementToView =
+      <DomElement, EngineFlutterView>{};
+
   // The controller of the [onViewCreated] stream.
   final StreamController<int> _onViewCreatedController =
       StreamController<int>.broadcast(sync: true);
+
   // The controller of the [onViewDisposed] stream.
   final StreamController<int> _onViewDisposedController =
       StreamController<int>.broadcast(sync: true);
@@ -60,6 +67,7 @@ class FlutterViewManager {
 
     // Store the view, and the jsViewOptions, if any...
     _viewData[viewId] = view;
+    _elementToView[view.dom.rootElement] = view;
     if (jsViewOptions != null) {
       _jsViewOptions[viewId] = jsViewOptions;
     }
@@ -82,7 +90,10 @@ class FlutterViewManager {
   ///
   /// Returns its [JsFlutterViewOptions] (if any).
   JsFlutterViewOptions? unregisterView(int viewId) {
-    _viewData.remove(viewId); // .dispose();
+    final EngineFlutterView? unregisteredView = _viewData.remove(viewId);
+    if (unregisteredView != null) {
+      _elementToView.remove(unregisteredView.dom.rootElement);
+    }
     final JsFlutterViewOptions? jsViewOptions = _jsViewOptions.remove(viewId);
     _onViewDisposedController.add(viewId);
     return jsViewOptions;
@@ -94,6 +105,18 @@ class FlutterViewManager {
   /// be exposed through a method in ui_web.
   JsFlutterViewOptions? getOptions(int viewId) {
     return _jsViewOptions[viewId];
+  }
+
+  EngineFlutterView? findViewForElement(DomElement? element) {
+    DomElement? current = element;
+    while (current != null) {
+      final EngineFlutterView? view = _elementToView[current];
+      if (view != null) {
+        return view;
+      }
+      current = current.parent;
+    }
+    return null;
   }
 
   void dispose() {

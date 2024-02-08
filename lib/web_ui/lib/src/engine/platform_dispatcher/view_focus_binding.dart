@@ -90,13 +90,8 @@ final class ViewFocusBinding {
   }
 
   static int? _viewId(DomElement? element) {
-    final DomElement? viewElement = element?.closest(
-      DomManager.flutterViewTagName,
-    );
-    final String? viewIdAttribute = viewElement?.getAttribute(
-      GlobalHtmlAttributes.flutterViewIdAttributeName,
-    );
-    return viewIdAttribute == null ? null : int.tryParse(viewIdAttribute);
+    final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+    return viewManager.findViewForElement(element)?.viewId;
   }
 
   static const String _focusin = 'focusin';

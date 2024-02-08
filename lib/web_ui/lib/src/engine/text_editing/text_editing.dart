@@ -18,6 +18,8 @@ import '../semantics.dart';
 import '../services.dart';
 import '../text/paragraph.dart';
 import '../util.dart';
+import '../view_embedder/flutter_view_manager.dart';
+import '../window.dart';
 import 'autofill_hint.dart';
 import 'composition_aware_mixin.dart';
 import 'input_action.dart';
@@ -47,12 +49,6 @@ bool browserHasAutofillOverlay() =>
 const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
-
-/// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
-@visibleForTesting
-// TODO(mdebbar): There could be multiple views with multiple text editing hosts.
-//                https://github.com/flutter/flutter/issues/137344
-DomElement get defaultTextEditingRoot => EnginePlatformDispatcher.instance.implicitView!.dom.textEditingHost;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -147,6 +143,39 @@ void _styleAutofillElements(
   elementStyle.setProperty('caret-color', 'transparent');
 }
 
+void _ensureEditingElementInView(DomElement element, int viewId) {
+  final bool isAlreadyAppended = element.isConnected ?? false;
+  if (!isAlreadyAppended) {
+    // If the element is not already appended to a view, we don't need to move
+    // it anywhere.
+    return;
+  }
+
+  final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+  final EngineFlutterView? currentView = viewManager.findViewForElement(element);
+  if (currentView == null) {
+    // For some reason, the input element was in the DOM, but it wasn't part of
+    // any Flutter view. Should we throw?
+    return;
+  }
+
+  if (currentView.viewId != viewId) {
+    _insertEditingElementInView(element, viewId);
+  }
+}
+
+void _insertEditingElementInView(DomElement element, int viewId) {
+  final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+  final EngineFlutterView? view = viewManager[viewId];
+  if (view == null) {
+    // `viewId` points to a non-existent view, is this even possible? Should we
+    // throw?
+    return;
+  }
+
+  view.dom.textEditingHost.append(element);
+}
+
 /// Form that contains all the fields in the same AutofillGroup.
 ///
 /// An [EngineAutofillForm] will only be constructed when autofill is enabled
@@ -154,12 +183,13 @@ void _styleAutofillElements(
 /// static method.
 class EngineAutofillForm {
   EngineAutofillForm({
+    required int viewId,
     required this.formElement,
     this.elements,
     this.items,
     this.formIdentifier = '',
     this.insertionReferenceNode,
-  });
+  }) : _viewId = viewId;
 
   final DomHTMLFormElement formElement;
 
@@ -177,6 +207,16 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
+  int _viewId;
+  int get viewId => _viewId;
+  set viewId(int value) {
+    if (_viewId == value) {
+      return;
+    }
+    _viewId = value;
+    _ensureEditingElementInView(formElement, _viewId);
+  }
+
   /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
   /// framework `TextInputConfiguration` object.
   ///
@@ -189,6 +229,7 @@ class EngineAutofillForm {
   ///
   /// Returns null if autofill is disabled for the input field.
   static EngineAutofillForm? fromFrameworkMessage(
+    int viewId,
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
@@ -312,6 +353,7 @@ class EngineAutofillForm {
     insertionReferenceNode ??= submitButton;
 
     return EngineAutofillForm(
+      viewId: viewId,
       formElement: formElement,
       elements: elements,
       items: items,
@@ -330,7 +372,7 @@ class EngineAutofillForm {
     }
 
     formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
-    defaultTextEditingRoot.append(formElement);
+    _insertEditingElementInView(formElement, viewId);
   }
 
   void storeForm() {
@@ -944,6 +986,7 @@ class EditingState {
 /// This corresponds to Flutter's [TextInputConfiguration].
 class InputConfiguration {
   InputConfiguration({
+    required this.viewId,
     this.inputType = EngineInputType.text,
     this.inputAction = 'TextInputAction.done',
     this.obscureText = false,
@@ -958,7 +1001,8 @@ class InputConfiguration {
 
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
-      : inputType = EngineInputType.fromName(
+      : viewId = flutterInputConfiguration.tryInt('viewId') ?? kImplicitViewId,
+        inputType = EngineInputType.fromName(
           flutterInputConfiguration.readJson('inputType').readString('name'),
           isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
           isMultiline: flutterInputConfiguration.readJson('inputType').tryBool('isMultiline') ?? false,
@@ -976,10 +1020,14 @@ class InputConfiguration {
                 flutterInputConfiguration.readJson('autofill'))
             : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
+          flutterInputConfiguration.tryInt('viewId') ?? kImplicitViewId,
           flutterInputConfiguration.tryJson('autofill'),
           flutterInputConfiguration.tryList('fields'),
         ),
         enableDeltaModel = flutterInputConfiguration.tryBool('enableDeltaModel') ?? false;
+
+  /// The ID of the view that contains the text field.
+  final int viewId;
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -1238,6 +1286,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   DomHTMLFormElement? get focusedFormElement =>
       inputConfiguration.autofillGroup?.formElement;
 
+  FlutterViewManager get viewManager => EnginePlatformDispatcher.instance.viewManager;
+
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
@@ -1257,7 +1307,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      defaultTextEditingRoot.append(activeDomElement);
+      final DomElement textEditingHost = viewManager[inputConfig.viewId]!.dom.textEditingHost;
+      textEditingHost.append(activeDomElement);
       _appendedToForm = false;
     }
 
@@ -1291,8 +1342,12 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     final AutofillInfo? autofill = config.autofill;
     if (autofill != null) {
       autofill.applyToDomElement(activeDomElement, focusedElement: true);
+      config.autofillGroup!.viewId = config.viewId;
     } else {
       activeDomElement.setAttribute('autocomplete', 'off');
+      // When the new input configuration contains a different view ID, we need
+      // to move the input element to the new view.
+      _ensureEditingElementInView(activeDomElement, inputConfiguration.viewId);
     }
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
@@ -1748,7 +1803,8 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      defaultTextEditingRoot.append(activeDomElement);
+      final DomElement textEditingHost = viewManager[inputConfig.viewId]!.dom.textEditingHost;
+      textEditingHost.append(activeDomElement);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(
         activeDomElement);

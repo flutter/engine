@@ -16,6 +16,8 @@ import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'services.dart';
 import 'vector_math.dart';
+import 'view_embedder/dom_manager.dart';
+import 'view_embedder/global_html_attributes.dart';
 
 /// Generic callback signature, used by [_futurize].
 typedef Callback<T> = void Function(T result);
@@ -647,6 +649,15 @@ int? tryViewId(Object? arguments) {
     return arguments.tryInt('viewId');
   }
   return null;
+}
+
+int? findParentViewId(DomElement element) {
+  DomElement? current = element;
+  while (current != null && element.tagName.toLowerCase() != DomManager.flutterViewTagName) {
+    current = element.parent;
+  }
+  final String? viewIdAttribute = current?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+  return viewIdAttribute == null ? null : int.parse(viewIdAttribute);
 }
 
 /// Prints a list of bytes in hex format.
