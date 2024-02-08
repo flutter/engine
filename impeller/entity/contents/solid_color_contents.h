@@ -53,6 +53,9 @@ class SolidColorContents final : public ColorSourceContents {
       const ColorFilterProc& color_filter_proc) override;
 
  private:
+  // |ColorSourceContents|
+  bool BindFragmentCallback(RenderPass& pass) const override;
+
   Color color_;
 
   SolidColorContents(const SolidColorContents&) = delete;

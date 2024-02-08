@@ -54,4 +54,8 @@ void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
   inherited_opacity_ = opacity;
 }
 
+bool ColorSourceContents::BindFragmentCallback(RenderPass& pass) const {
+  return true;
+}
+
 }  // namespace impeller

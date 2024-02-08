@@ -55,11 +55,13 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
 
   return ColorSourceContents::DrawPositions<VS>(
-      renderer, entity, pass, &ContentContext::GetSolidFillPipeline, frame_info,
-      [](RenderPass& pass) {
-        pass.SetCommandLabel("Solid Fill");
-        return true;
-      });
+      renderer, entity, pass, &ContentContext::GetSolidFillPipeline,
+      frame_info);
+}
+
+bool SolidColorContents::BindFragmentCallback(RenderPass& pass) const {
+  pass.SetCommandLabel("Solid Fill");
+  return true;
 }
 
 std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
