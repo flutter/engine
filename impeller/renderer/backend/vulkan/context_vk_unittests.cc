@@ -167,13 +167,16 @@ TEST(CapabilitiesVKTest, ContextInitializesWithNoStencilFormat) {
   ASSERT_NE(context, nullptr);
   const CapabilitiesVK* capabilites_vk =
       reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
-  ASSERT_EQ(capabilites_vk->GetDefaultStencilFormat(), PixelFormat::kUnknown);
   ASSERT_EQ(capabilites_vk->GetDefaultDepthStencilFormat(),
+            PixelFormat::kD32FloatS8UInt);
+  ASSERT_EQ(capabilites_vk->GetDefaultStencilFormat(),
             PixelFormat::kD32FloatS8UInt);
 }
 
 // Impeller's 2D renderer relies on hardware support for a combined
-// depth-stencil format (widely supported).
+// depth-stencil format (widely supported). So fail initialization if a suitable
+// one couldn't be found. That way we have an opportunity to fallback to
+// OpenGLES.
 TEST(CapabilitiesVKTest,
      ContextFailsInitializationForNoCombinedDepthStencilFormat) {
   const std::shared_ptr<ContextVK> context =
