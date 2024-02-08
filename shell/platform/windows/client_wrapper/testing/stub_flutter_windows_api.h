@@ -72,6 +72,10 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopEngineReloadSystemFonts.
   virtual void EngineReloadSystemFonts() {}
 
+  // Called for FlutterDesktopEngineRegisterPlatformViewType.
+  virtual void EngineRegisterPlatformViewType(
+      const char* view_type_name, FlutterPlatformViewTypeEntry view_type) {}
+
   // Called for FlutterDesktopViewGetHWND.
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
 
