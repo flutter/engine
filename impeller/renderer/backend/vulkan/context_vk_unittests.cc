@@ -143,20 +143,53 @@ TEST(ContextVKTest, CanCreateContextWithValidationLayers) {
   ASSERT_TRUE(capabilites_vk->AreValidationsEnabled());
 }
 
-TEST(CapabilitiesVKTest, ContextInitializesWithoutDefaultTextureFormats) {
-  // This can happen for stencil-only. It will likely never happen for combined
-  // depth-stencil textures on the devices Flutter supports.
+// In Impeller's 2D renderer, we no longer use stencil-only formats. They're
+// less widely supported than combined depth-stencil formats, so make sure we
+// don't fail initialization if we can't find a suitable stencil format.
+TEST(CapabilitiesVKTest, ContextInitializesWithNoStencilFormat) {
   const std::shared_ptr<ContextVK> context =
       MockVulkanContextBuilder()
-          .OverrideFormatProperties(
-              VkFormatProperties{.optimalTilingFeatures = {}})
+          .SetPhysicalDeviceFormatPropertiesCallback(
+              [](VkPhysicalDevice physicalDevice, VkFormat format,
+                 VkFormatProperties* pFormatProperties) {
+                if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+                  pFormatProperties->optimalTilingFeatures =
+                      static_cast<VkFormatFeatureFlags>(
+                          vk::FormatFeatureFlagBits::eColorAttachment);
+                } else if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+                  pFormatProperties->optimalTilingFeatures =
+                      static_cast<VkFormatFeatureFlags>(
+                          vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+                }
+                // Ignore just the stencil format.
+              })
           .Build();
   ASSERT_NE(context, nullptr);
   const CapabilitiesVK* capabilites_vk =
       reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
   ASSERT_EQ(capabilites_vk->GetDefaultStencilFormat(), PixelFormat::kUnknown);
   ASSERT_EQ(capabilites_vk->GetDefaultDepthStencilFormat(),
-            PixelFormat::kUnknown);
+            PixelFormat::kD32FloatS8UInt);
+}
+
+// Impeller's 2D renderer relies on hardware support for a combined
+// depth-stencil format (widely supported).
+TEST(CapabilitiesVKTest,
+     ContextFailsInitializationForNoCombinedDepthStencilFormat) {
+  const std::shared_ptr<ContextVK> context =
+      MockVulkanContextBuilder()
+          .SetPhysicalDeviceFormatPropertiesCallback(
+              [](VkPhysicalDevice physicalDevice, VkFormat format,
+                 VkFormatProperties* pFormatProperties) {
+                if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+                  pFormatProperties->optimalTilingFeatures =
+                      static_cast<VkFormatFeatureFlags>(
+                          vk::FormatFeatureFlagBits::eColorAttachment);
+                }
+                // Ignore combined depth-stencil formats.
+              })
+          .Build();
+  ASSERT_EQ(context, nullptr);
 }
 
 }  // namespace testing

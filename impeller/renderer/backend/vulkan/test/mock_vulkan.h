@@ -89,9 +89,14 @@ class MockVulkanContextBuilder {
     return *this;
   }
 
-  MockVulkanContextBuilder& OverrideFormatProperties(
-      std::optional<VkFormatProperties> format_properties_override) {
-    format_properties_override_ = format_properties_override;
+  /// Set the behavior of vkGetPhysicalDeviceFormatProperties, which needs to
+  /// respond differently for different formats.
+  MockVulkanContextBuilder& SetPhysicalDeviceFormatPropertiesCallback(
+      std::function<void(VkPhysicalDevice physicalDevice,
+                         VkFormat format,
+                         VkFormatProperties* pFormatProperties)>
+          format_properties_callback) {
+    format_properties_callback_ = std::move(format_properties_callback);
     return *this;
   }
 
@@ -99,7 +104,10 @@ class MockVulkanContextBuilder {
   std::function<void(ContextVK::Settings&)> settings_callback_;
   std::vector<std::string> instance_extensions_;
   std::vector<std::string> instance_layers_;
-  std::optional<VkFormatProperties> format_properties_override_;
+  std::function<void(VkPhysicalDevice physicalDevice,
+                     VkFormat format,
+                     VkFormatProperties* pFormatProperties)>
+      format_properties_callback_;
 };
 
 /// @brief Override the image size returned by all swapchain images.
