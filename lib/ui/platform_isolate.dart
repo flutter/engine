@@ -31,7 +31,7 @@ FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
       _platformRunnerSendPort = null;
     });
     try {
-      _spawn(_remoteRun, portReceiver.sendPort, onExit: onExit.sendPort);
+      _spawn(_remoteRun<R>, portReceiver.sendPort, onExit: onExit.sendPort);
     } on Object {
       portReceiver.close();
       onExit.close();
@@ -67,7 +67,7 @@ FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
   });
 
   _platformRunnerSendPort!
-      .then((port) => port.send((computation, resultPort.sendPort)));
+      .then((SendPort port) => port.send((computation, resultPort.sendPort)));
   return resultCompleter.future;
 }
 
