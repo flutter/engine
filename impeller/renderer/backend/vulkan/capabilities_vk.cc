@@ -351,10 +351,8 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
 
   if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
     default_stencil_format_ = PixelFormat::kS8UInt;
-  } else if (default_stencil_format_ != PixelFormat::kUnknown) {
-    default_stencil_format_ = default_depth_stencil_format_;
   } else {
-    return false;
+    default_stencil_format_ = PixelFormat::kUnknown;
   }
 
   device_properties_ = device.getProperties();
