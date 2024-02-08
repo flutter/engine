@@ -449,10 +449,10 @@ void PlatformConfiguration::CompletePlatformMessageResponse(
   response->Complete(std::make_unique<fml::DataMapping>(std::move(data)));
 }
 
-void PlatformConfigurationNativeApi::Render(int64_t view_id,
-                                            Scene* scene,
-                                            double width,
-                                            double height) {
+void PlatformConfigurationNativeApi::RenderView(int64_t view_id,
+                                                Scene* scene,
+                                                double width,
+                                                double height) {
   // TODO(dkwingsmt): Currently only supports a single window.
   // See https://github.com/flutter/flutter/issues/135530, item 2.
   FML_DCHECK(view_id == kFlutterImplicitViewId);
