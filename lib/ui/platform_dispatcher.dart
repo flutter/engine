@@ -815,14 +815,16 @@ class PlatformDispatcher {
   /// does, but instead of doing so at an appropriate opportunity, the render is
   /// completed synchronously within this call.
   ///
-  /// This method should not be used in usual cases. It is designed for
-  /// situations that require a frame is rendered as soon as possible, even at
-  /// the cost of rendering quality.
+  /// Prefer [scheduleFrame] to update the display in normal operation. The
+  /// [forceSyncFrame] method is designed for situations that require a frame is
+  /// rendered as soon as possible, even at the cost of rendering quality. An
+  /// example of using this method is [SchedulerBinding.scheduleWarmUpFrame],
+  /// which is called during application startup so that the first frame can be
+  /// presented to the screen a few extra milliseconds earlier.
   ///
   /// See also:
   ///
-  ///  * [SchedulerBinding], the Flutter framework class which manages the
-  ///    scheduling of frames.
+  ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method.
   ///  * [scheduleFrame].
   ///
   // TODO(dkwingsmt): This method is not used for now, and is not implemented by
