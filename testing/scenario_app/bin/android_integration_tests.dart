@@ -32,7 +32,6 @@ void main(List<String> args) async {
     ..addOption(
       'smoke-test',
       help: 'runs a single test to verify the setup',
-      valueHelp: 'The class to execute, defaults to dev.flutter.scenarios.EngineLaunchE2ETest',
     )
     ..addFlag(
       'use-skia-gold',
@@ -40,7 +39,7 @@ void main(List<String> args) async {
       defaultsTo: isLuciEnv,
     )
     ..addOption(
-      'android-graphics-backend',
+      'graphics-backend',
       help: 'The graphics backend to use for the Android app.',
       allowed: <String>['skia', 'impeller-vulkan'],
       defaultsTo: 'skia',
@@ -52,20 +51,17 @@ void main(List<String> args) async {
       final Directory outDir = Directory(results['out-dir'] as String);
       final File adb = File(results['adb'] as String);
       final bool useSkiaGold = results['use-skia-gold'] as bool;
-      String? smokeTest = results['smoke-test'] as String?;
-      if (results.wasParsed('smoke-test') && smokeTest!.isEmpty) {
-        smokeTest = 'dev.flutter.scenarios.EngineLaunchE2ETest';
-      }
-      final _AndroidGraphicsBackend? androidGraphicsBackend = _AndroidGraphicsBackend.tryParse(results['android-graphics-backend'] as String?);
-      if (androidGraphicsBackend == null) {
-        panic(<String>['invalid android-graphics-backend', results['android-graphics-backend'] as String? ?? '<null>']);
+      final String? smokeTest = results['smoke-test'] as String?;
+      final _GraphicsBackend? graphicsBackend = _GraphicsBackend.tryParse(results['graphics-backend'] as String?);
+      if (graphicsBackend == null) {
+        panic(<String>['invalid graphics-backend', results['graphics-backend'] as String? ?? '<null>']);
       }
       await _run(
         outDir: outDir,
         adb: adb,
         smokeTestFullPath: smokeTest,
         useSkiaGold: useSkiaGold,
-        androidGraphicsBackend: androidGraphicsBackend,
+        graphicsBackend: graphicsBackend,
       );
       exit(0);
     },
@@ -79,16 +75,17 @@ void main(List<String> args) async {
   );
 }
 
-enum _AndroidGraphicsBackend {
+enum _GraphicsBackend {
   skia,
-  impellerVulkan;
+  // TODO(matanlurey): Create impeller-opengles variant.
+  impeller;
 
-  static _AndroidGraphicsBackend? tryParse(String? value) {
+  static _GraphicsBackend? tryParse(String? value) {
     switch (value) {
       case 'skia':
-        return _AndroidGraphicsBackend.skia;
-      case 'impeller-vulkan':
-        return _AndroidGraphicsBackend.impellerVulkan;
+        return _GraphicsBackend.skia;
+      case 'impeller':
+        return _GraphicsBackend.impeller;
       default:
         return null;
     }
@@ -100,7 +97,7 @@ Future<void> _run({
   required File adb,
   required String? smokeTestFullPath,
   required bool useSkiaGold,
-  required _AndroidGraphicsBackend androidGraphicsBackend,
+  required _GraphicsBackend graphicsBackend,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -212,6 +209,7 @@ Future<void> _run({
         outDir,
         dimensions: <String, String>{
           'AndroidAPILevel': connectedDeviceAPILevel,
+          'GraphicsBackend': graphicsBackend.name,
         },
       );
     });
@@ -257,11 +255,11 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-        if (androidGraphicsBackend != _AndroidGraphicsBackend.skia)
-          '-e enable-impeller',
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
+        if (graphicsBackend != _GraphicsBackend.skia)
+          '-e enable-impeller',
       ]);
       if (exitCode != 0) {
         panic(<String>['instrumented tests failed to run']);
