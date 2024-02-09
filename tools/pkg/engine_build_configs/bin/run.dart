@@ -18,7 +18,7 @@ import 'package:process_runner/process_runner.dart';
 // For example:
 // $ dart bin/run.dart mac_unopt host_debug_unopt
 //
-// The build config names are the namess of the json files under ci/builders
+// The build config names are the names of the json files under ci/builders
 // The build names are the "name" fields of the maps in the list of "builds".
 
 void main(List<String> args) async {
@@ -28,7 +28,17 @@ void main(List<String> args) async {
     configName = args[0];
     buildName = args[1];
   } else {
-    io.stderr.writeln('Wrong arguments');
+    io.stderr.writeln(r'''
+Usage:
+$ dart bin/run.dart [build config name] [build name]
+
+For example:
+
+$ dart bin/run.dart mac_unopt host_debug_unopt
+
+The build config names are the names of the json files under ci/builders.
+The build names are the "name" fields of the maps in the list of "builds".
+''');
     io.exitCode = 1;
     return;
   }
@@ -67,20 +77,15 @@ void main(List<String> args) async {
   }
 
   // Check the parsed build configs for validity.
-  BuildConfig? targetConfig;
-  for (final String name in configs.keys) {
-    if (name == configName) {
-      targetConfig = configs[name];
-    }
-  }
+  final BuildConfig? targetConfig = configs[configName];
   if (targetConfig == null) {
-    io.stderr.writeln('Build config $configName not found.');
+    io.stderr.writeln('Build config "$configName" not found.');
     io.exitCode = 1;
     return;
   }
   final List<String> buildConfigErrors = targetConfig.check(configName);
   if (buildConfigErrors.isNotEmpty) {
-    io.stderr.writeln('Errors in $configName:');
+    io.stderr.writeln('Errors in "$configName":');
     for (final String error in buildConfigErrors) {
       io.stderr.writeln('    $error');
     }
@@ -120,7 +125,8 @@ void main(List<String> args) async {
       case RunnerProgress(done: false): {
         final int width = io.stdout.terminalColumns;
         final String percent = '${event.percent.toStringAsFixed(1)}%';
-        final String prefix = '[${event.name}] $percent ';
+        final String fraction = '(${event.completed}/${event.total})';
+        final String prefix = '[${event.name}] $percent $fraction ';
         final int remainingSpace = width - prefix.length;
         final String what;
         if (remainingSpace >= event.what.length) {

@@ -290,18 +290,7 @@ final class GlobalBuild extends BuildConfigBase {
 
   /// Returns true if platform is capable of executing this build and false
   /// otherwise.
-  bool canRunOn(Platform platform) {
-    String? os;
-    for (final String dimension in droneDimensions) {
-      os ??= switch (dimension.split('=')) {
-        ['os', 'Linux'] => Platform.linux,
-        ['os', 'Windows'] => Platform.windows,
-        ['os', final String mac] when mac.startsWith('Mac') => Platform.macOS,
-        _ => null,
-      };
-    }
-    return os == platform.operatingSystem;
-  }
+  bool canRunOn(Platform platform) => _canRunOn(droneDimensions, platform);
 
   @override
   List<String> check(String path) {
@@ -619,18 +608,7 @@ final class GlobalTest extends BuildConfigBase {
 
   /// Returns true if platform is capable of executing this build and false
   /// otherwise.
-  bool canRunOn(Platform platform) {
-    String? os;
-    for (final String dimension in droneDimensions) {
-      os ??= switch (dimension.split('=')) {
-        ['os', 'Linux'] => Platform.linux,
-        ['os', 'Windows'] => Platform.windows,
-        ['os', final String mac] when mac.startsWith('Mac') => Platform.macOS,
-        _ => null,
-      };
-    }
-    return os == platform.operatingSystem;
-  }
+  bool canRunOn(Platform platform) => _canRunOn(droneDimensions, platform);
 
   @override
   List<String> check(String path) {
@@ -775,6 +753,19 @@ final class GlobalArchive extends BuildConfigBase {
   final String realm;
 }
 
+bool _canRunOn(List<String> droneDimensions, Platform platform) {
+  String? os;
+  for (final String dimension in droneDimensions) {
+    os ??= switch (dimension.split('=')) {
+      ['os', 'Linux'] => Platform.linux,
+      ['os', final String win] when win.startsWith('Windows') => Platform.windows,
+      ['os', final String mac] when mac.startsWith('Mac') => Platform.macOS,
+      _ => null,
+    };
+  }
+  return os == platform.operatingSystem;
+}
+
 void appendTypeError(
   Map<String, Object?> map,
   String field,
@@ -795,7 +786,6 @@ void appendTypeError(
     );
   }
 }
-
 
 List<T>? objListOfJson<T>(
   Map<String, Object?> map,

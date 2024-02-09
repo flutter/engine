@@ -40,12 +40,18 @@ final class RunnerStart extends RunnerEvent {
 final class RunnerProgress extends RunnerEvent {
   RunnerProgress(
     super.name, super.command, super.timestamp,
-    this.what, this.percent, this.done,
-  );
+    this.what, this.completed, this.total, this.done,
+  ) : percent = (completed * 1000) / total;
 
   /// What a command is currently working on, for example a build target or
   /// the name of a test.
   final String what;
+
+  /// The number of steps completed.
+  final int completed;
+
+  /// The total number of steps in the task.
+  final int total;
 
   /// How close is the task to being completed, for example the proportion of
   /// build targets that have finished building.
@@ -58,7 +64,7 @@ final class RunnerProgress extends RunnerEvent {
   String toString() {
     final String ts = '[${_timestamp(timestamp)}]';
     final String pct = '${percent.toStringAsFixed(1)}%';
-    return '$ts[$name]: $pct $what';
+    return '$ts[$name]: $pct ($completed/$total) $what';
   }
 }
 
@@ -209,7 +215,7 @@ final class GlobalBuildRunner extends Runner {
     }
 
     if (runGn) {
-      if (!await _runGN(eventHandler)) {
+      if (!await _runGn(eventHandler)) {
         return false;
       }
     }
@@ -261,7 +267,7 @@ final class GlobalBuildRunner extends Runner {
     return gnArgs;
   }();
 
-  Future<bool> _runGN(RunnerEventHandler eventHandler) async {
+  Future<bool> _runGn(RunnerEventHandler eventHandler) async {
     final String gnPath = p.join(engineSrcDir.path, 'flutter', 'tools', 'gn');
     final Set<String> gnArgs = _mergedGnArgs;
     final List<String> command = <String>[gnPath, ...gnArgs];
@@ -377,7 +383,8 @@ final class GlobalBuildRunner extends Runner {
       command,
       DateTime.now(),
       line.replaceFirst(maybeProgress, '').trim(),
-      (completed * 100) / total,
+      completed,
+      total,
       completed == total,  // True when done.
     ));
   }
