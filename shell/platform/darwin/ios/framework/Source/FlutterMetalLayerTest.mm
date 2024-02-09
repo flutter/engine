@@ -268,7 +268,7 @@
   // Simulate compositor holding on to t3 for a while.
   IOSurfaceIncrementUseCount(t3.iosurface);
 
-  id<CAMetalDrawable> drawable = [layer nextDrawable];
+  drawable = [layer nextDrawable];
   XCTAssertNil(drawable);
 }
 
