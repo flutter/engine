@@ -171,8 +171,8 @@ void InsertBarrierForInputAttachmentRead(const vk::CommandBuffer& buffer,
   image_levels.aspectMask = vk::ImageAspectFlagBits::eColor;
   image_levels.baseArrayLayer = 0u;
   image_levels.baseMipLevel = 0u;
-  image_levels.layerCount = VK_REMAINING_ARRAY_LAYERS;
-  image_levels.levelCount = VK_REMAINING_MIP_LEVELS;
+  image_levels.layerCount = 1u;
+  image_levels.levelCount = 1u;
   barrier.subresourceRange = image_levels;
 
   buffer.pipelineBarrier(kSelfDependencySrcStageMask,  //
