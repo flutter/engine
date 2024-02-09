@@ -34,7 +34,7 @@ void VsyncWaiterAndroid::AwaitVSync() {
       fml::TaskRunner::RunNowOrPostTask(
           task_runners_.GetUITaskRunner(), [weak_this]() {
             NDKHelpers::AChoreographer_postFrameCallback(
-                NDKHelpers::AChoreographer_getInstance(), &OnVsyncFromNDK,
+                NDKHelpers::AChoreographer_getInstance(), &OnVsyncFromNDK32,
                 weak_this);
           });
     } break;
@@ -60,6 +60,13 @@ void VsyncWaiterAndroid::AwaitVSync() {
       });
     } break;
   }
+}
+
+// static
+void VsyncWaiterAndroid::OnVsyncFromNDK32(
+    long frame_nanos,  // NOLINT to match a deprecated NDK interface.
+    void* data) {
+  OnVsyncFromNDK(frame_nanos, data);
 }
 
 // static
