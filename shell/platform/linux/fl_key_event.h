@@ -38,7 +38,7 @@ typedef struct _FlKeyEvent {
   // Keyval.
   guint keyval;
   // Modifier state.
-  int state;
+  GdkModifierType state;
   // Keyboard group.
   guint8 group;
   // An opaque pointer to the original event.
