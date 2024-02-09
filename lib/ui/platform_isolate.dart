@@ -31,7 +31,7 @@ FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
       _platformRunnerSendPort = null;
     });
     try {
-      _spawn(_remoteRun<R>, portReceiver.sendPort, onExit: onExit.sendPort);
+      _spawn(_remoteRun, portReceiver.sendPort, onExit: onExit.sendPort);
     } on Object {
       portReceiver.close();
       onExit.close();
@@ -73,21 +73,21 @@ FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
 
 Future<SendPort>? _platformRunnerSendPort;
 
-Future<void> _remoteRun<R>(SendPort portReceiver) async {
+Future<void> _remoteRun(SendPort portReceiver) async {
   final RawReceivePort computationPort = RawReceivePort();
   computationPort.handler = ((
-        FutureOr<R> Function() computation,
+        FutureOr<Object?> Function() computation,
         SendPort resultPort
       ) message) async {
     // Once this isolate has handled at least one computation, allow it to
     // close if there are no more incoming.
     computationPort.keepIsolateAlive = false;
 
-    final (FutureOr<R> Function() computation, SendPort resultPort) = message;
+    final (FutureOr<Object?> Function() computation, SendPort resultPort) = message;
     try {
-      final FutureOr<R> potentiallyAsyncResult = computation();
-      late final R result;
-      if (potentiallyAsyncResult is Future<R>) {
+      final FutureOr<Object?> potentiallyAsyncResult = computation();
+      Object? result;
+      if (potentiallyAsyncResult is Future<Object?>) {
         result = await potentiallyAsyncResult;
       } else {
         result = potentiallyAsyncResult;
