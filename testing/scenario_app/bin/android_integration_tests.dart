@@ -41,7 +41,7 @@ void main(List<String> args) async {
     ..addOption(
       'graphics-backend',
       help: 'The graphics backend to use for the Android app.',
-      allowed: <String>['skia', 'impeller-vulkan'],
+      allowed: <String>['skia', 'impeller-vulkan', 'impeller-opengles'],
       defaultsTo: 'skia',
     );
 
@@ -77,15 +77,17 @@ void main(List<String> args) async {
 
 enum _GraphicsBackend {
   skia,
-  // TODO(matanlurey): Create impeller-opengles variant.
-  impeller;
+  impellerVulkan,
+  impellerOpengles;
 
   static _GraphicsBackend? tryParse(String? value) {
     switch (value) {
       case 'skia':
         return _GraphicsBackend.skia;
-      case 'impeller':
-        return _GraphicsBackend.impeller;
+      case 'impeller-vulkan':
+        return _GraphicsBackend.impellerVulkan;
+      case 'impeller-opengles':
+        return _GraphicsBackend.impellerOpengles;
       default:
         return null;
     }
@@ -259,7 +261,10 @@ Future<void> _run({
           '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
         if (graphicsBackend != _GraphicsBackend.skia)
-          '-e enable-impeller',
+          ...<String>[
+            '-e enable-impeller',
+            '-e impeller_backend ${graphicsBackend == _GraphicsBackend.impellerVulkan ? 'vulkan' : 'opengles'}',
+          ],
       ]);
       if (exitCode != 0) {
         panic(<String>['instrumented tests failed to run']);
