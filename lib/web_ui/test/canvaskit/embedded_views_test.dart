@@ -986,7 +986,7 @@ void testMain() {
     await createPlatformView(1, 'test-view');
     await createPlatformView(2, 'test-view');
 
-    LayerSceneBuilder sb = LayerSceneBuilder()
+    final LayerSceneBuilder sb = LayerSceneBuilder()
       ..pushOffset(0, 0)
       ..addPlatformView(0, width: 10, height: 10)
       ..addPlatformView(1, width: 10, height: 10)
