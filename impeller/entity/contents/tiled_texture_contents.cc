@@ -136,15 +136,15 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = GetOpacityFactor();
 
-  PipelineBuilderMethod pipeline_builder;
+  PipelineBuilderMethod pipeline_method;
 
 #ifdef IMPELLER_ENABLE_OPENGLES
   if (is_external_texture) {
-    pipeline_builder = &ContentContext::GetTiledTextureExternalPipeline;
+    pipeline_method = &ContentContext::GetTiledTextureExternalPipeline;
   } else {
-    pipeline_builder = uses_emulated_tile_mode
-                           ? &ContentContext::GetTiledTexturePipeline
-                           : &ContentContext::GetTexturePipeline;
+    pipeline_method = uses_emulated_tile_mode
+                          ? &ContentContext::GetTiledTexturePipeline
+                          : &ContentContext::GetTexturePipeline;
   }
 #else
   pipeline_builder = uses_emulated_tile_mode
@@ -152,9 +152,13 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
                          : &ContentContext::GetTexturePipeline;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer, &pipeline_method](ContentContextOptions options) {
+        return (renderer.*pipeline_method)(options);
+      };
   return ColorSourceContents::DrawPositionsAndUVs<VS>(
       Rect::MakeSize(texture_size), GetInverseEffectTransform(), renderer,
-      entity, pass, pipeline_builder, frame_info,
+      entity, pass, pipeline_callback, frame_info,
       [this, &renderer, &is_external_texture,
        &uses_emulated_tile_mode](RenderPass& pass) {
         auto& host_buffer = renderer.GetTransientsBuffer();

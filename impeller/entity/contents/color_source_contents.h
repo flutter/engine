@@ -105,13 +105,16 @@ class ColorSourceContents : public Contents {
   using BindFragmentCallback = std::function<bool(RenderPass& pass)>;
   using PipelineBuilderMethod = std::shared_ptr<Pipeline<PipelineDescriptor>> (
       impeller::ContentContext::*)(ContentContextOptions) const;
+  using PipelineBuilderCallback =
+      std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>(
+          ContentContextOptions)>;
 
   template <typename VertexShaderT>
   bool DrawGeometry(GeometryResult geometry_result,
                     const ContentContext& renderer,
                     const Entity& entity,
                     RenderPass& pass,
-                    const PipelineBuilderMethod& pipeline_builder,
+                    const PipelineBuilderCallback& pipeline_callback,
                     typename VertexShaderT::FrameInfo frame_info,
                     const BindFragmentCallback& bind_fragment_callback) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
@@ -137,7 +140,7 @@ class ColorSourceContents : public Contents {
         pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
     std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
-        (renderer.*pipeline_builder)(options);
+        pipeline_callback(options);
     pass.SetPipeline(pipeline);
 
     // The reason we need to have a callback mechanism here is that this routine
@@ -167,14 +170,14 @@ class ColorSourceContents : public Contents {
   bool DrawPositions(const ContentContext& renderer,
                      const Entity& entity,
                      RenderPass& pass,
-                     const PipelineBuilderMethod& pipeline_builder,
+                     const PipelineBuilderCallback& pipeline_callback,
                      typename VertexShaderT::FrameInfo frame_info,
                      const BindFragmentCallback& bind_pipeline_callback) const {
     auto geometry_result =
         GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
     return DrawGeometry<VertexShaderT>(geometry_result, renderer, entity, pass,
-                                       pipeline_builder, frame_info,
+                                       pipeline_callback, frame_info,
                                        bind_pipeline_callback);
   }
 
@@ -185,14 +188,14 @@ class ColorSourceContents : public Contents {
       const ContentContext& renderer,
       const Entity& entity,
       RenderPass& pass,
-      const PipelineBuilderMethod& pipeline_builder,
+      const PipelineBuilderCallback& pipeline_callback,
       typename VertexShaderT::FrameInfo frame_info,
       const BindFragmentCallback& bind_pipeline_callback) const {
     auto geometry_result = GetGeometry()->GetPositionUVBuffer(
         texture_coverage, effect_transform, renderer, entity, pass);
 
     return DrawGeometry<VertexShaderT>(geometry_result, renderer, entity, pass,
-                                       pipeline_builder, frame_info,
+                                       pipeline_callback, frame_info,
                                        bind_pipeline_callback);
   }
 

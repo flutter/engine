@@ -54,8 +54,12 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
 
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetSolidFillPipeline(options);
+      };
   return ColorSourceContents::DrawPositions<VS>(
-      renderer, entity, pass, &ContentContext::GetSolidFillPipeline, frame_info,
+      renderer, entity, pass, pipeline_callback, frame_info,
       [](RenderPass& pass) {
         pass.SetCommandLabel("Solid Fill");
         return true;

@@ -72,9 +72,13 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.matrix = GetInverseEffectTransform();
 
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetLinearGradientFillPipeline(options);
+      };
   return ColorSourceContents::DrawPositions<VS>(
-      renderer, entity, pass, &ContentContext::GetLinearGradientFillPipeline,
-      frame_info, [this, &renderer](RenderPass& pass) {
+      renderer, entity, pass, pipeline_callback, frame_info,
+      [this, &renderer](RenderPass& pass) {
         auto gradient_data = CreateGradientBuffer(colors_, stops_);
         auto gradient_texture =
             CreateGradientTexture(gradient_data, renderer.GetContext());
@@ -119,9 +123,12 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.matrix = GetInverseEffectTransform();
 
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetLinearGradientSSBOFillPipeline(options);
+      };
   return ColorSourceContents::DrawPositions<VS>(
-      renderer, entity, pass,
-      &ContentContext::GetLinearGradientSSBOFillPipeline, frame_info,
+      renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer](RenderPass& pass) {
         FS::FragInfo frag_info;
         frag_info.start_point = start_point_;
