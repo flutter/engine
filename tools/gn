@@ -1225,7 +1225,8 @@ def parse_args(args):
       '--enable-impeller-vulkan-playgrounds',
       default=False,
       action='store_true',
-      help='Enable the Impeller Vulkan Playgrounds. The Impeller Vulkan backend needs to be enabled.'
+      help='Enable the Impeller Vulkan Playgrounds. ' +
+      'The Impeller Vulkan backend needs to be enabled.'
   )
 
   parser.add_argument(
