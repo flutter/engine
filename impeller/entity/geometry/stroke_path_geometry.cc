@@ -14,16 +14,15 @@ namespace impeller {
 using VS = SolidFillVertexShader;
 
 namespace {
-class VertexWriter {
- public:
-  virtual void AppendVertex(const Point& point) = 0;
-};
 
+template <typename VertexWriter>
 using CapProc = std::function<void(VertexWriter& vtx_builder,
                                    const Point& position,
                                    const Point& offset,
                                    Scalar scale,
                                    bool reverse)>;
+
+template <typename VertexWriter>
 using JoinProc = std::function<void(VertexWriter& vtx_builder,
                                     const Point& position,
                                     const Point& start_offset,
@@ -31,9 +30,9 @@ using JoinProc = std::function<void(VertexWriter& vtx_builder,
                                     Scalar miter_limit,
                                     Scalar scale)>;
 
-class PositionWriter : public VertexWriter {
+class PositionWriter {
  public:
-  void AppendVertex(const Point& point) override {
+  void AppendVertex(const Point& point) {
     data_.emplace_back(SolidFillVertexShader::PerVertexData{.position = point});
   }
 
@@ -45,7 +44,7 @@ class PositionWriter : public VertexWriter {
   std::vector<SolidFillVertexShader::PerVertexData> data_ = {};
 };
 
-class PositionUVWriter : public VertexWriter {
+class PositionUVWriter {
  public:
   PositionUVWriter(Point texture_origin,
                    Size texture_coverage,
@@ -58,7 +57,7 @@ class PositionUVWriter : public VertexWriter {
     return data_;
   }
 
-  void AppendVertex(const Point& point) override {
+  void AppendVertex(const Point& point) {
     data_.emplace_back(TextureFillVertexShader::PerVertexData{
         .position = point,
         .texture_coords =
@@ -72,13 +71,14 @@ class PositionUVWriter : public VertexWriter {
   const Matrix effect_transform_;
 };
 
+template <typename VertexWriter>
 class StrokeGenerator {
  public:
   StrokeGenerator(const Path::Polyline& p_polyline,
                   const Scalar p_stroke_width,
                   const Scalar p_scaled_miter_limit,
-                  const JoinProc& p_join_proc,
-                  const CapProc& p_cap_proc,
+                  const JoinProc<VertexWriter>& p_join_proc,
+                  const CapProc<VertexWriter>& p_cap_proc,
                   const Scalar p_scale)
       : polyline(p_polyline),
         stroke_width(p_stroke_width),
@@ -275,8 +275,8 @@ class StrokeGenerator {
   const Path::Polyline& polyline;
   const Scalar stroke_width;
   const Scalar scaled_miter_limit;
-  const JoinProc& join_proc;
-  const CapProc& cap_proc;
+  const JoinProc<VertexWriter>& join_proc;
+  const CapProc<VertexWriter>& cap_proc;
   const Scalar scale;
 
   Point previous_offset;
@@ -284,6 +284,7 @@ class StrokeGenerator {
   SolidFillVertexShader::PerVertexData vtx;
 };
 
+template <typename VertexWriter>
 void CreateButtCap(VertexWriter& vtx_builder,
                    const Point& position,
                    const Point& offset,
@@ -297,6 +298,7 @@ void CreateButtCap(VertexWriter& vtx_builder,
   vtx_builder.AppendVertex(vtx.position);
 }
 
+template <typename VertexWriter>
 void CreateRoundCap(VertexWriter& vtx_builder,
                     const Point& position,
                     const Point& offset,
@@ -333,6 +335,7 @@ void CreateRoundCap(VertexWriter& vtx_builder,
   });
 }
 
+template <typename VertexWriter>
 void CreateSquareCap(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& offset,
@@ -351,6 +354,7 @@ void CreateSquareCap(VertexWriter& vtx_builder,
   vtx_builder.AppendVertex(vtx);
 }
 
+template <typename VertexWriter>
 Scalar CreateBevelAndGetDirection(VertexWriter& vtx_builder,
                                   const Point& position,
                                   const Point& start_offset,
@@ -367,6 +371,7 @@ Scalar CreateBevelAndGetDirection(VertexWriter& vtx_builder,
   return dir;
 }
 
+template <typename VertexWriter>
 void CreateMiterJoin(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& start_offset,
@@ -396,6 +401,7 @@ void CreateMiterJoin(VertexWriter& vtx_builder,
   vtx_builder.AppendVertex(vtx.position);
 }
 
+template <typename VertexWriter>
 void CreateRoundJoin(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& start_offset,
@@ -436,6 +442,7 @@ void CreateRoundJoin(VertexWriter& vtx_builder,
       });
 }
 
+template <typename VertexWriter>
 void CreateBevelJoin(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& start_offset,
@@ -445,12 +452,13 @@ void CreateBevelJoin(VertexWriter& vtx_builder,
   CreateBevelAndGetDirection(vtx_builder, position, start_offset, end_offset);
 }
 
+template <typename VertexWriter>
 void CreateSolidStrokeVertices(VertexWriter& vtx_builder,
                                const Path::Polyline& polyline,
                                Scalar stroke_width,
                                Scalar scaled_miter_limit,
-                               const JoinProc& join_proc,
-                               const CapProc& cap_proc,
+                               const JoinProc<VertexWriter>& join_proc,
+                               const CapProc<VertexWriter>& cap_proc,
                                Scalar scale) {
   StrokeGenerator stroke_generator(polyline, stroke_width, scaled_miter_limit,
                                    join_proc, cap_proc, scale);
@@ -458,25 +466,27 @@ void CreateSolidStrokeVertices(VertexWriter& vtx_builder,
 }
 
 // static
-JoinProc GetJoinProc(Join stroke_join) {
+template <typename VertexWriter>
+JoinProc<VertexWriter> GetJoinProc(Join stroke_join) {
   switch (stroke_join) {
     case Join::kBevel:
-      return &CreateBevelJoin;
+      return &CreateBevelJoin<VertexWriter>;
     case Join::kMiter:
-      return &CreateMiterJoin;
+      return &CreateMiterJoin<VertexWriter>;
     case Join::kRound:
-      return &CreateRoundJoin;
+      return &CreateRoundJoin<VertexWriter>;
   }
 }
 
-CapProc GetCapProc(Cap stroke_cap) {
+template <typename VertexWriter>
+CapProc<VertexWriter> GetCapProc(Cap stroke_cap) {
   switch (stroke_cap) {
     case Cap::kButt:
-      return &CreateButtCap;
+      return &CreateButtCap<VertexWriter>;
     case Cap::kRound:
-      return &CreateRoundCap;
+      return &CreateRoundCap<VertexWriter>;
     case Cap::kSquare:
-      return &CreateSquareCap;
+      return &CreateSquareCap<VertexWriter>;
   }
 }
 }  // namespace
@@ -532,8 +542,8 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   auto polyline = renderer.GetTessellator()->CreateTempPolyline(path_, scale);
   CreateSolidStrokeVertices(position_writer, polyline, stroke_width,
                             miter_limit_ * stroke_width_ * 0.5f,
-                            GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
-                            scale);
+                            GetJoinProc<PositionWriter>(stroke_join_),
+                            GetCapProc<PositionWriter>(stroke_cap_), scale);
 
   BufferView buffer_view =
       host_buffer.Emplace(position_writer.GetData().data(),
@@ -577,9 +587,10 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
 
   PositionUVWriter writer(Point{0, 0}, texture_coverage.GetSize(),
                           effect_transform);
-  CreateSolidStrokeVertices(
-      writer, polyline, stroke_width, miter_limit_ * stroke_width_ * 0.5f,
-      GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), scale);
+  CreateSolidStrokeVertices(writer, polyline, stroke_width,
+                            miter_limit_ * stroke_width_ * 0.5f,
+                            GetJoinProc<PositionUVWriter>(stroke_join_),
+                            GetCapProc<PositionUVWriter>(stroke_cap_), scale);
 
   BufferView buffer_view = host_buffer.Emplace(
       writer.GetData().data(),
