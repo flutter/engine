@@ -5,9 +5,7 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
 #include "fml/logging.h"
-#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
