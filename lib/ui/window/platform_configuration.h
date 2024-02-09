@@ -557,6 +557,8 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
+  static void ImposeSyncFrame();
+
   static void Render(int64_t view_id,
                      Scene* scene,
                      double width,

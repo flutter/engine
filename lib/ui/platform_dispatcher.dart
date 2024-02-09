@@ -801,10 +801,40 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
+  ///  * [imposeSyncFrame], a similar method that is used in rare cases that
+  ///    a frame must be rendered immediately.
   void scheduleFrame() => _scheduleFrame();
 
   @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
+
+  /// Immediately render a frame by invoking the [onBeginFrame] and
+  /// [onDrawFrame] callbacks synchronously.
+  ///
+  /// This method performs the same computation for a frame as [scheduleFrame]
+  /// does, but instead of doing so at an appropriate opportunity, the render is
+  /// completed synchronously within this call.
+  ///
+  /// This method should not be used in usual cases. It is designed for
+  /// situations that require a frame is rendered as soon as possible, even at
+  /// the cost of rendering quality.
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding], the Flutter framework class which manages the
+  ///    scheduling of frames.
+  ///  * [scheduleFrame].
+  ///
+  // TODO(dkwingsmt): This method is not used for now, and is not implemented by
+  // the engine yet. This is because we have to land the Dart FFI method first
+  // before being able to run the performance test for the full changes due to
+  // the restriction of the performance test. Eventually, we should either land
+  // the full changes, or remove this method.
+  // https://github.com/flutter/flutter/issues/142851
+  void imposeSyncFrame() => _imposeSyncFrame();
+
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ImposeSyncFrame')
+  external static void _imposeSyncFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;

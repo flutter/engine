@@ -589,6 +589,16 @@ void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
+void PlatformConfigurationNativeApi::ImposeSyncFrame() {
+  // TODO(dkwingsmt): This method is not implemented and is not used for now.
+  // This is because we have to land the Dart FFI method first before being able
+  // to run the performance test for the full changes due to the restriction of
+  // the performance test. Eventually, we should either land the full changes,
+  // or remove this method.
+  // https://github.com/flutter/flutter/issues/142851
+  FML_UNREACHABLE();
+}
+
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->UpdateSemantics(
