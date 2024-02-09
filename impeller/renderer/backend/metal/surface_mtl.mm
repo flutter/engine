@@ -259,9 +259,11 @@ bool SurfaceMTL::Present() const {
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
 
-    id<CAMetalDrawable> metal_drawable = reinterpret_cast<id<CAMetalDrawable>>(drawable_);
+    id<CAMetalDrawable> metal_drawable =
+        reinterpret_cast<id<CAMetalDrawable>>(drawable_);
     if ([metal_drawable conformsToProtocol:@protocol(FlutterMetalDrawable)]) {
-      [(id<FlutterMetalDrawable>)metal_drawable flutterPrepareForPresent:command_buffer];
+      [(id<FlutterMetalDrawable>)metal_drawable
+          flutterPrepareForPresent:command_buffer];
     }
 
     // If the threads have been merged, or there is a pending frame capture,

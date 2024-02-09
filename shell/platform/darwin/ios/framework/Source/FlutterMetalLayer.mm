@@ -337,8 +337,6 @@ extern CFTimeInterval display_link_target;
                                                                        surface:surface];
       return flutterTexture;
     } else {
-
-
       // Prefer surface that is not in use and has been presented the longest
       // time ago.
       // When isInUse is false, the surface is definitely not used by the compositor.
