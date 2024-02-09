@@ -41,12 +41,3 @@ impeller_component("image_skia_backend") {
     "//flutter/skia",
   ]
 }
-
-impeller_component("image_unittests") {
-  testonly = true
-  sources = []
-  deps = [
-    ":image_skia_backend",
-    "//flutter/testing",
-  ]
-}

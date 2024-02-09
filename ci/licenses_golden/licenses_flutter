@@ -4961,24 +4961,6 @@ ORIGIN: ../../../flutter/impeller/aiks/picture_recorder.cc + ../../../flutter/LI
 ORIGIN: ../../../flutter/impeller/aiks/picture_recorder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/trace_serializer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/trace_serializer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivable.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivable.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_class_registration.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_class_registration.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_database.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_database.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_location.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_location.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_statement.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_statement.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_transaction.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_transaction.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_vector.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_vector.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivist_fixture.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivist_fixture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/allocation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/allocation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/backend_cast.h + ../../../flutter/LICENSE
@@ -6128,6 +6110,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart + ../../../f
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/custom_element_dimensions_provider.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/dimensions_provider.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/full_page_dimensions_provider.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/display_dpr_stream.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dom_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/custom_element_embedding_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart + ../../../flutter/LICENSE
@@ -7812,24 +7795,6 @@ FILE: ../../../flutter/impeller/aiks/picture_recorder.cc
 FILE: ../../../flutter/impeller/aiks/picture_recorder.h
 FILE: ../../../flutter/impeller/aiks/trace_serializer.cc
 FILE: ../../../flutter/impeller/aiks/trace_serializer.h
-FILE: ../../../flutter/impeller/archivist/archivable.cc
-FILE: ../../../flutter/impeller/archivist/archivable.h
-FILE: ../../../flutter/impeller/archivist/archive.cc
-FILE: ../../../flutter/impeller/archivist/archive.h
-FILE: ../../../flutter/impeller/archivist/archive_class_registration.cc
-FILE: ../../../flutter/impeller/archivist/archive_class_registration.h
-FILE: ../../../flutter/impeller/archivist/archive_database.cc
-FILE: ../../../flutter/impeller/archivist/archive_database.h
-FILE: ../../../flutter/impeller/archivist/archive_location.cc
-FILE: ../../../flutter/impeller/archivist/archive_location.h
-FILE: ../../../flutter/impeller/archivist/archive_statement.cc
-FILE: ../../../flutter/impeller/archivist/archive_statement.h
-FILE: ../../../flutter/impeller/archivist/archive_transaction.cc
-FILE: ../../../flutter/impeller/archivist/archive_transaction.h
-FILE: ../../../flutter/impeller/archivist/archive_vector.cc
-FILE: ../../../flutter/impeller/archivist/archive_vector.h
-FILE: ../../../flutter/impeller/archivist/archivist_fixture.cc
-FILE: ../../../flutter/impeller/archivist/archivist_fixture.h
 FILE: ../../../flutter/impeller/base/allocation.cc
 FILE: ../../../flutter/impeller/base/allocation.h
 FILE: ../../../flutter/impeller/base/backend_cast.h
@@ -8985,6 +8950,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/custom_element_dimensions_provider.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/dimensions_provider.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/full_page_dimensions_provider.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/display_dpr_stream.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dom_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/custom_element_embedding_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart

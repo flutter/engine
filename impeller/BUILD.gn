@@ -56,7 +56,6 @@ config("impeller_public_config") {
 
 group("impeller") {
   public_deps = [
-    "archivist",
     "base",
     "geometry",
     "tessellator",
@@ -80,7 +79,6 @@ impeller_component("impeller_unittests") {
   testonly = true
 
   deps = [
-    "archivist:archivist_unittests",
     "base:base_unittests",
     "compiler:compiler_unittests",
     "core:allocator_unittests",
@@ -100,7 +98,6 @@ impeller_component("impeller_unittests") {
       "entity:entity_unittests",
       "fixtures",
       "geometry:geometry_unittests",
-      "image:image_unittests",
       "playground",
       "renderer:renderer_unittests",
       "scene:scene_unittests",

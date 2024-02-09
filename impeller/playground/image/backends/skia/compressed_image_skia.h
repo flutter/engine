@@ -6,7 +6,7 @@
 #define FLUTTER_IMPELLER_PLAYGROUND_IMAGE_BACKENDS_SKIA_COMPRESSED_IMAGE_SKIA_H_
 
 #include "flutter/fml/macros.h"
-#include "impeller/image/compressed_image.h"
+#include "impeller/playground/image/compressed_image.h"
 
 namespace impeller {
 
