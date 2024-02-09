@@ -110,13 +110,17 @@ void InitOnceCallback() {
           .value_or(nullptr);
   if (_AChoreographer_getInstance) {
     _AChoreographer_postFrameCallback64 =
-        android->ResolveFunction<fp_AChoreographer_postFrameCallback64>(
-            "AChoreographer_postFrameCallback64");
+        android
+            ->ResolveFunction<fp_AChoreographer_postFrameCallback64>(
+                "AChoreographer_postFrameCallback64")
+            .value_or(nullptr);
 #if FML_ARCH_CPU_64_BITS
     if (!_AChoreographer_postFrameCallback64) {
       _AChoreographer_postFrameCallback =
-          android->ResolveFunction<fp_AChoreographer_postFrameCallback>(
-              "AChoreographer_postFrameCallback");
+          android
+              ->ResolveFunction<fp_AChoreographer_postFrameCallback>(
+                  "AChoreographer_postFrameCallback")
+              .value_or(nullptr);
     }
 #endif
   }
