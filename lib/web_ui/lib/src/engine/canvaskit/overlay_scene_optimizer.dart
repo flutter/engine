@@ -7,6 +7,7 @@ import 'package:ui/src/engine/util.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show PlatformViewManager;
+import '../display.dart';
 import '../vector_math.dart';
 import 'embedded_views.dart';
 import 'picture.dart';
@@ -25,11 +26,21 @@ class Rendering {
     entities.add(entity);
   }
 
+  /// Returns [true] if this is equibalent to [other] for use in rendering.
+  bool equalsForRendering(Rendering other) {
+    if (other.entities.length != entities.length) {
+      return false;
+    }
+    for (int i = 0; i < entities.length; i++) {
+      if (!entities[i].equalsForRendering(other.entities[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   List<RenderingRenderCanvas> get canvases =>
       entities.whereType<RenderingRenderCanvas>().toList();
-
-  List<ui.Rect>? debugPlatformViewBounds;
-  List<ui.Rect>? debugPictureBounds;
 }
 
 /// An element of a [Rendering]. Either a render canvas or a platform view.
@@ -40,18 +51,14 @@ sealed class RenderingEntity {
   /// for purposes of rendering since any canvas in that place in the rendering
   /// will be equivalent. Platform views are only equal if they are for the same
   /// view id.
-  bool equalForRendering(RenderingEntity other);
+  bool equalsForRendering(RenderingEntity other);
 }
 
 class RenderingRenderCanvas extends RenderingEntity {
-  RenderingRenderCanvas({required this.requiredDueTo});
+  RenderingRenderCanvas();
 
   /// The [pictures] which should be rendered in this canvas.
   final List<CkPicture> pictures = <CkPicture>[];
-
-  /// The index of the platform view that caused this render canvas to be
-  /// required.
-  final int requiredDueTo;
 
   /// Adds the [picture] to the pictures that should be rendered in this canvas.
   void add(CkPicture picture) {
@@ -59,7 +66,7 @@ class RenderingRenderCanvas extends RenderingEntity {
   }
 
   @override
-  bool equalForRendering(RenderingEntity other) {
+  bool equalsForRendering(RenderingEntity other) {
     return other is RenderingRenderCanvas;
   }
 }
@@ -72,7 +79,7 @@ class RenderingPlatformView extends RenderingEntity {
   final int viewId;
 
   @override
-  bool equalForRendering(RenderingEntity other) {
+  bool equalsForRendering(RenderingEntity other) {
     return other is RenderingPlatformView && other.viewId == viewId;
   }
 }
@@ -81,7 +88,14 @@ class RenderingPlatformView extends RenderingEntity {
 @visibleForTesting
 ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
   ui.Rect currentClipBounds = ui.Rect.largest;
-  Matrix4 currentTransform = Matrix4.identity();
+
+  // The transforms are in logical pixels, but we want to compute physical
+  // pixel bounds, so transform by the device pixel ratio.
+  final double scale = EngineFlutterDisplay.instance.devicePixelRatio;
+  Matrix4 currentTransform = Matrix4.diagonal3Values(scale, scale, 1);
+  currentTransform = currentTransform.multiplied(params.offset == ui.Offset.zero
+      ? Matrix4.identity()
+      : Matrix4.translationValues(params.offset.dx, params.offset.dy, 0));
   for (final Mutator mutator in params.mutators) {
     switch (mutator.type) {
       case MutatorType.clipRect:
@@ -103,11 +117,14 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
         continue;
     }
   }
+
+  // The width and height are in physical pixels already, so apply the inverse
+  // scale since the transform already applied the scaling.
   final ui.Rect rawBounds = ui.Rect.fromLTWH(
-    params.offset.dx,
-    params.offset.dy,
-    params.size.width,
-    params.size.height,
+    0,
+    0,
+    params.size.width / scale,
+    params.size.height / scale,
   );
   final ui.Rect transformedBounds =
       transformRectWithMatrix(currentTransform, rawBounds);
@@ -125,62 +142,39 @@ Rendering createOptimizedRendering(
 ) {
   assert(pictures.length == platformViews.length + 1);
 
-  final Map<CkPicture, int> overlayRequirement = <CkPicture, int>{};
   final Rendering result = Rendering();
-
-  final List<ui.Rect> pictureBounds = <ui.Rect>[];
-  for (final CkPicture picture in pictures) {
-    pictureBounds.add(picture.cullRect);
-  }
-  result.debugPictureBounds = pictureBounds;
-
-  final List<ui.Rect> platformViewBounds = <ui.Rect>[];
-  for (final int viewId in platformViews) {
-    platformViewBounds.add(computePlatformViewBounds(paramsForViews[viewId]!));
-  }
-  result.debugPlatformViewBounds = platformViewBounds;
 
   // The first render canvas is required due to the pseudo-platform view "V_0"
   // which is defined as a platform view that comes before all Flutter drawing
   // commands and intersects with everything.
-  RenderingRenderCanvas currentRenderCanvas =
-      RenderingRenderCanvas(requiredDueTo: 0);
+  RenderingRenderCanvas currentRenderCanvas = RenderingRenderCanvas();
 
   // This line essentially unwinds the first iteration of the following loop.
   // Since "V_0" intersects with all subsequent pictures, then the first picture
   // it intersects with is "P_0", so we create a new render canvas and add "P_0"
   // to it.
   currentRenderCanvas.add(pictures[0]);
-  result.add(currentRenderCanvas);
   for (int i = 0; i < platformViews.length; i++) {
-    result.add(RenderingPlatformView(platformViews[i]));
-    // Find the first picture after this platform view that intersects with this
-    // platform view.
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
       final ui.Rect platformViewBounds =
           computePlatformViewBounds(paramsForViews[platformViews[i]]!);
-      for (int j = i + 1; j < pictures.length; j++) {
-        final ui.Rect pictureBounds = pictures[j].cullRect;
-        if (platformViewBounds.overlaps(pictureBounds)) {
-          overlayRequirement[pictures[j]] = i;
+      bool intersectsWithCurrentPictures = false;
+      for (final CkPicture picture in currentRenderCanvas.pictures) {
+        if (picture.cullRect.overlaps(platformViewBounds)) {
+          intersectsWithCurrentPictures = true;
           break;
         }
       }
+      if (intersectsWithCurrentPictures) {
+        result.add(currentRenderCanvas);
+        currentRenderCanvas = RenderingRenderCanvas();
+      }
     }
-    if (overlayRequirement.containsKey(pictures[i + 1]) &&
-        overlayRequirement[pictures[i + 1]]! >=
-            currentRenderCanvas.requiredDueTo) {
-      currentRenderCanvas = RenderingRenderCanvas(
-          requiredDueTo: overlayRequirement[pictures[i + 1]]!);
-      currentRenderCanvas.add(pictures[i + 1]);
-      result.add(currentRenderCanvas);
-    } else {
-      currentRenderCanvas.add(pictures[i + 1]);
-    }
+    result.add(RenderingPlatformView(platformViews[i]));
+    currentRenderCanvas.add(pictures[i + 1]);
+  }
+  if (currentRenderCanvas.pictures.isNotEmpty) {
+    result.add(currentRenderCanvas);
   }
   return result;
 }
-
-/// Updates the DOM to display the [next] rendering by using the fewest
-/// DOM operations to rearrange the [current] rendering.
-void updateRendering(Rendering current, Rendering next) {}

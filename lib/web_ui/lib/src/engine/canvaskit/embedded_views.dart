@@ -66,6 +66,9 @@ class HtmlViewEmbedder {
   /// The most recent overlay groups.
   List<OverlayGroup> _activeOverlayGroups = <OverlayGroup>[];
 
+  /// The most recent rendering.
+  Rendering _activeRendering = Rendering();
+
   DisplayCanvas? debugBoundsCanvas;
 
   /// The size of the frame, in physical pixels.
@@ -390,6 +393,12 @@ class HtmlViewEmbedder {
     );
 
     final List<RenderingRenderCanvas> renderCanvases = rendering.canvases;
+    if (renderCanvases.length != _activeOverlayGroups.length + 1) {
+      print('render canvas count = ${renderCanvases.length}');
+      print(
+          'overlay groups = ${_activeOverlayGroups.map((group) => group._group)}');
+      print('overlayGroups was null? ${overlayGroups == null}');
+    }
     assert(renderCanvases.length == _activeOverlayGroups.length + 1);
 
     await rasterizer.rasterizeToCanvas(baseCanvas, renderCanvases[0].pictures);
@@ -518,34 +527,6 @@ class HtmlViewEmbedder {
 
     disposeViews(unusedViews);
 
-    if (rendering.debugPictureBounds != null &&
-        rendering.debugPlatformViewBounds != null) {
-      // Draw the rects for the computed bounds.
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
-
-      final CkPaint pictureBoundPaint = CkPaint()
-        ..color = const ui.Color.fromARGB(64, 0, 255, 0);
-      final CkPaint platformViewBoundPaint = CkPaint()
-        ..color = const ui.Color.fromARGB(64, 0, 0, 255);
-
-      for (final ui.Rect pictureBound in rendering.debugPictureBounds!) {
-        canvas.drawRect(pictureBound, pictureBoundPaint);
-      }
-
-      for (final ui.Rect platformViewBound
-          in rendering.debugPlatformViewBounds!) {
-        canvas.drawRect(platformViewBound, platformViewBoundPaint);
-      }
-
-      final CkPicture boundsPicture = recorder.endRecording();
-
-      debugBoundsCanvas ??= rasterizer.getOverlay();
-      await rasterizer
-          .rasterizeToCanvas(debugBoundsCanvas!, <CkPicture>[boundsPicture]);
-      sceneHost.append(debugBoundsCanvas!.hostElement);
-    }
-
     assert(
       debugInvalidViewIds == null || debugInvalidViewIds!.isEmpty,
       'Cannot render platform views: ${debugInvalidViewIds!.join(', ')}. '
@@ -593,11 +574,8 @@ class HtmlViewEmbedder {
   // TODO(hterkelsen): Test this more thoroughly.
   List<OverlayGroup>? _updateOverlays(
       Rendering rendering, ViewListDiffResult? diffResult) {
-    if (diffResult != null &&
-        diffResult.viewsToAdd.isEmpty &&
-        diffResult.viewsToRemove.isEmpty) {
-      // The composition order has not changed, continue using the assigned
-      // overlays.
+    if (rendering.equalsForRendering(_activeRendering)) {
+      // The rendering has not changed, continue using the assigned overlays.
       return null;
     }
     // Group platform views from their composition order.
@@ -643,9 +621,7 @@ class HtmlViewEmbedder {
     final List<OverlayGroup> result = <OverlayGroup>[];
     OverlayGroup currentGroup = OverlayGroup();
 
-    for (int i = 0; i < rendering.entities.length; i++) {
-      final RenderingEntity entity = rendering.entities[i];
-
+    for (final RenderingEntity entity in rendering.entities) {
       /// We are at an overlay, end the current group and start the next group.
       if (entity is RenderingRenderCanvas) {
         if (!currentGroup.isEmpty) {
@@ -656,6 +632,7 @@ class HtmlViewEmbedder {
         currentGroup.add(entity.viewId);
       }
     }
+    assert(rendering.canvases.length == result.length + 1);
     return result;
   }
 
