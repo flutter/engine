@@ -86,7 +86,10 @@ public abstract class TestActivity extends TestableFlutterActivity {
   public void onFlutterUiDisplayed() {
     final Intent launchIntent = getIntent();
     MethodChannel channel =
-        new MethodChannel(Objects.requireNonNull(getFlutterEngine()).getDartExecutor(), "driver", JSONMethodCodec.INSTANCE);
+        new MethodChannel(
+            Objects.requireNonNull(getFlutterEngine()).getDartExecutor(),
+            "driver",
+            JSONMethodCodec.INSTANCE);
     Map<String, Object> test = new HashMap<>(2);
     if (launchIntent.hasExtra("scenario_name")) {
       test.put("name", launchIntent.getStringExtra("scenario_name"));
