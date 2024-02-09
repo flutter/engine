@@ -293,7 +293,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + '2c3c95dc8cdb71fa176fe2e7886ef2022cbdc3bb',
+  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + 'a39f3c1d06d2f2e0afa71e04b78889d250543058',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
