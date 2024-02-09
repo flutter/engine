@@ -139,9 +139,7 @@ class ColorSourceContents : public Contents {
     VertexShaderT::BindFrameInfo(
         pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
-        pipeline_callback(options);
-    pass.SetPipeline(pipeline);
+    pass.SetPipeline(pipeline_callback(options));
 
     // The reason we need to have a callback mechanism here is that this routine
     // may insert draw calls before the main draw call below. For example, for
@@ -173,12 +171,12 @@ class ColorSourceContents : public Contents {
                      const PipelineBuilderCallback& pipeline_callback,
                      typename VertexShaderT::FrameInfo frame_info,
                      const BindFragmentCallback& bind_pipeline_callback) const {
-    auto geometry_result =
+    GeometryResult geometry_result =
         GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
-    return DrawGeometry<VertexShaderT>(geometry_result, renderer, entity, pass,
-                                       pipeline_callback, frame_info,
-                                       bind_pipeline_callback);
+    return DrawGeometry<VertexShaderT>(std::move(geometry_result), renderer,
+                                       entity, pass, pipeline_callback,
+                                       frame_info, bind_pipeline_callback);
   }
 
   template <typename VertexShaderT>
@@ -194,9 +192,9 @@ class ColorSourceContents : public Contents {
     auto geometry_result = GetGeometry()->GetPositionUVBuffer(
         texture_coverage, effect_transform, renderer, entity, pass);
 
-    return DrawGeometry<VertexShaderT>(geometry_result, renderer, entity, pass,
-                                       pipeline_callback, frame_info,
-                                       bind_pipeline_callback);
+    return DrawGeometry<VertexShaderT>(std::move(geometry_result), renderer,
+                                       entity, pass, pipeline_callback,
+                                       frame_info, bind_pipeline_callback);
   }
 
  private:
