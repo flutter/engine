@@ -98,7 +98,7 @@ typedef CanvasPath Path;
   V(NativeStringAttribute::initSpellOutStringAttribute)            \
   V(PlatformConfigurationNativeApi::DefaultRouteName)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame)                 \
-  V(PlatformConfigurationNativeApi::ImposeSyncFrame)               \
+  V(PlatformConfigurationNativeApi::ForceSyncFrame)                \
   V(PlatformConfigurationNativeApi::Render)                        \
   V(PlatformConfigurationNativeApi::UpdateSemantics)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings)         \

@@ -589,7 +589,7 @@ void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
-void PlatformConfigurationNativeApi::ImposeSyncFrame() {
+void PlatformConfigurationNativeApi::ForceSyncFrame() {
   // TODO(dkwingsmt): This method is not implemented and is not used for now.
   // This is because we have to land the Dart FFI method first before being able
   // to run the performance test for the full changes due to the restriction of

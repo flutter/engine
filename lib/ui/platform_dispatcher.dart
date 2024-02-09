@@ -801,7 +801,7 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  ///  * [imposeSyncFrame], a similar method that is used in rare cases that
+  ///  * [forceSyncFrame], a similar method that is used in rare cases that
   ///    a frame must be rendered immediately.
   void scheduleFrame() => _scheduleFrame();
 
@@ -831,10 +831,10 @@ class PlatformDispatcher {
   // the restriction of the performance test. Eventually, we should either land
   // the full changes, or remove this method.
   // https://github.com/flutter/flutter/issues/142851
-  void imposeSyncFrame() => _imposeSyncFrame();
+  void forceSyncFrame() => _forceSyncFrame();
 
-  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ImposeSyncFrame')
-  external static void _imposeSyncFrame();
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ForceSyncFrame')
+  external static void _forceSyncFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;
