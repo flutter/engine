@@ -215,13 +215,6 @@ def setup_rbe(args):
   if not args.rbe:
     return rbe_gn_args
 
-  if get_host_os() not in ['linux', 'mac']:
-    print(
-        'The --rbe flag has no effect. RBE is currently only supported on '
-        'macOS and Linux.'
-    )
-    return rbe_gn_args
-
   rbe_gn_args['use_rbe'] = True
 
   # When running in CI, the recipes use their own rbe install, and take
@@ -237,9 +230,15 @@ def setup_rbe(args):
         'reclient',
     )
     bootstrap_path = os.path.join(cipd_reclient_dir, 'bootstrap')
+    bootstrap_path = bootstrap_path + '.exe' if get_host_os(
+    ) == 'win' else bootstrap_path
     reproxy_path = os.path.join(cipd_reclient_dir, 'reproxy')
     rbe_cfg_path = os.path.join(
-        SRC_ROOT, 'flutter', 'build', 'rbe', 'reclient.cfg'
+        SRC_ROOT,
+        'flutter',
+        'build',
+        'rbe',
+        'reclient-' + get_host_os() + '.cfg',
     )
     bootstrap_cmd = [
         bootstrap_path,
@@ -717,9 +716,8 @@ def to_gn_args(args):
   # gen_snapshot, but the build defines otherwise make it look like the build is
   # for a host Windows build and make GN think we will be building ANGLE.
   # Angle is not used on Mac hosts as there are no tests for the OpenGL backend.
-  if (is_host_build(args) and
-      gn_args['host_os'] != 'mac') or (args.target_os == 'android' and
-                                       get_host_os() == 'win'):
+  if is_host_build(args) or (args.target_os == 'android' and
+                             get_host_os() == 'win'):
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     gn_args['angle_has_astc_encoder'] = False
@@ -728,6 +726,10 @@ def to_gn_args(args):
     # https://github.com/flutter/flutter/issues/114107
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
+    if get_host_os() == 'mac':
+      gn_args['angle_enable_metal'] = True
+      gn_args['angle_enable_gl'] = False
+      gn_args['angle_enable_vulkan'] = False
 
     # ANGLE and SwiftShader share build flags to enable X11 and Wayland,
     # but we only need these enabled for SwiftShader.
@@ -789,8 +791,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_enable_fontmgr_custom_directory'] = False
   gn_args['skia_enable_fontmgr_custom_embedded'] = True
   gn_args['skia_enable_fontmgr_custom_empty'] = True
-  gn_args['skia_fontmgr_factory'
-         ] = '//flutter/skia:fontmgr_custom_empty_factory'
   gn_args['skia_enable_skshaper'] = True
   gn_args['skia_enable_skparagraph'] = True
   gn_args['skia_canvaskit_force_tracing'] = False

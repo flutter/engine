@@ -14,14 +14,17 @@ impeller_component("vulkan_unittests") {
     "context_vk_unittests.cc",
     "descriptor_pool_vk_unittests.cc",
     "fence_waiter_vk_unittests.cc",
+    "render_pass_cache_unittests.cc",
     "resource_manager_vk_unittests.cc",
     "test/gpu_tracer_unittests.cc",
     "test/mock_vulkan.cc",
     "test/mock_vulkan.h",
     "test/mock_vulkan_unittests.cc",
+    "test/swapchain_unittests.cc",
   ]
   deps = [
     ":vulkan",
+    "../../../playground:playground_test",
     "//flutter/testing:testing_lib",
   ]
 }
@@ -46,6 +49,8 @@ impeller_component("vulkan") {
     "command_encoder_vk.h",
     "command_pool_vk.cc",
     "command_pool_vk.h",
+    "command_queue_vk.cc",
+    "command_queue_vk.h",
     "compute_pass_vk.cc",
     "compute_pass_vk.h",
     "compute_pipeline_vk.cc",
@@ -73,6 +78,8 @@ impeller_component("vulkan") {
     "pipeline_vk.h",
     "queue_vk.cc",
     "queue_vk.h",
+    "render_pass_builder_vk.cc",
+    "render_pass_builder_vk.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
     "resource_manager_vk.cc",
@@ -118,8 +125,4 @@ impeller_component("vulkan") {
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]
-
-  if (impeller_enable_vulkan_validation_layers) {
-    defines = [ "IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS" ]
-  }
 }

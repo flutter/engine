@@ -87,6 +87,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
                           DefaultUniformAlignment());
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
   frame_info.matrix = GetInverseEffectTransform();
 
@@ -94,8 +95,8 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
   options.primitive_type = geometry_result.type;
 
@@ -155,6 +156,7 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = geometry_result.transform;
   frame_info.matrix = GetInverseEffectTransform();
 
@@ -163,8 +165,8 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
   options.primitive_type = geometry_result.type;
   pass.SetPipeline(renderer.GetConicalGradientFillPipeline(options));

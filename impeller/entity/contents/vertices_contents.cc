@@ -116,6 +116,7 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
                                      GetCoverageHint(),  // coverage_limit
                                      std::nullopt,       // sampler_descriptor
                                      true,               // msaa_enabled
+                                     /*mip_count=*/1,
                                      "VerticesUVContents Snapshot");  // label
   if (!snapshot.has_value()) {
     return false;
@@ -138,6 +139,7 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale =
       snapshot->texture->GetYCoordScale();
@@ -187,6 +189,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = geometry_result.transform;
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 

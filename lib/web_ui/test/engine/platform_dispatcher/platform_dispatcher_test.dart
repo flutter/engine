@@ -10,12 +10,16 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  ensureFlutterViewEmbedderInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
+  });
 
   group('PlatformDispatcher', () {
     test('reports at least one display', () {
@@ -360,6 +364,43 @@ void testMain() {
 
       expect(onMetricsChangedCalled, isFalse);
       expect(view1.isDisposed, isTrue);
+    });
+
+    test('invokeOnViewFocusChange calls onViewFocusChange', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final List<ui.ViewFocusEvent> dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
+      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+        viewId: 0,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+
+      dispatcher.onViewFocusChange = dispatchedViewFocusEvents.add;
+      dispatcher.invokeOnViewFocusChange(viewFocusEvent);
+
+      expect(dispatchedViewFocusEvents, hasLength(1));
+      expect(dispatchedViewFocusEvents.single, viewFocusEvent);
+    });
+
+    test('invokeOnViewFocusChange preserves the zone', () {
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+      final Zone zone1 = Zone.current.fork();
+      final Zone zone2 = Zone.current.fork();
+      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+        viewId: 0,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+
+      zone1.runGuarded(() {
+        dispatcher.onViewFocusChange = (_) {
+          expect(Zone.current, zone1);
+        };
+      });
+
+      zone2.runGuarded(() {
+        dispatcher.invokeOnViewFocusChange(viewFocusEvent);
+      });
     });
   });
 }

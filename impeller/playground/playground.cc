@@ -8,8 +8,8 @@
 #include <sstream>
 
 #include "fml/time/time_point.h"
-#include "impeller/image/backends/skia/compressed_image_skia.h"
-#include "impeller/image/decompressed_image.h"
+#include "impeller/playground/image/backends/skia/compressed_image_skia.h"
+#include "impeller/playground/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
@@ -20,7 +20,8 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
-#include "impeller/image/compressed_image.h"
+#include "impeller/playground/backend/vulkan/swiftshader_utilities.h"
+#include "impeller/playground/image/compressed_image.h"
 #include "impeller/playground/imgui/imgui_impl_impeller.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_impl.h"
@@ -48,38 +49,36 @@ std::string PlaygroundBackendToString(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-struct Playground::GLFWInitializer {
-  GLFWInitializer() {
-    // This guard is a hack to work around a problem where glfwCreateWindow
-    // hangs when opening a second window after GLFW has been reinitialized (for
-    // example, when flipping through multiple playground tests).
-    //
-    // Explanation:
-    //  * glfwCreateWindow calls [NSApp run], which begins running the event
-    //    loop on the current thread.
-    //  * GLFW then immediately stops the loop when
-    //    applicationDidFinishLaunching is fired.
-    //  * applicationDidFinishLaunching is only ever fired once during the
-    //    application's lifetime, so subsequent calls to [NSApp run] will always
-    //    hang with this setup.
-    //  * glfwInit resets the flag that guards against [NSApp run] being
-    //    called a second time, which causes the subsequent `glfwCreateWindow`
-    //    to hang indefinitely in the event loop, because
-    //    applicationDidFinishLaunching is never fired.
-    static std::once_flag sOnceInitializer;
-    std::call_once(sOnceInitializer, []() {
-      ::glfwSetErrorCallback([](int code, const char* description) {
-        FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code
-                       << ").";
-      });
-      FML_CHECK(::glfwInit() == GLFW_TRUE);
+static void InitializeGLFWOnce() {
+  // This guard is a hack to work around a problem where glfwCreateWindow
+  // hangs when opening a second window after GLFW has been reinitialized (for
+  // example, when flipping through multiple playground tests).
+  //
+  // Explanation:
+  //  * glfwCreateWindow calls [NSApp run], which begins running the event
+  //    loop on the current thread.
+  //  * GLFW then immediately stops the loop when
+  //    applicationDidFinishLaunching is fired.
+  //  * applicationDidFinishLaunching is only ever fired once during the
+  //    application's lifetime, so subsequent calls to [NSApp run] will always
+  //    hang with this setup.
+  //  * glfwInit resets the flag that guards against [NSApp run] being
+  //    called a second time, which causes the subsequent `glfwCreateWindow`
+  //    to hang indefinitely in the event loop, because
+  //    applicationDidFinishLaunching is never fired.
+  static std::once_flag sOnceInitializer;
+  std::call_once(sOnceInitializer, []() {
+    ::glfwSetErrorCallback([](int code, const char* description) {
+      FML_LOG(ERROR) << "GLFW Error '" << description << "'  (" << code << ").";
     });
-  }
-};
+    FML_CHECK(::glfwInit() == GLFW_TRUE);
+  });
+}
 
-Playground::Playground(PlaygroundSwitches switches)
-    : switches_(switches),
-      glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
+Playground::Playground(PlaygroundSwitches switches) : switches_(switches) {
+  InitializeGLFWOnce();
+  SetupSwiftshaderOnce(switches_.use_swiftshader);
+}
 
 Playground::~Playground() = default;
 
@@ -306,7 +305,7 @@ bool Playground::OpenPlaygroundHere(
         ImGui_ImplImpeller_RenderDrawData(ImGui::GetDrawData(), *pass);
 
         pass->EncodeCommands();
-        if (!buffer->SubmitCommands()) {
+        if (!renderer->GetContext()->GetCommandQueue()->Submit({buffer}).ok()) {
           return false;
         }
       }
@@ -350,7 +349,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
         }
 
         pass->EncodeCommands();
-        if (!buffer->SubmitCommands()) {
+        if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
           return false;
         }
         return true;
@@ -422,7 +421,7 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     blit_pass->SetLabel("Mipmap Blit Pass");
     blit_pass->GenerateMipmap(texture);
     blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!command_buffer->SubmitCommands()) {
+    if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
       FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
       return nullptr;
     }

@@ -234,6 +234,9 @@ class Path {
   // builder from affecting the existing taken paths.
   struct Data {
     Data() = default;
+
+    Data(Data&& other) = default;
+
     Data(const Data& other) = default;
 
     ~Data() = default;
@@ -247,7 +250,7 @@ class Path {
     mutable TessellatedData tessellated_data;
   };
 
-  explicit Path(const Data& data);
+  explicit Path(Data data);
 
   std::shared_ptr<const Data> data_;
 };
