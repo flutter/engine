@@ -236,4 +236,40 @@
   [self removeMetalLayer:layer];
 }
 
+- (void)testTimeout {
+  FlutterMetalLayer* layer = [self addMetalLayer];
+  TestCompositor* compositor = [[TestCompositor alloc] initWithLayer:layer];
+
+  id<MTLTexture> t1, t2, t3;
+
+  id<CAMetalDrawable> drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
+  t1 = drawable.texture;
+  [drawable present];
+  [compositor commitTransaction];
+  XCTAssertTrue(IOSurfaceIsInUse(t1.iosurface));
+
+  IOSurfaceIncrementUseCount(t1.iosurface);
+
+  drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
+  t2 = drawable.texture;
+  [drawable present];
+  [compositor commitTransaction];
+
+  IOSurfaceIncrementUseCount(t2.iosurface);
+
+  drawable = [layer nextDrawable];
+  BAIL_IF_NO_DRAWABLE(drawable);
+  t3 = drawable.texture;
+  [drawable present];
+  [compositor commitTransaction];
+
+  // Simulate compositor holding on to t3 for a while.
+  IOSurfaceIncrementUseCount(t3.iosurface);
+
+  id<CAMetalDrawable> drawable = [layer nextDrawable];
+  XCTAssertNil(drawable);
+}
+
 @end
