@@ -206,7 +206,6 @@ source_set("flutter_framework_source") {
     "//flutter/skia",
     "//flutter/third_party/spring_animation",
     "//third_party/dart/runtime/bin:elf_loader",
-    "//third_party/skia",
   ]
 
   public_configs = [
