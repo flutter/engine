@@ -40,7 +40,7 @@ class NDKHelpers {
   static bool ATrace_isEnabled();
 
   // API Version 24
-  static ChoreographerStatus ChoreographerSupported();
+  static ChoreographerSupportStatus ChoreographerSupported();
   static AChoreographer* AChoreographer_getInstance();
   // Deprecated in 29, available since 24.
   static void AChoreographer_postFrameCallback(
