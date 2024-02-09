@@ -270,6 +270,8 @@
 
   drawable = [layer nextDrawable];
   XCTAssertNil(drawable);
+
+  [self removeMetalLayer:layer];
 }
 
 @end
