@@ -280,17 +280,15 @@ class StrokeGenerator {
                   const Scalar p_scaled_miter_limit,
                   const StrokePathGeometry::JoinProc& p_join_proc,
                   const StrokePathGeometry::CapProc& p_cap_proc,
-                  const Scalar p_scale,
-                  VertexWriter& p_vtx_builder)
+                  const Scalar p_scale)
       : polyline(p_polyline),
         stroke_width(p_stroke_width),
         scaled_miter_limit(p_scaled_miter_limit),
         join_proc(p_join_proc),
         cap_proc(p_cap_proc),
-        scale(p_scale),
-        vtx_builder(p_vtx_builder) {}
+        scale(p_scale) {}
 
-  void Generate() {
+  void Generate(VertexWriter& vtx_builder) {
     for (size_t contour_i = 0; contour_i < polyline.contours.size();
          contour_i++) {
       const Path::PolylineContour& contour = polyline.contours[contour_i];
@@ -361,12 +359,12 @@ class StrokeGenerator {
                                     .component_start_index;
         if (component.is_curve) {
           AddVerticesForCurveComponent(
-              component_start_index, component_end_index, contour_start_point_i,
-              contour_end_point_i, contour);
+              vtx_builder, component_start_index, component_end_index,
+              contour_start_point_i, contour_end_point_i, contour);
         } else {
           AddVerticesForLinearComponent(
-              component_start_index, component_end_index, contour_start_point_i,
-              contour_end_point_i, contour);
+              vtx_builder, component_start_index, component_end_index,
+              contour_start_point_i, contour_end_point_i, contour);
         }
       }
 
@@ -403,7 +401,8 @@ class StrokeGenerator {
     return Vector2{-direction.y, direction.x} * stroke_width * 0.5f;
   }
 
-  void AddVerticesForLinearComponent(const size_t component_start_index,
+  void AddVerticesForLinearComponent(VertexWriter& vtx_builder,
+                                     const size_t component_start_index,
                                      const size_t component_end_index,
                                      const size_t contour_start_point_i,
                                      const size_t contour_end_point_i,
@@ -437,7 +436,8 @@ class StrokeGenerator {
     }
   }
 
-  void AddVerticesForCurveComponent(const size_t component_start_index,
+  void AddVerticesForCurveComponent(VertexWriter& vtx_builder,
+                                    const size_t component_start_index,
                                     const size_t component_end_index,
                                     const size_t contour_start_point_i,
                                     const size_t contour_end_point_i,
@@ -480,7 +480,6 @@ class StrokeGenerator {
   const StrokePathGeometry::CapProc& cap_proc;
   const Scalar scale;
 
-  VertexWriter& vtx_builder;
   Point previous_offset;
   Point offset;
   SolidFillVertexShader::PerVertexData vtx;
@@ -496,8 +495,8 @@ void StrokePathGeometry::CreateSolidStrokeVertices(
     const CapProc& cap_proc,
     Scalar scale) {
   StrokeGenerator stroke_generator(polyline, stroke_width, scaled_miter_limit,
-                                   join_proc, cap_proc, scale, vtx_builder);
-  stroke_generator.Generate();
+                                   join_proc, cap_proc, scale);
+  stroke_generator.Generate(vtx_builder);
 }
 
 GeometryResult StrokePathGeometry::GetPositionBuffer(
