@@ -702,7 +702,6 @@ void Canvas::AddEntityToCurrentPass(Entity entity) {
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter) {
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
 
   // The DisplayList bounds/rtree doesn't account for filters applied to parent

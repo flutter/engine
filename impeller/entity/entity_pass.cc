@@ -883,8 +883,6 @@ bool EntityPass::OnRender(
     std::shared_ptr<Contents> backdrop_filter_contents,
     const std::optional<InlinePassContext::RenderPassResult>&
         collapsed_parent_pass) const {
-  TRACE_EVENT0("impeller", "EntityPass::OnRender");
-
   if (!active_clips_.empty()) {
     VALIDATION_LOG << SPrintF(
         "EntityPass (Depth=%d) contains one or more clips with an unresolved "
