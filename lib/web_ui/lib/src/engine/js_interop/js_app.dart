@@ -37,10 +37,20 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
 
 /// The JS bindings for a [ViewConstraints] object.
 @JS()
+@anonymous
 @staticInterop
-class JsViewConstraints {}
+class JsViewConstraints {
+  external factory JsViewConstraints({
+    double? minWidth,
+    double? maxWidth,
+    double? minHeight,
+    double? maxHeight,
+  });
+}
 
 /// The attributes of a [JsViewConstraints] object.
+///
+/// These attributes are expressed in *logical* pixels.
 extension JsViewConstraintsExtension on JsViewConstraints {
   external double? get maxHeight;
   external double? get maxWidth;

@@ -155,8 +155,9 @@ base class EngineFlutterView implements ui.FlutterView {
 
   @override
   ViewConstraints get physicalConstraints {
-    final ui.Size currentSize = _computePhysicalSize();
-    return ViewConstraints.fromJs(_jsViewConstraints, currentSize);
+    final double dpr = devicePixelRatio;
+    final ui.Size currentLogicalSize = physicalSize / dpr;
+    return ViewConstraints.fromJs(_jsViewConstraints, currentLogicalSize) * dpr;
   }
 
   final JsViewConstraints? _jsViewConstraints;
@@ -169,7 +170,7 @@ base class EngineFlutterView implements ui.FlutterView {
   }
 
   void resize(ui.Size newPhysicalSize) {
-    // The browser wants logical sizes!
+    // The browser uses CSS, and CSS operates in logical sizes.
     final ui.Size logicalSize = newPhysicalSize / devicePixelRatio;
     dom.rootElement.style
       ..width = '${logicalSize.width}px'
@@ -733,15 +734,22 @@ class ViewConstraints implements ui.ViewConstraints {
       minHeight = size.height,
       maxHeight = size.height;
 
-  factory ViewConstraints.fromJs(JsViewConstraints? constraints, ui.Size size) {
+  /// Converts JsViewConstraints into ViewConstraints.
+  ///
+  /// Since JsViewConstraints are expressed by the user, in logical pixels, this
+  /// conversion uses logical pixels for the available size as well. The resulting
+  /// ViewConstraints object can be multiplied by devicePixelRatio later to compute
+  /// the physicalViewConstraints.
+  factory ViewConstraints.fromJs(
+    JsViewConstraints? constraints, ui.Size availableLogicalSize) {
     if (constraints == null) {
-      return ViewConstraints.tight(size);
+      return ViewConstraints.tight(availableLogicalSize);
     }
     return ViewConstraints(
-      minWidth: _computeMinConstraintValue(constraints.minWidth, size.width),
-      minHeight: _computeMinConstraintValue(constraints.minHeight, size.height),
-      maxWidth: _computeMaxConstraintValue(constraints.maxWidth, size.width),
-      maxHeight: _computeMaxConstraintValue(constraints.maxHeight, size.height),
+      minWidth: _computeMinConstraintValue(constraints.minWidth, availableLogicalSize.width),
+      minHeight: _computeMinConstraintValue(constraints.minHeight, availableLogicalSize.height),
+      maxWidth: _computeMaxConstraintValue(constraints.maxWidth, availableLogicalSize.width),
+      maxHeight: _computeMaxConstraintValue(constraints.maxHeight, availableLogicalSize.height),
     );
   }
 
@@ -762,6 +770,15 @@ class ViewConstraints implements ui.ViewConstraints {
 
   @override
   bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+
+  ViewConstraints operator*(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth * factor,
+      maxWidth: maxWidth * factor,
+      minHeight: minHeight * factor,
+      maxHeight: maxHeight * factor,
+    );
+  }
 
   @override
   ViewConstraints operator/(double factor) {
@@ -812,15 +829,14 @@ class ViewConstraints implements ui.ViewConstraints {
   }
 }
 
-// Computes the "min" value for a constraint that takes into account user configuration
-// and the actual available size.
+// Computes the "min" value for a constraint that takes into account user `desired`
+// configuration and the actual available value.
 //
-// Returns the configured userValue, unless it's null (not passed) in which it returns
-// the actual physicalSize.
+// Returns the `desired` value unless it is `null`, in which case it returns the
+// `available` value.
 double _computeMinConstraintValue(double? desired, double available) {
   assert(desired == null || desired >= 0, 'Minimum constraint must be >= 0 if set.');
   assert(desired == null || desired.isFinite, 'Minimum constraint must be finite.');
-  // Do we need to max/min the values, or just trust the user?
   return desired ?? available;
 }
 
@@ -828,12 +844,15 @@ double _computeMinConstraintValue(double? desired, double available) {
 // configuration and the `available` size.
 //
 // Returns the `desired` value unless it is `null`, in which case it returns the
-// `available` size.
+// `available` value.
 //
 // A `desired` value of `Infinity` or `Number.POSITIVE_INFINITY` (from JS) means
 // "unconstrained".
+//
+// This method allows returning values larger than `available`, so the Flutter
+// app is able to stretch its container up to a certain value, without being
+// fully unconstrained.
 double _computeMaxConstraintValue(double? desired, double available) {
   assert(desired == null || desired >= 0, 'Maximum constraint must be >= 0 if set.');
-  // Do we need to max/min the values, or just trust the user?
   return desired ?? available;
 }
