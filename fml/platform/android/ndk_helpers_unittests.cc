@@ -16,15 +16,36 @@ class NdkHelpersTest : public ::testing::Test {
   void SetUp() override { NDKHelpers::Init(); }
 
   static void OnVsync(int64_t frame_nanos, void* data) {}
+  static void OnVsync32(long frame_nanos, void* data) {}
 };
 
 TEST_F(NdkHelpersTest, ATrace) {
-  // Test is going to expect to find symbols only present in 31 and above.
   ASSERT_GT(android_get_device_api_level(), 22);
+  EXPECT_FALSE(NDKHelpers::ATrace_isEnabled());
 }
-TEST_F(NdkHelpersTest, AChoreographer) {
-  // Test is going to expect to find symbols only present in 31 and above.
-  ASSERT_GT(android_get_device_api_level(), 30);
+
+TEST_F(NdkHelpersTest, AChoreographer32) {
+  if (android_get_device_api_level() >= 29) {
+    GTEST_SKIP() << "This test is for less than API 29.";
+  }
+
+  EXPECT_EQ(NDKHelpers::ChoreographerSupported(),
+            ChoreographerSupportStatus::kSupported32);
+
+  EXPECT_FALSE(NDKHelpers::AChoreographer_getInstance());
+
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+
+  EXPECT_TRUE(NDKHelpers::AChoreographer_getInstance());
+
+  NDKHelpers::AChoreographer_postFrameCallback(
+      NDKHelpers::AChoreographer_getInstance(), &OnVsync32, nullptr);
+}
+
+TEST_F(NdkHelpersTest, AChoreographer64) {
+  if (android_get_device_api_level() < 29) {
+    GTEST_SKIP() << "This test is for API 29 and above.";
+  }
 
   EXPECT_EQ(NDKHelpers::ChoreographerSupported(),
             ChoreographerSupportStatus::kSupported64);
@@ -33,8 +54,6 @@ TEST_F(NdkHelpersTest, AChoreographer) {
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  EXPECT_FALSE(NDKHelpers::ATrace_isEnabled());
-
   EXPECT_TRUE(NDKHelpers::AChoreographer_getInstance());
 
   NDKHelpers::AChoreographer_postFrameCallback64(
@@ -42,7 +61,9 @@ TEST_F(NdkHelpersTest, AChoreographer) {
 }
 
 TEST_F(NdkHelpersTest, HardwareBuffer) {
-  ASSERT_GT(android_get_device_api_level(), 31);
+  if (android_get_device_api_level() < 26) {
+    GTEST_SKIP() << "Test requires at least API 26.";
+  }
 
   ASSERT_TRUE(NDKHelpers::HardwareBufferSupported());
 
@@ -52,7 +73,9 @@ TEST_F(NdkHelpersTest, HardwareBuffer) {
       .layers = 1,
       .format = AHardwareBuffer_Format::AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM,
   };
-  EXPECT_TRUE(NDKHelpers::AHardwareBuffer_isSupported(&desc));
+  if (android_get_device_api_level() >= 29) {
+    EXPECT_TRUE(NDKHelpers::AHardwareBuffer_isSupported(&desc));
+  }
 
   AHardwareBuffer* buffer = nullptr;
   // AHardwareBuffer_allocate returns 0 on success.
@@ -66,13 +89,20 @@ TEST_F(NdkHelpersTest, HardwareBuffer) {
   EXPECT_EQ(desc.layers, out_desc.layers);
   EXPECT_EQ(desc.format, out_desc.format);
 
-  EXPECT_TRUE(NDKHelpers::AHardwareBuffer_getId(buffer).has_value());
+  auto id = NDKHelpers::AHardwareBuffer_getId(buffer);
+  if (android_get_device_api_level() >= 31) {
+    EXPECT_TRUE(id.has_value());
+  } else {
+    EXPECT_FALSE(id.has_value());
+  }
 
   NDKHelpers::AHardwareBuffer_release(buffer);
 }
 
 TEST_F(NdkHelpersTest, SurfaceTransaction) {
-  ASSERT_GT(android_get_device_api_level(), 30);
+  if (android_get_device_api_level() < 29) {
+    GTEST_SKIP() << "Test requires at least API 29.";
+  }
   EXPECT_TRUE(NDKHelpers::SurfaceControlAndTransactionSupported());
 
   // Need ANativeWindow to create ASurfaceControl and set a buffer to the
