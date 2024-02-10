@@ -6002,6 +6002,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart + ../..
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/view_focus_binding.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart + ../../../flutter/LICENSE
@@ -6290,8 +6291,6 @@ ORIGIN: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h + ../../../flut
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/AndroidManifest.xml + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/android_choreographer.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/android_choreographer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_impeller.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_skia.cc + ../../../flutter/LICENSE
@@ -8842,6 +8841,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/view_focus_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart
@@ -9130,8 +9130,6 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.h
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
-FILE: ../../../flutter/shell/platform/android/android_choreographer.cc
-FILE: ../../../flutter/shell/platform/android/android_choreographer.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl_impeller.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl_impeller.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl_skia.cc
