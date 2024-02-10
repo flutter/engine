@@ -100,11 +100,9 @@ void InitOnceCallback() {
   LOOKUP(android, AChoreographer_getInstance);
   if (_AChoreographer_getInstance) {
     LOOKUP(android, AChoreographer_postFrameCallback64);
-#if FML_ARCH_CPU_64_BITS
     if (!_AChoreographer_postFrameCallback64) {
       LOOKUP(android, AChoreographer_postFrameCallback);
     }
-#endif
   }
 
   LOOKUP(android, ASurfaceControl_createFromWindow);

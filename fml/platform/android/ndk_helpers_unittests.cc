@@ -16,7 +16,9 @@ class NdkHelpersTest : public ::testing::Test {
   void SetUp() override { NDKHelpers::Init(); }
 
   static void OnVsync(int64_t frame_nanos, void* data) {}
-  static void OnVsync32(long frame_nanos, void* data) {}
+  static void OnVsync32(
+      long frame_nanos,  // NOLINT - compat for deprecated call
+      void* data) {}
 };
 
 TEST_F(NdkHelpersTest, ATrace) {
