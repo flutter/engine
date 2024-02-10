@@ -362,7 +362,7 @@ void Path::StoreTessellatedData(Scalar scale,
                                 size_t vertices_count,
                                 const uint16_t* indices,
                                 size_t indices_count) const {
-  auto data = data_->tessellated_data;
+  auto& data = data_->tessellated_data;
   data.scale = scale;
   data.points.resize(vertices_count * 2);
   data.indices.resize(indices_count);
