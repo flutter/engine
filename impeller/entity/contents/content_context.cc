@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "impeller/base/strings.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
@@ -456,6 +457,7 @@ ContentContext::ContentContext(
                                           *context_, clip_pipeline_descriptor));
 
   is_valid_ = true;
+  AdditionalSetup();
 }
 
 ContentContext::~ContentContext() = default;
@@ -602,6 +604,72 @@ void ContentContext::RecordCommandBuffer(
 void ContentContext::FlushCommandBuffers() const {
   auto buffers = std::move(pending_command_buffers_->command_buffers);
   GetContext()->GetCommandQueue()->Submit(buffers);
+}
+
+void ContentContext::AdditionalSetup() const {
+  // Initialize commonly used shaders that aren't defaults.
+  auto options = ContentContextOptions{
+      .sample_count = SampleCount::kCount4,
+      .color_attachment_pixel_format =
+          context_->GetCapabilities()->GetDefaultColorFormat()};
+
+  for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
+    for (const auto geometry :
+         {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
+      options.blend_mode = mode;
+      options.primitive_type = geometry;
+      GetSolidFillPipeline(options);
+      if (context_->GetCapabilities()->SupportsSSBO()) {
+        GetLinearGradientSSBOFillPipeline(options);
+        GetRadialGradientSSBOFillPipeline(options);
+        GetSweepGradientSSBOFillPipeline(options);
+        GetConicalGradientSSBOFillPipeline(options);
+        GetTexturePipeline(options);
+      }
+    }
+  }
+
+  options.blend_mode = BlendMode::kDestination;
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  for (const auto stencil_mode :
+       {ContentContextOptions::StencilMode::kLegacyClipIncrement,
+        ContentContextOptions::StencilMode::kLegacyClipDecrement,
+        ContentContextOptions::StencilMode::kLegacyClipRestore}) {
+    options.stencil_mode = stencil_mode;
+    GetClipPipeline(options);
+  }
+
+  std::string vendor = GetContext()->DescribeGpuModel();
+  if (GetContext()->GetBackendType() != Context::BackendType::kVulkan ||
+      vendor.find("Mali") == std::string::npos) {
+    return;
+  }
+
+  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
+  // observed to take 10s of ms as an internal shader is compiled to perform the
+  // operation. Similarly, the initial render pass can also take 10s of ms for a
+  // similar reason. Because the context object is initialized far before the
+  // first frame, create a trivial texture and render pass to force the driver
+  // to compiler these shaders before the frame begins.
+
+  TextureDescriptor desc;
+  desc.size = {1, 1};
+  desc.storage_mode = StorageMode::kHostVisible;
+  desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+  uint32_t color = 0;
+  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
+    VALIDATION_LOG << "Failed to set bootstrap texture.";
+  }
+
+  auto cmd_buffer = GetContext()->CreateCommandBuffer();
+  auto render_target = RenderTarget::CreateOffscreenMSAA(
+      *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
+      /*mip_count=*/1, "Bootstrap RenderPass");
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+  render_pass->EncodeCommands();
+  RecordCommandBuffer(std::move(cmd_buffer));
+  FlushCommandBuffers();
 }
 
 }  // namespace impeller
