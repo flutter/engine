@@ -1011,10 +1011,14 @@ MakeRenderTargetFromBackingStoreImpeller(
   render_target_desc.SetDepthAttachment(depth0);
   render_target_desc.SetStencilAttachment(stencil0);
 
+  fml::closure framebuffer_destruct =
+      [callback = framebuffer->destruction_callback,
+       user_data = framebuffer->user_data]() { callback(user_data); };
+
   return std::make_unique<flutter::EmbedderRenderTargetImpeller>(
       backing_store, aiks_context,
       std::make_unique<impeller::RenderTarget>(std::move(render_target_desc)),
-      on_release);
+      on_release, framebuffer_destruct);
 #else
   return nullptr;
 #endif
