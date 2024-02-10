@@ -15,6 +15,8 @@
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "impeller/typographer/typographer_context.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkSize.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -120,12 +122,12 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
     GlyphAtlas::Type type,
     const ISize& max_texture_size) {
   static constexpr auto kMinAtlasSize = 8u;
-  static constexpr auto kMinAlphaBitmapSize = 1024u;
+  static constexpr auto kMinRedBitmapSize = 1024u;
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
-  ISize current_size = type == GlyphAtlas::Type::kAlphaBitmap
-                           ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
+  ISize current_size = type == GlyphAtlas::Type::kRedBitmap
+                           ? ISize(kMinRedBitmapSize, kMinRedBitmapSize)
                            : ISize(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
   do {
@@ -169,7 +171,7 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setHinting(SkFontHinting::kSlight);
   sk_font.setEmbolden(metrics.embolden);
 
-  auto glyph_color = has_color ? SK_ColorWHITE : SK_ColorBLACK;
+  auto glyph_color = has_color ? SK_ColorWHITE : SK_ColorRED;
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
@@ -219,8 +221,11 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
   SkImageInfo image_info;
 
   switch (atlas.GetType()) {
-    case GlyphAtlas::Type::kAlphaBitmap:
-      image_info = SkImageInfo::MakeA8(atlas_size.width, atlas_size.height);
+    case GlyphAtlas::Type::kRedBitmap:
+      image_info =
+          SkImageInfo::Make(SkISize{static_cast<int32_t>(atlas_size.width),
+                                    static_cast<int32_t>(atlas_size.height)},
+                            kR8_unorm_SkColorType, kPremul_SkAlphaType);
       break;
     case GlyphAtlas::Type::kColorBitmap:
       image_info =
@@ -465,8 +470,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   PixelFormat format;
   switch (type) {
-    case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
+    case GlyphAtlas::Type::kRedBitmap:
+      format = PixelFormat::kR8UNormInt;
       break;
     case GlyphAtlas::Type::kColorBitmap:
       format = PixelFormat::kR8G8B8A8UNormInt;

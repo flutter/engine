@@ -10,7 +10,7 @@
 namespace impeller {
 
 GlyphAtlasContext::GlyphAtlasContext()
-    : atlas_(std::make_shared<GlyphAtlas>(GlyphAtlas::Type::kAlphaBitmap)),
+    : atlas_(std::make_shared<GlyphAtlas>(GlyphAtlas::Type::kRedBitmap)),
       atlas_size_(ISize(0, 0)) {}
 
 GlyphAtlasContext::~GlyphAtlasContext() {}

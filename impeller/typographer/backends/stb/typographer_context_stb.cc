@@ -163,12 +163,12 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
     GlyphAtlas::Type type,
     const ISize& max_texture_size) {
   static constexpr auto kMinAtlasSize = 8u;
-  static constexpr auto kMinAlphaBitmapSize = 1024u;
+  static constexpr auto kMinRedBitmapSize = 1024u;
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
-  ISize current_size = type == GlyphAtlas::Type::kAlphaBitmap
-                           ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
+  ISize current_size = type == GlyphAtlas::Type::kRedBitmap
+                           ? ISize(kMinRedBitmapSize, kMinRedBitmapSize)
                            : ISize(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
   do {
@@ -515,7 +515,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   PixelFormat format;
   switch (type) {
-    case GlyphAtlas::Type::kAlphaBitmap:
+    case GlyphAtlas::Type::kRedBitmap:
       format = PixelFormat::kA8UNormInt;
       break;
     case GlyphAtlas::Type::kColorBitmap:

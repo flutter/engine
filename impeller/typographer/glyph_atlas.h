@@ -33,9 +33,9 @@ class GlyphAtlas {
   enum class Type {
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using only an 8-bit
-    /// alpha channel.
+    /// red channel.
     ///
-    kAlphaBitmap,
+    kRedBitmap,
 
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using N32 premul

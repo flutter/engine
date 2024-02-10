@@ -30,7 +30,7 @@ LazyGlyphAtlas::~LazyGlyphAtlas() = default;
 
 void LazyGlyphAtlas::AddTextFrame(const TextFrame& frame, Scalar scale) {
   FML_DCHECK(alpha_atlas_ == nullptr && color_atlas_ == nullptr);
-  if (frame.GetAtlasType() == GlyphAtlas::Type::kAlphaBitmap) {
+  if (frame.GetAtlasType() == GlyphAtlas::Type::kRedBitmap) {
     frame.CollectUniqueFontGlyphPairs(alpha_glyph_map_, scale);
   } else {
     frame.CollectUniqueFontGlyphPairs(color_glyph_map_, scale);
@@ -48,7 +48,7 @@ const std::shared_ptr<GlyphAtlas>& LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type) const {
   {
-    if (type == GlyphAtlas::Type::kAlphaBitmap && alpha_atlas_) {
+    if (type == GlyphAtlas::Type::kRedBitmap && alpha_atlas_) {
       return alpha_atlas_;
     }
     if (type == GlyphAtlas::Type::kColorBitmap && color_atlas_) {
@@ -67,17 +67,17 @@ const std::shared_ptr<GlyphAtlas>& LazyGlyphAtlas::CreateOrGetGlyphAtlas(
     return kNullGlyphAtlas;
   }
 
-  auto& glyph_map = type == GlyphAtlas::Type::kAlphaBitmap ? alpha_glyph_map_
-                                                           : color_glyph_map_;
+  auto& glyph_map = type == GlyphAtlas::Type::kRedBitmap ? alpha_glyph_map_
+                                                         : color_glyph_map_;
   const std::shared_ptr<GlyphAtlasContext>& atlas_context =
-      type == GlyphAtlas::Type::kAlphaBitmap ? alpha_context_ : color_context_;
+      type == GlyphAtlas::Type::kRedBitmap ? alpha_context_ : color_context_;
   std::shared_ptr<GlyphAtlas> atlas = typographer_context_->CreateGlyphAtlas(
       context, type, atlas_context, glyph_map);
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Could not create valid atlas.";
     return kNullGlyphAtlas;
   }
-  if (type == GlyphAtlas::Type::kAlphaBitmap) {
+  if (type == GlyphAtlas::Type::kRedBitmap) {
     alpha_atlas_ = std::move(atlas);
     return alpha_atlas_;
   }
