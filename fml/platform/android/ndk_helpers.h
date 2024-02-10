@@ -97,4 +97,4 @@ class NDKHelpers {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_NDK_HELPERS_H_
+#endif  // FLUTTER_FML_PLATFORM_ANDROID_NDK_HELPERS_H_
