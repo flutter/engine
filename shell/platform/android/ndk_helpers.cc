@@ -149,6 +149,27 @@ ChoreographerSupportStatus NDKHelpers::ChoreographerSupported() {
   return ChoreographerSupportStatus::kUnsupported;
 }
 
+AChoreographer* NDKHelpers::AChoreographer_getInstance() {
+  FML_CHECK(_AChoreographer_getInstance);
+  return _AChoreographer_getInstance();
+}
+
+void NDKHelpers::AChoreographer_postFrameCallback(
+    AChoreographer* choreographer,
+    AChoreographer_frameCallback callback,
+    void* data) {
+  FML_CHECK(_AChoreographer_postFrameCallback);
+  return _AChoreographer_postFrameCallback(choreographer, callback, data);
+}
+
+void NDKHelpers::AChoreographer_postFrameCallback64(
+    AChoreographer* choreographer,
+    AChoreographer_frameCallback64 callback,
+    void* data) {
+  FML_CHECK(_AChoreographer_postFrameCallback64);
+  return _AChoreographer_postFrameCallback64(choreographer, callback, data);
+}
+
 bool NDKHelpers::HardwareBufferSupported() {
   const bool r = _AHardwareBuffer_fromHardwareBuffer != nullptr;
   return r;
