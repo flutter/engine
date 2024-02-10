@@ -906,8 +906,8 @@ bool EntityPass::OnRender(
                                      Context::BackendType::kVulkan)) {
     // Force the pass context to create at least one new pass if the clear color
     // is present. Unless on Vulkan, then the pass is always created even if it
-    // has no clear color, as we use the pass to create the initial image layout.
-    // See also: https://github.com/flutter/flutter/issues/142358
+    // has no clear color, as we use the pass to create the initial image
+    // layout. See also: https://github.com/flutter/flutter/issues/142358
     pass_context.GetRenderPass(pass_depth);
   }
 
