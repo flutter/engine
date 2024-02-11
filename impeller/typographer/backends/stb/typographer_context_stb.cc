@@ -516,10 +516,10 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   PixelFormat format;
   switch (type) {
     case GlyphAtlas::Type::kRedBitmap:
-      format = PixelFormat::kA8UNormInt;
+      format = PixelFormat::kR8UNormInt;
       break;
     case GlyphAtlas::Type::kColorBitmap:
-      format = DISABLE_COLOR_FONT_SUPPORT ? PixelFormat::kA8UNormInt
+      format = DISABLE_COLOR_FONT_SUPPORT ? PixelFormat::kR8UNormInt
                                           : PixelFormat::kR8G8B8A8UNormInt;
       break;
   }
