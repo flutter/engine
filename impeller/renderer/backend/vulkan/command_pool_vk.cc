@@ -184,7 +184,7 @@ std::shared_ptr<CommandPoolVK> CommandPoolRecyclerVK::Get() {
 
   // Otherwise, create a new resource and return it.
   auto data = Create();
-  if (!data->pool) {
+  if (!data || !data->pool) {
     return nullptr;
   }
 
