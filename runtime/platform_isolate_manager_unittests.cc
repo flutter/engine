@@ -72,8 +72,8 @@ class PlatformIsolateManagerTest : public FixtureTest {
         std::move(isolate_configuration),    // isolate configuration
         context                              // engine context
     );
-    auto root_isolate = weak_isolate.lock();
-    ASSERT_TRUE(root_isolate);
+    root_isolate_ = weak_isolate.lock()->isolate();
+    ASSERT_TRUE(root_isolate_);
 
     test();
 
