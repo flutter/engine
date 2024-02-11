@@ -258,7 +258,7 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
             Dart_ShutdownIsolate();
           }
         }
-        while (!test_finished.load());
+        while (!test_finished.load()) {}
       }));
     }
 
