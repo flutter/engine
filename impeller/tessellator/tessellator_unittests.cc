@@ -579,7 +579,7 @@ TEST(TessellatorTest, DoesNotCacheFailedTessellation) {
       [](const float* vertices, size_t vertices_count, const uint16_t* indices,
          size_t indices_count) { return false; });
 
-  EXPECT_EQ(result, Tessellator::Result::kTessellationError);
+  EXPECT_EQ(result, Tessellator::Result::kInputError);
   EXPECT_FALSE(TessellatorAccess::HasData(path, 1.0));
 }
 
