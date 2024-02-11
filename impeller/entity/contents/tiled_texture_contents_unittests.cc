@@ -45,7 +45,7 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
 
   ASSERT_EQ(commands.size(), 1u);
   ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
-               "TextureFill Pipeline V#1");
+               "TextureFill Pipeline V#3");
 
   if (GetParam() == PlaygroundBackend::kMetal) {
     recording_pass->EncodeCommands();
