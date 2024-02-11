@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/runtime/platform_isolate_manager.h"
-
 #include "flutter/fml/thread_local.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
+#include "flutter/runtime/platform_isolate_manager.h"
 #include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
 
@@ -46,16 +45,35 @@ class PlatformIsolateManagerTest : public FixtureTest {
     auto vm_data = vm_ref.GetVMData();
     ASSERT_TRUE(vm_data);
 
-    Dart_IsolateFlags flags;
-    Dart_IsolateFlagsInitialize(&flags);
-    char* error = nullptr;
-    root_isolate_ = Dart_CreateIsolateGroup(
-        "main.dart", "RootIsolate",
-        vm_data->GetIsolateSnapshot()->GetDataMapping(),
-        vm_data->GetIsolateSnapshot()->GetInstructionsMapping(), &flags,
-        nullptr, nullptr, &error);
-    ASSERT_TRUE(root_isolate_);
-    Dart_ExitIsolate();
+    TaskRunners task_runners(GetCurrentTestName(),    //
+                             GetCurrentTaskRunner(),  //
+                             GetCurrentTaskRunner(),  //
+                             GetCurrentTaskRunner(),  //
+                             GetCurrentTaskRunner()   //
+    );
+
+    auto isolate_configuration =
+        IsolateConfiguration::InferFromSettings(settings);
+
+    UIDartState::Context context(task_runners);
+    context.advisory_script_uri = "main.dart";
+    context.advisory_script_entrypoint = "main";
+    auto weak_isolate = DartIsolate::CreateRunningRootIsolate(
+        vm_data->GetSettings(),              // settings
+        vm_data->GetIsolateSnapshot(),       // isolate snapshot
+        nullptr,                             // platform configuration
+        DartIsolate::Flags{},                // flags
+        nullptr,                             // root_isolate_create_callback
+        settings.isolate_create_callback,    // isolate create callback
+        settings.isolate_shutdown_callback,  // isolate shutdown callback
+        "main",                              // dart entrypoint
+        std::nullopt,                        // dart entrypoint library
+        {},                                  // dart entrypoint arguments
+        std::move(isolate_configuration),    // isolate configuration
+        context                              // engine context
+    );
+    auto root_isolate = weak_isolate.lock();
+    ASSERT_TRUE(root_isolate);
 
     test();
 
@@ -225,10 +243,11 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
     PlatformIsolateManager mgr;
     EXPECT_FALSE(mgr.IsShutdown());
 
+    std::atomic<bool> test_finished = false;
     std::vector<std::thread> threads;
     threads.reserve(10);
     for (int i = 0; i < 10; ++i) {
-      threads.push_back(std::thread([this, &mgr]() {
+      threads.push_back(std::thread([this, &mgr, &test_finished]() {
         for (int j = 0; j < 100; ++j) {
           Dart_Isolate isolate = CreateAndRegisterIsolate(&mgr);
           ASSERT_TRUE(isolate);
@@ -239,12 +258,14 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
             Dart_ShutdownIsolate();
           }
         }
+        while (!test_finished.load());
       }));
     }
 
     mgr.ShutdownPlatformIsolates();
     EXPECT_TRUE(mgr.IsShutdown());
 
+    test_finished = true;
     for (auto& thread : threads) {
       thread.join();
     }
