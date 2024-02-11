@@ -125,7 +125,7 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
     }
   }
 
-  return cmd_buffer->SubmitCommands();
+  return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
 }
 
 bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
@@ -167,6 +167,28 @@ vk::ImageLayout TextureVK::SetLayoutWithoutEncoding(
 
 vk::ImageLayout TextureVK::GetLayout() const {
   return source_ ? source_->GetLayout() : vk::ImageLayout::eUndefined;
+}
+
+vk::ImageView TextureVK::GetRenderTargetView() const {
+  return source_->GetRenderTargetView();
+}
+
+void TextureVK::SetFramebuffer(
+    const SharedHandleVK<vk::Framebuffer>& framebuffer) {
+  framebuffer_ = framebuffer;
+}
+
+void TextureVK::SetRenderPass(
+    const SharedHandleVK<vk::RenderPass>& render_pass) {
+  render_pass_ = render_pass;
+}
+
+SharedHandleVK<vk::Framebuffer> TextureVK::GetFramebuffer() const {
+  return framebuffer_;
+}
+
+SharedHandleVK<vk::RenderPass> TextureVK::GetRenderPass() const {
+  return render_pass_;
 }
 
 }  // namespace impeller

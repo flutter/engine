@@ -55,8 +55,8 @@ impeller_component("renderer") {
     "command.h",
     "command_buffer.cc",
     "command_buffer.h",
-    "compute_command.cc",
-    "compute_command.h",
+    "command_queue.cc",
+    "command_queue.h",
     "compute_pass.cc",
     "compute_pass.h",
     "compute_pipeline_builder.cc",
@@ -104,7 +104,6 @@ impeller_component("renderer") {
     "../base",
     "../core",
     "../geometry",
-    "../image",
     "../runtime_stage",
     "../tessellator",
   ]

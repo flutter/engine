@@ -296,7 +296,8 @@ Rasterizer::Screenshot AndroidShellHolder::Screenshot(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
   if (!IsValid()) {
-    return {nullptr, SkISize::MakeEmpty(), ""};
+    return {nullptr, SkISize::MakeEmpty(), "",
+            Rasterizer::ScreenshotFormat::kUnknown};
   }
   return shell_->Screenshot(type, base64_encode);
 }
@@ -350,10 +351,6 @@ void AndroidShellHolder::UpdateDisplayMetrics() {
   std::vector<std::unique_ptr<Display>> displays;
   displays.push_back(std::make_unique<AndroidDisplay>(jni_facade_));
   shell_->OnDisplayUpdates(std::move(displays));
-}
-
-void AndroidShellHolder::SetIsRenderingToImageView(bool value) {
-  platform_view_->SetIsRenderingToImageView(value);
 }
 
 }  // namespace flutter

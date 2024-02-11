@@ -25,7 +25,7 @@ void main() {
 
 void testMain() {
   group('$HtmlViewEmbedder', () {
-    setUpCanvasKitTest();
+    setUpCanvasKitTest(withImplicitView: true);
 
     setUp(() {
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1);
@@ -973,6 +973,43 @@ void testMain() {
         await disposePlatformView(i);
       }
     });
+  });
+
+  test('can dispose without crashing', () async {
+    ui_web.platformViewRegistry.registerViewFactory(
+        'test-view',
+        (int viewId) =>
+            createDomHTMLDivElement()..className = 'platform-view',
+        isVisible: false);
+
+    await createPlatformView(0, 'test-view');
+    await createPlatformView(1, 'test-view');
+    await createPlatformView(2, 'test-view');
+
+    final LayerSceneBuilder sb = LayerSceneBuilder()
+      ..pushOffset(0, 0)
+      ..addPlatformView(0, width: 10, height: 10)
+      ..addPlatformView(1, width: 10, height: 10)
+      ..addPlatformView(2, width: 10, height: 10)
+      ..pop();
+
+    await renderScene(sb.build());
+
+    _expectSceneMatches(<_EmbeddedViewMarker>[
+      _overlay,
+      _platformView,
+      _platformView,
+      _platformView,
+    ]);
+
+    expect(() {
+      final HtmlViewEmbedder embedder =
+        (renderer as CanvasKitRenderer)
+          .debugGetRasterizerForView(implicitView)!
+          .viewEmbedder;
+      // The following line used to cause a "Concurrent modification during iteration"
+      embedder.dispose();
+    }, returnsNormally);
   });
 }
 

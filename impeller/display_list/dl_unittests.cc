@@ -46,19 +46,6 @@ flutter::DlColor toColor(const float* components) {
 using DisplayListTest = DlPlayground;
 INSTANTIATE_PLAYGROUND_SUITE(DisplayListTest);
 
-TEST_P(DisplayListTest, DrawPictureWithAClip) {
-  flutter::DisplayListBuilder sub_builder;
-  sub_builder.ClipRect(SkRect::MakeXYWH(0, 0, 24, 24));
-  sub_builder.DrawPaint(flutter::DlPaint(flutter::DlColor::kBlue()));
-
-  auto display_list = sub_builder.Build();
-  flutter::DisplayListBuilder builder;
-  builder.DrawDisplayList(display_list);
-  builder.DrawRect(SkRect::MakeXYWH(30, 30, 24, 24),
-                   flutter::DlPaint(flutter::DlColor::kRed()));
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
 TEST_P(DisplayListTest, CanDrawRect) {
   flutter::DisplayListBuilder builder;
   builder.DrawRect(SkRect::MakeXYWH(10, 10, 100, 100),
@@ -961,8 +948,9 @@ TEST_P(DisplayListTest, TransparentShadowProducesCorrectColor) {
   DlDispatcher dispatcher;
   dispatcher.save();
   dispatcher.scale(1.618, 1.618);
-  dispatcher.drawShadow(SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
-                        flutter::DlColor::kTransparent(), 15, false, 1);
+  SkPath path = SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100));
+  flutter::DlOpReceiver::CacheablePath cache(path);
+  dispatcher.drawShadow(cache, flutter::DlColor::kTransparent(), 15, false, 1);
   dispatcher.restore();
   auto picture = dispatcher.EndRecordingAsPicture();
 

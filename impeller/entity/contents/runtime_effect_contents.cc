@@ -89,8 +89,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
   options.primitive_type = geometry_result.type;
 
@@ -141,7 +141,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   const std::shared_ptr<const Capabilities>& caps = context->GetCapabilities();
   const auto color_attachment_format = caps->GetDefaultColorFormat();
-  const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
+  const auto stencil_attachment_format = caps->GetDefaultDepthStencilFormat();
 
   using VS = RuntimeEffectVertexShader;
 
@@ -154,6 +154,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   ///
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = geometry_result.transform;
   VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -254,7 +255,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         FML_DCHECK(sampler_index < texture_inputs_.size());
         auto& input = texture_inputs_[sampler_index];
 
-        auto sampler =
+        const std::unique_ptr<const Sampler>& sampler =
             context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
 
         SampledImageSlot image_slot;
@@ -303,10 +304,11 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     desc.SetColorAttachmentDescriptor(
         0u, {.format = color_attachment_format, .blending_enabled = true});
 
-    StencilAttachmentDescriptor stencil0;
-    stencil0.stencil_compare = CompareFunction::kEqual;
-    desc.SetStencilAttachmentDescriptors(stencil0);
+    desc.SetStencilAttachmentDescriptors(StencilAttachmentDescriptor{});
     desc.SetStencilPixelFormat(stencil_attachment_format);
+
+    desc.SetDepthStencilAttachmentDescriptor(DepthAttachmentDescriptor{});
+    desc.SetDepthPixelFormat(stencil_attachment_format);
 
     options.ApplyToPipelineDescriptor(desc);
     auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();

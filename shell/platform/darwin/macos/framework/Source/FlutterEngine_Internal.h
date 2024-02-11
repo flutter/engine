@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
 #import <Cocoa/Cocoa.h>
@@ -212,6 +215,10 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 - (void)announceAccessibilityMessage:(NSString*)message
                         withPriority:(NSAccessibilityPriorityLevel)priority;
 
+/**
+ * Returns an array of screen objects representing all of the screens available on the system.
+ */
+- (NSArray<NSScreen*>*)screens;
 @end
 
 @interface FlutterEngine (Tests)
@@ -219,3 +226,5 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINE_INTERNAL_H_

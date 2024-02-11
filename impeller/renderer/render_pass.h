@@ -46,6 +46,9 @@ class RenderPass : public ResourceBinder {
 
   void SetLabel(std::string label);
 
+  /// @brief Reserve [command_count] commands in the HAL command buffer.
+  ///
+  /// Note: this is not the native command buffer.
   virtual void ReserveCommands(size_t command_count) {
     commands_.reserve(command_count);
   }
@@ -122,12 +125,13 @@ class RenderPass : public ResourceBinder {
       BufferView view);
 
   // |ResourceBinder|
-  virtual bool BindResource(ShaderStage stage,
-                            DescriptorType type,
-                            const SampledImageSlot& slot,
-                            const ShaderMetadata& metadata,
-                            std::shared_ptr<const Texture> texture,
-                            std::shared_ptr<const Sampler> sampler) override;
+  virtual bool BindResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      const ShaderMetadata& metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.

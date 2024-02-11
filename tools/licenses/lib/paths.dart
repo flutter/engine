@@ -30,6 +30,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
   r'flutter/third_party/benchmark', // only used by tests
+  r'flutter/third_party/depot_tools', // only used for the Windows build system.
   r'flutter/third_party/expat/expat/doc',
   r'flutter/third_party/expat/expat/win32/expat.iss',
   r'flutter/third_party/flatbuffers/android',
@@ -136,6 +137,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/runtime/docs',
   r'third_party/dart/runtime/vm/service',
   r'third_party/dart/sdk/lib/html/doc',
+  r'third_party/dart/sdk/lib/svg/dart2js', // generated from other sources
   r'third_party/dart/third_party/binary_size', // not linked in
   r'third_party/dart/third_party/binaryen', // not linked in
   r'third_party/dart/third_party/d3', // Siva says "that is the charting library used by the binary size tool"

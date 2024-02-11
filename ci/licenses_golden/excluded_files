@@ -106,6 +106,7 @@
 ../../../flutter/fml/platform/darwin/string_range_sanitization_unittests.mm
 ../../../flutter/fml/platform/darwin/weak_nsobject_arc_unittests.mm
 ../../../flutter/fml/platform/darwin/weak_nsobject_unittests.mm
+../../../flutter/fml/platform/fuchsia/log_interest_listener_unittests.cc
 ../../../flutter/fml/platform/win/file_win_unittests.cc
 ../../../flutter/fml/platform/win/wstring_conversion_unittests.cc
 ../../../flutter/fml/raster_thread_merger_unittests.cc
@@ -115,7 +116,6 @@
 ../../../flutter/fml/synchronization/sync_switch_unittest.cc
 ../../../flutter/fml/synchronization/waitable_event_unittest.cc
 ../../../flutter/fml/task_source_unittests.cc
-../../../flutter/fml/thread_local_unittests.cc
 ../../../flutter/fml/thread_unittests.cc
 ../../../flutter/fml/time/time_delta_unittest.cc
 ../../../flutter/fml/time/time_point_unittest.cc
@@ -123,6 +123,7 @@
 ../../../flutter/impeller/.clang-format
 ../../../flutter/impeller/.gitignore
 ../../../flutter/impeller/README.md
+../../../flutter/impeller/aiks/aiks_blur_unittests.cc
 ../../../flutter/impeller/aiks/aiks_gradient_unittests.cc
 ../../../flutter/impeller/aiks/aiks_path_unittests.cc
 ../../../flutter/impeller/aiks/aiks_unittests.cc
@@ -131,7 +132,6 @@
 ../../../flutter/impeller/aiks/canvas_unittests.cc
 ../../../flutter/impeller/aiks/testing
 ../../../flutter/impeller/aiks/trace_serializer_unittests.cc
-../../../flutter/impeller/archivist/archivist_unittests.cc
 ../../../flutter/impeller/base/README.md
 ../../../flutter/impeller/base/base_unittests.cc
 ../../../flutter/impeller/compiler/README.md
@@ -165,14 +165,6 @@
 ../../../flutter/impeller/geometry/size_unittests.cc
 ../../../flutter/impeller/geometry/trig_unittests.cc
 ../../../flutter/impeller/golden_tests/README.md
-../../../flutter/impeller/golden_tests_harvester/.dart_tool
-../../../flutter/impeller/golden_tests_harvester/.gitignore
-../../../flutter/impeller/golden_tests_harvester/README.md
-../../../flutter/impeller/golden_tests_harvester/analysis_options.yaml
-../../../flutter/impeller/golden_tests_harvester/pubspec.lock
-../../../flutter/impeller/golden_tests_harvester/pubspec.yaml
-../../../flutter/impeller/golden_tests_harvester/test
-../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/test
 ../../../flutter/impeller/renderer/backend/metal/texture_mtl_unittests.mm
@@ -182,7 +174,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
-../../../flutter/impeller/renderer/backend/vulkan/pass_bindings_cache_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/render_pass_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/blit_pass_unittests.cc
@@ -283,6 +275,7 @@
 ../../../flutter/shell/platform/android/external_view_embedder/surface_pool_unittests.cc
 ../../../flutter/shell/platform/android/flutter_shell_native_unittests.cc
 ../../../flutter/shell/platform/android/gradle.properties
+../../../flutter/shell/platform/android/image_lru_unittests.cc
 ../../../flutter/shell/platform/android/jni/jni_mock_unittest.cc
 ../../../flutter/shell/platform/android/platform_view_android_delegate/platform_view_android_delegate_unittests.cc
 ../../../flutter/shell/platform/android/platform_view_android_unittests.cc
@@ -463,6 +456,7 @@
 ../../../flutter/third_party/accessibility/gfx/range/range_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/test
 ../../../flutter/third_party/benchmark
+../../../flutter/third_party/depot_tools
 ../../../flutter/third_party/expat/.git
 ../../../flutter/third_party/expat/.github
 ../../../flutter/third_party/expat/.gitignore
@@ -1208,6 +1202,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
@@ -1314,8 +1309,6 @@
 ../../../fuchsia/sdk/linux/meta
 ../../../fuchsia/sdk/linux/obj/arm64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-12/sysroot/dist/lib/ld.so.1
-../../../fuchsia/sdk/linux/obj/arm64-api-13/sysroot/dist/lib/asan/ld.so.1
-../../../fuchsia/sdk/linux/obj/arm64-api-13/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-14/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-14/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-15/sysroot/dist/lib/asan/ld.so.1
@@ -1326,8 +1319,6 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-17/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-12/sysroot/dist/lib/ld.so.1
-../../../fuchsia/sdk/linux/obj/riscv64-api-13/sysroot/dist/lib/asan/ld.so.1
-../../../fuchsia/sdk/linux/obj/riscv64-api-13/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-14/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-14/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-15/sysroot/dist/lib/asan/ld.so.1
@@ -1338,8 +1329,6 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-17/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-12/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-12/sysroot/dist/lib/ld.so.1
-../../../fuchsia/sdk/linux/obj/x64-api-13/sysroot/dist/lib/asan/ld.so.1
-../../../fuchsia/sdk/linux/obj/x64-api-13/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-14/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-14/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-15/sysroot/dist/lib/asan/ld.so.1
@@ -1436,6 +1425,7 @@
 ../../../fuchsia/sdk/linux/pkg/trace/meta.json
 ../../../fuchsia/sdk/linux/pkg/utf-utils/meta.json
 ../../../fuchsia/sdk/linux/pkg/vfs_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/vfs_internal/meta.json
 ../../../fuchsia/sdk/linux/pkg/virtgralloc_headers/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
@@ -1977,6 +1967,7 @@
 ../../../third_party/boringssl/src/crypto/fipsmodule/ec/make_tables.go
 ../../../third_party/boringssl/src/crypto/fipsmodule/ec/p256-nistz_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/ecdsa/ecdsa_test.cc
+../../../third_party/boringssl/src/crypto/fipsmodule/hkdf/hkdf_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/md5/md5_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/modes/gcm_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/rand/ctrdrbg_test.cc
@@ -1984,7 +1975,6 @@
 ../../../third_party/boringssl/src/crypto/fipsmodule/rand/urandom_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/service_indicator/service_indicator_test.cc
 ../../../third_party/boringssl/src/crypto/fipsmodule/sha/sha_test.cc
-../../../third_party/boringssl/src/crypto/hkdf/hkdf_test.cc
 ../../../third_party/boringssl/src/crypto/hmac_extra/hmac_test.cc
 ../../../third_party/boringssl/src/crypto/hpke/hpke_test.cc
 ../../../third_party/boringssl/src/crypto/hpke/translate_test_vectors.py
@@ -2002,6 +1992,7 @@
 ../../../third_party/boringssl/src/crypto/pkcs8/test
 ../../../third_party/boringssl/src/crypto/poly1305/poly1305_test.cc
 ../../../third_party/boringssl/src/crypto/pool/pool_test.cc
+../../../third_party/boringssl/src/crypto/rand_extra/getentropy_test.cc
 ../../../third_party/boringssl/src/crypto/rand_extra/rand_test.cc
 ../../../third_party/boringssl/src/crypto/refcount_test.cc
 ../../../third_party/boringssl/src/crypto/rsa_extra/rsa_test.cc
@@ -2023,6 +2014,8 @@
 ../../../third_party/boringssl/src/decrepit/ripemd/ripemd_test.cc
 ../../../third_party/boringssl/src/decrepit/xts/xts_test.cc
 ../../../third_party/boringssl/src/fuzz
+../../../third_party/boringssl/src/pki/README.md
+../../../third_party/boringssl/src/pki/testdata
 ../../../third_party/boringssl/src/rust
 ../../../third_party/boringssl/src/sources.cmake
 ../../../third_party/boringssl/src/ssl/CMakeLists.txt
@@ -2268,7 +2261,6 @@
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/x448_test.json
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.json
 ../../../third_party/boringssl/src/third_party/wycheproof_testvectors/xchacha20_poly1305_test.txt
-../../../third_party/boringssl/src/tool/CMakeLists.txt
 ../../../third_party/boringssl/src/util
 ../../../third_party/boringssl/win-aarch64/crypto/test
 ../../../third_party/boringssl/win-x86/crypto/test
@@ -2522,6 +2514,7 @@
 ../../../third_party/dart/sdk/lib/html/doc
 ../../../third_party/dart/sdk/lib/libraries.json
 ../../../third_party/dart/sdk/lib/libraries.yaml
+../../../third_party/dart/sdk/lib/svg/dart2js
 ../../../third_party/dart/sdk/lib/vmservice_libraries.json
 ../../../third_party/dart/sdk/lib/vmservice_libraries.yaml
 ../../../third_party/dart/sdk/version
@@ -2545,6 +2538,7 @@
 ../../../third_party/dart/third_party/fallback_root_certificates/certdata.pem
 ../../../third_party/dart/third_party/fallback_root_certificates/certdata.txt
 ../../../third_party/dart/third_party/firefox_jsshell
+../../../third_party/dart/third_party/jsc/README.google
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
 ../../../third_party/dart/third_party/requirejs

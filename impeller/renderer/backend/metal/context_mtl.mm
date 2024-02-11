@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/metal/context_mtl.h"
 
-#include <Foundation/Foundation.h>
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
@@ -88,24 +87,6 @@ ContextMTL::ContextMTL(
   sync_switch_observer_.reset(new SyncSwitchObserver(*this));
   is_gpu_disabled_sync_switch_->AddObserver(sync_switch_observer_.get());
 
-  // Worker task runner.
-  {
-    raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-        std::min(4u, std::thread::hardware_concurrency()));
-    raster_message_loop_->PostTaskToAllWorkers([]() {
-      // See https://github.com/flutter/flutter/issues/65752
-      // Intentionally opt out of QoS for raster task workloads.
-      [[NSThread currentThread] setThreadPriority:1.0];
-      sched_param param;
-      int policy;
-      pthread_t thread = pthread_self();
-      if (!pthread_getschedparam(thread, &policy, &param)) {
-        param.sched_priority = 50;
-        pthread_setschedparam(thread, policy, &param);
-      }
-    });
-  }
-
   // Setup the shader library.
   {
     if (shader_libraries == nil) {
@@ -147,6 +128,7 @@ ContextMTL::ContextMTL(
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
+  command_queue_ip_ = std::make_shared<CommandQueue>();
 #ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
 #endif  // IMPELLER_DEBUG
@@ -330,20 +312,13 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
 }
 
 // |Context|
-void ContextMTL::Shutdown() {
-  raster_message_loop_.reset();
-}
+void ContextMTL::Shutdown() {}
 
 #ifdef IMPELLER_DEBUG
 std::shared_ptr<GPUTracerMTL> ContextMTL::GetGPUTracer() const {
   return gpu_tracer_;
 }
 #endif  // IMPELLER_DEBUG
-
-const std::shared_ptr<fml::ConcurrentTaskRunner>
-ContextMTL::GetWorkerTaskRunner() const {
-  return raster_message_loop_->GetTaskRunner();
-}
 
 std::shared_ptr<const fml::SyncSwitch> ContextMTL::GetIsGpuDisabledSyncSwitch()
     const {
@@ -418,6 +393,11 @@ void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
   if (!new_is_disabled) {
     parent_.FlushTasksAwaitingGPU();
   }
+}
+
+// |Context|
+std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
+  return command_queue_ip_;
 }
 
 }  // namespace impeller

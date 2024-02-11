@@ -22,6 +22,13 @@
 #include "impeller/fixtures/instanced_draw.vert.h"
 #include "impeller/fixtures/mipmaps.frag.h"
 #include "impeller/fixtures/mipmaps.vert.h"
+#include "impeller/fixtures/sepia.frag.h"
+#include "impeller/fixtures/sepia.vert.h"
+#include "impeller/fixtures/swizzle.frag.h"
+#include "impeller/fixtures/test_texture.frag.h"
+#include "impeller/fixtures/test_texture.vert.h"
+#include "impeller/fixtures/texture.frag.h"
+#include "impeller/fixtures/texture.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
@@ -69,7 +76,8 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
   auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
@@ -164,7 +172,8 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     vertex_buffer.index_type = IndexType::k16bit;
   }
 
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
   Vector3 euler_angles;
@@ -232,7 +241,8 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
   auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
@@ -281,6 +291,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   pipeline_desc->SetSampleCount(SampleCount::kCount1);
+  pipeline_desc->ClearDepthAttachment();
+  pipeline_desc->SetStencilPixelFormat(PixelFormat::kS8UInt);
 
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
@@ -305,8 +317,10 @@ TEST_P(RendererTest, CanRenderToTexture) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
+
   std::shared_ptr<RenderPass> r2t_pass;
   auto cmd_buffer = context->CreateCommandBuffer();
   ASSERT_TRUE(cmd_buffer);
@@ -472,7 +486,8 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
   // Vertex buffer.
@@ -540,7 +555,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
         frag_info.lod = 0;
         FS::BindFragInfo(*pass, host_buffer->EmplaceUniform(frag_info));
 
-        auto sampler = context->GetSamplerLibrary()->GetSampler({});
+        auto& sampler = context->GetSamplerLibrary()->GetSampler({});
         FS::BindTex(*pass, texture, sampler);
 
         pass->Draw();
@@ -548,7 +563,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
       pass->EncodeCommands();
     }
 
-    if (!buffer->SubmitCommands()) {
+    if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
       return false;
     }
     host_buffer->Reset();
@@ -577,7 +592,8 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
   TextureDescriptor texture_desc;
@@ -632,10 +648,9 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
 
       // Blit `bridge` to the top left corner of the texture.
       pass->AddCopy(bridge, device_buffer);
-
       pass->EncodeCommands(context->GetResourceAllocator());
 
-      if (!buffer->SubmitCommands()) {
+      if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
         return false;
       }
     }
@@ -668,7 +683,8 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         frag_info.lod = 0;
         FS::BindFragInfo(*pass, host_buffer->EmplaceUniform(frag_info));
 
-        auto sampler = context->GetSamplerLibrary()->GetSampler({});
+        const std::unique_ptr<const Sampler>& sampler =
+            context->GetSamplerLibrary()->GetSampler({});
         auto buffer_view = DeviceBuffer::AsBufferView(device_buffer);
         auto texture =
             context->GetResourceAllocator()->CreateTexture(texture_desc);
@@ -682,7 +698,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         pass->Draw().ok();
       }
       pass->EncodeCommands();
-      if (!buffer->SubmitCommands()) {
+      if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
         return false;
       }
     }
@@ -795,7 +811,8 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
         SamplerDescriptor sampler_desc;
         sampler_desc.mip_filter = mip_filters[selected_mip_filter];
         sampler_desc.min_filter = min_filters[selected_min_filter];
-        auto sampler = context->GetSamplerLibrary()->GetSampler(sampler_desc);
+        const std::unique_ptr<const Sampler>& sampler =
+            context->GetSamplerLibrary()->GetSampler(sampler_desc);
         FS::BindTex(*pass, boston, sampler);
 
         pass->Draw();
@@ -803,7 +820,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
       pass->EncodeCommands();
     }
 
-    if (!buffer->SubmitCommands()) {
+    if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
       return false;
     }
     host_buffer->Reset();
@@ -830,14 +847,15 @@ TEST_P(RendererTest, TheImpeller) {
   SamplerDescriptor noise_sampler_desc;
   noise_sampler_desc.width_address_mode = SamplerAddressMode::kRepeat;
   noise_sampler_desc.height_address_mode = SamplerAddressMode::kRepeat;
-  auto noise_sampler =
+  const std::unique_ptr<const Sampler>& noise_sampler =
       context->GetSamplerLibrary()->GetSampler(noise_sampler_desc);
 
   auto cube_map = CreateTextureCubeForFixture(
       {"table_mountain_px.png", "table_mountain_nx.png",
        "table_mountain_py.png", "table_mountain_ny.png",
        "table_mountain_pz.png", "table_mountain_nz.png"});
-  auto cube_map_sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& cube_map_sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
 
   SinglePassCallback callback = [&](RenderPass& pass) {
@@ -1132,7 +1150,8 @@ TEST_P(RendererTest, StencilMask) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
   auto boston = CreateTextureForFixture("boston.jpg");
   ASSERT_TRUE(bridge && boston);
-  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  const std::unique_ptr<const Sampler>& sampler =
+      context->GetSamplerLibrary()->GetSampler({});
   ASSERT_TRUE(sampler);
 
   static bool mirror = false;
@@ -1161,9 +1180,9 @@ TEST_P(RendererTest, StencilMask) {
       stencil_config.storage_mode = StorageMode::kHostVisible;
       auto render_target_allocator =
           RenderTargetAllocator(context->GetResourceAllocator());
-      render_target.SetupStencilAttachment(*context, render_target_allocator,
-                                           render_target.GetRenderTargetSize(),
-                                           true, "stencil", stencil_config);
+      render_target.SetupDepthStencilAttachments(
+          *context, render_target_allocator,
+          render_target.GetRenderTargetSize(), true, "stencil", stencil_config);
       // Fill the stencil buffer with an checkerboard pattern.
       const auto target_width = render_target.GetRenderTargetSize().width;
       const auto target_height = render_target.GetRenderTargetSize().height;
@@ -1246,7 +1265,7 @@ TEST_P(RendererTest, StencilMask) {
       pass->EncodeCommands();
     }
 
-    if (!buffer->SubmitCommands()) {
+    if (!context->GetCommandQueue()->Submit({buffer}).ok()) {
       return false;
     }
     host_buffer->Reset();
@@ -1272,6 +1291,235 @@ TEST_P(RendererTest, CanLookupRenderTargetProperties) {
             render_target.GetStencilAttachment().has_value());
   EXPECT_EQ(render_pass->GetRenderTargetSize(),
             render_target.GetRenderTargetSize());
+  render_pass->EncodeCommands();
+}
+
+TEST_P(RendererTest,
+       RenderTargetCreateOffscreenMSAASetsDefaultDepthStencilFormat) {
+  auto context = GetContext();
+  auto render_target_cache = std::make_shared<RenderTargetAllocator>(
+      GetContext()->GetResourceAllocator());
+
+  RenderTarget render_target = RenderTarget::CreateOffscreenMSAA(
+      *context, *render_target_cache, {100, 100}, /*mip_count=*/1);
+  EXPECT_EQ(render_target.GetDepthAttachment()
+                ->texture->GetTextureDescriptor()
+                .format,
+            GetContext()->GetCapabilities()->GetDefaultDepthStencilFormat());
+}
+
+template <class VertexShader, class FragmentShader>
+std::shared_ptr<Pipeline<PipelineDescriptor>> CreateDefaultPipeline(
+    const std::shared_ptr<Context>& context) {
+  using TexturePipelineBuilder = PipelineBuilder<VertexShader, FragmentShader>;
+  auto pipeline_desc =
+      TexturePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+  if (!pipeline_desc.has_value()) {
+    return nullptr;
+  }
+  pipeline_desc->SetSampleCount(SampleCount::kCount4);
+  pipeline_desc->SetStencilAttachmentDescriptors(std::nullopt);
+  auto pipeline =
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+  if (!pipeline || !pipeline->IsValid()) {
+    return nullptr;
+  }
+  return pipeline;
+}
+
+TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
+  // Define shader types
+  using TextureVS = TextureVertexShader;
+  using TextureFS = TextureFragmentShader;
+
+  using SepiaVS = SepiaVertexShader;
+  using SepiaFS = SepiaFragmentShader;
+
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  if (!context->GetCapabilities()->SupportsFramebufferFetch()) {
+    GTEST_SKIP_(
+        "This test uses framebuffer fetch and the backend doesn't support it.");
+    return;
+  }
+
+  // Create pipelines.
+  auto texture_pipeline = CreateDefaultPipeline<TextureVS, TextureFS>(context);
+  auto sepia_pipeline = CreateDefaultPipeline<SepiaVS, SepiaFS>(context);
+
+  ASSERT_TRUE(texture_pipeline);
+  ASSERT_TRUE(sepia_pipeline);
+
+  // Vertex buffer builders.
+  VertexBufferBuilder<TextureVS::PerVertexData> texture_vtx_builder;
+  texture_vtx_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+
+  VertexBufferBuilder<SepiaVS::PerVertexData> sepia_vtx_builder;
+  sepia_vtx_builder.AddVertices({
+      {{100, 100, 0.0}},  // 1
+      {{800, 100, 0.0}},  // 2
+      {{800, 800, 0.0}},  // 3
+      {{100, 100, 0.0}},  // 1
+      {{800, 800, 0.0}},  // 3
+      {{100, 800, 0.0}},  // 4
+  });
+
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+
+  const auto& sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+    // Draw the texture.
+    {
+      pass.SetPipeline(texture_pipeline);
+      pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      TextureVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      TextureVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
+      TextureFS::BindTextureContents(pass, boston, sampler);
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+    }
+
+    // Draw the sepia toner.
+    {
+      pass.SetPipeline(sepia_pipeline);
+      pass.SetVertexBuffer(sepia_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      SepiaVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      SepiaVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
+  // Define shader types
+  using TextureVS = TextureVertexShader;
+  using TextureFS = TextureFragmentShader;
+
+  using SwizzleVS = SepiaVertexShader;
+  using SwizzleFS = SwizzleFragmentShader;
+
+  using SepiaVS = SepiaVertexShader;
+  using SepiaFS = SepiaFragmentShader;
+
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  if (!context->GetCapabilities()->SupportsFramebufferFetch()) {
+    GTEST_SKIP_(
+        "This test uses framebuffer fetch and the backend doesn't support it.");
+    return;
+  }
+
+  // Create pipelines.
+  auto texture_pipeline = CreateDefaultPipeline<TextureVS, TextureFS>(context);
+  auto swizzle_pipeline = CreateDefaultPipeline<SwizzleVS, SwizzleFS>(context);
+  auto sepia_pipeline = CreateDefaultPipeline<SepiaVS, SepiaFS>(context);
+
+  ASSERT_TRUE(texture_pipeline);
+  ASSERT_TRUE(swizzle_pipeline);
+  ASSERT_TRUE(sepia_pipeline);
+
+  // Vertex buffer builders.
+  VertexBufferBuilder<TextureVS::PerVertexData> texture_vtx_builder;
+  texture_vtx_builder.AddVertices({
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 100, 0.0}, {1.0, 0.0}},  // 2
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 100, 0.0}, {0.0, 0.0}},  // 1
+      {{800, 800, 0.0}, {1.0, 1.0}},  // 3
+      {{100, 800, 0.0}, {0.0, 1.0}},  // 4
+  });
+
+  VertexBufferBuilder<SepiaVS::PerVertexData> sepia_vtx_builder;
+  sepia_vtx_builder.AddVertices({
+      {{100, 100, 0.0}},  // 1
+      {{800, 100, 0.0}},  // 2
+      {{800, 800, 0.0}},  // 3
+      {{100, 100, 0.0}},  // 1
+      {{800, 800, 0.0}},  // 3
+      {{100, 800, 0.0}},  // 4
+  });
+
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(boston);
+
+  const auto& sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    auto buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+    // Draw the texture.
+    {
+      pass.SetPipeline(texture_pipeline);
+      pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      TextureVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      TextureVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
+      TextureFS::BindTextureContents(pass, boston, sampler);
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+    }
+
+    // Draw the sepia toner.
+    {
+      pass.SetPipeline(sepia_pipeline);
+      pass.SetVertexBuffer(sepia_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      SepiaVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      SepiaVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+    }
+
+    // Draw the swizzle.
+    {
+      pass.SetPipeline(swizzle_pipeline);
+      pass.SetVertexBuffer(sepia_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+      SwizzleVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      SwizzleVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+  OpenPlaygroundHere(callback);
 }
 
 }  // namespace testing

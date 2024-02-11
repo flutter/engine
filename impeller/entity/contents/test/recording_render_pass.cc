@@ -78,7 +78,7 @@ void RecordingRenderPass::OnSetLabel(std::string label) {
 
 // |RenderPass|
 bool RecordingRenderPass::OnEncodeCommands(const Context& context) const {
-  return true;
+  return delegate_->EncodeCommands();
 }
 
 // |RenderPass|
@@ -103,12 +103,13 @@ bool RecordingRenderPass::BindResource(
 }
 
 // |RenderPass|
-bool RecordingRenderPass::BindResource(ShaderStage stage,
-                                       DescriptorType type,
-                                       const SampledImageSlot& slot,
-                                       const ShaderMetadata& metadata,
-                                       std::shared_ptr<const Texture> texture,
-                                       std::shared_ptr<const Sampler> sampler) {
+bool RecordingRenderPass::BindResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    const ShaderMetadata& metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
   pending_.BindResource(stage, type, slot, metadata, texture, sampler);
   return delegate_->BindResource(stage, type, slot, metadata, texture, sampler);
 }

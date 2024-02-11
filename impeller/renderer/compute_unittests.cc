@@ -3,20 +3,14 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
-#include "impeller/base/strings.h"
-#include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/fixtures/sample.comp.h"
 #include "impeller/fixtures/stage1.comp.h"
 #include "impeller/fixtures/stage2.comp.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/path_component.h"
 #include "impeller/playground/compute_playground_test.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/prefix_sum_test.comp.h"
@@ -54,11 +48,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
 
   static constexpr size_t kCount = 5;
 
-  pass->SetGridSize(ISize(kCount, 1));
-  pass->SetThreadGroupSize(ISize(kCount, 1));
-
-  ComputeCommand cmd;
-  cmd.pipeline = compute_pipeline;
+  pass->SetPipeline(compute_pipeline);
 
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
@@ -76,36 +66,42 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInfo(cmd, host_buffer->EmplaceUniform(info));
-  CS::BindInput0(cmd, host_buffer->EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd, host_buffer->EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, DeviceBuffer::AsBufferView(output_buffer));
+  CS::BindInfo(*pass, host_buffer->EmplaceUniform(info));
+  CS::BindInput0(*pass, host_buffer->EmplaceStorageBuffer(input_0));
+  CS::BindInput1(*pass, host_buffer->EmplaceStorageBuffer(input_1));
+  CS::BindOutput(*pass, DeviceBuffer::AsBufferView(output_buffer));
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->Compute(ISize(kCount, 1)).ok());
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
-  ASSERT_TRUE(cmd_buffer->SubmitCommands([&latch, output_buffer, &input_0,
-                                          &input_1](
-                                             CommandBuffer::Status status) {
-    EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+  ASSERT_TRUE(
+      context->GetCommandQueue()
+          ->Submit(
+              {cmd_buffer},
+              [&latch, output_buffer, &input_0,
+               &input_1](CommandBuffer::Status status) {
+                EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
-    auto view = DeviceBuffer::AsBufferView(output_buffer);
-    EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
+                auto view = DeviceBuffer::AsBufferView(output_buffer);
+                EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
 
-    CS::Output<kCount>* output =
-        reinterpret_cast<CS::Output<kCount>*>(output_buffer->OnGetContents());
-    EXPECT_TRUE(output);
-    for (size_t i = 0; i < kCount; i++) {
-      Vector4 vector = output->elements[i];
-      Vector4 computed = input_0.elements[i] * input_1.elements[i];
-      EXPECT_EQ(vector,
-                Vector4(computed.x + 2 + input_1.some_struct.i,
-                        computed.y + 3 + input_1.some_struct.vf.x,
-                        computed.z + 5 + input_1.some_struct.vf.y, computed.w));
-    }
-    latch.Signal();
-  }));
+                CS::Output<kCount>* output =
+                    reinterpret_cast<CS::Output<kCount>*>(
+                        output_buffer->OnGetContents());
+                EXPECT_TRUE(output);
+                for (size_t i = 0; i < kCount; i++) {
+                  Vector4 vector = output->elements[i];
+                  Vector4 computed = input_0.elements[i] * input_1.elements[i];
+                  EXPECT_EQ(vector,
+                            Vector4(computed.x + 2 + input_1.some_struct.i,
+                                    computed.y + 3 + input_1.some_struct.vf.x,
+                                    computed.z + 5 + input_1.some_struct.vf.y,
+                                    computed.w));
+                }
+                latch.Signal();
+              })
+          .ok());
 
   latch.Wait();
 }
@@ -131,11 +127,7 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
 
   static constexpr size_t kCount = 5;
 
-  pass->SetGridSize(ISize(kCount, 1));
-  pass->SetThreadGroupSize(ISize(kCount, 1));
-
-  ComputeCommand cmd;
-  cmd.pipeline = compute_pipeline;
+  pass->SetPipeline(compute_pipeline);
 
   CS::InputData<kCount> input_data;
   input_data.count = kCount;
@@ -146,31 +138,36 @@ TEST_P(ComputeTest, CanComputePrefixSum) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInputData(cmd, host_buffer->EmplaceStorageBuffer(input_data));
-  CS::BindOutputData(cmd, DeviceBuffer::AsBufferView(output_buffer));
+  CS::BindInputData(*pass, host_buffer->EmplaceStorageBuffer(input_data));
+  CS::BindOutputData(*pass, DeviceBuffer::AsBufferView(output_buffer));
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->Compute(ISize(kCount, 1)).ok());
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
-  ASSERT_TRUE(cmd_buffer->SubmitCommands([&latch, output_buffer](
-                                             CommandBuffer::Status status) {
-    EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+  ASSERT_TRUE(
+      context->GetCommandQueue()
+          ->Submit({cmd_buffer},
+                   [&latch, output_buffer](CommandBuffer::Status status) {
+                     EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
-    auto view = DeviceBuffer::AsBufferView(output_buffer);
-    EXPECT_EQ(view.range.length, sizeof(CS::OutputData<kCount>));
+                     auto view = DeviceBuffer::AsBufferView(output_buffer);
+                     EXPECT_EQ(view.range.length,
+                               sizeof(CS::OutputData<kCount>));
 
-    CS::OutputData<kCount>* output = reinterpret_cast<CS::OutputData<kCount>*>(
-        output_buffer->OnGetContents());
-    EXPECT_TRUE(output);
+                     CS::OutputData<kCount>* output =
+                         reinterpret_cast<CS::OutputData<kCount>*>(
+                             output_buffer->OnGetContents());
+                     EXPECT_TRUE(output);
 
-    constexpr uint32_t expected[kCount] = {1, 3, 6, 10, 15};
-    for (size_t i = 0; i < kCount; i++) {
-      auto computed_sum = output->data[i];
-      EXPECT_EQ(computed_sum, expected[i]);
-    }
-    latch.Signal();
-  }));
+                     constexpr uint32_t expected[kCount] = {1, 3, 6, 10, 15};
+                     for (size_t i = 0; i < kCount; i++) {
+                       auto computed_sum = output->data[i];
+                       EXPECT_EQ(computed_sum, expected[i]);
+                     }
+                     latch.Signal();
+                   })
+          .ok());
 
   latch.Wait();
 }
@@ -195,34 +192,35 @@ TEST_P(ComputeTest, 1DThreadgroupSizingIsCorrect) {
 
   static constexpr size_t kCount = 2048;
 
-  pass->SetGridSize(ISize(kCount, 1));
-  pass->SetThreadGroupSize(ISize(kCount, 1));
-
-  ComputeCommand cmd;
-  cmd.pipeline = compute_pipeline;
+  pass->SetPipeline(compute_pipeline);
 
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
       context, "Output Buffer");
 
-  CS::BindOutputData(cmd, DeviceBuffer::AsBufferView(output_buffer));
+  CS::BindOutputData(*pass, DeviceBuffer::AsBufferView(output_buffer));
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->Compute(ISize(kCount, 1)).ok());
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
-  ASSERT_TRUE(cmd_buffer->SubmitCommands([&latch, output_buffer](
-                                             CommandBuffer::Status status) {
-    EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+  ASSERT_TRUE(
+      context->GetCommandQueue()
+          ->Submit({cmd_buffer},
+                   [&latch, output_buffer](CommandBuffer::Status status) {
+                     EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
-    auto view = DeviceBuffer::AsBufferView(output_buffer);
-    EXPECT_EQ(view.range.length, sizeof(CS::OutputData<kCount>));
+                     auto view = DeviceBuffer::AsBufferView(output_buffer);
+                     EXPECT_EQ(view.range.length,
+                               sizeof(CS::OutputData<kCount>));
 
-    CS::OutputData<kCount>* output = reinterpret_cast<CS::OutputData<kCount>*>(
-        output_buffer->OnGetContents());
-    EXPECT_TRUE(output);
-    EXPECT_EQ(output->data[kCount - 1], kCount - 1);
-    latch.Signal();
-  }));
+                     CS::OutputData<kCount>* output =
+                         reinterpret_cast<CS::OutputData<kCount>*>(
+                             output_buffer->OnGetContents());
+                     EXPECT_TRUE(output);
+                     EXPECT_EQ(output->data[kCount - 1], kCount - 1);
+                     latch.Signal();
+                   })
+          .ok());
 
   latch.Wait();
 }
@@ -248,10 +246,7 @@ TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
 
     static constexpr size_t kCount = 1023;
 
-    pass->SetGridSize(ISize(kCount, 1));
-
-    ComputeCommand cmd;
-    cmd.pipeline = compute_pipeline;
+    pass->SetPipeline(compute_pipeline);
 
     CS::InputData<kCount> input_data;
     input_data.count = kCount;
@@ -262,13 +257,13 @@ TEST_P(ComputeTest, CanComputePrefixSumLargeInteractive) {
     auto output_buffer = CreateHostVisibleDeviceBuffer<CS::OutputData<kCount>>(
         context, "Output Buffer");
 
-    CS::BindInputData(cmd, host_buffer->EmplaceStorageBuffer(input_data));
-    CS::BindOutputData(cmd, DeviceBuffer::AsBufferView(output_buffer));
+    CS::BindInputData(*pass, host_buffer->EmplaceStorageBuffer(input_data));
+    CS::BindOutputData(*pass, DeviceBuffer::AsBufferView(output_buffer));
 
-    pass->AddCommand(std::move(cmd));
+    pass->Compute(ISize(kCount, 1));
     pass->EncodeCommands();
     host_buffer->Reset();
-    return cmd_buffer->SubmitCommands();
+    return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
@@ -305,9 +300,6 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
   static constexpr size_t kCount1 = 5;
   static constexpr size_t kCount2 = kCount1 * 2;
 
-  pass->SetGridSize(ISize(512, 1));
-  pass->SetThreadGroupSize(ISize(512, 1));
-
   CS1::Input<kCount1> input_1;
   input_1.count = kCount1;
   for (size_t i = 0; i < kCount1; i++) {
@@ -326,48 +318,54 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
       context, "Output Buffer Stage 2");
 
   {
-    ComputeCommand cmd;
-    cmd.pipeline = compute_pipeline_1;
+    pass->SetPipeline(compute_pipeline_1);
 
-    CS1::BindInput(cmd, host_buffer->EmplaceStorageBuffer(input_1));
-    CS1::BindOutput(cmd, DeviceBuffer::AsBufferView(output_buffer_1));
+    CS1::BindInput(*pass, host_buffer->EmplaceStorageBuffer(input_1));
+    CS1::BindOutput(*pass, DeviceBuffer::AsBufferView(output_buffer_1));
 
-    ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+    ASSERT_TRUE(pass->Compute(ISize(512, 1)).ok());
+    pass->AddBufferMemoryBarrier();
   }
 
   {
-    ComputeCommand cmd;
-    cmd.pipeline = compute_pipeline_2;
+    pass->SetPipeline(compute_pipeline_2);
 
-    CS1::BindInput(cmd, DeviceBuffer::AsBufferView(output_buffer_1));
-    CS2::BindOutput(cmd, DeviceBuffer::AsBufferView(output_buffer_2));
-    ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+    CS1::BindInput(*pass, DeviceBuffer::AsBufferView(output_buffer_1));
+    CS2::BindOutput(*pass, DeviceBuffer::AsBufferView(output_buffer_2));
+    ASSERT_TRUE(pass->Compute(ISize(512, 1)).ok());
   }
 
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
-  ASSERT_TRUE(cmd_buffer->SubmitCommands([&latch, &output_buffer_1,
-                                          &output_buffer_2](
-                                             CommandBuffer::Status status) {
-    EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+  ASSERT_TRUE(
+      context->GetCommandQueue()
+          ->Submit({cmd_buffer},
+                   [&latch, &output_buffer_1,
+                    &output_buffer_2](CommandBuffer::Status status) {
+                     EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
-    CS1::Output<kCount2>* output_1 = reinterpret_cast<CS1::Output<kCount2>*>(
-        output_buffer_1->OnGetContents());
-    EXPECT_TRUE(output_1);
-    EXPECT_EQ(output_1->count, 10u);
-    EXPECT_THAT(output_1->elements,
-                ::testing::ElementsAre(0, 0, 2, 3, 4, 6, 6, 9, 8, 12));
+                     CS1::Output<kCount2>* output_1 =
+                         reinterpret_cast<CS1::Output<kCount2>*>(
+                             output_buffer_1->OnGetContents());
+                     EXPECT_TRUE(output_1);
+                     EXPECT_EQ(output_1->count, 10u);
+                     EXPECT_THAT(
+                         output_1->elements,
+                         ::testing::ElementsAre(0, 0, 2, 3, 4, 6, 6, 9, 8, 12));
 
-    CS2::Output<kCount2>* output_2 = reinterpret_cast<CS2::Output<kCount2>*>(
-        output_buffer_2->OnGetContents());
-    EXPECT_TRUE(output_2);
-    EXPECT_EQ(output_2->count, 10u);
-    EXPECT_THAT(output_2->elements,
-                ::testing::ElementsAre(0, 0, 4, 6, 8, 12, 12, 18, 16, 24));
+                     CS2::Output<kCount2>* output_2 =
+                         reinterpret_cast<CS2::Output<kCount2>*>(
+                             output_buffer_2->OnGetContents());
+                     EXPECT_TRUE(output_2);
+                     EXPECT_EQ(output_2->count, 10u);
+                     EXPECT_THAT(output_2->elements,
+                                 ::testing::ElementsAre(0, 0, 4, 6, 8, 12, 12,
+                                                        18, 16, 24));
 
-    latch.Signal();
-  }));
+                     latch.Signal();
+                   })
+          .ok());
 
   latch.Wait();
 }
@@ -393,10 +391,7 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
 
   static constexpr size_t kCount = 5;
 
-  pass->SetGridSize(ISize(kCount, 1));
-
-  ComputeCommand cmd;
-  cmd.pipeline = compute_pipeline;
+  pass->SetPipeline(compute_pipeline);
 
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
@@ -414,36 +409,42 @@ TEST_P(ComputeTest, CanCompute1DimensionalData) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInfo(cmd, host_buffer->EmplaceUniform(info));
-  CS::BindInput0(cmd, host_buffer->EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd, host_buffer->EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, DeviceBuffer::AsBufferView(output_buffer));
+  CS::BindInfo(*pass, host_buffer->EmplaceUniform(info));
+  CS::BindInput0(*pass, host_buffer->EmplaceStorageBuffer(input_0));
+  CS::BindInput1(*pass, host_buffer->EmplaceStorageBuffer(input_1));
+  CS::BindOutput(*pass, DeviceBuffer::AsBufferView(output_buffer));
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
+  ASSERT_TRUE(pass->Compute(ISize(kCount, 1)).ok());
   ASSERT_TRUE(pass->EncodeCommands());
 
   fml::AutoResetWaitableEvent latch;
-  ASSERT_TRUE(cmd_buffer->SubmitCommands([&latch, output_buffer, &input_0,
-                                          &input_1](
-                                             CommandBuffer::Status status) {
-    EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
+  ASSERT_TRUE(
+      context->GetCommandQueue()
+          ->Submit(
+              {cmd_buffer},
+              [&latch, output_buffer, &input_0,
+               &input_1](CommandBuffer::Status status) {
+                EXPECT_EQ(status, CommandBuffer::Status::kCompleted);
 
-    auto view = DeviceBuffer::AsBufferView(output_buffer);
-    EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
+                auto view = DeviceBuffer::AsBufferView(output_buffer);
+                EXPECT_EQ(view.range.length, sizeof(CS::Output<kCount>));
 
-    CS::Output<kCount>* output =
-        reinterpret_cast<CS::Output<kCount>*>(output_buffer->OnGetContents());
-    EXPECT_TRUE(output);
-    for (size_t i = 0; i < kCount; i++) {
-      Vector4 vector = output->elements[i];
-      Vector4 computed = input_0.elements[i] * input_1.elements[i];
-      EXPECT_EQ(vector,
-                Vector4(computed.x + 2 + input_1.some_struct.i,
-                        computed.y + 3 + input_1.some_struct.vf.x,
-                        computed.z + 5 + input_1.some_struct.vf.y, computed.w));
-    }
-    latch.Signal();
-  }));
+                CS::Output<kCount>* output =
+                    reinterpret_cast<CS::Output<kCount>*>(
+                        output_buffer->OnGetContents());
+                EXPECT_TRUE(output);
+                for (size_t i = 0; i < kCount; i++) {
+                  Vector4 vector = output->elements[i];
+                  Vector4 computed = input_0.elements[i] * input_1.elements[i];
+                  EXPECT_EQ(vector,
+                            Vector4(computed.x + 2 + input_1.some_struct.i,
+                                    computed.y + 3 + input_1.some_struct.vf.x,
+                                    computed.z + 5 + input_1.some_struct.vf.y,
+                                    computed.w));
+                }
+                latch.Signal();
+              })
+          .ok());
 
   latch.Wait();
 }
@@ -469,13 +470,7 @@ TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
 
   static constexpr size_t kCount = 5;
 
-  // Intentionally making the grid size zero in one dimension. No GPU will
-  // tolerate this.
-  pass->SetGridSize(ISize(0, 1));
-  pass->SetThreadGroupSize(ISize(0, 1));
-
-  ComputeCommand cmd;
-  cmd.pipeline = compute_pipeline;
+  pass->SetPipeline(compute_pipeline);
 
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
@@ -493,13 +488,15 @@ TEST_P(ComputeTest, ReturnsEarlyWhenAnyGridDimensionIsZero) {
   auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
       context, "Output Buffer");
 
-  CS::BindInfo(cmd, host_buffer->EmplaceUniform(info));
-  CS::BindInput0(cmd, host_buffer->EmplaceStorageBuffer(input_0));
-  CS::BindInput1(cmd, host_buffer->EmplaceStorageBuffer(input_1));
-  CS::BindOutput(cmd, DeviceBuffer::AsBufferView(output_buffer));
+  CS::BindInfo(*pass, host_buffer->EmplaceUniform(info));
+  CS::BindInput0(*pass, host_buffer->EmplaceStorageBuffer(input_0));
+  CS::BindInput1(*pass, host_buffer->EmplaceStorageBuffer(input_1));
+  CS::BindOutput(*pass, DeviceBuffer::AsBufferView(output_buffer));
 
-  ASSERT_TRUE(pass->AddCommand(std::move(cmd)));
-  ASSERT_FALSE(pass->EncodeCommands());
+  // Intentionally making the grid size zero in one dimension. No GPU will
+  // tolerate this.
+  EXPECT_FALSE(pass->Compute(ISize(0, 1)).ok());
+  pass->EncodeCommands();
 }
 
 }  // namespace testing

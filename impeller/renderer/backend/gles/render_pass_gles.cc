@@ -151,10 +151,6 @@ struct RenderPassData {
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
-  if (commands.empty()) {
-    return true;
-  }
-
   const auto& gl = reactor.GetProcTable();
 #ifdef IMPELLER_DEBUG
   tracer->MarkFrameStart(gl);
@@ -186,20 +182,20 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
         return false;
       }
     }
 
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
         return false;
       }
     }
@@ -516,9 +512,6 @@ struct RenderPassData {
 bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   if (!IsValid()) {
     return false;
-  }
-  if (commands_.empty()) {
-    return true;
   }
   const auto& render_target = GetRenderTarget();
   if (!render_target.HasColorAttachment(0u)) {

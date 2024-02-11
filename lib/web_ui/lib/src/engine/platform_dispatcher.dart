@@ -77,14 +77,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
-    _setAppLifecycleState(ui.AppLifecycleState.resumed);
-    viewManager.onViewDisposed.listen((_) {
+    AppLifecycleState.instance.addListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.addListener(invokeOnViewFocusChange);
+    _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
       // View creation/resize is handled by the `_didResize` handler in the
       // EngineFlutterView itself.
       invokeOnMetricsChanged();
     });
   }
+
+  late StreamSubscription<int> _onViewDisposedListener;
 
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
@@ -111,6 +114,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _disconnectFontSizeObserver();
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
+    AppLifecycleState.instance.removeListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.removeListener(invokeOnViewFocusChange);
+    _onViewDisposedListener.cancel();
     viewManager.dispose();
   }
 
@@ -212,6 +218,37 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       invoke(_onMetricsChanged, _onMetricsChangedZone);
     }
   }
+
+  @override
+  ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
+  ui.ViewFocusChangeCallback? _onViewFocusChange;
+  Zone? _onViewFocusChangeZone;
+  @override
+  set onViewFocusChange(ui.ViewFocusChangeCallback? callback) {
+    _onViewFocusChange = callback;
+    _onViewFocusChangeZone = Zone.current;
+  }
+
+  // Engine code should use this method instead of the callback directly.
+  // Otherwise zones won't work properly.
+  void invokeOnViewFocusChange(ui.ViewFocusEvent viewFocusEvent) {
+    invoke1<ui.ViewFocusEvent>(
+      _onViewFocusChange,
+      _onViewFocusChangeZone,
+      viewFocusEvent,
+    );
+  }
+
+
+  @override
+  void requestViewFocusChange({
+    required int viewId,
+    required ui.ViewFocusState state,
+    required ui.ViewFocusDirection direction,
+  }) {
+    // TODO(tugorez): implement this method. At the moment will be a no op call.
+  }
+
 
   /// A set of views which have rendered in the current `onBeginFrame` or
   /// `onDrawFrame` scope.
@@ -931,7 +968,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
-  // Called by FlutterViewEmbedder when browser languages change.
+  // Called by `_onLocaleChangedSubscription` when browser languages change.
   void updateLocales() {
     configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
@@ -1033,10 +1070,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   void _setAppLifecycleState(ui.AppLifecycleState state) {
-    sendPlatformMessage(
+    invokeOnPlatformMessage(
       'flutter/lifecycle',
-      ByteData.sublistView(utf8.encode(state.toString())),
-      null,
+      const StringCodec().encodeMessage(state.toString()),
+      (_) {},
     );
   }
 
