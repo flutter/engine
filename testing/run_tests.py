@@ -44,7 +44,7 @@ FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 ENCODING = 'UTF-8'
 
 # This number must be updated when adding new golden tests to impeller.
-_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 554
+_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 557
 
 logger = logging.getLogger(__name__)
 logger_handler = logging.StreamHandler()
