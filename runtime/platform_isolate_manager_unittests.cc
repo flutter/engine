@@ -258,7 +258,10 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
             Dart_ShutdownIsolate();
           }
         }
-        while (!test_finished.load()) {}
+        while (!test_finished.load()) {
+          // Wait for the test to finish, to avoid prematurely destroying thread
+          // local isolate_data_map_.
+        }
       }));
     }
 
