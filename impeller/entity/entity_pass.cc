@@ -870,6 +870,14 @@ bool EntityPass::RenderElement(Entity& element_entity,
   return true;
 }
 
+// static
+bool EntityPass::ShouldForceRenderPassConstruction(
+    std::optional<Color> clear_color,
+    ContentContext& renderer) {
+  return clear_color.has_value() || renderer.GetContext()->GetBackendType() ==
+                                        Context::BackendType::kVulkan;
+}
+
 bool EntityPass::OnRender(
     ContentContext& renderer,
     Capture& capture,
@@ -901,9 +909,9 @@ bool EntityPass::OnRender(
   }
   auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
-  if (!collapsed_parent_pass && (GetClearColor(clear_color_size).has_value() ||
-                                 renderer.GetContext()->GetBackendType() ==
-                                     Context::BackendType::kVulkan)) {
+  if (!collapsed_parent_pass &&
+      ShouldForceRenderPassConstruction(GetClearColor(clear_color_size),
+                                        renderer)) {
     // Force the pass context to create at least one new pass if the clear color
     // is present. Unless on Vulkan, then the pass is always created even if it
     // has no clear color, as we use the pass to create the initial image
