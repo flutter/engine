@@ -606,7 +606,7 @@ void ContentContext::FlushCommandBuffers() const {
   GetContext()->GetCommandQueue()->Submit(buffers);
 }
 
-void ContentContext::AdditionalSetup() const {
+void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   // Initialize commonly used shaders that aren't defaults.
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
