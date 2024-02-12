@@ -194,10 +194,7 @@
                 },
                 {
                     "name": "run_tests test",
-                    "script": "vpython3",
-                    "parameters": [
-                        "flutter/testing/fuchsia/run_tests_test.py"
-                    ]
+                    "script": "flutter/testing/fuchsia/run_tests_test.py"
                 },
                 {
                     "name": "x64 emulator based debug tests",
