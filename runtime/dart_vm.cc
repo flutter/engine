@@ -36,7 +36,7 @@ namespace observatory {
 #if !OS_FUCHSIA && !FLUTTER_RELEASE
 
 // These two symbols are defined in |observatory_archive.cc| which is generated
-// by the |//third_party/dart/runtime/observatory:archive_observatory| rule.
+// by the |$dart_src/runtime/observatory:archive_observatory| rule.
 // Both of these symbols will be part of the data segment and therefore are read
 // only.
 extern unsigned int observatory_assets_archive_len;

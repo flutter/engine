@@ -18,7 +18,7 @@
 //
 // Entries are sorted by offset. String table entries are NUL-terminated.
 //
-// See also //third_party/dart/runtime/vm/native_symbol_fuchsia.cc
+// See also $dart_src/runtime/vm/native_symbol_fuchsia.cc
 
 import "dart:convert";
 import "dart:io";
