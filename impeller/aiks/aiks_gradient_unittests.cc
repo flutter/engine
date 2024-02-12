@@ -305,22 +305,24 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
         Entity::TileMode::kMirror, Entity::TileMode::kDecal};
 
     static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
     static Matrix matrix = {
         1, 0, 0, 0,  //
         0, 1, 0, 0,  //
         0, 0, 1, 0,  //
         0, 0, 0, 1   //
     };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      std::string label = "##1";
+      for (int i = 0; i < 4; i++) {
+        ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
+                            &(matrix.vec[i]), 4, NULL, NULL, "%.2f", 0);
+        label[2]++;
+      }
+      ImGui::End();
     }
-    ImGui::End();
 
     Canvas canvas;
     Paint paint;
@@ -381,22 +383,24 @@ TEST_P(AiksTest, CanRenderRadialGradient) {
         Entity::TileMode::kMirror, Entity::TileMode::kDecal};
 
     static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
     static Matrix matrix = {
         1, 0, 0, 0,  //
         0, 1, 0, 0,  //
         0, 0, 1, 0,  //
         0, 0, 0, 1   //
     };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      std::string label = "##1";
+      for (int i = 0; i < 4; i++) {
+        ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
+                            &(matrix.vec[i]), 4, NULL, NULL, "%.2f", 0);
+        label[2]++;
+      }
+      ImGui::End();
     }
-    ImGui::End();
 
     Canvas canvas;
     Paint paint;
@@ -424,22 +428,24 @@ TEST_P(AiksTest, CanRenderRadialGradientManyColors) {
         Entity::TileMode::kMirror, Entity::TileMode::kDecal};
 
     static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
     static Matrix matrix = {
         1, 0, 0, 0,  //
         0, 1, 0, 0,  //
         0, 0, 1, 0,  //
         0, 0, 0, 1   //
     };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      std::string label = "##1";
+      for (int i = 0; i < 4; i++) {
+        ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float,
+                            &(matrix.vec[i]), 4, NULL, NULL, "%.2f", 0);
+        label[2]++;
+      }
+      ImGui::End();
     }
-    ImGui::End();
 
     Canvas canvas;
     Paint paint;
@@ -657,13 +663,15 @@ TEST_P(AiksTest, GradientStrokesRenderCorrectly) {
     static int selected_tile_mode = 0;
     static float alpha = 1;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Scale", &scale, 0, 6);
-    ImGui::Checkbox("Circle clip", &add_circle_clip);
-    ImGui::SliderFloat("Alpha", &alpha, 0, 1);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Scale", &scale, 0, 6);
+      ImGui::Checkbox("Circle clip", &add_circle_clip);
+      ImGui::SliderFloat("Alpha", &alpha, 0, 1);
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      ImGui::End();
+    }
 
     Canvas canvas;
     canvas.Scale(GetContentScale());
