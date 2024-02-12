@@ -41,4 +41,4 @@ ffigen:
       - 'zircon_dart_.*'
     dependency-only: opaque
   compiler-opts:
-    - '-I../../../../../../third_party/dart/runtime'
+    - '-I../../../../../../flutter/third_party/dart/runtime'

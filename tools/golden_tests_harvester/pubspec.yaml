@@ -23,20 +23,20 @@ dependencies:
 
 dependency_overrides:
   collection:
-    path: ../../../third_party/dart/third_party/pkg/collection
+    path: ../../../flutter/third_party/dart/third_party/pkg/collection
   crypto:
-    path: ../../../third_party/dart/third_party/pkg/crypto
+    path: ../../../flutter/third_party/dart/third_party/pkg/crypto
   file:
-    path: ../../../third_party/dart/third_party/pkg/file/packages/file
+    path: ../../../flutter/third_party/dart/third_party/pkg/file/packages/file
   meta:
-    path: ../../../third_party/dart/pkg/meta
+    path: ../../../flutter/third_party/dart/pkg/meta
   engine_repo_tools:
     path: ../../tools/pkg/engine_repo_tools
   path:
-    path: ../../../third_party/dart/third_party/pkg/path
+    path: ../../../flutter/third_party/dart/third_party/pkg/path
   platform:
     path: ../../third_party/pkg/platform
   process:
     path: ../../third_party/pkg/process
   typed_data:
-    path: ../../../third_party/dart/third_party/pkg/typed_data
+    path: ../../../flutter/third_party/dart/third_party/pkg/typed_data
