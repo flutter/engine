@@ -133,7 +133,8 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   # TODO(zijiehe-google-com): Run tests with dart aot,
   # https://github.com/flutter/flutter/issues/140179.
   def dart_jit(test) -> bool:
-    return 'run_with_dart_aot' not in test or test['run_with_dart_aot'] != 'true'
+    return 'run_with_dart_aot' not in test or
+           test['run_with_dart_aot'] != 'true'
 
   # TODO(zijiehe-google-com): Run all tests in release build,
   # https://github.com/flutter/flutter/issues/140179.
