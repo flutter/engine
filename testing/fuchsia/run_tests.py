@@ -48,12 +48,13 @@ else:
 OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out', VARIANT)
 
 
+# Visible for testing
 class TestCase(NamedTuple):
   package: str
   args: str = ''
 
 
-class BundledTestRunner(TestRunner):
+class _BundledTestRunner(TestRunner):
 
   # private, use bundled_test_runner_of function instead.
   def __init__(self, target_id: str, package_deps: Set[str], tests: List[TestCase], logs_dir: str):
@@ -77,6 +78,7 @@ class BundledTestRunner(TestRunner):
     return CompletedProcess(args='', returncode=returncode)
 
 
+# Visible for testing
 def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
   packages = set()
   for test in tests:
@@ -105,6 +107,7 @@ def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
   return resolved_packages
 
 
+# Visible for testing
 def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   test_cases = []
   for test in [t['test_command'] for t in tests]:
@@ -118,7 +121,7 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   return test_cases
 
 
-def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
+def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
   log_dir = os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log')
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'), 'r') as file:
     tests = yaml.safe_load(file)
@@ -133,11 +136,11 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
     return 'variant' not in test or test['variant'] == VARIANT
 
   tests = [t for t in tests if dart_jit(t) and variant(t)]
-  return BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
+  return _BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
 
 
 def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
-  return bundled_test_runner_of(runner_args.target_id)
+  return _bundled_test_runner_of(runner_args.target_id)
 
 
 if __name__ == '__main__':
