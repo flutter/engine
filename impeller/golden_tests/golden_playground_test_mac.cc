@@ -72,7 +72,6 @@ static const std::vector<std::string> kSkipTests = {
     IMP_AIKSTEST(CoverageOriginShouldBeAccountedForInSubpasses),
     IMP_AIKSTEST(GaussianBlurRotatedAndClippedInteractive),
     IMP_AIKSTEST(GradientStrokesRenderCorrectly),
-    IMP_AIKSTEST(ColorWheel),
     IMP_AIKSTEST(SceneColorSource),
     IMP_AIKSTEST(SolidStrokesRenderCorrectly),
     IMP_AIKSTEST(TextFrameSubpixelAlignment),
@@ -233,6 +232,12 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   }
 
   return SaveScreenshot(std::move(screenshot));
+}
+
+bool GoldenPlaygroundTest::ImGuiBegin(const char* name,
+                                      bool* p_open,
+                                      ImGuiWindowFlags flags) {
+  return false;
 }
 
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
