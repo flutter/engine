@@ -262,7 +262,7 @@ Future<void> _run({
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
-        if (enableImpeller) 
+        if (enableImpeller)
           '-e enable-impeller',
         if (impellerBackend != null)
           '-e impeller-backend ${impellerBackend.name}',
