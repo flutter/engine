@@ -816,12 +816,12 @@ class ContentContext {
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
 
-  /// Run backend specific additional setup.
+  /// Run backend specific additional setup and create common shader variants.
   ///
   /// This is used by the Android Vulkan backend to force the driver to
   /// compile additional shaders used in internal operations, such as during
   /// buffer to image blits and render pass construction.
-  void AdditionalSetup() const;
+  void InitializeCommonlyUsedShadersIfNeeded() const;
 
   struct RuntimeEffectPipelineKey {
     std::string unique_entrypoint_name;

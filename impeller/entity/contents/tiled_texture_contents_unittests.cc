@@ -85,7 +85,7 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
 
   ASSERT_EQ(commands.size(), 1u);
   ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
-               "TiledTextureFillExternal Pipeline V#1");
+               "TiledTextureFillExternal Pipeline V#3");
 }
 #endif
 

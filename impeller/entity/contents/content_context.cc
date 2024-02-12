@@ -457,7 +457,7 @@ ContentContext::ContentContext(
                                           *context_, clip_pipeline_descriptor));
 
   is_valid_ = true;
-  AdditionalSetup();
+  InitializeCommonlyUsedShadersIfNeeded();
 }
 
 ContentContext::~ContentContext() = default;
