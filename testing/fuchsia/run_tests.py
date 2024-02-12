@@ -29,10 +29,7 @@ import yaml  # pylint: disable=import-error
 # is guaranteed.
 
 sys.path.insert(
-    0,
-    os.path.join(
-        os.path.dirname(__file__), '../../tools/fuchsia/test_scripts/test/'
-    )
+    0, os.path.join(os.path.dirname(__file__), '../../tools/fuchsia/test_scripts/test/')
 )
 
 # pylint: disable=import-error, wrong-import-position
@@ -59,10 +56,7 @@ class TestCase(NamedTuple):
 class BundledTestRunner(TestRunner):
 
   # private, use bundled_test_runner_of function instead.
-  def __init__(
-      self, target_id: str, package_deps: Set[str], tests: List[TestCase],
-      logs_dir: str
-  ):
+  def __init__(self, target_id: str, package_deps: Set[str], tests: List[TestCase], logs_dir: str):
     super().__init__(OUT_DIR, [], None, target_id, list(package_deps))
     self.tests = tests
     self.logs_dir = logs_dir
@@ -72,8 +66,7 @@ class BundledTestRunner(TestRunner):
     for test in self.tests:
       assert test.package.endswith('.cm')
       test_runner = ExecutableTestRunner(
-          OUT_DIR, test.args.split(), test.package, self._target_id, None,
-          self.logs_dir, [], None
+          OUT_DIR, test.args.split(), test.package, self._target_id, None, self.logs_dir, [], None
       )
       # pylint: disable=protected-access
       test_runner._package_deps = self._package_deps
@@ -127,8 +120,7 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
 
 def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
   log_dir = os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log')
-  with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'),
-            'r') as file:
+  with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'), 'r') as file:
     tests = yaml.safe_load(file)
   # TODO(zijiehe-google-com): Run tests with dart aot,
   # https://github.com/flutter/flutter/issues/140179.
@@ -141,9 +133,7 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
     return 'variant' not in test or test['variant'] == VARIANT
 
   tests = [t for t in tests if dart_jit(t) and variant(t)]
-  return BundledTestRunner(
-      target_id, resolve_packages(tests), build_test_cases(tests), log_dir
-  )
+  return BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
 
 
 def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
