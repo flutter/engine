@@ -65,6 +65,7 @@ const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
 static const std::vector<std::string> kSkipTests = {
     IMP_AIKSTEST(CanRenderBackdropBlurInteractive),
     IMP_AIKSTEST(ClippedBlurFilterRendersCorrectlyInteractive),
+    IMP_AIKSTEST(GaussianBlurRotatedAndClippedInteractive),
     IMP_AIKSTEST(CoverageOriginShouldBeAccountedForInSubpasses),
     // TextRotated is flakey and we can't seem to get it to stabilize on Skia
     // Gold.
