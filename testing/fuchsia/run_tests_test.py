@@ -1,5 +1,13 @@
 #!/usr/bin/env vpython3
-#
+
+# [VPYTHON:BEGIN]
+# python_version: "3.8"
+# wheel <
+#   name: "infra/python/wheels/pyyaml/${platform}_${py_python}_${py_abi}"
+#   version: "version:5.4.1.chromium.1"
+# >
+# [VPYTHON:END]
+
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
