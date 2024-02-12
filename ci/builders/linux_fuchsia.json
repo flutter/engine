@@ -194,7 +194,7 @@
                 },
                 {
                     "name": "run_tests test",
-                    "language": "python3",
+                    "language": "vpython3",
                     "script": "flutter/testing/fuchsia/run_tests_test.py"
                 },
                 {
