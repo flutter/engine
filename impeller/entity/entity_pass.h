@@ -301,10 +301,6 @@ class EntityPass {
                 const std::optional<InlinePassContext::RenderPassResult>&
                     collapsed_parent_pass = std::nullopt) const;
 
-  static bool ShouldForceRenderPassConstruction(
-      std::optional<Color> clear_color,
-      ContentContext& renderer);
-
   /// The list of renderable items in the scene. Each of these items is
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
