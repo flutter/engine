@@ -79,7 +79,6 @@ class _BundledTestRunner(TestRunner):
 
 
 # Visible for testing
-@staticmethod
 def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
   packages = set()
   for test in tests:
@@ -109,7 +108,6 @@ def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
 
 
 # Visible for testing
-@staticmethod
 def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   test_cases = []
   for test in [t['test_command'] for t in tests]:
@@ -123,7 +121,6 @@ def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   return test_cases
 
 
-@staticmethod
 def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
   log_dir = os.environ.get('FLUTTER_LOGS_DIR', '/tmp/log')
   with open(os.path.join(os.path.dirname(__file__), 'test_suites.yaml'), 'r') as file:
@@ -142,7 +139,6 @@ def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
   return _BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
 
 
-@staticmethod
 def _get_test_runner(runner_args: argparse.Namespace, *_) -> TestRunner:
   return _bundled_test_runner_of(runner_args.target_id)
 
