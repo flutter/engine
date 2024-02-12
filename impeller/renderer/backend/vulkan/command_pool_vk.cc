@@ -22,6 +22,10 @@ class BackgroundCommandPoolVK final {
  public:
   BackgroundCommandPoolVK(BackgroundCommandPoolVK&&) = default;
 
+  // The recycler also recycles command buffers that were never used, up to a
+  // limit of 16 per frame. This number was somewhat arbitrarily chosen.
+  static constexpr size_t kUnusedCommandBufferLimit = 16u;
+
   explicit BackgroundCommandPoolVK(
       vk::UniqueCommandPool&& pool,
       std::vector<vk::UniqueCommandBuffer>&& buffers,
@@ -43,7 +47,7 @@ class BackgroundCommandPoolVK final {
       return;
     }
     // If there are many unused command buffers, release some of them.
-    if (unused_count_ > 16u) {
+    if (unused_count_ > kUnusedCommandBufferLimit) {
       for (auto i = 0u; i < unused_count_; i++) {
         buffers_.pop_back();
       }
