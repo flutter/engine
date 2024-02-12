@@ -5,11 +5,7 @@
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
 #include "impeller/aiks/canvas.h"
-#include "impeller/entity/contents/conical_gradient_contents.h"
-#include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/render_target_cache.h"
-#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/testing/mocks.h"

@@ -6,16 +6,13 @@
 
 #include "impeller/aiks/canvas.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
-#include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/widgets.h"
 #include "third_party/imgui/imgui.h"
-#include "txt/platform.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // This is for tests of Canvas that are interested the results of rendering

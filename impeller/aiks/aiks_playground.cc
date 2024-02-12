@@ -24,6 +24,7 @@ void AiksPlayground::SetTypographerContext(
 }
 
 void AiksPlayground::TearDown() {
+
   inspector_.HackResetDueToTextureLeaks();
   PlaygroundTest::TearDown();
 }
