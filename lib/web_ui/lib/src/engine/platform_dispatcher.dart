@@ -17,6 +17,13 @@ import '../engine.dart';
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
+/// Requests that the framework tries to render a frame immediately.
+///
+/// Since this will probably call [PlatformWindow.render] outside of an
+/// animation frame, the render will not be actually presented, but just to warm
+/// up the framework.
+ui.VoidCallback? warmUpFrameCallback;
+
 /// Signature of functions added as a listener to high contrast changes
 typedef HighContrastListener = void Function(bool enabled);
 typedef _KeyDataResponseCallback = void Function(bool handled);
@@ -773,8 +780,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @override
   void forceSyncFrame() {
-    // TODO(dkwingsmt): Call beginFrame and drawFrame, since the framework
-    // will no longer call them once it switches to forceSyncFrame.
+    if (warmUpFrameCallback == null) {
+      throw Exception('warmUpFrameCallback must be initialized first.');
+    }
+    warmUpFrameCallback!();
   }
 
   /// Updates the application's rendering on the GPU with the newly provided
