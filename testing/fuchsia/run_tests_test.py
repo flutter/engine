@@ -18,6 +18,8 @@ import unittest
 
 from pathlib import Path
 
+# pylint is looking for a wrong //testing/run_tests.py.
+# pylint: disable=no-member
 import run_tests
 
 run_tests.OUT_DIR = '/tmp/out/fuchsia_debug_x64'
