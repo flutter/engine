@@ -213,7 +213,7 @@ Future<void> _run({
         outDir,
         dimensions: <String, String>{
           'AndroidAPILevel': connectedDeviceAPILevel,
-          'GraphicsBackend': enableImpeller ? 'impeller=${impellerBackend!.name}' : 'skia',
+          'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
         },
       );
     });
