@@ -503,9 +503,9 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-// Regression test for https://github.com/flutter/flutter/issues/142358 . Without
-// a change to force render pass construction the image is left in an undefined
-// layout and triggers a validation error.
+// Regression test for https://github.com/flutter/flutter/issues/142358 .
+// Without a change to force render pass construction the image is left in an
+// undefined layout and triggers a validation error.
 TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
   Canvas recorder_canvas;
 
