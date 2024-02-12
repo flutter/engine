@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -208,7 +209,11 @@ Future<void> _run({
         panic(<String>['could not get API level of the connected device']);
       }
       final String connectedDeviceAPILevel = (apiLevelProcessResult.stdout as String).trim();
-      log('using API level $connectedDeviceAPILevel');
+      final Map<String, String> dimensions = <String, String>{
+        'AndroidAPILevel': connectedDeviceAPILevel,
+        'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
+      };
+      log('using dimensions: ${json.encode(dimensions)}');
       skiaGoldClient = SkiaGoldClient(
         outDir,
         dimensions: <String, String>{
