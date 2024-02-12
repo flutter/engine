@@ -771,6 +771,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     scheduleFrameCallback!();
   }
 
+  @override
+  void forceSyncFrame() {
+    // TODO(dkwingsmt): Call beginFrame and drawFrame, since the framework
+    // will no longer call them once it switches to forceSyncFrame.
+  }
+
   /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
   /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function

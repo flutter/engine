@@ -658,6 +658,9 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
+  void ForceSyncFrame() override;
+
+  // |PlatformConfigurationClient|
   void Render(Scene* scene, double width, double height) override;
 
   // |PlatformConfigurationClient|

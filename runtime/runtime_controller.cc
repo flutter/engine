@@ -341,6 +341,11 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
+void RuntimeController::ForceSyncFrame() {
+  client_.ForceSyncFrame();
+}
+
+// |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene, double width, double height) {
   // TODO(dkwingsmt): Currently only supports a single window.
   int64_t view_id = kFlutterImplicitViewId;

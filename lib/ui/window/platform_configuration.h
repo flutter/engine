@@ -66,6 +66,11 @@ class PlatformConfigurationClient {
   virtual void ScheduleFrame() = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief
+  ///
+  virtual void ForceSyncFrame() = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
@@ -556,6 +561,8 @@ class PlatformConfigurationNativeApi {
   static std::string DefaultRouteName();
 
   static void ScheduleFrame();
+
+  static void ForceSyncFrame();
 
   static void Render(int64_t view_id,
                      Scene* scene,

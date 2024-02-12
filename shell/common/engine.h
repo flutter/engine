@@ -838,6 +838,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
+  void ForceSyncFrame() override;
+
+  // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
   // |RuntimeDelegate|

@@ -264,6 +264,20 @@ void Animator::AwaitVSync() {
   }
 }
 
+void Animator::ForceSyncFrame() {
+  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Forced Frame Request Pending",
+                           frame_request_number_);
+  regenerate_layer_trees_ = true;
+
+  const fml::TimePoint frame_start_time = fml::TimePoint::Now();
+  const fml::TimePoint frame_target_time = frame_start_time;
+
+  std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
+      std::make_unique<FrameTimingsRecorder>();
+  frame_timings_recorder->RecordVsync(frame_start_time, frame_target_time);
+  BeginFrame(std::move(frame_timings_recorder));
+}
+
 void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,
                                               const fml::closure& callback) {
   waiter_->ScheduleSecondaryCallback(id, callback);
