@@ -72,9 +72,10 @@
                     "contexts": [
                         "android_virtual_device"
                     ],
-                    "script": "flutter/testing/scenario_app/run_android_tests.sh --graphics-backend=skia",
+                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
                     "parameters": [
-                        "android_debug_x64"
+                        "android_debug_x64",
+                        "--no-enable-impeller"
                     ]
                 },
                 {
@@ -93,9 +94,11 @@
                     "contexts": [
                         "android_virtual_device"
                     ],
-                    "script": "flutter/testing/scenario_app/run_android_tests.sh --graphics-backend=impeller-vulkan",
+                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
                     "parameters": [
-                        "android_debug_x64"
+                        "android_debug_x64",
+                        "--enable-impeller",
+                        "--impeller-backend=vulkan"
                     ]
                 },
                 {
@@ -114,9 +117,11 @@
                     "contexts": [
                         "android_virtual_device"
                     ],
-                    "script": "flutter/testing/scenario_app/run_android_tests.sh --graphics-backend=impeller-opengles",
+                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
                     "parameters": [
-                        "android_debug_x64"
+                        "android_debug_x64",
+                        "--enable-impeller",
+                        "--impeller-backend=opengles"
                     ]
                 }
             ]

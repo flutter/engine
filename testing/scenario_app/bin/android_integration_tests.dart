@@ -38,11 +38,15 @@ void main(List<String> args) async {
       help: 'Use Skia Gold to compare screenshots.',
       defaultsTo: isLuciEnv,
     )
+    ..addFlag(
+      'enable-impeller',
+      help: 'Enable Impeller for the Android app.',
+    )
     ..addOption(
-      'graphics-backend',
-      help: 'The graphics backend to use for the Android app.',
-      allowed: <String>['skia', 'impeller-vulkan', 'impeller-opengles'],
-      defaultsTo: 'skia',
+      'impeller-backend',
+      help: 'The Impeller backend to use for the Android app.',
+      allowed: <String>['vulkan', 'opengles'],
+      defaultsTo: 'vulkan',
     );
 
   runZonedGuarded(
@@ -52,16 +56,18 @@ void main(List<String> args) async {
       final File adb = File(results['adb'] as String);
       final bool useSkiaGold = results['use-skia-gold'] as bool;
       final String? smokeTest = results['smoke-test'] as String?;
-      final _GraphicsBackend? graphicsBackend = _GraphicsBackend.tryParse(results['graphics-backend'] as String?);
-      if (graphicsBackend == null) {
-        panic(<String>['invalid graphics-backend', results['graphics-backend'] as String? ?? '<null>']);
+      final bool enableImpeller = results['enable-impeller'] as bool;
+      final _ImpellerBackend? impellerBackend = _ImpellerBackend.tryParse(results['impeller-backend'] as String?);
+      if (enableImpeller && impellerBackend == null) {
+        panic(<String>['invalid graphics-backend', results['impeller-backend'] as String? ?? '<null>']);
       }
       await _run(
         outDir: outDir,
         adb: adb,
         smokeTestFullPath: smokeTest,
         useSkiaGold: useSkiaGold,
-        graphicsBackend: graphicsBackend,
+        enableImpeller: enableImpeller,
+        impellerBackend: impellerBackend,
       );
       exit(0);
     },
@@ -75,22 +81,17 @@ void main(List<String> args) async {
   );
 }
 
-enum _GraphicsBackend {
-  skia,
-  impellerVulkan,
-  impellerOpengles;
+enum _ImpellerBackend {
+  vulkan,
+  opengles;
 
-  static _GraphicsBackend? tryParse(String? value) {
-    switch (value) {
-      case 'skia':
-        return _GraphicsBackend.skia;
-      case 'impeller-vulkan':
-        return _GraphicsBackend.impellerVulkan;
-      case 'impeller-opengles':
-        return _GraphicsBackend.impellerOpengles;
-      default:
-        return null;
+  static _ImpellerBackend? tryParse(String? value) {
+    for (final _ImpellerBackend backend in _ImpellerBackend.values) {
+      if (backend.name == value) {
+        return backend;
+      }
     }
+    return null;
   }
 }
 
@@ -99,7 +100,8 @@ Future<void> _run({
   required File adb,
   required String? smokeTestFullPath,
   required bool useSkiaGold,
-  required _GraphicsBackend graphicsBackend,
+  required bool enableImpeller,
+  required _ImpellerBackend? impellerBackend,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -211,7 +213,7 @@ Future<void> _run({
         outDir,
         dimensions: <String, String>{
           'AndroidAPILevel': connectedDeviceAPILevel,
-          'GraphicsBackend': graphicsBackend.name,
+          'GraphicsBackend': enableImpeller ? 'impeller=${impellerBackend!.name}' : 'skia',
         },
       );
     });
@@ -260,11 +262,10 @@ Future<void> _run({
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
-        if (graphicsBackend != _GraphicsBackend.skia)
-          ...<String>[
-            '-e enable-impeller',
-            '-e impeller_backend ${graphicsBackend == _GraphicsBackend.impellerVulkan ? 'vulkan' : 'opengles'}',
-          ],
+        if (enableImpeller) 
+          '-e enable-impeller',
+        if (impellerBackend != null)
+          '-e impeller-backend ${impellerBackend.name}',
       ]);
       if (exitCode != 0) {
         panic(<String>['instrumented tests failed to run']);
