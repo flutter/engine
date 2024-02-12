@@ -18,7 +18,7 @@ import os
 import sys
 
 from subprocess import CompletedProcess
-from typing import Any, List, NamedTuple, Set
+from typing import Any, Iterable, List, Mapping, NamedTuple, Set
 
 # The import is coming from vpython wheel and pylint cannot find it.
 import yaml  # pylint: disable=import-error
@@ -52,7 +52,7 @@ OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out', VARIANT)
 
 
 class TestCase(NamedTuple):
-  package: str = None
+  package: str
   args: str = ''
 
 
@@ -84,7 +84,7 @@ class BundledTestRunner(TestRunner):
     return CompletedProcess(args='', returncode=returncode)
 
 
-def resolve_packages(tests: List[Any]) -> Set[str]:
+def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
   packages = set()
   for test in tests:
     if 'package' in test:
@@ -112,16 +112,14 @@ def resolve_packages(tests: List[Any]) -> Set[str]:
   return resolved_packages
 
 
-def build_test_cases(tests: dict) -> List[TestCase]:
+def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   test_cases = []
   for test in [t['test_command'] for t in tests]:
     assert test.startswith('test run ')
     test = test[len('test run '):]
     if ' -- ' in test:
-      index = test.index(' -- ')
-      test_cases.append(
-          TestCase(package=test[:index], args=test[index + len(' -- '):])
-      )
+      package, args = test.split(' -- ', 1)
+      test_cases.append(TestCase(package=package, args=args))
     else:
       test_cases.append(TestCase(package=test))
   return test_cases
@@ -134,18 +132,13 @@ def bundled_test_runner_of(target_id: str) -> BundledTestRunner:
     tests = yaml.safe_load(file)
   # TODO(zijiehe-google-com): Run tests with dart aot,
   # https://github.com/flutter/flutter/issues/140179.
-  tests = list(
-      filter(
-          lambda test: 'run_with_dart_aot' not in test or test[
-              'run_with_dart_aot'] != 'true', tests
-      )
-  )
-  tests = list(
-      filter(
-          lambda test: 'variant' not in test or VARIANT == test['variant'],
-          tests
-      )
-  )
+  def dart_jit(test) -> bool:
+    return 'run_with_dart_aot' not in test or test['run_with_dart_aot'] != 'true'
+  # TODO(zijiehe-google-com): Run all tests in release build,
+  # https://github.com/flutter/flutter/issues/140179.
+  def variant(test) -> bool:
+    return 'variant' not in test or test['variant'] == VARIANT
+  tests = [t for t in tests if dart_jit(t) and variant(t)]
   return BundledTestRunner(
       target_id, resolve_packages(tests), build_test_cases(tests), log_dir
   )
