@@ -64,11 +64,11 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
-  ASSERT_EQ(atlas->GetType(), GlyphAtlas::Type::kRedBitmap);
+  ASSERT_EQ(atlas->GetType(), GlyphAtlas::Type::kAlphaBitmap);
   ASSERT_EQ(atlas->GetGlyphCount(), 4llu);
 
   std::optional<impeller::ScaledFont> first_scaled_font;
@@ -122,7 +122,7 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
       *GetContext(), GlyphAtlas::Type::kColorBitmap);
 
   auto bitmap_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
-      *GetContext(), GlyphAtlas::Type::kRedBitmap);
+      *GetContext(), GlyphAtlas::Type::kAlphaBitmap);
 
   ASSERT_FALSE(color_atlas == bitmap_atlas);
 }
@@ -135,7 +135,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
@@ -152,7 +152,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
@@ -161,7 +161,7 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   // now attempt to re-create an atlas with the same text blob.
 
   auto next_atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
   ASSERT_EQ(atlas, next_atlas);
   ASSERT_EQ(atlas_context->GetGlyphAtlas(), atlas);
@@ -189,7 +189,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
         font_glyph_map, 0.6 * index);
   };
   auto atlas =
-      context->CreateGlyphAtlas(*GetContext(), GlyphAtlas::Type::kRedBitmap,
+      context->CreateGlyphAtlas(*GetContext(), GlyphAtlas::Type::kAlphaBitmap,
                                 atlas_context, font_glyph_map);
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
@@ -219,7 +219,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
   auto old_packer = atlas_context->GetRectPacker();
 
@@ -233,7 +233,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
 
   auto blob2 = SkTextBlob::MakeFromString("spooky 2", sk_font);
   auto next_atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob2));
   ASSERT_EQ(atlas, next_atlas);
   auto* second_texture = next_atlas->GetTexture().get();
@@ -252,7 +252,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
   ASSERT_TRUE(blob);
   auto atlas = CreateGlyphAtlas(
-      *GetContext(), context.get(), GlyphAtlas::Type::kRedBitmap, 1.0f,
+      *GetContext(), context.get(), GlyphAtlas::Type::kAlphaBitmap, 1.0f,
       atlas_context, *MakeTextFrameFromTextBlobSkia(blob));
   auto old_packer = atlas_context->GetRectPacker();
 

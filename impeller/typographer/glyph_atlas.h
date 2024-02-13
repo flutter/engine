@@ -32,8 +32,10 @@ class GlyphAtlas {
   enum class Type {
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using only an 8-bit
-    /// alpha or red channel.
+    /// color channel.
     ///
+    /// This might be backed by a grey or red single channel texture, depending
+    /// on the backend capabilities.
     kAlphaBitmap,
 
     //--------------------------------------------------------------------------

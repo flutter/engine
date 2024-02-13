@@ -83,7 +83,7 @@ bool TextContents::Render(const ContentContext& renderer,
   pass.SetCommandLabel("TextFrame");
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangle;
-  if (type == GlyphAtlas::Type::kRedBitmap) {
+  if (type == GlyphAtlas::Type::kAlphaBitmap) {
     pass.SetPipeline(renderer.GetGlyphAtlasPipeline(opts));
   } else {
     pass.SetPipeline(renderer.GetGlyphAtlasColorPipeline(opts));

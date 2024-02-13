@@ -197,13 +197,12 @@ PixelFormat CapabilitiesGLES::GetDefaultDepthStencilFormat() const {
   return PixelFormat::kD24UnormS8Uint;
 }
 
-<<<<<<< HEAD
-PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {
-  return default_glyph_atlas_format_;
-=======
 bool CapabilitiesGLES::IsANGLE() const {
   return is_angle_;
->>>>>>> 9b183870ff6ce2f928e86b45d82e06ddcef28423
+}
+
+PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {
+  return default_glyph_atlas_format_;
 }
 
 }  // namespace impeller
