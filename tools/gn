@@ -1092,14 +1092,14 @@ def parse_args(args):
   # Impeller flags.
   parser.add_argument(
       '--enable-impeller-vulkan',
-      default=False,
+      default=True,
       action='store_true',
       help='Enable the Impeller Vulkan backend.'
   )
 
   parser.add_argument(
       '--enable-impeller-vulkan-playgrounds',
-      default=False,
+      default=True,
       action='store_true',
       help='Enable the Impeller Vulkan Playgrounds. ' +
       'The Impeller Vulkan backend needs to be enabled.'
@@ -1107,7 +1107,7 @@ def parse_args(args):
 
   parser.add_argument(
       '--enable-impeller-opengles',
-      default=False,
+      default=True,
       action='store_true',
       help='Enable the Impeller OpenGL ES backend.'
   )
