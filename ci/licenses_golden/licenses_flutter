@@ -1113,6 +1113,186 @@ limitations under the License.
 ====================================================================================================
 
 ====================================================================================================
+LIBRARY: libpng
+ORIGIN: ../../../flutter/third_party/libpng/LICENSE
+ORIGIN: ../../../flutter/third_party/libpng/png.h
+TYPE: LicenseType.libpng
+FILE: ../../../flutter/third_party/libpng/arm/arm_init.c
+FILE: ../../../flutter/third_party/libpng/arm/filter_neon.S
+FILE: ../../../flutter/third_party/libpng/arm/filter_neon_intrinsics.c
+FILE: ../../../flutter/third_party/libpng/arm/palette_neon_intrinsics.c
+FILE: ../../../flutter/third_party/libpng/config.h.in
+FILE: ../../../flutter/third_party/libpng/example.c
+FILE: ../../../flutter/third_party/libpng/intel/filter_sse2_intrinsics.c
+FILE: ../../../flutter/third_party/libpng/intel/intel_init.c
+FILE: ../../../flutter/third_party/libpng/libpng.pc.in
+FILE: ../../../flutter/third_party/libpng/png.c
+FILE: ../../../flutter/third_party/libpng/png.h
+FILE: ../../../flutter/third_party/libpng/pngbar.jpg
+FILE: ../../../flutter/third_party/libpng/pngbar.png
+FILE: ../../../flutter/third_party/libpng/pngconf.h
+FILE: ../../../flutter/third_party/libpng/pngdebug.h
+FILE: ../../../flutter/third_party/libpng/pngerror.c
+FILE: ../../../flutter/third_party/libpng/pngget.c
+FILE: ../../../flutter/third_party/libpng/pnginfo.h
+FILE: ../../../flutter/third_party/libpng/pnglibconf.h
+FILE: ../../../flutter/third_party/libpng/pngmem.c
+FILE: ../../../flutter/third_party/libpng/pngnow.png
+FILE: ../../../flutter/third_party/libpng/pngpread.c
+FILE: ../../../flutter/third_party/libpng/pngprefix.h
+FILE: ../../../flutter/third_party/libpng/pngpriv.h
+FILE: ../../../flutter/third_party/libpng/pngread.c
+FILE: ../../../flutter/third_party/libpng/pngrio.c
+FILE: ../../../flutter/third_party/libpng/pngrtran.c
+FILE: ../../../flutter/third_party/libpng/pngrutil.c
+FILE: ../../../flutter/third_party/libpng/pngset.c
+FILE: ../../../flutter/third_party/libpng/pngstruct.h
+FILE: ../../../flutter/third_party/libpng/pngtest.c
+FILE: ../../../flutter/third_party/libpng/pngtest.png
+FILE: ../../../flutter/third_party/libpng/pngtrans.c
+FILE: ../../../flutter/third_party/libpng/pngusr.dfa
+FILE: ../../../flutter/third_party/libpng/pngwio.c
+FILE: ../../../flutter/third_party/libpng/pngwrite.c
+FILE: ../../../flutter/third_party/libpng/pngwtran.c
+FILE: ../../../flutter/third_party/libpng/pngwutil.c
+----------------------------------------------------------------------------------------------------
+COPYRIGHT NOTICE, DISCLAIMER, and LICENSE
+=========================================
+
+PNG Reference Library License version 2
+---------------------------------------
+
+* Copyright (c) 1995-2019 The PNG Reference Library Authors.
+* Copyright (c) 2018-2019 Cosmin Truta.
+* Copyright (c) 2000-2002, 2004, 2006-2018 Glenn Randers-Pehrson.
+* Copyright (c) 1996-1997 Andreas Dilger.
+* Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
+
+The software is supplied "as is", without warranty of any kind,
+express or implied, including, without limitation, the warranties
+of merchantability, fitness for a particular purpose, title, and
+non-infringement.  In no event shall the Copyright owners, or
+anyone distributing the software, be liable for any damages or
+other liability, whether in contract, tort or otherwise, arising
+from, out of, or in connection with the software, or the use or
+other dealings in the software, even if advised of the possibility
+of such damage.
+
+Permission is hereby granted to use, copy, modify, and distribute
+this software, or portions hereof, for any purpose, without fee,
+subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you
+    must not claim that you wrote the original software.  If you
+    use this software in a product, an acknowledgment in the product
+    documentation would be appreciated, but is not required.
+
+2. Altered source versions must be plainly marked as such, and must
+    not be misrepresented as being the original software.
+
+3. This Copyright notice may not be removed or altered from any
+    source or altered source distribution.
+
+
+PNG Reference Library License version 1 (for libpng 0.5 through 1.6.35)
+-----------------------------------------------------------------------
+
+libpng versions 1.0.7, July 1, 2000, through 1.6.35, July 15, 2018 are
+Copyright (c) 2000-2002, 2004, 2006-2018 Glenn Randers-Pehrson, are
+derived from libpng-1.0.6, and are distributed according to the same
+disclaimer and license as libpng-1.0.6 with the following individuals
+added to the list of Contributing Authors:
+
+    Simon-Pierre Cadieux
+    Eric S. Raymond
+    Mans Rullgard
+    Cosmin Truta
+    Gilles Vollant
+    James Yu
+    Mandar Sahastrabuddhe
+    Google Inc.
+    Vadim Barkov
+
+and with the following additions to the disclaimer:
+
+    There is no warranty against interference with your enjoyment of
+    the library or against infringement.  There is no warranty that our
+    efforts or the library will fulfill any of your particular purposes
+    or needs.  This library is provided with all faults, and the entire
+    risk of satisfactory quality, performance, accuracy, and effort is
+    with the user.
+
+Some files in the "contrib" directory and some configure-generated
+files that are distributed with libpng have other copyright owners, and
+are released under other open source licenses.
+
+libpng versions 0.97, January 1998, through 1.0.6, March 20, 2000, are
+Copyright (c) 1998-2000 Glenn Randers-Pehrson, are derived from
+libpng-0.96, and are distributed according to the same disclaimer and
+license as libpng-0.96, with the following individuals added to the
+list of Contributing Authors:
+
+    Tom Lane
+    Glenn Randers-Pehrson
+    Willem van Schaik
+
+libpng versions 0.89, June 1996, through 0.96, May 1997, are
+Copyright (c) 1996-1997 Andreas Dilger, are derived from libpng-0.88,
+and are distributed according to the same disclaimer and license as
+libpng-0.88, with the following individuals added to the list of
+Contributing Authors:
+
+    John Bowler
+    Kevin Bracey
+    Sam Bushell
+    Magnus Holmgren
+    Greg Roelofs
+    Tom Tanner
+
+Some files in the "scripts" directory have other copyright owners,
+but are released under this license.
+
+libpng versions 0.5, May 1995, through 0.88, January 1996, are
+Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
+
+For the purposes of this copyright and license, "Contributing Authors"
+is defined as the following set of individuals:
+
+    Andreas Dilger
+    Dave Martindale
+    Guy Eric Schalnat
+    Paul Schmidt
+    Tim Wegner
+
+The PNG Reference Library is supplied "AS IS".  The Contributing
+Authors and Group 42, Inc. disclaim all warranties, expressed or
+implied, including, without limitation, the warranties of
+merchantability and of fitness for any purpose.  The Contributing
+Authors and Group 42, Inc. assume no liability for direct, indirect,
+incidental, special, exemplary, or consequential damages, which may
+result from the use of the PNG Reference Library, even if advised of
+the possibility of such damage.
+
+Permission is hereby granted to use, copy, modify, and distribute this
+source code, or portions hereof, for any purpose, without fee, subject
+to the following restrictions:
+
+1. The origin of this source code must not be misrepresented.
+
+2. Altered versions must be plainly marked as such and must not
+    be misrepresented as being the original source.
+
+3. This Copyright notice may not be removed or altered from any
+    source or altered source distribution.
+
+The Contributing Authors and Group 42, Inc. specifically permit,
+without fee, and encourage the use of this source code as a component
+to supporting the PNG file format in commercial products.  If you use
+this source code in a product, acknowledgment is not required but would
+be appreciated.
+====================================================================================================
+
+====================================================================================================
 LIBRARY: libjpeg-turbo
 ORIGIN: ../../../flutter/third_party/libjpeg-turbo/src/rdcolmap.c
 ORIGIN: ../../../flutter/third_party/libjpeg-turbo/src/rdppm.c
@@ -4832,6 +5012,8 @@ ORIGIN: ../../../flutter/fml/platform/android/jni_weak_ref.cc + ../../../flutter
 ORIGIN: ../../../flutter/fml/platform/android/jni_weak_ref.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/android/message_loop_android.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/android/message_loop_android.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/android/ndk_helpers.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/fml/platform/android/ndk_helpers.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/android/paths_android.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/android/paths_android.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/fml/platform/android/scoped_java_ref.cc + ../../../flutter/LICENSE
@@ -4961,24 +5143,6 @@ ORIGIN: ../../../flutter/impeller/aiks/picture_recorder.cc + ../../../flutter/LI
 ORIGIN: ../../../flutter/impeller/aiks/picture_recorder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/trace_serializer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/trace_serializer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivable.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivable.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_class_registration.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_class_registration.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_database.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_database.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_location.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_location.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_statement.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_statement.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_transaction.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_transaction.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_vector.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archive_vector.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivist_fixture.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/archivist/archivist_fixture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/allocation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/allocation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/backend_cast.h + ../../../flutter/LICENSE
@@ -5120,8 +5284,6 @@ ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc + ../../../flutter/LICENSE
@@ -5325,12 +5487,6 @@ ORIGIN: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.h + ../../..
 ORIGIN: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/image/compressed_image.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/image/compressed_image.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/image/decompressed_image.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/image/decompressed_image.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/allocator_gles.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/allocator_gles.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/gles/blit_command_gles.cc + ../../../flutter/LICENSE
@@ -6026,6 +6182,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart + ../..
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/view_focus_binding.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart + ../../../flutter/LICENSE
@@ -6134,6 +6291,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart + ../../../f
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/custom_element_dimensions_provider.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/dimensions_provider.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/full_page_dimensions_provider.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/display_dpr_stream.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dom_manager.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/custom_element_embedding_strategy.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart + ../../../flutter/LICENSE
@@ -6313,8 +6471,6 @@ ORIGIN: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h + ../../../flut
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/AndroidManifest.xml + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/android_choreographer.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/android_choreographer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_impeller.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/android_context_gl_skia.cc + ../../../flutter/LICENSE
@@ -6500,8 +6656,6 @@ ORIGIN: ../../../flutter/shell/platform/android/jni/jni_mock.h + ../../../flutte
 ORIGIN: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/library_loader.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/ndk_helpers.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/android/ndk_helpers.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/platform_message_handler_android.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/platform_message_response_android.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/android/platform_message_response_android.h + ../../../flutter/LICENSE
@@ -7689,6 +7843,8 @@ FILE: ../../../flutter/fml/platform/android/jni_weak_ref.cc
 FILE: ../../../flutter/fml/platform/android/jni_weak_ref.h
 FILE: ../../../flutter/fml/platform/android/message_loop_android.cc
 FILE: ../../../flutter/fml/platform/android/message_loop_android.h
+FILE: ../../../flutter/fml/platform/android/ndk_helpers.cc
+FILE: ../../../flutter/fml/platform/android/ndk_helpers.h
 FILE: ../../../flutter/fml/platform/android/paths_android.cc
 FILE: ../../../flutter/fml/platform/android/paths_android.h
 FILE: ../../../flutter/fml/platform/android/scoped_java_ref.cc
@@ -7818,24 +7974,6 @@ FILE: ../../../flutter/impeller/aiks/picture_recorder.cc
 FILE: ../../../flutter/impeller/aiks/picture_recorder.h
 FILE: ../../../flutter/impeller/aiks/trace_serializer.cc
 FILE: ../../../flutter/impeller/aiks/trace_serializer.h
-FILE: ../../../flutter/impeller/archivist/archivable.cc
-FILE: ../../../flutter/impeller/archivist/archivable.h
-FILE: ../../../flutter/impeller/archivist/archive.cc
-FILE: ../../../flutter/impeller/archivist/archive.h
-FILE: ../../../flutter/impeller/archivist/archive_class_registration.cc
-FILE: ../../../flutter/impeller/archivist/archive_class_registration.h
-FILE: ../../../flutter/impeller/archivist/archive_database.cc
-FILE: ../../../flutter/impeller/archivist/archive_database.h
-FILE: ../../../flutter/impeller/archivist/archive_location.cc
-FILE: ../../../flutter/impeller/archivist/archive_location.h
-FILE: ../../../flutter/impeller/archivist/archive_statement.cc
-FILE: ../../../flutter/impeller/archivist/archive_statement.h
-FILE: ../../../flutter/impeller/archivist/archive_transaction.cc
-FILE: ../../../flutter/impeller/archivist/archive_transaction.h
-FILE: ../../../flutter/impeller/archivist/archive_vector.cc
-FILE: ../../../flutter/impeller/archivist/archive_vector.h
-FILE: ../../../flutter/impeller/archivist/archivist_fixture.cc
-FILE: ../../../flutter/impeller/archivist/archivist_fixture.h
 FILE: ../../../flutter/impeller/base/allocation.cc
 FILE: ../../../flutter/impeller/base/allocation.h
 FILE: ../../../flutter/impeller/base/backend_cast.h
@@ -7977,8 +8115,6 @@ FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/color_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/color_matrix_filter_contents.h
-FILE: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/filters/directional_gaussian_blur_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents.cc
@@ -8182,12 +8318,6 @@ FILE: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.h
 FILE: ../../../flutter/impeller/golden_tests/vulkan_screenshotter.mm
 FILE: ../../../flutter/impeller/golden_tests/working_directory.cc
 FILE: ../../../flutter/impeller/golden_tests/working_directory.h
-FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc
-FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h
-FILE: ../../../flutter/impeller/image/compressed_image.cc
-FILE: ../../../flutter/impeller/image/compressed_image.h
-FILE: ../../../flutter/impeller/image/decompressed_image.cc
-FILE: ../../../flutter/impeller/image/decompressed_image.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/allocator_gles.cc
 FILE: ../../../flutter/impeller/renderer/backend/gles/allocator_gles.h
 FILE: ../../../flutter/impeller/renderer/backend/gles/blit_command_gles.cc
@@ -8889,6 +9019,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/onscreen_logging.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/picture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/app_lifecycle_state.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_dispatcher/view_focus_binding.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/content_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.dart
@@ -8997,6 +9128,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/vector_math.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/custom_element_dimensions_provider.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/dimensions_provider.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dimensions_provider/full_page_dimensions_provider.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/display_dpr_stream.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/dom_manager.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/custom_element_embedding_strategy.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/view_embedder/embedding_strategy/embedding_strategy.dart
@@ -9176,8 +9308,6 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.h
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
-FILE: ../../../flutter/shell/platform/android/android_choreographer.cc
-FILE: ../../../flutter/shell/platform/android/android_choreographer.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl_impeller.cc
 FILE: ../../../flutter/shell/platform/android/android_context_gl_impeller.h
 FILE: ../../../flutter/shell/platform/android/android_context_gl_skia.cc
@@ -9376,8 +9506,6 @@ FILE: ../../../flutter/shell/platform/android/jni/jni_mock.h
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.cc
 FILE: ../../../flutter/shell/platform/android/jni/platform_view_android_jni.h
 FILE: ../../../flutter/shell/platform/android/library_loader.cc
-FILE: ../../../flutter/shell/platform/android/ndk_helpers.cc
-FILE: ../../../flutter/shell/platform/android/ndk_helpers.h
 FILE: ../../../flutter/shell/platform/android/platform_message_handler_android.cc
 FILE: ../../../flutter/shell/platform/android/platform_message_handler_android.h
 FILE: ../../../flutter/shell/platform/android/platform_message_response_android.cc
@@ -11960,4 +12088,4 @@ TO DO
 Please send bug reports, offers of help, etc. to jpeg-info@jpegclub.org.
 ====================================================================================================
 
-Total license count: 113
+Total license count: 114

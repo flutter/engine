@@ -113,13 +113,16 @@ static void init_keyboard(FlView* self) {
   g_autoptr(GtkIMContext) im_context = gtk_im_multicontext_new();
   gtk_im_context_set_client_window(im_context, window);
 
+  g_clear_object(&self->text_input_plugin);
   self->text_input_plugin = fl_text_input_plugin_new(
       messenger, im_context, FL_TEXT_INPUT_VIEW_DELEGATE(self));
+  g_clear_object(&self->keyboard_manager);
   self->keyboard_manager =
       fl_keyboard_manager_new(messenger, FL_KEYBOARD_VIEW_DELEGATE(self));
 }
 
 static void init_scrolling(FlView* self) {
+  g_clear_object(&self->scrolling_manager);
   self->scrolling_manager =
       fl_scrolling_manager_new(FL_SCROLLING_VIEW_DELEGATE(self));
 }
@@ -242,9 +245,6 @@ static void update_semantics_node_cb(FlEngine* engine,
 static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
-  g_clear_object(&self->keyboard_manager);
-  g_clear_object(&self->text_input_plugin);
-  g_clear_object(&self->scrolling_manager);
   init_keyboard(self);
   init_scrolling(self);
 }
@@ -290,11 +290,10 @@ static void fl_view_keyboard_delegate_iface_init(
   iface->redispatch_event = [](FlKeyboardViewDelegate* view_delegate,
                                std::unique_ptr<FlKeyEvent> in_event) {
     FlKeyEvent* event = in_event.release();
-    GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(event->origin);
-    GdkEventType event_type = gdk_event_get_event_type(gdk_event);
+    GdkEventType event_type = gdk_event_get_event_type(event->origin);
     g_return_if_fail(event_type == GDK_KEY_PRESS ||
                      event_type == GDK_KEY_RELEASE);
-    gdk_event_put(gdk_event);
+    gdk_event_put(event->origin);
     fl_key_event_dispose(event);
   };
 
