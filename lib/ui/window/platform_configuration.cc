@@ -589,9 +589,12 @@ void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
 }
 
-void PlatformConfigurationNativeApi::ForceSyncFrame() {
+void PlatformConfigurationNativeApi::RequestWarmUpFrame() {
   UIDartState::ThrowIfUIOperationsProhibited();
-  UIDartState::Current()->platform_configuration()->client()->ForceSyncFrame();
+  UIDartState::Current()
+      ->platform_configuration()
+      ->client()
+      ->RequestWarmUpFrame();
 }
 
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {

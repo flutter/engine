@@ -68,7 +68,7 @@ class PlatformConfigurationClient {
   //--------------------------------------------------------------------------
   /// @brief
   ///
-  virtual void ForceSyncFrame() = 0;
+  virtual void RequestWarmUpFrame() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
@@ -562,7 +562,7 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
-  static void ForceSyncFrame();
+  static void RequestWarmUpFrame();
 
   static void Render(int64_t view_id,
                      Scene* scene,

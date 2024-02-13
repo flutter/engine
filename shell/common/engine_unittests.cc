@@ -63,7 +63,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD(std::string, DefaultRouteName, (), (override));
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
-  MOCK_METHOD(void, ForceSyncFrame, (), (override));
+  MOCK_METHOD(void, RequestWarmUpFrame, (), (override));
   MOCK_METHOD(void,
               Render,
               (std::unique_ptr<flutter::LayerTree>, float),

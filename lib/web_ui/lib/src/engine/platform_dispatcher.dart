@@ -22,7 +22,7 @@ ui.VoidCallback? scheduleFrameCallback;
 /// Since this will probably call [PlatformWindow.render] outside of an
 /// animation frame, the render will not be actually presented, but just to warm
 /// up the framework.
-ui.VoidCallback? warmUpFrameCallback;
+ui.VoidCallback? requestWarmUpFrameCallback;
 
 /// Signature of functions added as a listener to high contrast changes
 typedef HighContrastListener = void Function(bool enabled);
@@ -779,11 +779,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  void forceSyncFrame() {
-    if (warmUpFrameCallback == null) {
-      throw Exception('warmUpFrameCallback must be initialized first.');
+  void requestWarmUpFrame() {
+    if (requestWarmUpFrameCallback == null) {
+      throw Exception('requestWarmUpFrameCallback must be initialized first.');
     }
-    warmUpFrameCallback!();
+    requestWarmUpFrameCallback!();
   }
 
   /// Updates the application's rendering on the GPU with the newly provided

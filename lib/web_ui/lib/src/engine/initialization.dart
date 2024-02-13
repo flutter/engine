@@ -102,7 +102,7 @@ void debugResetEngineInitializationState() {
   _initializationState = DebugEngineInitializationState.uninitialized;
 }
 
-void renderFrame(int timeInMicroseconds) {
+void renderFrame(int timeMicroseconds) {
   frameTimingsOnVsync();
 
   // In Flutter terminology "building a frame" consists of "beginning
@@ -114,7 +114,7 @@ void renderFrame(int timeInMicroseconds) {
   frameTimingsOnBuildStart();
   if (EnginePlatformDispatcher.instance.onBeginFrame != null) {
     EnginePlatformDispatcher.instance.invokeOnBeginFrame(
-        Duration(microseconds: timeInMicroseconds));
+        Duration(microseconds: timeMicroseconds));
   }
 
   if (EnginePlatformDispatcher.instance.onDrawFrame != null) {
@@ -196,9 +196,9 @@ Future<void> initializeEngineServices({
       });
     }
   };
-  warmUpFrameCallback = () {
-    // TODO(dkwingsmt): Can we give it some time value?
-    renderFrame(0);
+  requestWarmUpFrameCallback = () {
+    final int timeMicroseconds = (1000 * domWindow.performance.now()).toInt();
+    renderFrame(timeMicroseconds);
   };
 
   assetManager ??= ui_web.AssetManager(assetBase: configuration.assetBase);

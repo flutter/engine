@@ -801,7 +801,7 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  ///  * [forceSyncFrame], a similar method that is used in rare cases that
+  ///  * [requestWarmUpFrame], a similar method that is used in rare cases that
   ///    a frame must be rendered immediately.
   void scheduleFrame() => _scheduleFrame();
 
@@ -816,7 +816,7 @@ class PlatformDispatcher {
   /// completed synchronously within this call.
   ///
   /// Prefer [scheduleFrame] to update the display in normal operation. The
-  /// [forceSyncFrame] method is designed for situations that require a frame is
+  /// [requestWarmUpFrame] method is designed for situations that require a frame is
   /// rendered as soon as possible, even at the cost of rendering quality. An
   /// example of using this method is [SchedulerBinding.scheduleWarmUpFrame],
   /// which is called during application startup so that the first frame can be
@@ -826,10 +826,10 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method.
   ///  * [scheduleFrame].
-  void forceSyncFrame() => _forceSyncFrame();
+  void requestWarmUpFrame() => _requestWarmUpFrame();
 
-  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ForceSyncFrame')
-  external static void _forceSyncFrame();
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::RequestWarmUpFrame')
+  external static void _requestWarmUpFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;

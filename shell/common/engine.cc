@@ -462,8 +462,8 @@ void Engine::ScheduleFrame(bool regenerate_layer_trees) {
   animator_->RequestFrame(regenerate_layer_trees);
 }
 
-void Engine::ForceSyncFrame() {
-  animator_->ForceSyncFrame();
+void Engine::RequestWarmUpFrame() {
+  animator_->RequestWarmUpFrame();
 }
 
 void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree,

@@ -264,7 +264,7 @@ void Animator::AwaitVSync() {
   }
 }
 
-void Animator::ForceSyncFrame() {
+void Animator::RequestWarmUpFrame() {
   TRACE_EVENT_ASYNC_BEGIN0("flutter", "Forced Frame Request Pending",
                            frame_request_number_);
   regenerate_layer_trees_ = true;

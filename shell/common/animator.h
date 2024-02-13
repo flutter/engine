@@ -53,7 +53,7 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_trees = true);
 
-  void ForceSyncFrame();
+  void RequestWarmUpFrame();
 
   //--------------------------------------------------------------------------
   /// @brief    Tells the Animator that this frame needs to render another view.
