@@ -16,27 +16,29 @@
 
 namespace flutter {
 
-enum class FocusChangeDirection {
-  kProgrammatic,
-  kForward,
-  kBackward
-};
+enum class FocusChangeDirection { kProgrammatic, kForward, kBackward };
 
 class PlatformViewManager {
  public:
-  PlatformViewManager(TaskRunner* task_runner, BinaryMessenger* binary_messenger);
+  PlatformViewManager(TaskRunner* task_runner,
+                      BinaryMessenger* binary_messenger);
 
   virtual ~PlatformViewManager();
 
-  virtual void QueuePlatformViewCreation(std::string_view type_name, int64_t id);
+  virtual void QueuePlatformViewCreation(std::string_view type_name,
+                                         int64_t id);
 
   void InstantiatePlatformView(int64_t id);
 
-  void RegisterPlatformViewType(std::string_view type_name, const FlutterPlatformViewTypeEntry& type);
+  void RegisterPlatformViewType(std::string_view type_name,
+                                const FlutterPlatformViewTypeEntry& type);
 
-  void FocusPlatformView(int64_t id, FocusChangeDirection direction, bool focus);
+  void FocusPlatformView(int64_t id,
+                         FocusChangeDirection direction,
+                         bool focus);
 
   std::optional<HWND> GetNativeHandleForId(int64_t id) const;
+
  private:
   std::unique_ptr<MethodChannel<EncodableValue>> channel_;
 

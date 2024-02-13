@@ -14,7 +14,9 @@ namespace flutter {
 
 class MockPlatformViewManager : public PlatformViewManager {
  public:
-  MockPlatformViewManager(FlutterWindowsEngine* engine) : PlatformViewManager(engine->task_runner(), engine->messenger_wrapper()) {}
+  MockPlatformViewManager(FlutterWindowsEngine* engine)
+      : PlatformViewManager(engine->task_runner(),
+                            engine->messenger_wrapper()) {}
 
   ~MockPlatformViewManager() {}
 
