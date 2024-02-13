@@ -1051,7 +1051,8 @@ def run_impeller_golden_tests(build_dir: str):
                                    cwd=os.path.join(BUILDROOT_DIR, "flutter"))
       if diff_result.returncode != 0:
         print_divider('<')
-        print(f'Unexpected diff in {golden_path}')
+        print(f'Unexpected diff in {golden_path}, use `git apply` with the following patch.')
+        print('')
         print(redirect_patch(diff_result.stdout.decode()))
         raise RuntimeError('impeller_golden_tests diff failure')
 
