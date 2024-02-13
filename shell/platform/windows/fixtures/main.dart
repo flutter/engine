@@ -177,6 +177,7 @@ void sendCreationMethod() async {
   ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform_views', bytes, (ByteData? response) {
     completed.complete(response);
   });
+  await completed.future;
 }
 
 @pragma('vm:entry-point')
