@@ -1204,7 +1204,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           'impeller_unittests',
           engine_filter,
           [
-            '--repeat=2',
+              '--repeat=2',
           ],
           coverage=args.coverage,
           gtest=True,
