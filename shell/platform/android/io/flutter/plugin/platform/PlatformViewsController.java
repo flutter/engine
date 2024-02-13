@@ -151,7 +151,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private static boolean enableImageRenderTarget = true;
 
-  private static boolean enableSurfaceProducerRenderTarget = true;
+  private static boolean enableSurfaceProducerRenderTarget = false;
 
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
