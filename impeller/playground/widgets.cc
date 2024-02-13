@@ -2,9 +2,47 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "widgets.h"
+#include "impeller/playground/widgets.h"
 
 namespace impeller {
+
+Point DrawPlaygroundPoint(PlaygroundPoint& point) {
+  impeller::Point mouse_pos(ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+  if (!point.prev_mouse_pos.has_value()) {
+    point.prev_mouse_pos = mouse_pos;
+  }
+
+  if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+    point.position = point.reset_position;
+    point.dragging = false;
+  }
+
+  bool hovering =
+      point.position.GetDistance(mouse_pos) < point.radius &&
+      point.position.GetDistance(point.prev_mouse_pos.value()) < point.radius;
+  if (!ImGui::IsMouseDown(0)) {
+    point.dragging = false;
+  } else if (hovering && ImGui::IsMouseClicked(0)) {
+    point.dragging = true;
+  }
+  if (point.dragging) {
+    point.position += mouse_pos - point.prev_mouse_pos.value();
+  }
+  ImGui::GetBackgroundDrawList()->AddCircleFilled(
+      {point.position.x, point.position.y}, point.radius,
+      ImColor(point.color.red, point.color.green, point.color.blue,
+              (hovering || point.dragging) ? 0.6f : 0.3f));
+  if (hovering || point.dragging) {
+    ImGui::GetBackgroundDrawList()->AddText(
+        {point.position.x - point.radius, point.position.y + point.radius + 10},
+        ImColor(point.color.red, point.color.green, point.color.blue, 1.0f),
+        impeller::SPrintF("x:%0.3f y:%0.3f", point.position.x, point.position.y)
+            .c_str());
+  }
+  point.prev_mouse_pos = mouse_pos;
+  return point.position;
+}
+
 std::tuple<Point, Point> DrawPlaygroundLine(Point default_position_a,
                                             Point default_position_b,
                                             Scalar radius,
@@ -16,8 +54,10 @@ std::tuple<Point, Point> DrawPlaygroundLine(Point default_position_a,
   Color color_a_ = color_a;
   Color color_b_ = color_b;
 
-  position_a = IMPELLER_PLAYGROUND_POINT(position_a, r_, color_a_);
-  position_b = IMPELLER_PLAYGROUND_POINT(position_b, r_, color_b_);
+  static PlaygroundPoint point_a(position_a, r_, color_a_);
+  position_a = DrawPlaygroundPoint(point_a);
+  static PlaygroundPoint point_b(position_b, r_, color_b_);
+  position_b = DrawPlaygroundPoint(point_b);
 
   auto dir = (position_b - position_a).Normalize() * r_;
   auto line_a = position_a + dir;

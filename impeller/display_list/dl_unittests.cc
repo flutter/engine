@@ -694,8 +694,8 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
                       &filter);
 
     if (draw_circle) {
-      auto circle_center =
-          IMPELLER_PLAYGROUND_POINT(Point(500, 400), 20, Color::Red());
+      static PlaygroundPoint center_point(Point(500, 400), 20, Color::Red());
+      auto circle_center = DrawPlaygroundPoint(center_point);
 
       flutter::DlPaint paint;
       paint.setDrawStyle(flutter::DlDrawStyle::kStroke);

@@ -300,20 +300,21 @@ TEST_P(EntityTest, TriangleInsideASquare) {
   auto callback = [&](ContentContext& context, RenderPass& pass) {
     Point offset(100, 100);
 
-    Point a =
-        IMPELLER_PLAYGROUND_POINT(Point(10, 10) + offset, 20, Color::White());
-    Point b =
-        IMPELLER_PLAYGROUND_POINT(Point(210, 10) + offset, 20, Color::White());
-    Point c =
-        IMPELLER_PLAYGROUND_POINT(Point(210, 210) + offset, 20, Color::White());
-    Point d =
-        IMPELLER_PLAYGROUND_POINT(Point(10, 210) + offset, 20, Color::White());
-    Point e =
-        IMPELLER_PLAYGROUND_POINT(Point(50, 50) + offset, 20, Color::White());
-    Point f =
-        IMPELLER_PLAYGROUND_POINT(Point(100, 50) + offset, 20, Color::White());
-    Point g =
-        IMPELLER_PLAYGROUND_POINT(Point(50, 150) + offset, 20, Color::White());
+    static PlaygroundPoint point_a(Point(10, 10) + offset, 20, Color::White());
+    Point a = DrawPlaygroundPoint(point_a);
+    static PlaygroundPoint point_b(Point(210, 10) + offset, 20, Color::White());
+    Point b = DrawPlaygroundPoint(point_b);
+    static PlaygroundPoint point_c(Point(210, 210) + offset, 20,
+                                   Color::White());
+    Point c = DrawPlaygroundPoint(point_c);
+    static PlaygroundPoint point_d(Point(10, 210) + offset, 20, Color::White());
+    Point d = DrawPlaygroundPoint(point_d);
+    static PlaygroundPoint point_e(Point(50, 50) + offset, 20, Color::White());
+    Point e = DrawPlaygroundPoint(point_e);
+    static PlaygroundPoint point_f(Point(100, 50) + offset, 20, Color::White());
+    Point f = DrawPlaygroundPoint(point_f);
+    static PlaygroundPoint point_g(Point(50, 150) + offset, 20, Color::White());
+    Point g = DrawPlaygroundPoint(point_g);
     Path path = PathBuilder{}
                     .MoveTo(a)
                     .LineTo(b)
@@ -425,9 +426,15 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Join::kBevel demo.
     {
       Point off = Point(0, 1) * padding + margin;
-      Point a = IMPELLER_PLAYGROUND_POINT(off + a_def, r, Color::White());
-      Point b = IMPELLER_PLAYGROUND_POINT(off + e_def, r, Color::White());
-      Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
+      static PlaygroundPoint point_a =
+          PlaygroundPoint(off + a_def, r, Color::White());
+      static PlaygroundPoint point_b =
+          PlaygroundPoint(off + e_def, r, Color::White());
+      static PlaygroundPoint point_c =
+          PlaygroundPoint(off + c_def, r, Color::White());
+      Point a = DrawPlaygroundPoint(point_a);
+      Point b = DrawPlaygroundPoint(point_b);
+      Point c = DrawPlaygroundPoint(point_c);
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
           Cap::kButt, Join::kBevel);
@@ -436,9 +443,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Join::kMiter demo.
     {
       Point off = Point(1, 1) * padding + margin;
-      Point a = IMPELLER_PLAYGROUND_POINT(off + a_def, r, Color::White());
-      Point b = IMPELLER_PLAYGROUND_POINT(off + e_def, r, Color::White());
-      Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::White());
+      static PlaygroundPoint point_b(off + e_def, r, Color::White());
+      static PlaygroundPoint point_c(off + c_def, r, Color::White());
+      Point a = DrawPlaygroundPoint(point_a);
+      Point b = DrawPlaygroundPoint(point_b);
+      Point c = DrawPlaygroundPoint(point_c);
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
           Cap::kButt, Join::kMiter);
@@ -447,9 +457,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Join::kRound demo.
     {
       Point off = Point(2, 1) * padding + margin;
-      Point a = IMPELLER_PLAYGROUND_POINT(off + a_def, r, Color::White());
-      Point b = IMPELLER_PLAYGROUND_POINT(off + e_def, r, Color::White());
-      Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::White());
+      static PlaygroundPoint point_b(off + e_def, r, Color::White());
+      static PlaygroundPoint point_c(off + c_def, r, Color::White());
+      Point a = DrawPlaygroundPoint(point_a);
+      Point b = DrawPlaygroundPoint(point_b);
+      Point c = DrawPlaygroundPoint(point_c);
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
           Cap::kButt, Join::kRound);

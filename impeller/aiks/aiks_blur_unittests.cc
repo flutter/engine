@@ -143,7 +143,9 @@ TEST_P(AiksTest, CanRenderClippedBlur) {
 
 TEST_P(AiksTest, ClippedBlurFilterRendersCorrectlyInteractive) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    auto point = IMPELLER_PLAYGROUND_POINT(Point(400, 400), 20, Color::Green());
+    static PlaygroundPoint playground_point(Point(400, 400), 20,
+                                            Color::Green());
+    auto point = DrawPlaygroundPoint(playground_point);
 
     Canvas canvas;
     canvas.Translate(point - Point(400, 400));
