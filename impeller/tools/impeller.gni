@@ -19,10 +19,10 @@ declare_args() {
 
   # Whether the OpenGLES backend is enabled.
   impeller_enable_opengles =
-      (is_linux || is_win || is_android) && target_os != "fuchsia"
+      (is_linux || is_win || is_android || is_mac) && target_os != "fuchsia"
 
   # Whether the Vulkan backend is enabled.
-  impeller_enable_vulkan = (is_linux || is_win || is_android ||
+  impeller_enable_vulkan = (is_linux || is_win || is_mac || is_android ||
                             enable_unittests) && target_os != "fuchsia"
 
   # Whether playgrounds should run with Vulkan.
