@@ -1440,9 +1440,6 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'boringssl') {
-      return _RepositoryBoringSSLDirectory(this, entry);
-    }
     if (entry.name == 'expat') {
       return _RepositoryExpatDirectory(this, entry);
     }
@@ -1762,6 +1759,9 @@ class _RepositoryFlutterThirdPartyDirectory extends _RepositoryGenericThirdParty
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'boringssl') {
+      return _RepositoryBoringSSLDirectory(this, entry);
+    }
     if (entry.name == 'expat') {
       return _RepositoryExpatDirectory(this, entry);
     }
