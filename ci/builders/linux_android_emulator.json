@@ -84,7 +84,7 @@
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
-                            "version": "android_28_google_apis_x64.textpb"
+                            "version": "android_28_google_apis_x86.textpb"
                         },
                         {
                             "dependency": "avd_cipd_version",
@@ -152,7 +152,7 @@
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
-                            "version": "android_28_google_apis_x64.textpb"
+                            "version": "android_28_google_apis_x86.textpb"
                         },
                         {
                             "dependency": "avd_cipd_version",
