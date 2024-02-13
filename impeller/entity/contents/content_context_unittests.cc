@@ -326,7 +326,7 @@ TEST(ContentContext, InvalidatesAllPipelinesWithSameUniqueNameOnClear) {
                            "B", optionsB, create_callback));
 }
 
-TEST(ContentContext, MaliDevicesHaveAdditionalBootstrap) {
+TEST(ContentContext, VulkanDevicesHaveAdditionalBootstrap) {
   auto context = std::make_shared<FakeContext>("Mali G70");
   ContentContext content_context(context, nullptr);
 
@@ -336,16 +336,6 @@ TEST(ContentContext, MaliDevicesHaveAdditionalBootstrap) {
   ASSERT_EQ(fake_allocator.textures.size(), 4u);
   // 1 for the blit bootstrap, 3 for the render pass setup.
   EXPECT_TRUE(fake_allocator.textures[0]->did_set_contents);
-}
-
-TEST(ContentContext, NonMaliDevicesHaveNoAdditionalBootstrap) {
-  auto context = std::make_shared<FakeContext>("Adreno 110");
-  ContentContext content_context(context, nullptr);
-
-  FakeAllocator& fake_allocator =
-      FakeAllocator::Cast(*context->GetResourceAllocator());
-
-  EXPECT_TRUE(fake_allocator.textures.empty());
 }
 
 }  // namespace testing

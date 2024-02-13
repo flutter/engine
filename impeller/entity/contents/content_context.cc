@@ -639,9 +639,7 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
     GetClipPipeline(options);
   }
 
-  std::string vendor = GetContext()->DescribeGpuModel();
-  if (GetContext()->GetBackendType() != Context::BackendType::kVulkan ||
-      vendor.find("Mali") == std::string::npos) {
+  if (GetContext()->GetBackendType() != Context::BackendType::kVulkan) {
     return;
   }
 
