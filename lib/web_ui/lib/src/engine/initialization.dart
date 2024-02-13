@@ -102,30 +102,6 @@ void debugResetEngineInitializationState() {
   _initializationState = DebugEngineInitializationState.uninitialized;
 }
 
-void renderFrame(int timeMicroseconds) {
-  frameTimingsOnVsync();
-
-  // In Flutter terminology "building a frame" consists of "beginning
-  // frame" and "drawing frame".
-  //
-  // We do not call `frameTimingsOnBuildFinish` from here because
-  // part of the rasterization process, particularly in the HTML
-  // renderer, takes place in the `SceneBuilder.build()`.
-  frameTimingsOnBuildStart();
-  if (EnginePlatformDispatcher.instance.onBeginFrame != null) {
-    EnginePlatformDispatcher.instance.invokeOnBeginFrame(
-        Duration(microseconds: timeMicroseconds));
-  }
-
-  if (EnginePlatformDispatcher.instance.onDrawFrame != null) {
-    // TODO(yjbanov): technically Flutter flushes microtasks between
-    //                onBeginFrame and onDrawFrame. We don't, which hasn't
-    //                been an issue yet, but eventually we'll have to
-    //                implement it properly.
-    EnginePlatformDispatcher.instance.invokeOnDrawFrame();
-  }
-}
-
 /// Initializes non-UI engine services.
 ///
 /// Does not put any UI onto the page. It is therefore safe to call this
@@ -182,6 +158,8 @@ Future<void> initializeEngineServices({
     if (!waitingForAnimation) {
       waitingForAnimation = true;
       domWindow.requestAnimationFrame((JSNumber highResTime) {
+        frameTimingsOnVsync();
+
         // Reset immediately, because `frameHandler` can schedule more frames.
         waitingForAnimation = false;
 
@@ -192,13 +170,33 @@ Future<void> initializeEngineServices({
         // microsecond precision, and only then convert to `int`.
         final int highResTimeMicroseconds =
             (1000 * highResTime.toDartDouble).toInt();
-        renderFrame(highResTimeMicroseconds);
+
+        // In Flutter terminology "building a frame" consists of "beginning
+        // frame" and "drawing frame".
+        //
+        // We do not call `frameTimingsOnBuildFinish` from here because
+        // part of the rasterization process, particularly in the HTML
+        // renderer, takes place in the `SceneBuilder.build()`.
+        frameTimingsOnBuildStart();
+        if (EnginePlatformDispatcher.instance.onBeginFrame != null) {
+          EnginePlatformDispatcher.instance.invokeOnBeginFrame(
+              Duration(microseconds: highResTimeMicroseconds));
+        }
+
+        if (EnginePlatformDispatcher.instance.onDrawFrame != null) {
+          // TODO(yjbanov): technically Flutter flushes microtasks between
+          //                onBeginFrame and onDrawFrame. We don't, which hasn't
+          //                been an issue yet, but eventually we'll have to
+          //                implement it properly.
+          EnginePlatformDispatcher.instance.invokeOnDrawFrame();
+        }
       });
     }
   };
-  requestWarmUpFrameCallback = () {
-    final int timeMicroseconds = (1000 * domWindow.performance.now()).toInt();
-    renderFrame(timeMicroseconds);
+
+  scheduleWarmUpFrameCallback = (ui.VoidCallback beginFrameCallback, ui.VoidCallback drawFrameCallback) {
+    Timer.run(beginFrameCallback);
+    Timer.run(drawFrameCallback);
   };
 
   assetManager ??= ui_web.AssetManager(assetBase: configuration.assetBase);

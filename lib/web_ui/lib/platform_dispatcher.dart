@@ -90,7 +90,7 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void requestWarmUpFrame();
+  void scheduleWarmUpFrame(VoidCallback beginFrameCallback, VoidCallback drawFrameCallback);
 
   Future<void> render(Scene scene, [FlutterView view]);
 

@@ -658,7 +658,7 @@ class RuntimeController : public PlatformConfigurationClient {
   void ScheduleFrame() override;
 
   // |PlatformConfigurationClient|
-  void RequestWarmUpFrame() override;
+  void EndWarmUpFrame() override;
 
   // |PlatformConfigurationClient|
   void Render(Scene* scene, double width, double height) override;

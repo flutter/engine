@@ -341,8 +341,8 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::RequestWarmUpFrame() {
-  client_.RequestWarmUpFrame();
+void RuntimeController::EndWarmUpFrame() {
+  client_.EndWarmUpFrame();
 }
 
 // |PlatformConfigurationClient|
