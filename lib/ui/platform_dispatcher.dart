@@ -827,6 +827,7 @@ class PlatformDispatcher {
   ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method.
   ///  * [scheduleFrame].
   void scheduleWarmUpFrame(VoidCallback beginFrameCallback, VoidCallback drawFrameCallback) {
+    // We use timers here to ensure that microtasks flush in between.
     Timer.run(beginFrameCallback);
     Timer.run(() {
       drawFrameCallback();
