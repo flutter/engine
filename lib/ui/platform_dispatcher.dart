@@ -808,29 +808,32 @@ class PlatformDispatcher {
   @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
 
-  /// Immediately render a frame by invoking the [onBeginFrame] and
-  /// [onDrawFrame] callbacks synchronously.
+  /// Schedule a frame to run as soon as possible, rather than waiting for the
+  /// engine to request a frame in response to a system "Vsync" signal.
   ///
-  /// This method performs the same computation for a frame as [scheduleFrame]
-  /// does, but instead of doing so at an appropriate opportunity, the render is
-  /// completed synchronously within this call.
+  /// This method is used during application startup so that the first frame
+  /// (which is likely to be quite expensive) can start a few extra milliseconds
+  /// earlier. Using it in other situations might lead to unintended results,
+  /// such as screen tearing. Depending on the platform, the warm up frame
+  /// might or might not be actually rendered to the screen.
   ///
-  /// Prefer [scheduleFrame] to update the display in normal operation. The
-  /// [scheduleWarmUpFrame] method is designed for situations that require a frame is
-  /// rendered as soon as possible, even at the cost of rendering quality. An
-  /// example of using this method is [SchedulerBinding.scheduleWarmUpFrame],
-  /// which is called during application startup so that the first frame can be
-  /// presented to the screen a few extra milliseconds earlier.
+  /// For more introduction to the warm up frame, see
+  /// [SchedulerBinding.scheduleWarmUpFrame].
+  ///
+  /// This method uses the provided callbacks as the begin frame callback and
+  /// the draw frame callback instead of [onBeginFrame] and [onDrawFrame].
   ///
   /// See also:
   ///
-  ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method.
-  ///  * [scheduleFrame].
-  void scheduleWarmUpFrame(VoidCallback beginFrameCallback, VoidCallback drawFrameCallback) {
+  ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method, and
+  ///    introduces the warm up frame in more details.
+  ///  * [scheduleFrame], which schedules the frame at the next appropriate
+  ///    opportunity and should be used to render regular frames.
+  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame}) {
     // We use timers here to ensure that microtasks flush in between.
-    Timer.run(beginFrameCallback);
+    Timer.run(beginFrame);
     Timer.run(() {
-      drawFrameCallback();
+      drawFrame();
       _endWarmUpFrame();
     });
   }
