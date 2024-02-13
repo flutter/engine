@@ -310,22 +310,27 @@ InferOpenGLPlatformViewCreationCallback(
       // damage are always 1. Once the function that computes damage implements
       // support for multiple damage rectangles, GLPresentInfo should also
       // contain the number of damage rectangles.
-      const size_t num_rects = 1;
 
-      std::array<FlutterRect, num_rects> frame_damage_rect = {
-          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
-      std::array<FlutterRect, num_rects> buffer_damage_rect = {
-          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+      std::optional<FlutterRect> frame_damage_rect;
+      if (gl_present_info.frame_damage) {
+        frame_damage_rect =
+            SkIRectToFlutterRect(*(gl_present_info.frame_damage));
+      }
+      std::optional<FlutterRect> buffer_damage_rect;
+      if (gl_present_info.buffer_damage) {
+        buffer_damage_rect =
+            SkIRectToFlutterRect(*(gl_present_info.buffer_damage));
+      }
 
       FlutterDamage frame_damage{
           .struct_size = sizeof(FlutterDamage),
-          .num_rects = frame_damage_rect.size(),
-          .damage = frame_damage_rect.data(),
+          .num_rects = frame_damage_rect ? size_t{1} : size_t{0},
+          .damage = frame_damage_rect ? &frame_damage_rect.value() : nullptr,
       };
       FlutterDamage buffer_damage{
           .struct_size = sizeof(FlutterDamage),
-          .num_rects = buffer_damage_rect.size(),
-          .damage = buffer_damage_rect.data(),
+          .num_rects = buffer_damage_rect ? size_t{1} : size_t{0},
+          .damage = buffer_damage_rect ? &buffer_damage_rect.value() : nullptr,
       };
 
       // Construct the present information concerning the frame being rendered.
@@ -1088,7 +1093,7 @@ MakeRenderTargetFromBackingStoreImpeller(
   return std::make_unique<flutter::EmbedderRenderTargetImpeller>(
       backing_store, aiks_context,
       std::make_unique<impeller::RenderTarget>(std::move(render_target_desc)),
-      on_release);
+      on_release, fml::closure());
 #else
   return nullptr;
 #endif
