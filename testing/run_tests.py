@@ -12,6 +12,7 @@ from pathlib import Path
 
 import argparse
 import errno
+from functools import reduce
 import glob
 import logging
 import logging.handlers
@@ -1011,6 +1012,20 @@ class DirectoryChange():
   def __exit__(self, exception_type, exception_value, exception_traceback):
     os.chdir(self.old_cwd)
 
+def generate_dir_listing(dir_path: str) -> str:
+  listing = os.listdir(dir_path)
+  listing.sort()
+  return reduce(lambda a, b: a + "\n" + b, listing)
+
+def str_replace_range(instr: str, start: int, end: int, replacement: str) -> str:
+  return instr[:start] + replacement + instr[end:]
+
+def redirect_patch(patch: str) -> str:
+  "Makes a diff point its output file to its input file."
+  input_path = re.search(r'^--- a(.*)', patch, re.MULTILINE)
+  output_path = re.search(r'^\+\+\+ b(.*)', patch, re.MULTILINE)
+  return str_replace_range(patch, output_path.span(1)[0],
+                           output_path.span(1)[1], input_path.group(1))
 
 def run_impeller_golden_tests(build_dir: str):
   """
@@ -1026,6 +1041,20 @@ def run_impeller_golden_tests(build_dir: str):
                                                          ).joinpath('golden_tests_harvester')
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
     run_cmd([tests_path, '--working_dir=%s' % temp_dir], cwd=build_dir)
+    with tempfile.NamedTemporaryFile(mode="w",
+                                     prefix="impeller_golden_tests_output") as dir_listing_file:
+      dir_listing = generate_dir_listing(temp_dir)
+      dir_listing_file.write(dir_listing)
+      golden_path = os.path.join("testing", "impeller_golden_tests_output.txt")
+      diff_result = subprocess.run(f'git diff -p {golden_path} {dir_listing_file.name}',
+                                   check=False, shell=True, stdout=subprocess.PIPE,
+                                   cwd=os.path.join(BUILDROOT_DIR, "flutter"))
+      if diff_result.returncode != 0:
+        print_divider('<')
+        print(f'Unexpected diff in {golden_path}')
+        print(redirect_patch(diff_result.stdout.decode()))
+        raise RuntimeError('impeller_golden_tests diff failure')
+
     num_generated_files = len(os.listdir(temp_dir))
     if num_generated_files != _NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES:
       raise Exception(
