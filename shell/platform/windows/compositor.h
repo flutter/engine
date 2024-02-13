@@ -37,6 +37,7 @@ class Compositor {
   virtual bool Present(const FlutterLayer** layers, size_t layers_count) = 0;
 
  protected:
+  // Pointer to the platform view manager owned by the engine.
   PlatformViewManager* platform_view_manager_;
 };
 

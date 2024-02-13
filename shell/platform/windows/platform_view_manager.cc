@@ -37,20 +37,20 @@ PlatformViewManager::PlatformViewManager(TaskRunner* task_runner,
 PlatformViewManager::~PlatformViewManager() {}
 
 void PlatformViewManager::QueuePlatformViewCreation(std::string_view type_name,
-                                                    int64_t id) {}
+                                                    PlatformViewId id) {}
 
-void PlatformViewManager::InstantiatePlatformView(int64_t id) {}
+void PlatformViewManager::InstantiatePlatformView(PlatformViewId id) {}
 
 void PlatformViewManager::RegisterPlatformViewType(
     std::string_view type_name,
     const FlutterPlatformViewTypeEntry& type) {}
 
-void PlatformViewManager::FocusPlatformView(int64_t id,
+void PlatformViewManager::FocusPlatformView(PlatformViewId id,
                                             FocusChangeDirection direction,
                                             bool focus) {}
 
 std::optional<HWND> PlatformViewManager::GetNativeHandleForId(
-    int64_t id) const {
+    PlatformViewId id) const {
   return std::nullopt;
 }
 

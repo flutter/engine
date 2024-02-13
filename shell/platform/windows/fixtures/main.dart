@@ -161,6 +161,9 @@ void enableLifecycleToFrom() async {
 
 @pragma('vm:entry-point')
 void sendCreationMethod() async {
+  // The platform view method channel uses the standard method codec.
+  // See https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/message_codecs.dart#L262
+  // for the implementation of the encoding and magic number identifiers.
   final List<int> data = <int>[
     // Method name
     7, 'create'.length, ...utf8.encode('create'),
