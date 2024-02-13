@@ -24,6 +24,8 @@ static fml::UniqueFD CreateIntermediatesDirectory() {
   std::uniform_int_distribution<int> dist(0, 1000000);
   test_name += "_" + std::to_string(dist(rng));
 
+  FML_LOG(ERROR) << "Creating intermediates directory: " << test_name;
+
   return fml::OpenDirectory(flutter::testing::OpenFixturesDirectory(),
                             test_name.c_str(),
                             true,  // create if necessary
