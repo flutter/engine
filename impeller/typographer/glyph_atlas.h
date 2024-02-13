@@ -10,7 +10,6 @@
 #include <optional>
 #include <unordered_map>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/pipeline.h"
@@ -33,9 +32,9 @@ class GlyphAtlas {
   enum class Type {
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using only an 8-bit
-    /// red channel.
+    /// alpha or red channel.
     ///
-    kRedBitmap,
+    kAlphaBitmap,
 
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using N32 premul
