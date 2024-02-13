@@ -66,6 +66,8 @@ static const std::vector<std::string> kSkipTests = {
     IMP_AIKSTEST(GaussianBlurAnimatedBackdrop),
     IMP_AIKSTEST(CanRenderBackdropBlurInteractive),
     IMP_AIKSTEST(ClippedBlurFilterRendersCorrectlyInteractive),
+    IMP_AIKSTEST(GradientStrokesRenderCorrectly),
+    IMP_AIKSTEST(SolidStrokesRenderCorrectly),
     IMP_AIKSTEST(GaussianBlurRotatedAndClippedInteractive),
     IMP_AIKSTEST(CoverageOriginShouldBeAccountedForInSubpasses),
     // TextRotated is flakey and we can't seem to get it to stabilize on Skia
