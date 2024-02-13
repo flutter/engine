@@ -16,5 +16,5 @@ out f16vec4 frag_color;
 
 void main() {
   f16vec4 value = texture(glyph_atlas_sampler, v_uv);
-  frag_color = max(value.rrrr, value.aaaa) * v_text_color;
+  frag_color = vec4(max(value.r, value.a)) * v_text_color;
 }
