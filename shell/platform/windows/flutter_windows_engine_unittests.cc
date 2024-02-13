@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/windows/testing/egl/mock_manager.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_platform_view_manager.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
@@ -1165,6 +1166,29 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
   engine->Run();
 
   while (!lifecycle_began) {
+    engine->task_runner()->ProcessTasks();
+  }
+}
+
+TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("sendCreationMethod");
+  auto engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  bool received_call = false;
+
+  auto manager = std::make_unique<MockPlatformViewManager>(engine.get());
+  EXPECT_CALL(*manager, QueuePlatformViewCreation).WillRepeatedly([&](std::string_view type_name, int64_t id){
+    received_call = true;
+  });
+  modifier.SetPlatformViewManager(std::move(manager));
+
+  engine->Run();
+
+  while (!received_call) {
     engine->task_runner()->ProcessTasks();
   }
 }

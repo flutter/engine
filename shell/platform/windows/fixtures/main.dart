@@ -4,7 +4,7 @@
 
 import 'dart:async';
 import 'dart:io' as io;
-import 'dart:typed_data' show ByteData, Uint8List;
+import 'dart:typed_data' show ByteData, Endian, Uint8List;
 import 'dart:ui' as ui;
 import 'dart:convert';
 
@@ -156,6 +156,26 @@ void enableLifecycleToFrom() async {
   final Completer<ByteData?> enabledLifecycle = Completer<ByteData?>();
   ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(utf8.encode('{"method":"System.initializationComplete"}')), (ByteData? data) {
     enabledLifecycle.complete(data);
+  });
+}
+
+@pragma('vm:entry-point')
+void sendCreationMethod() async {
+  final List<int> data = <int>[
+    // Method name
+    7, 'create'.length, ...utf8.encode('create'),
+    // Method arguments: {'type': 'type':, 'id': 0}
+    13, 2,
+    7, 'type'.length, ...utf8.encode('type'),
+    7, 'type'.length, ...utf8.encode('type'),
+    7, 'id'.length, ...utf8.encode('id'),
+    3, 0, 0, 0, 0,
+  ];
+
+  final Completer<ByteData?> completed = Completer<ByteData?>();
+  final ByteData bytes = ByteData.sublistView(Uint8List.fromList(data));
+  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform_views', bytes, (ByteData? response) {
+    completed.complete(response);
   });
 }
 

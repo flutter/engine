@@ -9,14 +9,22 @@
 namespace flutter {
 
 namespace {
-constexpr char kChannelName[] = "";
+constexpr char kChannelName[] = "flutter/platform_views";
 }
 
 PlatformViewManager::PlatformViewManager(TaskRunner* task_runner, BinaryMessenger* binary_messenger) : task_runner_(task_runner), channel_(std::make_unique<MethodChannel<EncodableValue>>(binary_messenger, kChannelName, &StandardMethodCodec::GetInstance())) {
-  channel_->SetMethodCallHandler([](const MethodCall<EncodableValue>& call, std::unique_ptr<MethodResult<EncodableValue>> result){
+  channel_->SetMethodCallHandler([this](const MethodCall<EncodableValue>& call, std::unique_ptr<MethodResult<EncodableValue>> result){
+    const auto& args = std::get<EncodableMap>(*call.arguments());
+    if (call.method_name() == "create") {
+      const auto& type = std::get<std::string>(args.find(EncodableValue("type"))->second);
+      const auto& id = std::get<std::int32_t>(args.find(EncodableValue("id"))->second);
+      QueuePlatformViewCreation(type, id);
+    }
     result->Success();
   });
 }
+
+PlatformViewManager::~PlatformViewManager() {}
 
 void PlatformViewManager::QueuePlatformViewCreation(std::string_view type_name, int64_t id) {}
 

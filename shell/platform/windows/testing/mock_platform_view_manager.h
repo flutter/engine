@@ -16,7 +16,9 @@ class MockPlatformViewManager : public PlatformViewManager {
  public:
   MockPlatformViewManager(FlutterWindowsEngine* engine) : PlatformViewManager(engine->task_runner(), engine->messenger_wrapper()) {}
 
-  MOCK_METHOD(void, QueuePlatformViewCreation, (std::string_view, const FlutterPlatformViewTypeEntry&));
+  ~MockPlatformViewManager() {}
+
+  MOCK_METHOD(void, QueuePlatformViewCreation, (std::string_view, int64_t id));
 };
 
 }  // namespace flutter
