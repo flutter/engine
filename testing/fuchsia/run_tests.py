@@ -130,7 +130,7 @@ def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
   def variant(test) -> bool:
     return 'variant' not in test or test['variant'] == VARIANT
 
-  tests = [t for t in tests if dart_jit(t) and variant(t)]
+  tests = [t for t in tests if variant(t)]
   return _BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
 
 
