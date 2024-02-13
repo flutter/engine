@@ -31,6 +31,10 @@ void testMain() {
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1);
     });
 
+    tearDown(() {
+      PlatformViewManager.instance.debugClear();
+    });
+
     test('embeds interactive platform views', () async {
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',

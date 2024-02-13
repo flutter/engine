@@ -15,7 +15,6 @@ import '../vector_math.dart';
 import 'canvas.dart';
 import 'embedded_views_diff.dart';
 import 'overlay_scene_optimizer.dart';
-import 'painting.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
@@ -95,14 +94,9 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    // We need an overlay for each visible platform view. Invisible platform
-    // views will be grouped with (at most) one visible platform view later.
-    final bool needNewOverlay = PlatformViewManager.instance.isVisible(viewId);
-    if (needNewOverlay) {
-      final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-      pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
-      _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
-    }
+    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
+    _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
 
     // Do nothing if the params didn't change.
     if (_currentCompositionParams[viewId] == params) {
@@ -125,21 +119,15 @@ class HtmlViewEmbedder {
     // Ensure platform view with `viewId` is injected into the `rasterizer.view`.
     rasterizer.view.dom.injectPlatformView(viewId);
 
-    final int overlayIndex = _context.visibleViewCount;
+    final int overlayIndex = _context.viewCount;
     _compositionOrder.add(viewId);
-    // Keep track of the number of visible platform views.
-    if (PlatformViewManager.instance.isVisible(viewId)) {
-      _context.visibleViewCount++;
-    }
-    // We need a new overlay if this is a visible view.
-    final bool needNewOverlay = PlatformViewManager.instance.isVisible(viewId);
+    _context.viewCount++;
+
     CkPictureRecorder? recorderToUseForRendering;
-    if (needNewOverlay) {
-      if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
-        recorderToUseForRendering =
-            _context.pictureRecordersCreatedDuringPreroll[overlayIndex];
-        _context.pictureRecorders.add(recorderToUseForRendering);
-      }
+    if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
+      recorderToUseForRendering =
+          _context.pictureRecordersCreatedDuringPreroll[overlayIndex];
+      _context.pictureRecorders.add(recorderToUseForRendering);
     }
 
     if (_viewsToRecomposite.contains(viewId)) {
@@ -377,12 +365,8 @@ class HtmlViewEmbedder {
     }
     final Rendering rendering = createOptimizedRendering(
         pictures, _compositionOrder, _currentCompositionParams);
-    final ViewListDiffResult? diffResult =
-        (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
-            ? null
-            : diffViewList(_activeCompositionOrder, _compositionOrder);
     final List<OverlayGroup>? overlayGroups =
-        _updateOverlays(rendering, diffResult);
+        _updateOverlays(rendering);
     if (overlayGroups != null) {
       _activeOverlayGroups = overlayGroups;
     }
@@ -393,14 +377,6 @@ class HtmlViewEmbedder {
     );
 
     final List<RenderingRenderCanvas> renderCanvases = rendering.canvases;
-    if (renderCanvases.length != _activeOverlayGroups.length + 1) {
-      print('render canvas count = ${renderCanvases.length}');
-      print(
-          'overlay groups = ${_activeOverlayGroups.map((group) => group._group)}');
-      print('overlayGroups was null? ${overlayGroups == null}');
-    }
-    assert(renderCanvases.length == _activeOverlayGroups.length + 1);
-
     await rasterizer.rasterizeToCanvas(baseCanvas, renderCanvases[0].pictures);
 
     // The first render canvas is the base canvas, not an overlay, so skip it
@@ -431,96 +407,31 @@ class HtmlViewEmbedder {
 
     List<int>? debugInvalidViewIds;
 
-    if (diffResult != null) {
-      // Dispose of the views that should be removed, except for the ones which
-      // are going to be added back. Moving rather than removing and re-adding
-      // the view helps it maintain state.
-      disposeViews(diffResult.viewsToRemove
-          .where((int view) => !diffResult.viewsToAdd.contains(view)));
-      _activeCompositionOrder.addAll(_compositionOrder);
-      unusedViews.removeAll(_compositionOrder);
+    rasterizer.removeOverlaysFromDom();
+    for (int i = 0; i < _compositionOrder.length; i++) {
+      final int viewId = _compositionOrder[i];
 
-      DomElement? elementToInsertBefore;
-      if (diffResult.addToBeginning) {
-        elementToInsertBefore =
-            _viewClipChains[diffResult.viewToInsertBefore!]!.root;
-      }
-
-      for (final int viewId in diffResult.viewsToAdd) {
-        bool isViewInvalid = false;
-        assert(() {
-          isViewInvalid = !PlatformViewManager.instance.knowsViewId(viewId);
-          if (isViewInvalid) {
-            debugInvalidViewIds ??= <int>[];
-            debugInvalidViewIds!.add(viewId);
-          }
-          return true;
-        }());
+      bool isViewInvalid = false;
+      assert(() {
+        isViewInvalid = !PlatformViewManager.instance.knowsViewId(viewId);
         if (isViewInvalid) {
-          continue;
+          debugInvalidViewIds ??= <int>[];
+          debugInvalidViewIds!.add(viewId);
         }
-
-        if (diffResult.addToBeginning) {
-          final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-          sceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
-          final DisplayCanvas? overlay = _overlays[viewId];
-          if (overlay != null) {
-            sceneHost.insertBefore(overlay.hostElement, elementToInsertBefore);
-          }
-        } else {
-          final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-          sceneHost.append(platformViewRoot);
-          final DisplayCanvas? overlay = _overlays[viewId];
-          if (overlay != null) {
-            sceneHost.append(overlay.hostElement);
-          }
-        }
+        return true;
+      }());
+      if (isViewInvalid) {
+        continue;
       }
-      // It's possible that some platform views which were in the unchanged
-      // section have newly assigned overlays. If so, add them to the DOM.
-      for (int i = 0; i < _compositionOrder.length; i++) {
-        final int view = _compositionOrder[i];
-        if (_overlays[view] != null) {
-          final DomElement overlayElement = _overlays[view]!.hostElement;
-          if (!overlayElement.isConnected!) {
-            // This overlay wasn't added to the DOM.
-            if (i == _compositionOrder.length - 1) {
-              sceneHost.append(overlayElement);
-            } else {
-              final int nextView = _compositionOrder[i + 1];
-              final DomElement nextElement = _viewClipChains[nextView]!.root;
-              sceneHost.insertBefore(overlayElement, nextElement);
-            }
-          }
-        }
-      }
-    } else {
-      rasterizer.removeOverlaysFromDom();
-      for (int i = 0; i < _compositionOrder.length; i++) {
-        final int viewId = _compositionOrder[i];
 
-        bool isViewInvalid = false;
-        assert(() {
-          isViewInvalid = !PlatformViewManager.instance.knowsViewId(viewId);
-          if (isViewInvalid) {
-            debugInvalidViewIds ??= <int>[];
-            debugInvalidViewIds!.add(viewId);
-          }
-          return true;
-        }());
-        if (isViewInvalid) {
-          continue;
-        }
-
-        final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-        final DisplayCanvas? overlay = _overlays[viewId];
-        sceneHost.append(platformViewRoot);
-        if (overlay != null) {
-          sceneHost.append(overlay.hostElement);
-        }
-        _activeCompositionOrder.add(viewId);
-        unusedViews.remove(viewId);
+      final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
+      final DisplayCanvas? overlay = _overlays[viewId];
+      sceneHost.append(platformViewRoot);
+      if (overlay != null) {
+        sceneHost.append(overlay.hostElement);
       }
+      _activeCompositionOrder.add(viewId);
+      unusedViews.remove(viewId);
     }
 
     _compositionOrder.clear();
@@ -573,7 +484,7 @@ class HtmlViewEmbedder {
   //
   // TODO(hterkelsen): Test this more thoroughly.
   List<OverlayGroup>? _updateOverlays(
-      Rendering rendering, ViewListDiffResult? diffResult) {
+      Rendering rendering) {
     if (rendering.equalsForRendering(_activeRendering)) {
       // The rendering has not changed, continue using the assigned overlays.
       return null;
@@ -581,30 +492,18 @@ class HtmlViewEmbedder {
     // Group platform views from their composition order.
     // Each group contains one visible view, and any number of invisible views
     // before or after that visible view.
+    // TODO(harryterkelsen): Fix case where RenderCanvas isn't the first
+    //   element in the rendering.
     final List<OverlayGroup> overlayGroups = getOverlayGroups(rendering);
     final List<int> viewsNeedingOverlays =
         overlayGroups.map((OverlayGroup group) => group.last).toList();
-    if (diffResult == null) {
-      // Everything is going to be explicitly recomposited anyway. Release all
-      // the surfaces and assign an overlay to all the surfaces needing one.
-      rasterizer.releaseOverlays();
-      _overlays.clear();
-      viewsNeedingOverlays.forEach(_initializeOverlay);
-    } else {
-      // We want to preserve the overlays in the "unchanged" section of the
-      // diff result as much as possible. Iterate over all the views needing
-      // overlays and assign them an overlay if they don't have one already.
 
-      // Use `toList` here since we will modify `_overlays` in the for-loop
-      // below.
-      final Iterable<int> viewsWithOverlays = _overlays.keys.toList();
-      viewsWithOverlays
-          .where((int view) => !viewsNeedingOverlays.contains(view))
-          .forEach(_releaseOverlay);
-      viewsNeedingOverlays
-          .where((int view) => !_overlays.containsKey(view))
-          .forEach(_initializeOverlay);
-    }
+    // Everything is going to be explicitly recomposited anyway. Release all
+    // the surfaces and assign an overlay to all the surfaces needing one.
+    rasterizer.releaseOverlays();
+    _overlays.clear();
+
+    viewsNeedingOverlays.forEach(_initializeOverlay);
     assert(_overlays.length == viewsNeedingOverlays.length);
     return overlayGroups;
   }
@@ -632,7 +531,6 @@ class HtmlViewEmbedder {
         currentGroup.add(entity.viewId);
       }
     }
-    assert(rendering.canvases.length == result.length + 1);
     return result;
   }
 
@@ -903,8 +801,6 @@ class EmbedderFrameContext {
   /// This is a subset of [_pictureRecordersCreatedDuringPreroll].
   final List<CkPictureRecorder> pictureRecorders = <CkPictureRecorder>[];
 
-  /// The number of platform views in this frame which are visible.
-  ///
-  /// These platform views will require overlays.
-  int visibleViewCount = 0;
+  /// The number of platform views in this frame.
+  int viewCount = 0;
 }
