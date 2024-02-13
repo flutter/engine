@@ -315,7 +315,7 @@ deps = {
   'src/third_party/googletest':
    Var('chromium_git') + '/external/github.com/google/googletest' + '@' + '7f036c5563af7d0329f20e8bb42effb04629f0c0',
 
-  'src/third_party/boringssl':
+  'src/flutter/third_party/boringssl':
    Var('dart_git') + '/boringssl_gen.git' + '@' + Var('dart_boringssl_gen_rev'),
 
   'src/flutter/third_party/yapf':
