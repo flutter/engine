@@ -2,7 +2,6 @@
 #include "flutter/shell/platform/android/image_external_texture_vk.h"
 #include <cstdint>
 
-#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/core/texture_descriptor.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
@@ -10,6 +9,7 @@
 #include "flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/texture_vk.h"
+#include "flutter/shell/platform/android/ndk_helpers.h"
 
 namespace flutter {
 
