@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ffi' as ffi;
 import 'dart:io' as io;
 
 import 'package:engine_build_configs/engine_build_configs.dart';
@@ -108,11 +109,21 @@ The build names are the "name" fields of the maps in the list of "builds".
     return;
   }
 
+  // If RBE config files aren't in the tree, then disable RBE.
+  final String rbeConfigPath = p.join(
+    engine.srcDir.path, 'flutter', 'build', 'rbe',
+  );
+  final List<String> extraGnArgs = <String>[
+    if (!io.Directory(rbeConfigPath).existsSync()) '--no-rbe',
+  ];
+
   final GlobalBuildRunner buildRunner = GlobalBuildRunner(
     platform: const LocalPlatform(),
     processRunner: ProcessRunner(),
+    abi: ffi.Abi.current(),
     engineSrcDir: engine.srcDir,
     build: targetBuild,
+    extraGnArgs: extraGnArgs,
     runGenerators: false,
     runTests: false,
   );

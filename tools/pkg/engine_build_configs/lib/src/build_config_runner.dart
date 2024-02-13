@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi' as ffi;
 import 'dart:io' as io show Directory, Process;
 
 import 'package:path/path.dart' as p;
@@ -41,7 +42,7 @@ final class RunnerProgress extends RunnerEvent {
   RunnerProgress(
     super.name, super.command, super.timestamp,
     this.what, this.completed, this.total, this.done,
-  ) : percent = (completed * 1000) / total;
+  ) : percent = (completed * 100) / total;
 
   /// What a command is currently working on, for example a build target or
   /// the name of a test.
@@ -111,13 +112,22 @@ typedef RunnerEventHandler = void Function(RunnerEvent);
 /// An abstract base clase for running the various tasks that a build config
 /// specifies. Derived classes implement the `run()` method.
 sealed class Runner {
-  Runner(this.platform, this.processRunner, this.engineSrcDir, this.dryRun);
+  Runner(
+    this.platform,
+    this.processRunner,
+    this.abi,
+    this.engineSrcDir,
+    this.dryRun,
+  );
 
   /// Information about the platform that hosts the runner.
   final Platform platform;
 
   /// Runs the subprocesses required to run the element of the build config.
   final ProcessRunner processRunner;
+
+  /// The [Abi] of the host platform.
+  final ffi.Abi abi;
 
   /// The src/ directory of the engine checkout.
   final io.Directory engineSrcDir;
@@ -162,6 +172,7 @@ final class GlobalBuildRunner extends Runner {
   GlobalBuildRunner({
     Platform? platform,
     ProcessRunner? processRunner,
+    ffi.Abi? abi,
     required io.Directory engineSrcDir,
     required this.build,
     this.extraGnArgs = const <String>[],
@@ -175,6 +186,7 @@ final class GlobalBuildRunner extends Runner {
   }) : super(
     platform ?? const LocalPlatform(),
     processRunner ?? ProcessRunner(),
+    abi ?? ffi.Abi.current(),
     engineSrcDir,
     dryRun,
   );
@@ -263,7 +275,6 @@ final class GlobalBuildRunner extends Runner {
         gnArgs.remove(arg.$1);
       }
     }
-
     return gnArgs;
   }();
 
@@ -289,67 +300,156 @@ final class GlobalBuildRunner extends Runner {
     return result.ok;
   }
 
-  // TODO(zanderso): This should start and stop RBE when it is an --rbe build.
-  Future<bool> _runNinja(RunnerEventHandler eventHandler) async {
-    final String ninjaPath = p.join(
-      engineSrcDir.path, 'flutter', 'third_party', 'ninja', 'ninja',
+  late final String _hostCpu = (){
+    return switch (abi) {
+      ffi.Abi.linuxArm64 || ffi.Abi.macosArm64 || ffi.Abi.windowsArm64 => 'arm64',
+      ffi.Abi.linuxX64 || ffi.Abi.macosX64 || ffi.Abi.windowsX64 => 'x64',
+      _ => throw StateError('This host platform "$abi" is not supported.'),
+    };
+  }();
+
+  late final String _buildtoolsPath = (){
+    final String os = platform.operatingSystem;
+    final String platformDir = switch (os) {
+      Platform.linux => 'linux-$_hostCpu',
+      Platform.macOS => 'mac-$_hostCpu',
+      Platform.windows => 'windows-$_hostCpu',
+      _ => throw StateError('This host OS "$os" is not supported.'),
+    };
+    return p.join(engineSrcDir.path, 'buildtools', platformDir);
+  }();
+
+  Future<bool> _bootstrapRbe(
+    RunnerEventHandler eventHandler, {
+    bool shutdown = false,
+  }) async {
+    final String reclientPath = p.join(_buildtoolsPath, 'reclient');
+    final String exe = platform.isWindows ? '.exe' : '';
+    final String bootstrapPath = p.join(reclientPath, 'bootstrap$exe');
+    final String reproxyPath = p.join(reclientPath, 'reproxy$exe');
+    final String os = platform.operatingSystem;
+    final String reclientConfigFile = switch (os) {
+      Platform.linux => 'reclient-linux.cfg',
+      Platform.macOS => 'reclient-mac.cfg',
+      Platform.windows => 'reclient-win.cfg',
+      _ => throw StateError('This host OS "$os" is not supported.'),
+    };
+    final String reclientConfigPath = p.join(
+      engineSrcDir.path, 'flutter', 'build', 'rbe', reclientConfigFile,
     );
-    final String outDir = p.join(engineSrcDir.path, 'out', build.ninja.config);
-    final List<String> command = <String>[
-      ninjaPath,
-      '-C', outDir,
-      if (_isGomaOrRbe) ...<String>['-j', '200'],
-      ...extraNinjaArgs,
-      ...build.ninja.targets,
+    final List<String> bootstrapCommand = <String>[
+      bootstrapPath,
+      '--re_proxy=$reproxyPath',
+      '--automatic_auth=true',
+      if (shutdown)
+        '--shutdown'
+      else ...<String>[
+        '--cfg=$reclientConfigPath'
+      ],
     ];
-    eventHandler(RunnerStart('${build.name}: ninja', command, DateTime.now()));
-
-    final ProcessRunnerResult processResult;
+    if (!processRunner.processManager.canRun(bootstrapPath)) {
+      eventHandler(RunnerError(
+        build.name, <String>[], DateTime.now(), '"$bootstrapPath" not found.',
+      ));
+      return false;
+    }
+    eventHandler(RunnerStart(
+      '${build.name}: RBE ${shutdown ? 'shutdown' : 'startup'}',
+      bootstrapCommand,
+      DateTime.now(),
+    ));
+    final ProcessRunnerResult bootstrapResult;
     if (dryRun) {
-      processResult = _dryRunResult;
+      bootstrapResult = _dryRunResult;
     } else {
-      final io.Process process = await processRunner.processManager.start(
-        command,
-        workingDirectory: engineSrcDir.path,
-      );
-      final List<int> stderrOutput = <int>[];
-      final Completer<void> stdoutComplete = Completer<void>();
-      final Completer<void> stderrComplete = Completer<void>();
-
-      process.stdout
-        .transform<String>(const Utf8Decoder())
-        .transform(const LineSplitter())
-        .listen(
-          (String line) {
-            _ninjaProgress(eventHandler, command, line);
-          },
-          onDone: () async => stdoutComplete.complete(),
-        );
-
-      process.stderr.listen(
-        stderrOutput.addAll,
-        onDone: () async => stderrComplete.complete(),
-      );
-
-      await Future.wait<void>(<Future<void>>[
-        stdoutComplete.future, stderrComplete.future,
-      ]);
-      final int exitCode = await process.exitCode;
-
-      processResult = ProcessRunnerResult(
-        exitCode,
-        <int>[], // stdout.
-        stderrOutput, // stderr.
-        stderrOutput, // combined,
-        pid: process.pid, // pid,
+      bootstrapResult = await processRunner.runProcess(
+        bootstrapCommand, failOk: true,
       );
     }
+    eventHandler(RunnerResult(
+      '${build.name}: RBE ${shutdown ? 'shutdown' : 'startup'}',
+      bootstrapCommand,
+      DateTime.now(),
+      bootstrapResult,
+    ));
+    return bootstrapResult.exitCode == 0;
+  }
 
-    final RunnerResult result = RunnerResult(
-      '${build.name}: ninja', command, DateTime.now(), processResult,
-    );
-    eventHandler(result);
-    return result.ok;
+  Future<bool> _runNinja(RunnerEventHandler eventHandler) async {
+    if (_isRbe) {
+      if (!await _bootstrapRbe(eventHandler)) {
+        return false;
+      }
+    }
+    bool success = false;
+    try {
+      final String ninjaPath = p.join(
+        engineSrcDir.path, 'flutter', 'third_party', 'ninja', 'ninja',
+      );
+      final String outDir = p.join(
+        engineSrcDir.path, 'out', build.ninja.config,
+      );
+      final List<String> command = <String>[
+        ninjaPath,
+        '-C', outDir,
+        if (_isGomaOrRbe) ...<String>['-j', '200'],
+        ...extraNinjaArgs,
+        ...build.ninja.targets,
+      ];
+      eventHandler(RunnerStart(
+        '${build.name}: ninja', command, DateTime.now()),
+      );
+      final ProcessRunnerResult processResult;
+      if (dryRun) {
+        processResult = _dryRunResult;
+      } else {
+        final io.Process process = await processRunner.processManager.start(
+          command,
+          workingDirectory: engineSrcDir.path,
+        );
+        final List<int> stderrOutput = <int>[];
+        final Completer<void> stdoutComplete = Completer<void>();
+        final Completer<void> stderrComplete = Completer<void>();
+
+        process.stdout
+          .transform<String>(const Utf8Decoder())
+          .transform(const LineSplitter())
+          .listen(
+            (String line) {
+              _ninjaProgress(eventHandler, command, line);
+            },
+            onDone: () async => stdoutComplete.complete(),
+          );
+
+        process.stderr.listen(
+          stderrOutput.addAll,
+          onDone: () async => stderrComplete.complete(),
+        );
+
+        await Future.wait<void>(<Future<void>>[
+          stdoutComplete.future, stderrComplete.future,
+        ]);
+        final int exitCode = await process.exitCode;
+
+        processResult = ProcessRunnerResult(
+          exitCode,
+          <int>[], // stdout.
+          stderrOutput, // stderr.
+          stderrOutput, // combined,
+          pid: process.pid, // pid,
+        );
+      }
+      eventHandler(RunnerResult(
+        '${build.name}: ninja', command, DateTime.now(), processResult,
+      ));
+      success = processResult.exitCode == 0;
+    } finally {
+      if (_isRbe) {
+        // Ignore failures to shutdown.
+        await _bootstrapRbe(eventHandler, shutdown: true);
+      }
+    }
+    return success;
   }
 
   // Parse lines of the form '[6232/6269] LINK ./accessibility_unittests'.
@@ -389,10 +489,8 @@ final class GlobalBuildRunner extends Runner {
     ));
   }
 
-  late final bool _isGoma = build.gn.contains('--goma') ||
-                            extraGnArgs.contains('--goma');
-  late final bool _isRbe = build.gn.contains('--rbe') ||
-                           extraGnArgs.contains('--rbe');
+  late final bool _isGoma = _mergedGnArgs.contains('--goma');
+  late final bool _isRbe = _mergedGnArgs.contains('--rbe');
   late final bool _isGomaOrRbe = _isGoma || _isRbe;
 
   Future<bool> _runGenerators(RunnerEventHandler eventHandler) async {
@@ -400,6 +498,7 @@ final class GlobalBuildRunner extends Runner {
       final BuildTaskRunner runner = BuildTaskRunner(
         processRunner: processRunner,
         platform: platform,
+        abi: abi,
         engineSrcDir: engineSrcDir,
         task: task,
         dryRun: dryRun,
@@ -416,6 +515,7 @@ final class GlobalBuildRunner extends Runner {
       final BuildTestRunner runner = BuildTestRunner(
         processRunner: processRunner,
         platform: platform,
+        abi: abi,
         engineSrcDir: engineSrcDir,
         test: test,
         extraTestArgs: extraTestArgs,
@@ -434,12 +534,14 @@ final class BuildTaskRunner extends Runner {
   BuildTaskRunner({
     Platform? platform,
     ProcessRunner? processRunner,
+    ffi.Abi? abi,
     required io.Directory engineSrcDir,
     required this.task,
     bool dryRun = false,
   }) : super(
     platform ?? const LocalPlatform(),
     processRunner ?? ProcessRunner(),
+    abi ?? ffi.Abi.current(),
     engineSrcDir,
     dryRun,
   );
@@ -484,6 +586,7 @@ final class BuildTestRunner extends Runner {
   BuildTestRunner({
     Platform? platform,
     ProcessRunner? processRunner,
+    ffi.Abi? abi,
     required io.Directory engineSrcDir,
     required this.test,
     this.extraTestArgs = const <String>[],
@@ -491,6 +594,7 @@ final class BuildTestRunner extends Runner {
   }) : super(
     platform ?? const LocalPlatform(),
     processRunner ?? ProcessRunner(),
+    abi ?? ffi.Abi.current(),
     engineSrcDir,
     dryRun,
   );
