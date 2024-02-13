@@ -139,8 +139,6 @@ class ColorSourceContents : public Contents {
     VertexShaderT::BindFrameInfo(
         pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-    pass.SetPipeline(pipeline_callback(options));
-
     // The reason we need to have a callback mechanism here is that this routine
     // may insert draw calls before the main draw call below. For example, for
     // sufficiently complex paths we may opt to use stencil-then-cover to avoid
@@ -148,6 +146,8 @@ class ColorSourceContents : public Contents {
     if (!bind_fragment_callback(pass)) {
       return false;
     }
+
+    pass.SetPipeline(pipeline_callback(options));
 
     if (!pass.Draw().ok()) {
       return false;
