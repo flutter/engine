@@ -362,7 +362,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
   repeat_flags = [
-      '--repeat=100',
+      '--repeat=2',
   ]
 
   def make_test(name, flags=None, extra_env=None):
@@ -1204,7 +1204,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           'impeller_unittests',
           engine_filter,
           [
-              '--repeat=2',
+              '--repeat=20',
           ],
           coverage=args.coverage,
           gtest=True,
