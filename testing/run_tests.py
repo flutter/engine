@@ -1200,7 +1200,12 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     try:
       xvfb.start_virtual_x(build_name, build_dir)
       run_engine_executable(
-          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage
+          build_dir,
+          'impeller_unittests',
+          engine_filter,
+          shuffle_flags,
+          coverage=args.coverage,
+          gtest=True,
       )
     finally:
       xvfb.stop_virtual_x(build_name)
