@@ -21,15 +21,20 @@ FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
   if (_platformRunnerSendPort == null) {
     final Completer<SendPort> sendPortCompleter = Completer<SendPort>();
     _platformRunnerSendPort = sendPortCompleter.future;
-    final RawReceivePort portReceiver =
-        _receiveOne((SendPort port) => sendPortCompleter.complete(port));
-    // TODO(liamappelbe): If there are any pending computations when onExit is
-    // triggered, complete them with errors. This is blocked on testing. At the
-    // moment, calling Isolate.exit() in the platform isolate causes
-    // flutter_tester to log an error, but doesn't actually exit the isolate.
+    final RawReceivePort portReceiver = _receiveOne((SendPort port) {
+      Isolate.current.addOnExitListener(port);
+      sendPortCompleter.complete(port);
+    });
+    portReceiver.keepIsolateAlive = false;
     final RawReceivePort onExit = _receiveOne((_) {
+      // This shouldn't really happen, since Isolate.exit() is disabled on the
+      // platform isolate, the pause and terminate capabilities aren't provided
+      // to the parent isolate, and errors are fatal is false. But if the
+      // isolate does shutdown unexpectedly, clear the singleton so we can
+      // create another.
       _platformRunnerSendPort = null;
     });
+    onExit.keepIsolateAlive = false;
     try {
       _spawn(_remoteRun, portReceiver.sendPort, onExit: onExit.sendPort);
     } on Object {
@@ -78,12 +83,14 @@ Future<void> _remoteRun(SendPort portReceiver) async {
   computationPort.handler = ((
         FutureOr<Object?> Function() computation,
         SendPort resultPort
-      ) message) async {
-    // Once this isolate has handled at least one computation, allow it to
-    // close if there are no more incoming.
-    computationPort.keepIsolateAlive = false;
-
-    final (FutureOr<Object?> Function() computation, SendPort resultPort) = message;
+      )? message) async {
+    if (message == null) {
+      // The parent isolate has shutdown. Allow this isolate to shutdown.
+      computationPort..keepIsolateAlive = false;
+      return;
+    }
+    final (FutureOr<Object?> Function() computation, SendPort resultPort) =
+        message;
     try {
       final FutureOr<Object?> potentiallyAsyncResult = computation();
       Object? result;
@@ -106,9 +113,8 @@ Future<Isolate> _spawn<T>(void Function(T) entryPoint, T message,
   final Completer<Isolate> isolateCompleter = Completer<Isolate>();
   final RawReceivePort isolateReadyPort = _receiveOne((Object readyMessage) {
     if (readyMessage is _PlatformIsolateReadyMessage) {
-      final Isolate isolate = Isolate(readyMessage.controlPort,
-          pauseCapability: readyMessage.pauseCapability,
-          terminateCapability: readyMessage.terminateCapability);
+      final Isolate isolate = Isolate(readyMessage.controlPort)
+        ..setErrorsFatal(false);
       if (onExit != null) {
         isolate.addOnExitListener(onExit);
       }
@@ -144,10 +150,7 @@ void _platformIsolateMain<T>(SendPort isolateReadyPort) {
   });
   final Isolate isolate = Isolate.current;
   isolateReadyPort.send(_PlatformIsolateReadyMessage(
-      isolate.controlPort,
-      isolate.pauseCapability,
-      isolate.terminateCapability,
-      entryPointPort.sendPort));
+      isolate.controlPort, entryPointPort.sendPort));
 }
 
 @Native<Void Function(Handle, Handle, Handle)>(
@@ -170,11 +173,8 @@ RawReceivePort _receiveOne<T>(void Function(T) then) {
 }
 
 class _PlatformIsolateReadyMessage {
-  _PlatformIsolateReadyMessage(this.controlPort, this.pauseCapability,
-      this.terminateCapability, this.entryPointPort);
+  _PlatformIsolateReadyMessage(this.controlPort, this.entryPointPort);
 
   final SendPort controlPort;
-  final Capability? pauseCapability;
-  final Capability? terminateCapability;
   final SendPort entryPointPort;
 }
