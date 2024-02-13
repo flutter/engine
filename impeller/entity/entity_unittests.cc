@@ -392,10 +392,10 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kButt demo.
     {
       Point off = Point(0, 0) * padding + margin;
-      auto [a, b] = IMPELLER_PLAYGROUND_LINE(off + a_def, off + b_def, r,
-                                             Color::Black(), Color::White());
-      auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
-                                             Color::Black(), Color::White());
+      auto [a, b] = DrawPlaygroundLine(off + a_def, off + b_def, r,
+                                       Color::Black(), Color::White());
+      auto [c, d] = DrawPlaygroundLine(off + c_def, off + d_def, r,
+                                       Color::Black(), Color::White());
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kButt, Join::kBevel);
     }
@@ -403,10 +403,10 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kSquare demo.
     {
       Point off = Point(1, 0) * padding + margin;
-      auto [a, b] = IMPELLER_PLAYGROUND_LINE(off + a_def, off + b_def, r,
-                                             Color::Black(), Color::White());
-      auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
-                                             Color::Black(), Color::White());
+      auto [a, b] = DrawPlaygroundLine(off + a_def, off + b_def, r,
+                                       Color::Black(), Color::White());
+      auto [c, d] = DrawPlaygroundLine(off + c_def, off + d_def, r,
+                                       Color::Black(), Color::White());
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kSquare, Join::kBevel);
     }
@@ -414,10 +414,10 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kRound demo.
     {
       Point off = Point(2, 0) * padding + margin;
-      auto [a, b] = IMPELLER_PLAYGROUND_LINE(off + a_def, off + b_def, r,
-                                             Color::Black(), Color::White());
-      auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
-                                             Color::Black(), Color::White());
+      auto [a, b] = DrawPlaygroundLine(off + a_def, off + b_def, r,
+                                       Color::Black(), Color::White());
+      auto [c, d] = DrawPlaygroundLine(off + c_def, off + d_def, r,
+                                       Color::Black(), Color::White());
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kRound, Join::kBevel);
     }
@@ -905,10 +905,10 @@ TEST_P(EntityTest, BlendingModeOptions) {
     BlendMode selected_mode = blend_mode_values[current_blend_index];
 
     Point a, b, c, d;
-    std::tie(a, b) = IMPELLER_PLAYGROUND_LINE(
-        Point(400, 100), Point(200, 300), 20, Color::White(), Color::White());
-    std::tie(c, d) = IMPELLER_PLAYGROUND_LINE(
-        Point(470, 190), Point(270, 390), 20, Color::White(), Color::White());
+    std::tie(a, b) = DrawPlaygroundLine(Point(400, 100), Point(200, 300), 20,
+                                        Color::White(), Color::White());
+    std::tie(c, d) = DrawPlaygroundLine(Point(470, 190), Point(270, 390), 20,
+                                        Color::White(), Color::White());
 
     bool result = true;
     result = result &&
@@ -1739,7 +1739,7 @@ TEST_P(EntityTest, RRectShadowTest) {
     }
     ImGui::End();
 
-    auto [top_left, bottom_right] = IMPELLER_PLAYGROUND_LINE(
+    auto [top_left, bottom_right] = DrawPlaygroundLine(
         Point(200, 200), Point(600, 400), 30, Color::White(), Color::White());
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);

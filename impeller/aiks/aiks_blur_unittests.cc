@@ -76,8 +76,8 @@ TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
 
 TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    auto [a, b] = IMPELLER_PLAYGROUND_LINE(Point(50, 50), Point(300, 200), 30,
-                                           Color::White(), Color::White());
+    auto [a, b] = DrawPlaygroundLine(Point(50, 50), Point(300, 200), 30,
+                                     Color::White(), Color::White());
 
     Canvas canvas;
     canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
@@ -465,7 +465,7 @@ TEST_P(AiksTest, GaussianBlurRotatedAndClippedInteractive) {
                        ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
                                              FilterContents::BlurStyle::kNormal,
                                              tile_modes[selected_tile_mode])};
-    auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
+    auto [handle_a, handle_b] = DrawPlaygroundLine(
         Point(362, 309), Point(662, 459), 20, Color::Red(), Color::Red());
     Vector2 center = Vector2(1024, 768) / 2;
     canvas.Scale(GetContentScale());
@@ -567,7 +567,7 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
                      Point(1024 / 2 - boston->GetSize().width / 2,
                            (768 / 2 - boston->GetSize().height / 2) + y),
                      {});
-    auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
+    auto [handle_a, handle_b] = DrawPlaygroundLine(
         Point(100, 100), Point(900, 700), 20, Color::Red(), Color::Red());
     canvas.ClipRect(
         Rect::MakeLTRB(handle_a.x, handle_a.y, handle_b.x, handle_b.y));
