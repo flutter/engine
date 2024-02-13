@@ -1203,7 +1203,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           build_dir,
           'impeller_unittests',
           engine_filter,
-          shuffle_flags,
+          [
+            '--repeat=2',
+          ],
           coverage=args.coverage,
           gtest=True,
       )
