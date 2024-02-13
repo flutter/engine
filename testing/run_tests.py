@@ -362,7 +362,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
   repeat_flags = [
-      '--repeat=2',
+      '--repeat=100',
   ]
 
   def make_test(name, flags=None, extra_env=None):
