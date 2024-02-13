@@ -2,14 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SAMPLER_LIBRARY_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SAMPLER_LIBRARY_VK_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/base/comparable.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
@@ -30,7 +28,7 @@ class SamplerLibraryVK final
   explicit SamplerLibraryVK(const std::weak_ptr<DeviceHolder>& device_holder);
 
   // |SamplerLibrary|
-  std::shared_ptr<const Sampler> GetSampler(
+  const std::unique_ptr<const Sampler>& GetSampler(
       SamplerDescriptor descriptor) override;
 
   SamplerLibraryVK(const SamplerLibraryVK&) = delete;
@@ -39,3 +37,5 @@ class SamplerLibraryVK final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SAMPLER_LIBRARY_VK_H_

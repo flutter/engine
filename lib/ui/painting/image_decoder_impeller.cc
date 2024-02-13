@@ -333,13 +333,14 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
     return std::make_pair(nullptr, decode_error);
   }
   blit_pass->SetLabel("Mipmap Blit Pass");
-  blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
+  blit_pass->AddCopy(impeller::DeviceBuffer::AsBufferView(buffer),
+                     dest_texture);
   if (texture_descriptor.size.MipCount() > 1) {
     blit_pass->GenerateMipmap(dest_texture);
   }
 
   blit_pass->EncodeCommands(context->GetResourceAllocator());
-  if (!command_buffer->SubmitCommands()) {
+  if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
     std::string decode_error("Failed to submit blit pass command buffer.");
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
@@ -458,7 +459,7 @@ ImageDecoderImpeller::UploadTextureToStorage(
           blit_pass->GenerateMipmap(texture);
 
           blit_pass->EncodeCommands(context->GetResourceAllocator());
-          if (!command_buffer->SubmitCommands()) {
+          if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
             decode_error = "Failed to submit blit pass command buffer.";
             return;
           }

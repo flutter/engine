@@ -13,7 +13,8 @@
 #include "impeller/entity/gles/framebuffer_blend_shaders_gles.h"
 
 #if IMPELLER_ENABLE_3D
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogcncheck
+// This include was turned to an error since it breaks GN.
+#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogncheck
 #endif  // IMPELLER_ENABLE_3D
 namespace flutter {
 
@@ -83,7 +84,7 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
     FML_LOG(ERROR) << "Could not add reactor worker.";
     return nullptr;
   }
-  FML_LOG(ERROR) << "Using the Impeller rendering backend (OpenGLES).";
+  FML_LOG(IMPORTANT) << "Using the Impeller rendering backend (OpenGLES).";
   return context;
 }
 

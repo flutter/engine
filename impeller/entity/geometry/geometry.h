@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_
 
 #include "impeller/core/formats.h"
 #include "impeller/core/vertex_buffer.h"
@@ -47,8 +48,18 @@ ComputeUVGeometryCPU(
     Size texture_coverage,
     Matrix effect_transform);
 
+/// @brief Computes geometry and UV coordinates for a rectangle to be rendered.
+///
+/// UV is the horizontal and vertical coordinates within the texture.
+///
+/// @param source_rect      The rectangle to be rendered.
+/// @param texture_bounds The local space bounding box of the geometry.
+/// @param effect_transform The transform to apply to the UV coordinates.
+/// @param renderer         The content context to use for allocating buffers.
+/// @param entity           The entity to use for the transform.
+/// @param pass             The render pass to use for the transform.
 GeometryResult ComputeUVGeometryForRect(Rect source_rect,
-                                        Rect texture_coverage,
+                                        Rect texture_bounds,
                                         Matrix effect_transform,
                                         const ContentContext& renderer,
                                         const Entity& entity,
@@ -57,11 +68,11 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
 class Geometry {
  public:
   static std::shared_ptr<Geometry> MakeFillPath(
-      Path path,
+      const Path& path,
       std::optional<Rect> inner_rect = std::nullopt);
 
   static std::shared_ptr<Geometry> MakeStrokePath(
-      Path path,
+      const Path& path,
       Scalar stroke_width = 0.0,
       Scalar miter_limit = 4.0,
       Cap stroke_cap = Cap::kButt,
@@ -84,6 +95,9 @@ class Geometry {
   static std::shared_ptr<Geometry> MakeStrokedCircle(const Point& center,
                                                      Scalar radius,
                                                      Scalar stroke_width);
+
+  static std::shared_ptr<Geometry> MakeRoundRect(const Rect& rect,
+                                                 const Size& radii);
 
   static std::shared_ptr<Geometry> MakePointField(std::vector<Point> points,
                                                   Scalar radius,
@@ -119,11 +133,13 @@ class Geometry {
 
  protected:
   static GeometryResult ComputePositionGeometry(
+      const ContentContext& renderer,
       const Tessellator::VertexGenerator& generator,
       const Entity& entity,
       RenderPass& pass);
 
   static GeometryResult ComputePositionUVGeometry(
+      const ContentContext& renderer,
       const Tessellator::VertexGenerator& generator,
       const Matrix& uv_transform,
       const Entity& entity,
@@ -131,3 +147,5 @@ class Geometry {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_GEOMETRY_H_

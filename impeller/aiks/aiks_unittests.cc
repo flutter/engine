@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/impeller/aiks/aiks_unittests.h"
+
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
@@ -11,7 +14,6 @@
 #include <vector>
 
 #include "flutter/testing/testing.h"
-#include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
@@ -19,24 +21,18 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
-#include "impeller/entity/contents/conical_gradient_contents.h"
-#include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/radial_gradient_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
+#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/golden_tests/golden_playground_test.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
-#include "impeller/scene/material.h"
-#include "impeller/scene/node.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
@@ -44,43 +40,12 @@
 #include "impeller/typographer/backends/stb/typographer_context_stb.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
-#include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/platform.h"
 
 namespace impeller {
 namespace testing {
 
-#ifdef IMPELLER_GOLDEN_TESTS
-using AiksTest = GoldenPlaygroundTest;
-#else
-using AiksTest = AiksPlayground;
-#endif
 INSTANTIATE_PLAYGROUND_SUITE(AiksTest);
-
-TEST_P(AiksTest, RotateColorFilteredPath) {
-  Canvas canvas;
-  canvas.Concat(Matrix::MakeTranslation({300, 300}));
-  canvas.Concat(Matrix::MakeRotationZ(Radians(kPiOver2)));
-  auto arrow_stem =
-      PathBuilder{}.MoveTo({120, 190}).LineTo({120, 50}).TakePath();
-  auto arrow_head = PathBuilder{}
-                        .MoveTo({50, 120})
-                        .LineTo({120, 190})
-                        .LineTo({190, 120})
-                        .TakePath();
-  auto paint = Paint{
-      .stroke_width = 15.0,
-      .stroke_cap = Cap::kRound,
-      .stroke_join = Join::kRound,
-      .style = Paint::Style::kStroke,
-      .color_filter =
-          ColorFilter::MakeBlend(BlendMode::kSourceIn, Color::AliceBlue()),
-  };
-
-  canvas.DrawPath(std::move(arrow_stem), paint);
-  canvas.DrawPath(std::move(arrow_head), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
 
 TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
   Canvas canvas;
@@ -164,11 +129,32 @@ TEST_P(AiksTest, CanRenderColorFilterWithInvertColorsDrawPaint) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderAdvancedBlendColorFilterWithSaveLayer) {
+  Canvas canvas;
+
+  Rect layer_rect = Rect::MakeXYWH(0, 0, 500, 500);
+  canvas.ClipRect(layer_rect);
+
+  canvas.SaveLayer(
+      {
+          .color_filter = ColorFilter::MakeBlend(BlendMode::kDifference,
+                                                 Color(0, 1, 0, 0.5)),
+      },
+      layer_rect);
+
+  Paint paint;
+  canvas.DrawPaint({.color = Color::Black()});
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 300, 300),
+                  {.color = Color::White()});
+  canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 namespace {
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
-                    std::string label,
-                    bool async_submit) {
+                    std::string label) {
   auto buffer = context->CreateCommandBuffer();
   if (!buffer) {
     return false;
@@ -178,23 +164,19 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
     return false;
   }
   pass->GenerateMipmap(std::move(texture), std::move(label));
-  if (async_submit) {
-    return buffer->EncodeAndSubmit(pass, context->GetResourceAllocator());
-  }
 
   pass->EncodeCommands(context->GetResourceAllocator());
-  return buffer->SubmitCommands();
+  return context->GetCommandQueue()->Submit({buffer}).ok();
 }
 
 void CanRenderTiledTexture(AiksTest* aiks_test,
                            Entity::TileMode tile_mode,
-                           bool async_submit = false,
                            Matrix local_matrix = {}) {
   auto context = aiks_test->GetContext();
   ASSERT_TRUE(context);
   auto texture = aiks_test->CreateTextureForFixture("table_mountain_nx.png",
                                                     /*enable_mipmapping=*/true);
-  GenerateMipmap(context, texture, "table_mountain_nx", async_submit);
+  GenerateMipmap(context, texture, "table_mountain_nx");
   Canvas canvas;
   canvas.Scale(aiks_test->GetContentScale());
   canvas.Translate({100.0f, 100.0f, 0});
@@ -241,10 +223,6 @@ TEST_P(AiksTest, CanRenderTiledTextureClamp) {
   CanRenderTiledTexture(this, Entity::TileMode::kClamp);
 }
 
-TEST_P(AiksTest, CanRenderTiledTextureClampAsync) {
-  CanRenderTiledTexture(this, Entity::TileMode::kClamp, /*async_submit=*/true);
-}
-
 TEST_P(AiksTest, CanRenderTiledTextureRepeat) {
   CanRenderTiledTexture(this, Entity::TileMode::kRepeat);
 }
@@ -258,7 +236,7 @@ TEST_P(AiksTest, CanRenderTiledTextureDecal) {
 }
 
 TEST_P(AiksTest, CanRenderTiledTextureClampWithTranslate) {
-  CanRenderTiledTexture(this, Entity::TileMode::kClamp, /*async_submit=*/false,
+  CanRenderTiledTexture(this, Entity::TileMode::kClamp,
                         Matrix::MakeTranslation({172.f, 172.f, 0.f}));
 }
 
@@ -277,44 +255,83 @@ TEST_P(AiksTest, CanRenderImageRect) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderStrokes) {
+TEST_P(AiksTest, CanRenderSimpleClips) {
   Canvas canvas;
+  canvas.Scale(GetContentScale());
   Paint paint;
-  paint.color = Color::Red();
-  paint.stroke_width = 20.0;
-  paint.style = Paint::Style::kStroke;
-  canvas.DrawPath(PathBuilder{}.AddLine({200, 100}, {800, 100}).TakePath(),
-                  paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
 
-TEST_P(AiksTest, CanRenderCurvedStrokes) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.stroke_width = 25.0;
-  paint.style = Paint::Style::kStroke;
-  canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
+  paint.color = Color::White();
+  canvas.DrawPaint(paint);
 
-TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.stroke_width = 100.0;
-  paint.style = Paint::Style::kStroke;
-  canvas.DrawPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
+  auto draw = [&canvas](const Paint& paint, Scalar x, Scalar y) {
+    canvas.Save();
+    canvas.Translate({x, y});
+    {
+      canvas.Save();
+      canvas.ClipRect(Rect::MakeLTRB(50, 50, 150, 150));
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipOval(Rect::MakeLTRB(200, 50, 300, 150));
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipRRect(Rect::MakeLTRB(50, 200, 150, 300), {20, 20});
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipRRect(Rect::MakeLTRB(200, 230, 300, 270), {20, 20});
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    {
+      canvas.Save();
+      canvas.ClipRRect(Rect::MakeLTRB(230, 200, 270, 300), {20, 20});
+      canvas.DrawPaint(paint);
+      canvas.Restore();
+    }
+    canvas.Restore();
+  };
 
-TEST_P(AiksTest, CanRenderClips) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Fuchsia();
-  canvas.ClipPath(
-      PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 500, 500)).TakePath());
-  canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
+  paint.color = Color::Blue();
+  draw(paint, 0, 0);
+
+  std::vector<Color> gradient_colors = {
+      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      (1.0 / 6.0) * 1,
+      (1.0 / 6.0) * 2,
+      (1.0 / 6.0) * 3,
+      (1.0 / 6.0) * 4,
+      (1.0 / 6.0) * 5,
+      1.0,
+  };
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {500, 600}, 75, std::move(gradient_colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  draw(paint, 0, 300);
+
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({0, 0}));
+  draw(paint, 300, 0);
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -427,610 +444,6 @@ TEST_P(AiksTest, CanSaveLayerStandalone) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-namespace {
-void CanRenderLinearGradient(AiksTest* aiks_test, Entity::TileMode tile_mode) {
-  Canvas canvas;
-  canvas.Scale(aiks_test->GetContentScale());
-  Paint paint;
-  canvas.Translate({100.0f, 0, 0});
-
-  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                               Color{0.1294, 0.5882, 0.9529, 0.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {200, 200}, std::move(colors), std::move(stops), tile_mode, {});
-
-  paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-}  // namespace
-
-TEST_P(AiksTest, CanRenderLinearGradientClamp) {
-  CanRenderLinearGradient(this, Entity::TileMode::kClamp);
-}
-TEST_P(AiksTest, CanRenderLinearGradientRepeat) {
-  CanRenderLinearGradient(this, Entity::TileMode::kRepeat);
-}
-TEST_P(AiksTest, CanRenderLinearGradientMirror) {
-  CanRenderLinearGradient(this, Entity::TileMode::kMirror);
-}
-TEST_P(AiksTest, CanRenderLinearGradientDecal) {
-  CanRenderLinearGradient(this, Entity::TileMode::kDecal);
-}
-
-TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  Paint paint;
-  canvas.Translate({100.0f, 0, 0});
-
-  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                               Color{0.1294, 0.5882, 0.9529, 0.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {200, 200}, std::move(colors), std::move(stops),
-      Entity::TileMode::kDecal, {});
-  // Overlay the gradient with 25% green. This should appear as the entire
-  // rectangle being drawn with 25% green, including the border area outside the
-  // decal gradient.
-  paint.color_filter = ColorFilter::MakeBlend(BlendMode::kSourceOver,
-                                              Color::Green().WithAlpha(0.25));
-
-  paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test,
-                                                 bool use_dithering) {
-  Canvas canvas;
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-
-  // 0xffcccccc --> 0xff333333, taken from
-  // https://github.com/flutter/flutter/issues/118073#issue-1521699748
-  std::vector<Color> colors = {Color{0.8, 0.8, 0.8, 1.0},
-                               Color{0.2, 0.2, 0.2, 1.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {800, 500}, std::move(colors), std::move(stops),
-      Entity::TileMode::kClamp, {});
-  paint.dither = use_dithering;
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 800, 500), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderLinearGradientWithDitheringDisabled) {
-  CanRenderLinearGradientWithDithering(this, false);
-}
-
-TEST_P(AiksTest, CanRenderLinearGradientWithDitheringEnabled) {
-  CanRenderLinearGradientWithDithering(this, true);
-}  // namespace
-
-static void CanRenderRadialGradientWithDithering(AiksTest* aiks_test,
-                                                 bool use_dithering) {
-  Canvas canvas;
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-
-  // #FFF -> #000
-  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
-                               Color{0.0, 0.0, 0.0, 1.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeRadialGradient(
-      {600, 600}, 600, std::move(colors), std::move(stops),
-      Entity::TileMode::kClamp, {});
-  paint.dither = use_dithering;
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 1200, 1200), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderRadialGradientWithDitheringDisabled) {
-  CanRenderRadialGradientWithDithering(this, false);
-}
-
-TEST_P(AiksTest, CanRenderRadialGradientWithDitheringEnabled) {
-  CanRenderRadialGradientWithDithering(this, true);
-}
-
-static void CanRenderSweepGradientWithDithering(AiksTest* aiks_test,
-                                                bool use_dithering) {
-  Canvas canvas;
-  canvas.Scale(aiks_test->GetContentScale());
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-
-  // #FFF -> #000
-  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
-                               Color{0.0, 0.0, 0.0, 1.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeSweepGradient(
-      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
-      std::move(stops), Entity::TileMode::kMirror, {});
-  paint.dither = use_dithering;
-
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderSweepGradientWithDitheringDisabled) {
-  CanRenderSweepGradientWithDithering(this, false);
-}
-
-TEST_P(AiksTest, CanRenderSweepGradientWithDitheringEnabled) {
-  CanRenderSweepGradientWithDithering(this, true);
-}
-
-static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test,
-                                                  bool use_dithering) {
-  Canvas canvas;
-  canvas.Scale(aiks_test->GetContentScale());
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-
-  // #FFF -> #000
-  std::vector<Color> colors = {Color{1.0, 1.0, 1.0, 1.0},
-                               Color{0.0, 0.0, 0.0, 1.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeConicalGradient(
-      {100, 100}, 100, std::move(colors), std::move(stops), {0, 1}, 0,
-      Entity::TileMode::kMirror, {});
-  paint.dither = use_dithering;
-
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderConicalGradientWithDitheringDisabled) {
-  CanRenderConicalGradientWithDithering(this, false);
-}
-
-TEST_P(AiksTest, CanRenderConicalGradientWithDitheringEnabled) {
-  CanRenderConicalGradientWithDithering(this, true);
-}
-
-namespace {
-void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
-                                                 Entity::TileMode tile_mode) {
-  Canvas canvas;
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-
-  std::vector<Color> colors = {
-      Color{0.9568, 0.2627, 0.2118, 1.0}, Color{0.9568, 0.2627, 0.2118, 1.0},
-      Color{0.1294, 0.5882, 0.9529, 1.0}, Color{0.1294, 0.5882, 0.9529, 1.0}};
-  std::vector<Scalar> stops = {0.0, 0.5, 0.5, 1.0};
-
-  paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {500, 500}, std::move(colors), std::move(stops), tile_mode, {});
-
-  paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 500, 500), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-}  // namespace
-
-// Only clamp is necessary. All tile modes are the same output.
-TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStopsClamp) {
-  CanRenderLinearGradientWithOverlappingStops(this, Entity::TileMode::kClamp);
-}
-
-namespace {
-void CanRenderLinearGradientManyColors(AiksTest* aiks_test,
-                                       Entity::TileMode tile_mode) {
-  Canvas canvas;
-  canvas.Scale(aiks_test->GetContentScale());
-  Paint paint;
-  canvas.Translate({100, 100, 0});
-
-  std::vector<Color> colors = {
-      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
-  std::vector<Scalar> stops = {
-      0.0,
-      (1.0 / 6.0) * 1,
-      (1.0 / 6.0) * 2,
-      (1.0 / 6.0) * 3,
-      (1.0 / 6.0) * 4,
-      (1.0 / 6.0) * 5,
-      1.0,
-  };
-
-  paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {200, 200}, std::move(colors), std::move(stops), tile_mode, {});
-
-  paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  canvas.Restore();
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-}  // namespace
-
-TEST_P(AiksTest, CanRenderLinearGradientManyColorsClamp) {
-  CanRenderLinearGradientManyColors(this, Entity::TileMode::kClamp);
-}
-TEST_P(AiksTest, CanRenderLinearGradientManyColorsRepeat) {
-  CanRenderLinearGradientManyColors(this, Entity::TileMode::kRepeat);
-}
-TEST_P(AiksTest, CanRenderLinearGradientManyColorsMirror) {
-  CanRenderLinearGradientManyColors(this, Entity::TileMode::kMirror);
-}
-TEST_P(AiksTest, CanRenderLinearGradientManyColorsDecal) {
-  CanRenderLinearGradientManyColors(this, Entity::TileMode::kDecal);
-}
-
-namespace {
-void CanRenderLinearGradientWayManyColors(AiksTest* aiks_test,
-                                          Entity::TileMode tile_mode) {
-  Canvas canvas;
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-  auto color = Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0};
-  std::vector<Color> colors;
-  std::vector<Scalar> stops;
-  auto current_stop = 0.0;
-  for (int i = 0; i < 2000; i++) {
-    colors.push_back(color);
-    stops.push_back(current_stop);
-    current_stop += 1 / 2000.0;
-  }
-  stops[2000 - 1] = 1.0;
-
-  paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {200, 200}, std::move(colors), std::move(stops), tile_mode, {});
-
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-}  // namespace
-
-// Only test clamp on purpose since they all look the same.
-TEST_P(AiksTest, CanRenderLinearGradientWayManyColorsClamp) {
-  CanRenderLinearGradientWayManyColors(this, Entity::TileMode::kClamp);
-}
-
-TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-
-    static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
-    }
-    ImGui::End();
-
-    Canvas canvas;
-    Paint paint;
-    canvas.Translate({100.0, 100.0, 0});
-    auto tile_mode = tile_modes[selected_tile_mode];
-
-    std::vector<Color> colors = {
-        Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-        Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-        Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-        Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-        Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-        Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-        Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
-    std::vector<Scalar> stops = {
-        0.0, 2.0 / 62.0, 4.0 / 62.0, 8.0 / 62.0, 16.0 / 62.0, 32.0 / 62.0, 1.0,
-    };
-
-    paint.color_source = ColorSource::MakeLinearGradient(
-        {0, 0}, {200, 200}, std::move(colors), std::move(stops), tile_mode, {});
-
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-    return canvas.EndRecordingAsPicture();
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, CanRenderLinearGradientMaskBlur) {
-  Canvas canvas;
-
-  Paint paint = {
-      .color = Color::White(),
-      .color_source = ColorSource::MakeLinearGradient(
-          {200, 200}, {400, 400},
-          {Color::Red(), Color::White(), Color::Red(), Color::White(),
-           Color::Red(), Color::White(), Color::Red(), Color::White(),
-           Color::Red(), Color::White(), Color::Red()},
-          {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0},
-          Entity::TileMode::kClamp, {}),
-      .mask_blur_descriptor =
-          Paint::MaskBlurDescriptor{
-              .style = FilterContents::BlurStyle::kNormal,
-              .sigma = Sigma(20),
-          },
-  };
-
-  canvas.DrawCircle({300, 300}, 200, paint);
-  canvas.DrawRect(Rect::MakeLTRB(100, 300, 500, 600), paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderRadialGradient) {
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-
-    static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
-    }
-    ImGui::End();
-
-    Canvas canvas;
-    Paint paint;
-    canvas.Translate({100.0, 100.0, 0});
-    auto tile_mode = tile_modes[selected_tile_mode];
-
-    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
-    std::vector<Scalar> stops = {0.0, 1.0};
-
-    paint.color_source = ColorSource::MakeRadialGradient(
-        {100, 100}, 100, std::move(colors), std::move(stops), tile_mode, {});
-
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-    return canvas.EndRecordingAsPicture();
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, CanRenderRadialGradientManyColors) {
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-
-    static int selected_tile_mode = 0;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
-    std::string label = "##1";
-    for (int i = 0; i < 4; i++) {
-      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
-                          4, NULL, NULL, "%.2f", 0);
-      label[2]++;
-    }
-    ImGui::End();
-
-    Canvas canvas;
-    Paint paint;
-    canvas.Translate({100.0, 100.0, 0});
-    auto tile_mode = tile_modes[selected_tile_mode];
-
-    std::vector<Color> colors = {
-        Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-        Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-        Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-        Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-        Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-        Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-        Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
-    std::vector<Scalar> stops = {
-        0.0,
-        (1.0 / 6.0) * 1,
-        (1.0 / 6.0) * 2,
-        (1.0 / 6.0) * 3,
-        (1.0 / 6.0) * 4,
-        (1.0 / 6.0) * 5,
-        1.0,
-    };
-
-    paint.color_source = ColorSource::MakeRadialGradient(
-        {100, 100}, 100, std::move(colors), std::move(stops), tile_mode, {});
-
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-    return canvas.EndRecordingAsPicture();
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-namespace {
-void CanRenderSweepGradient(AiksTest* aiks_test, Entity::TileMode tile_mode) {
-  Canvas canvas;
-  canvas.Scale(aiks_test->GetContentScale());
-  Paint paint;
-  canvas.Translate({100, 100, 0});
-
-  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                               Color{0.1294, 0.5882, 0.9529, 1.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-
-  paint.color_source = ColorSource::MakeSweepGradient(
-      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
-      std::move(stops), tile_mode, {});
-
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-}  // namespace
-
-TEST_P(AiksTest, CanRenderSweepGradientClamp) {
-  CanRenderSweepGradient(this, Entity::TileMode::kClamp);
-}
-TEST_P(AiksTest, CanRenderSweepGradientRepeat) {
-  CanRenderSweepGradient(this, Entity::TileMode::kRepeat);
-}
-TEST_P(AiksTest, CanRenderSweepGradientMirror) {
-  CanRenderSweepGradient(this, Entity::TileMode::kMirror);
-}
-TEST_P(AiksTest, CanRenderSweepGradientDecal) {
-  CanRenderSweepGradient(this, Entity::TileMode::kDecal);
-}
-
-namespace {
-void CanRenderSweepGradientManyColors(AiksTest* aiks_test,
-                                      Entity::TileMode tile_mode) {
-  Canvas canvas;
-  Paint paint;
-  canvas.Translate({100.0, 100.0, 0});
-
-  std::vector<Color> colors = {
-      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
-  std::vector<Scalar> stops = {
-      0.0,
-      (1.0 / 6.0) * 1,
-      (1.0 / 6.0) * 2,
-      (1.0 / 6.0) * 3,
-      (1.0 / 6.0) * 4,
-      (1.0 / 6.0) * 5,
-      1.0,
-  };
-
-  paint.color_source = ColorSource::MakeSweepGradient(
-      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
-      std::move(stops), tile_mode, {});
-
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  ASSERT_TRUE(aiks_test->OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-}  // namespace
-
-TEST_P(AiksTest, CanRenderSweepGradientManyColorsClamp) {
-  CanRenderSweepGradientManyColors(this, Entity::TileMode::kClamp);
-}
-TEST_P(AiksTest, CanRenderSweepGradientManyColorsRepeat) {
-  CanRenderSweepGradientManyColors(this, Entity::TileMode::kRepeat);
-}
-TEST_P(AiksTest, CanRenderSweepGradientManyColorsMirror) {
-  CanRenderSweepGradientManyColors(this, Entity::TileMode::kMirror);
-}
-TEST_P(AiksTest, CanRenderSweepGradientManyColorsDecal) {
-  CanRenderSweepGradientManyColors(this, Entity::TileMode::kDecal);
-}
-
-TEST_P(AiksTest, CanRenderConicalGradient) {
-  Scalar size = 256;
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::White();
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, size * 3, size * 3), paint);
-  std::vector<Color> colors = {Color::MakeRGBA8(0xF4, 0x43, 0x36, 0xFF),
-                               Color::MakeRGBA8(0xFF, 0xEB, 0x3B, 0xFF),
-                               Color::MakeRGBA8(0x4c, 0xAF, 0x50, 0xFF),
-                               Color::MakeRGBA8(0x21, 0x96, 0xF3, 0xFF)};
-  std::vector<Scalar> stops = {0.0, 1.f / 3.f, 2.f / 3.f, 1.0};
-  std::array<std::tuple<Point, float, Point, float>, 8> array{
-      std::make_tuple(Point{size / 2.f, size / 2.f}, 0.f,
-                      Point{size / 2.f, size / 2.f}, size / 2.f),
-      std::make_tuple(Point{size / 2.f, size / 2.f}, size / 4.f,
-                      Point{size / 2.f, size / 2.f}, size / 2.f),
-      std::make_tuple(Point{size / 4.f, size / 4.f}, 0.f,
-                      Point{size / 2.f, size / 2.f}, size / 2.f),
-      std::make_tuple(Point{size / 4.f, size / 4.f}, size / 2.f,
-                      Point{size / 2.f, size / 2.f}, 0),
-      std::make_tuple(Point{size / 4.f, size / 4.f}, size / 4.f,
-                      Point{size / 2.f, size / 2.f}, size / 2.f),
-      std::make_tuple(Point{size / 4.f, size / 4.f}, size / 16.f,
-                      Point{size / 2.f, size / 2.f}, size / 8.f),
-      std::make_tuple(Point{size / 4.f, size / 4.f}, size / 8.f,
-                      Point{size / 2.f, size / 2.f}, size / 16.f),
-      std::make_tuple(Point{size / 8.f, size / 8.f}, size / 8.f,
-                      Point{size / 2.f, size / 2.f}, size / 8.f),
-  };
-  for (int i = 0; i < 8; i++) {
-    canvas.Save();
-    canvas.Translate({(i % 3) * size, i / 3 * size, 0});
-    paint.color_source = ColorSource::MakeConicalGradient(
-        std::get<0>(array[i]), std::get<1>(array[i]), colors, stops,
-        std::get<2>(array[i]), std::get<3>(array[i]), Entity::TileMode::kClamp,
-        {});
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, size, size), paint);
-    canvas.Restore();
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderGradientDecalWithBackground) {
-  std::vector<Color> colors = {Color::MakeRGBA8(0xF4, 0x43, 0x36, 0xFF),
-                               Color::MakeRGBA8(0xFF, 0xEB, 0x3B, 0xFF),
-                               Color::MakeRGBA8(0x4c, 0xAF, 0x50, 0xFF),
-                               Color::MakeRGBA8(0x21, 0x96, 0xF3, 0xFF)};
-  std::vector<Scalar> stops = {0.0, 1.f / 3.f, 2.f / 3.f, 1.0};
-
-  std::array<ColorSource, 3> color_sources = {
-      ColorSource::MakeLinearGradient({0, 0}, {100, 100}, colors, stops,
-                                      Entity::TileMode::kDecal, {}),
-      ColorSource::MakeRadialGradient({100, 100}, 100, colors, stops,
-                                      Entity::TileMode::kDecal, {}),
-      ColorSource::MakeSweepGradient({100, 100}, Degrees(45), Degrees(135),
-                                     colors, stops, Entity::TileMode::kDecal,
-                                     {}),
-  };
-
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::White();
-  canvas.DrawRect(Rect::MakeLTRB(0, 0, 605, 205), paint);
-  for (int i = 0; i < 3; i++) {
-    canvas.Save();
-    canvas.Translate({i * 200.0f, 0, 0});
-    paint.color_source = color_sources[i];
-    canvas.DrawRect(Rect::MakeLTRB(0, 0, 200, 200), paint);
-    canvas.Restore();
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CanRenderDifferentShapesWithSameColorSource) {
   Canvas canvas;
   Paint paint;
@@ -1068,6 +481,28 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
 
   Canvas canvas;
   AiksContext renderer(GetContext(), nullptr);
+  paint.color = Color::BlackTransparent();
+  canvas.DrawPaint(paint);
+  Picture picture = recorder_canvas.EndRecordingAsPicture();
+  auto image = picture.ToImage(renderer, ISize{1000, 1000});
+  if (image) {
+    canvas.DrawImage(image, Point(), Paint());
+    paint.color = Color{0.1, 0.1, 0.1, 0.2};
+    canvas.DrawRect(Rect::MakeSize(ISize{1000, 1000}), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Regression test for https://github.com/flutter/flutter/issues/142358 .
+// Without a change to force render pass construction the image is left in an
+// undefined layout and triggers a validation error.
+TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
+  Canvas recorder_canvas;
+
+  Canvas canvas;
+  AiksContext renderer(GetContext(), nullptr);
+  Paint paint;
   paint.color = Color::BlackTransparent();
   canvas.DrawPaint(paint);
   Picture picture = recorder_canvas.EndRecordingAsPicture();
@@ -1263,112 +698,7 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
                   .AddRoundedRect(Rect::MakeXYWH(100, 100, 500, 500), radii)
                   .TakePath();
 
-  canvas.DrawPath(std::move(path), paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
-  Canvas canvas;
-
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 200;
-
-  Rect rect = Rect::MakeXYWH(100, 100, 200, 200);
-  PathBuilder builder;
-  builder.AddArc(rect, Degrees(0), Degrees(90), false);
-
-  canvas.DrawPath(builder.TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
-  Canvas canvas;
-
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 20;
-
-  PathBuilder builder;
-  builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
-
-  canvas.DrawPath(builder.TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderDifferencePaths) {
-  Canvas canvas;
-
-  Paint paint;
-  paint.color = Color::Red();
-
-  PathBuilder builder;
-
-  PathBuilder::RoundingRadii radii;
-  radii.top_left = {50, 25};
-  radii.top_right = {25, 50};
-  radii.bottom_right = {50, 25};
-  radii.bottom_left = {25, 50};
-
-  builder.AddRoundedRect(Rect::MakeXYWH(100, 100, 200, 200), radii);
-  builder.AddCircle({200, 200}, 50);
-  auto path = builder.TakePath(FillType::kOdd);
-
-  canvas.DrawImage(
-      std::make_shared<Image>(CreateTextureForFixture("boston.jpg")), {10, 10},
-      Paint{});
-  canvas.DrawPath(std::move(path), paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/134816.
-//
-// It should be possible to draw 3 lines, and not have an implicit close path.
-TEST_P(AiksTest, CanDrawAnOpenPath) {
-  Canvas canvas;
-
-  // Starting at (50, 50), draw lines from:
-  // 1. (50, height)
-  // 2. (width, height)
-  // 3. (width, 50)
-  PathBuilder builder;
-  builder.MoveTo({50, 50});
-  builder.LineTo({50, 100});
-  builder.LineTo({100, 100});
-  builder.LineTo({100, 50});
-
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
-
-  canvas.DrawPath(builder.TakePath(), paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanDrawAnOpenPathThatIsntARect) {
-  Canvas canvas;
-
-  // Draw a stroked path that is explicitly closed to verify
-  // It doesn't become a rectangle.
-  PathBuilder builder;
-  builder.MoveTo({50, 50});
-  builder.LineTo({520, 120});
-  builder.LineTo({300, 310});
-  builder.LineTo({100, 50});
-  builder.Close();
-
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
-
-  canvas.DrawPath(builder.TakePath(), paint);
+  canvas.DrawPath(path, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1479,12 +809,14 @@ TEST_P(AiksTest, TextFrameSubpixelAlignment) {
     static float phase_variation = 0.2;
     static float speed = 0.5;
     static float magnitude = 100;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Font size", &font_size, 5, 50);
-    ImGui::SliderFloat("Phase variation", &phase_variation, 0, 1);
-    ImGui::SliderFloat("Oscillation speed", &speed, 0, 2);
-    ImGui::SliderFloat("Oscillation magnitude", &magnitude, 0, 300);
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Font size", &font_size, 5, 50);
+      ImGui::SliderFloat("Phase variation", &phase_variation, 0, 1);
+      ImGui::SliderFloat("Oscillation speed", &speed, 0, 2);
+      ImGui::SliderFloat("Oscillation magnitude", &magnitude, 0, 300);
+      ImGui::End();
+    }
 
     Canvas canvas;
     canvas.Scale(GetContentScale());
@@ -1728,15 +1060,15 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimesInteractive) {
     static Color foreground = Color::Color::OrangeRed().WithAlpha(0.5);
     static int current_blend_index = 3;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&background));
       ImGui::ColorEdit4("Foreground", reinterpret_cast<float*>(&foreground));
       ImGui::ListBox("Blend mode", &current_blend_index,
                      modes.blend_mode_names.data(),
                      modes.blend_mode_names.size());
+      ImGui::End();
     }
-    ImGui::End();
 
     Canvas canvas;
     canvas.Scale(Vector2(0.2, 0.2));
@@ -1823,8 +1155,8 @@ TEST_P(AiksTest, ColorWheel) {
     static Color color1 = Color::Green();
     static Color color2 = Color::Blue();
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
       ImGui::ListBox("Blending mode", &current_blend_index,
                      blend_modes.blend_mode_names.data(),
@@ -1834,8 +1166,8 @@ TEST_P(AiksTest, ColorWheel) {
       ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
       ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&color2));
       ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
+      ImGui::End();
     }
-    ImGui::End();
 
     static Point content_scale;
     Point new_content_scale = GetContentScale();
@@ -1941,133 +1273,6 @@ TEST_P(AiksTest, TransformMultipliesCorrectly) {
               0,   0,   0,   0,
            -500, 400,   0,   1));
   // clang-format on
-}
-
-TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
-  // Compare with https://fiddle.skia.org/c/027392122bec8ac2b5d5de00a4b9bbe2
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    static Color color = Color::Black().WithAlpha(0.5);
-    static float scale = 3;
-    static bool add_circle_clip = true;
-
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
-    ImGui::SliderFloat("Scale", &scale, 0, 6);
-    ImGui::Checkbox("Circle clip", &add_circle_clip);
-    ImGui::End();
-
-    Canvas canvas;
-    canvas.Scale(GetContentScale());
-    Paint paint;
-
-    paint.color = Color::White();
-    canvas.DrawPaint(paint);
-
-    paint.color = color;
-    paint.style = Paint::Style::kStroke;
-    paint.stroke_width = 10;
-
-    Path path = PathBuilder{}
-                    .MoveTo({20, 20})
-                    .QuadraticCurveTo({60, 20}, {60, 60})
-                    .Close()
-                    .MoveTo({60, 20})
-                    .QuadraticCurveTo({60, 60}, {20, 60})
-                    .TakePath();
-
-    canvas.Scale(Vector2(scale, scale));
-
-    if (add_circle_clip) {
-      auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
-          Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
-
-      auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
-      Point point_a = screen_to_canvas * handle_a * GetContentScale();
-      Point point_b = screen_to_canvas * handle_b * GetContentScale();
-
-      Point middle = (point_a + point_b) / 2;
-      auto radius = point_a.GetDistance(middle);
-      canvas.ClipPath(PathBuilder{}.AddCircle(middle, radius).TakePath());
-    }
-
-    for (auto join : {Join::kBevel, Join::kRound, Join::kMiter}) {
-      paint.stroke_join = join;
-      for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
-        paint.stroke_cap = cap;
-        canvas.DrawPath(path.Clone(), paint);
-        canvas.Translate({80, 0});
-      }
-      canvas.Translate({-240, 60});
-    }
-
-    return canvas.EndRecordingAsPicture();
-  };
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, DrawLinesRenderCorrectly) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  Paint paint;
-  paint.color = Color::Blue();
-  paint.stroke_width = 10;
-
-  auto draw = [&canvas](Paint& paint) {
-    for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
-      paint.stroke_cap = cap;
-      Point origin = {100, 100};
-      Point p0 = {50, 0};
-      Point p1 = {150, 0};
-      canvas.DrawLine({150, 100}, {250, 100}, paint);
-      for (int d = 15; d < 90; d += 15) {
-        Matrix m = Matrix::MakeRotationZ(Degrees(d));
-        canvas.DrawLine(origin + m * p0, origin + m * p1, paint);
-      }
-      canvas.DrawLine({100, 150}, {100, 250}, paint);
-      canvas.DrawCircle({origin}, 35, paint);
-
-      canvas.DrawLine({250, 250}, {250, 250}, paint);
-
-      canvas.Translate({250, 0});
-    }
-    canvas.Translate({-750, 250});
-  };
-
-  std::vector<Color> colors = {
-      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
-  std::vector<Scalar> stops = {
-      0.0,
-      (1.0 / 6.0) * 1,
-      (1.0 / 6.0) * 2,
-      (1.0 / 6.0) * 3,
-      (1.0 / 6.0) * 4,
-      (1.0 / 6.0) * 5,
-      1.0,
-  };
-
-  auto texture = CreateTextureForFixture("airplane.jpg",
-                                         /*enable_mipmapping=*/true);
-
-  draw(paint);
-
-  paint.color_source = ColorSource::MakeRadialGradient(
-      {100, 100}, 200, std::move(colors), std::move(stops),
-      Entity::TileMode::kMirror, {});
-  draw(paint);
-
-  paint.color_source = ColorSource::MakeImage(
-      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
-      Matrix::MakeTranslation({-150, 75}));
-  draw(paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, FilledCirclesRenderCorrectly) {
@@ -2264,81 +1469,238 @@ TEST_P(AiksTest, FilledEllipsesRenderCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, GradientStrokesRenderCorrectly) {
-  // Compare with https://fiddle.skia.org/c/027392122bec8ac2b5d5de00a4b9bbe2
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    static float scale = 3;
-    static bool add_circle_clip = true;
-    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
-    const Entity::TileMode tile_modes[] = {
-        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
-        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
-    static int selected_tile_mode = 0;
-    static float alpha = 1;
-
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Scale", &scale, 0, 6);
-    ImGui::Checkbox("Circle clip", &add_circle_clip);
-    ImGui::SliderFloat("Alpha", &alpha, 0, 1);
-    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
-                 sizeof(tile_mode_names) / sizeof(char*));
-    ImGui::End();
-
-    Canvas canvas;
-    canvas.Scale(GetContentScale());
-    Paint paint;
-    paint.color = Color::White();
-    canvas.DrawPaint(paint);
-
-    paint.style = Paint::Style::kStroke;
-    paint.color = Color(1.0, 1.0, 1.0, alpha);
-    paint.stroke_width = 10;
-    auto tile_mode = tile_modes[selected_tile_mode];
-
-    std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-                                 Color{0.1294, 0.5882, 0.9529, 1.0}};
-    std::vector<Scalar> stops = {0.0, 1.0};
-
-    paint.color_source = ColorSource::MakeLinearGradient(
-        {0, 0}, {50, 50}, std::move(colors), std::move(stops), tile_mode, {});
-
-    Path path = PathBuilder{}
-                    .MoveTo({20, 20})
-                    .QuadraticCurveTo({60, 20}, {60, 60})
-                    .Close()
-                    .MoveTo({60, 20})
-                    .QuadraticCurveTo({60, 60}, {20, 60})
-                    .TakePath();
-
-    canvas.Scale(Vector2(scale, scale));
-
-    if (add_circle_clip) {
-      auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
-          Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
-
-      auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
-      Point point_a = screen_to_canvas * handle_a * GetContentScale();
-      Point point_b = screen_to_canvas * handle_b * GetContentScale();
-
-      Point middle = (point_a + point_b) / 2;
-      auto radius = point_a.GetDistance(middle);
-      canvas.ClipPath(PathBuilder{}.AddCircle(middle, radius).TakePath());
-    }
-
-    for (auto join : {Join::kBevel, Join::kRound, Join::kMiter}) {
-      paint.stroke_join = join;
-      for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
-        paint.stroke_cap = cap;
-        canvas.DrawPath(path.Clone(), paint);
-        canvas.Translate({80, 0});
-      }
-      canvas.Translate({-240, 60});
-    }
-
-    return canvas.EndRecordingAsPicture();
+TEST_P(AiksTest, FilledRoundRectsRenderCorrectly) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  const int color_count = 3;
+  Color colors[color_count] = {
+      Color::Blue(),
+      Color::Green(),
+      Color::Crimson(),
   };
 
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
+  paint.color = Color::White();
+  canvas.DrawPaint(paint);
+
+  int c_index = 0;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      paint.color = colors[(c_index++) % color_count];
+      canvas.DrawRRect(Rect::MakeXYWH(i * 100 + 10, j * 100 + 20, 80, 80),
+                       Size(i * 5 + 10, j * 5 + 10), paint);
+    }
+  }
+  paint.color = colors[(c_index++) % color_count];
+  canvas.DrawRRect(Rect::MakeXYWH(10, 420, 380, 80), Size(40, 40), paint);
+  paint.color = colors[(c_index++) % color_count];
+  canvas.DrawRRect(Rect::MakeXYWH(410, 20, 80, 380), Size(40, 40), paint);
+
+  std::vector<Color> gradient_colors = {
+      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      (1.0 / 6.0) * 1,
+      (1.0 / 6.0) * 2,
+      (1.0 / 6.0) * 3,
+      (1.0 / 6.0) * 4,
+      (1.0 / 6.0) * 5,
+      1.0,
+  };
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  paint.color = Color::White().WithAlpha(0.1);
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {550, 550}, 75, gradient_colors, stops, Entity::TileMode::kMirror, {});
+  for (int i = 1; i <= 10; i++) {
+    int j = 11 - i;
+    canvas.DrawRRect(Rect::MakeLTRB(550 - i * 20, 550 - j * 20,  //
+                                    550 + i * 20, 550 + j * 20),
+                     Size(i * 10, j * 10), paint);
+  }
+  paint.color = Color::White().WithAlpha(0.5);
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {200, 650}, 75, std::move(gradient_colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  canvas.DrawRRect(Rect::MakeLTRB(100, 610, 300, 690), Size(40, 40), paint);
+  canvas.DrawRRect(Rect::MakeLTRB(160, 550, 240, 750), Size(40, 40), paint);
+
+  paint.color = Color::White().WithAlpha(0.1);
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({520, 20}));
+  for (int i = 1; i <= 10; i++) {
+    int j = 11 - i;
+    canvas.DrawRRect(Rect::MakeLTRB(720 - i * 20, 220 - j * 20,  //
+                                    720 + i * 20, 220 + j * 20),
+                     Size(i * 10, j * 10), paint);
+  }
+  paint.color = Color::White().WithAlpha(0.5);
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({800, 300}));
+  canvas.DrawRRect(Rect::MakeLTRB(800, 410, 1000, 490), Size(40, 40), paint);
+  canvas.DrawRRect(Rect::MakeLTRB(860, 350, 940, 550), Size(40, 40), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SolidColorCirclesOvalsRRectsMaskBlurCorrectly) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma{1},
+  };
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  paint.color = Color::Crimson();
+  Scalar y = 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 10.0f;
+    canvas.DrawRect(Rect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
+                                   radius, 60.0f - radius),
+                    paint);
+  }
+
+  paint.color = Color::Blue();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 10.0f;
+    canvas.DrawCircle({x + 25, y + 25}, radius, paint);
+  }
+
+  paint.color = Color::Green();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 10.0f;
+    canvas.DrawOval(Rect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
+                                   radius, 60.0f - radius),
+                    paint);
+  }
+
+  paint.color = Color::Purple();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 20.0f;
+    canvas.DrawRRect(Rect::MakeXYWH(x, y, 60.0f, 60.0f),  //
+                     {radius, radius},                    //
+                     paint);
+  }
+
+  paint.color = Color::Orange();
+  y += 100.0f;
+  for (int i = 0; i < 5; i++) {
+    Scalar x = (i + 1) * 100;
+    Scalar radius = x / 20.0f;
+    canvas.DrawRRect(Rect::MakeXYWH(x, y, 60.0f, 60.0f),  //
+                     {radius, 5.0f}, paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  const int color_count = 3;
+  Color colors[color_count] = {
+      Color::Blue(),
+      Color::Green(),
+      Color::Crimson(),
+  };
+
+  paint.color = Color::White();
+  canvas.DrawPaint(paint);
+
+  auto draw_rrect_as_path = [&canvas](const Rect& rect, const Size& radii,
+                                      const Paint& paint) {
+    PathBuilder builder = PathBuilder();
+    builder.AddRoundedRect(rect, radii);
+    canvas.DrawPath(builder.TakePath(), paint);
+  };
+
+  int c_index = 0;
+  for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) {
+      paint.color = colors[(c_index++) % color_count];
+      draw_rrect_as_path(Rect::MakeXYWH(i * 100 + 10, j * 100 + 20, 80, 80),
+                         Size(i * 5 + 10, j * 5 + 10), paint);
+    }
+  }
+  paint.color = colors[(c_index++) % color_count];
+  draw_rrect_as_path(Rect::MakeXYWH(10, 420, 380, 80), Size(40, 40), paint);
+  paint.color = colors[(c_index++) % color_count];
+  draw_rrect_as_path(Rect::MakeXYWH(410, 20, 80, 380), Size(40, 40), paint);
+
+  std::vector<Color> gradient_colors = {
+      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      (1.0 / 6.0) * 1,
+      (1.0 / 6.0) * 2,
+      (1.0 / 6.0) * 3,
+      (1.0 / 6.0) * 4,
+      (1.0 / 6.0) * 5,
+      1.0,
+  };
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  paint.color = Color::White().WithAlpha(0.1);
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {550, 550}, 75, gradient_colors, stops, Entity::TileMode::kMirror, {});
+  for (int i = 1; i <= 10; i++) {
+    int j = 11 - i;
+    draw_rrect_as_path(Rect::MakeLTRB(550 - i * 20, 550 - j * 20,  //
+                                      550 + i * 20, 550 + j * 20),
+                       Size(i * 10, j * 10), paint);
+  }
+  paint.color = Color::White().WithAlpha(0.5);
+  paint.color_source = ColorSource::MakeRadialGradient(
+      {200, 650}, 75, std::move(gradient_colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  draw_rrect_as_path(Rect::MakeLTRB(100, 610, 300, 690), Size(40, 40), paint);
+  draw_rrect_as_path(Rect::MakeLTRB(160, 550, 240, 750), Size(40, 40), paint);
+
+  paint.color = Color::White().WithAlpha(0.1);
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({520, 20}));
+  for (int i = 1; i <= 10; i++) {
+    int j = 11 - i;
+    draw_rrect_as_path(Rect::MakeLTRB(720 - i * 20, 220 - j * 20,  //
+                                      720 + i * 20, 220 + j * 20),
+                       Size(i * 10, j * 10), paint);
+  }
+  paint.color = Color::White().WithAlpha(0.5);
+  paint.color_source = ColorSource::MakeImage(
+      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+      Matrix::MakeTranslation({800, 300}));
+  draw_rrect_as_path(Rect::MakeLTRB(800, 410, 1000, 490), Size(40, 40), paint);
+  draw_rrect_as_path(Rect::MakeLTRB(860, 350, 940, 550), Size(40, 40), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
@@ -2376,37 +1738,6 @@ TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
-
-  canvas.Translate({100, 100});
-  canvas.DrawPath(
-      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
-      {paint});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
-  paint.stroke_join = Join::kBevel;
-
-  canvas.Translate({100, 100});
-  canvas.DrawPath(
-      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
-      {paint});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, SaveLayerDrawsBehindSubsequentEntities) {
@@ -2530,14 +1861,16 @@ TEST_P(AiksTest, SceneColorSource) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     Paint paint;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     static Scalar distance = 2;
-    ImGui::SliderFloat("Distance", &distance, 0, 4);
     static Scalar y_pos = 0;
-    ImGui::SliderFloat("Y", &y_pos, -3, 3);
     static Scalar fov = 45;
-    ImGui::SliderFloat("FOV", &fov, 1, 180);
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Distance", &distance, 0, 4);
+      ImGui::SliderFloat("Y", &y_pos, -3, 3);
+      ImGui::SliderFloat("FOV", &fov, 1, 180);
+      ImGui::End();
+    }
 
     Scalar angle = GetSecondsElapsed();
     auto camera_position =
@@ -2666,7 +1999,8 @@ TEST_P(AiksTest,
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 3llu);
+  ASSERT_EQ(spy->render_passes_.size(),
+            GetBackend() == PlaygroundBackend::kOpenGLES ? 4llu : 3llu);
   std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
@@ -2789,19 +2123,18 @@ TEST_P(AiksTest, ClearColorOptimizationDoesNotApplyForBackdropFilters) {
   Picture picture = canvas.EndRecordingAsPicture();
 
   std::optional<Color> actual_color;
+  bool found_subpass = false;
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
     if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
       actual_color = subpass->get()->GetClearColor();
+      found_subpass = true;
     }
     // Fail if the first element isn't a subpass.
     return true;
   });
 
-  ASSERT_TRUE(actual_color.has_value());
-  if (!actual_color) {
-    return;
-  }
-  ASSERT_EQ(actual_color.value(), Color::BlackTransparent());
+  EXPECT_TRUE(found_subpass);
+  EXPECT_FALSE(actual_color.has_value());
 }
 
 TEST_P(AiksTest, CollapsedDrawPaintInSubpass) {
@@ -2894,7 +2227,8 @@ TEST_P(AiksTest, SrgbToLinearFilterSubpassCollapseOptimization) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-static Picture BlendModeTest(BlendMode blend_mode,
+static Picture BlendModeTest(Vector2 content_scale,
+                             BlendMode blend_mode,
                              const std::shared_ptr<Image>& src_image,
                              const std::shared_ptr<Image>& dst_image) {
   Color destination_color = Color::CornflowerBlue().WithAlpha(0.75);
@@ -2903,8 +2237,10 @@ static Picture BlendModeTest(BlendMode blend_mode,
                                            Color::Black().WithAlpha(0.75)});
 
   Canvas canvas;
-
   canvas.DrawPaint({.color = Color::Black()});
+  // TODO(bdero): Why does this cause the left image to double scale on high DPI
+  //              displays.
+  // canvas.Scale(content_scale);
 
   //----------------------------------------------------------------------------
   /// 1. Save layer blending (top squares).
@@ -2914,7 +2250,7 @@ static Picture BlendModeTest(BlendMode blend_mode,
   for (const auto& color : source_colors) {
     canvas.Save();
     {
-      canvas.ClipRect(Rect::MakeXYWH(50, 50, 100, 100));
+      canvas.ClipRect(Rect::MakeXYWH(25, 25, 100, 100));
       // Perform the blend in a SaveLayer so that the initial backdrop color is
       // fully transparent black. SourceOver blend the result onto the parent
       // pass.
@@ -2925,7 +2261,7 @@ static Picture BlendModeTest(BlendMode blend_mode,
         // pass.
         canvas.SaveLayer({.blend_mode = blend_mode});
         {  //
-          canvas.DrawRect(Rect::MakeXYWH(50, 50, 100, 100), {.color = color});
+          canvas.DrawRect(Rect::MakeXYWH(25, 25, 100, 100), {.color = color});
         }
         canvas.Restore();
       }
@@ -2942,47 +2278,76 @@ static Picture BlendModeTest(BlendMode blend_mode,
 
   canvas.Save();
   canvas.Translate({0, 100});
-
   // Perform the blend in a SaveLayer so that the initial backdrop color is
   // fully transparent black. SourceOver blend the result onto the parent pass.
   canvas.SaveLayer({});
-  // canvas.DrawPaint({.color = destination_color});
   for (const auto& color : source_colors) {
     // Simply write the CPU blended color to the pass.
-    canvas.DrawRect(Rect::MakeXYWH(50, 50, 100, 100),
+    canvas.DrawRect(Rect::MakeXYWH(25, 25, 100, 100),
                     {.color = destination_color.Blend(color, blend_mode),
                      .blend_mode = BlendMode::kSourceOver});
     canvas.Translate(Vector2(100, 0));
   }
-  canvas.RestoreToCount(0);
+  canvas.Restore();
+  canvas.Restore();
 
   //----------------------------------------------------------------------------
-  /// 3. Image blending (top right).
+  /// 3. Image blending (bottom images).
   ///
   /// Compare these results with the images in the Flutter blend mode
   /// documentation: https://api.flutter.dev/flutter/dart-ui/BlendMode.html
   ///
 
+  canvas.Translate({0, 250});
+
+  // Draw grid behind the images.
+  canvas.DrawRect(Rect::MakeLTRB(0, 0, 800, 400),
+                  {.color = Color::MakeRGBA8(41, 41, 41, 255)});
+  Paint square_paint = {.color = Color::MakeRGBA8(15, 15, 15, 255)};
+  for (int y = 0; y < 400 / 8; y++) {
+    for (int x = 0; x < 800 / 16; x++) {
+      canvas.DrawRect(Rect::MakeXYWH(x * 16 + (y % 2) * 8, y * 8, 8, 8),
+                      square_paint);
+    }
+  }
+
+  // Uploaded image source (left image).
   canvas.Save();
-  // canvas.ClipRect(Rect::MakeXYWH(500, 0, 500, 500));
   canvas.SaveLayer({.blend_mode = BlendMode::kSourceOver});
   {
-    canvas.DrawImage(dst_image, {400, 50}, {.blend_mode = BlendMode::kSource});
-    canvas.DrawImage(src_image, {400, 50}, {.blend_mode = blend_mode});
+    canvas.DrawImage(dst_image, {0, 0}, {.blend_mode = BlendMode::kSourceOver});
+    canvas.DrawImage(src_image, {0, 0}, {.blend_mode = blend_mode});
   }
-  canvas.RestoreToCount(0);
+  canvas.Restore();
+  canvas.Restore();
+
+  // Rendered image source (right image).
+  canvas.Save();
+  canvas.SaveLayer({.blend_mode = BlendMode::kSourceOver});
+  {
+    canvas.DrawImage(dst_image, {400, 0},
+                     {.blend_mode = BlendMode::kSourceOver});
+    canvas.SaveLayer({.blend_mode = blend_mode});
+    {
+      canvas.DrawImage(src_image, {400, 0},
+                       {.blend_mode = BlendMode::kSourceOver});
+    }
+    canvas.Restore();
+  }
+  canvas.Restore();
+  canvas.Restore();
 
   return canvas.EndRecordingAsPicture();
 }
 
-#define BLEND_MODE_TEST(blend_mode)                                     \
-  TEST_P(AiksTest, BlendMode##blend_mode) {                             \
-    auto src_image = std::make_shared<Image>(                           \
-        CreateTextureForFixture("blend_mode_src.png"));                 \
-    auto dst_image = std::make_shared<Image>(                           \
-        CreateTextureForFixture("blend_mode_dst.png"));                 \
-    OpenPlaygroundHere(                                                 \
-        BlendModeTest(BlendMode::k##blend_mode, src_image, dst_image)); \
+#define BLEND_MODE_TEST(blend_mode)                                          \
+  TEST_P(AiksTest, BlendMode##blend_mode) {                                  \
+    auto src_image = std::make_shared<Image>(                                \
+        CreateTextureForFixture("blend_mode_src.png"));                      \
+    auto dst_image = std::make_shared<Image>(                                \
+        CreateTextureForFixture("blend_mode_dst.png"));                      \
+    OpenPlaygroundHere(BlendModeTest(                                        \
+        GetContentScale(), BlendMode::k##blend_mode, src_image, dst_image)); \
   }
 IMPELLER_FOR_EACH_BLEND_MODE(BLEND_MODE_TEST)
 
@@ -3061,7 +2426,7 @@ TEST_P(AiksTest, ImageFilteredSaveLayerWithUnboundedContents) {
                       .TakePath();
       Paint paint = p;
       paint.style = Paint::Style::kStroke;
-      canvas.DrawPath(std::move(path), paint);
+      canvas.DrawPath(path, paint);
     };
     // Registration marks for the edge of the SaveLayer
     DrawLine(Point(75, 100), Point(225, 100), {.color = Color::White()});
@@ -3342,136 +2707,14 @@ TEST_P(AiksTest, CanRenderDestructiveSaveLayer) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderMaskBlurHugeSigma) {
-  Canvas canvas;
-  canvas.DrawCircle({400, 400}, 300,
-                    {.color = Color::Green(),
-                     .mask_blur_descriptor = Paint::MaskBlurDescriptor{
-                         .style = FilterContents::BlurStyle::kNormal,
-                         .sigma = Sigma(99999),
-                     }});
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderBackdropBlurInteractive) {
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    auto [a, b] = IMPELLER_PLAYGROUND_LINE(Point(50, 50), Point(300, 200), 30,
-                                           Color::White(), Color::White());
-
-    Canvas canvas;
-    canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-    canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
-    canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
-    canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
-    canvas.ClipRRect(Rect::MakeLTRB(a.x, a.y, b.x, b.y), {20, 20});
-    canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                     ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
-                                           FilterContents::BlurStyle::kNormal,
-                                           Entity::TileMode::kClamp));
-    canvas.Restore();
-
-    return canvas.EndRecordingAsPicture();
-  };
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, CanRenderBackdropBlur) {
-  Canvas canvas;
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.DrawCircle({300, 200}, 100, {.color = Color::GreenYellow()});
-  canvas.DrawCircle({140, 170}, 75, {.color = Color::DarkMagenta()});
-  canvas.DrawCircle({180, 120}, 100, {.color = Color::OrangeRed()});
-  canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), {20, 20});
-  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderBackdropBlurHugeSigma) {
-  Canvas canvas;
-  canvas.DrawCircle({400, 400}, 300, {.color = Color::Green()});
-  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(999999), Sigma(999999),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderClippedBlur) {
-  Canvas canvas;
-  canvas.ClipRect(Rect::MakeXYWH(100, 150, 400, 400));
-  canvas.DrawCircle(
-      {400, 400}, 200,
-      {
-          .color = Color::Green(),
-          .image_filter = ImageFilter::MakeBlur(
-              Sigma(20.0), Sigma(20.0), FilterContents::BlurStyle::kNormal,
-              Entity::TileMode::kClamp),
-      });
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderForegroundBlendWithMaskBlur) {
-  // This case triggers the ForegroundPorterDuffBlend path. The color filter
-  // should apply to the color only, and respect the alpha mask.
-  Canvas canvas;
-  canvas.ClipRect(Rect::MakeXYWH(100, 150, 400, 400));
-  canvas.DrawCircle({400, 400}, 200,
-                    {
-                        .color = Color::White(),
-                        .color_filter = ColorFilter::MakeBlend(
-                            BlendMode::kSource, Color::Green()),
-                        .mask_blur_descriptor =
-                            Paint::MaskBlurDescriptor{
-                                .style = FilterContents::BlurStyle::kNormal,
-                                .sigma = Radius(20),
-                            },
-                    });
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderForegroundAdvancedBlendWithMaskBlur) {
-  // This case triggers the ForegroundAdvancedBlend path. The color filter
-  // should apply to the color only, and respect the alpha mask.
-  Canvas canvas;
-  canvas.ClipRect(Rect::MakeXYWH(100, 150, 400, 400));
-  canvas.DrawCircle({400, 400}, 200,
-                    {
-                        .color = Color::Grey(),
-                        .color_filter = ColorFilter::MakeBlend(
-                            BlendMode::kColor, Color::Green()),
-                        .mask_blur_descriptor =
-                            Paint::MaskBlurDescriptor{
-                                .style = FilterContents::BlurStyle::kNormal,
-                                .sigma = Radius(20),
-                            },
-                    });
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 // Regression test for https://github.com/flutter/flutter/issues/126701 .
 TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
 
   auto runtime_stage =
-      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   struct FragUniforms {
@@ -3499,11 +2742,10 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 }
 
 TEST_P(AiksTest, DrawPaintTransformsBounds) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't support runtime effects.");
-  }
-
-  auto runtime_stage = OpenAssetAsRuntimeStage("gradient.frag.iplr");
+  auto runtime_stages = OpenAssetAsRuntimeStage("gradient.frag.iplr");
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   struct FragUniforms {
@@ -3688,125 +2930,6 @@ TEST_P(AiksTest, TextForegroundShaderWithTransform) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanCanvasDrawPicture) {
-  Canvas subcanvas;
-  subcanvas.DrawRect(Rect::MakeLTRB(-100, -50, 100, 50),
-                     {.color = Color::CornflowerBlue()});
-  auto picture = subcanvas.EndRecordingAsPicture();
-
-  Canvas canvas;
-  canvas.Translate({200, 200});
-  canvas.Rotate(Radians(kPi / 4));
-  canvas.DrawPicture(picture);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanCanvasDrawPictureWithAdvancedBlend) {
-  Canvas subcanvas;
-  subcanvas.DrawRect(
-      Rect::MakeLTRB(-100, -50, 100, 50),
-      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kColorDodge});
-  auto picture = subcanvas.EndRecordingAsPicture();
-
-  Canvas canvas;
-  canvas.DrawPaint({.color = Color::Black()});
-  canvas.DrawCircle(Point::MakeXY(150, 150), 25, {.color = Color::Red()});
-  canvas.DrawPicture(picture);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanDrawMultiContourConvexPath) {
-  PathBuilder builder = {};
-  for (auto i = 0; i < 10; i++) {
-    if (i % 2 == 0) {
-      builder.AddCircle(Point(100 + 50 * i, 100 + 50 * i), 100);
-    } else {
-      builder.MoveTo({100.f + 50.f * i - 100, 100.f + 50.f * i});
-      builder.LineTo({100.f + 50.f * i, 100.f + 50.f * i - 100});
-      builder.LineTo({100.f + 50.f * i - 100, 100.f + 50.f * i - 100});
-      builder.Close();
-    }
-  }
-  builder.SetConvexity(Convexity::kConvex);
-
-  Canvas canvas;
-  canvas.DrawPath(builder.TakePath(), {.color = Color::Red().WithAlpha(0.4)});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanCanvasDrawPictureWithBackdropFilter) {
-  Canvas subcanvas;
-  subcanvas.SaveLayer({}, {},
-                      ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
-                                            FilterContents::BlurStyle::kNormal,
-                                            Entity::TileMode::kDecal));
-  auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
-  Paint paint;
-  paint.color = Color::Red().WithAlpha(0.5);
-  subcanvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
-
-  auto picture = subcanvas.EndRecordingAsPicture();
-
-  Canvas canvas;
-  canvas.DrawPaint({.color = Color::Black()});
-  canvas.DrawCircle(Point::MakeXY(150, 150), 25, {.color = Color::Red()});
-  canvas.DrawPicture(picture);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, DrawPictureWithText) {
-  Canvas subcanvas;
-  ASSERT_TRUE(RenderTextInCanvasSkia(
-      GetContext(), subcanvas,
-      "the quick brown fox jumped over the lazy dog!.?", "Roboto-Regular.ttf"));
-  subcanvas.Translate({0, 10});
-  subcanvas.Scale(Vector2(3, 3));
-  ASSERT_TRUE(RenderTextInCanvasSkia(
-      GetContext(), subcanvas,
-      "the quick brown fox jumped over the very big lazy dog!.?",
-      "Roboto-Regular.ttf"));
-  auto picture = subcanvas.EndRecordingAsPicture();
-
-  Canvas canvas;
-  canvas.Scale(Vector2(.2, .2));
-  canvas.Save();
-  canvas.Translate({200, 200});
-  canvas.Scale(Vector2(3.5, 3.5));  // The text must not be blurry after this.
-  canvas.DrawPicture(picture);
-  canvas.Restore();
-
-  canvas.Scale(Vector2(1.5, 1.5));
-  ASSERT_TRUE(RenderTextInCanvasSkia(
-      GetContext(), canvas,
-      "the quick brown fox jumped over the smaller lazy dog!.?",
-      "Roboto-Regular.ttf"));
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, DrawPictureClipped) {
-  Canvas subcanvas;
-  subcanvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400), {15, 15});
-  subcanvas.DrawPaint({.color = Color::Red()});
-  auto picture = subcanvas.EndRecordingAsPicture();
-
-  Canvas canvas;
-  canvas.DrawPaint({.color = Color::CornflowerBlue()});
-
-  // Draw a red RRect via DrawPicture.
-  canvas.DrawPicture(picture);
-
-  // Draw over the picture with a larger green rectangle, completely covering it
-  // up.
-  canvas.ClipRRect(Rect::MakeLTRB(100, 100, 400, 400).Expand(20), {15, 15});
-  canvas.DrawPaint({.color = Color::Green()});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, MatrixSaveLayerFilter) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Black()});
@@ -3866,27 +2989,8 @@ TEST_P(AiksTest, SolidColorApplyColorFilter) {
   });
   ASSERT_TRUE(result);
   ASSERT_COLOR_NEAR(contents.GetColor(),
-                    Color(0.433247, 0.879523, 0.825324, 0.75));
+                    Color(0.424452, 0.828743, 0.79105, 0.9375));
 }
-
-#define APPLY_COLOR_FILTER_GRADIENT_TEST(name)                                 \
-  TEST_P(AiksTest, name##GradientApplyColorFilter) {                           \
-    auto contents = name##GradientContents();                                  \
-    contents.SetColors({Color::CornflowerBlue().WithAlpha(0.75)});             \
-    auto result = contents.ApplyColorFilter([](const Color& color) {           \
-      return color.Blend(Color::LimeGreen().WithAlpha(0.75),                   \
-                         BlendMode::kScreen);                                  \
-    });                                                                        \
-    ASSERT_TRUE(result);                                                       \
-                                                                               \
-    std::vector<Color> expected = {Color(0.433247, 0.879523, 0.825324, 0.75)}; \
-    ASSERT_COLORS_NEAR(contents.GetColors(), expected);                        \
-  }
-
-APPLY_COLOR_FILTER_GRADIENT_TEST(Linear);
-APPLY_COLOR_FILTER_GRADIENT_TEST(Radial);
-APPLY_COLOR_FILTER_GRADIENT_TEST(Conical);
-APPLY_COLOR_FILTER_GRADIENT_TEST(Sweep);
 
 TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {
   Canvas canvas;
@@ -3945,41 +3049,6 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, ClippedBlurFilterRendersCorrectlyInteractive) {
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    auto point = IMPELLER_PLAYGROUND_POINT(Point(400, 400), 20, Color::Green());
-
-    Canvas canvas;
-    canvas.Translate(point - Point(400, 400));
-    Paint paint;
-    paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-        .style = FilterContents::BlurStyle::kNormal,
-        .sigma = Radius{120 * 3},
-    };
-    paint.color = Color::Red();
-    PathBuilder builder{};
-    builder.AddRect(Rect::MakeLTRB(0, 0, 800, 800));
-    canvas.DrawPath(builder.TakePath(), paint);
-    return canvas.EndRecordingAsPicture();
-  };
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, ClippedBlurFilterRendersCorrectly) {
-  Canvas canvas;
-  canvas.Translate(Point(0, -400));
-  Paint paint;
-  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-      .style = FilterContents::BlurStyle::kNormal,
-      .sigma = Radius{120 * 3},
-  };
-  paint.color = Color::Red();
-  PathBuilder builder{};
-  builder.AddRect(Rect::MakeLTRB(0, 0, 800, 800));
-  canvas.DrawPath(builder.TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CaptureContext) {
   auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
 
@@ -3992,13 +3061,16 @@ TEST_P(AiksTest, CaptureContext) {
     auto color = document.AddColor("Background color", Color::CornflowerBlue());
     canvas.DrawPaint({.color = color});
 
-    ImGui::Begin("TestDocument", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    document.GetElement()->properties.Iterate([](CaptureProperty& property) {
-      property.Invoke({.color = [](CaptureColorProperty& p) {
-        ImGui::ColorEdit4(p.label.c_str(), reinterpret_cast<float*>(&p.value));
-      }});
-    });
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
+        property.Invoke({.color = [](CaptureColorProperty& p) {
+          ImGui::ColorEdit4(p.label.c_str(),
+                            reinterpret_cast<float*>(&p.value));
+        }});
+      });
+      ImGui::End();
+    }
 
     return canvas.EndRecordingAsPicture();
   };
@@ -4011,7 +3083,7 @@ TEST_P(AiksTest, CaptureInactivatedByDefault) {
 
 // Regression test for https://github.com/flutter/flutter/issues/134678.
 TEST_P(AiksTest, ReleasesTextureOnTeardown) {
-  auto context = GetContext();
+  auto context = MakeContext();
   std::weak_ptr<Texture> weak_texture;
 
   {
@@ -4084,24 +3156,6 @@ TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
       Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
 
   canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, ClearBlendWithBlur) {
-  Canvas canvas;
-  Paint white;
-  white.color = Color::Blue();
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600.0, 600.0), white);
-
-  Paint clear;
-  clear.blend_mode = BlendMode::kClear;
-  clear.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-      .style = FilterContents::BlurStyle::kNormal,
-      .sigma = Sigma(20),
-  };
-
-  canvas.DrawCircle(Point::MakeXY(300.0, 300.0), 200.0, clear);
-
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -4189,22 +3243,6 @@ TEST_P(AiksTest, ClearColorOptimizationWhenSubpassIsBiggerThanParentPass) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, BlurHasNoEdge) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  canvas.DrawPaint({});
-  Paint blur = {
-      .color = Color::Green(),
-      .mask_blur_descriptor =
-          Paint::MaskBlurDescriptor{
-              .style = FilterContents::BlurStyle::kNormal,
-              .sigma = Sigma(47.6),
-          },
-  };
-  canvas.DrawRect(Rect::MakeXYWH(300, 300, 200, 200), blur);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, EmptySaveLayerIgnoresPaint) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -4226,146 +3264,300 @@ TEST_P(AiksTest, EmptySaveLayerRendersWithClear) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, BlurredRectangleWithShader) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-
-  auto paint_lines = [&canvas](Scalar dx, Scalar dy, Paint paint) {
-    auto draw_line = [&canvas, &paint](Point a, Point b) {
-      canvas.DrawPath(PathBuilder{}.AddLine(a, b).TakePath(), paint);
-    };
-    paint.stroke_width = 5;
-    paint.style = Paint::Style::kStroke;
-    draw_line(Point(dx + 100, dy + 100), Point(dx + 200, dy + 200));
-    draw_line(Point(dx + 100, dy + 200), Point(dx + 200, dy + 100));
-    draw_line(Point(dx + 150, dy + 100), Point(dx + 200, dy + 150));
-    draw_line(Point(dx + 100, dy + 150), Point(dx + 150, dy + 200));
-  };
-
-  AiksContext renderer(GetContext(), nullptr);
-  Canvas recorder_canvas;
-  for (int x = 0; x < 5; ++x) {
-    for (int y = 0; y < 5; ++y) {
-      Rect rect = Rect::MakeXYWH(x * 20, y * 20, 20, 20);
-      Paint paint{.color =
-                      ((x + y) & 1) == 0 ? Color::Yellow() : Color::Blue()};
-      recorder_canvas.DrawRect(rect, paint);
-    }
-  }
-  Picture picture = recorder_canvas.EndRecordingAsPicture();
-  std::shared_ptr<Texture> texture =
-      picture.ToImage(renderer, ISize{100, 100})->GetTexture();
-
-  ColorSource image_source = ColorSource::MakeImage(
-      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {}, {});
-  std::shared_ptr<ImageFilter> blur_filter = ImageFilter::MakeBlur(
-      Sigma(5), Sigma(5), FilterContents::BlurStyle::kNormal,
-      Entity::TileMode::kDecal);
-  canvas.DrawRect(Rect::MakeLTRB(0, 0, 300, 600),
-                  Paint{.color = Color::DarkGreen()});
-  canvas.DrawRect(Rect::MakeLTRB(100, 100, 200, 200),
-                  Paint{.color_source = image_source});
-  canvas.DrawRect(Rect::MakeLTRB(300, 0, 600, 600),
-                  Paint{.color = Color::Red()});
-  canvas.DrawRect(
-      Rect::MakeLTRB(400, 100, 500, 200),
-      Paint{.color_source = image_source, .image_filter = blur_filter});
-  paint_lines(0, 300, Paint{.color_source = image_source});
-  paint_lines(300, 300,
-              Paint{.color_source = image_source, .image_filter = blur_filter});
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, ArcWithZeroSweepAndBlur) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-
-  Paint paint;
-  paint.color = Color::Red();
-  std::vector<Color> colors = {Color{1.0, 0.0, 0.0, 1.0},
-                               Color{0.0, 0.0, 0.0, 1.0}};
-  std::vector<Scalar> stops = {0.0, 1.0};
-  paint.color_source = ColorSource::MakeSweepGradient(
-      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
-      std::move(stops), Entity::TileMode::kMirror, {});
-  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-      .style = FilterContents::BlurStyle::kNormal,
-      .sigma = Sigma(20),
-  };
-
-  PathBuilder builder;
-  builder.AddArc(Rect::MakeXYWH(10, 10, 100, 100), Degrees(0), Degrees(0),
-                 false);
-  canvas.DrawPath(builder.TakePath(), paint);
-
-  // Check that this empty picture can be created without crashing.
-  canvas.EndRecordingAsPicture();
-}
-
-TEST_P(AiksTest, MaskBlurWithZeroSigmaIsSkipped) {
+TEST_P(AiksTest, SubpassWithClearColorOptimization) {
   Canvas canvas;
 
-  Paint paint = {
-      .color = Color::White(),
-      .mask_blur_descriptor =
-          Paint::MaskBlurDescriptor{
-              .style = FilterContents::BlurStyle::kNormal,
-              .sigma = Sigma(0),
-          },
-  };
-
-  canvas.DrawCircle({300, 300}, 200, paint);
-  canvas.DrawRect(Rect::MakeLTRB(100, 300, 500, 600), paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, AdvancedBlendWithClearColorOptimization) {
-  Canvas canvas;
+  // Use a non-srcOver blend mode to ensure that we don't detect this as an
+  // opacity peephole optimization.
+  canvas.SaveLayer(
+      {.color = Color::Blue().WithAlpha(0.5), .blend_mode = BlendMode::kSource},
+      Rect::MakeLTRB(0, 0, 200, 200));
   canvas.DrawPaint(
-      {.color = {1.0, 1.0, 0.0, 1.0}, .blend_mode = BlendMode::kSource});
+      {.color = Color::BlackTransparent(), .blend_mode = BlendMode::kSource});
+  canvas.Restore();
 
-  canvas.DrawRect(
-      Rect::MakeXYWH(0, 0, 200, 300),
-      {.color = {1.0, 0.0, 1.0, 1.0}, .blend_mode = BlendMode::kMultiply});
+  canvas.SaveLayer(
+      {.color = Color::Blue(), .blend_mode = BlendMode::kDestinationOver});
+  canvas.Restore();
+
+  // This playground should appear blank on CI since we are only drawing
+  // transparent black. If the clear color optimization is broken, the texture
+  // will be filled with NaNs and may produce a magenta texture on macOS or iOS.
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, GaussianBlurAtPeripheryVertical) {
-  Canvas canvas;
+TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
+  // This makes sure if mip maps are recycled across invocations of blurs the
+  // contents get updated each frame correctly. If they aren't updated the color
+  // inside the blur and outside the blur will be different.
+  //
+  // If there is some change to render target caching this could display a false
+  // positive in the future.  Also, if the LOD that is rendered is 1 it could
+  // present a false positive.
+  int32_t count = 0;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    Canvas canvas;
+    if (count++ == 0) {
+      canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+    } else {
+      canvas.DrawCircle({100, 100}, 50, {.color = Color::Chartreuse()});
+    }
+    canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), {20, 20});
+    canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
+                     ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
+                                           FilterContents::BlurStyle::kNormal,
+                                           Entity::TileMode::kClamp));
+    canvas.Restore();
+    return canvas.EndRecordingAsPicture();
+  };
 
-  canvas.Scale(GetContentScale());
-  canvas.DrawRRect(Rect::MakeLTRB(0, 0, GetWindowSize().width, 100),
-                   Point(10, 10), Paint{.color = Color::LimeGreen()});
-  canvas.DrawRRect(Rect::MakeLTRB(0, 110, GetWindowSize().width, 210),
-                   Point(10, 10), Paint{.color = Color::Magenta()});
-  canvas.ClipRect(Rect::MakeLTRB(100, 0, 200, GetWindowSize().height));
-  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
+  Canvas canvas;
+  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+  canvas.SaveLayer({}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
                                          FilterContents::BlurStyle::kNormal,
                                          Entity::TileMode::kClamp));
   canvas.Restore();
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  Picture picture = canvas.EndRecordingAsPicture();
+  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
 }
 
-TEST_P(AiksTest, GaussianBlurAtPeripheryHorizontal) {
-  Canvas canvas;
+TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
 
-  canvas.Scale(GetContentScale());
-  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
-  canvas.DrawImageRect(
-      std::make_shared<Image>(boston),
-      Rect::MakeXYWH(0, 0, boston->GetSize().width, boston->GetSize().height),
-      Rect::MakeLTRB(0, 0, GetWindowSize().width, 100), Paint{});
-  canvas.DrawRRect(Rect::MakeLTRB(0, 110, GetWindowSize().width, 210),
-                   Point(10, 10), Paint{.color = Color::Magenta()});
-  canvas.ClipRect(Rect::MakeLTRB(0, 50, GetWindowSize().width, 150));
-  canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(20.0), Sigma(20.0),
+  Canvas canvas;
+  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+  canvas.SaveLayer({}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
                                          FilterContents::BlurStyle::kNormal,
                                          Entity::TileMode::kClamp));
   canvas.Restore();
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {100, 100});
+
+  size_t max_mip_count = 0;
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    max_mip_count =
+        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
+  }
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+}
+
+TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
+  fml::testing::LogCapture log_capture;
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
+
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Wheat()});
+  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
+  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
+  canvas.SaveLayer({}, std::nullopt,
+                   ImageFilter::MakeBlur(Sigma(30), Sigma(30),
+                                         FilterContents::BlurStyle::kNormal,
+                                         Entity::TileMode::kClamp));
+  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {100, 100});
+
+  size_t max_mip_count = 0;
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    max_mip_count =
+        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
+  }
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+  // The log is FML_DLOG, so only check in debug builds.
+#ifndef NDEBUG
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
+#endif
+}
+
+TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
+  fml::testing::LogCapture log_capture;
+  Canvas canvas;
+  canvas.SaveLayer(
+      {.image_filter = ImageFilter::MakeBlur(Sigma(30), Sigma(30),
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp)});
+  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {1024, 768});
+
+  size_t max_mip_count = 0;
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    max_mip_count =
+        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
+  }
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+  // The log is FML_DLOG, so only check in debug builds.
+#ifndef NDEBUG
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
+#endif
+}
+
+TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
+  size_t blur_required_mip_count =
+      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
+  fml::testing::LogCapture log_capture;
+  Canvas canvas;
+  canvas.DrawPath(PathBuilder{}
+                      .MoveTo({100, 100})
+                      .LineTo({200, 100})
+                      .LineTo({150, 200})
+                      .LineTo({50, 200})
+                      .Close()
+                      .TakePath(),
+                  {.color = Color::Chartreuse(),
+                   .image_filter = ImageFilter::MakeBlur(
+                       Sigma(30), Sigma(30), FilterContents::BlurStyle::kNormal,
+                       Entity::TileMode::kClamp)});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+  std::shared_ptr<RenderTargetCache> cache =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
+  AiksContext aiks_context(GetContext(), nullptr, cache);
+  picture.ToImage(aiks_context, {1024, 768});
+
+  size_t max_mip_count = 0;
+  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
+       ++it) {
+    max_mip_count =
+        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
+  }
+  EXPECT_EQ(max_mip_count, blur_required_mip_count);
+  // The log is FML_DLOG, so only check in debug builds.
+#ifndef NDEBUG
+  if (GetParam() != PlaygroundBackend::kOpenGLES) {
+    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  } else {
+    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
+              std::string::npos);
+  }
+#endif
+}
+
+TEST_P(AiksTest, ImageColorSourceEffectTransform) {
+  // Compare with https://fiddle.skia.org/c/6cdc5aefb291fda3833b806ca347a885
+
+  Canvas canvas;
+  auto texture = CreateTextureForFixture("monkey.png");
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  // Translation
+  {
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix::MakeTranslation({50, 50}));
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 100, 100), paint);
+  }
+
+  // Rotation/skew
+  {
+    canvas.Save();
+    canvas.Rotate(Degrees(45));
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix(1, -1, 0, 0,  //
+               1, 1, 0, 0,   //
+               0, 0, 1, 0,   //
+               0, 0, 0, 1)   //
+    );
+    canvas.DrawRect(Rect::MakeLTRB(100, 0, 200, 100), paint);
+    canvas.Restore();
+  }
+
+  // Scale
+  {
+    canvas.Translate(Vector2(100, 0));
+    canvas.Scale(Vector2(100, 100));
+    Paint paint;
+    paint.color_source = ColorSource::MakeImage(
+        texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
+        Matrix::MakeScale(Vector2(0.005, 0.005)));
+    canvas.DrawRect(Rect::MakeLTRB(0, 0, 1, 1), paint);
+  }
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
+  Canvas canvas;  // Depth 1 (base pass)
+  canvas.DrawRRect(Rect::MakeLTRB(0, 0, 100, 100), {10, 10}, {});  // Depth 2
+  canvas.Save();
+  {
+    canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 5
+    canvas.SaveLayer({});                                          // Depth 3
+    {
+      canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 4
+    }
+    canvas.Restore();  // Restore the savelayer.
+  }
+  canvas.Restore();  // Depth 5 -- this will no longer append a restore entity
+                     //            once we switch to the clip depth approach.
+
+  auto picture = canvas.EndRecordingAsPicture();
+  std::array<uint32_t, 5> expected = {
+      2,  // DrawRRect
+      4,  // ClipRRect
+      3,  // SaveLayer
+      4,  // DrawRRect
+      5,  // Restore (will be removed once we switch to the clip depth approach)
+  };
+  std::vector<uint32_t> actual;
+
+  picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
+    if (auto* subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
+      actual.push_back(subpass->get()->GetNewClipDepth());
+    }
+    if (Entity* entity = std::get_if<Entity>(&element)) {
+      actual.push_back(entity->GetNewClipDepth());
+    }
+    return true;
+  });
+
+  ASSERT_EQ(actual.size(), expected.size());
+  for (size_t i = 0; i < expected.size(); i++) {
+    EXPECT_EQ(actual[i], expected[i]) << "Index: " << i;
+  }
 }
 
 }  // namespace testing

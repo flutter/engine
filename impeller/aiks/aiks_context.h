@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_AIKS_CONTEXT_H_
+#define FLUTTER_IMPELLER_AIKS_AIKS_CONTEXT_H_
 
 #include <memory>
 
@@ -27,8 +28,12 @@ class AiksContext {
   ///                             `nullptr` is supplied, then attempting to draw
   ///                             text with Aiks will result in validation
   ///                             errors.
+  /// @param render_target_allocator Injects a render target allocator or
+  ///                                allocates its own if none is supplied.
   AiksContext(std::shared_ptr<Context> context,
-              std::shared_ptr<TypographerContext> typographer_context);
+              std::shared_ptr<TypographerContext> typographer_context,
+              std::optional<std::shared_ptr<RenderTargetAllocator>>
+                  render_target_allocator = std::nullopt);
 
   ~AiksContext();
 
@@ -38,7 +43,9 @@ class AiksContext {
 
   ContentContext& GetContentContext() const;
 
-  bool Render(const Picture& picture, RenderTarget& render_target);
+  bool Render(const Picture& picture,
+              RenderTarget& render_target,
+              bool reset_host_buffer);
 
  private:
   std::shared_ptr<Context> context_;
@@ -51,3 +58,5 @@ class AiksContext {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_AIKS_CONTEXT_H_

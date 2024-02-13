@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/aiks/aiks_context.h"
@@ -10,6 +11,7 @@
 #include "impeller/aiks/picture.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/typographer_context.h"
+#include "third_party/imgui/imgui.h"
 
 namespace impeller {
 
@@ -31,6 +33,10 @@ class AiksPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
+  static bool ImGuiBegin(const char* name,
+                         bool* p_open,
+                         ImGuiWindowFlags flags);
+
  private:
   std::shared_ptr<TypographerContext> typographer_context_;
   AiksInspector inspector_;
@@ -41,3 +47,5 @@ class AiksPlayground : public PlaygroundTest {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_H_

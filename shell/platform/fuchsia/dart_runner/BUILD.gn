@@ -58,10 +58,10 @@ template("runner_sources") {
       "$fuchsia_sdk_root/pkg:async-loop-cpp",
       "$fuchsia_sdk_root/pkg:async-loop-default",
       "$fuchsia_sdk_root/pkg:fidl_cpp",
+      "$fuchsia_sdk_root/pkg:inspect",
+      "$fuchsia_sdk_root/pkg:inspect_component_cpp",
       "$fuchsia_sdk_root/pkg:sys_cpp",
       "$fuchsia_sdk_root/pkg:sys_cpp_testing",
-      "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
-      "$fuchsia_sdk_root/pkg:syslog",
       "$fuchsia_sdk_root/pkg:trace",
       "$fuchsia_sdk_root/pkg:vfs_cpp",
       "$fuchsia_sdk_root/pkg:zx",
@@ -100,7 +100,7 @@ template("runner") {
 
     deps = [
              ":" + target_name + "_runner_sources",
-             "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
+             "$fuchsia_sdk_root/pkg:inspect_component_cpp",
              "$fuchsia_sdk_root/pkg:trace-provider-so",
            ] + extra_deps
   }
@@ -250,18 +250,8 @@ template("jit_runner_package") {
       },
       {
         path = rebase_path(
-                "$target_gen_dir/kernel/vm_instructions${product_suffix}.bin")
-        dest = "vm_snapshot_instructions.bin"
-      },
-      {
-        path = rebase_path(
                 "$target_gen_dir/kernel/isolate_data${product_suffix}.bin")
         dest = "isolate_core_snapshot_data.bin"
-      },
-      {
-        path = rebase_path(
-                "$target_gen_dir/kernel/isolate_instructions${product_suffix}.bin")
-        dest = "isolate_core_snapshot_instructions.bin"
       },
     ]
 

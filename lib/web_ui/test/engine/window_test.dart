@@ -463,6 +463,39 @@ Future<void> testMain() async {
     await expectLater(completer.future, completes);
   });
 
+  test('sets global html attributes', () {
+    final DomElement host = createDomHTMLDivElement();
+    final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+
+    expect(host.getAttribute('flt-renderer'), 'html (requested explicitly)');
+    expect(host.getAttribute('flt-build-mode'), 'debug');
+
+    view.dispose();
+  });
+
+  test('in full-page mode, Flutter window replaces viewport meta tags', () {
+    final DomHTMLMetaElement existingMeta = createDomHTMLMetaElement()
+      ..name = 'viewport'
+      ..content = 'foo=bar';
+    domDocument.head!.append(existingMeta);
+    expect(existingMeta.isConnected, isTrue);
+
+    final EngineFlutterWindow implicitView = EngineFlutterView.implicit(dispatcher, null);
+    // The existing viewport meta tag should've been removed.
+    expect(existingMeta.isConnected, isFalse);
+    // And a new one should've been added.
+    final DomHTMLMetaElement? newMeta = domDocument.head!.querySelector('meta[name="viewport"]') as DomHTMLMetaElement?;
+    expect(newMeta, isNotNull);
+    newMeta!;
+    expect(newMeta.getAttribute('flt-viewport'), isNotNull);
+    expect(newMeta.name, 'viewport');
+    expect(newMeta.content, contains('width=device-width'));
+    expect(newMeta.content, contains('initial-scale=1.0'));
+    expect(newMeta.content, contains('maximum-scale=1.0'));
+    expect(newMeta.content, contains('user-scalable=no'));
+    implicitView.dispose();
+  });
+
   test('auto-view-id', () {
     final DomElement host = createDomHTMLDivElement();
     final EngineFlutterView implicit1 = EngineFlutterView.implicit(dispatcher, host);
@@ -535,5 +568,69 @@ Future<void> testMain() async {
       () => view.updateSemantics(ui.SemanticsUpdateBuilder().build()),
       throwsAssertionError,
     );
+  });
+
+  group('resizing', () {
+    late DomHTMLDivElement host;
+    late EngineFlutterView view;
+    late int metricsChangedCount;
+
+    setUp(() async {
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.5);
+      host = createDomHTMLDivElement();
+      view = EngineFlutterView(EnginePlatformDispatcher.instance, host);
+
+      host.style
+        ..width = '10px'
+        ..height = '10px';
+      domDocument.body!.append(host);
+      // Let the DOM settle before starting the test, so we don't get the first
+      // 10,10 Size in the test. Otherwise, the ResizeObserver may trigger
+      // unexpectedly after the test has started, and break our "first" result.
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+
+      metricsChangedCount = 0;
+      view.platformDispatcher.onMetricsChanged = () {
+        metricsChangedCount++;
+      };
+    });
+
+    tearDown(() {
+      view.dispose();
+      host.remove();
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(null);
+      view.platformDispatcher.onMetricsChanged = null;
+    });
+
+    test('listens to resize', () async {
+      // Initial size is 10x10, with a 2.5 dpr, is equal to 25x25 physical pixels.
+      expect(view.physicalSize, const ui.Size(25.0, 25.0));
+      expect(metricsChangedCount, 0);
+
+      // Resize the host to 20x20.
+      host.style
+        ..width = '20px'
+        ..height = '20px';
+      await view.onResize.first;
+      expect(view.physicalSize, const ui.Size(50.0, 50.0));
+      expect(metricsChangedCount, 1);
+    });
+
+    test('maintains debugPhysicalSizeOverride', () async {
+      // Initial size is 10x10, with a 2.5 dpr, is equal to 25x25 physical pixels.
+      expect(view.physicalSize, const ui.Size(25.0, 25.0));
+
+      view.debugPhysicalSizeOverride = const ui.Size(100.0, 100.0);
+      view.debugForceResize();
+      expect(view.physicalSize, const ui.Size(100.0, 100.0));
+
+      // Resize the host to 20x20.
+      host.style
+        ..width = '20px'
+        ..height = '20px';
+      await view.onResize.first;
+      // The view should maintain the debugPhysicalSizeOverride.
+      expect(view.physicalSize, const ui.Size(100.0, 100.0));
+    });
   });
 }

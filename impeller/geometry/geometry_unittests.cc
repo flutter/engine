@@ -622,15 +622,6 @@ TEST(GeometryTest, CanConvertTTypesExplicitly) {
     ASSERT_EQ(p1.x, 1u);
     ASSERT_EQ(p1.y, 2u);
   }
-
-  {
-    Rect r1 = Rect::MakeXYWH(1.0, 2.0, 3.0, 4.0);
-    IRect r2 = static_cast<IRect>(r1);
-    ASSERT_EQ(r2.GetOrigin().x, 1u);
-    ASSERT_EQ(r2.GetOrigin().y, 2u);
-    ASSERT_EQ(r2.GetSize().width, 3u);
-    ASSERT_EQ(r2.GetSize().height, 4u);
-  }
 }
 
 TEST(GeometryTest, CanPerformAlgebraicPointOps) {
@@ -1440,6 +1431,158 @@ TEST(GeometryTest, ColorSRGBToLinear) {
   }
 }
 
+struct ColorBlendTestData {
+  static constexpr Color kDestinationColor =
+      Color::CornflowerBlue().WithAlpha(0.75);
+  static constexpr Color kSourceColors[] = {Color::White().WithAlpha(0.75),
+                                            Color::LimeGreen().WithAlpha(0.75),
+                                            Color::Black().WithAlpha(0.75)};
+
+  // THIS RESULT TABLE IS GENERATED!
+  //
+  // Uncomment the `GenerateColorBlendResults` test below to print a new table
+  // after making changes to `Color::Blend`.
+  static constexpr Color kExpectedResults
+      [sizeof(kSourceColors)]
+      [static_cast<std::underlying_type_t<BlendMode>>(BlendMode::kLast) + 1] = {
+          {
+              {0, 0, 0, 0},                            // Clear
+              {1, 1, 1, 0.75},                         // Source
+              {0.392157, 0.584314, 0.929412, 0.75},    // Destination
+              {0.878431, 0.916863, 0.985882, 0.9375},  // SourceOver
+              {0.513726, 0.667451, 0.943529, 0.9375},  // DestinationOver
+              {1, 1, 1, 0.5625},                       // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},  // DestinationIn
+              {1, 1, 1, 0.1875},                       // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},  // DestinationOut
+              {0.848039, 0.896078, 0.982353, 0.75},    // SourceATop
+              {0.544118, 0.688235, 0.947059, 0.75},    // DestinationATop
+              {0.696078, 0.792157, 0.964706, 0.375},   // Xor
+              {1, 1, 1, 1},                            // Plus
+              {0.392157, 0.584314, 0.929412, 0.5625},  // Modulate
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Screen
+              {0.74902, 0.916863, 0.985882, 0.9375},   // Overlay
+              {0.513726, 0.667451, 0.943529, 0.9375},  // Darken
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Lighten
+              {0.878431, 0.916863, 0.985882, 0.9375},  // ColorDodge
+              {0.513725, 0.667451, 0.943529, 0.9375},  // ColorBurn
+              {0.878431, 0.916863, 0.985882, 0.9375},  // HardLight
+              {0.654166, 0.775505, 0.964318, 0.9375},  // SoftLight
+              {0.643137, 0.566275, 0.428235, 0.9375},  // Difference
+              {0.643137, 0.566275, 0.428235, 0.9375},  // Exclusion
+              {0.513726, 0.667451, 0.943529, 0.9375},  // Multiply
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Hue
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Saturation
+              {0.617208, 0.655639, 0.724659, 0.9375},  // Color
+              {0.878431, 0.916863, 0.985882, 0.9375},  // Luminosity
+          },
+          {
+              {0, 0, 0, 0},                             // Clear
+              {0.196078, 0.803922, 0.196078, 0.75},     // Source
+              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
+              {0.235294, 0.76, 0.342745, 0.9375},       // SourceOver
+              {0.352941, 0.628235, 0.782745, 0.9375},   // DestinationOver
+              {0.196078, 0.803922, 0.196078, 0.5625},   // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
+              {0.196078, 0.803922, 0.196078, 0.1875},   // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
+              {0.245098, 0.74902, 0.379412, 0.75},      // SourceATop
+              {0.343137, 0.639216, 0.746078, 0.75},     // DestinationATop
+              {0.294118, 0.694118, 0.562745, 0.375},    // Xor
+              {0.441176, 1, 0.844118, 1},               // Plus
+              {0.0768935, 0.469742, 0.182238, 0.5625},  // Modulate
+              {0.424452, 0.828743, 0.79105, 0.9375},    // Screen
+              {0.209919, 0.779839, 0.757001, 0.9375},   // Overlay
+              {0.235294, 0.628235, 0.342745, 0.9375},   // Darken
+              {0.352941, 0.76, 0.782745, 0.9375},       // Lighten
+              {0.41033, 0.877647, 0.825098, 0.9375},    // ColorDodge
+              {0.117647, 0.567403, 0.609098, 0.9375},   // ColorBurn
+              {0.209919, 0.779839, 0.443783, 0.9375},   // HardLight
+              {0.266006, 0.693915, 0.758818, 0.9375},   // SoftLight
+              {0.235294, 0.409412, 0.665098, 0.9375},   // Difference
+              {0.378316, 0.546897, 0.681707, 0.9375},   // Exclusion
+              {0.163783, 0.559493, 0.334441, 0.9375},   // Multiply
+              {0.266235, 0.748588, 0.373686, 0.9375},   // Hue
+              {0.339345, 0.629787, 0.811502, 0.9375},   // Saturation
+              {0.241247, 0.765953, 0.348698, 0.9375},   // Color
+              {0.346988, 0.622282, 0.776792, 0.9375},   // Luminosity
+          },
+          {
+              {0, 0, 0, 0},                             // Clear
+              {0, 0, 0, 0.75},                          // Source
+              {0.392157, 0.584314, 0.929412, 0.75},     // Destination
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // SourceOver
+              {0.313726, 0.467451, 0.743529, 0.9375},   // DestinationOver
+              {0, 0, 0, 0.5625},                        // SourceIn
+              {0.392157, 0.584314, 0.929412, 0.5625},   // DestinationIn
+              {0, 0, 0, 0.1875},                        // SourceOut
+              {0.392157, 0.584314, 0.929412, 0.1875},   // DestinationOut
+              {0.0980392, 0.146078, 0.232353, 0.75},    // SourceATop
+              {0.294118, 0.438235, 0.697059, 0.75},     // DestinationATop
+              {0.196078, 0.292157, 0.464706, 0.375},    // Xor
+              {0.294118, 0.438235, 0.697059, 1},        // Plus
+              {0, 0, 0, 0.5625},                        // Modulate
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Screen
+              {0.0784314, 0.218039, 0.701176, 0.9375},  // Overlay
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Darken
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Lighten
+              {0.313726, 0.467451, 0.743529, 0.9375},   // ColorDodge
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // ColorBurn
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // HardLight
+              {0.170704, 0.321716, 0.704166, 0.9375},   // SoftLight
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Difference
+              {0.313726, 0.467451, 0.743529, 0.9375},   // Exclusion
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Multiply
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Hue
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Saturation
+              {0.417208, 0.455639, 0.524659, 0.9375},   // Color
+              {0.0784314, 0.116863, 0.185882, 0.9375},  // Luminosity
+          },
+  };
+};
+
+/// To print a new ColorBlendTestData::kExpectedResults table, uncomment this
+/// test and run with:
+/// --gtest_filter="GeometryTest.GenerateColorBlendResults"
+/*
+TEST(GeometryTest, GenerateColorBlendResults) {
+  auto& o = std::cout;
+  using BlendT = std::underlying_type_t<BlendMode>;
+  o << "{";
+  for (const auto& source : ColorBlendTestData::kSourceColors) {
+    o << "{";
+    for (BlendT blend_i = 0;
+         blend_i < static_cast<BlendT>(BlendMode::kLast) + 1; blend_i++) {
+      auto blend = static_cast<BlendMode>(blend_i);
+      Color c = ColorBlendTestData::kDestinationColor.Blend(source, blend);
+      o << "{" << c.red << "," << c.green << "," << c.blue << "," << c.alpha
+        << "}, // " << BlendModeToString(blend) << std::endl;
+    }
+    o << "},";
+  }
+  o << "};" << std::endl;
+}
+*/
+
+#define _BLEND_MODE_RESULT_CHECK(blend_mode)                          \
+  blend_i = static_cast<BlendT>(BlendMode::k##blend_mode);            \
+  expected = ColorBlendTestData::kExpectedResults[source_i][blend_i]; \
+  EXPECT_COLOR_NEAR(dst.Blend(src, BlendMode::k##blend_mode), expected);
+
+TEST(GeometryTest, ColorBlendReturnsExpectedResults) {
+  using BlendT = std::underlying_type_t<BlendMode>;
+  Color dst = ColorBlendTestData::kDestinationColor;
+  for (size_t source_i = 0;
+       source_i < sizeof(ColorBlendTestData::kSourceColors) / sizeof(Color);
+       source_i++) {
+    Color src = ColorBlendTestData::kSourceColors[source_i];
+
+    size_t blend_i;
+    Color expected;
+    IMPELLER_FOR_EACH_BLEND_MODE(_BLEND_MODE_RESULT_CHECK)
+  }
+}
+
 #define _BLEND_MODE_NAME_CHECK(blend_mode) \
   case BlendMode::k##blend_mode:           \
     ASSERT_STREQ(result, #blend_mode);     \
@@ -1459,523 +1602,6 @@ TEST(GeometryTest, CanConvertBetweenDegressAndRadians) {
     auto deg = Degrees{90.0};
     Radians rad = deg;
     ASSERT_FLOAT_EQ(rad.radians, kPiOver2);
-  }
-}
-
-TEST(GeometryTest, RectUnion) {
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(0, 0, 0, 0);
-    auto u = a.Union(b);
-    auto expected = Rect::MakeXYWH(0, 0, 200, 200);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(10, 10, 0, 0);
-    auto u = a.Union(b);
-    auto expected = Rect::MakeXYWH(10, 10, 190, 190);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(10, 10, 100, 100);
-    auto u = a.Union(b);
-    auto expected = Rect::MakeXYWH(0, 0, 110, 110);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(100, 100, 100, 100);
-    auto u = a.Union(b);
-    auto expected = Rect::MakeXYWH(0, 0, 200, 200);
-    ASSERT_RECT_NEAR(u, expected);
-  }
-}
-
-TEST(GeometryTest, OptRectUnion) {
-  Rect a = Rect::MakeLTRB(0, 0, 100, 100);
-  Rect b = Rect::MakeLTRB(100, 100, 200, 200);
-  Rect c = Rect::MakeLTRB(100, 0, 200, 100);
-
-  // NullOpt, NullOpt
-  EXPECT_FALSE(Rect::Union(std::nullopt, std::nullopt).has_value());
-  EXPECT_EQ(Rect::Union(std::nullopt, std::nullopt), std::nullopt);
-
-  auto test1 = [](const Rect& r) {
-    // Rect, NullOpt
-    EXPECT_TRUE(Rect::Union(r, std::nullopt).has_value());
-    EXPECT_EQ(Rect::Union(r, std::nullopt).value(), r);
-
-    // OptRect, NullOpt
-    EXPECT_TRUE(Rect::Union(std::optional(r), std::nullopt).has_value());
-    EXPECT_EQ(Rect::Union(std::optional(r), std::nullopt).value(), r);
-
-    // NullOpt, Rect
-    EXPECT_TRUE(Rect::Union(std::nullopt, r).has_value());
-    EXPECT_EQ(Rect::Union(std::nullopt, r).value(), r);
-
-    // NullOpt, OptRect
-    EXPECT_TRUE(Rect::Union(std::nullopt, std::optional(r)).has_value());
-    EXPECT_EQ(Rect::Union(std::nullopt, std::optional(r)).value(), r);
-  };
-
-  test1(a);
-  test1(b);
-  test1(c);
-
-  auto test2 = [](const Rect& a, const Rect& b, const Rect& u) {
-    ASSERT_EQ(a.Union(b), u);
-
-    // Rect, OptRect
-    EXPECT_TRUE(Rect::Union(a, std::optional(b)).has_value());
-    EXPECT_EQ(Rect::Union(a, std::optional(b)).value(), u);
-
-    // OptRect, Rect
-    EXPECT_TRUE(Rect::Union(std::optional(a), b).has_value());
-    EXPECT_EQ(Rect::Union(std::optional(a), b).value(), u);
-
-    // OptRect, OptRect
-    EXPECT_TRUE(Rect::Union(std::optional(a), std::optional(b)).has_value());
-    EXPECT_EQ(Rect::Union(std::optional(a), std::optional(b)).value(), u);
-  };
-
-  test2(a, b, Rect::MakeLTRB(0, 0, 200, 200));
-  test2(a, c, Rect::MakeLTRB(0, 0, 200, 100));
-  test2(b, c, Rect::MakeLTRB(100, 0, 200, 200));
-}
-
-TEST(GeometryTest, RectIntersection) {
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(0, 0, 0, 0);
-
-    auto u = a.Intersection(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(10, 10, 0, 0);
-    auto u = a.Intersection(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(10, 10, 100, 100);
-    auto u = a.Intersection(b);
-    ASSERT_TRUE(u.has_value());
-    auto expected = Rect::MakeXYWH(10, 10, 90, 90);
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(100, 100, 100, 100);
-    auto u = a.Intersection(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeXYWH(10, 10, 300, 300);
-    auto u = a.Intersection(b);
-    ASSERT_TRUE(u);
-    ASSERT_RECT_NEAR(u.value(), b);
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeMaximum();
-    auto u = a.Intersection(b);
-    ASSERT_TRUE(u);
-    ASSERT_EQ(u, Rect::MakeMaximum());
-  }
-}
-
-TEST(GeometryTest, OptRectIntersection) {
-  Rect a = Rect::MakeLTRB(0, 0, 110, 110);
-  Rect b = Rect::MakeLTRB(100, 100, 200, 200);
-  Rect c = Rect::MakeLTRB(100, 0, 200, 110);
-
-  // NullOpt, NullOpt
-  EXPECT_FALSE(Rect::Intersection(std::nullopt, std::nullopt).has_value());
-  EXPECT_EQ(Rect::Intersection(std::nullopt, std::nullopt), std::nullopt);
-
-  auto test1 = [](const Rect& r) {
-    // Rect, NullOpt
-    EXPECT_TRUE(Rect::Intersection(r, std::nullopt).has_value());
-    EXPECT_EQ(Rect::Intersection(r, std::nullopt).value(), r);
-
-    // OptRect, NullOpt
-    EXPECT_TRUE(Rect::Intersection(std::optional(r), std::nullopt).has_value());
-    EXPECT_EQ(Rect::Intersection(std::optional(r), std::nullopt).value(), r);
-
-    // NullOpt, Rect
-    EXPECT_TRUE(Rect::Intersection(std::nullopt, r).has_value());
-    EXPECT_EQ(Rect::Intersection(std::nullopt, r).value(), r);
-
-    // NullOpt, OptRect
-    EXPECT_TRUE(Rect::Intersection(std::nullopt, std::optional(r)).has_value());
-    EXPECT_EQ(Rect::Intersection(std::nullopt, std::optional(r)).value(), r);
-  };
-
-  test1(a);
-  test1(b);
-  test1(c);
-
-  auto test2 = [](const Rect& a, const Rect& b, const Rect& i) {
-    ASSERT_EQ(a.Intersection(b), i);
-
-    // Rect, OptRect
-    EXPECT_TRUE(Rect::Intersection(a, std::optional(b)).has_value());
-    EXPECT_EQ(Rect::Intersection(a, std::optional(b)).value(), i);
-
-    // OptRect, Rect
-    EXPECT_TRUE(Rect::Intersection(std::optional(a), b).has_value());
-    EXPECT_EQ(Rect::Intersection(std::optional(a), b).value(), i);
-
-    // OptRect, OptRect
-    EXPECT_TRUE(
-        Rect::Intersection(std::optional(a), std::optional(b)).has_value());
-    EXPECT_EQ(Rect::Intersection(std::optional(a), std::optional(b)).value(),
-              i);
-  };
-
-  test2(a, b, Rect::MakeLTRB(100, 100, 110, 110));
-  test2(a, c, Rect::MakeLTRB(100, 0, 110, 110));
-  test2(b, c, Rect::MakeLTRB(100, 100, 200, 110));
-}
-
-TEST(GeometryTest, RectIntersectsWithRect) {
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(0, 0, 0, 0);
-    ASSERT_FALSE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(10, 10, 0, 0);
-    ASSERT_FALSE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(10, 10, 100, 100);
-    ASSERT_TRUE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(100, 100, 100, 100);
-    ASSERT_FALSE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeXYWH(10, 10, 100, 100);
-    ASSERT_TRUE(a.IntersectsWithRect(b));
-  }
-
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeMaximum();
-    ASSERT_TRUE(a.IntersectsWithRect(b));
-  }
-}
-
-TEST(GeometryTest, RectCutout) {
-  // No cutout.
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(0, 0, 50, 50);
-    auto u = a.Cutout(b);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), a);
-  }
-
-  // Full cutout.
-  {
-    Rect a = Rect::MakeXYWH(0, 0, 100, 100);
-    Rect b = Rect::MakeXYWH(-10, -10, 120, 120);
-    auto u = a.Cutout(b);
-    ASSERT_FALSE(u.has_value());
-  }
-
-  // Cutout from top.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(-10, -10, 110, 90);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(0, 90, 100, 100);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  // Cutout from bottom.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(-10, 10, 110, 110);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(0, 0, 100, 10);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  // Cutout from left.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(-10, -10, 90, 110);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(90, 0, 100, 100);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-
-  // Cutout from right.
-  {
-    auto a = Rect::MakeLTRB(0, 0, 100, 100);
-    auto b = Rect::MakeLTRB(10, -10, 110, 110);
-    auto u = a.Cutout(b);
-    auto expected = Rect::MakeLTRB(0, 0, 10, 100);
-    ASSERT_TRUE(u.has_value());
-    ASSERT_RECT_NEAR(u.value(), expected);
-  }
-}
-
-TEST(GeometryTest, RectContainsPoint) {
-  {
-    // Origin is inclusive
-    Rect r = Rect::MakeXYWH(100, 100, 100, 100);
-    Point p(100, 100);
-    ASSERT_TRUE(r.Contains(p));
-  }
-  {
-    // Size is exclusive
-    Rect r = Rect::MakeXYWH(100, 100, 100, 100);
-    Point p(200, 200);
-    ASSERT_FALSE(r.Contains(p));
-  }
-  {
-    Rect r = Rect::MakeXYWH(100, 100, 100, 100);
-    Point p(99, 99);
-    ASSERT_FALSE(r.Contains(p));
-  }
-  {
-    Rect r = Rect::MakeXYWH(100, 100, 100, 100);
-    Point p(199, 199);
-    ASSERT_TRUE(r.Contains(p));
-  }
-
-  {
-    Rect r = Rect::MakeMaximum();
-    Point p(199, 199);
-    ASSERT_TRUE(r.Contains(p));
-  }
-}
-
-TEST(GeometryTest, RectContainsRect) {
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    ASSERT_TRUE(a.Contains(a));
-  }
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(0, 0, 0, 0);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(150, 150, 20, 20);
-    ASSERT_TRUE(a.Contains(b));
-  }
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(150, 150, 100, 100);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(50, 50, 100, 100);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a = Rect::MakeXYWH(100, 100, 100, 100);
-    Rect b = Rect::MakeXYWH(0, 0, 300, 300);
-    ASSERT_FALSE(a.Contains(b));
-  }
-  {
-    Rect a = Rect::MakeMaximum();
-    Rect b = Rect::MakeXYWH(0, 0, 300, 300);
-    ASSERT_TRUE(a.Contains(b));
-  }
-}
-
-TEST(GeometryTest, RectGetPoints) {
-  {
-    Rect r = Rect::MakeXYWH(100, 200, 300, 400);
-    auto points = r.GetPoints();
-    ASSERT_POINT_NEAR(points[0], Point(100, 200));
-    ASSERT_POINT_NEAR(points[1], Point(400, 200));
-    ASSERT_POINT_NEAR(points[2], Point(100, 600));
-    ASSERT_POINT_NEAR(points[3], Point(400, 600));
-  }
-
-  {
-    Rect r = Rect::MakeMaximum();
-    auto points = r.GetPoints();
-    ASSERT_EQ(points[0], Point(-std::numeric_limits<float>::infinity(),
-                               -std::numeric_limits<float>::infinity()));
-    ASSERT_EQ(points[1], Point(std::numeric_limits<float>::infinity(),
-                               -std::numeric_limits<float>::infinity()));
-    ASSERT_EQ(points[2], Point(-std::numeric_limits<float>::infinity(),
-                               std::numeric_limits<float>::infinity()));
-    ASSERT_EQ(points[3], Point(std::numeric_limits<float>::infinity(),
-                               std::numeric_limits<float>::infinity()));
-  }
-}
-
-TEST(GeometryTest, RectShift) {
-  auto r = Rect::MakeLTRB(0, 0, 100, 100);
-
-  ASSERT_EQ(r.Shift(Point(10, 5)), Rect::MakeLTRB(10, 5, 110, 105));
-  ASSERT_EQ(r.Shift(Point(-10, -5)), Rect::MakeLTRB(-10, -5, 90, 95));
-}
-
-TEST(GeometryTest, RectGetTransformedPoints) {
-  Rect r = Rect::MakeXYWH(100, 200, 300, 400);
-  auto points = r.GetTransformedPoints(Matrix::MakeTranslation({10, 20}));
-  ASSERT_POINT_NEAR(points[0], Point(110, 220));
-  ASSERT_POINT_NEAR(points[1], Point(410, 220));
-  ASSERT_POINT_NEAR(points[2], Point(110, 620));
-  ASSERT_POINT_NEAR(points[3], Point(410, 620));
-}
-
-TEST(GeometryTest, RectMakePointBounds) {
-  {
-    std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
-    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
-    auto expected = Rect::MakeXYWH(0, -1, 4, 7);
-    ASSERT_RECT_NEAR(r, expected);
-  }
-  {
-    std::vector<Point> points;
-    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
-    ASSERT_FALSE(r.has_value());
-  }
-}
-
-TEST(GeometryTest, RectExpand) {
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(1);
-    auto expected = Rect::MakeLTRB(99, 99, 201, 201);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(-1);
-    auto expected = Rect::MakeLTRB(101, 101, 199, 199);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(1, 2, 3, 4);
-    auto expected = Rect::MakeLTRB(99, 98, 203, 204);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-  {
-    auto a = Rect::MakeLTRB(100, 100, 200, 200);
-    auto b = a.Expand(-1, -2, -3, -4);
-    auto expected = Rect::MakeLTRB(101, 102, 197, 196);
-    ASSERT_RECT_NEAR(b, expected);
-  }
-}
-
-TEST(GeometryTest, RectGetPositive) {
-  {
-    Rect r = Rect::MakeXYWH(100, 200, 300, 400);
-    auto actual = r.GetPositive();
-    ASSERT_RECT_NEAR(r, actual);
-  }
-  {
-    Rect r = Rect::MakeXYWH(100, 200, -100, -100);
-    auto actual = r.GetPositive();
-    Rect expected = Rect::MakeXYWH(0, 100, 100, 100);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-}
-
-TEST(GeometryTest, RectScale) {
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(0);
-    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(-2);
-    auto expected = Rect::MakeLTRB(200, 200, -200, -200);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(Point{0, 0});
-    auto expected = Rect::MakeLTRB(0, 0, 0, 0);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Scale(Size{-1, -2});
-    auto expected = Rect::MakeLTRB(100, 200, -100, -200);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-}
-
-TEST(GeometryTest, RectDirections) {
-  auto r = Rect::MakeLTRB(1, 2, 3, 4);
-
-  ASSERT_EQ(r.GetLeft(), 1);
-  ASSERT_EQ(r.GetTop(), 2);
-  ASSERT_EQ(r.GetRight(), 3);
-  ASSERT_EQ(r.GetBottom(), 4);
-
-  ASSERT_POINT_NEAR(r.GetLeftTop(), Point(1, 2));
-  ASSERT_POINT_NEAR(r.GetRightTop(), Point(3, 2));
-  ASSERT_POINT_NEAR(r.GetLeftBottom(), Point(1, 4));
-  ASSERT_POINT_NEAR(r.GetRightBottom(), Point(3, 4));
-}
-
-TEST(GeometryTest, RectProject) {
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Project(r);
-    auto expected = Rect::MakeLTRB(0, 0, 1, 1);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    auto actual = r.Project(Rect::MakeLTRB(0, 0, 100, 100));
-    auto expected = Rect::MakeLTRB(0.5, 0.5, 1, 1);
-    ASSERT_RECT_NEAR(expected, actual);
-  }
-}
-
-TEST(GeometryTest, RectRoundOut) {
-  {
-    auto r = Rect::MakeLTRB(-100, -100, 100, 100);
-    ASSERT_EQ(Rect::RoundOut(r), r);
-  }
-  {
-    auto r = Rect::MakeLTRB(-100.1, -100.1, 100.1, 100.1);
-    ASSERT_EQ(Rect::RoundOut(r), Rect::MakeLTRB(-101, -101, 101, 101));
   }
 }
 
@@ -2147,10 +1773,8 @@ TEST(GeometryTest, Gradient) {
 }
 
 TEST(GeometryTest, HalfConversions) {
-#ifdef FML_OS_WIN
-  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
-                  "unavailable on Windows.";
-#else
+#if defined(FML_OS_MACOSX) || defined(FML_OS_IOS) || \
+    defined(FML_OS_IOS_SIMULATOR)
   ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
   ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
   ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
@@ -2177,7 +1801,10 @@ TEST(GeometryTest, HalfConversions) {
   ASSERT_EQ(Half(0.5f), Half(0.5f16));
   ASSERT_EQ(Half(0.5), Half(0.5f16));
   ASSERT_EQ(Half(5), Half(5.0f16));
-#endif  // FML_OS_WIN
+#else
+  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
+                  "only used on Apple platforms.";
+#endif  // FML_OS_MACOSX || FML_OS_IOS || FML_OS_IOS_SIMULATOR
 }
 
 }  // namespace testing

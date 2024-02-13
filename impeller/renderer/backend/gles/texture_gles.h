@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
@@ -40,13 +41,14 @@ class TextureGLES final : public Texture,
 
   [[nodiscard]] bool GenerateMipmap();
 
-  enum class AttachmentPoint {
+  enum class AttachmentType {
     kColor0,
     kDepth,
     kStencil,
   };
-  [[nodiscard]] bool SetAsFramebufferAttachment(GLenum target,
-                                                AttachmentPoint point) const;
+  [[nodiscard]] bool SetAsFramebufferAttachment(
+      GLenum target,
+      AttachmentType attachment_type) const;
 
   Type GetType() const;
 
@@ -95,3 +97,5 @@ class TextureGLES final : public Texture,
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_

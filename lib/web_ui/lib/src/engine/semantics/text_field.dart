@@ -152,8 +152,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
       {OnChangeCallback? onChange, OnActionCallback? onAction}) {
     isEnabled = true;
     inputConfiguration = inputConfig;
-    onChange = onChange;
-    onAction = onAction;
     applyConfiguration(inputConfig);
   }
 
@@ -226,6 +224,16 @@ class TextField extends PrimaryRoleManager {
     return editableElement!;
   }
 
+  @override
+  bool focusAsRouteDefault() {
+    final DomHTMLElement? editableElement = this.editableElement;
+    if (editableElement == null) {
+      return false;
+    }
+    editableElement.focus();
+    return true;
+  }
+
   /// Timer that times when to set the location of the input text.
   ///
   /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
@@ -251,7 +259,7 @@ class TextField extends PrimaryRoleManager {
 
     // On iOS, even though the semantic text field is transparent, the cursor
     // and text highlighting are still visible. The cursor and text selection
-    // are made invisible by CSS in [FlutterViewEmbedder.reset].
+    // are made invisible by CSS in [StyleManager.attachGlobalStyles].
     // But there's one more case where iOS highlights text. That's when there's
     // and autocorrect suggestion. To disable that, we have to do the following:
     activeEditableElement

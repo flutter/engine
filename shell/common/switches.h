@@ -7,8 +7,8 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/command_line.h"
 
-#ifndef SHELL_COMMON_SWITCHES_H_
-#define SHELL_COMMON_SWITCHES_H_
+#ifndef FLUTTER_SHELL_COMMON_SWITCHES_H_
+#define FLUTTER_SHELL_COMMON_SWITCHES_H_
 
 namespace flutter {
 
@@ -279,6 +279,10 @@ DEF_SWITCH(EnableOpenGLGPUTracing,
            "enable-opengl-gpu-tracing",
            "Enable tracing of GPU execution time when using the Impeller "
            "OpenGLES backend.")
+DEF_SWITCH(EnableVulkanGPUTracing,
+           "enable-vulkan-gpu-tracing",
+           "Enable tracing of GPU execution time when using the Impeller "
+           "Vulkan backend.")
 DEF_SWITCH(LeakVM,
            "leak-vm",
            "When the last shell shuts down, the shared VM is leaked by default "
@@ -304,4 +308,4 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SWITCHES_H_
+#endif  // FLUTTER_SHELL_COMMON_SWITCHES_H_

@@ -2,11 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_
 
-#include <thread>
-#include <unordered_map>
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/gles/allocator_gles.h"
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
@@ -16,6 +14,7 @@
 #include "impeller/renderer/backend/gles/sampler_library_gles.h"
 #include "impeller/renderer/backend/gles/shader_library_gles.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 namespace impeller {
@@ -50,6 +49,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<PipelineLibraryGLES> pipeline_library_;
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
+  std::shared_ptr<CommandQueue> command_queue_;
   std::shared_ptr<GPUTracerGLES> gpu_tracer_;
 
   // Note: This is stored separately from the ProcTableGLES CapabilitiesGLES
@@ -88,6 +88,9 @@ class ContextGLES final : public Context,
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
+
+  // |Context|
   void Shutdown() override;
 
   ContextGLES(const ContextGLES&) = delete;
@@ -96,3 +99,5 @@ class ContextGLES final : public Context,
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CONTEXT_GLES_H_

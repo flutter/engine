@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_BACKEND_VULKAN_PLAYGROUND_IMPL_VK_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_BACKEND_VULKAN_PLAYGROUND_IMPL_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_impl.h"
@@ -16,6 +17,9 @@ class PlaygroundImplVK final : public PlaygroundImpl {
 
   ~PlaygroundImplVK();
 
+  fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities) override;
+
  private:
   std::shared_ptr<Context> context_;
 
@@ -23,6 +27,7 @@ class PlaygroundImplVK final : public PlaygroundImpl {
   static void DestroyWindowHandle(WindowHandle handle);
   using UniqueHandle = std::unique_ptr<void, decltype(&DestroyWindowHandle)>;
   UniqueHandle handle_;
+  ISize size_ = {1, 1};
 
   // A global Vulkan instance which ensures that the Vulkan library will remain
   // loaded throughout the lifetime of the process.
@@ -46,3 +51,5 @@ class PlaygroundImplVK final : public PlaygroundImpl {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_BACKEND_VULKAN_PLAYGROUND_IMPL_VK_H_

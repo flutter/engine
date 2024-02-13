@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_INLINE_PASS_CONTEXT_H_
+#define FLUTTER_IMPELLER_ENTITY_INLINE_PASS_CONTEXT_H_
 
 #include <cstdint>
 
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity_pass_target.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
@@ -21,7 +22,7 @@ class InlinePassContext {
   };
 
   InlinePassContext(
-      std::shared_ptr<Context> context,
+      const ContentContext& renderer,
       EntityPassTarget& pass_target,
       uint32_t pass_texture_reads,
       uint32_t entity_count,
@@ -44,7 +45,7 @@ class InlinePassContext {
   RenderPassResult GetRenderPass(uint32_t pass_depth);
 
  private:
-  std::shared_ptr<Context> context_;
+  const ContentContext& renderer_;
   EntityPassTarget& pass_target_;
   std::shared_ptr<CommandBuffer> command_buffer_;
   std::shared_ptr<RenderPass> pass_;
@@ -60,3 +61,5 @@ class InlinePassContext {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_INLINE_PASS_CONTEXT_H_

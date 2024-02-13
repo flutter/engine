@@ -7,12 +7,21 @@
                 "kvm=1",
                 "cores=8"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
                 "--android",
                 "--android-cpu=x64",
                 "--no-lto",
                 "--rbe",
                 "--no-goma"
+            ],
+            "dependencies": [
+                {
+                    "dependency": "goldctl",
+                    "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+                }
             ],
             "name": "android_debug_x64",
             "ninja": {
@@ -28,8 +37,12 @@
                     "name": "Android Unit Tests",
                     "test_dependencies": [
                         {
-                        "dependency": "android_virtual_device",
-                        "version": "34"
+                            "dependency": "android_virtual_device",
+                            "version": "android_34_google_apis_x64.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "build_id:8759428741582061553"
                         }
                     ],
                     "contexts": [
@@ -45,11 +58,15 @@
                 },
                 {
                     "language": "bash",
-                    "name": "Scenario App Integration Tests",
+                    "name": "Android Scenario App Integration Tests (Skia)",
                     "test_dependencies": [
                         {
-                        "dependency": "android_virtual_device",
-                        "version": "34"
+                            "dependency": "android_virtual_device",
+                            "version": "android_34_google_apis_x64.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "build_id:8759428741582061553"
                         }
                     ],
                     "contexts": [
@@ -57,7 +74,54 @@
                     ],
                     "script": "flutter/testing/scenario_app/run_android_tests.sh",
                     "parameters": [
-                            "android_debug_x64"
+                        "android_debug_x64",
+                        "--no-enable-impeller"
+                    ]
+                },
+                {
+                    "language": "bash",
+                    "name": "Android Scenario App Integration Tests (Impeller/Vulkan)",
+                    "test_dependencies": [
+                        {
+                            "dependency": "android_virtual_device",
+                            "version": "android_34_google_apis_x64.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "build_id:8759428741582061553"
+                        }
+                    ],
+                    "contexts": [
+                        "android_virtual_device"
+                    ],
+                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
+                    "parameters": [
+                        "android_debug_x64",
+                        "--enable-impeller",
+                        "--impeller-backend=vulkan"
+                    ]
+                },
+                {
+                    "language": "bash",
+                    "name": "Android Scenario App Integration Tests (Impeller/OpenGLES)",
+                    "test_dependencies": [
+                        {
+                            "dependency": "android_virtual_device",
+                            "version": "android_34_google_apis_x64.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "build_id:8759428741582061553"
+                        }
+                    ],
+                    "contexts": [
+                        "android_virtual_device"
+                    ],
+                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
+                    "parameters": [
+                        "android_debug_x64",
+                        "--enable-impeller",
+                        "--impeller-backend=opengles"
                     ]
                 }
             ]
@@ -69,6 +133,9 @@
                 "kvm=1",
                 "cores=8"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
                 "--android",
                 "--android-cpu=x86",
@@ -89,8 +156,12 @@
                     "name": "Android Unit Tests (API 28)",
                     "test_dependencies": [
                         {
-                        "dependency": "android_virtual_device",
-                        "version": "28"
+                            "dependency": "android_virtual_device",
+                            "version": "android_28_google_apis_x86.textpb"
+                        },
+                        {
+                            "dependency": "avd_cipd_version",
+                            "version": "build_id:8759428741582061553"
                         }
                     ],
                     "contexts": [

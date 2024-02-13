@@ -2,14 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_
 
-#include <functional>
 #include <memory>
-#include <variant>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -69,14 +66,11 @@ class TextContents final : public Contents {
   Vector2 offset_;
   bool force_text_color_ = false;
 
-  std::shared_ptr<GlyphAtlas> ResolveAtlas(
-      Context& context,
-      GlyphAtlas::Type type,
-      const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const;
-
   TextContents(const TextContents&) = delete;
 
   TextContents& operator=(const TextContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TEXT_CONTENTS_H_

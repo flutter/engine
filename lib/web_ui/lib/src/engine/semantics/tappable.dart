@@ -12,6 +12,9 @@ class Button extends PrimaryRoleManager {
   }
 
   @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
+
+  @override
   void update() {
     super.update();
 
@@ -33,7 +36,7 @@ class Tappable extends RoleManager {
   Tappable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
       : super(Role.tappable, semanticsObject, owner) {
     _clickListener = createDomEventListener((DomEvent click) {
-      PointerBinding.instance!.clickDebouncer.onClick(
+      PointerBinding.clickDebouncer.onClick(
         click,
         semanticsObject.id,
         _isListening,

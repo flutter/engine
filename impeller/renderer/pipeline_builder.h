@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_BUILDER_H_
+#define FLUTTER_IMPELLER_RENDERER_PIPELINE_BUILDER_H_
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
@@ -106,13 +107,22 @@ struct PipelineBuilder {
       desc.SetColorAttachmentDescriptor(0u, color0);
     }
 
+    // Setup default depth buffer descriptions.
+    {
+      DepthAttachmentDescriptor depth0;
+      depth0.depth_compare = CompareFunction::kAlways;
+      desc.SetDepthStencilAttachmentDescriptor(depth0);
+      desc.SetDepthPixelFormat(
+          context.GetCapabilities()->GetDefaultDepthStencilFormat());
+    }
+
     // Setup default stencil buffer descriptions.
     {
       StencilAttachmentDescriptor stencil0;
       stencil0.stencil_compare = CompareFunction::kEqual;
       desc.SetStencilAttachmentDescriptors(stencil0);
       desc.SetStencilPixelFormat(
-          context.GetCapabilities()->GetDefaultStencilFormat());
+          context.GetCapabilities()->GetDefaultDepthStencilFormat());
     }
 
     return true;
@@ -120,3 +130,5 @@ struct PipelineBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_PIPELINE_BUILDER_H_

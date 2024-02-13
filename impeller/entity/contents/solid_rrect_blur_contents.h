@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_RRECT_BLUR_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_RRECT_BLUR_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -27,7 +28,7 @@ class SolidRRectBlurContents final : public Contents {
 
   ~SolidRRectBlurContents() override;
 
-  void SetRRect(std::optional<Rect> rect, Scalar corner_radius = 0);
+  void SetRRect(std::optional<Rect> rect, Size corner_radii = {});
 
   void SetSigma(Sigma sigma);
 
@@ -49,7 +50,7 @@ class SolidRRectBlurContents final : public Contents {
 
  private:
   std::optional<Rect> rect_;
-  Scalar corner_radius_;
+  Size corner_radii_;
   Sigma sigma_;
 
   Color color_;
@@ -60,3 +61,5 @@ class SolidRRectBlurContents final : public Contents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_RRECT_BLUR_CONTENTS_H_

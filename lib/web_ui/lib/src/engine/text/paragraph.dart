@@ -380,7 +380,7 @@ class ParagraphLine {
 
       final double? minDistance = closestFragment?.distance;
       if (minDistance == null || minDistance > distance) {
-          closestFragment = (fragment: fragment, distance: distance);
+        closestFragment = (fragment: fragment, distance: distance);
       }
     }
     return closestFragment?.fragment;
@@ -501,6 +501,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
         other.fontSize == fontSize &&
         other.height == height &&
         other._textHeightBehavior == _textHeightBehavior &&
+        other._strutStyle == _strutStyle &&
         other.ellipsis == ellipsis &&
         other.locale == locale;
   }
@@ -508,17 +509,19 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   @override
   int get hashCode {
     return Object.hash(
-        textAlign,
-        textDirection,
-        fontWeight,
-        fontStyle,
-        maxLines,
-        fontFamily,
-        fontSize,
-        height,
-        _textHeightBehavior,
-        ellipsis,
-        locale);
+      textAlign,
+      textDirection,
+      fontWeight,
+      fontStyle,
+      maxLines,
+      fontFamily,
+      fontSize,
+      height,
+      _textHeightBehavior,
+      _strutStyle,
+      ellipsis,
+      locale,
+    );
   }
 
   @override
@@ -537,6 +540,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
           'fontFamily: ${fontFamily ?? "unspecified"}, '
           'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'strutStyle: ${_strutStyle ?? "unspecified"}, '
           'ellipsis: ${ellipsis != null ? '"$ellipsis"' : "unspecified"}, '
           'locale: ${locale ?? "unspecified"}'
           ')';
@@ -568,6 +572,7 @@ class EngineTextStyle implements ui.TextStyle {
     required double? letterSpacing,
     required double? wordSpacing,
     required double? height,
+    required ui.TextLeadingDistribution? leadingDistribution,
     required ui.Locale? locale,
     required ui.Paint? background,
     required ui.Paint? foreground,
@@ -595,6 +600,7 @@ class EngineTextStyle implements ui.TextStyle {
     this.letterSpacing,
     this.wordSpacing,
     this.height,
+    this.leadingDistribution,
     this.locale,
     this.background,
     this.foreground,
@@ -640,6 +646,7 @@ class EngineTextStyle implements ui.TextStyle {
   final double? letterSpacing;
   final double? wordSpacing;
   final double? height;
+  final ui.TextLeadingDistribution? leadingDistribution;
   final ui.Locale? locale;
   final ui.Paint? background;
   final ui.Paint? foreground;
@@ -688,101 +695,68 @@ class EngineTextStyle implements ui.TextStyle {
     );
   }
 
-  EngineTextStyle copyWith({
-    ui.Color? color,
-    ui.TextDecoration? decoration,
-    ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-    ui.FontWeight? fontWeight,
-    ui.FontStyle? fontStyle,
-    ui.TextBaseline? textBaseline,
-    String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    ui.Locale? locale,
-    ui.Paint? background,
-    ui.Paint? foreground,
-    List<ui.Shadow>? shadows,
-    List<ui.FontFeature>? fontFeatures,
-    List<ui.FontVariation>? fontVariations,
-  }) {
-    return EngineTextStyle(
-      color: color ?? this.color,
-      decoration: decoration ?? this.decoration,
-      decorationColor: decorationColor ?? this.decorationColor,
-      decorationStyle: decorationStyle ?? this.decorationStyle,
-      decorationThickness: decorationThickness ?? this.decorationThickness,
-      fontWeight: fontWeight ?? this.fontWeight,
-      fontStyle: fontStyle ?? this.fontStyle,
-      textBaseline: textBaseline ?? this.textBaseline,
-      fontFamily: fontFamily ?? this.fontFamily,
-      fontFamilyFallback: fontFamilyFallback ?? this.fontFamilyFallback,
-      fontSize: fontSize ?? this.fontSize,
-      letterSpacing: letterSpacing ?? this.letterSpacing,
-      wordSpacing: wordSpacing ?? this.wordSpacing,
-      height: height ?? this.height,
-      locale: locale ?? this.locale,
-      background: background ?? this.background,
-      foreground: foreground ?? this.foreground,
-      shadows: shadows ?? this.shadows,
-      fontFeatures: fontFeatures ?? this.fontFeatures,
-      fontVariations: fontVariations ?? this.fontVariations,
-    );
-  }
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) {
       return true;
     }
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is EngineTextStyle &&
-        other.color == color &&
-        other.decoration == decoration &&
-        other.decorationColor == decorationColor &&
-        other.decorationStyle == decorationStyle &&
-        other.fontWeight == fontWeight &&
-        other.fontStyle == fontStyle &&
-        other.textBaseline == textBaseline &&
-        other.fontFamily == fontFamily &&
-        other.fontSize == fontSize &&
-        other.letterSpacing == letterSpacing &&
-        other.wordSpacing == wordSpacing &&
-        other.height == height &&
-        other.locale == locale &&
-        other.background == background &&
-        other.foreground == foreground &&
-        listEquals<ui.Shadow>(other.shadows, shadows) &&
-        listEquals<String>(other.fontFamilyFallback, fontFamilyFallback);
+    return other is EngineTextStyle
+        && other.color == color
+        && other.decoration == decoration
+        && other.decorationColor == decorationColor
+        && other.decorationStyle == decorationStyle
+        && other.fontWeight == fontWeight
+        && other.fontStyle == fontStyle
+        && other.textBaseline == textBaseline
+        && other.leadingDistribution == leadingDistribution
+        && other.fontFamily == fontFamily
+        && other.fontSize == fontSize
+        && other.letterSpacing == letterSpacing
+        && other.wordSpacing == wordSpacing
+        && other.height == height
+        && other.decorationThickness == decorationThickness
+        && other.locale == locale
+        && other.background == background
+        && other.foreground == foreground
+        && listEquals<ui.Shadow>(other.shadows, shadows)
+        && listEquals<String>(other.fontFamilyFallback, fontFamilyFallback)
+        && listEquals<ui.FontFeature>(other.fontFeatures, fontFeatures)
+        && listEquals<ui.FontVariation>(other.fontVariations, fontVariations);
   }
 
   @override
-  int get hashCode => Object.hash(
-        color,
-        decoration,
-        decorationColor,
-        decorationStyle,
-        decorationThickness,
-        fontWeight,
-        fontStyle,
-        textBaseline,
-        fontFamily,
-        fontFamilyFallback,
-        fontSize,
-        letterSpacing,
-        wordSpacing,
-        height,
-        locale,
-        background,
-        foreground,
-        shadows,
-      );
+  int get hashCode {
+    final List<ui.Shadow>? shadows = this.shadows;
+    final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+    final List<ui.FontVariation>? fontVariations = this.fontVariations;
+    final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+    return Object.hash(
+      color,
+      decoration,
+      decorationColor,
+      decorationStyle,
+      fontWeight,
+      fontStyle,
+      textBaseline,
+      leadingDistribution,
+      fontFamily,
+      fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback),
+      fontSize,
+      letterSpacing,
+      wordSpacing,
+      height,
+      locale,
+      background,
+      foreground,
+      shadows == null ? null : Object.hashAll(shadows),
+      decorationThickness,
+      // Object.hash goes up to 20 arguments, but we have 21
+      Object.hash(
+        fontFeatures == null ? null : Object.hashAll(fontFeatures),
+        fontVariations == null ? null : Object.hashAll(fontVariations),
+      )
+    );
+  }
 
   @override
   String toString() {
@@ -806,6 +780,7 @@ class EngineTextStyle implements ui.TextStyle {
           'letterSpacing: ${letterSpacing != null ? "${letterSpacing}x" : "unspecified"}, '
           'wordSpacing: ${wordSpacing != null ? "${wordSpacing}x" : "unspecified"}, '
           'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
+          'leadingDistribution: ${leadingDistribution ?? "unspecified"}, '
           'locale: ${locale ?? "unspecified"}, '
           'background: ${background ?? "unspecified"}, '
           'foreground: ${foreground ?? "unspecified"}, '
@@ -872,9 +847,11 @@ class EngineStrutStyle implements ui.StrutStyle {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode {
+    final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    return Object.hash(
         _fontFamily,
-        _fontFamilyFallback,
+        fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
         _fontSize,
         _height,
         _leading,
@@ -883,6 +860,7 @@ class EngineStrutStyle implements ui.StrutStyle {
         _fontStyle,
         _forceStrutHeight,
       );
+  }
 }
 
 /// Holds information for a placeholder in a paragraph.

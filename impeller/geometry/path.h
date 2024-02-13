@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_H_
+#define FLUTTER_IMPELLER_GEOMETRY_PATH_H_
 
 #include <functional>
 #include <optional>
-#include <set>
 #include <tuple>
 #include <vector>
 
@@ -132,16 +132,13 @@ class Path {
 
   ~Path();
 
-  Path(Path&& other) = default;
-
-  /// @brief Deeply clone this path and all data associated with it.
-  Path Clone() const;
-
   size_t GetComponentCount(std::optional<ComponentType> type = {}) const;
 
   FillType GetFillType() const;
 
   bool IsConvex() const;
+
+  bool IsEmpty() const;
 
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
@@ -178,41 +175,8 @@ class Path {
 
   std::optional<Rect> GetTransformedBoundingBox(const Matrix& transform) const;
 
-  std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
-
  private:
   friend class PathBuilder;
-
-  Path(const Path& other) = default;
-
-  void SetConvexity(Convexity value);
-
-  void SetFillType(FillType fill);
-
-  void SetBounds(Rect rect);
-
-  Path& AddLinearComponent(const Point& p1, const Point& p2);
-
-  Path& AddQuadraticComponent(const Point& p1,
-                              const Point& cp,
-                              const Point& p2);
-
-  Path& AddCubicComponent(const Point& p1,
-                          const Point& cp1,
-                          const Point& cp2,
-                          const Point& p2);
-
-  Path& AddContourComponent(const Point& destination, bool is_closed = false);
-
-  /// @brief Called by `PathBuilder` to compute the bounds for certain paths.
-  ///
-  /// `PathBuilder` may set the bounds directly, in case they come from a source
-  /// with already computed bounds, such as an SkPath.
-  void ComputeBounds();
-
-  void SetContourClosed(bool is_closed);
-
-  void Shift(Point shift);
 
   struct ComponentIndexPair {
     ComponentType type = ComponentType::kLinear;
@@ -224,13 +188,40 @@ class Path {
         : type(a_type), index(a_index) {}
   };
 
-  FillType fill_ = FillType::kNonZero;
-  Convexity convexity_ = Convexity::kUnknown;
-  std::vector<ComponentIndexPair> components_;
-  std::vector<Point> points_;
-  std::vector<ContourComponent> contours_;
+  // All of the data for the path is stored in this structure which is
+  // held by a shared_ptr. Since they all share the structure, the
+  // copy constructor for Path is very cheap and we don't need to deal
+  // with shared pointers for Path fields and method arguments.
+  //
+  // PathBuilder also uses this structure to accumulate the path data
+  // but the Path constructor used in |TakePath()| will clone the
+  // structure to prevent sharing and future modifications within the
+  // builder from affecting the existing taken paths.
+  struct Data {
+    Data() = default;
 
-  std::optional<Rect> computed_bounds_;
+    Data(Data&& other) = default;
+
+    Data(const Data& other) = default;
+
+    ~Data() = default;
+
+    FillType fill = FillType::kNonZero;
+    Convexity convexity = Convexity::kUnknown;
+    std::vector<ComponentIndexPair> components;
+    std::vector<Point> points;
+    std::vector<ContourComponent> contours;
+
+    std::optional<Rect> bounds;
+  };
+
+  explicit Path(Data data);
+
+  std::shared_ptr<const Data> data_;
 };
 
+static_assert(sizeof(Path) == sizeof(std::shared_ptr<struct Anonymous>));
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_PATH_H_

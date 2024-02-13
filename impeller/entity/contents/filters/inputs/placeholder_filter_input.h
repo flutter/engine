@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_PLACEHOLDER_FILTER_INPUT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_PLACEHOLDER_FILTER_INPUT_H_
 
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
@@ -18,11 +19,11 @@ class PlaceholderFilterInput final : public FilterInput {
   Variant GetInput() const override;
 
   // |FilterInput|
-  std::optional<Snapshot> GetSnapshot(
-      const std::string& label,
-      const ContentContext& renderer,
-      const Entity& entity,
-      std::optional<Rect> coverage_limit) const override;
+  std::optional<Snapshot> GetSnapshot(const std::string& label,
+                                      const ContentContext& renderer,
+                                      const Entity& entity,
+                                      std::optional<Rect> coverage_limit,
+                                      int32_t mip_count = 1) const override;
 
   // |FilterInput|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -39,3 +40,5 @@ class PlaceholderFilterInput final : public FilterInput {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_PLACEHOLDER_FILTER_INPUT_H_

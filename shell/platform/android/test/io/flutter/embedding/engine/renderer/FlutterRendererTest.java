@@ -5,6 +5,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,6 +42,12 @@ public class FlutterRendererTest {
   private FlutterJNI fakeFlutterJNI;
   private Surface fakeSurface;
   private Surface fakeSurface2;
+
+  @Before
+  public void init() {
+    // Uncomment the following line to enable logging output in test.
+    // ShadowLog.stream = System.out;
+  }
 
   @Before
   public void setup() {
@@ -451,7 +458,7 @@ public class FlutterRendererTest {
   }
 
   @Test
-  public void ImageRawSurfaceTextureProducesImageOfCorrectSize() {
+  public void ImageReaderSurfaceProducerProducesImageOfCorrectSize() {
     FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
     FlutterRenderer.ImageReaderSurfaceProducer texture =
         flutterRenderer.new ImageReaderSurfaceProducer(0);
@@ -501,5 +508,154 @@ public class FlutterRendererTest {
     assertNull(texture.acquireLatestImage());
 
     texture.release();
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerDoesNotDropFramesWhenResizeInflight() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+    texture.disableFenceForTest();
+
+    // Returns a null image when one hasn't been produced.
+    assertNull(texture.acquireLatestImage());
+
+    // Give the texture an initial size.
+    texture.setSize(1, 1);
+
+    // Render a frame.
+    Surface surface = texture.getSurface();
+    assertNotNull(surface);
+    Canvas canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Resize.
+    texture.setSize(4, 4);
+
+    // Let callbacks run. The rendered frame will manifest here.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    // We acquired the frame produced above.
+    assertNotNull(texture.acquireLatestImage());
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerImageReadersAndImagesCount() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+    texture.disableFenceForTest();
+
+    // Returns a null image when one hasn't been produced.
+    assertNull(texture.acquireLatestImage());
+
+    // Give the texture an initial size.
+    texture.setSize(1, 1);
+
+    // Grab the surface so we can render a frame at 1x1 after resizing.
+    Surface surface = texture.getSurface();
+    assertNotNull(surface);
+    Canvas canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run, this will produce a single frame.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(1, texture.numImages());
+
+    // Resize.
+    texture.setSize(4, 4);
+
+    // Render a frame at the old size (by using the pre-resized Surface)
+    canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(2, texture.numImages());
+
+    // Render a new frame with the current size.
+    surface = texture.getSurface();
+    assertNotNull(surface);
+    canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(2, texture.numImageReaders());
+    assertEquals(3, texture.numImages());
+
+    // Acquire first frame.
+    Image produced = texture.acquireLatestImage();
+    assertNotNull(produced);
+    assertEquals(1, produced.getWidth());
+    assertEquals(1, produced.getHeight());
+    assertEquals(2, texture.numImageReaders());
+    assertEquals(2, texture.numImages());
+    // Acquire second frame. This won't result in the first reader being closed because it has
+    // an active image from it.
+    produced = texture.acquireLatestImage();
+    assertNotNull(produced);
+    assertEquals(1, produced.getWidth());
+    assertEquals(1, produced.getHeight());
+    assertEquals(2, texture.numImageReaders());
+    assertEquals(1, texture.numImages());
+    // Acquire third frame. We will now close the first reader.
+    produced = texture.acquireLatestImage();
+    assertNotNull(produced);
+    assertEquals(4, produced.getWidth());
+    assertEquals(4, produced.getHeight());
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(0, texture.numImages());
+
+    // Returns null image when no more images are queued.
+    assertNull(texture.acquireLatestImage());
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(0, texture.numImages());
+  }
+
+  // A 0x0 ImageReader is a runtime error.
+  @Test
+  public void ImageReaderSurfaceProducerClampsWidthAndHeightTo1() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+
+    // Default values.
+    assertEquals(texture.getWidth(), 1);
+    assertEquals(texture.getHeight(), 1);
+
+    // Try setting width and height to 0.
+    texture.setSize(0, 0);
+
+    // Ensure we can still create/get a surface without an exception being raised.
+    assertNotNull(texture.getSurface());
+
+    // Expect clamp to 1.
+    assertEquals(texture.getWidth(), 1);
+    assertEquals(texture.getHeight(), 1);
+  }
+
+  @Test
+  public void SurfaceTextureSurfaceProducerCreatesAConnectedTexture() {
+    // Force creating a SurfaceTextureSurfaceProducer regardless of Android API version.
+    FlutterRenderer.debugForceSurfaceProducerGlTextures = true;
+
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
+
+    // Verify behavior under test.
+    assertEquals(producer.id(), 0);
+    verify(fakeFlutterJNI, times(1)).registerTexture(eq(producer.id()), any());
   }
 }

@@ -18,9 +18,14 @@
 #include "flutter/shell/platform/windows/flutter_window.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
+#include "flutter/shell/platform/windows/testing/egl/mock_context.h"
+#include "flutter/shell/platform/windows/testing/egl/mock_manager.h"
+#include "flutter/shell/platform/windows/testing/egl/mock_window_surface.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
+#include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
+#include "flutter/shell/platform/windows/testing/view_modifier.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -116,28 +121,6 @@ class MockFlutterWindowsEngine : public FlutterWindowsEngine {
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsEngine);
-};
-
-class MockAngleSurfaceManager : public AngleSurfaceManager {
- public:
-  MockAngleSurfaceManager() : AngleSurfaceManager(false) {}
-
-  MOCK_METHOD(bool,
-              CreateSurface,
-              (WindowsRenderTarget*, EGLint, EGLint),
-              (override));
-  MOCK_METHOD(void,
-              ResizeSurface,
-              (WindowsRenderTarget*, EGLint, EGLint, bool),
-              (override));
-  MOCK_METHOD(void, DestroySurface, (), (override));
-
-  MOCK_METHOD(bool, MakeCurrent, (), (override));
-  MOCK_METHOD(bool, ClearCurrent, (), (override));
-  MOCK_METHOD(void, SetVSyncEnabled, (bool), (override));
-
- private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockAngleSurfaceManager);
 };
 
 }  // namespace
@@ -249,23 +232,24 @@ TEST(FlutterWindowsViewTest, SubMenuExpandedState) {
 // The view's surface must be destroyed after the engine is shutdown.
 // See: https://github.com/flutter/flutter/issues/124463
 TEST(FlutterWindowsViewTest, Shutdown) {
-  std::unique_ptr<MockFlutterWindowsEngine> engine =
-      std::make_unique<MockFlutterWindowsEngine>();
+  auto engine = std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  auto surface = std::make_unique<egl::MockWindowSurface>();
 
-  EngineModifier modifier(engine.get());
   FlutterWindowsView view(std::move(window_binding_handler));
+  EngineModifier engine_modifier(engine.get());
+  ViewModifier view_modifier(&view);
 
   // The engine must be stopped before the surface can be destroyed.
   InSequence s;
   EXPECT_CALL(*engine.get(), Stop).Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface.get(), Destroy).Times(1);
 
-  modifier.SetSurfaceManager(surface_manager.release());
+  engine_modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
+  view_modifier.SetSurface(std::move(surface));
 }
 
 TEST(FlutterWindowsViewTest, KeySequence) {
@@ -831,27 +815,37 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
 
 TEST(FlutterWindowsViewTest, WindowResizeTests) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  EngineModifier modifier(engine.get());
+  EngineModifier engine_modifier(engine.get());
 
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto resized_surface = std::make_unique<egl::MockWindowSurface>();
+  auto resized_surface_ptr = resized_surface.get();
 
-  EXPECT_CALL(*window_binding_handler.get(), NeedsVSync)
-      .WillOnce(Return(false));
-  EXPECT_CALL(
-      *surface_manager.get(),
-      ResizeSurface(_, /*width=*/500, /*height=*/500, /*enable_vsync=*/false))
-      .Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface.get(), IsValid).WillRepeatedly(Return(true));
+  EXPECT_CALL(*surface.get(), Destroy).WillOnce(Return(true));
 
-  FlutterWindowsView view(std::move(window_binding_handler));
-  modifier.SetSurfaceManager(surface_manager.release());
+  EXPECT_CALL(*egl_manager.get(),
+              CreateWindowSurface(_, /*width=*/500, /*height=*/500))
+      .WillOnce(Return(std::move((resized_surface))));
+  EXPECT_CALL(*resized_surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*resized_surface_ptr, SetVSyncEnabled).WillOnce(Return(true));
+  EXPECT_CALL(*windows_proc_table.get(), DwmFlush).WillOnce(Return(S_OK));
+
+  EXPECT_CALL(*resized_surface_ptr, Destroy).WillOnce(Return(true));
+
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
+  ViewModifier view_modifier(&view);
+  engine_modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
+  view_modifier.SetSurface(std::move(surface));
 
   fml::AutoResetWaitableEvent metrics_sent_latch;
-  modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+  engine_modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
       SendWindowMetricsEvent,
       ([&metrics_sent_latch](auto engine,
                              const FlutterWindowMetricsEvent* event) {
@@ -863,16 +857,182 @@ TEST(FlutterWindowsViewTest, WindowResizeTests) {
   std::thread([&resized_latch, &view]() {
     // Start the window resize. This sends the new window metrics
     // and then blocks until another thread completes the window resize.
-    view.OnWindowSizeChanged(500, 500);
+    EXPECT_TRUE(view.OnWindowSizeChanged(500, 500));
     resized_latch.Signal();
   }).detach();
 
   // Wait until the platform thread has started the window resize.
   metrics_sent_latch.Wait();
 
-  // Complete the window resize by requesting a buffer with the new window size.
-  view.GetFrameBufferId(500, 500);
+  // Complete the window resize by reporting a frame with the new window size.
+  ASSERT_TRUE(view.OnFrameGenerated(500, 500));
+  view.OnFramePresented();
   resized_latch.Wait();
+}
+
+// Verify that an empty frame completes a view resize.
+TEST(FlutterWindowsViewTest, TestEmptyFrameResizes) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier engine_modifier(engine.get());
+
+  auto window_binding_handler =
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto resized_surface = std::make_unique<egl::MockWindowSurface>();
+  auto resized_surface_ptr = resized_surface.get();
+
+  EXPECT_CALL(*surface.get(), IsValid).WillRepeatedly(Return(true));
+  EXPECT_CALL(*surface.get(), Destroy).WillOnce(Return(true));
+
+  EXPECT_CALL(*egl_manager.get(),
+              CreateWindowSurface(_, /*width=*/500, /*height=*/500))
+      .WillOnce(Return(std::move((resized_surface))));
+  EXPECT_CALL(*resized_surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*resized_surface_ptr, SetVSyncEnabled).WillOnce(Return(true));
+  EXPECT_CALL(*windows_proc_table.get(), DwmFlush).WillOnce(Return(S_OK));
+
+  EXPECT_CALL(*resized_surface_ptr, Destroy).WillOnce(Return(true));
+
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
+  ViewModifier view_modifier(&view);
+  engine_modifier.SetEGLManager(std::move(egl_manager));
+  view.SetEngine(engine.get());
+  view_modifier.SetSurface(std::move(surface));
+
+  fml::AutoResetWaitableEvent metrics_sent_latch;
+  engine_modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&metrics_sent_latch](auto engine,
+                             const FlutterWindowMetricsEvent* event) {
+        metrics_sent_latch.Signal();
+        return kSuccess;
+      }));
+
+  fml::AutoResetWaitableEvent resized_latch;
+  std::thread([&resized_latch, &view]() {
+    // Start the window resize. This sends the new window metrics
+    // and then blocks until another thread completes the window resize.
+    EXPECT_TRUE(view.OnWindowSizeChanged(500, 500));
+    resized_latch.Signal();
+  }).detach();
+
+  // Wait until the platform thread has started the window resize.
+  metrics_sent_latch.Wait();
+
+  // Complete the window resize by reporting an empty frame.
+  view.OnEmptyFrameGenerated();
+  view.OnFramePresented();
+  resized_latch.Wait();
+}
+
+// A window resize can be interleaved between a frame generation and
+// presentation. This should not crash the app. Regression test for:
+// https://github.com/flutter/flutter/issues/141855
+TEST(FlutterWindowsViewTest, WindowResizeRace) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier engine_modifier(engine.get());
+
+  auto window_binding_handler =
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+
+  EXPECT_CALL(*surface.get(), IsValid).WillRepeatedly(Return(true));
+  EXPECT_CALL(*surface.get(), Destroy).WillOnce(Return(true));
+
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
+  ViewModifier view_modifier(&view);
+  engine_modifier.SetEGLManager(std::move(egl_manager));
+  view_modifier.SetSurface(std::move(surface));
+  view.SetEngine(engine.get());
+
+  // Begin a frame.
+  ASSERT_TRUE(view.OnFrameGenerated(100, 100));
+
+  // Inject a window resize between the frame generation and
+  // frame presentation. The new size invalidates the current frame.
+  fml::AutoResetWaitableEvent resized_latch;
+  std::thread([&resized_latch, &view]() {
+    // The resize is never completed. The view times out and returns false.
+    EXPECT_FALSE(view.OnWindowSizeChanged(500, 500));
+    resized_latch.Signal();
+  }).detach();
+
+  // Wait until the platform thread has started the window resize.
+  resized_latch.Wait();
+
+  // Complete the invalidated frame while a resize is pending. Although this
+  // might mean that we presented a frame with the wrong size, this should not
+  // crash the app.
+  view.OnFramePresented();
+}
+
+// Window resize should succeed even if the render surface could not be created
+// even though EGL initialized successfully.
+TEST(FlutterWindowsViewTest, WindowResizeInvalidSurface) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier engine_modifier(engine.get());
+
+  auto window_binding_handler =
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+
+  EXPECT_CALL(*egl_manager.get(), CreateWindowSurface).Times(0);
+  EXPECT_CALL(*surface.get(), IsValid).WillRepeatedly(Return(false));
+  EXPECT_CALL(*surface.get(), Destroy).WillOnce(Return(false));
+
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
+  ViewModifier view_modifier(&view);
+  engine_modifier.SetEGLManager(std::move(egl_manager));
+  view_modifier.SetSurface(std::move(surface));
+  view.SetEngine(engine.get());
+
+  auto metrics_sent = false;
+  engine_modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&metrics_sent](auto engine, const FlutterWindowMetricsEvent* event) {
+        metrics_sent = true;
+        return kSuccess;
+      }));
+
+  view.OnWindowSizeChanged(500, 500);
+}
+
+// Window resize should succeed even if EGL initialized successfully
+// but the EGL surface could not be created.
+TEST(FlutterWindowsViewTest, WindowResizeWithoutSurface) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+
+  auto window_binding_handler =
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+
+  EXPECT_CALL(*egl_manager.get(), CreateWindowSurface).Times(0);
+
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
+  modifier.SetEGLManager(std::move(egl_manager));
+  view.SetEngine(engine.get());
+
+  auto metrics_sent = false;
+  modifier.embedder_api().SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&metrics_sent](auto engine, const FlutterWindowMetricsEvent* event) {
+        metrics_sent = true;
+        return kSuccess;
+      }));
+
+  view.OnWindowSizeChanged(500, 500);
 }
 
 TEST(FlutterWindowsViewTest, WindowRepaintTests) {
@@ -1224,33 +1384,40 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
 // Don't block until the v-blank if it is disabled by the window.
 // The surface is updated on the platform thread at startup.
 TEST(FlutterWindowsViewTest, DisablesVSyncAtStartup) {
-  std::unique_ptr<MockFlutterWindowsEngine> engine =
-      std::make_unique<MockFlutterWindowsEngine>();
+  auto engine = std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  egl::MockContext render_context;
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto surface_ptr = surface.get();
 
   EXPECT_CALL(*engine.get(), running).WillRepeatedly(Return(false));
   EXPECT_CALL(*engine.get(), PostRasterThreadTask).Times(0);
 
-  EXPECT_CALL(*window_binding_handler.get(), NeedsVSync)
-      .WillOnce(Return(false));
+  EXPECT_CALL(*windows_proc_table.get(), DwmIsCompositionEnabled)
+      .WillOnce(Return(true));
 
-  EngineModifier modifier(engine.get());
-  FlutterWindowsView view(std::move(window_binding_handler));
+  EXPECT_CALL(*egl_manager.get(), render_context)
+      .WillOnce(Return(&render_context));
+  EXPECT_CALL(*surface_ptr, IsValid).WillOnce(Return(true));
+
+  EngineModifier engine_modifier(engine.get());
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
 
   InSequence s;
-  EXPECT_CALL(*surface_manager.get(), CreateSurface(_, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*egl_manager.get(), CreateWindowSurface)
+      .WillOnce(Return(std::move(surface)));
+  EXPECT_CALL(*surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*surface_ptr, SetVSyncEnabled(false)).WillOnce(Return(true));
+  EXPECT_CALL(render_context, ClearCurrent).WillOnce(Return(true));
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface_ptr, Destroy).Times(1);
 
-  modifier.SetSurfaceManager(surface_manager.release());
+  engine_modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
 
   view.CreateRenderSurface();
@@ -1259,31 +1426,39 @@ TEST(FlutterWindowsViewTest, DisablesVSyncAtStartup) {
 // Blocks until the v-blank if it is enabled by the window.
 // The surface is updated on the platform thread at startup.
 TEST(FlutterWindowsViewTest, EnablesVSyncAtStartup) {
-  std::unique_ptr<MockFlutterWindowsEngine> engine =
-      std::make_unique<MockFlutterWindowsEngine>();
+  auto engine = std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  egl::MockContext render_context;
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto surface_ptr = surface.get();
 
   EXPECT_CALL(*engine.get(), running).WillRepeatedly(Return(false));
   EXPECT_CALL(*engine.get(), PostRasterThreadTask).Times(0);
-  EXPECT_CALL(*window_binding_handler.get(), NeedsVSync).WillOnce(Return(true));
+  EXPECT_CALL(*windows_proc_table.get(), DwmIsCompositionEnabled)
+      .WillOnce(Return(false));
+
+  EXPECT_CALL(*egl_manager.get(), render_context)
+      .WillOnce(Return(&render_context));
+  EXPECT_CALL(*surface_ptr, IsValid).WillOnce(Return(true));
 
   EngineModifier modifier(engine.get());
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
 
   InSequence s;
-  EXPECT_CALL(*surface_manager.get(), CreateSurface(_, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*egl_manager.get(), CreateWindowSurface)
+      .WillOnce(Return(std::move(surface)));
+  EXPECT_CALL(*surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*surface_ptr, SetVSyncEnabled(true)).WillOnce(Return(true));
+  EXPECT_CALL(render_context, ClearCurrent).WillOnce(Return(true));
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface_ptr, Destroy).Times(1);
 
-  modifier.SetSurfaceManager(surface_manager.release());
+  modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
 
   view.CreateRenderSurface();
@@ -1292,35 +1467,42 @@ TEST(FlutterWindowsViewTest, EnablesVSyncAtStartup) {
 // Don't block until the v-blank if it is disabled by the window.
 // The surface is updated on the raster thread if the engine is running.
 TEST(FlutterWindowsViewTest, DisablesVSyncAfterStartup) {
-  std::unique_ptr<MockFlutterWindowsEngine> engine =
-      std::make_unique<MockFlutterWindowsEngine>();
+  auto engine = std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  egl::MockContext render_context;
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto surface_ptr = surface.get();
 
   EXPECT_CALL(*engine.get(), running).WillRepeatedly(Return(true));
-  EXPECT_CALL(*window_binding_handler.get(), NeedsVSync).WillOnce(Return(true));
+  EXPECT_CALL(*windows_proc_table.get(), DwmIsCompositionEnabled)
+      .WillOnce(Return(true));
+
+  EXPECT_CALL(*egl_manager.get(), render_context)
+      .WillOnce(Return(&render_context));
+  EXPECT_CALL(*surface_ptr, IsValid).WillOnce(Return(true));
 
   EngineModifier modifier(engine.get());
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
 
   InSequence s;
-  EXPECT_CALL(*surface_manager.get(), CreateSurface(_, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
+  EXPECT_CALL(*egl_manager.get(), CreateWindowSurface)
+      .WillOnce(Return(std::move(surface)));
   EXPECT_CALL(*engine.get(), PostRasterThreadTask)
       .WillOnce([](fml::closure callback) {
         callback();
         return true;
       });
-  EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(0);
-
+  EXPECT_CALL(*surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*surface_ptr, SetVSyncEnabled(false)).WillOnce(Return(true));
+  EXPECT_CALL(render_context, ClearCurrent).WillOnce(Return(true));
   EXPECT_CALL(*engine.get(), Stop).Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface_ptr, Destroy).Times(1);
 
-  modifier.SetSurfaceManager(surface_manager.release());
+  modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
 
   view.CreateRenderSurface();
@@ -1329,36 +1511,44 @@ TEST(FlutterWindowsViewTest, DisablesVSyncAfterStartup) {
 // Blocks until the v-blank if it is enabled by the window.
 // The surface is updated on the raster thread if the engine is running.
 TEST(FlutterWindowsViewTest, EnablesVSyncAfterStartup) {
-  std::unique_ptr<MockFlutterWindowsEngine> engine =
-      std::make_unique<MockFlutterWindowsEngine>();
+  auto engine = std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  egl::MockContext render_context;
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto surface_ptr = surface.get();
 
   EXPECT_CALL(*engine.get(), running).WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*window_binding_handler.get(), NeedsVSync).WillOnce(Return(true));
+  EXPECT_CALL(*windows_proc_table.get(), DwmIsCompositionEnabled)
+      .WillOnce(Return(false));
+
+  EXPECT_CALL(*egl_manager.get(), render_context)
+      .WillOnce(Return(&render_context));
+  EXPECT_CALL(*surface_ptr, IsValid).WillOnce(Return(true));
 
   EngineModifier modifier(engine.get());
-  FlutterWindowsView view(std::move(window_binding_handler));
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
 
   InSequence s;
-  EXPECT_CALL(*surface_manager.get(), CreateSurface(_, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
+  EXPECT_CALL(*egl_manager.get(), CreateWindowSurface)
+      .WillOnce(Return(std::move(surface)));
   EXPECT_CALL(*engine.get(), PostRasterThreadTask)
       .WillOnce([](fml::closure callback) {
         callback();
         return true;
       });
-  EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(0);
 
+  EXPECT_CALL(*surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*surface_ptr, SetVSyncEnabled(true)).WillOnce(Return(true));
+  EXPECT_CALL(render_context, ClearCurrent).WillOnce(Return(true));
   EXPECT_CALL(*engine.get(), Stop).Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface_ptr, Destroy).Times(1);
 
-  modifier.SetSurfaceManager(surface_manager.release());
+  modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
 
   view.CreateRenderSurface();
@@ -1368,12 +1558,14 @@ TEST(FlutterWindowsViewTest, EnablesVSyncAfterStartup) {
 // If this happens, the app must synchronize with the vsync to prevent
 // screen tearing.
 TEST(FlutterWindowsViewTest, UpdatesVSyncOnDwmUpdates) {
-  std::unique_ptr<MockFlutterWindowsEngine> engine =
-      std::make_unique<MockFlutterWindowsEngine>();
+  auto engine = std::make_unique<MockFlutterWindowsEngine>();
   auto window_binding_handler =
       std::make_unique<NiceMock<MockWindowBindingHandler>>();
-  std::unique_ptr<MockAngleSurfaceManager> surface_manager =
-      std::make_unique<MockAngleSurfaceManager>();
+  auto windows_proc_table = std::make_shared<MockWindowsProcTable>();
+  auto egl_manager = std::make_unique<egl::MockManager>();
+  egl::MockContext render_context;
+  auto surface = std::make_unique<egl::MockWindowSurface>();
+  auto surface_ptr = surface.get();
 
   EXPECT_CALL(*engine.get(), running).WillRepeatedly(Return(true));
 
@@ -1383,24 +1575,35 @@ TEST(FlutterWindowsViewTest, UpdatesVSyncOnDwmUpdates) {
         return true;
       });
 
-  EXPECT_CALL(*window_binding_handler.get(), NeedsVSync)
-      .WillOnce(Return(true))
-      .WillOnce(Return(false));
+  EXPECT_CALL(*windows_proc_table.get(), DwmIsCompositionEnabled)
+      .WillOnce(Return(false))
+      .WillOnce(Return(true));
 
-  EXPECT_CALL(*surface_manager.get(), ClearCurrent).Times(0);
+  EXPECT_CALL(*egl_manager.get(), render_context)
+      .WillRepeatedly(Return(&render_context));
 
-  EngineModifier modifier(engine.get());
-  FlutterWindowsView view(std::move(window_binding_handler));
+  EXPECT_CALL(*surface_ptr, IsValid).WillRepeatedly(Return(true));
+
+  EngineModifier engine_modifier(engine.get());
+  FlutterWindowsView view(std::move(window_binding_handler),
+                          std::move(windows_proc_table));
+  ViewModifier view_modifier(&view);
 
   InSequence s;
-  EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(true)).Times(1);
-  EXPECT_CALL(*surface_manager.get(), SetVSyncEnabled(false)).Times(1);
+  EXPECT_CALL(*surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*surface_ptr, SetVSyncEnabled(true)).WillOnce(Return(true));
+  EXPECT_CALL(render_context, ClearCurrent).WillOnce(Return(true));
+
+  EXPECT_CALL(*surface_ptr, MakeCurrent).WillOnce(Return(true));
+  EXPECT_CALL(*surface_ptr, SetVSyncEnabled(false)).WillOnce(Return(true));
+  EXPECT_CALL(render_context, ClearCurrent).WillOnce(Return(true));
 
   EXPECT_CALL(*engine.get(), Stop).Times(1);
-  EXPECT_CALL(*surface_manager.get(), DestroySurface).Times(1);
+  EXPECT_CALL(*surface_ptr, Destroy).Times(1);
 
-  modifier.SetSurfaceManager(surface_manager.release());
+  engine_modifier.SetEGLManager(std::move(egl_manager));
   view.SetEngine(engine.get());
+  view_modifier.SetSurface(std::move(surface));
 
   view.GetEngine()->OnDwmCompositionChanged();
   view.GetEngine()->OnDwmCompositionChanged();

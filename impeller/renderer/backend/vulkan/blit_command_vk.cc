@@ -70,11 +70,11 @@ bool BlitCopyTextureToTextureCommandVK::Encode(
       vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
 
   image_copy.srcOffset =
-      vk::Offset3D(source_region.origin.x, source_region.origin.y, 0);
+      vk::Offset3D(source_region.GetX(), source_region.GetY(), 0);
   image_copy.dstOffset =
       vk::Offset3D(destination_origin.x, destination_origin.y, 0);
   image_copy.extent =
-      vk::Extent3D(source_region.size.width, source_region.size.height, 1);
+      vk::Extent3D(source_region.GetWidth(), source_region.GetHeight(), 1);
 
   // Issue the copy command now that the images are already in the right
   // layouts.
@@ -85,7 +85,21 @@ bool BlitCopyTextureToTextureCommandVK::Encode(
                        image_copy               //
   );
 
-  return true;
+  // If this is an onscreen texture, do not transition the layout
+  // back to shader read.
+  if (dst.IsSwapchainImage()) {
+    return true;
+  }
+
+  BarrierVK barrier;
+  barrier.cmd_buffer = cmd_buffer;
+  barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+  barrier.src_access = {};
+  barrier.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+  barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+  return dst.SetLayout(barrier);
 }
 
 //------------------------------------------------------------------------------
@@ -130,9 +144,9 @@ bool BlitCopyTextureToBufferCommandVK::Encode(CommandEncoderVK& encoder) const {
   image_copy.setImageSubresource(
       vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
   image_copy.setImageOffset(
-      vk::Offset3D(source_region.origin.x, source_region.origin.y, 0));
+      vk::Offset3D(source_region.GetX(), source_region.GetY(), 0));
   image_copy.setImageExtent(
-      vk::Extent3D(source_region.size.width, source_region.size.height, 1));
+      vk::Extent3D(source_region.GetWidth(), source_region.GetHeight(), 1));
 
   if (!src.SetLayout(barrier)) {
     VALIDATION_LOG << "Could not encode layout transition.";
@@ -352,6 +366,7 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   // We modified the layouts of this image from underneath it. Tell it its new
   // state so it doesn't try to perform redundant transitions under the hood.
   src.SetLayoutWithoutEncoding(vk::ImageLayout::eShaderReadOnlyOptimal);
+  src.SetMipMapGenerated();
 
   return true;
 }

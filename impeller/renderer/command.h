@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMMAND_H_
+#define FLUTTER_IMPELLER_RENDERER_COMMAND_H_
 
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -61,7 +61,7 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 struct TextureAndSampler {
   SampledImageSlot slot;
   TextureResource texture;
-  std::shared_ptr<const Sampler> sampler;
+  const std::unique_ptr<const Sampler>& sampler;
 };
 
 /// @brief combines the buffer resource and its uniform slot information.
@@ -162,21 +162,24 @@ struct Command : public ResourceBinder {
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
                     BufferView view) override;
 
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const ShaderUniformSlot& slot,
                     const std::shared_ptr<const ShaderMetadata>& metadata,
                     BufferView view);
 
   // |ResourceBinder|
   bool BindResource(ShaderStage stage,
+                    DescriptorType type,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler) override;
+                    const std::unique_ptr<const Sampler>& sampler) override;
 
   bool IsValid() const { return pipeline && pipeline->IsValid(); }
 
@@ -189,3 +192,5 @@ struct Command : public ResourceBinder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMMAND_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_COMMAND_BUFFER_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_COMMAND_BUFFER_MTL_H_
 
 #include <Metal/Metal.h>
 
@@ -38,13 +39,6 @@ class CommandBufferMTL final : public CommandBuffer {
   void OnWaitUntilScheduled() override;
 
   // |CommandBuffer|
-  bool EncodeAndSubmit(const std::shared_ptr<RenderPass>& render_pass) override;
-
-  // |CommandBuffer|
-  bool EncodeAndSubmit(const std::shared_ptr<BlitPass>& blit_ass,
-                       const std::shared_ptr<Allocator>& allocator) override;
-
-  // |CommandBuffer|
   std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
 
   // |CommandBuffer|
@@ -59,3 +53,5 @@ class CommandBufferMTL final : public CommandBuffer {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_COMMAND_BUFFER_MTL_H_

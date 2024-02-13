@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_GPU_RENDER_PASS_H_
+#define FLUTTER_LIB_GPU_RENDER_PASS_H_
 
 #include <map>
 #include <memory>
@@ -32,7 +33,7 @@ class RenderPass : public RefCountedDartWrappable<RenderPass> {
 
   ~RenderPass() override;
 
-  const std::weak_ptr<const impeller::Context>& GetContext() const;
+  const std::shared_ptr<const impeller::Context>& GetContext() const;
 
   impeller::Command& GetCommand();
   const impeller::Command& GetCommand() const;
@@ -162,8 +163,8 @@ extern void InternalFlutterGpu_RenderPass_BindIndexBufferHost(
 FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_BindUniformDevice(
     flutter::gpu::RenderPass* wrapper,
-    int stage,
-    int slot_id,
+    flutter::gpu::Shader* shader,
+    Dart_Handle uniform_name_handle,
     flutter::gpu::DeviceBuffer* device_buffer,
     int offset_in_bytes,
     int length_in_bytes);
@@ -171,8 +172,8 @@ extern bool InternalFlutterGpu_RenderPass_BindUniformDevice(
 FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_BindUniformHost(
     flutter::gpu::RenderPass* wrapper,
-    int stage,
-    int slot_id,
+    flutter::gpu::Shader* shader,
+    Dart_Handle uniform_name_handle,
     flutter::gpu::HostBuffer* host_buffer,
     int offset_in_bytes,
     int length_in_bytes);
@@ -180,8 +181,8 @@ extern bool InternalFlutterGpu_RenderPass_BindUniformHost(
 FLUTTER_GPU_EXPORT
 extern bool InternalFlutterGpu_RenderPass_BindTexture(
     flutter::gpu::RenderPass* wrapper,
-    int stage,
-    int slot_id,
+    flutter::gpu::Shader* shader,
+    Dart_Handle uniform_name_handle,
     flutter::gpu::Texture* texture,
     int min_filter,
     int mag_filter,
@@ -225,3 +226,5 @@ extern bool InternalFlutterGpu_RenderPass_Draw(
     flutter::gpu::RenderPass* wrapper);
 
 }  // extern "C"
+
+#endif  // FLUTTER_LIB_GPU_RENDER_PASS_H_

@@ -22,7 +22,7 @@ void main() {
 Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
-  setUpUnitTests();
+  setUpUnitTests(withImplicitView: true);
 
   late String fallback;
   setUp(() {
@@ -153,6 +153,29 @@ Future<void> testMain() async {
     expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(30, 10, 10, 10));
     expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 8, end: 9));
     expect(bottomRight?.writingDirection, TextDirection.ltr);
+  });
+
+  test('Basic glyph metrics - hit test - center aligned text in separate fragments', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      textAlign: TextAlign.center,
+      fontFamily: 'FlutterTest',
+    ))..addText('12345\n')
+      ..addText('1')
+      ..addText('2')
+      ..addText('3');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 50));
+
+    final GlyphInfo? bottomCenter = paragraph.getClosestGlyphInfoForOffset(const Offset(25.0, 99.0));
+    final GlyphInfo? expected = paragraph.getGlyphInfoAt(7);
+    expect(bottomCenter, equals(expected));
+    expect(bottomCenter, isNot(paragraph.getGlyphInfoAt(8)));
+
+    expect(bottomCenter?.graphemeClusterLayoutBounds, const Rect.fromLTWH(20, 10, 10, 10));
+    expect(bottomCenter?.graphemeClusterCodeUnitRange, const TextRange(start: 7, end: 8));
+    expect(bottomCenter?.writingDirection, TextDirection.ltr);
   });
 
   test('Glyph metrics with grapheme split into different runs', () {

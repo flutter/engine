@@ -30,18 +30,17 @@ import typing
 import xvfb
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-BUILDROOT_DIR = os.path.abspath(
-    os.path.join(os.path.realpath(__file__), '..', '..', '..')
-)
+BUILDROOT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..'))
 OUT_DIR = os.path.join(BUILDROOT_DIR, 'out')
 GOLDEN_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'resources')
-FONTS_DIR = os.path.join(
-    BUILDROOT_DIR, 'flutter', 'third_party', 'txt', 'third_party', 'fonts'
-)
+FONTS_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'third_party', 'txt', 'third_party', 'fonts')
 ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
-FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
+FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
+
+# This number must be updated when adding new golden tests to impeller.
+_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 578
 
 logger = logging.getLogger(__name__)
 logger_handler = logging.StreamHandler()
@@ -108,8 +107,8 @@ def run_cmd(
     print_divider('!')
 
     logger.error(
-        'Failed Command:\n\n%s\n\nExit Code: %s\n\nOutput:\n%s', command_string,
-        process.returncode, output
+        'Failed Command:\n\n%s\n\nExit Code: %s\n\nOutput:\n%s', command_string, process.returncode,
+        output
     )
 
     print_divider('!')
@@ -120,23 +119,16 @@ def run_cmd(
         allowed_failure = True
 
     if not allowed_failure:
-      raise RuntimeError(
-          'Command "%s" exited with code %s.' %
-          (command_string, process.returncode)
-      )
+      raise RuntimeError('Command "%s" exited with code %s.' % (command_string, process.returncode))
 
   for forbidden_string in forbidden_output:
     if forbidden_string in output:
       raise RuntimeError(
-          'command "%s" contained forbidden string "%s"' %
-          (command_string, forbidden_string)
+          'command "%s" contained forbidden string "%s"' % (command_string, forbidden_string)
       )
 
   print_divider('<')
-  logger.info(
-      'Command run successfully in %.2f seconds: %s', end_time - start_time,
-      command_string
-  )
+  logger.info('Command run successfully in %.2f seconds: %s', end_time - start_time, command_string)
 
 
 def is_mac():
@@ -196,9 +188,7 @@ def build_engine_executable_command(
   else:
     executable = find_executable_path(os.path.join(build_dir, executable_name))
 
-  coverage_script = os.path.join(
-      BUILDROOT_DIR, 'flutter', 'build', 'generate_coverage.py'
-  )
+  coverage_script = os.path.join(BUILDROOT_DIR, 'flutter', 'build', 'generate_coverage.py')
 
   if coverage:
     coverage_flags = [
@@ -211,8 +201,7 @@ def build_engine_executable_command(
     test_command = [executable] + flags
     if gtest:
       gtest_parallel = os.path.join(
-          BUILDROOT_DIR, 'flutter', 'third_party', 'gtest-parallel',
-          'gtest-parallel'
+          BUILDROOT_DIR, 'flutter', 'third_party', 'gtest-parallel', 'gtest-parallel'
       )
       test_command = ['python3', gtest_parallel] + test_command
 
@@ -296,16 +285,13 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     # the dump and output a report that will be uploaded.
     luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
     core_path = os.path.join(cwd, 'core')
-    if luci_test_outputs_path and os.path.exists(core_path) and os.path.exists(
-        unstripped_exe):
+    if luci_test_outputs_path and os.path.exists(core_path) and os.path.exists(unstripped_exe):
       dump_path = os.path.join(
           luci_test_outputs_path, '%s_%s.txt' % (executable_name, sys_platform)
       )
       logger.error('Writing core dump analysis to %s', dump_path)
       subprocess.call([
-          os.path.join(
-              BUILDROOT_DIR, 'flutter', 'testing', 'analyze_core_dump.sh'
-          ),
+          os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'analyze_core_dump.sh'),
           BUILDROOT_DIR,
           unstripped_exe,
           core_path,
@@ -357,10 +343,7 @@ class EngineExecutableTask():  # pylint: disable=too-many-instance-attributes
 
   def __str__(self):
     command = build_engine_executable_command(
-        self.build_dir,
-        self.executable_name,
-        flags=self.flags,
-        coverage=self.coverage
+        self.build_dir, self.executable_name, flags=self.flags, coverage=self.coverage
     )
     return ' '.join(command)
 
@@ -376,9 +359,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
 
   if capture_core_dump and is_linux():
     import resource  # pylint: disable=import-outside-toplevel
-    resource.setrlimit(
-        resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY)
-    )
+    resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
 
   repeat_flags = [
       '--repeat=2',
@@ -437,6 +418,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
     unittests += [
         # The accessibility library only supports Mac and Windows.
         make_test('accessibility_unittests'),
+        make_test('availability_version_check_unittests'),
         make_test('framework_common_unittests'),
         make_test('spring_animation_unittests'),
         make_test('gpu_surface_metal_unittests'),
@@ -447,15 +429,11 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         '--golden-dir=%s' % GOLDEN_DIR,
         '--font-file=%s' % ROBOTO_FONT_PATH,
     ]
-    icu_flags = [
-        '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')
-    ]
+    icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
     unittests += [
         make_test('flow_unittests', flags=repeat_flags + ['--'] + flow_flags),
         make_test('flutter_glfw_unittests'),
-        make_test(
-            'flutter_linux_unittests', extra_env={'G_DEBUG': 'fatal-criticals'}
-        ),
+        make_test('flutter_linux_unittests', extra_env={'G_DEBUG': 'fatal-criticals'}),
         # https://github.com/flutter/flutter/issues/36296
         make_test('txt_unittests', flags=repeat_flags + ['--'] + icu_flags),
     ]
@@ -519,12 +497,16 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
           'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
       })
+    mac_impeller_unittests_flags = shuffle_flags + [
+        '--enable_vulkan_validation',
+        '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
+    ]
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
         build_dir,
         'impeller_unittests',
         executable_filter,
-        shuffle_flags + ['--enable_vulkan_validation'],
+        mac_impeller_unittests_flags,
         coverage=coverage,
         extra_env=extra_env,
         # TODO(https://github.com/flutter/flutter/issues/123733): Remove this allowlist.
@@ -554,42 +536,40 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         extra_env=extra_env,
     )
 
+    # Run the Flutter GPU test suite.
+    run_engine_executable(
+        build_dir,
+        'impeller_dart_unittests',
+        executable_filter,
+        shuffle_flags + [
+            '--enable_vulkan_validation',
+            # TODO(https://github.com/flutter/flutter/issues/142642): Remove this.
+            '--gtest_filter=-*OpenGLES',
+        ],
+        coverage=coverage,
+        extra_env=extra_env,
+    )
+
 
 def run_engine_benchmarks(build_dir, executable_filter):
   logger.info('Running Engine Benchmarks.')
 
-  icu_flags = [
-      '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')
-  ]
+  icu_flags = ['--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat')]
 
-  run_engine_executable(
-      build_dir, 'shell_benchmarks', executable_filter, icu_flags
-  )
+  run_engine_executable(build_dir, 'shell_benchmarks', executable_filter, icu_flags)
 
-  run_engine_executable(
-      build_dir, 'fml_benchmarks', executable_filter, icu_flags
-  )
+  run_engine_executable(build_dir, 'fml_benchmarks', executable_filter, icu_flags)
 
-  run_engine_executable(
-      build_dir, 'ui_benchmarks', executable_filter, icu_flags
-  )
+  run_engine_executable(build_dir, 'ui_benchmarks', executable_filter, icu_flags)
 
-  run_engine_executable(
-      build_dir, 'display_list_builder_benchmarks', executable_filter, icu_flags
-  )
+  run_engine_executable(build_dir, 'display_list_builder_benchmarks', executable_filter, icu_flags)
 
-  run_engine_executable(
-      build_dir, 'geometry_benchmarks', executable_filter, icu_flags
-  )
+  run_engine_executable(build_dir, 'geometry_benchmarks', executable_filter, icu_flags)
 
-  run_engine_executable(
-      build_dir, 'canvas_benchmarks', executable_filter, icu_flags
-  )
+  run_engine_executable(build_dir, 'canvas_benchmarks', executable_filter, icu_flags)
 
   if is_linux():
-    run_engine_executable(
-        build_dir, 'txt_benchmarks', executable_filter, icu_flags
-    )
+    run_engine_executable(build_dir, 'txt_benchmarks', executable_filter, icu_flags)
 
 
 class FlutterTesterOptions():
@@ -612,6 +592,8 @@ class FlutterTesterOptions():
 
     if self.enable_impeller:
       command_args += ['--enable-impeller']
+    else:
+      command_args += ['--no-enable-impeller']
 
     if self.multithreaded:
       command_args.insert(0, '--force-multithreading')
@@ -640,17 +622,14 @@ def gather_dart_test(build_dir, dart_file, options):
   options.apply_args(command_args)
 
   dart_file_contents = open(dart_file, 'r')
-  custom_options = re.findall(
-      '// FlutterTesterOptions=(.*)', dart_file_contents.read()
-  )
+  custom_options = re.findall('// FlutterTesterOptions=(.*)', dart_file_contents.read())
   dart_file_contents.close()
   command_args.extend(custom_options)
 
   command_args += [
       '--use-test-fonts',
       '--icu-data-file-path=%s' % os.path.join(build_dir, 'icudtl.dat'),
-      '--flutter-assets-dir=%s' %
-      os.path.join(build_dir, 'gen', 'flutter', 'lib', 'ui', 'assets'),
+      '--flutter-assets-dir=%s' % os.path.join(build_dir, 'gen', 'flutter', 'lib', 'ui', 'assets'),
       '--disable-asset-fonts',
       kernel_file_output,
   ]
@@ -660,9 +639,7 @@ def gather_dart_test(build_dir, dart_file, options):
       "Running test '%s' using '%s' (%s, %s)", kernel_file_name, tester_name,
       options.threading_description(), options.impeller_enabled()
   )
-  forbidden_output = [] if 'unopt' in build_dir or options.expect_failure else [
-      '[ERROR'
-  ]
+  forbidden_output = [] if 'unopt' in build_dir or options.expect_failure else ['[ERROR']
   return EngineExecutableTask(
       build_dir,
       tester_name,
@@ -678,24 +655,20 @@ def ensure_ios_tests_are_built(ios_out_dir):
   tmp_out_dir = os.path.join(OUT_DIR, ios_out_dir)
   ios_test_lib = os.path.join(tmp_out_dir, 'libios_test_flutter.dylib')
   message = []
-  message.append(
-      'gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator'
-  )
+  message.append('gn --ios --unoptimized --runtime-mode=debug --no-lto --simulator')
   message.append('ninja -C %s ios_test_flutter' % ios_out_dir)
   final_message = "%s or %s doesn't exist. Please run the following commands: \n%s" % (
       ios_out_dir, ios_test_lib, '\n'.join(message)
   )
-  assert os.path.exists(tmp_out_dir
-                       ) and os.path.exists(ios_test_lib), final_message
+  assert os.path.exists(tmp_out_dir) and os.path.exists(ios_test_lib), final_message
 
 
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
   # TODO ricardoamador: remove this check when python 2 is deprecated.
-  version_output = version_output if isinstance(
-      version_output, str
-  ) else version_output.decode(ENCODING)
+  version_output = version_output if isinstance(version_output,
+                                                str) else version_output.decode(ENCODING)
   version_output = version_output.strip()
   match = re.match(r'Xcode (\d+)', version_output)
   message = 'Xcode must be installed to run the iOS embedding unit tests'
@@ -706,16 +679,13 @@ def java_home():
   script_path = os.path.dirname(os.path.realpath(__file__))
   if is_mac():
     return os.path.join(
-        script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents',
-        'Home'
+        script_path, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home'
     )
   return os.path.join(script_path, '..', '..', 'third_party', 'java', 'openjdk')
 
 
 def java_bin():
-  return os.path.join(
-      java_home(), 'bin', 'java.exe' if is_windows() else 'java'
-  )
+  return os.path.join(java_home(), 'bin', 'java.exe' if is_windows() else 'java')
 
 
 def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
@@ -724,19 +694,12 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
       BUILDROOT_DIR, 'flutter', 'shell', 'platform', 'android', 'test_runner'
   )
   gradle_bin = os.path.join(
-      BUILDROOT_DIR, 'third_party', 'gradle', 'bin',
-      'gradle.bat' if is_windows() else 'gradle'
+      BUILDROOT_DIR, 'third_party', 'gradle', 'bin', 'gradle.bat' if is_windows() else 'gradle'
   )
   flutter_jar = os.path.join(OUT_DIR, android_variant, 'flutter.jar')
-  android_home = os.path.join(
-      BUILDROOT_DIR, 'third_party', 'android_tools', 'sdk'
-  )
-  build_dir = os.path.join(
-      OUT_DIR, android_variant, 'robolectric_tests', 'build'
-  )
-  gradle_cache_dir = os.path.join(
-      OUT_DIR, android_variant, 'robolectric_tests', '.gradle'
-  )
+  android_home = os.path.join(BUILDROOT_DIR, 'third_party', 'android_tools', 'sdk')
+  build_dir = os.path.join(OUT_DIR, android_variant, 'robolectric_tests', 'build')
+  gradle_cache_dir = os.path.join(OUT_DIR, android_variant, 'robolectric_tests', '.gradle')
 
   test_class = executable_filter if executable_filter else '*'
   command = [
@@ -765,16 +728,11 @@ def run_android_tests(android_variant='android_debug_unopt', adb_path=None):
   run_cmd([adb_path, 'push', tests_path, remote_path], cwd=BUILDROOT_DIR)
   run_cmd([adb_path, 'shell', remote_tests_path])
 
-  systrace_test = os.path.join(
-      BUILDROOT_DIR, 'flutter', 'testing', 'android_systrace_test.py'
-  )
-  scenario_apk = os.path.join(
-      OUT_DIR, android_variant, 'firebase_apks', 'scenario_app.apk'
-  )
+  systrace_test = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'android_systrace_test.py')
+  scenario_apk = os.path.join(OUT_DIR, android_variant, 'firebase_apks', 'scenario_app.apk')
   run_cmd([
-      systrace_test, '--adb-path', adb_path, '--apk-path', scenario_apk,
-      '--package-name', 'dev.flutter.scenarios', '--activity-name',
-      '.PlatformViewsActivity'
+      systrace_test, '--adb-path', adb_path, '--apk-path', scenario_apk, '--package-name',
+      'dev.flutter.scenarios', '--activity-name', '.PlatformViewsActivity'
   ])
 
 
@@ -799,12 +757,9 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
   run_cmd(create_simulator, shell=True)
 
   try:
-    ios_unit_test_dir = os.path.join(
-        BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests'
-    )
+    ios_unit_test_dir = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'ios', 'IosUnitTests')
 
-    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult'
-                                    ) as result_bundle_temp:
+    with tempfile.TemporaryDirectory(suffix='ios_embedding_xcresult') as result_bundle_temp:
       result_bundle_path = os.path.join(result_bundle_temp, 'ios_embedding')
 
       # Avoid using xcpretty unless the following can be addressed:
@@ -830,13 +785,9 @@ def run_objc_tests(ios_variant='ios_debug_sim_unopt', test_filter=None):
         # for additional output files that will be uploaded to cloud storage.
         # Upload the xcresult when the tests fail.
         luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
-        xcresult_bundle = os.path.join(
-            result_bundle_temp, 'ios_embedding.xcresult'
-        )
+        xcresult_bundle = os.path.join(result_bundle_temp, 'ios_embedding.xcresult')
         if luci_test_outputs_path and os.path.exists(xcresult_bundle):
-          dump_path = os.path.join(
-              luci_test_outputs_path, 'ios_embedding.xcresult'
-          )
+          dump_path = os.path.join(luci_test_outputs_path, 'ios_embedding.xcresult')
           # xcresults contain many little files. Archive the bundle before upload.
           shutil.make_archive(dump_path, 'zip', root_dir=xcresult_bundle)
         raise
@@ -874,20 +825,15 @@ def gather_dart_tests(build_dir, test_filter):
       cwd=dart_tests_dir,
   )
 
-  dart_observatory_tests = glob.glob(
-      '%s/observatory/*_test.dart' % dart_tests_dir
-  )
+  dart_observatory_tests = glob.glob('%s/observatory/*_test.dart' % dart_tests_dir)
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
 
   if 'release' not in build_dir:
     for dart_test_file in dart_observatory_tests:
-      if test_filter is not None and os.path.basename(dart_test_file
-                                                     ) not in test_filter:
+      if test_filter is not None and os.path.basename(dart_test_file) not in test_filter:
         logger.info("Skipping '%s' due to filter.", dart_test_file)
       else:
-        logger.info(
-            "Gathering dart test '%s' with observatory enabled", dart_test_file
-        )
+        logger.info("Gathering dart test '%s' with observatory enabled", dart_test_file)
         for multithreaded in [False, True]:
           for enable_impeller in [False, True]:
             yield gather_dart_test(
@@ -900,8 +846,7 @@ def gather_dart_tests(build_dir, test_filter):
             )
 
   for dart_test_file in dart_tests:
-    if test_filter is not None and os.path.basename(dart_test_file
-                                                   ) not in test_filter:
+    if test_filter is not None and os.path.basename(dart_test_file) not in test_filter:
       logger.info("Skipping '%s' due to filter.", dart_test_file)
     else:
       logger.info("Gathering dart test '%s'", dart_test_file)
@@ -909,9 +854,7 @@ def gather_dart_tests(build_dir, test_filter):
         for enable_impeller in [False, True]:
           yield gather_dart_test(
               build_dir, dart_test_file,
-              FlutterTesterOptions(
-                  multithreaded=multithreaded, enable_impeller=enable_impeller
-              )
+              FlutterTesterOptions(multithreaded=multithreaded, enable_impeller=enable_impeller)
           )
 
 
@@ -923,17 +866,14 @@ def gather_dart_smoke_test(build_dir, test_filter):
       'smoke_test_failure',
       'fail_test.dart',
   )
-  if test_filter is not None and os.path.basename(smoke_test
-                                                 ) not in test_filter:
+  if test_filter is not None and os.path.basename(smoke_test) not in test_filter:
     logger.info("Skipping '%s' due to filter.", smoke_test)
   else:
     yield gather_dart_test(
-        build_dir, smoke_test,
-        FlutterTesterOptions(multithreaded=True, expect_failure=True)
+        build_dir, smoke_test, FlutterTesterOptions(multithreaded=True, expect_failure=True)
     )
     yield gather_dart_test(
-        build_dir, smoke_test,
-        FlutterTesterOptions(multithreaded=False, expect_failure=True)
+        build_dir, smoke_test, FlutterTesterOptions(multithreaded=False, expect_failure=True)
     )
 
 
@@ -944,11 +884,7 @@ def gather_dart_package_tests(build_dir, package_path, extra_opts):
   for dart_test_file in dart_tests:
     opts = ['--disable-dart-dev', dart_test_file] + extra_opts
     yield EngineExecutableTask(
-        build_dir,
-        os.path.join('dart-sdk', 'bin', 'dart'),
-        None,
-        flags=opts,
-        cwd=package_path
+        build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=package_path
     )
 
 
@@ -990,6 +926,7 @@ def build_dart_host_test_list(build_dir):
           ],
       ),
       (os.path.join('flutter', 'tools', 'githooks'), []),
+      (os.path.join('flutter', 'tools', 'header_guard_check'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'), []),
@@ -1008,11 +945,7 @@ def run_benchmark_tests(build_dir):
   for dart_test_file in dart_tests:
     opts = ['--disable-dart-dev', dart_test_file]
     run_engine_executable(
-        build_dir,
-        os.path.join('dart-sdk', 'bin', 'dart'),
-        None,
-        flags=opts,
-        cwd=test_dir
+        build_dir, os.path.join('dart-sdk', 'bin', 'dart'), None, flags=opts, cwd=test_dir
     )
 
 
@@ -1057,7 +990,7 @@ def run_engine_tasks_in_parallel(tasks):
   if len(failures) > 0:
     logger.error('The following commands failed:')
     for task, exn in failures:
-      logger.error('%s\n', str(task))
+      logger.error('%s\n  %s\n\n', str(task), str(exn))
     return False
 
   return True
@@ -1088,18 +1021,25 @@ def run_impeller_golden_tests(build_dir: str):
   tests_path: str = os.path.join(build_dir, 'impeller_golden_tests')
   if not os.path.exists(tests_path):
     raise Exception(
-        'Cannot find the "impeller_golden_tests" executable in "%s". You may need to build it.'
-        % (build_dir)
+        'Cannot find the "impeller_golden_tests" executable in "%s". You may need to build it.' %
+        (build_dir)
     )
-  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('impeller').joinpath(
-      'golden_tests_harvester'
-  )
+  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('tools'
+                                                         ).joinpath('golden_tests_harvester')
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    run_cmd([tests_path, '--working_dir=%s' % temp_dir])
+    run_cmd([tests_path, '--working_dir=%s' % temp_dir], cwd=build_dir)
+    num_generated_files = len(os.listdir(temp_dir))
+    if num_generated_files != _NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES:
+      raise Exception(
+          '`impeller_golden_tests` was expected to generate '
+          f'{_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES} files, '
+          f'{num_generated_files} were generated. If this is expected, update '
+          '_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES.'
+      )
+
     with DirectoryChange(harvester_path):
       run_cmd(['dart', 'pub', 'get'])
-      bin_path = Path('.').joinpath('bin'
-                                   ).joinpath('golden_tests_harvester.dart')
+      bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
       run_cmd(['dart', 'run', str(bin_path), temp_dir])
 
 
@@ -1133,14 +1073,10 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       '--type',
       type=str,
       default='all',
-      help='A list of test types, default is "all" (equivalent to "%s")' %
-      (','.join(all_types))
+      help='A list of test types, default is "all" (equivalent to "%s")' % (','.join(all_types))
   )
   parser.add_argument(
-      '--engine-filter',
-      type=str,
-      default='',
-      help='A list of engine test executables to run.'
+      '--engine-filter', type=str, default='', help='A list of engine test executables to run.'
   )
   parser.add_argument(
       '--dart-filter',
@@ -1238,9 +1174,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
 
   build_dir = os.path.join(OUT_DIR, args.variant)
   if args.type != 'java' and args.type != 'android':
-    assert os.path.exists(
-        build_dir
-    ), 'Build variant directory %s does not exist!' % build_dir
+    assert os.path.exists(build_dir), 'Build variant directory %s does not exist!' % build_dir
 
   if args.sanitizer_suppressions:
     assert is_linux() or is_mac(
@@ -1248,8 +1182,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     file_dir = os.path.dirname(os.path.abspath(__file__))
     command = [
         'env', '-i', 'bash', '-c',
-        'source {}/sanitizer_suppressions.sh >/dev/null && env'
-        .format(file_dir)
+        'source {}/sanitizer_suppressions.sh >/dev/null && env'.format(file_dir)
     ]
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     for line in process.stdout:
@@ -1261,22 +1194,15 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
 
   engine_filter = args.engine_filter.split(',') if args.engine_filter else None
   if 'engine' in types:
-    run_cc_tests(
-        build_dir, engine_filter, args.coverage, args.engine_capture_core_dump
-    )
+    run_cc_tests(build_dir, engine_filter, args.coverage, args.engine_capture_core_dump)
 
-  # Use this type to exclusively run impeller vulkan tests.
-  if 'impeller-vulkan' in types:
+  # Use this type to exclusively run impeller tests.
+  if 'impeller' in types:
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
       run_engine_executable(
-          build_dir,
-          'impeller_unittests',
-          engine_filter,
-          shuffle_flags + ['--gtest_filter=-'
-                           '*/OpenGLES:'],
-          coverage=args.coverage
+          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage
       )
     finally:
       xvfb.stop_virtual_x(build_name)
@@ -1288,9 +1214,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     success = success and run_engine_tasks_in_parallel(tasks)
 
   if 'dart-host' in types:
-    dart_filter = args.dart_host_filter.split(
-        ','
-    ) if args.dart_host_filter else None
+    dart_filter = args.dart_host_filter.split(',') if args.dart_host_filter else None
     dart_host_packages = build_dart_host_test_list(build_dir)
     tasks = []
     for dart_host_package, extra_opts in dart_host_packages:
@@ -1306,8 +1230,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     success = success and run_engine_tasks_in_parallel(tasks)
 
   if 'java' in types:
-    assert not is_windows(
-    ), "Android engine files can't be compiled on Windows."
+    assert not is_windows(), "Android engine files can't be compiled on Windows."
     java_filter = args.java_filter
     if ',' in java_filter or '*' in java_filter:
       logger.wraning(
@@ -1318,8 +1241,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     run_java_tests(java_filter, args.android_variant)
 
   if 'android' in types:
-    assert not is_windows(
-    ), "Android engine files can't be compiled on Windows."
+    assert not is_windows(), "Android engine files can't be compiled on Windows."
     run_android_tests(args.android_variant, args.adb_path)
 
   if 'objc' in types:
@@ -1332,8 +1254,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     run_engine_benchmarks(build_dir, engine_filter)
 
   variants_to_skip = ['host_release', 'host_profile']
-  if ('engine' in types or
-      'font-subset' in types) and args.variant not in variants_to_skip:
+  if ('engine' in types or 'font-subset' in types) and args.variant not in variants_to_skip:
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
 
   if 'impeller-golden' in types:

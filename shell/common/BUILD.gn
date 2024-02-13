@@ -262,6 +262,10 @@ if (enable_unittests) {
       "//flutter/third_party/rapidjson",
     ]
 
+    if (impeller_supports_rendering) {
+      deps += [ "//flutter/impeller" ]
+    }
+
     public_configs = [
       ":shell_test_fixture_sources_config",
       ":shell_unittests_gpu_configuration_config",
@@ -344,14 +348,14 @@ if (enable_unittests) {
       # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot
       # run on fuchsia or when GL is not enabled.
       sources += [ "shell_io_manager_unittests.cc" ]
-      deps += [ "//third_party/swiftshader" ]
+      deps += [ "//flutter/third_party/swiftshader" ]
     }
 
     if (shell_enable_gl) {
       deps += [
+        "//flutter/third_party/swiftshader",
         "//third_party/angle:libEGL_static",
         "//third_party/angle:libGLESv2_static",
-        "//third_party/swiftshader",
       ]
     }
   }

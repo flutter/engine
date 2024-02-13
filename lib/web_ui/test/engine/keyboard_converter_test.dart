@@ -11,7 +11,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../common/keyboard_test_common.dart';
 
-const int kLocationStandard = 0;
 const int kLocationLeft = 1;
 const int kLocationRight = 2;
 const int kLocationNumpad = 3;
@@ -25,9 +24,9 @@ final int kPhysicalNumpad1 = kWebToPhysicalKey['Numpad1']!;
 final int kPhysicalShiftLeft = kWebToPhysicalKey['ShiftLeft']!;
 final int kPhysicalShiftRight = kWebToPhysicalKey['ShiftRight']!;
 final int kPhysicalMetaLeft = kWebToPhysicalKey['MetaLeft']!;
-final int kPhysicalTab = kWebToPhysicalKey['Tab']!;
 final int kPhysicalCapsLock = kWebToPhysicalKey['CapsLock']!;
 final int kPhysicalScrollLock = kWebToPhysicalKey['ScrollLock']!;
+final int kPhysicalBracketLeft = kWebToPhysicalKey['BracketLeft']!;
 // A web-specific physical key when code is empty.
 const int kPhysicalEmptyCode = 0x1700000000;
 
@@ -41,11 +40,11 @@ final int kLogicalShiftRight = kWebLogicalLocationMap['Shift']![kLocationRight]!
 final int kLogicalCtrlLeft = kWebLogicalLocationMap['Control']![kLocationLeft]!;
 final int kLogicalAltLeft = kWebLogicalLocationMap['Alt']![kLocationLeft]!;
 final int kLogicalMetaLeft = kWebLogicalLocationMap['Meta']![kLocationLeft]!;
-const int kLogicalTab = 0x0000000009;
 final int kLogicalCapsLock = kWebToLogicalKey['CapsLock']!;
 final int kLogicalScrollLock = kWebToLogicalKey['ScrollLock']!;
-
-typedef VoidCallback = void Function();
+final int kLogicalProcess = kWebToLogicalKey['Process']!;
+const int kWebKeyIdPlane = 0x1700000000;
+final int kLogicalBracketLeft = kPhysicalBracketLeft + kWebKeyIdPlane; // Dead key algorithm.
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -520,6 +519,49 @@ void testMain() {
       deviceType: ui.KeyEventDeviceType.keyboard,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
+      character: null,
+    );
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+  });
+
+  test('Duplicate down is preceded with synthesized up using registered logical key', () {
+    // Regression test for https://github.com/flutter/flutter/issues/126247.
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    }, OperatingSystem.linux);
+
+    // This test simulates the use of 'BracketLeft' on a french keyboard, see:
+    // https://github.com/flutter/flutter/issues/126247#issuecomment-1856112566.
+    converter.handleEvent(keyDownEvent('BracketLeft', 'Dead'));
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+    expectKeyData(keyDataList.first,
+      type: ui.KeyEventType.down,
+      deviceType: ui.KeyEventDeviceType.keyboard,
+      physical: kPhysicalBracketLeft,
+      logical: kLogicalBracketLeft,
+      character: null,
+    );
+
+    // A KeyUp of BracketLeft is missed.
+    keyDataList.clear();
+
+    converter.handleEvent(keyDownEvent('BracketLeft', 'Process'));
+    expect(keyDataList, hasLength(2));
+    expectKeyData(keyDataList.first,
+      type: ui.KeyEventType.up,
+      deviceType: ui.KeyEventDeviceType.keyboard,
+      physical: kPhysicalBracketLeft,
+      logical: kLogicalBracketLeft,
+      character: null,
+      synthesized: true,
+    );
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      deviceType: ui.KeyEventDeviceType.keyboard,
+      physical: kPhysicalBracketLeft,
+      logical: kLogicalProcess,
       character: null,
     );
     expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
@@ -1150,11 +1192,6 @@ MockKeyboardEvent keyRepeatedDownEvent(String code, String key, [int modifiers =
     location: location,
   );
 }
-
-// Flags used for the `activeLocks` argument of expectKeyData.
-const int kCapsLock = 0x1;
-const int kNumlLock = 0x2;
-const int kScrollLock = 0x4;
 
 void expectKeyData(
   ui.KeyData target, {

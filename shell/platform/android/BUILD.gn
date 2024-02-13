@@ -42,16 +42,19 @@ executable("flutter_shell_native_unittests") {
   visibility = [ "*" ]
   testonly = true
   sources = [
+    "//flutter/fml/platform/android/ndk_helpers_unittests.cc",
     "android_context_gl_impeller_unittests.cc",
     "android_context_gl_unittests.cc",
     "android_shell_holder_unittests.cc",
     "apk_asset_provider_unittests.cc",
     "flutter_shell_native_unittests.cc",
+    "image_lru_unittests.cc",
     "platform_view_android_unittests.cc",
   ]
   public_configs = [ "//flutter:config" ]
   deps = [
     ":flutter_shell_native_src",
+    "//flutter/fml",
     "//flutter/shell/platform/android/jni:jni_mock",
     "//third_party/googletest:gmock",
     "//third_party/googletest:gtest",
@@ -77,8 +80,6 @@ source_set("flutter_shell_native_src") {
   visibility = [ ":*" ]
 
   sources = [
-    "android_choreographer.cc",
-    "android_choreographer.h",
     "android_context_gl_impeller.cc",
     "android_context_gl_impeller.h",
     "android_context_gl_skia.cc",
@@ -111,9 +112,9 @@ source_set("flutter_shell_native_src") {
     "image_external_texture_gl.h",
     "image_external_texture_vk.cc",
     "image_external_texture_vk.h",
+    "image_lru.cc",
+    "image_lru.h",
     "library_loader.cc",
-    "ndk_helpers.cc",
-    "ndk_helpers.h",
     "platform_message_handler_android.cc",
     "platform_message_handler_android.h",
     "platform_message_response_android.cc",
@@ -266,6 +267,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/renderer/FlutterRenderer.java",
   "io/flutter/embedding/engine/renderer/FlutterUiDisplayListener.java",
   "io/flutter/embedding/engine/renderer/RenderSurface.java",
+  "io/flutter/embedding/engine/renderer/SurfaceTextureSurfaceProducer.java",
   "io/flutter/embedding/engine/renderer/SurfaceTextureWrapper.java",
   "io/flutter/embedding/engine/systemchannels/AccessibilityChannel.java",
   "io/flutter/embedding/engine/systemchannels/DeferredComponentChannel.java",
@@ -323,6 +325,7 @@ android_java_sources = [
   "io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java",
   "io/flutter/plugin/platform/PlatformViewsController.java",
   "io/flutter/plugin/platform/SingleViewPresentation.java",
+  "io/flutter/plugin/platform/SurfaceProducerPlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/SurfaceTexturePlatformViewRenderTarget.java",
   "io/flutter/plugin/platform/VirtualDisplayController.java",
   "io/flutter/plugin/text/ProcessTextPlugin.java",

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_RENDER_TARGET_H_
+#define FLUTTER_IMPELLER_RENDERER_RENDER_TARGET_H_
 
 #include <functional>
 #include <map>
@@ -85,6 +86,7 @@ class RenderTarget final {
       const Context& context,
       RenderTargetAllocator& allocator,
       ISize size,
+      int mip_count,
       const std::string& label = "Offscreen",
       AttachmentConfig color_attachment_config = kDefaultColorAttachmentConfig,
       std::optional<AttachmentConfig> stencil_attachment_config =
@@ -94,6 +96,7 @@ class RenderTarget final {
       const Context& context,
       RenderTargetAllocator& allocator,
       ISize size,
+      int mip_count,
       const std::string& label = "Offscreen MSAA",
       AttachmentConfigMSAA color_attachment_config =
           kDefaultColorAttachmentConfigMSAA,
@@ -106,13 +109,13 @@ class RenderTarget final {
 
   bool IsValid() const;
 
-  void SetupStencilAttachment(const Context& context,
-                              RenderTargetAllocator& allocator,
-                              ISize size,
-                              bool msaa,
-                              const std::string& label = "Offscreen",
-                              AttachmentConfig stencil_attachment_config =
-                                  kDefaultStencilAttachmentConfig);
+  void SetupDepthStencilAttachments(const Context& context,
+                                    RenderTargetAllocator& allocator,
+                                    ISize size,
+                                    bool msaa,
+                                    const std::string& label = "Offscreen",
+                                    AttachmentConfig stencil_attachment_config =
+                                        kDefaultStencilAttachmentConfig);
 
   SampleCount GetSampleCount() const;
 
@@ -156,3 +159,5 @@ class RenderTarget final {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_RENDER_TARGET_H_

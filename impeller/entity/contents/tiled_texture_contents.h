@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TILED_TEXTURE_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_TILED_TEXTURE_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -60,6 +61,7 @@ class TiledTextureContents final : public ColorSourceContents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Tiled Texture Snapshot") const override;
 
  private:
@@ -83,3 +85,5 @@ class TiledTextureContents final : public ColorSourceContents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TILED_TEXTURE_CONTENTS_H_

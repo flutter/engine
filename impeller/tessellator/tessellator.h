@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TESSELLATOR_TESSELLATOR_H_
+#define FLUTTER_IMPELLER_TESSELLATOR_TESSELLATOR_H_
 
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
@@ -22,11 +22,6 @@ void DestroyTessellator(TESStesselator* tessellator);
 
 using CTessellator =
     std::unique_ptr<TESStesselator, decltype(&DestroyTessellator)>;
-
-enum class WindingOrder {
-  kClockwise,
-  kCounterClockwise,
-};
 
 //------------------------------------------------------------------------------
 /// @brief      A utility that generates triangles of the specified fill type
@@ -217,6 +212,14 @@ class Tessellator {
   ///
   std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Create a temporary polyline. Only one per-process can exist at
+  ///             a time.
+  ///
+  ///             The tessellator itself is not a thread safe class and should
+  ///             only be used from the raster thread.
+  Path::Polyline CreateTempPolyline(const Path& path, Scalar tolerance);
+
   /// @brief   The pixel tolerance used by the algorighm to determine how
   ///          many divisions to create for a circle.
   ///
@@ -280,6 +283,19 @@ class Tessellator {
   EllipticalVertexGenerator FilledEllipse(const Matrix& view_transform,
                                           const Rect& bounds);
 
+  /// @brief   Create a |VertexGenerator| that can produce vertices for
+  ///          a filled round rect within the given bounds and corner radii
+  ///          with enough polygon sub-divisions to provide reasonable
+  ///          fidelity when viewed under the given view transform.
+  ///
+  ///          Note that the view transform is only used to choose the
+  ///          number of sample points to use per quarter circle and the
+  ///          returned points are not transformed by it, instead they are
+  ///          relative to the coordinate space of the bounds.
+  EllipticalVertexGenerator FilledRoundRect(const Matrix& view_transform,
+                                            const Rect& bounds,
+                                            const Size& radii);
+
  private:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
@@ -309,9 +325,16 @@ class Tessellator {
                                     const EllipticalVertexGenerator::Data& data,
                                     const TessellatedVertexProc& proc);
 
+  static void GenerateFilledRoundRect(
+      const Trigs& trigs,
+      const EllipticalVertexGenerator::Data& data,
+      const TessellatedVertexProc& proc);
+
   Tessellator(const Tessellator&) = delete;
 
   Tessellator& operator=(const Tessellator&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TESSELLATOR_TESSELLATOR_H_

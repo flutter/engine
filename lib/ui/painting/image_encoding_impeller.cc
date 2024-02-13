@@ -34,7 +34,7 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     SkColorType color_type,
     SkISize dimensions) {
-  auto buffer_view = buffer->AsBufferView();
+  auto buffer_view = impeller::DeviceBuffer::AsBufferView(buffer);
 
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
@@ -47,7 +47,7 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     delete buffer;
   };
   auto bytes_per_pixel = image_info.bytesPerPixel();
-  bitmap.installPixels(image_info, buffer_view.contents,
+  bitmap.installPixels(image_info, buffer->OnGetContents(),
                        dimensions.width() * bytes_per_pixel, func,
                        new std::shared_ptr<impeller::DeviceBuffer>(buffer));
   bitmap.setImmutable();
@@ -178,7 +178,9 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
     encode_task(sk_image);
   };
 
-  if (!command_buffer->SubmitCommands(completion)) {
+  if (!impeller_context->GetCommandQueue()
+           ->Submit({command_buffer}, completion)
+           .ok()) {
     FML_LOG(ERROR) << "Failed to submit commands.";
   }
 }

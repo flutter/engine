@@ -77,8 +77,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
-    _setAppLifecycleState(ui.AppLifecycleState.resumed);
+    AppLifecycleState.instance.addListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.addListener(invokeOnViewFocusChange);
+    _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
+      // Send a metrics changed event to the framework when a view is disposed.
+      // View creation/resize is handled by the `_didResize` handler in the
+      // EngineFlutterView itself.
+      invokeOnMetricsChanged();
+    });
   }
+
+  late StreamSubscription<int> _onViewDisposedListener;
 
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
@@ -105,6 +114,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _disconnectFontSizeObserver();
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
+    AppLifecycleState.instance.removeListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.removeListener(invokeOnViewFocusChange);
+    _onViewDisposedListener.cancel();
     viewManager.dispose();
   }
 
@@ -207,6 +219,41 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
+  @override
+  ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
+  ui.ViewFocusChangeCallback? _onViewFocusChange;
+  Zone? _onViewFocusChangeZone;
+  @override
+  set onViewFocusChange(ui.ViewFocusChangeCallback? callback) {
+    _onViewFocusChange = callback;
+    _onViewFocusChangeZone = Zone.current;
+  }
+
+  // Engine code should use this method instead of the callback directly.
+  // Otherwise zones won't work properly.
+  void invokeOnViewFocusChange(ui.ViewFocusEvent viewFocusEvent) {
+    invoke1<ui.ViewFocusEvent>(
+      _onViewFocusChange,
+      _onViewFocusChangeZone,
+      viewFocusEvent,
+    );
+  }
+
+
+  @override
+  void requestViewFocusChange({
+    required int viewId,
+    required ui.ViewFocusState state,
+    required ui.ViewFocusDirection direction,
+  }) {
+    // TODO(tugorez): implement this method. At the moment will be a no op call.
+  }
+
+
+  /// A set of views which have rendered in the current `onBeginFrame` or
+  /// `onDrawFrame` scope.
+  Set<ui.FlutterView>? _viewsRenderedInCurrentFrame;
+
   /// A callback invoked when any window begins a frame.
   ///
   /// A callback that is invoked to notify the application that it is an
@@ -229,7 +276,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnBeginFrame(Duration duration) {
+    _viewsRenderedInCurrentFrame = <ui.FlutterView>{};
     invoke1<Duration>(_onBeginFrame, _onBeginFrameZone, duration);
+    _viewsRenderedInCurrentFrame = null;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -250,7 +299,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnDrawFrame() {
+    _viewsRenderedInCurrentFrame = <ui.FlutterView>{};
     invoke(_onDrawFrame, _onDrawFrameZone);
+    _viewsRenderedInCurrentFrame = null;
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -600,9 +651,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
-            // TODO(mdebbar): This needs a view ID from the framework.
-            //                https://github.com/flutter/flutter/issues/137289
-            implicitView?.mouseCursor
+            // TODO(mdebbar): Once the framework starts sending us a viewId, we
+            //                should use it to grab the correct view.
+            //                https://github.com/flutter/flutter/issues/140226
+            views.firstOrNull?.mouseCursor
                 .activateSystemCursor(arguments.tryString('kind'));
         }
         return;
@@ -614,18 +666,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 _handleWebTestEnd2EndMessage(jsonCodec, data)));
         return;
 
-      case 'flutter/platform_views':
+      case PlatformViewMessageHandler.channelName:
+        // `arguments` can be a Map<String, Object> for `create`,
+        // but an `int` for `dispose`, hence why `dynamic` everywhere.
         final MethodCall(:String method, :dynamic arguments) =
             standardCodec.decodeMethodCall(data);
-        final int? flutterViewId = tryViewId(arguments);
-        if (flutterViewId == null) {
-          implicitView!.platformViewMessageHandler
-              .handleLegacyPlatformViewCall(method, arguments, callback!);
-          return;
-        }
-        arguments as Map<dynamic, dynamic>;
-        viewManager[flutterViewId]!
-            .platformViewMessageHandler
+        PlatformViewMessageHandler.instance
             .handlePlatformViewCall(method, arguments, callback!);
         return;
 
@@ -634,7 +680,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         const StandardMessageCodec codec = StandardMessageCodec();
         // TODO(yjbanov): Dispatch the announcement to the correct view?
         //                https://github.com/flutter/flutter/issues/137445
-        implicitView!.accessibilityAnnouncements.handleMessage(codec, data);
+        implicitView?.accessibilityAnnouncements.handleMessage(codec, data);
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
@@ -752,14 +798,27 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   @override
-  void render(ui.Scene scene, [ui.FlutterView? view]) {
+  Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
     assert(view != null || implicitView != null,
         'Calling render without a FlutterView');
     if (view == null && implicitView == null) {
       // If there is no view to render into, then this is a no-op.
       return;
     }
-    renderer.renderScene(scene, view ?? implicitView!);
+    final ui.FlutterView viewToRender = view ?? implicitView!;
+
+    // Only render in an `onDrawFrame` or `onBeginFrame` scope. This is checked
+    // by checking if the `_viewsRenderedInCurrentFrame` is non-null and this
+    // view hasn't been rendered already in this scope.
+    final bool shouldRender =
+        _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
+    // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
+    // order to perform golden tests in Flutter framework because on the HTML
+    // renderer, golden tests render to DOM and then take a browser screenshot,
+    // https://github.com/flutter/flutter/issues/137073.
+    if (shouldRender || renderer.rendererTag == 'html') {
+      await renderer.renderScene(scene, viewToRender);
+    }
   }
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -909,7 +968,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
-  // Called by FlutterViewEmbedder when browser languages change.
+  // Called by `_onLocaleChangedSubscription` when browser languages change.
   void updateLocales() {
     configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
@@ -986,8 +1045,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void _addFontSizeObserver() {
     const String styleAttribute = 'style';
 
-    _fontSizeObserver =
-        createDomMutationObserver((JSArray mutations, DomMutationObserver _) {
+    _fontSizeObserver = createDomMutationObserver(
+        (JSArray<JSAny?> mutations, DomMutationObserver _) {
       for (final JSAny? mutation in mutations.toDart) {
         final DomMutationRecord record = mutation! as DomMutationRecord;
         if (record.type == 'attributes' &&
@@ -1011,10 +1070,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   void _setAppLifecycleState(ui.AppLifecycleState state) {
-    sendPlatformMessage(
+    invokeOnPlatformMessage(
       'flutter/lifecycle',
-      ByteData.sublistView(utf8.encode(state.toString())),
-      null,
+      const StringCodec().encodeMessage(state.toString()),
+      (_) {},
     );
   }
 
@@ -1274,7 +1333,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   String get defaultRouteName {
     // TODO(mdebbar): What should we do in multi-view mode?
     //                https://github.com/flutter/flutter/issues/139174
-    return _defaultRouteName ??= implicitView?.browserHistory.currentPath ?? '/';
+    return _defaultRouteName ??=
+        implicitView?.browserHistory.currentPath ?? '/';
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.

@@ -8,6 +8,9 @@ import("//flutter/testing/testing.gni")
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
 
+  # 2.3 adds support for framebuffer fetch in Metal.
+  metal_version = "2.3"
+
   # Not analyzing because they are not performance critical, and mipmap uses
   # textureLod, which uses an extension that malioc does not support.
   analyze = false
@@ -16,8 +19,9 @@ impeller_shaders("shader_fixtures") {
     "array.vert",
     "box_fade.frag",
     "box_fade.vert",
-    "colors.vert",
     "colors.frag",
+    "colors.vert",
+    "half.frag",
     "impeller.frag",
     "impeller.vert",
     "inactive_uniforms.frag",
@@ -27,12 +31,16 @@ impeller_shaders("shader_fixtures") {
     "mipmaps.frag",
     "mipmaps.vert",
     "sample.comp",
+    "sepia.frag",
+    "sepia.vert",
+    "simple.vert",
     "stage1.comp",
     "stage2.comp",
-    "simple.vert",
+    "swizzle.frag",
     "test_texture.frag",
     "test_texture.vert",
-    "half.frag",
+    "texture.frag",
+    "texture.vert",
   ]
 
   if (impeller_enable_opengles) {
@@ -60,7 +68,13 @@ impellerc("runtime_stages") {
     "gradient.frag",
   ]
   sl_file_extension = "iplr"
-  shader_target_flag = "--runtime-stage-metal"
+
+  shader_target_flags = [
+    "--runtime-stage-metal",
+    "--runtime-stage-gles",
+    "--runtime-stage-vulkan",
+  ]
+
   iplr = true
 }
 
@@ -76,9 +90,15 @@ test_fixtures("file_fixtures") {
     "blue_noise.png",
     "boston.jpg",
     "embarcadero.jpg",
+    "flutter_gpu_texture.frag",
+    "flutter_gpu_texture.vert",
+    "flutter_gpu_unlit.frag",
+    "flutter_gpu_unlit.vert",
     "flutter_logo_baked.glb",
     "kalimba.jpg",
+    "monkey.png",
     "multiple_stages.hlsl",
+    "nine_patch_corners.png",
     "resources_limit.vert",
     "sample.comp",
     "sample.frag",
@@ -89,6 +109,7 @@ test_fixtures("file_fixtures") {
     "stage1.comp",
     "stage2.comp",
     "struct_def_bug.vert",
+    "struct_internal.frag",
     "table_mountain_nx.png",
     "table_mountain_ny.png",
     "table_mountain_nz.png",
@@ -121,17 +142,20 @@ impellerc("flutter_gpu_shaders") {
     "flutter_gpu_texture.frag",
     "flutter_gpu_texture.vert",
   ]
-  sl_file_extension = "iplr"
-  shader_target_flag = "--runtime-stage-metal"
-  iplr = true
-  iplr_bundle = "temporary"
+
+  fixtures = rebase_path("//flutter/impeller/fixtures")
+  shader_bundle = "{\"UnlitFragment\": {\"type\": \"fragment\", \"file\": \"${fixtures}/flutter_gpu_unlit.frag\"}, \"UnlitVertex\": {\"type\": \"vertex\", \"file\": \"${fixtures}/flutter_gpu_unlit.vert\"}, \"TextureFragment\": {\"type\": \"fragment\", \"file\": \"${fixtures}/flutter_gpu_texture.frag\"}, \"TextureVertex\": {\"type\": \"vertex\", \"file\": \"${fixtures}/flutter_gpu_texture.vert\"}}"
+  shader_bundle_output = "playground.shaderbundle"
 }
 
 test_fixtures("flutter_gpu_fixtures") {
   dart_main = "dart_tests.dart"
 
-  fixtures =
-      filter_include(get_target_outputs(":flutter_gpu_shaders"), [ "*.iplr" ])
+  fixtures = filter_include(get_target_outputs(":flutter_gpu_shaders"),
+                            [
+                              "*.iplr",
+                              "*.shaderbundle",
+                            ])
 
   deps = [ ":flutter_gpu_shaders" ]
 }

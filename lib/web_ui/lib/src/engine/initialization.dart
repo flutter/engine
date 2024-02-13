@@ -225,9 +225,14 @@ Future<void> initializeEngineUi() async {
   _initializationState = DebugEngineInitializationState.initializingUi;
 
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
+  KeyboardBinding.initInstance();
+
   if (!configuration.multiViewEnabled) {
-    ensureImplicitViewInitialized(hostElement: configuration.hostElement);
-    ensureFlutterViewEmbedderInitialized();
+    final EngineFlutterWindow implicitView =
+        ensureImplicitViewInitialized(hostElement: configuration.hostElement);
+    if (renderer is HtmlRenderer) {
+      ensureResourceManagerInitialized(implicitView);
+    }
   }
   _initializationState = DebugEngineInitializationState.initialized;
 }

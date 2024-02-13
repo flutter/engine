@@ -7,14 +7,15 @@
 
 namespace impeller {
 
-FillPathGeometry::FillPathGeometry(Path path, std::optional<Rect> inner_rect)
-    : path_(std::move(path)), inner_rect_(inner_rect) {}
+FillPathGeometry::FillPathGeometry(const Path& path,
+                                   std::optional<Rect> inner_rect)
+    : path_(path), inner_rect_(inner_rect) {}
 
 GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   VertexBuffer vertex_buffer;
 
   if (path_.GetFillType() == FillType::kNonZero &&  //
@@ -30,8 +31,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     return GeometryResult{
         .type = PrimitiveType::kTriangleStrip,
         .vertex_buffer = vertex_buffer,
-        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform(),
+        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
         .prevent_overdraw = false,
     };
   }
@@ -61,8 +61,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = vertex_buffer,
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }
@@ -96,9 +95,8 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
     return GeometryResult{
         .type = PrimitiveType::kTriangleStrip,
         .vertex_buffer =
-            vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
-        .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform(),
+            vertex_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()),
+        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
         .prevent_overdraw = false,
     };
   }
@@ -130,9 +128,8 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangle,
       .vertex_buffer =
-          vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
+          vertex_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()),
+      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
       .prevent_overdraw = false,
   };
 }

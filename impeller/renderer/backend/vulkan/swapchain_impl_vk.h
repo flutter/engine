@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
 
 #include <cstdint>
 #include <memory>
 #include <variant>
 
-#include "flutter/fml/macros.h"
+#include "impeller/geometry/size.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "vulkan/vulkan_enums.hpp"
 
@@ -33,9 +34,9 @@ class SwapchainImplVK final
   static std::shared_ptr<SwapchainImplVK> Create(
       const std::shared_ptr<Context>& context,
       vk::UniqueSurfaceKHR surface,
-      vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE,
-      vk::SurfaceTransformFlagBitsKHR last_transform =
-          vk::SurfaceTransformFlagBitsKHR::eIdentity);
+      const ISize& size,
+      bool enable_msaa = true,
+      vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
   ~SwapchainImplVK();
 
@@ -56,29 +57,29 @@ class SwapchainImplVK final
 
   vk::Format GetSurfaceFormat() const;
 
-  vk::SurfaceTransformFlagBitsKHR GetLastTransform() const;
-
   std::shared_ptr<Context> GetContext() const;
 
   std::pair<vk::UniqueSurfaceKHR, vk::UniqueSwapchainKHR> DestroySwapchain();
 
+  const ISize& GetSize() const;
+
  private:
   std::weak_ptr<Context> context_;
   vk::UniqueSurfaceKHR surface_;
-  vk::Queue present_queue_ = {};
   vk::Format surface_format_ = vk::Format::eUndefined;
   vk::UniqueSwapchainKHR swapchain_;
   std::vector<std::shared_ptr<SwapchainImageVK>> images_;
   std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers_;
   size_t current_frame_ = 0u;
+  ISize size_;
+  bool enable_msaa_ = true;
   bool is_valid_ = false;
-  size_t current_transform_poll_count_ = 0u;
-  vk::SurfaceTransformFlagBitsKHR transform_if_changed_discard_swapchain_;
 
   SwapchainImplVK(const std::shared_ptr<Context>& context,
                   vk::UniqueSurfaceKHR surface,
-                  vk::SwapchainKHR old_swapchain,
-                  vk::SurfaceTransformFlagBitsKHR last_transform);
+                  const ISize& size,
+                  bool enable_msaa,
+                  vk::SwapchainKHR old_swapchain);
 
   bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);
 
@@ -90,3 +91,5 @@ class SwapchainImplVK final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_

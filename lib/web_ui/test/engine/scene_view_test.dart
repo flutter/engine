@@ -12,6 +12,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart';
 
+import '../common/test_initialization.dart';
 import 'scene_builder_utils.dart';
 
 void main() {
@@ -26,10 +27,13 @@ class StubPictureRenderer implements PictureRenderer {
   Future<DomImageBitmap> renderPicture(ScenePicture picture) async {
     renderedPictures.add(picture);
     final ui.Rect cullRect = picture.cullRect;
-    final DomImageBitmap bitmap = (await createImageBitmap(
-      scratchCanvasElement as JSObject,
-      (x: 0, y: 0, width: cullRect.width.toInt(), height: cullRect.height.toInt())
-    ).toDart)! as DomImageBitmap;
+    final DomImageBitmap bitmap =
+        await createImageBitmap(scratchCanvasElement as JSObject, (
+      x: 0,
+      y: 0,
+      width: cullRect.width.toInt(),
+      height: cullRect.height.toInt(),
+    ));
     return bitmap;
   }
 
@@ -40,8 +44,8 @@ void testMain() {
   late EngineSceneView sceneView;
   late StubPictureRenderer stubPictureRenderer;
 
-  setUpAll(() {
-    ensureImplicitViewInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
   });
 
   setUp(() {
@@ -83,7 +87,8 @@ void testMain() {
     debugOverrideDevicePixelRatio(null);
   });
 
-  test('SceneView places platform view according to device-pixel ratio', () async {
+  test('SceneView places platform view according to device-pixel ratio',
+      () async {
     debugOverrideDevicePixelRatio(2.0);
 
     final PlatformView platformView = PlatformView(
@@ -113,7 +118,9 @@ void testMain() {
     debugOverrideDevicePixelRatio(null);
   });
 
-  test('SceneView always renders most recent picture and skips intermediate pictures', () async {
+  test(
+      'SceneView always renders most recent picture and skips intermediate pictures',
+      () async {
     final List<StubPicture> pictures = <StubPicture>[];
     final List<Future<void>> renderFutures = <Future<void>>[];
     for (int i = 1; i < 20; i++) {

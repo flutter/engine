@@ -26,13 +26,12 @@ abstract class EmbeddingStrategy {
     }
   }
 
-  void initialize({
-    Map<String, String>? hostElementAttributes,
-  });
+  /// The host element in which the Flutter view is embedded.
+  DomElement get hostElement;
 
-  /// Attaches the glassPane element into the hostElement.
-  void attachGlassPane(DomElement glassPaneElement);
+  /// The global event target for the Flutter view.
+  DomEventTarget get globalEventTarget;
 
-  /// Attaches the resourceHost element into the hostElement.
-  void attachResourcesHost(DomElement resourceHost, {DomElement? nextTo});
+  /// Attaches the view root element into the hostElement.
+  void attachViewRoot(DomElement rootElement);
 }
