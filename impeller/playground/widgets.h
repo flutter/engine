@@ -26,14 +26,14 @@ struct PlaygroundPoint {
   std::optional<Point> prev_mouse_pos;
   Scalar radius;
   Color color;
+  PlaygroundPoint(const PlaygroundPoint&) = delete;
+  PlaygroundPoint(PlaygroundPoint&&) = delete;
+  PlaygroundPoint& operator=(const PlaygroundPoint&) = delete;
 };
 
 Point DrawPlaygroundPoint(PlaygroundPoint& point);
 
-std::tuple<Point, Point> DrawPlaygroundLine(Point default_position_a,
-                                            Point default_position_b,
-                                            Scalar radius,
-                                            Color color_a,
-                                            Color color_b);
+std::tuple<Point, Point> DrawPlaygroundLine(PlaygroundPoint& point_a,
+                                            PlaygroundPoint& point_b);
 }  // namespace impeller
 #endif  // FLUTTER_IMPELLER_PLAYGROUND_WIDGETS_H_

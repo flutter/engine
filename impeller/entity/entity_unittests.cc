@@ -393,10 +393,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kButt demo.
     {
       Point off = Point(0, 0) * padding + margin;
-      auto [a, b] = DrawPlaygroundLine(off + a_def, off + b_def, r,
-                                       Color::Black(), Color::White());
-      auto [c, d] = DrawPlaygroundLine(off + c_def, off + d_def, r,
-                                       Color::Black(), Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::Black());
+      static PlaygroundPoint point_b(off + b_def, r, Color::White());
+      auto [a, b] = DrawPlaygroundLine(point_a, point_b);
+      static PlaygroundPoint point_c(off + c_def, r, Color::Black());
+      static PlaygroundPoint point_d(off + d_def, r, Color::White());
+      auto [c, d] = DrawPlaygroundLine(point_c, point_d);
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kButt, Join::kBevel);
     }
@@ -404,10 +406,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kSquare demo.
     {
       Point off = Point(1, 0) * padding + margin;
-      auto [a, b] = DrawPlaygroundLine(off + a_def, off + b_def, r,
-                                       Color::Black(), Color::White());
-      auto [c, d] = DrawPlaygroundLine(off + c_def, off + d_def, r,
-                                       Color::Black(), Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::Black());
+      static PlaygroundPoint point_b(off + b_def, r, Color::White());
+      auto [a, b] = DrawPlaygroundLine(point_a, point_b);
+      static PlaygroundPoint point_c(off + c_def, r, Color::Black());
+      static PlaygroundPoint point_d(off + d_def, r, Color::White());
+      auto [c, d] = DrawPlaygroundLine(point_c, point_d);
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kSquare, Join::kBevel);
     }
@@ -415,10 +419,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kRound demo.
     {
       Point off = Point(2, 0) * padding + margin;
-      auto [a, b] = DrawPlaygroundLine(off + a_def, off + b_def, r,
-                                       Color::Black(), Color::White());
-      auto [c, d] = DrawPlaygroundLine(off + c_def, off + d_def, r,
-                                       Color::Black(), Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::Black());
+      static PlaygroundPoint point_b(off + b_def, r, Color::White());
+      auto [a, b] = DrawPlaygroundLine(point_a, point_b);
+      static PlaygroundPoint point_c(off + c_def, r, Color::Black());
+      static PlaygroundPoint point_d(off + d_def, r, Color::White());
+      auto [c, d] = DrawPlaygroundLine(point_c, point_d);
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kRound, Join::kBevel);
     }
@@ -918,10 +924,12 @@ TEST_P(EntityTest, BlendingModeOptions) {
     BlendMode selected_mode = blend_mode_values[current_blend_index];
 
     Point a, b, c, d;
-    std::tie(a, b) = DrawPlaygroundLine(Point(400, 100), Point(200, 300), 20,
-                                        Color::White(), Color::White());
-    std::tie(c, d) = DrawPlaygroundLine(Point(470, 190), Point(270, 390), 20,
-                                        Color::White(), Color::White());
+    static PlaygroundPoint point_a(Point(400, 100), 20, Color::White());
+    static PlaygroundPoint point_b(Point(200, 300), 20, Color::White());
+    std::tie(a, b) = DrawPlaygroundLine(point_a, point_b);
+    static PlaygroundPoint point_c(Point(470, 190), 20, Color::White());
+    static PlaygroundPoint point_d(Point(270, 390), 20, Color::White());
+    std::tie(c, d) = DrawPlaygroundLine(point_c, point_d);
 
     bool result = true;
     result = result &&
@@ -1752,8 +1760,11 @@ TEST_P(EntityTest, RRectShadowTest) {
     }
     ImGui::End();
 
-    auto [top_left, bottom_right] = DrawPlaygroundLine(
-        Point(200, 200), Point(600, 400), 30, Color::White(), Color::White());
+    static PlaygroundPoint top_left_point(Point(200, 200), 30, Color::White());
+    static PlaygroundPoint bottom_right_point(Point(600, 400), 30,
+                                              Color::White());
+    auto [top_left, bottom_right] =
+        DrawPlaygroundLine(top_left_point, bottom_right_point);
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 
