@@ -45,7 +45,7 @@ TEST_F(NdkHelpersTest, AChoreographer32) {
       NDKHelpers::AChoreographer_getInstance(), &OnVsync32, nullptr);
 }
 #else
-TEST_F(NdkHelpersTest, AChoreographer32_NotSupported) {
+TEST_F(NdkHelpersTest, AChoreographer32NotSupported) {
   if (android_get_device_api_level() >= 29) {
     GTEST_SKIP() << "This test is for less than API 29.";
   }
