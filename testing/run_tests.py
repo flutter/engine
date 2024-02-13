@@ -1012,20 +1012,27 @@ class DirectoryChange():
   def __exit__(self, exception_type, exception_value, exception_traceback):
     os.chdir(self.old_cwd)
 
+
 def generate_dir_listing(dir_path: str) -> str:
   listing = os.listdir(dir_path)
   listing.sort()
   return reduce(lambda a, b: a + "\n" + b, listing)
 
+
 def str_replace_range(instr: str, start: int, end: int, replacement: str) -> str:
   return instr[:start] + replacement + instr[end:]
+
 
 def redirect_patch(patch: str) -> str:
   "Makes a diff point its output file to its input file."
   input_path = re.search(r'^--- a(.*)', patch, re.MULTILINE)
   output_path = re.search(r'^\+\+\+ b(.*)', patch, re.MULTILINE)
-  return str_replace_range(patch, output_path.span(1)[0],
-                           output_path.span(1)[1], input_path.group(1))
+  return str_replace_range(
+      patch,
+      output_path.span(1)[0],
+      output_path.span(1)[1], input_path.group(1)
+  )
+
 
 def run_impeller_golden_tests(build_dir: str):
   """
@@ -1046,9 +1053,13 @@ def run_impeller_golden_tests(build_dir: str):
       dir_listing = generate_dir_listing(temp_dir)
       dir_listing_file.write(dir_listing)
       golden_path = os.path.join("testing", "impeller_golden_tests_output.txt")
-      diff_result = subprocess.run(f'git diff -p {golden_path} {dir_listing_file.name}',
-                                   check=False, shell=True, stdout=subprocess.PIPE,
-                                   cwd=os.path.join(BUILDROOT_DIR, "flutter"))
+      diff_result = subprocess.run(
+          f'git diff -p {golden_path} {dir_listing_file.name}',
+          check=False,
+          shell=True,
+          stdout=subprocess.PIPE,
+          cwd=os.path.join(BUILDROOT_DIR, "flutter")
+      )
       if diff_result.returncode != 0:
         print_divider('<')
         print(f'Unexpected diff in {golden_path}, use `git apply` with the following patch.')
