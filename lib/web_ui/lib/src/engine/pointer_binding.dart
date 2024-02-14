@@ -497,6 +497,7 @@ abstract class _BaseAdapter {
 
   final List<_Listener> _listeners = <_Listener>[];
   DomWheelEvent? _lastWheelEvent;
+  DomWheelEvent? _trackpadScrollStartWheelEvent;
   bool _lastWheelEventWasTrackpad = false;
 
   DomEventTarget get _viewTarget => _view.dom.rootElement;
@@ -629,6 +630,27 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     return true;
   }
 
+  bool _isLockedHorizontally(DomWheelEvent event) {
+    double diff = event.timeStamp - _lastWheelEvent.timeStamp;
+
+    if (diff < 10 * 1000) {
+      return _trackpadScrollStartWheelEvent.deltaX > _trackpadScrollStartWheelEvent.deltaY;
+    }
+    _trackpadScrollStartWheelEvent = event;
+    return event.deltaX > event.deltaY;
+  }
+
+  bool _isLockedVertically(DomWheelEvent event) {
+    DomWheelEvent trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
+    double diff = event.timeStamp - _lastWheelEvent.timeStamp;
+
+    if (diff < 10 * 1000 && trackpadScrollStartWheelEvent != null) {
+      return _trackpadScrollStartWheelEvent.deltaX < _trackpadScrollStartWheelEvent.deltaY;
+    }
+    _trackpadScrollStartWheelEvent = event;
+    return event.deltaX < event.deltaY;
+  }
+
   List<ui.PointerData> _convertWheelEventToPointerData(
     DomWheelEvent event
   ) {
@@ -643,10 +665,17 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       deviceId = _trackpadDeviceId;
     }
 
-    // Flutter only supports pixel scroll delta. Convert deltaMode values
-    // to pixels.
     double deltaX = event.deltaX;
     double deltaY = event.deltaY;
+
+    if (_isTrackpadEvent(event) && _isLockedVertically(event)) {
+      deltaX = 0;
+    } else if (_isTrackpadEvent(event) && _isLockedVertically(event)) {
+      deltaY = 0;
+    }
+
+    // Flutter only supports pixel scroll delta. Convert deltaMode values
+    // to pixels.
     switch (event.deltaMode.toInt()) {
       case domDeltaLine:
         _defaultScrollLineHeight ??= _computeDefaultScrollLineHeight();
