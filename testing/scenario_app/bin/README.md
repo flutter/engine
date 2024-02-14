@@ -19,10 +19,7 @@ by class name, which can be useful to verify the setup.
 For example, to run the `EngineLaunchE2ETest` test:
 
 ```sh
-dart bin/android_integration_tests.dart \
-  --adb ../third_party/android_tools/sdk/platform-tools/adb \
-  --out-dir ../out/android_debug_unopt_arm64 \
-  --smoke-test dev.flutter.scenarios.EngineLaunchE2ETest
+dart bin/android_integration_tests.dart --smoke-test dev.flutter.scenarios.EngineLaunchE2ETest
 ```
 
 ## Additional arguments
