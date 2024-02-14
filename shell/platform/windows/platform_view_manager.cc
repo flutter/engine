@@ -28,7 +28,7 @@ PlatformViewManager::PlatformViewManager(TaskRunner* task_runner,
               std::get<std::string>(args.find(EncodableValue("type"))->second);
           const auto& id =
               std::get<std::int32_t>(args.find(EncodableValue("id"))->second);
-          QueuePlatformViewCreation(type, id);
+          QueuePlatformViewCreation(id, type);
         }
         result->Success();
       });
@@ -36,8 +36,8 @@ PlatformViewManager::PlatformViewManager(TaskRunner* task_runner,
 
 PlatformViewManager::~PlatformViewManager() {}
 
-void PlatformViewManager::QueuePlatformViewCreation(std::string_view type_name,
-                                                    PlatformViewId id) {}
+void PlatformViewManager::QueuePlatformViewCreation(PlatformViewId id,
+                                                    std::string_view type_name) {}
 
 void PlatformViewManager::InstantiatePlatformView(PlatformViewId id) {}
 

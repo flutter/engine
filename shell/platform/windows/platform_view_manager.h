@@ -35,8 +35,8 @@ class PlatformViewManager {
 
   // Add a new platform view instance to be lazily instantiated when it is next
   // composited.
-  virtual void QueuePlatformViewCreation(std::string_view type_name,
-                                         PlatformViewId id);
+  virtual void QueuePlatformViewCreation(PlatformViewId id,
+                                         std::string_view type_name);
 
   // Create a queued platform view instance.
   void InstantiatePlatformView(PlatformViewId id);
