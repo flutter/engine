@@ -96,9 +96,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_debug_arm64",
-                        "--product",
-                        "terminal.qemu-arm64"
+                        "fuchsia_debug_arm64"
                     ]
                 }
             ]
