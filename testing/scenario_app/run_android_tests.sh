@@ -33,7 +33,10 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../../.."; pwd -P)"
+SRC_DIR="$(
+  cd "$SCRIPT_DIR/../../.."
+  pwd -P
+)"
 OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
 
 # Dump the logcat and symbolize stack traces before exiting.
@@ -65,4 +68,5 @@ cd $SCRIPT_DIR
 "$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart run \
   "$SCRIPT_DIR"/bin/android_integration_tests.dart \
   --adb="$SRC_DIR"/third_party/android_tools/sdk/platform-tools/adb \
-  --out-dir="$OUT_DIR"
+  --out-dir="$OUT_DIR" \
+  "$@"
