@@ -169,6 +169,43 @@ base class EngineFlutterView implements ui.FlutterView {
     return _physicalSize ??= _computePhysicalSize();
   }
 
+  /// Resizes the `rootElement` to `newPhysicalSize` by changing its CSS style.
+  ///
+  /// This is used by the [render] method, when the framework sends new dimensions
+  /// for the current Flutter View.
+  ///
+  /// Dimensions from the framework are constrained by the [physicalConstraints]
+  /// that can be configured by the user when adding a view to the app.
+  ///
+  /// In practice, this method changes the size of the `rootElement` of the app
+  /// so it can push/shrink inside its `hostElement`. That way, a Flutter app
+  /// can change the layout of the container page.
+  ///
+  /// ```
+  /// <p>Some HTML content...</p>
+  /// +--- (div) hostElement ------------------------------------+
+  /// | +--- rootElement ---------------------+                  |
+  /// | |                                     |                  |
+  /// | |                                     |    container     |
+  /// | |    size applied to *this*           |    must be able  |
+  /// | |                                     |    to reflow     |
+  /// | |                                     |                  |
+  /// | +-------------------------------------+                  |
+  /// +----------------------------------------------------------+
+  /// <p>More HTML content...</p>
+  /// ```
+  ///
+  /// The `hostElement` needs to be styled in a way that allows its size to flow
+  /// with its contents. Things like `max-height: 100px; overflow: hidden` will
+  /// work as expected (by hiding the overflowing part of the flutter app), but
+  /// if in that case flutter is not made aware of that max-height with
+  /// `physicalConstraints`, it will end up rendering more pixels that are visible
+  /// on the screen, with a possible hit to performance.
+  ///
+  /// TL;DR: The `viewConstraints` of a Flutter view, must take into consideration
+  /// the CSS box-model restrictions imposed on its `hostElement` (especially when
+  /// hiding `overflow`). Flutter does not attempt to interpret the styles of
+  /// `hostElement` to compute its `physicalConstraints`, only its current size.
   void resize(ui.Size newPhysicalSize) {
     // The browser uses CSS, and CSS operates in logical sizes.
     final ui.Size logicalSize = newPhysicalSize / devicePixelRatio;

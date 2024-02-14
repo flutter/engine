@@ -28,7 +28,6 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
   @JS('viewConstraints')
   external JsViewConstraints? get _viewConstraints;
   JsViewConstraints? get viewConstraints {
-    // Assert constraints are valid?
     return _viewConstraints;
   }
 
