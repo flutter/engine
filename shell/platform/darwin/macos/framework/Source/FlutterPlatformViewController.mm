@@ -127,6 +127,7 @@
 
 - (void)handleAcceptGesture:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSDictionary<NSString*, id>* args = [call arguments];
+  NSAssert(args && args[@"id"], @"id argument is required");
   int64_t viewId = [args[@"id"] longLongValue];
   if (_platformViews.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
@@ -141,6 +142,7 @@
 
 - (void)handleRejectGesture:(FlutterMethodCall*)call result:(FlutterResult)result {
   NSDictionary<NSString*, id>* args = [call arguments];
+  NSAssert(args && args[@"id"], @"id argument is required");
   int64_t viewId = [args[@"id"] longLongValue];
   if (_platformViews.count(viewId) == 0) {
     result([FlutterError errorWithCode:@"unknown_view"
