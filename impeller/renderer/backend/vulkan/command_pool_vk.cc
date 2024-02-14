@@ -159,7 +159,7 @@ void CommandPoolVK::Destroy() {
 using CommandPoolMap =
     std::unordered_map<uint64_t, std::shared_ptr<CommandPoolVK>>;
 
-// Lifecycle:
+// CommandPoolVK Lifecycle:
 // 1. End of frame will reset the command pool (clearing this on a thread).
 //    There will still be references to the command pool from the uncompleted
 //    command buffers.
