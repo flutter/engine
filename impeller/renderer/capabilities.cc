@@ -113,7 +113,8 @@ class StandardCapabilities final : public Capabilities {
         supports_device_transient_textures_(supports_device_transient_textures),
         default_color_format_(default_color_format),
         default_stencil_format_(default_stencil_format),
-        default_depth_stencil_format_(default_depth_stencil_format) {}
+        default_depth_stencil_format_(default_depth_stencil_format),
+        default_glyph_atlas_format_(default_glyph_atlas_format) {}
 
   friend class CapabilitiesBuilder;
 
