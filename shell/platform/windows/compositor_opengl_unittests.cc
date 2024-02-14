@@ -113,7 +113,7 @@ class CompositorOpenGLTest : public WindowsTest {
 TEST_F(CompositorOpenGLTest, CreateBackingStore) {
   UseHeadlessEngine();
 
-  auto compositor = CompositorOpenGL{nullptr, engine(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
@@ -127,7 +127,7 @@ TEST_F(CompositorOpenGLTest, CreateBackingStore) {
 TEST_F(CompositorOpenGLTest, InitializationFailure) {
   UseHeadlessEngine();
 
-  auto compositor = CompositorOpenGL{nullptr, engine(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
@@ -140,7 +140,7 @@ TEST_F(CompositorOpenGLTest, InitializationFailure) {
 TEST_F(CompositorOpenGLTest, Present) {
   UseEngineWithView();
 
-  auto compositor = CompositorOpenGL{nullptr, engine(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
@@ -164,7 +164,7 @@ TEST_F(CompositorOpenGLTest, Present) {
 TEST_F(CompositorOpenGLTest, PresentEmpty) {
   UseEngineWithView();
 
-  auto compositor = CompositorOpenGL{nullptr, engine(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   // The context will be bound twice: first to initialize the compositor, second
   // to clear the surface.
@@ -177,7 +177,7 @@ TEST_F(CompositorOpenGLTest, PresentEmpty) {
 TEST_F(CompositorOpenGLTest, HeadlessPresentIgnored) {
   UseHeadlessEngine();
 
-  auto compositor = CompositorOpenGL{nullptr, engine(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
@@ -199,7 +199,7 @@ TEST_F(CompositorOpenGLTest, HeadlessPresentIgnored) {
 TEST_F(CompositorOpenGLTest, NoSurfaceIgnored) {
   UseEngineWithView(/*add_surface = */ false);
 
-  auto compositor = CompositorOpenGL{nullptr, engine(), kMockResolver};
+  auto compositor = CompositorOpenGL{engine(), kMockResolver};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};

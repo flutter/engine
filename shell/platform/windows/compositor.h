@@ -7,8 +7,6 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 
-#include "flutter/shell/platform/windows/platform_view_manager.h"
-
 namespace flutter {
 
 // Enables the Flutter engine to render content on Windows.
@@ -21,7 +19,6 @@ namespace flutter {
 // Platform views are not yet supported.
 class Compositor {
  public:
-  Compositor(PlatformViewManager* manager) : platform_view_manager_(manager) {}
   virtual ~Compositor() = default;
 
   // Creates a backing store used for rendering Flutter content.
@@ -35,10 +32,6 @@ class Compositor {
 
   // Present Flutter content and platform views onto the view.
   virtual bool Present(const FlutterLayer** layers, size_t layers_count) = 0;
-
- protected:
-  // Pointer to the platform view manager owned by the engine.
-  PlatformViewManager* platform_view_manager_;
 };
 
 }  // namespace flutter

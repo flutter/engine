@@ -15,8 +15,7 @@ namespace flutter {
 // rasterization and bitmaps.
 class CompositorSoftware : public Compositor {
  public:
-  CompositorSoftware(PlatformViewManager* manager,
-                     FlutterWindowsEngine* engine);
+  CompositorSoftware(FlutterWindowsEngine* engine);
 
   /// |Compositor|
   bool CreateBackingStore(const FlutterBackingStoreConfig& config,

@@ -76,7 +76,7 @@ class CompositorSoftwareTest : public WindowsTest {
 TEST_F(CompositorSoftwareTest, CreateBackingStore) {
   UseHeadlessEngine();
 
-  auto compositor = CompositorSoftware{nullptr, engine()};
+  auto compositor = CompositorSoftware{engine()};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
@@ -88,7 +88,7 @@ TEST_F(CompositorSoftwareTest, CreateBackingStore) {
 TEST_F(CompositorSoftwareTest, Present) {
   UseEngineWithView();
 
-  auto compositor = CompositorSoftware{nullptr, engine()};
+  auto compositor = CompositorSoftware{engine()};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
@@ -109,7 +109,7 @@ TEST_F(CompositorSoftwareTest, Present) {
 TEST_F(CompositorSoftwareTest, PresentEmpty) {
   UseEngineWithView();
 
-  auto compositor = CompositorSoftware{nullptr, engine()};
+  auto compositor = CompositorSoftware{engine()};
 
   EXPECT_CALL(*view(), ClearSoftwareBitmap).WillOnce(Return(true));
   EXPECT_TRUE(compositor.Present(nullptr, 0));
@@ -118,7 +118,7 @@ TEST_F(CompositorSoftwareTest, PresentEmpty) {
 TEST_F(CompositorSoftwareTest, HeadlessPresentIgnored) {
   UseHeadlessEngine();
 
-  auto compositor = CompositorSoftware{nullptr, engine()};
+  auto compositor = CompositorSoftware{engine()};
 
   FlutterBackingStoreConfig config = {};
   FlutterBackingStore backing_store = {};
