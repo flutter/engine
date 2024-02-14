@@ -164,61 +164,48 @@ TEST(EntityGeometryTest, StrokePathGeometryTransformOfLine) {
   };
 
   EXPECT_SOLID_VERTICES_NEAR(vertices, expected);
-}
 
-TEST(EntityGeometryTest, StrokePathGeometryUVTransformOfLine) {
-  auto path =
-      PathBuilder().AddLine(Point(100, 100), Point(200, 100)).TakePath();
-  auto points = std::make_unique<std::vector<Point>>();
-  auto polyline =
-      path.CreatePolyline(1.0f, std::move(points),
-                          [&points](Path::Polyline::PointBufferPtr reclaimed) {
-                            points = std::move(reclaimed);
-                          });
+  {
+    auto uv_vertices =
+        ImpellerEntityUnitTestAccessor::GenerateSolidStrokeVerticesUV(
+            polyline, 10.0f, 10.0f, Join::kBevel, Cap::kButt, 1.0,  //
+            Point(50.0f, 40.0f), Size(20.0f, 40.0f),
+            Matrix::MakeScale({8.0f, 4.0f, 1.0f}));
+    // uvx = ((x * 8) - 50) / 20
+    // uvy = ((y * 4) - 40) / 40
+    auto uv = [](const Point& p) {
+      return Point(((p.x * 8.0f) - 50.0f) / 20.0f,
+                   ((p.y * 4.0f) - 40.0f) / 40.0f);
+    };
+    std::vector<TextureFillVertexShader::PerVertexData> uv_expected;
+    for (size_t i = 0; i < expected.size(); i++) {
+      auto p = expected[i].position;
+      uv_expected.push_back({.position = p, .texture_coords = uv(p)});
+    }
 
-  auto vertices = ImpellerEntityUnitTestAccessor::GenerateSolidStrokeVerticesUV(
-      polyline, 10.0f, 10.0f, Join::kBevel, Cap::kButt, 1.0,  //
-      Point(50.0f, 40.0f), Size(20.0f, 40.0f),
-      Matrix::MakeScale({8.0f, 4.0f, 1.0f}));
+    EXPECT_TEXTURE_VERTICES_NEAR(uv_vertices, uv_expected);
+  }
 
-  // uvx = (x - 50) / 20 * 8
-  // uvy = (y - 40) / 40 * 4
-  std::vector<TextureFillVertexShader::PerVertexData> expected = {
-      {
-          .position = Point(100.0f, 105.0f),
-          .texture_coords = Point(20.0f, 6.5f),
-      },
-      {
-          .position = Point(100.0f, 95.0f),
-          .texture_coords = Point(20.0f, 5.5f),
-      },
-      {
-          .position = Point(100.0f, 105.0f),
-          .texture_coords = Point(20.0f, 6.5f),
-      },
-      {
-          .position = Point(100.0f, 95.0f),
-          .texture_coords = Point(20.0f, 5.5f),
-      },
-      {
-          .position = Point(200.0f, 105.0f),
-          .texture_coords = Point(60.0f, 6.5f),
-      },
-      {
-          .position = Point(200.0f, 95.0f),
-          .texture_coords = Point(60.0f, 5.5f),
-      },
-      {
-          .position = Point(200.0f, 105.0f),
-          .texture_coords = Point(60.0f, 6.5f),
-      },
-      {
-          .position = Point(200.0f, 95.0f),
-          .texture_coords = Point(60.0f, 5.5f),
-      },
-  };
+  {
+    auto uv_vertices =
+        ImpellerEntityUnitTestAccessor::GenerateSolidStrokeVerticesUV(
+            polyline, 10.0f, 10.0f, Join::kBevel, Cap::kButt, 1.0,  //
+            Point(50.0f, 40.0f), Size(20.0f, 40.0f),
+            Matrix::MakeTranslation({8.0f, 4.0f}));
+    // uvx = ((x + 8) - 50) / 20
+    // uvy = ((y + 4) - 40) / 40
+    auto uv = [](const Point& p) {
+      return Point(((p.x + 8.0f) - 50.0f) / 20.0f,
+                   ((p.y + 4.0f) - 40.0f) / 40.0f);
+    };
+    std::vector<TextureFillVertexShader::PerVertexData> uv_expected;
+    for (size_t i = 0; i < expected.size(); i++) {
+      auto p = expected[i].position;
+      uv_expected.push_back({.position = p, .texture_coords = uv(p)});
+    }
 
-  EXPECT_TEXTURE_VERTICES_NEAR(vertices, expected);
+    EXPECT_TEXTURE_VERTICES_NEAR(uv_vertices, uv_expected);
+  }
 }
 
 }  // namespace testing
