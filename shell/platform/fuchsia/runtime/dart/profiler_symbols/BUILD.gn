@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//flutter/build/dart/dart.gni")
 import("//flutter/tools/fuchsia/clang.gni")
+
 import("$dart_src/build/dart/dart_action.gni")
 
 template("generate_dart_profiler_symbols") {
