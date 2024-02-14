@@ -192,7 +192,7 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
                      const char* file_name,
                      const Mapping& data) {
   if (file_name == nullptr || data.GetMapping() == nullptr) {
-    FML_LOG(ERROR) << "Invalid file name or data";
+    FML_DLOG(ERROR) << "Invalid file name or data";
     return false;
   }
 
@@ -203,12 +203,12 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
   auto temp_file = OpenFile(base_directory, temp_file_name.c_str(), true,
                             FilePermission::kReadWrite);
   if (!temp_file.is_valid()) {
-    FML_LOG(ERROR) << "Failed to open temp file: " << strerror(errno);
+    FML_DLOG(ERROR) << "Failed to open temp file: " << strerror(errno);
     return false;
   }
 
   if (!TruncateFile(temp_file, data.GetSize())) {
-    FML_LOG(ERROR) << "Failed to truncate temp file: " << strerror(errno);
+    FML_DLOG(ERROR) << "Failed to truncate temp file: " << strerror(errno);
     return false;
   }
 
@@ -237,7 +237,14 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
   auto success = ::renameat(base_directory.get(), temp_file_name.c_str(),
                             base_directory.get(), file_name) == 0;
   if (!success) {
-    FML_DLOG(ERROR) << "Failed to rename: " << strerror(errno);
+    FML_DLOG(ERROR) << "Failed to rename: " << strerror(errno) << " "
+                    << temp_file_name << " -> " << file_name << " in directory "
+                    << base_directory.get();
+
+    // Check if the base directory actually exists.
+    if (!FileExists(base_directory, ".")) {
+      FML_DLOG(ERROR) << "Base directory does not exist";
+    }
   }
   return success;
 }
