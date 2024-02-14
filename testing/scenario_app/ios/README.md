@@ -4,12 +4,17 @@ As mentioned in the [top-level README](../README.md), this directory contains
 the iOS-specific native code and tests for the [scenario app](../lib). To run
 the tests, you will need to build the engine with the appropriate configuration.
 
-For example, `ios_debug_sim_unopt` or `ios_debug_sim_unopt_arm64` was built,
+For example, after building `ios_debug_sim_unopt` (to run on Intel Macs) or `ios_debug_sim_unopt_arm64` (to run on ARM Macs),
 run:
 
 ```sh
 # From the root of the engine repository
-$ ./testing/run_ios_tests.sh
+$ ./testing/run_ios_tests.sh ios_debug_sim_unopt
+```
+or 
+```sh
+# From the root of the engine repository
+$ ./testing/run_ios_tests.sh ios_debug_sim_unopt_arm64
 ```
 
 To run or debug in Xcode, open the xcodeproj file located in
