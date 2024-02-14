@@ -49,9 +49,9 @@ class PositionUVWriter {
   PositionUVWriter(Point texture_origin,
                    Size texture_coverage,
                    const Matrix& effect_transform)
-      : texture_origin_(texture_origin),
-        texture_coverage_(texture_coverage),
-        effect_transform_(effect_transform) {}
+      : effect_transform_(effect_transform  //
+                              .Scale(1.0f / texture_coverage)
+                              .Translate(-texture_origin)) {}
 
   const std::vector<TextureFillVertexShader::PerVertexData>& GetData() const {
     return data_;
@@ -60,14 +60,12 @@ class PositionUVWriter {
   void AppendVertex(const Point& point) {
     data_.emplace_back(TextureFillVertexShader::PerVertexData{
         .position = point,
-        .texture_coords =
-            effect_transform_ * (point - texture_origin_) / texture_coverage_});
+        .texture_coords = effect_transform_ * point,
+    });
   }
 
  private:
   std::vector<TextureFillVertexShader::PerVertexData> data_ = {};
-  const Point texture_origin_;
-  const Size texture_coverage_;
   const Matrix effect_transform_;
 };
 
