@@ -8,9 +8,7 @@ captured and compared using Skia Gold (if available, for example on CI).
 ## Usage
 
 ```sh
-dart bin/android_integration_tests.dart \
-  --adb ../third_party/android_tools/sdk/platform-tools/adb \
-  --out-dir ../out/android_debug_unopt_arm64
+dart bin/android_integration_tests.dart
 ```
 
 ## Debugging
@@ -28,6 +26,12 @@ dart bin/android_integration_tests.dart \
 ```
 
 ## Additional arguments
+
+- `--adb`: The path to the `adb` tool. Defaults to
+  `third_party/android_tools/sdk/platform-tools/adb`.
+
+- `--out-dir`: The directory containing the build artifacts. Defaults to the
+  last updated build directory in `out/` that starts with `android_`.
 
 - `--use-skia-gold`: Use Skia Gold to compare screenshots. Defaults to true
   when running on CI, and false otherwise (i.e. when running locally). If
