@@ -7272,6 +7272,7 @@ ORIGIN: ../../../flutter/shell/platform/windows/flutter_window.h + ../../../flut
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_engine.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_engine.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/windows/flutter_windows_view.cc + ../../../flutter/LICENSE
@@ -10161,6 +10162,7 @@ FILE: ../../../flutter/shell/platform/windows/flutter_window.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_engine.h
+FILE: ../../../flutter/shell/platform/windows/flutter_windows_internal.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_texture_registrar.h
 FILE: ../../../flutter/shell/platform/windows/flutter_windows_view.cc
