@@ -28,7 +28,7 @@ and run [`./ci/firebase_testlab.py`](../../ci/firebase_testlab.py), or pass
 $ ./ci/firebase_testlab.py --variant android_debug_arm64
 ```
 
-> ![NOTE]
+> [!NOTE]
 > These instructions were not verified at the time of writing/refactoring.
 
 ## Adding a New Scenario
