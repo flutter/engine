@@ -17,17 +17,6 @@ import '../engine.dart';
 /// This may be overridden in tests, for example, to pump fake frames.
 ui.VoidCallback? scheduleFrameCallback;
 
-/// Signature of the function to schedule a warm up frame with the specified
-/// frame callbacks.
-typedef ScheduleWarmUpFrameCallback = void Function(ui.VoidCallback beginFrameCallback, ui.VoidCallback drawFrameCallback);
-
-/// Requests that the framework tries to render a frame immediately.
-///
-/// Since this will probably call [PlatformWindow.render] outside of an
-/// animation frame, the render will not be actually presented, but just to warm
-/// up the framework.
-ScheduleWarmUpFrameCallback? scheduleWarmUpFrameCallback;
-
 /// Signature of functions added as a listener to high contrast changes
 typedef HighContrastListener = void Function(bool enabled);
 typedef _KeyDataResponseCallback = void Function(bool handled);
@@ -783,11 +772,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  void scheduleWarmUpFrame(ui.VoidCallback beginFrameCallback, ui.VoidCallback drawFrameCallback) {
-    if (scheduleWarmUpFrameCallback == null) {
-      throw Exception('scheduleWarmUpFrameCallback must be initialized first.');
-    }
-    scheduleWarmUpFrameCallback!(beginFrameCallback, drawFrameCallback);
+  void scheduleWarmUpFrame({required ui.VoidCallback beginFrame, required ui.VoidCallback drawFrame}) {
+    Timer.run(beginFrame);
+    // TODO(yjbanov): technically Flutter flushes microtasks between
+    //                onBeginFrame and onDrawFrame. We don't, which hasn't been
+    //                an issue yet, but eventually we'll have to implement it
+    //                properly. (Same TODO as in `initializeEngineServices` in
+    //                initialization.dart).
+    Timer.run(drawFrame);
   }
 
   /// Updates the application's rendering on the GPU with the newly provided
