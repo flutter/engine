@@ -74,16 +74,7 @@ bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
   native_window_ = std::move(window);
   bool success = native_window_ && native_window_->IsValid();
   if (success) {
-    auto surface =
-        surface_context_vk_->CreateAndroidSurface(native_window_->handle());
-
-    if (!surface) {
-      FML_LOG(ERROR) << "Could not create a vulkan surface.";
-      return false;
-    }
-    auto size = native_window_->GetSize();
-    return surface_context_vk_->SetWindowSurface(
-        std::move(surface), impeller::ISize{size.width(), size.height()});
+    return surface_context_vk_->SetWindowSurface(native_window_->handle());
   }
 
   native_window_ = nullptr;

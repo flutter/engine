@@ -13,16 +13,16 @@
 
 namespace impeller {
 
-class SwapchainImageVK final : public TextureSourceVK {
+class SwapchainImageVK : public TextureSourceVK {
  public:
   SwapchainImageVK(TextureDescriptor desc,
                    const vk::Device& device,
                    vk::Image image);
 
   // |TextureSourceVK|
-  ~SwapchainImageVK() override;
+  virtual ~SwapchainImageVK() override;
 
-  bool IsValid() const;
+  virtual bool IsValid() const;
 
   PixelFormat GetPixelFormat() const;
 

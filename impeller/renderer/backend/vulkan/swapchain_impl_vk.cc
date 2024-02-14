@@ -121,15 +121,21 @@ std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
     const ISize& size,
     bool enable_msaa,
     vk::SwapchainKHR old_swapchain) {
-  return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
+  return std::shared_ptr<SwapchainImplVK>(new DefaultSwapchainImplVK(
       context, std::move(surface), size, enable_msaa, old_swapchain));
 }
 
 SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
-                                 vk::UniqueSurfaceKHR surface,
-                                 const ISize& size,
-                                 bool enable_msaa,
-                                 vk::SwapchainKHR old_swapchain) {
+                                 const ISize& size)
+    : context_(context), size_(size) {}
+
+DefaultSwapchainImplVK::DefaultSwapchainImplVK(
+    const std::shared_ptr<Context>& context,
+    vk::UniqueSurfaceKHR surface,
+    const ISize& size,
+    bool enable_msaa,
+    vk::SwapchainKHR old_swapchain)
+    : SwapchainImplVK(context, size) {
   if (!context) {
     VALIDATION_LOG << "Cannot create a swapchain without a context.";
     return;
@@ -268,20 +274,26 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   images_ = std::move(swapchain_images);
   synchronizers_ = std::move(synchronizers);
   current_frame_ = synchronizers_.size() - 1u;
-  size_ = size;
   enable_msaa_ = enable_msaa;
   is_valid_ = true;
 }
 
-SwapchainImplVK::~SwapchainImplVK() {
+std::shared_ptr<SwapchainImplVK> DefaultSwapchainImplVK::RecreateSwapchain() {
+  auto [surface, old_swapchain] = DestroySwapchain();
+
+  return SwapchainImplVK::Create(GetContext(),        //
+                                 std::move(surface),  //
+                                 GetSize(),           //
+                                 enable_msaa_,        //
+                                 *old_swapchain       //
+  );
+}
+
+DefaultSwapchainImplVK::~DefaultSwapchainImplVK() {
   DestroySwapchain();
 }
 
-const ISize& SwapchainImplVK::GetSize() const {
-  return size_;
-}
-
-bool SwapchainImplVK::IsValid() const {
+bool DefaultSwapchainImplVK::IsValid() const {
   return is_valid_;
 }
 
@@ -293,7 +305,7 @@ void SwapchainImplVK::WaitIdle() const {
 }
 
 std::pair<vk::UniqueSurfaceKHR, vk::UniqueSwapchainKHR>
-SwapchainImplVK::DestroySwapchain() {
+DefaultSwapchainImplVK::DestroySwapchain() {
   WaitIdle();
   is_valid_ = false;
   synchronizers_.clear();
@@ -302,15 +314,11 @@ SwapchainImplVK::DestroySwapchain() {
   return {std::move(surface_), std::move(swapchain_)};
 }
 
-vk::Format SwapchainImplVK::GetSurfaceFormat() const {
+vk::Format DefaultSwapchainImplVK::GetSurfaceFormat() const {
   return surface_format_;
 }
 
-std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
-  return context_.lock();
-}
-
-SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
+SwapchainImplVK::AcquireResult DefaultSwapchainImplVK::AcquireNextDrawable() {
   auto context_strong = context_.lock();
   if (!context_strong) {
     return SwapchainImplVK::AcquireResult{};
@@ -380,8 +388,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
-                              uint32_t index) {
+bool DefaultSwapchainImplVK::Present(
+    const std::shared_ptr<SwapchainImageVK>& image,
+    uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
     return false;

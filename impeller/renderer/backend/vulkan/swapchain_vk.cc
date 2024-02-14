@@ -7,8 +7,27 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
+#if FML_OS_ANDROID
+#include "impeller/renderer/backend/vulkan/android_swapchain_vk.h"
+#endif  // FML_OS_ANDROID
 
 namespace impeller {
+
+#if FML_OS_ANDROID
+std::shared_ptr<SwapchainVK> SwapchainVK::Create(
+    const std::shared_ptr<Context>& context,
+    ANativeWindow* window) {
+  ISize size{ANativeWindow_getWidth(window), ANativeWindow_getHeight(window)};
+
+  auto impl = AndroidSwapchainVK::Create(window, context, size);
+  if (!impl || !impl->IsValid()) {
+    VALIDATION_LOG << "Failed to create Android SwapchainVK implementation.";
+    return nullptr;
+  }
+  return std::shared_ptr<SwapchainVK>(
+      new SwapchainVK(std::move(impl), size, true));
+}
+#endif  // FML_OS_ANDROID
 
 std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     const std::shared_ptr<Context>& context,
@@ -58,15 +77,8 @@ std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
 
   // This swapchain implementation indicates that it is out of date. Tear it
   // down and make a new one.
-  auto context = impl_->GetContext();
-  auto [surface, old_swapchain] = impl_->DestroySwapchain();
+  auto new_impl = impl_->RecreateSwapchain();
 
-  auto new_impl = SwapchainImplVK::Create(context,             //
-                                          std::move(surface),  //
-                                          size_,               //
-                                          enable_msaa_,        //
-                                          *old_swapchain       //
-  );
   if (!new_impl || !new_impl->IsValid()) {
     VALIDATION_LOG << "Could not update swapchain.";
     // The old swapchain is dead because we took its surface. This is

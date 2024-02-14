@@ -79,7 +79,7 @@ class SurfaceContextVK : public Context,
   void UpdateSurfaceSize(const ISize& size) const;
 
 #ifdef FML_OS_ANDROID
-  vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;
+  [[nodiscard]] bool SetWindowSurface(ANativeWindow* window);
 #endif  // FML_OS_ANDROID
 
   const vk::Device& GetDevice() const;

@@ -10,6 +10,12 @@
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/surface.h"
 
+#if FML_OS_ANDROID
+#include <android/native_window.h>
+
+#include "impeller/renderer/backend/vulkan/android_swapchain_vk.h"
+#endif  // FML_OS_ANDROID
+
 namespace impeller {
 
 SurfaceContextVK::SurfaceContextVK(const std::shared_ptr<ContextVK>& parent)
@@ -97,23 +103,24 @@ void SurfaceContextVK::UpdateSurfaceSize(const ISize& size) const {
 
 #ifdef FML_OS_ANDROID
 
-vk::UniqueSurfaceKHR SurfaceContextVK::CreateAndroidSurface(
-    ANativeWindow* window) const {
+bool SurfaceContextVK::SetWindowSurface(ANativeWindow* window) {
   if (!parent_->GetInstance()) {
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+    VALIDATION_LOG << "Must have a parent instance to set the window "
+                      "surface.";
+    return false;
   }
 
-  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
-  auto surface_res =
-      parent_->GetInstance().createAndroidSurfaceKHRUnique(create_info);
-
-  if (surface_res.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create Android surface, error: "
-                   << vk::to_string(surface_res.result);
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  auto swapchain = SwapchainVK::Create(parent_, window);
+  if (!swapchain) {
+    VALIDATION_LOG << "Could not create swapchain.";
+    return false;
   }
-
-  return std::move(surface_res.value);
+  if (!swapchain->IsValid()) {
+    VALIDATION_LOG << "Could not create valid swapchain.";
+    return false;
+  }
+  swapchain_ = std::move(swapchain);
+  return true;
 }
 
 #endif  // FML_OS_ANDROID

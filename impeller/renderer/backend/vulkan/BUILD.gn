@@ -33,8 +33,6 @@ impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
     "allocator_vk.h",
-    "android_hardware_buffer_texture_source_vk.cc",
-    "android_hardware_buffer_texture_source_vk.h",
     "barrier_vk.cc",
     "barrier_vk.h",
     "blit_command_vk.cc",
@@ -116,6 +114,19 @@ impeller_component("vulkan") {
     "vma.cc",
     "vma.h",
   ]
+
+  if (is_android) {
+    sources += [
+      "android_hardware_buffer_swapchain_image_vk.cc",
+      "android_hardware_buffer_swapchain_image_vk.h",
+      "android_hardware_buffer_texture_source_vk.cc",
+      "android_hardware_buffer_texture_source_vk.h",
+      "android_swapchain_vk.cc",
+      "android_swapchain_vk.h",
+    ]
+
+    libs = [ "android" ]
+  }
 
   public_deps = [
     "../../:renderer",
