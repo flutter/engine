@@ -305,4 +305,28 @@ static const CGFloat kCompareAccuracy = 0.001;
   XCTAssertFalse(overlayView1.exists);
 }
 
+// Platform view surrounded by adjacent layers on each side should not create any overlays.
+//      +----+
+//      | B  |
+//  +---+----+---+
+//  | A | PV | C |
+//  +---+----+---+
+//      | D  |
+//      +----+
+- (void)testPlatformViewsWithAdjacentSurroundingLayers {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--platform-view-surrounding-layers" ];
+  [app launch];
+
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
+  XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
+  XCTAssertEqual(platform_view.frame.origin.x, 99.5);
+  XCTAssertEqual(platform_view.frame.origin.y, 99.5);
+  XCTAssertEqual(platform_view.frame.size.width, 101);
+  XCTAssertEqual(platform_view.frame.size.height, 101);
+
+  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCTAssertFalse(overlay.exists);
+}
+
 @end

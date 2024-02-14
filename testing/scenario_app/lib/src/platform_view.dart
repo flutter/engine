@@ -366,6 +366,69 @@ class PlatformViewMaxOverlaysScenario extends Scenario
   }
 }
 
+/// A platform view with adjacent surrounding layers should not create overlays.
+class PlatformViewSurroundingLayersScenario extends Scenario
+    with _BasePlatformViewScenarioMixin {
+  /// Creates the PlatformView scenario.
+  PlatformViewSurroundingLayersScenario(
+    super.view, {
+    required this.id,
+  });
+
+  /// The platform view identifier.
+  final int id;
+
+  @override
+  void onBeginFrame(Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+
+    // a square platform view from (99.5, 99.5) to (200.5, 200.5)
+    builder.pushOffset(99.5, 99.5);
+    addPlatformView(
+      id,
+      width: 101,
+      height: 101,
+      dispatcher: view.platformDispatcher,
+      sceneBuilder: builder,
+    );
+
+    builder.pop();
+
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+
+    // Rect at the left of platform view
+    canvas.drawRect(
+      const Rect.fromLTWH(0, 99.5, 99.5, 99.5),
+      Paint()..color = const Color(0x22FF0000),
+    );
+
+    // Rect at the right of platform view
+    canvas.drawRect(
+      const Rect.fromLTWH(200.5, 99.5, 99.5, 99.5),
+      Paint()..color = const Color(0x22FF0000),
+    );
+
+    // Rect at the top of platform view
+    canvas.drawRect(
+      const Rect.fromLTWH(99.5, 0, 99.5, 99.5),
+      Paint()..color = const Color(0x22FF0000),
+    );
+
+    // Rect at the bottom of platform view
+    canvas.drawRect(
+      const Rect.fromLTWH(99.5, 200.5, 99.5, 99.5),
+      Paint()..color = const Color(0x22FF0000),
+    );
+
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(Offset.zero, picture);
+    final Scene scene = builder.build();
+    view.render(scene);
+    scene.dispose();
+  }
+}
+
 /// Builds a scene with 2 platform views.
 class MultiPlatformViewScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
