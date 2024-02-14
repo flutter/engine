@@ -1184,7 +1184,7 @@ hooks = [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
       'src/flutter/tools/fuchsia/test_scripts/update_product_bundles.py',
-      'terminal.x64',
+      'terminal.x64,terminal.qemu-arm64',
     ]
   }
 ]
