@@ -164,7 +164,7 @@ using CommandPoolMap =
 //    There will still be references to the command pool from the uncompleted
 //    command buffers.
 // 2. The last reference to the command pool will be released from the fence
-//    waiter thread, which will schedule something to occur on the resource
+//    waiter thread, which will schedule a task on the resource
 //    manager thread, which in turn will reset the command pool and make it
 //    available for reuse ("recycle").
 static thread_local std::unique_ptr<CommandPoolMap> tls_command_pool_map;
