@@ -36,12 +36,12 @@ void main(List<String> args) async {
         'sdk',
         'platform-tools',
         'adb',
-      ) : null,   
+      ) : null,
     )
     ..addOption(
       'out-dir',
       help: 'Out directory',
-      defaultsTo: 
+      defaultsTo:
         engine?.
         outputs().
         where((Output o) => basename(o.path.path).startsWith('android_')).
