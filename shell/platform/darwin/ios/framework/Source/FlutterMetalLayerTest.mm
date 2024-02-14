@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import <Metal/Metal.h>
+#import <OCMock/OCMock.h>
 #import <QuartzCore/QuartzCore.h>
 #import <XCTest/XCTest.h>
 
@@ -240,36 +241,31 @@
   FlutterMetalLayer* layer = [self addMetalLayer];
   TestCompositor* compositor = [[TestCompositor alloc] initWithLayer:layer];
 
-  id<MTLTexture> t1, t2, t3;
-
   id<CAMetalDrawable> drawable = [layer nextDrawable];
   BAIL_IF_NO_DRAWABLE(drawable);
-  t1 = drawable.texture;
-  [drawable present];
-  [compositor commitTransaction];
-  XCTAssertTrue(IOSurfaceIsInUse(t1.iosurface));
 
-  IOSurfaceIncrementUseCount(t1.iosurface);
+  __block MTLCommandBufferHandler handler;
 
-  drawable = [layer nextDrawable];
-  BAIL_IF_NO_DRAWABLE(drawable);
-  t2 = drawable.texture;
-  [drawable present];
-  [compositor commitTransaction];
+  id<MTLCommandBuffer> mockCommandBuffer = OCMProtocolMock(@protocol(MTLCommandBuffer));
+  OCMStub([mockCommandBuffer addCompletedHandler:OCMOCK_ANY]).andDo(^(NSInvocation* invocation) {
+    MTLCommandBufferHandler handlerOnStack;
+    [invocation getArgument:&handlerOnStack atIndex:2];
+    // Required to copy stack block to heap.
+    handler = handlerOnStack;
+  });
 
-  IOSurfaceIncrementUseCount(t2.iosurface);
-
-  drawable = [layer nextDrawable];
-  BAIL_IF_NO_DRAWABLE(drawable);
-  t3 = drawable.texture;
+  [(id<FlutterMetalDrawable>)drawable flutterPrepareForPresent:mockCommandBuffer];
   [drawable present];
   [compositor commitTransaction];
 
-  // Simulate compositor holding on to t3 for a while.
-  IOSurfaceIncrementUseCount(t3.iosurface);
-
+  // Drawable will not be available until the command buffer completes.
   drawable = [layer nextDrawable];
   XCTAssertNil(drawable);
+
+  handler(mockCommandBuffer);
+
+  drawable = [layer nextDrawable];
+  XCTAssertNotNil(drawable);
 
   [self removeMetalLayer:layer];
 }
