@@ -1013,7 +1013,7 @@ class DirectoryChange():
 def generate_dir_listing(dir_path: str) -> str:
   listing = os.listdir(dir_path)
   listing.sort()
-  return reduce(lambda a, b: a + "\n" + b, listing)
+  return reduce(lambda a, b: a + '\n' + b, listing)
 
 
 def str_replace_range(instr: str, start: int, end: int, replacement: str) -> str:
@@ -1021,7 +1021,7 @@ def str_replace_range(instr: str, start: int, end: int, replacement: str) -> str
 
 
 def redirect_patch(patch: str) -> str:
-  "Makes a diff point its output file to its input file."
+  'Makes a diff point its output file to its input file.'
   input_path = re.search(r'^--- a(.*)', patch, re.MULTILINE)
   output_path = re.search(r'^\+\+\+ b(.*)', patch, re.MULTILINE)
   return str_replace_range(
@@ -1045,17 +1045,17 @@ def run_impeller_golden_tests(build_dir: str):
                                                          ).joinpath('golden_tests_harvester')
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
     run_cmd([tests_path, '--working_dir=%s' % temp_dir], cwd=build_dir)
-    with tempfile.NamedTemporaryFile(mode="w",
-                                     prefix="impeller_golden_tests_output") as dir_listing_file:
+    with tempfile.NamedTemporaryFile(mode='w',
+                                     prefix='impeller_golden_tests_output') as dir_listing_file:
       dir_listing = generate_dir_listing(temp_dir)
       dir_listing_file.write(dir_listing)
-      golden_path = os.path.join("testing", "impeller_golden_tests_output.txt")
+      golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
       diff_result = subprocess.run(
           f'git diff -p {golden_path} {dir_listing_file.name}',
           check=False,
           shell=True,
           stdout=subprocess.PIPE,
-          cwd=os.path.join(BUILDROOT_DIR, "flutter")
+          cwd=os.path.join(BUILDROOT_DIR, 'flutter')
       )
       if diff_result.returncode != 0:
         print_divider('<')
