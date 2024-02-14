@@ -26,3 +26,12 @@ Here's the steps for using this with something like impeller golden tests:
 ## Requirements
 
 - ImageMagick is installed on $PATH
+
+## Testing
+
+To run the tests:
+
+```sh
+dart pub get
+find . -name "*_test.dart" | xargs -n 1 dart --enable-asserts
+```

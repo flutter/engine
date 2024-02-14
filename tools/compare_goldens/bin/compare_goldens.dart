@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io' show exitCode;
 import 'package:compare_goldens/compare_goldens.dart' as compare_goldens;
 
 void main(List<String> args) {
-  compare_goldens.run(args);
+  exitCode = compare_goldens.run(args);
 }

@@ -16,13 +16,11 @@ List<String> _findPairs(Set<String> as, Set<String> bs) {
       result.add(a);
     } else {
       print('Mix match file $a.');
-      exitCode = 1;
     }
   }
   for (final String b in bs) {
     if (!as.contains(b)) {
       print('Mix match file $b.');
-      exitCode = 1;
     }
   }
   return result;
@@ -39,7 +37,8 @@ Set<String> _grabPngFilenames(Directory dir) {
     .toSet();
 }
 
-void run(List<String> args) {
+int run(List<String> args) {
+  int returnCode = 0;
   if (!_hasCommandOnPath('compare')) {
     throw Exception(r'Could not find `compare` from ImageMagick on $PATH.');
   }
@@ -60,6 +59,10 @@ void run(List<String> args) {
   final Set<String> filesB = _grabPngFilenames(dirB);
   final List<String> pairs = _findPairs(filesA, filesB);
 
+  if (filesA.length != pairs.length || filesB.length != pairs.length) {
+    returnCode = 1;
+  }
+
   int count = 0;
   for (final String name in pairs) {
     count += 1;
@@ -70,9 +73,10 @@ void run(List<String> args) {
     final ProcessResult result = Process.runSync('compare', ['-metric', 'RMSE', '-fuzz', '5%', pathA, pathB, output]);
     if (result.exitCode != 0) {
       print('DIFF FOUND: saved to $output');
-      exitCode = 1;
+      returnCode = 1;
     } else {
       File(output).deleteSync();
     }
   }
+  return returnCode;
 }
