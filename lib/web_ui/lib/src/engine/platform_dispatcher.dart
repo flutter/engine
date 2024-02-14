@@ -777,8 +777,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // TODO(yjbanov): technically Flutter flushes microtasks between
     //                onBeginFrame and onDrawFrame. We don't, which hasn't been
     //                an issue yet, but eventually we'll have to implement it
-    //                properly. (Same TODO as in `initializeEngineServices` in
-    //                initialization.dart).
+    //                properly. (This is the same to-do as the one in
+    //                `initializeEngineServices` in initialization.dart).
     Timer.run(drawFrame);
   }
 
