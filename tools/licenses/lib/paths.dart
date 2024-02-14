@@ -30,6 +30,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
   r'flutter/third_party/benchmark', // only used by tests
+  r'flutter/third_party/depot_tools', // only used for the Windows build system.
   r'flutter/third_party/expat/expat/doc',
   r'flutter/third_party/expat/expat/win32/expat.iss',
   r'flutter/third_party/flatbuffers/android',
@@ -49,6 +50,11 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
   r'flutter/third_party/inja/third_party/include/doctest', // seems to be a unit test library
   r'flutter/third_party/json/docs',
+  r'flutter/third_party/libpng/contrib', // not linked in
+  r'flutter/third_party/libpng/mips', // not linked in
+  r'flutter/third_party/libpng/powerpc', // not linked in
+  r'flutter/third_party/libpng/projects', // not linked in
+  r'flutter/third_party/libpng/scripts', // not linked in
   r'flutter/third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
   r'flutter/third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
   r'flutter/third_party/libtess2/Example',
@@ -170,11 +176,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libcxx/src/support/solaris',
   r'third_party/libcxx/utils',
   r'third_party/libcxxabi/www',
-  r'third_party/libpng/contrib', // not linked in
-  r'third_party/libpng/mips', // not linked in
-  r'third_party/libpng/powerpc', // not linked in
-  r'third_party/libpng/projects', // not linked in
-  r'third_party/libpng/scripts', // not linked in
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
@@ -204,9 +205,11 @@ final Set<String> skippedPaths = <String>{
   r'third_party/vulkan-deps/spirv-cross/src/shaders-ue4-no-opt', // used by regression tests
   r'third_party/vulkan-deps/spirv-headers', // only used on hosts for tests
   r'third_party/vulkan-deps/spirv-tools', // only used on hosts for tests
+  r'third_party/vulkan-deps/vulkan-headers/src/LICENSE.md', // redundant with licenses inside files
   r'third_party/vulkan-deps/vulkan-headers/src/registry',
   r'third_party/vulkan-deps/vulkan-loader', // on hosts for tests
   r'third_party/vulkan-deps/vulkan-tools', // on hosts for tests
+  r'third_party/vulkan-deps/vulkan-utility-libraries/src/LICENSE.md', // redundant with licenses inside files
   r'third_party/vulkan-deps/vulkan-validation-layers/src/docs',
   r'third_party/vulkan_memory_allocator/bin',
   r'third_party/vulkan_memory_allocator/docs',

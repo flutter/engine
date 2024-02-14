@@ -261,6 +261,7 @@ VkResult vkAllocateCommandBuffers(
     const VkCommandBufferAllocateInfo* pAllocateInfo,
     VkCommandBuffer* pCommandBuffers) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkAllocateCommandBuffers");
   *pCommandBuffers =
       reinterpret_cast<VkCommandBuffer>(mock_device->NewCommandBuffer());
   return VK_SUCCESS;
@@ -504,6 +505,12 @@ VkResult vkGetFenceStatus(VkDevice device, VkFence fence) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
   MockFence* mock_fence = reinterpret_cast<MockFence*>(fence);
   return mock_fence->GetStatus();
+}
+
+VkResult vkResetFences(VkDevice device,
+                       uint32_t fenceCount,
+                       const VkFence* fences) {
+  return VK_SUCCESS;
 }
 
 VkResult vkCreateDebugUtilsMessengerEXT(
@@ -773,6 +780,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkWaitForFences;
   } else if (strcmp("vkGetFenceStatus", pName) == 0) {
     return (PFN_vkVoidFunction)vkGetFenceStatus;
+  } else if (strcmp("vkResetFences", pName) == 0) {
+    return (PFN_vkVoidFunction)vkResetFences;
   } else if (strcmp("vkCreateDebugUtilsMessengerEXT", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateDebugUtilsMessengerEXT;
   } else if (strcmp("vkSetDebugUtilsObjectNameEXT", pName) == 0) {
