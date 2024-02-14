@@ -774,11 +774,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   void scheduleWarmUpFrame({required ui.VoidCallback beginFrame, required ui.VoidCallback drawFrame}) {
     Timer.run(beginFrame);
-    // TODO(yjbanov): technically Flutter flushes microtasks between
-    //                onBeginFrame and onDrawFrame. We don't, which hasn't been
-    //                an issue yet, but eventually we'll have to implement it
-    //                properly. (This is the same to-do as the one in
-    //                `initializeEngineServices` in initialization.dart).
+    // We use timers here to ensure that microtasks flush in between.
     Timer.run(drawFrame);
   }
 
