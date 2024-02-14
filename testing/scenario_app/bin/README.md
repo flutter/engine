@@ -35,7 +35,7 @@ dart bin/android_integration_tests.dart \
 
 - `--use-skia-gold`: Use Skia Gold to compare screenshots. Defaults to true
   when running on CI, and false otherwise (i.e. when running locally). If
-  set to true, [isSkiaGoldClientAvailable] must be true.
+  set to true, `isSkiaGoldClientAvailable` must be true.
 
 - `--enable-impeller`: Enable Impeller for the Android app. Defaults to
   false, which means that the app will use Skia as the graphics backend.
