@@ -163,7 +163,7 @@ using CommandPoolMap =
 // 1. End of frame will reset the command pool (clearing this on a thread).
 //    There will still be references to the command pool from the uncompleted
 //    command buffers.
-// 2. The last reference to the command pool wuill be destroyed from the fence
+// 2. The last reference to the command pool will be released from the fence
 //    waiter thread, which will schedule something to occur on the resource
 //    manager thread, which in turn will reset the command pool and make it
 //    available for reuse ("recycle").
