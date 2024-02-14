@@ -265,7 +265,7 @@ void Animator::AwaitVSync() {
 }
 
 void Animator::EndWarmUpFrame() {
-  // Do nothing. The warm up frame does not need any additional work to end the
+  // Do nothing. The warm up frame does not need any additional work for end the
   // frame for now. This will change once the pipeline supports multi-view.
   // https://github.com/flutter/flutter/issues/142851
 }
