@@ -94,13 +94,9 @@ void main(List<String> args) async {
       final bool useSkiaGold = results['use-skia-gold'] as bool;
       final String? smokeTest = results['smoke-test'] as String?;
       final bool enableImpeller = results['enable-impeller'] as bool;
-      final _ImpellerBackend? impellerBackend =
-          _ImpellerBackend.tryParse(results['impeller-backend'] as String?);
+      final _ImpellerBackend? impellerBackend = _ImpellerBackend.tryParse(results['impeller-backend'] as String?);
       if (enableImpeller && impellerBackend == null) {
-        panic(<String>[
-          'invalid graphics-backend',
-          results['impeller-backend'] as String? ?? '<null>'
-        ]);
+        panic(<String>['invalid graphics-backend', results['impeller-backend'] as String? ?? '<null>']);
       }
       await _run(
         outDir: outDir,
@@ -149,10 +145,7 @@ Future<void> _run({
   const ProcessManager pm = LocalProcessManager();
 
   if (!outDir.existsSync()) {
-    panic(<String>[
-      'out-dir does not exist: $outDir',
-      'make sure to build the selected engine variant'
-    ]);
+    panic(<String>['out-dir does not exist: $outDir', 'make sure to build the selected engine variant']);
   }
 
   if (!adb.existsSync()) {
@@ -163,22 +156,15 @@ Future<void> _run({
   final String logcatPath = join(scenarioAppPath, 'logcat.txt');
   final String screenshotPath = join(scenarioAppPath, 'screenshots');
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
-  final File testApk = File(
-      join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
+  final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
   final File appApk = File(join(apkOutPath, 'debug', 'app-debug.apk'));
 
   if (!testApk.existsSync()) {
-    panic(<String>[
-      'test apk does not exist: ${testApk.path}',
-      'make sure to build the selected engine variant'
-    ]);
+    panic(<String>['test apk does not exist: ${testApk.path}', 'make sure to build the selected engine variant']);
   }
 
   if (!appApk.existsSync()) {
-    panic(<String>[
-      'app apk does not exist: ${appApk.path}',
-      'make sure to build the selected engine variant'
-    ]);
+    panic(<String>['app apk does not exist: ${appApk.path}', 'make sure to build the selected engine variant']);
   }
 
   // Start a TCP socket in the host, and forward it to the device that runs the tests.
@@ -186,41 +172,39 @@ Future<void> _run({
   // for the screenshots.
   // On LUCI, the host uploads the screenshots to Skia Gold.
   SkiaGoldClient? skiaGoldClient;
-  late ServerSocket server;
+  late  ServerSocket server;
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   await step('Starting server...', () async {
     server = await ServerSocket.bind(InternetAddress.anyIPv4, _tcpPort);
-    stdout
-        .writeln('listening on host ${server.address.address}:${server.port}');
+    stdout.writeln('listening on host ${server.address.address}:${server.port}');
     server.listen((Socket client) {
-      stdout.writeln(
-          'client connected ${client.remoteAddress.address}:${client.remotePort}');
-      client.transform(const ScreenshotBlobTransformer()).listen(
-          (Screenshot screenshot) {
+      stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
+      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) {
         final String fileName = screenshot.filename;
         final Uint8List fileContent = screenshot.fileContent;
         log('host received ${fileContent.lengthInBytes} bytes for screenshot `$fileName`');
         assert(skiaGoldClient != null, 'expected Skia Gold client');
         late File goldenFile;
         try {
-          goldenFile = File(join(screenshotPath, fileName))
-            ..writeAsBytesSync(fileContent, flush: true);
+          goldenFile = File(join(screenshotPath, fileName))..writeAsBytesSync(fileContent, flush: true);
         } on FileSystemException catch (err) {
           panic(<String>['failed to create screenshot $fileName: $err']);
         }
         log('wrote ${goldenFile.absolute.path}');
         if (isSkiaGoldClientAvailable) {
           final Future<void> comparison = skiaGoldClient!
-              .addImg(fileName, goldenFile,
-                  screenshotSize: screenshot.pixelCount)
-              .catchError((dynamic err) {
-            panic(<String>['skia gold comparison failed: $err']);
-          });
+            .addImg(fileName, goldenFile,
+                    screenshotSize: screenshot.pixelCount)
+            .catchError((dynamic err) {
+              panic(<String>['skia gold comparison failed: $err']);
+            });
           pendingComparisons.add(comparison);
         }
-      }, onError: (dynamic err) {
+      },
+      onError: (dynamic err) {
         panic(<String>['error while receiving bytes: $err']);
-      }, cancelOnError: true);
+      },
+      cancelOnError: true);
     });
   });
 
@@ -234,8 +218,7 @@ Future<void> _run({
     });
 
     await step('Starting logcat...', () async {
-      final int exitCode =
-          await pm.runAndForward(<String>[adb.path, 'logcat', '-c']);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'logcat', '-c']);
       if (exitCode != 0) {
         panic(<String>['could not clear logs']);
       }
@@ -259,25 +242,21 @@ Future<void> _run({
     });
 
     await step('Get API level of connected device...', () async {
-      final ProcessResult apiLevelProcessResult = await pm
-          .run(<String>[adb.path, 'shell', 'getprop', 'ro.build.version.sdk']);
+      final ProcessResult apiLevelProcessResult = await pm.run(<String>[adb.path, 'shell', 'getprop', 'ro.build.version.sdk']);
       if (apiLevelProcessResult.exitCode != 0) {
         panic(<String>['could not get API level of the connected device']);
       }
-      final String connectedDeviceAPILevel =
-          (apiLevelProcessResult.stdout as String).trim();
+      final String connectedDeviceAPILevel = (apiLevelProcessResult.stdout as String).trim();
       final Map<String, String> dimensions = <String, String>{
         'AndroidAPILevel': connectedDeviceAPILevel,
-        'GraphicsBackend':
-            enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
+        'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
       };
       log('using dimensions: ${json.encode(dimensions)}');
       skiaGoldClient = SkiaGoldClient(
         outDir,
         dimensions: <String, String>{
           'AndroidAPILevel': connectedDeviceAPILevel,
-          'GraphicsBackend':
-              enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
+          'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
         },
       );
     });
@@ -296,24 +275,21 @@ Future<void> _run({
     });
 
     await step('Reverse port...', () async {
-      final int exitCode = await pm.runAndForward(
-          <String>[adb.path, 'reverse', 'tcp:3000', 'tcp:$_tcpPort']);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'reverse', 'tcp:3000', 'tcp:$_tcpPort']);
       if (exitCode != 0) {
         panic(<String>['could not forward port']);
       }
     });
 
     await step('Installing app APK...', () async {
-      final int exitCode =
-          await pm.runAndForward(<String>[adb.path, 'install', appApk.path]);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'install', appApk.path]);
       if (exitCode != 0) {
         panic(<String>['could not install app apk']);
       }
     });
 
     await step('Installing test APK...', () async {
-      final int exitCode =
-          await pm.runAndForward(<String>[adb.path, 'install', testApk.path]);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'install', testApk.path]);
       if (exitCode != 0) {
         panic(<String>['could not install test apk']);
       }
@@ -326,9 +302,11 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-        if (smokeTestFullPath != null) '-e class $smokeTestFullPath',
+        if (smokeTestFullPath != null)
+          '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
-        if (enableImpeller) '-e enable-impeller',
+        if (enableImpeller)
+          '-e enable-impeller',
         if (impellerBackend != null)
           '-e impeller-backend ${impellerBackend.name}',
       ]);
@@ -350,8 +328,7 @@ Future<void> _run({
       final int exitCode = await pm.runAndForward(<String>[
         adb.path,
         'reverse',
-        '--remove',
-        'tcp:3000',
+        '--remove', 'tcp:3000',
       ]);
       if (exitCode != 0) {
         panic(<String>['could not unforward port']);
@@ -359,16 +336,14 @@ Future<void> _run({
     });
 
     await step('Uinstalling app APK...', () async {
-      final int exitCode = await pm.runAndForward(
-          <String>[adb.path, 'uninstall', 'dev.flutter.scenarios']);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'uninstall', 'dev.flutter.scenarios']);
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
       }
     });
 
     await step('Uinstalling test APK...', () async {
-      final int exitCode = await pm.runAndForward(
-          <String>[adb.path, 'uninstall', 'dev.flutter.scenarios.test']);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'uninstall', 'dev.flutter.scenarios.test']);
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
       }
