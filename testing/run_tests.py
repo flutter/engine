@@ -12,6 +12,7 @@ from pathlib import Path
 
 import argparse
 import errno
+from functools import reduce
 import glob
 import logging
 import logging.handlers
@@ -38,9 +39,6 @@ ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
 FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
-
-# This number must be updated when adding new golden tests to impeller.
-_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES = 599
 
 logger = logging.getLogger(__name__)
 logger_handler = logging.StreamHandler()
@@ -240,11 +238,13 @@ def run_engine_executable( # pylint: disable=too-many-arguments
     env['LD_LIBRARY_PATH'] = build_dir
     env['VK_DRIVER_FILES'] = os.path.join(build_dir, 'vk_swiftshader_icd.json')
     if os.path.exists(unstripped_exe):
+      unstripped_vulkan = os.path.join(build_dir, 'lib.unstripped', 'libvulkan.so.1')
+      if os.path.exists(unstripped_vulkan):
+        vulkan_path = unstripped_vulkan
+      else:
+        vulkan_path = os.path.join(build_dir, 'libvulkan.so.1')
       try:
-        os.symlink(
-            os.path.join(build_dir, 'lib.unstripped', 'libvulkan.so.1'),
-            os.path.join(build_dir, 'exe.unstripped', 'libvulkan.so.1')
-        )
+        os.symlink(vulkan_path, os.path.join(build_dir, 'exe.unstripped', 'libvulkan.so.1'))
       except OSError as err:
         if err.errno == errno.EEXIST:
           pass
@@ -923,6 +923,7 @@ def build_dart_host_test_list(build_dir):
               os.path.join(build_dir, 'dart-sdk', 'lib', 'libraries.json'),
           ],
       ),
+      (os.path.join('flutter', 'tools', 'engine_tool'), []),
       (os.path.join('flutter', 'tools', 'githooks'), []),
       (os.path.join('flutter', 'tools', 'header_guard_check'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'), []),
@@ -1012,6 +1013,27 @@ class DirectoryChange():
     os.chdir(self.old_cwd)
 
 
+def generate_dir_listing(dir_path: str) -> str:
+  listing = os.listdir(dir_path)
+  listing.sort()
+  return reduce(lambda a, b: a + '\n' + b, listing)
+
+
+def str_replace_range(instr: str, start: int, end: int, replacement: str) -> str:
+  return instr[:start] + replacement + instr[end:]
+
+
+def redirect_patch(patch: str) -> str:
+  'Makes a diff point its output file to its input file.'
+  input_path = re.search(r'^--- a(.*)', patch, re.MULTILINE)
+  output_path = re.search(r'^\+\+\+ b(.*)', patch, re.MULTILINE)
+  return str_replace_range(
+      patch,
+      output_path.span(1)[0],
+      output_path.span(1)[1], input_path.group(1)
+  )
+
+
 def run_impeller_golden_tests(build_dir: str):
   """
   Executes the impeller golden image tests from in the `variant` build.
@@ -1026,14 +1048,24 @@ def run_impeller_golden_tests(build_dir: str):
                                                          ).joinpath('golden_tests_harvester')
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
     run_cmd([tests_path, '--working_dir=%s' % temp_dir], cwd=build_dir)
-    num_generated_files = len(os.listdir(temp_dir))
-    if num_generated_files != _NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES:
-      raise Exception(
-          '`impeller_golden_tests` was expected to generate '
-          f'{_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES} files, '
-          f'{num_generated_files} were generated. If this is expected, update '
-          '_NUM_EXPECTED_GENERATED_IMPELLER_GOLDEN_FILES.'
+    with tempfile.NamedTemporaryFile(mode='w',
+                                     prefix='impeller_golden_tests_output') as dir_listing_file:
+      dir_listing = generate_dir_listing(temp_dir)
+      dir_listing_file.write(dir_listing)
+      golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
+      diff_result = subprocess.run(
+          f'git diff -p {golden_path} {dir_listing_file.name}',
+          check=False,
+          shell=True,
+          stdout=subprocess.PIPE,
+          cwd=os.path.join(BUILDROOT_DIR, 'flutter')
       )
+      if diff_result.returncode != 0:
+        print_divider('<')
+        print(f'Unexpected diff in {golden_path}, use `git apply` with the following patch.')
+        print('')
+        print(redirect_patch(diff_result.stdout.decode()))
+        raise RuntimeError('impeller_golden_tests diff failure')
 
     with DirectoryChange(harvester_path):
       run_cmd(['dart', 'pub', 'get'])
