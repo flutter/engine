@@ -5,6 +5,9 @@ part of dart.ui;
 
 /// Runs [computation] in the platform thread and returns the result.
 ///
+/// Internally this creates an isolate in the platform thread that will be
+/// reused for subsequent [runInPlatformThread] calls.
+///
 /// If [computation] is asynchronous (returns a `Future<R>`) then
 /// that future is awaited in the new isolate, completing the entire
 /// asynchronous computation, before returning the result.
@@ -27,11 +30,12 @@ FutureOr<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
     });
     portReceiver.keepIsolateAlive = false;
     final RawReceivePort onExit = _receiveOne((_) {
-      // This shouldn't really happen, since Isolate.exit() is disabled on the
-      // platform isolate, the pause and terminate capabilities aren't provided
+      // This shouldn't really happen unless the user explicitly calls
+      // Isolate.exit, the pause and terminate capabilities aren't provided
       // to the parent isolate, and errors are fatal is false. But if the
       // isolate does shutdown unexpectedly, clear the singleton so we can
       // create another.
+      // TODO(liamappelbe): Disable Isolate.exit(). Will require VM changes.
       _platformRunnerSendPort = null;
     });
     onExit.keepIsolateAlive = false;
@@ -86,7 +90,7 @@ Future<void> _remoteRun(SendPort portReceiver) async {
       )? message) async {
     if (message == null) {
       // The parent isolate has shutdown. Allow this isolate to shutdown.
-      computationPort..keepIsolateAlive = false;
+      computationPort.keepIsolateAlive = false;
       return;
     }
     final (FutureOr<Object?> Function() computation, SendPort resultPort) =

@@ -19,7 +19,6 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:isolate'
     show
-        Capability,
         Isolate,
         IsolateSpawnException,
         RawReceivePort,
