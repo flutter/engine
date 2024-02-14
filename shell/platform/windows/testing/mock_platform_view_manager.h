@@ -20,7 +20,9 @@ class MockPlatformViewManager : public PlatformViewManager {
 
   ~MockPlatformViewManager() {}
 
-  MOCK_METHOD(void, QueuePlatformViewCreation, (PlatformViewId id, std::string_view));
+  MOCK_METHOD(void,
+              QueuePlatformViewCreation,
+              (PlatformViewId id, std::string_view));
 };
 
 }  // namespace flutter

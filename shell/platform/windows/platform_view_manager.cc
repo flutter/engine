@@ -36,8 +36,9 @@ PlatformViewManager::PlatformViewManager(TaskRunner* task_runner,
 
 PlatformViewManager::~PlatformViewManager() {}
 
-void PlatformViewManager::QueuePlatformViewCreation(PlatformViewId id,
-                                                    std::string_view type_name) {}
+void PlatformViewManager::QueuePlatformViewCreation(
+    PlatformViewId id,
+    std::string_view type_name) {}
 
 void PlatformViewManager::InstantiatePlatformView(PlatformViewId id) {}
 

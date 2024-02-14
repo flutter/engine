@@ -391,11 +391,9 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
     // TODO(schectman) Pass the platform view manager to the compositor
     // constructors: https://github.com/flutter/flutter/issues/143375
-    compositor_ = std::make_unique<CompositorOpenGL>(
-        this, resolver);
+    compositor_ = std::make_unique<CompositorOpenGL>(this, resolver);
   } else {
-    compositor_ = std::make_unique<CompositorSoftware>(
-        this);
+    compositor_ = std::make_unique<CompositorSoftware>(this);
   }
 
   FlutterCompositor compositor = {};
