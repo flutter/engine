@@ -224,11 +224,6 @@ typedef struct {
   void* user_data;  // Arbitrary user data supplied to the cretaion struct.
 } FlutterPlatformViewTypeEntry;
 
-FLUTTER_EXPORT void FlutterDesktopEngineRegisterPlatformViewType(
-    FlutterDesktopEngineRef engine,
-    const char* view_type_name,
-    FlutterPlatformViewTypeEntry view_type);
-
 // ========== View ==========
 
 // Return backing HWND for manipulation in host application.

@@ -80,6 +80,7 @@ source_set("flutter_windows_source") {
     "flutter_windows.cc",
     "flutter_windows_engine.cc",
     "flutter_windows_engine.h",
+    "flutter_windows_internal.h",
     "flutter_windows_texture_registrar.cc",
     "flutter_windows_texture_registrar.h",
     "flutter_windows_view.cc",
