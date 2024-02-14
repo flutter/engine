@@ -66,7 +66,9 @@ class PlatformConfigurationClient {
   virtual void ScheduleFrame() = 0;
 
   //--------------------------------------------------------------------------
-  /// @brief
+  /// @brief    Called when a warm up frame has ended.
+  ///
+  ///           For more introduction, see `Animator::EndWarmUpFrame`.
   ///
   virtual void EndWarmUpFrame() = 0;
 

@@ -56,8 +56,8 @@ class Animator final {
   //--------------------------------------------------------------------------
   /// @brief    Tells the Animator that a warm up frame has ended.
   ///
-  ///           In a warm up frame, Animator::Render is called out of a vsync
-  ///           task, and Animator requires this explicit end-of-frame call to
+  ///           In a warm up frame, `Animator::Render` is called out of vsync
+  ///           tasks, and Animator requires an explicit end-of-frame call to
   ///           know when to send the layer trees to the pipeline.
   ///
   ///           This is different from regular frames, where Animator::Render is
