@@ -127,7 +127,8 @@
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
-                "release"
+                "release",
+                "--no-lto"
             ],
             "name": "fuchsia_release_x64",
             "ninja": {
@@ -190,6 +191,10 @@
                         "${REVISION}",
                         "--upload"
                     ]
+                },
+                {
+                    "name": "run_tests test",
+                    "script": "flutter/testing/fuchsia/run_tests_test.py"
                 },
                 {
                     "name": "x64 emulator based debug tests",

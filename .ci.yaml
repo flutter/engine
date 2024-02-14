@@ -54,9 +54,14 @@ targets:
     recipe: engine_v2/engine_v2
     properties:
       config_name: linux_android_emulator
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
     timeout: 60
     runIf:
       - .ci.yaml
+      - ci/builders/linux_android_emulator.json
       - DEPS
       - lib/ui/**
       - shell/platform/android/**
@@ -71,9 +76,14 @@ targets:
     recipe: engine_v2/engine_v2
     properties:
       config_name: linux_android_emulator_api_33
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
     timeout: 60
     runIf:
       - .ci.yaml
+      - ci/builders/linux_android_emulator_api_33.json
       - DEPS
       - lib/ui/**
       - shell/platform/android/**
@@ -195,12 +205,7 @@ targets:
 
   - name: Linux linux_fuchsia
     recipe: engine_v2/engine_v2
-    # Temporarily increase the timeout of this builder to 75 minutes to avoid
-    # being penetrated by cold goma / rbclient cache.
-    # TODO(zijiehe-google-com): Drop the timeout to 60 minutes once the release
-    # builder can finish within a reasonable time.
-    # https://github.com/flutter/flutter/issues/142932
-    timeout: 75
+    timeout: 60
     properties:
       release_build: "true"
       config_name: linux_fuchsia
@@ -223,6 +228,9 @@ targets:
     enabled_branches:
       - main
     timeout: 60
+    properties:
+      gclient_variables: >-
+        {"use_rbe": true}
 
   - name: Linux linux_clang_tidy
     recipe: engine_v2/engine_v2
