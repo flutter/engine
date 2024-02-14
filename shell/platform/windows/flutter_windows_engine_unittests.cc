@@ -1182,7 +1182,7 @@ TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
 
   auto manager = std::make_unique<MockPlatformViewManager>(engine.get());
   EXPECT_CALL(*manager, QueuePlatformViewCreation)
-      .WillRepeatedly([&](std::string_view type_name, int64_t id) {
+      .WillRepeatedly([&](PlatformViewId id, std::string_view type_name) {
         received_call = true;
       });
   modifier.SetPlatformViewManager(std::move(manager));
