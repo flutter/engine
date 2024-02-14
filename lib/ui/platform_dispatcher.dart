@@ -814,8 +814,8 @@ class PlatformDispatcher {
   /// This method is used during application startup so that the first frame
   /// (which is likely to be quite expensive) can start a few extra milliseconds
   /// earlier. Using it in other situations might lead to unintended results,
-  /// such as screen tearing. Depending on the platform, the warm up frame
-  /// might or might not be actually rendered to the screen.
+  /// such as screen tearing. Depending on platforms and situations, the warm up
+  /// frame might or might not be actually rendered onto the screen.
   ///
   /// For more introduction to the warm up frame, see
   /// [SchedulerBinding.scheduleWarmUpFrame].

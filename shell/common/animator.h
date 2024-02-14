@@ -53,6 +53,20 @@ class Animator final {
 
   void RequestFrame(bool regenerate_layer_trees = true);
 
+  //--------------------------------------------------------------------------
+  /// @brief    Tells the Animator that a warm up frame has ended.
+  ///
+  ///           In a warm up frame, Animator::Render is called out of a vsync
+  ///           task, and Animator requires this explicit end-of-frame call to
+  ///           know when to send the layer trees to the pipeline.
+  ///
+  ///           This is different from regular frames, where Animator::Render is
+  ///           always called within a vsync task, and Animator can send
+  ///           the views at the end of the vsync task.
+  ///
+  ///           For more about warm up frames, see
+  ///           `PlatformDispatcher.scheduleWarmUpFrame`.
+  ///
   void EndWarmUpFrame();
 
   //--------------------------------------------------------------------------
