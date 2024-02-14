@@ -801,8 +801,8 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
-  ///  * [scheduleWarmUpFrame], a similar method that is used in rare cases that
-  ///    a frame must be rendered immediately.
+  ///  * [scheduleWarmUpFrame], which should only be used to schedule warm up
+  ///    frames.
   void scheduleFrame() => _scheduleFrame();
 
   @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
