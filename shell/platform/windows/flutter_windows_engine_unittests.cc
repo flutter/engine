@@ -1172,7 +1172,7 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
 
 TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
   FlutterWindowsEngineBuilder builder{GetContext()};
-  builder.SetDartEntrypoint("sendCreationMethod");
+  builder.SetDartEntrypoint("sendCreatePlatformViewMethod");
   auto engine = builder.Build();
 
   EngineModifier modifier(engine.get());
