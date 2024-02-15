@@ -774,19 +774,21 @@ class ViewConstraints implements ui.ViewConstraints {
   /// Converts JsViewConstraints into ViewConstraints.
   ///
   /// Since JsViewConstraints are expressed by the user, in logical pixels, this
-  /// conversion uses logical pixels for the available size as well. The resulting
-  /// ViewConstraints object can be multiplied by devicePixelRatio later to compute
-  /// the physicalViewConstraints.
+  /// conversion uses logical pixels for the current size as well.
+  ///
+  /// The resulting ViewConstraints object will be multiplied by devicePixelRatio
+  /// later to compute the physicalViewConstraints, which is what the framework
+  /// uses.
   factory ViewConstraints.fromJs(
-    JsViewConstraints? constraints, ui.Size availableLogicalSize) {
+    JsViewConstraints? constraints, ui.Size currentLogicalSize) {
     if (constraints == null) {
-      return ViewConstraints.tight(availableLogicalSize);
+      return ViewConstraints.tight(currentLogicalSize);
     }
     return ViewConstraints(
-      minWidth: _computeMinConstraintValue(constraints.minWidth, availableLogicalSize.width),
-      minHeight: _computeMinConstraintValue(constraints.minHeight, availableLogicalSize.height),
-      maxWidth: _computeMaxConstraintValue(constraints.maxWidth, availableLogicalSize.width),
-      maxHeight: _computeMaxConstraintValue(constraints.maxHeight, availableLogicalSize.height),
+      minWidth: _computeMinConstraintValue(constraints.minWidth, currentLogicalSize.width),
+      minHeight: _computeMinConstraintValue(constraints.minHeight, currentLogicalSize.height),
+      maxWidth: _computeMaxConstraintValue(constraints.maxWidth, currentLogicalSize.width),
+      maxHeight: _computeMaxConstraintValue(constraints.maxHeight, currentLogicalSize.height),
     );
   }
 
