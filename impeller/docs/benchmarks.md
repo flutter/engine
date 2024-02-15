@@ -34,3 +34,7 @@ Here are some noteworthy benchmarks related to Impeller performance:
     - OpenGLES: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X78baa100c6cadec3171d42063cc857bf)
     - Vulkan vs OpenGLES - Average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=device_type%3DPixel_7_Pro%26sub_result%3Daverage_frame_rasterizer_time_millis%26test%3Danimated_advanced_blend_perf__timeline_summary%26test%3Danimated_advanced_blend_perf_opengles__timeline_summary)
   - iPhone 11 (Metal): [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X65477f5b5026c0d5ee8fee79122427ab)
+
+- **Backdrop Filter Perf** - A driver test that isolates better the performance
+  of blurs.
+  - iPhone 11 (Metal): [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=sub_result%3Daverage_frame_rasterizer_time_millis%26test%3Dbackdrop_filter_perf_ios__timeline_summary&xbaroffset=38815)
