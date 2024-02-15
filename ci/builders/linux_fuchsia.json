@@ -26,6 +26,7 @@
         },
         {
             "archives": [],
+            "cas_archive": false,
             "drone_dimensions": [
                 "device_type=none",
                 "kvm=1",
