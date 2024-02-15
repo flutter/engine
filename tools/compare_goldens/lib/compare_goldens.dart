@@ -32,11 +32,13 @@ String _basename(String path) {
 
 Set<String> _grabPngFilenames(Directory dir) {
   return dir.listSync()
-    .map((e) => _basename(e.path))
-    .where((e) => e.endsWith('.png'))
+    .map((FileSystemEntity e) => _basename(e.path))
+    .where((String e) => e.endsWith('.png'))
     .toSet();
 }
 
+/// The main entry point to the tool, execute it like `main`. Returns the
+/// `exitCode`.
 int run(List<String> args) {
   int returnCode = 0;
   if (!_hasCommandOnPath('compare')) {
@@ -70,7 +72,8 @@ int run(List<String> args) {
     final String pathB = <String>[dirB.path, name].join(Platform.pathSeparator);
     final String output = 'diff_$name';
     print('compare ($count / ${pairs.length}) $name');
-    final ProcessResult result = Process.runSync('compare', ['-metric', 'RMSE', '-fuzz', '5%', pathA, pathB, output]);
+    final ProcessResult result = Process.runSync('compare',
+        <String>['-metric', 'RMSE', '-fuzz', '5%', pathA, pathB, output]);
     if (result.exitCode != 0) {
       print('DIFF FOUND: saved to $output');
       returnCode = 1;
