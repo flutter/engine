@@ -534,15 +534,15 @@ void testReportViewWidths() {
 
 @pragma('vm:entry-point')
 void renderWarmUpImplicitView() {
-  bool beginFrameDone = false;
+  bool beginFrameCalled = false;
 
   PlatformDispatcher.instance.scheduleWarmUpFrame(
     beginFrame: () {
-      expect(beginFrameDone, false);
-      beginFrameDone = true;
+      expect(beginFrameCalled, false);
+      beginFrameCalled = true;
     },
     drawFrame: () {
-      expect(beginFrameDone, true);
+      expect(beginFrameCalled, true);
 
       final SceneBuilder builder = SceneBuilder();
       final PictureRecorder recorder = PictureRecorder();
