@@ -318,7 +318,7 @@ default is empty which means no interpreter will be used to run the script
 and it is assumed the script is already an executable with the right
 permissions to run in the target platform.
 * **test_timeout_secs** - the timeout in seconds for the step running the test. This value overrides the
-default 1 hour timeout. It is recommended to add timeouts to tests leaking processes to allow LUCI services to collect logs.
+default 1 hour timeout. When debugging, or if a third-party program is known to misbehave, it is recommended to add timeouts to allow LUCI services to collect logs.
 * **name** - the name of the step running the script.
 * **parameters** - flags or parameters passed to the script. Parameters
 accept magic environment variables(placeholders replaced before executing
@@ -540,7 +540,7 @@ The property's description is as follows:
 * **max_attempts** an integer with the maximum number of runs in case of failure.
 * **script** the path relative to checkout/src/ to run.
 * **test_timeout_secs** - the timeout in seconds for the step running the test. This value overrides the
-default 1 hour timeout. It is recommended to add timeouts to tests leaking processes to allow LUCI services to collect logs.
+default 1 hour timeout. When debugging, or if a third-party program is known to misbehave, it is recommended to add timeouts to allow LUCI services to collect logs.
 
 ### Global Generators
 
