@@ -6,8 +6,8 @@
 
 #include <cstring>
 
-#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/common/constants.h"
+#include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
@@ -584,19 +584,18 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
 
   fml::AutoResetWaitableEvent draw_latch;
   EXPECT_CALL(animator_delegate, OnAnimatorDraw)
-      .WillOnce(
-          Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
-            auto status =
-                pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-                  EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
-                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, kFlutterImplicitViewId);
-                });
-            EXPECT_EQ(status, PipelineConsumeResult::Done);
-            draw_latch.Signal();
-          }));
+      .WillOnce(Invoke([&draw_latch](
+                           const std::shared_ptr<FramePipeline>& pipeline) {
+        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+          EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
+          EXPECT_EQ(item->layer_tree_tasks[0]->view_id, kFlutterImplicitViewId);
+        });
+        EXPECT_EQ(status, PipelineConsumeResult::Done);
+        draw_latch.Signal();
+      }));
   EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
       .WillRepeatedly(Invoke([&engine_context](fml::TimePoint frame_target_time,
-                                         uint64_t frame_number) {
+                                               uint64_t frame_number) {
         engine_context->EngineTaskSync([&](Engine& engine) {
           engine.BeginFrame(frame_target_time, frame_number);
         });

@@ -542,23 +542,17 @@ void renderWarmUpImplicitViewAfterMetricsChanged() {
     notifyNative();
   };
 
-  bool microtaskDone = false;
+  bool beginFrameDone = false;
 
   // As soon as 2 views are added, render these views.
   PlatformDispatcher.instance.onMetricsChanged = () {
     PlatformDispatcher.instance.scheduleWarmUpFrame(
       beginFrame: () {
-        expect(microtaskDone, false);
-        scheduleMicrotask(() {
-          microtaskDone = true;
-        });
+        expect(beginFrameDone, false);
+        beginFrameDone = true;
       },
       drawFrame: () {
-        // TODO(dkwingsmt): According to the document in
-        // [ScheduleBinding.scheduleWarmUpFrame], the microtasks should be
-        // executed between two `Timer`s. It doesn't, at least with the current
-        // set up. We should examine more closely.
-        expect(microtaskDone, false);
+        expect(beginFrameDone, true);
 
         final SceneBuilder builder = SceneBuilder();
         final PictureRecorder recorder = PictureRecorder();
