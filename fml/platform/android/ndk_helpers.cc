@@ -56,6 +56,11 @@ DECLARE_TYPES(void,
                ASurfaceControl* surface_control,
                AHardwareBuffer* buffer,
                int acquire_fence_fd));
+DECLARE_TYPES(void,
+              ASurfaceTransaction_setOnComplete,
+              (ASurfaceTransaction * transaction,
+               void* context,
+               ASurfaceTransaction_OnComplete func));
 
 DECLARE_TYPES(AChoreographer*, AChoreographer_getInstance, (void));
 DECLARE_TYPES(void,
@@ -117,6 +122,7 @@ void InitOnceCallback() {
   LOOKUP(android, ASurfaceTransaction_create);
   LOOKUP(android, ASurfaceTransaction_delete);
   LOOKUP(android, ASurfaceTransaction_setBuffer);
+  LOOKUP(android, ASurfaceTransaction_setOnComplete);
 #undef LOOKUP
 }
 
@@ -248,6 +254,14 @@ void NDKHelpers::ASurfaceTransaction_setBuffer(ASurfaceTransaction* transaction,
   FML_CHECK(_ASurfaceTransaction_setBuffer);
   _ASurfaceTransaction_setBuffer(transaction, surface_control, buffer,
                                  acquire_fence_fd);
+}
+
+void NDKHelpers::ASurfaceTransaction_setOnComplete(
+    ASurfaceTransaction* transaction,
+    void* context,
+    ASurfaceTransaction_OnComplete func) {
+  FML_CHECK(_ASurfaceTransaction_setOnComplete);
+  _ASurfaceTransaction_setOnComplete(transaction, context, func);
 }
 
 int NDKHelpers::AHardwareBuffer_isSupported(const AHardwareBuffer_Desc* desc) {

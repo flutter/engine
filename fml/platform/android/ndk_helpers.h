@@ -87,6 +87,10 @@ class NDKHelpers {
       ASurfaceControl* _Nonnull surface_control,
       AHardwareBuffer* _Nonnull buffer,
       int acquire_fence_fd);
+  static void ASurfaceTransaction_setOnComplete(
+      ASurfaceTransaction* transaction,
+      void* context,
+      ASurfaceTransaction_OnComplete func);
 
   // API Version 31
 

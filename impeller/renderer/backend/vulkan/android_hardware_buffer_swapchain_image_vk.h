@@ -24,6 +24,8 @@ class AndroidHardwareBufferSwapchainImageVK : public SwapchainImageVK {
 
   bool IsValid() const override;
 
+  AHardwareBuffer* GetHardwareBuffer() const { return hardware_buffer_; }
+
  private:
   AndroidHardwareBufferSwapchainImageVK(
       AHardwareBuffer* hardware_buffer,

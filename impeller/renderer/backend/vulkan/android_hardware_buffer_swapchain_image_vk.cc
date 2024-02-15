@@ -56,6 +56,7 @@ AndroidHardwareBufferSwapchainImageVK::Create(TextureDescriptor desc,
       .format = format.value(),
       .usage =
           AHardwareBuffer_UsageFlags::AHARDWAREBUFFER_USAGE_CPU_READ_NEVER |
+          AHardwareBuffer_UsageFlags::AHARDWAREBUFFER_USAGE_GPU_SAMPLED |
           AHardwareBuffer_UsageFlags::AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER,
   };
   AHardwareBuffer* buffer;
