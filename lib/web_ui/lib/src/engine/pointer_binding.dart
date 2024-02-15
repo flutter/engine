@@ -631,21 +631,22 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   bool _isLockedHorizontally(DomWheelEvent event) {
-    double diff = event.timeStamp - _lastWheelEvent.timeStamp;
+    DomWheelEvent? trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
+    double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
 
-    if (diff < 10 * 1000) {
-      return _trackpadScrollStartWheelEvent.deltaX > _trackpadScrollStartWheelEvent.deltaY;
+    if (diff < 10 * 1000 && trackpadScrollStartWheelEvent != null) {
+      return trackpadScrollStartWheelEvent.deltaX > trackpadScrollStartWheelEvent.deltaY;
     }
     _trackpadScrollStartWheelEvent = event;
     return event.deltaX > event.deltaY;
   }
 
   bool _isLockedVertically(DomWheelEvent event) {
-    DomWheelEvent trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
-    double diff = event.timeStamp - _lastWheelEvent.timeStamp;
+    DomWheelEvent? trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
+    double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
 
     if (diff < 10 * 1000 && trackpadScrollStartWheelEvent != null) {
-      return _trackpadScrollStartWheelEvent.deltaX < _trackpadScrollStartWheelEvent.deltaY;
+      return trackpadScrollStartWheelEvent.deltaX < trackpadScrollStartWheelEvent.deltaY;
     }
     _trackpadScrollStartWheelEvent = event;
     return event.deltaX < event.deltaY;
