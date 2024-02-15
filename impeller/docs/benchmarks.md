@@ -20,10 +20,10 @@ Here are some noteworthy benchmarks related to Impeller performance:
 - **Animated Blur Backdrop Filter** - A driver test that scrolls to a screen and
   animates a Blur Backdrop filter to get progressively blurrier.  This covers a
   gap in the "New Gallery" tests we've seen in places like Wonderous.
-  - Samsung S10
-    - Vulkan: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X71aab43432178775be19fe133cdb5528)
-    - OpenGLES: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X8024e2cd402a6afcefdb18aaabc9533a)
-    - Vulkan vs OpenGLES - Average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=Xb1c6d1bb2e43c633bc3e1aa896cf5b08)
+  - Pixel 7 Pro
+    - Vulkan: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X6d3dd43039c95ec80a8b3914cf386f48)
+    - OpenGLES: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X48625544c02c75d050c4440405025d80)
+    - Vulkan vs OpenGLES - Average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=device_type%3DPixel_7_Pro%26sub_result%3Daverage_frame_rasterizer_time_millis%26test%3Danimated_blur_backdrop_filter_perf__timeline_summary%26test%3Danimated_blur_backdrop_filter_perf_opengles__timeline_summary)
   - Moto G4 (OpenGLES): [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X78023772ea9e94c81f37456a7fa7bf46)
   - iPhone 11 (Metal): [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X2f7504aba3db6aeff08cc896081ace55)
 
