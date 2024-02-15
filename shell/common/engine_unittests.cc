@@ -595,7 +595,6 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
             draw_latch.Signal();
           }));
   EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
-      .Times(2)
       .WillRepeatedly(Invoke([&engine_context](fml::TimePoint frame_target_time,
                                          uint64_t frame_number) {
         engine_context->EngineTaskSync([&](Engine& engine) {
@@ -627,10 +626,9 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
 
   continuation_ready_latch.Wait();
 
-
   // Set metrics, which notifies the Dart isolate to render the views.
   engine_context->EngineTaskSync([](Engine& engine) {
-    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{});
+    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1.0, 10, 10, 1, 0});
   });
 
   draw_latch.Wait();
