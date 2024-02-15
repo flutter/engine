@@ -234,6 +234,11 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
     return false;
   }
 
+  if (!FileExists(base_directory, temp_file_name.c_str())) {
+    FML_DLOG(ERROR) << "Temp file " << temp_file_name << " does not exist";
+    return false;
+  }
+
   auto success = ::renameat(base_directory.get(), temp_file_name.c_str(),
                             base_directory.get(), file_name) == 0;
   if (!success) {
