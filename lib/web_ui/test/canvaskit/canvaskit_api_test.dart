@@ -1596,7 +1596,7 @@ void _paragraphTests() {
         ..weight = canvasKit.FontWeight.Bold)
       ..fontSize = 72
       ..heightMultiplier = 1.5
-      ..halfLeading = false
+      ..halfLeading = true
       ..leading = 0
       ..strutEnabled = true
       ..forceStrutHeight = false;
