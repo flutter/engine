@@ -617,19 +617,20 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
   engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
                                          std::move(animator));
 
-  engine_context->EngineTaskSync(
-      [](Engine& engine) { engine.ScheduleFrame(true); });
-
+  engine_context->EngineTaskSync([](Engine& engine) {
+    // Schedule a frame to trigger Animator::BeginFrame to create a
+    // continuation. The continuation needs to be available before `Engine::Run`
+    // since the Dart program immediately schedules a warm up frame.
+    engine.ScheduleFrame(true);
+    // Add the implicit view so that the engine recognizes it and that its
+    // metrics is not empty.
+    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1.0, 10, 10, 1, 0});
+  });
   continuation_ready_latch.Wait();
 
   auto configuration = RunConfiguration::InferFromSettings(settings_);
   configuration.SetEntrypoint("renderWarmUpImplicitView");
   engine_context->Run(std::move(configuration));
-
-  // Set metrics, which notifies the Dart isolate to render the views.
-  engine_context->EngineTaskSync([](Engine& engine) {
-    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1.0, 10, 10, 1, 0});
-  });
 
   draw_latch.Wait();
 }
