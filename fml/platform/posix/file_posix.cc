@@ -244,6 +244,12 @@ bool WriteAtomically(const fml::UniqueFD& base_directory,
     return false;
   }
 
+  // Close the temp file before renaming it.
+  if (::close(temp_file.release()) != 0) {
+    FML_DLOG(ERROR) << "Failed to close temp file: " << strerror(errno);
+    return false;
+  }
+
   auto success = ::renameat(base_directory.get(), temp_file_name.c_str(),
                             base_directory.get(), file_name) == 0;
   if (!success) {
