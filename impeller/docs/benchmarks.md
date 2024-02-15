@@ -37,4 +37,4 @@ Here are some noteworthy benchmarks related to Impeller performance:
 
 - **Backdrop Filter Perf** - A driver test that isolates better the performance
   of blurs.
-  - iPhone 11 (Metal): [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=sub_result%3Daverage_frame_rasterizer_time_millis%26test%3Dbackdrop_filter_perf_ios__timeline_summary&xbaroffset=38815)
+  - iPhone 11 (Metal) - Average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=sub_result%3Daverage_frame_rasterizer_time_millis%26test%3Dbackdrop_filter_perf_ios__timeline_summary&xbaroffset=38815)
