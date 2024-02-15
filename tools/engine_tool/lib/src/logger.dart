@@ -16,7 +16,7 @@ import 'package:meta/meta.dart';
 // can go. We can just add more methods to Logger using the flutter_tool's
 // Logger as a guide:
 //
-// https://github.com/flutter/flutter/blob/master/packages/flutter_tools/lib/src/base/logger.dart#L422
+// https://github.com/flutter/flutter/blob/c530276f7806c77da2541c518a0e103c9bb44f10/packages/flutter_tools/lib/src/base/logger.dart#L422
 
 /// A simplified wrapper around the [Logger] from package:logging.
 ///
