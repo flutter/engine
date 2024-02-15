@@ -582,6 +582,7 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
   EXPECT_CALL(delegate_, GetPlatformMessageHandler)
       .WillOnce(ReturnRef(platform_message_handler));
 
+  fml::AutoResetWaitableEvent continuation_ready_latch;
   fml::AutoResetWaitableEvent draw_latch;
   EXPECT_CALL(animator_delegate, OnAnimatorDraw)
       .WillOnce(Invoke([&draw_latch](
@@ -594,17 +595,14 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
         draw_latch.Signal();
       }));
   EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
-      .WillRepeatedly(Invoke([&engine_context](fml::TimePoint frame_target_time,
-                                               uint64_t frame_number) {
-        engine_context->EngineTaskSync([&](Engine& engine) {
-          engine.BeginFrame(frame_target_time, frame_number);
-        });
-      }));
-
-  static fml::AutoResetWaitableEvent continuation_ready_latch;
-  continuation_ready_latch.Reset();
-  AddNativeCallback("NotifyNative",
-                    [](auto args) { continuation_ready_latch.Signal(); });
+      .WillRepeatedly(
+          Invoke([&engine_context, &continuation_ready_latch](
+                     fml::TimePoint frame_target_time, uint64_t frame_number) {
+            continuation_ready_latch.Signal();
+            engine_context->EngineTaskSync([&](Engine& engine) {
+              engine.BeginFrame(frame_target_time, frame_number);
+            });
+          }));
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
@@ -619,11 +617,14 @@ TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
   engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
                                          std::move(animator));
 
-  auto configuration = RunConfiguration::InferFromSettings(settings_);
-  configuration.SetEntrypoint("renderWarmUpImplicitViewAfterMetricsChanged");
-  engine_context->Run(std::move(configuration));
+  engine_context->EngineTaskSync(
+      [](Engine& engine) { engine.ScheduleFrame(true); });
 
   continuation_ready_latch.Wait();
+
+  auto configuration = RunConfiguration::InferFromSettings(settings_);
+  configuration.SetEntrypoint("renderWarmUpImplicitView");
+  engine_context->Run(std::move(configuration));
 
   // Set metrics, which notifies the Dart isolate to render the views.
   engine_context->EngineTaskSync([](Engine& engine) {

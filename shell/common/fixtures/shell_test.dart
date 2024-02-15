@@ -533,43 +533,29 @@ void testReportViewWidths() {
 }
 
 @pragma('vm:entry-point')
-void renderWarmUpImplicitViewAfterMetricsChanged() {
-  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
-    // Make sure onBeginFrame and onDrawFrame are not used later.
-    PlatformDispatcher.instance.onBeginFrame = null;
-    PlatformDispatcher.instance.onDrawFrame = null;
-    // Let the test know that a continuation is available.
-    notifyNative();
-  };
-
+void renderWarmUpImplicitView() {
   bool beginFrameDone = false;
 
-  // As soon as 2 views are added, render these views.
-  PlatformDispatcher.instance.onMetricsChanged = () {
-    PlatformDispatcher.instance.scheduleWarmUpFrame(
-      beginFrame: () {
-        expect(beginFrameDone, false);
-        beginFrameDone = true;
-      },
-      drawFrame: () {
-        expect(beginFrameDone, true);
+  PlatformDispatcher.instance.scheduleWarmUpFrame(
+    beginFrame: () {
+      expect(beginFrameDone, false);
+      beginFrameDone = true;
+    },
+    drawFrame: () {
+      expect(beginFrameDone, true);
 
-        final SceneBuilder builder = SceneBuilder();
-        final PictureRecorder recorder = PictureRecorder();
-        final Canvas canvas = Canvas(recorder);
-        canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
-        final Picture picture = recorder.endRecording();
-        builder.addPicture(Offset.zero, picture);
+      final SceneBuilder builder = SceneBuilder();
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+      final Picture picture = recorder.endRecording();
+      builder.addPicture(Offset.zero, picture);
 
-        final Scene scene = builder.build();
-        PlatformDispatcher.instance.implicitView!.render(scene);
+      final Scene scene = builder.build();
+      PlatformDispatcher.instance.implicitView!.render(scene);
 
-        scene.dispose();
-        picture.dispose();
-      },
-    );
-  };
-
-  // Schedule a frame to produce an Animator continuation.
-  PlatformDispatcher.instance.scheduleFrame();
+      scene.dispose();
+      picture.dispose();
+    },
+  );
 }
