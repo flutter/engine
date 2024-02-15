@@ -252,7 +252,7 @@ vars = {
   # The version / instance id of the cipd:chromium/fuchsia/test-scripts which
   # will be used altogether with fuchsia-sdk to setup the build / test
   # environment.
-  'fuchsia_test_scripts_version': 'MXOVCk7s_1bZ8hJZ5M5DgS_9i8FeSjYojkSGY8zpnxQC',
+  'fuchsia_test_scripts_version': 'vf8imeAzGv_gjYQDoqub2laI-6nkB3gQNiGuVaFForMC',
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
