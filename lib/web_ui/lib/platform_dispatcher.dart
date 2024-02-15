@@ -92,8 +92,6 @@ abstract class PlatformDispatcher {
 
   void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame});
 
-  Future<void> render(Scene scene, [FlutterView view]);
-
   AccessibilityFeatures get accessibilityFeatures;
 
   VoidCallback? get onAccessibilityFeaturesChanged;
@@ -589,5 +587,5 @@ enum ViewFocusState {
 enum ViewFocusDirection {
   undefined,
   forward,
-  backwards,
+  backward,
 }

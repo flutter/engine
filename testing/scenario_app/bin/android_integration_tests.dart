@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:args/args.dart';
+import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart';
 import 'package:process/process.dart';
 import 'package:skia_gold_client/skia_gold_client.dart';
@@ -15,33 +17,89 @@ import 'utils/logs.dart';
 import 'utils/process_manager_extension.dart';
 import 'utils/screenshot_transformer.dart';
 
-const int tcpPort = 3001;
-
+// If you update the arguments, update the documentation in the README.md file.
 void main(List<String> args) async {
+  final Engine? engine = Engine.tryFindWithin();
   final ArgParser parser = ArgParser()
+    ..addFlag(
+      'help',
+      help: 'Prints usage information',
+      negatable: false,
+    )
     ..addOption(
       'adb',
-      help: 'absolute path to the adb tool',
-      mandatory: true,
+      help: 'Absolute path to the adb tool',
+      defaultsTo: engine != null ? join(
+        engine.srcDir.path,
+        'third_party',
+        'android_tools',
+        'sdk',
+        'platform-tools',
+        'adb',
+      ) : null,
     )
     ..addOption(
       'out-dir',
-      help: 'out directory',
-      mandatory: true,
+      help: 'Out directory',
+      defaultsTo:
+        engine?.
+        outputs().
+        where((Output o) => basename(o.path.path).startsWith('android_')).
+        firstOrNull?.
+        path.path,
     )
-    ..addFlag(
+    ..addOption(
       'smoke-test',
       help: 'runs a single test to verify the setup',
-      negatable: false,
+    )
+    ..addFlag(
+      'use-skia-gold',
+      help: 'Use Skia Gold to compare screenshots.',
+      defaultsTo: isLuciEnv,
+    )
+    ..addFlag(
+      'enable-impeller',
+      help: 'Enable Impeller for the Android app.',
+    )
+    ..addOption(
+      'impeller-backend',
+      help: 'The Impeller backend to use for the Android app.',
+      allowed: <String>['vulkan', 'opengles'],
+      defaultsTo: 'vulkan',
     );
 
   runZonedGuarded(
     () async {
       final ArgResults results = parser.parse(args);
+      if (results['help'] as bool) {
+        stdout.writeln(parser.usage);
+        return;
+      }
+
+      if (results['out-dir'] == null) {
+        panic(<String>['--out-dir is required']);
+      }
+      if (results['adb'] == null) {
+        panic(<String>['--adb is required']);
+      }
+
       final Directory outDir = Directory(results['out-dir'] as String);
       final File adb = File(results['adb'] as String);
-      final bool smokeTest = results['smoke-test'] as bool;
-      await _run(outDir: outDir, adb: adb, smokeTest: smokeTest);
+      final bool useSkiaGold = results['use-skia-gold'] as bool;
+      final String? smokeTest = results['smoke-test'] as String?;
+      final bool enableImpeller = results['enable-impeller'] as bool;
+      final _ImpellerBackend? impellerBackend = _ImpellerBackend.tryParse(results['impeller-backend'] as String?);
+      if (enableImpeller && impellerBackend == null) {
+        panic(<String>['invalid graphics-backend', results['impeller-backend'] as String? ?? '<null>']);
+      }
+      await _run(
+        outDir: outDir,
+        adb: adb,
+        smokeTestFullPath: smokeTest,
+        useSkiaGold: useSkiaGold,
+        enableImpeller: enableImpeller,
+        impellerBackend: impellerBackend,
+      );
       exit(0);
     },
     (Object error, StackTrace stackTrace) {
@@ -54,10 +112,29 @@ void main(List<String> args) async {
   );
 }
 
+const int _tcpPort = 3001;
+
+enum _ImpellerBackend {
+  vulkan,
+  opengles;
+
+  static _ImpellerBackend? tryParse(String? value) {
+    for (final _ImpellerBackend backend in _ImpellerBackend.values) {
+      if (backend.name == value) {
+        return backend;
+      }
+    }
+    return null;
+  }
+}
+
 Future<void> _run({
   required Directory outDir,
   required File adb,
-  required bool smokeTest,
+  required String? smokeTestFullPath,
+  required bool useSkiaGold,
+  required bool enableImpeller,
+  required _ImpellerBackend? impellerBackend,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -92,7 +169,7 @@ Future<void> _run({
   late  ServerSocket server;
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   await step('Starting server...', () async {
-    server = await ServerSocket.bind(InternetAddress.anyIPv4, tcpPort);
+    server = await ServerSocket.bind(InternetAddress.anyIPv4, _tcpPort);
     stdout.writeln('listening on host ${server.address.address}:${server.port}');
     server.listen((Socket client) {
       stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
@@ -164,11 +241,16 @@ Future<void> _run({
         panic(<String>['could not get API level of the connected device']);
       }
       final String connectedDeviceAPILevel = (apiLevelProcessResult.stdout as String).trim();
-      log('using API level $connectedDeviceAPILevel');
+      final Map<String, String> dimensions = <String, String>{
+        'AndroidAPILevel': connectedDeviceAPILevel,
+        'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
+      };
+      log('using dimensions: ${json.encode(dimensions)}');
       skiaGoldClient = SkiaGoldClient(
         outDir,
         dimensions: <String, String>{
           'AndroidAPILevel': connectedDeviceAPILevel,
+          'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
         },
       );
     });
@@ -178,12 +260,16 @@ Future<void> _run({
         await skiaGoldClient!.auth();
         log('skia gold client is available');
       } else {
-        log('skia gold client is unavailable');
+        if (useSkiaGold) {
+          panic(<String>['skia gold client is unavailable']);
+        } else {
+          log('skia gold client is unavaialble');
+        }
       }
     });
 
     await step('Reverse port...', () async {
-      final int exitCode = await pm.runAndForward(<String>[adb.path, 'reverse', 'tcp:3000', 'tcp:$tcpPort']);
+      final int exitCode = await pm.runAndForward(<String>[adb.path, 'reverse', 'tcp:3000', 'tcp:$_tcpPort']);
       if (exitCode != 0) {
         panic(<String>['could not forward port']);
       }
@@ -210,9 +296,13 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-        if (smokeTest)
-          '-e class dev.flutter.scenarios.EngineLaunchE2ETest',
+        if (smokeTestFullPath != null)
+          '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
+        if (enableImpeller)
+          '-e enable-impeller',
+        if (impellerBackend != null)
+          '-e impeller-backend ${impellerBackend.name}',
       ]);
       if (exitCode != 0) {
         panic(<String>['instrumented tests failed to run']);
