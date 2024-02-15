@@ -15,6 +15,7 @@
   package: display_list_tests-0.far
 - test_command: test run fuchsia-pkg://fuchsia.com/display_list_render_tests#meta/display_list_render_tests.cm
   package: display_list_render_tests-0.far
+  variant: x64
 - test_command: test run fuchsia-pkg://fuchsia.com/flow_tests#meta/flow_tests.cm
   package: flow_tests-0.far
 - test_command: test run fuchsia-pkg://fuchsia.com/runtime_tests#meta/runtime_tests.cm
