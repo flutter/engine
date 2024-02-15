@@ -17,12 +17,11 @@ static fml::UniqueFD CreateIntermediatesDirectory() {
   std::replace(test_name.begin(), test_name.end(), '.', '_');
 
   // To be able to run tests in parallel, we can't have tests all writing to
-  // the same directory. We add a unique (random) suffix in order to avoid
-  // collisions: https://github.com/flutter/flutter/issues/143330.
-  std::seed_seq seed{::testing::UnitTest::GetInstance()->random_seed()};
-  std::mt19937 rng(seed);
-  std::uniform_int_distribution<int> dist(0, 1000000);
-  test_name += "_" + std::to_string(dist(rng));
+  // the same directory. We add the unix timestamp to the directory name.
+  // See https://github.com/flutter/flutter/issues/143330.
+  std::stringstream stream;
+  stream << test_name << "_" << std::time(nullptr);
+  test_name = stream.str();
 
   FML_LOG(ERROR) << "Creating intermediates directory: " << test_name;
 
