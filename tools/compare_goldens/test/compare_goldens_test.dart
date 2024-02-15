@@ -2,7 +2,4 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// import 'package:compare_goldens/compare_goldens.dart' as compare_goldens;
-// import 'package:litetest/litetest.dart';
-
 void main() {}
