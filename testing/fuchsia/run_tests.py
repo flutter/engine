@@ -128,7 +128,7 @@ def _bundled_test_runner_of(target_id: str) -> _BundledTestRunner:
   # TODO(zijiehe-google-com): Run all tests in release build,
   # https://github.com/flutter/flutter/issues/140179.
   def variant(test) -> bool:
-    return 'variant' not in test or VARIANT in test['variant']
+    return 'variant' not in test or test['variant'] in VARIANT
 
   tests = [t for t in tests if variant(t)]
   return _BundledTestRunner(target_id, resolve_packages(tests), build_test_cases(tests), log_dir)
