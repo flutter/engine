@@ -5,11 +5,13 @@ Here are some noteworthy benchmarks related to Impeller performance:
 - **New Gallery** - Runs through the Flutter Gallery with a driver test.
   - Pixel 7 Pro
     - Skia vs Vulkan Impeller - frame raster time stats: [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=device_type%3DPixel_7_Pro%26sub_result%3D90th_percentile_frame_rasterizer_time_millis%26sub_result%3D99th_percentile_frame_rasterizer_time_millis%26sub_result%3Daverage_frame_rasterizer_time_millis%26sub_result%3Dworst_frame_rasterizer_time_millis%26test%3Dnew_gallery__transition_perf%26test%3Dnew_gallery_impeller__transition_perf)
+    - OpenGLES: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X080f13e1d6607d5ad3f4fe5c67e61538)
+    - Vulkan vs OpenGLES - average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?queries=device_type%3DPixel_7_Pro%26sub_result%3Daverage_frame_rasterizer_time_millis%26test%3Dnew_gallery_impeller__transition_perf%26test%3Dnew_gallery_opengles_impeller__transition_perf)
   - Samsung S10
-    - Vulkan: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X8f96868d3a9eeb120bec1f458c577c30)
-    - OpenGLES: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=Xeb13bfef4ef2947f899646422bbad8c6)
-    - Vulkan vs OpenGLES - average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=Xdfca283b38a86fc09129141792cf5a4b)
-    - Skia vs Vulkan Impeller - 90th percentile frame rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X2cacf305c9d4b1b5fc43f81368803a9b)
+    - Vulkan: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X777844777514c7b34e736eadbc5dd002)
+    - Skia vs Vulkan Impeller - 90th percentile frame rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?begin=1707934850&end=1708021250&queries=device_type%3DSM-A025V%26sub_result%3D90th_percentile_frame_rasterizer_time_millis%26test%3Dnew_gallery__transition_perf%26test%3Dnew_gallery_impeller__transition_perf)
+    - (deprecated) OpenGLES: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=Xeb13bfef4ef2947f899646422bbad8c6)
+    - (deprecated) Vulkan vs OpenGLES - average rasterizer time: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=Xdfca283b38a86fc09129141792cf5a4b)
   - Moto G4 (OpenGLES): [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=Xaeae5aa39c9028be43e8a9ad40540bd8)
   - iPhone 11
     - Metal: [dashboard](https://flutter-flutter-perf.skia.org/e/?keys=X9d52e54d0ac32151cc10feca61ea34cc)
