@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '1277910beec9aca2c04095970662919ee2de6161',
+  'skia_revision': 'a8e4db1afac5a39e49f8a060d126bc529a06e660',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -252,7 +252,7 @@ vars = {
   # The version / instance id of the cipd:chromium/fuchsia/test-scripts which
   # will be used altogether with fuchsia-sdk to setup the build / test
   # environment.
-  'fuchsia_test_scripts_version': 'MXOVCk7s_1bZ8hJZ5M5DgS_9i8FeSjYojkSGY8zpnxQC',
+  'fuchsia_test_scripts_version': 'vf8imeAzGv_gjYQDoqub2laI-6nkB3gQNiGuVaFForMC',
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
@@ -1184,7 +1184,7 @@ hooks = [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
       'src/flutter/tools/fuchsia/test_scripts/update_product_bundles.py',
-      'terminal.x64',
+      'terminal.x64,terminal.qemu-arm64',
     ]
   }
 ]
