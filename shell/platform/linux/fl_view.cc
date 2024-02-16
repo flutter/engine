@@ -550,7 +550,7 @@ static void realize_cb(FlView* self) {
   handle_geometry_changed(self);
 }
 
-static void configure_cb(FlView* self) {
+static void size_allocate_cb(FlView* self) {
   handle_geometry_changed(self);
 }
 
@@ -613,7 +613,7 @@ static void fl_view_constructed(GObject* object) {
                            self);
 
   g_signal_connect_swapped(self, "realize", G_CALLBACK(realize_cb), self);
-  g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(configure_cb),
+  g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(size_allocate_cb),
                            self);
 }
 
