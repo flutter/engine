@@ -55,7 +55,8 @@ File _makeTempFile(String prefix) {
 }
 
 /// Run the diff of the contents of a directory at [dirPath] and the contents of
-/// a file at [goldenPath].  Returns 0 if there is no diff.
+/// a file at [goldenPath].  Returns 0 if there is no diff. Be aware that the
+/// CWD should be inside of the git repository for the patch to be correct.
 int dirContentsDiff(String goldenPath, String dirPath) {
   if (!File(goldenPath).existsSync()) {
     throw Exception('unable to find `$goldenPath`');
