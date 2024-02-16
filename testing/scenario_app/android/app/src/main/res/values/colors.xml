@@ -4,5 +4,5 @@
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
     <!-- See https://github.com/flutter/flutter/issues/143602 -->
-    <color name="colorBackground">#000000 </color>
+    <color name="colorBackground">#000000</color>
 </resources>
