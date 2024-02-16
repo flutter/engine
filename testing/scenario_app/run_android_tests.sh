@@ -95,9 +95,6 @@ cd $SCRIPT_DIR
 "$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart run \
   "$SCRIPT_DIR"/bin/android_integration_tests.dart \
   --out-dir="$OUT_DIR" \
-<<<<<<< HEAD
   --logs-dir="$LOGS_DIR" \
-=======
   --output-contents-golden="$CONTENTS_GOLDEN" \
->>>>>>> upstream/main
   "$@"
