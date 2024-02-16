@@ -160,7 +160,7 @@ Future<void> _run({
   final String logcatPath = join(logsDir.path, 'logcat.txt');
 
   // TODO(matanlurey): Use screenshots/ sub-directory (https://github.com/flutter/flutter/issues/143604).
-  final String screenshotPath = logcatPath;
+  final String screenshotPath = logsDir.path;
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
   final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
   final File appApk = File(join(apkOutPath, 'debug', 'app-debug.apk'));
@@ -342,14 +342,14 @@ Future<void> _run({
       }
     });
 
-    await step('Uinstalling app APK...', () async {
+    await step('Uninstalling app APK...', () async {
       final int exitCode = await pm.runAndForward(<String>[adb.path, 'uninstall', 'dev.flutter.scenarios']);
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
       }
     });
 
-    await step('Uinstalling test APK...', () async {
+    await step('Uninstalling test APK...', () async {
       final int exitCode = await pm.runAndForward(<String>[adb.path, 'uninstall', 'dev.flutter.scenarios.test']);
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
