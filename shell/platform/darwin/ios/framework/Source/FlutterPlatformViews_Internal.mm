@@ -290,18 +290,18 @@ static BOOL _preparedOnce = NO;
 }
 
 - (void)drawRect:(CGRect)rect {
-  CGContextRef context = UIGraphicsGetCurrentContext();
-  CGContextSaveGState(context);
+  // CGContextRef context = UIGraphicsGetCurrentContext();
+  // CGContextSaveGState(context);
 
-  // For mask view, only the alpha channel is used.
-  CGContextSetAlpha(context, 1);
+  // // For mask view, only the alpha channel is used.
+  // CGContextSetAlpha(context, 1);
 
-  for (size_t i = 0; i < paths_.size(); i++) {
-    CGContextAddPath(context, paths_.at(i));
-    CGContextClip(context);
-  }
-  CGContextFillRect(context, rect);
-  CGContextRestoreGState(context);
+  // for (size_t i = 0; i < paths_.size(); i++) {
+  //   CGContextAddPath(context, paths_.at(i));
+  //   CGContextClip(context);
+  // }
+  // CGContextFillRect(context, rect);
+  // CGContextRestoreGState(context);
 }
 
 - (void)clipRect:(const SkRect&)clipSkRect matrix:(const SkMatrix&)matrix {
