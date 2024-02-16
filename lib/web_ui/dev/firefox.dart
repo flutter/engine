@@ -6,8 +6,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:path/path.dart' as path;
-import 'package:test_api/src/backend/runtime.dart';
-import 'package:test_core/src/util/io.dart';
+import 'package:test_api/backend.dart';
+import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
 
 import 'browser.dart';
 import 'browser_process.dart';
