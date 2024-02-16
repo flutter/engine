@@ -86,6 +86,7 @@ void ImageExternalTextureGL::ProcessFrame(PaintContext& context,
 void ImageExternalTextureGL::Detach() {
   image_lru_.Clear();
   gl_entries_.clear();
+  latest_android_image_.Reset();
 }
 
 impeller::UniqueEGLImageKHR ImageExternalTextureGL::CreateEGLImage(
