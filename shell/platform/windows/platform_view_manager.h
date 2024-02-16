@@ -20,9 +20,10 @@ enum class FocusChangeDirection {
   kBackward       // Keyboard focus moves backwards, e.g. Shift+TAB.
 };
 
-// Keeps track of registered platform view types and platform view instances,
-// and is responsible for processing and responding to platform view related
-// method invokations from the framework.
+// The platform method handler for platform view related communication between
+// the engine and the framework. This base class is derived by a concrete class
+// (i.e. PlatformViewPlugin) to provide implementation of its abstract virtual
+// methods.
 class PlatformViewManager {
  public:
   PlatformViewManager(BinaryMessenger* binary_messenger);
@@ -30,15 +31,17 @@ class PlatformViewManager {
   virtual ~PlatformViewManager();
 
   // Add a new platform view instance to be lazily instantiated when it is next
-  // composited.
+  // composited. The manager will invoke Success when this method returns true,
+  // and invoke Error otherwise.
   virtual bool AddPlatformView(PlatformViewId id,
-                                         std::string_view type_name) = 0;
+                               std::string_view type_name) = 0;
 
   // The framework may invoke this method when keyboard focus must be given to
-  // the platform view.
+  // the platform view. The manager will invoke Success when this method returns
+  // true, and invoke Error otherwise.
   virtual bool FocusPlatformView(PlatformViewId id,
-                         FocusChangeDirection direction,
-                         bool focus) = 0;
+                                 FocusChangeDirection direction,
+                                 bool focus) = 0;
 
  private:
   std::unique_ptr<MethodChannel<EncodableValue>> channel_;
