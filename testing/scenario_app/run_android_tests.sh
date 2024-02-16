@@ -10,8 +10,8 @@
 set -e
 
 # Check number of args.
-if [ $# -ne 1 ]; then
-  echo "Usage: $0 <variant>"
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <variant> [flags*]"
   exit 1
 fi
 
