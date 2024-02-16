@@ -9,6 +9,12 @@
 
 set -e
 
+# Check number of args.
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <variant>"
+  exit 1
+fi
+
 # Needed because if it is set, cd may print the path it changed to.
 unset CDPATH
 

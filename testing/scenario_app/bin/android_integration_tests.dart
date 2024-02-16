@@ -18,6 +18,17 @@ import 'utils/logs.dart';
 import 'utils/process_manager_extension.dart';
 import 'utils/screenshot_transformer.dart';
 
+void _withTemporaryCwd(String path, void Function() callback) async {
+  final String originalCwd = Directory.current.path;
+  Directory.current = Directory(path).parent.path;
+
+  try {
+    callback();
+  } finally {
+    Directory.current = originalCwd;
+  }
+}
+
 // If you update the arguments, update the documentation in the README.md file.
 void main(List<String> args) async {
   final Engine? engine = Engine.tryFindWithin();
@@ -363,10 +374,13 @@ Future<void> _run({
     if (contentsGolden != null) {
       // Check the output here.
       await step('Check output files...', () async {
-        final int exitCode = dirContentsDiff(contentsGolden, screenshotPath);
-        if (exitCode != 0) {
-          panic(<String>['Output contents incorrect.']);
-        }
+        // TODO(gaaclarke): We should move this into dir_contents_diff.
+        _withTemporaryCwd(contentsGolden, () {
+          final int exitCode = dirContentsDiff(basename(contentsGolden), screenshotPath);
+          if (exitCode != 0) {
+            panic(<String>['Output contents incorrect.']);
+          }
+        });
       });
     }
 
