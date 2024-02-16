@@ -906,7 +906,7 @@ TEST(FlutterWindowsViewTest, TestEmptyFrameResizes) {
   std::unique_ptr<FlutterWindowsView> view = engine->CreateView(
       std::make_unique<NiceMock<MockWindowBindingHandler>>());
 
-  ViewModifier view_modifier(view.get());
+  ViewModifier view_modifier{view.get()};
   engine_modifier.SetEGLManager(std::move(egl_manager));
   view_modifier.SetSurface(std::move(surface));
 
@@ -943,7 +943,7 @@ TEST(FlutterWindowsViewTest, WindowResizeRace) {
   std::unique_ptr<FlutterWindowsView> view = engine->CreateView(
       std::make_unique<NiceMock<MockWindowBindingHandler>>());
 
-  ViewModifier view_modifier(view.get());
+  ViewModifier view_modifier{view.get()};
   engine_modifier.SetEGLManager(std::move(egl_manager));
   view_modifier.SetSurface(std::move(surface));
 
@@ -984,7 +984,7 @@ TEST(FlutterWindowsViewTest, WindowResizeInvalidSurface) {
   std::unique_ptr<FlutterWindowsView> view = engine->CreateView(
       std::make_unique<NiceMock<MockWindowBindingHandler>>());
 
-  ViewModifier view_modifier(view.get());
+  ViewModifier view_modifier{view.get()};
   engine_modifier.SetEGLManager(std::move(egl_manager));
   view_modifier.SetSurface(std::move(surface));
 
@@ -1029,8 +1029,8 @@ TEST(FlutterWindowsViewTest, WindowRepaintTests) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
 
-  FlutterWindowsView view(engine.get(),
-                          std::make_unique<flutter::FlutterWindow>(100, 100));
+  FlutterWindowsView view{engine.get(),
+                          std::make_unique<flutter::FlutterWindow>(100, 100)};
 
   bool schedule_frame_called = false;
   modifier.embedder_api().ScheduleFrame =

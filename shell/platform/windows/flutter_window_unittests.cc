@@ -322,7 +322,7 @@ TEST_F(FlutterWindowTest, AlertNode) {
       .WillRepeatedly(Return(nullptr));
   EXPECT_CALL(*win32window.get(), OnWindowStateEvent).Times(AnyNumber());
   EXPECT_CALL(*win32window.get(), GetWindowHandle).Times(AnyNumber());
-  MockFlutterWindowsView view(engine.get(), std::move(win32window));
+  MockFlutterWindowsView view{engine.get(), std::move(win32window)};
   std::wstring message = L"Test alert";
   EXPECT_CALL(view, NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
       .Times(1);
