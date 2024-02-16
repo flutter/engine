@@ -818,9 +818,10 @@ class ContentContext {
 
   /// Run backend specific additional setup and create common shader variants.
   ///
-  /// This is used by the Android Vulkan backend to force the driver to
-  /// compile additional shaders used in internal operations, such as during
-  /// buffer to image blits and render pass construction.
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
   void InitializeCommonlyUsedShadersIfNeeded() const;
 
   struct RuntimeEffectPipelineKey {
@@ -1014,6 +1015,13 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
+    TypedPipeline* pipeline = CreateIfNeeded(container, opts);
+    return pipeline->WaitAndGet();
+  }
+
+  template <class TypedPipeline>
+  TypedPipeline* CreateIfNeeded(Variants<TypedPipeline>& container,
+                                ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
     }
@@ -1022,16 +1030,17 @@ class ContentContext {
       opts.wireframe = true;
     }
 
-    if (auto found = container.Get(opts)) {
-      return found->WaitAndGet();
+    if (TypedPipeline* found = container.Get(opts)) {
+      return found;
     }
 
-    auto prototype = container.GetDefault();
+    TypedPipeline* prototype = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != nullptr);
 
-    auto pipeline = prototype->WaitAndGet();
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+        prototype->WaitAndGet();
     if (!pipeline) {
       return nullptr;
     }
@@ -1043,10 +1052,10 @@ class ContentContext {
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
-    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
-    auto variant_pipeline = variant->WaitAndGet();
+    std::unique_ptr<TypedPipeline> variant =
+        std::make_unique<TypedPipeline>(std::move(variant_future));
     container.Set(opts, std::move(variant));
-    return variant_pipeline;
+    return container.Get(opts);
   }
 
   bool is_valid_ = false;

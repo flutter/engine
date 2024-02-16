@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "fml/trace_event.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
@@ -607,7 +608,12 @@ void ContentContext::FlushCommandBuffers() const {
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
-  // Initialize commonly used shaders that aren't defaults.
+  TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
+
+  // Initialize commonly used shaders that aren't defaults. These settings were
+  // chosen based on the knowledge that we mix and match triangle and
+  // triangle-strip geometry, and also have fairly agressive srcOver to src
+  // blend mode conversions.
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
       .color_attachment_pixel_format =
@@ -618,13 +624,13 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
          {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
       options.blend_mode = mode;
       options.primitive_type = geometry;
-      GetSolidFillPipeline(options);
+      CreateIfNeeded(solid_fill_pipelines_, options);
       if (context_->GetCapabilities()->SupportsSSBO()) {
-        GetLinearGradientSSBOFillPipeline(options);
-        GetRadialGradientSSBOFillPipeline(options);
-        GetSweepGradientSSBOFillPipeline(options);
-        GetConicalGradientSSBOFillPipeline(options);
-        GetTexturePipeline(options);
+        CreateIfNeeded(linear_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(radial_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(sweep_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(conical_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(texture_pipelines_, options);
       }
     }
   }
@@ -636,38 +642,35 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
         ContentContextOptions::StencilMode::kLegacyClipDecrement,
         ContentContextOptions::StencilMode::kLegacyClipRestore}) {
     options.stencil_mode = stencil_mode;
-    GetClipPipeline(options);
+    CreateIfNeeded(clip_pipelines_, options);
   }
 
-  if (GetContext()->GetBackendType() != Context::BackendType::kVulkan) {
-    return;
+  if (GetContext()->GetBackendType() == Context::BackendType::kVulkan) {
+    // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
+    // observed to take 10s of ms as an internal shader is compiled to perform
+    // the operation. Similarly, the initial render pass can also take 10s of ms
+    // for a similar reason. Because the context object is initialized far
+    // before the first frame, create a trivial texture and render pass to force
+    // the driver to compiler these shaders before the frame begins.
+    TextureDescriptor desc;
+    desc.size = {1, 1};
+    desc.storage_mode = StorageMode::kHostVisible;
+    desc.format = context_->GetCapabilities()->GetDefaultColorFormat();
+    auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+    uint32_t color = 0;
+    if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
+      VALIDATION_LOG << "Failed to set bootstrap texture.";
+    }
+
+    auto cmd_buffer = GetContext()->CreateCommandBuffer();
+    auto render_target = RenderTarget::CreateOffscreenMSAA(
+        *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
+        /*mip_count=*/1, "Bootstrap RenderPass");
+    auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+    render_pass->EncodeCommands();
+    RecordCommandBuffer(std::move(cmd_buffer));
+    FlushCommandBuffers();
   }
-
-  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
-  // observed to take 10s of ms as an internal shader is compiled to perform the
-  // operation. Similarly, the initial render pass can also take 10s of ms for a
-  // similar reason. Because the context object is initialized far before the
-  // first frame, create a trivial texture and render pass to force the driver
-  // to compiler these shaders before the frame begins.
-
-  TextureDescriptor desc;
-  desc.size = {1, 1};
-  desc.storage_mode = StorageMode::kHostVisible;
-  desc.format = context_->GetCapabilities()->GetDefaultColorFormat();
-  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
-  uint32_t color = 0;
-  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
-    VALIDATION_LOG << "Failed to set bootstrap texture.";
-  }
-
-  auto cmd_buffer = GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
-      /*mip_count=*/1, "Bootstrap RenderPass");
-  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
-  render_pass->EncodeCommands();
-  RecordCommandBuffer(std::move(cmd_buffer));
-  FlushCommandBuffers();
 }
 
 }  // namespace impeller
