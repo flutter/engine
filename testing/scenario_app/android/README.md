@@ -36,6 +36,10 @@ The result of `adb logcat` and screenshots taken during the test will be stored
 in a logs directory, which is either `FLUTTER_LOGS_DIR` (if set, such as on CI)
 or locally in `out/.../scenario_app/logs`.
 
+You can then view the logs and screenshots on LUCI. [For example](https://ci.chromium.org/ui/p/flutter/builders/try/Linux%20Engine%20Drone/2003164/overview):
+
+![Screenshot of the Logs on LUCI](https://github.com/flutter/engine/assets/168174/79dc864c-c18b-4df9-a733-fd55301cc69c).
+
 ## CI Configuration
 
 See [`ci/builders/linux_android_emulator.json`](../../../ci/builders/linux_android_emulator.json)

@@ -158,7 +158,9 @@ Future<void> _run({
 
   final String scenarioAppPath = join(outDir.path, 'scenario_app');
   final String logcatPath = join(logsDir.path, 'logcat.txt');
-  final String screenshotPath = join(logsDir.path, 'screenshots');
+
+  // TODO(matanlurey): Use screenshots/ sub-directory (https://github.com/flutter/flutter/issues/143604).
+  final String screenshotPath = logcatPath;
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
   final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
   final File appApk = File(join(apkOutPath, 'debug', 'app-debug.apk'));
