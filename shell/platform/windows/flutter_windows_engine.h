@@ -32,7 +32,7 @@
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
-#include "flutter/shell/platform/windows/platform_view_manager.h"
+#include "flutter/shell/platform/windows/platform_view_plugin.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
@@ -430,7 +430,7 @@ class FlutterWindowsEngine {
 
   std::shared_ptr<egl::ProcTable> gl_;
 
-  std::unique_ptr<PlatformViewManager> platform_view_manager_;
+  std::unique_ptr<PlatformViewPlugin> platform_view_plugin_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

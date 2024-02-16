@@ -5,23 +5,22 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_PLATFORM_VIEW_MANAGER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_PLATFORM_VIEW_MANAGER_H_
 
-#include "flutter/shell/platform/windows/platform_view_manager.h"
+#include "flutter/shell/platform/windows/platform_view_plugin.h"
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "gmock/gmock.h"
 
 namespace flutter {
 
-class MockPlatformViewManager : public PlatformViewManager {
+class MockPlatformViewManager : public PlatformViewPlugin {
  public:
   MockPlatformViewManager(FlutterWindowsEngine* engine)
-      : PlatformViewManager(engine->task_runner(),
-                            engine->messenger_wrapper()) {}
+      : PlatformViewPlugin(engine->messenger_wrapper(), engine->task_runner()) {}
 
   ~MockPlatformViewManager() {}
 
-  MOCK_METHOD(void,
-              QueuePlatformViewCreation,
+  MOCK_METHOD(bool,
+              AddPlatformView,
               (PlatformViewId id, std::string_view));
 };
 

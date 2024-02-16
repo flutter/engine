@@ -380,9 +380,9 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
   args.custom_task_runners = &custom_task_runners;
 
-  if (!platform_view_manager_) {
-    platform_view_manager_ = std::make_unique<PlatformViewManager>(
-        task_runner_.get(), messenger_wrapper_.get());
+  if (!platform_view_plugin_) {
+    platform_view_plugin_ = std::make_unique<PlatformViewPlugin>(
+        messenger_wrapper_.get(), task_runner_.get());
   }
   if (egl_manager_) {
     auto resolver = [](const char* name) -> void* {

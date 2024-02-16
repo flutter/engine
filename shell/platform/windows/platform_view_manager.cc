@@ -12,10 +12,8 @@ namespace {
 constexpr char kChannelName[] = "flutter/platform_views";
 }
 
-PlatformViewManager::PlatformViewManager(TaskRunner* task_runner,
-                                         BinaryMessenger* binary_messenger)
-    : task_runner_(task_runner),
-      channel_(std::make_unique<MethodChannel<EncodableValue>>(
+PlatformViewManager::PlatformViewManager(BinaryMessenger* binary_messenger)
+    : channel_(std::make_unique<MethodChannel<EncodableValue>>(
           binary_messenger,
           kChannelName,
           &StandardMethodCodec::GetInstance())) {
@@ -28,31 +26,30 @@ PlatformViewManager::PlatformViewManager(TaskRunner* task_runner,
               std::get<std::string>(args.find(EncodableValue("type"))->second);
           const auto& id =
               std::get<std::int32_t>(args.find(EncodableValue("id"))->second);
-          QueuePlatformViewCreation(id, type);
+          if (AddPlatformView(id, type)) {
+            result->Success();
+          } else {
+            result->Error("AddPlatformView", "Failed to add platform view");
+          }
+          return;
+        } else if (call.method_name() == "focus") {
+          const auto& id =
+              std::get<std::int32_t>(args.find(EncodableValue("id"))->second);
+          const auto& direction =
+              std::get<std::int32_t>(args.find(EncodableValue("direction"))->second);
+          const auto& focus =
+              std::get<bool>(args.find(EncodableValue("focus"))->second);
+          if (FocusPlatformView(id, static_cast<FocusChangeDirection>(direction), focus)) {
+            result->Success();
+          } else {
+            result->Error("FocusPlatformView", "Failed to focus platform view");
+          }
+          return;
         }
-        result->Success();
+        result->NotImplemented();
       });
 }
 
 PlatformViewManager::~PlatformViewManager() {}
-
-void PlatformViewManager::QueuePlatformViewCreation(
-    PlatformViewId id,
-    std::string_view type_name) {}
-
-void PlatformViewManager::InstantiatePlatformView(PlatformViewId id) {}
-
-void PlatformViewManager::RegisterPlatformViewType(
-    std::string_view type_name,
-    const FlutterPlatformViewTypeEntry& type) {}
-
-void PlatformViewManager::FocusPlatformView(PlatformViewId id,
-                                            FocusChangeDirection direction,
-                                            bool focus) {}
-
-std::optional<HWND> PlatformViewManager::GetNativeHandleForId(
-    PlatformViewId id) const {
-  return std::nullopt;
-}
 
 }  // namespace flutter
