@@ -47,11 +47,8 @@ static bool ClipRectContainsPlatformViewBoundingRect(const SkRect& clip_rect,
   SkRect transformed_rect = transform_matrix.mapRect(clip_rect);
 
   // Tolerate floating point errors when comparing flow clipping view bounds
-  // and quartz platform view bounds. Round to integers.
-  SkIRect transformed_rect_rounded = transformed_rect.round();
-  SkIRect platformview_boundingrect_rounded = platformview_boundingrect.round();
-
-  return transformed_rect_rounded.contains(platformview_boundingrect_rounded);
+  // and quartz platform view bounds. Round platform view to integers.
+  return transformed_rect.roundOut().contains(platformview_boundingrect);
 }
 
 // Determines if the `clipRRect` from a clipRRect mutator contains the
