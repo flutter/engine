@@ -326,15 +326,15 @@ TEST(ContentContext, InvalidatesAllPipelinesWithSameUniqueNameOnClear) {
                            "B", optionsB, create_callback));
 }
 
-TEST(ContentContext, VulkanDevicesHaveAdditionalBootstrap) {
+TEST(ContentContext, InitializeCommonlyUsedShadersIfNeeded) {
   auto context = std::make_shared<FakeContext>("Mali G70");
   ContentContext content_context(context, nullptr);
 
   FakeAllocator& fake_allocator =
       FakeAllocator::Cast(*context->GetResourceAllocator());
 
-  ASSERT_EQ(fake_allocator.textures.size(), 4u);
-  // 1 for the blit bootstrap, 3 for the render pass setup.
+  ASSERT_EQ(fake_allocator.textures.size(), 3u);
+  // 1 for the blit bootstrap, 2 for the render pass setup.
   EXPECT_TRUE(fake_allocator.textures[0]->did_set_contents);
 }
 

@@ -2584,9 +2584,7 @@ class TestRenderTargetAllocator : public RenderTargetAllocator {
 
   std::vector<TextureDescriptor> GetDescriptors() const { return allocated_; }
 
-  void ResetDescriptors() {
-    allocated_.clear();
-  }
+  void ResetDescriptors() { allocated_.clear(); }
 
  private:
   std::vector<TextureDescriptor> allocated_;
@@ -2648,10 +2646,6 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
     EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[6].size, ISize(200, 200));
   } else {
-    FML_LOG(ERROR) << test_allocator->GetDescriptors().size();
-    for (auto i = 0u; i < test_allocator->GetDescriptors().size(); i++) {
-          FML_LOG(ERROR) << TextureDescriptorToString(test_allocator->GetDescriptors()[i]);
-    }
     EXPECT_TRUE(false);
   }
 }
