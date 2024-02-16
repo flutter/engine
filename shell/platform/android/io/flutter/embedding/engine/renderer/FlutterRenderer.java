@@ -190,6 +190,7 @@ public class FlutterRenderer implements TextureRegistry {
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
       Log.v(TAG, "New ImageReaderSurfaceProducer ID: " + id);
+      addOnTrimMemoryListener(producer);
       entry = producer;
     } else {
       final SurfaceTextureSurfaceProducer producer =
@@ -404,7 +405,9 @@ public class FlutterRenderer implements TextureRegistry {
   @Keep
   @TargetApi(29)
   final class ImageReaderSurfaceProducer
-      implements TextureRegistry.SurfaceProducer, TextureRegistry.ImageConsumer {
+      implements TextureRegistry.SurfaceProducer,
+          TextureRegistry.ImageConsumer,
+          TextureRegistry.OnTrimMemoryListener {
     private static final String TAG = "ImageReaderSurfaceProducer";
     private static final int MAX_IMAGES = 4;
 
@@ -614,6 +617,22 @@ public class FlutterRenderer implements TextureRegistry {
         pruneImageReaderQueue();
       }
       return r;
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+      synchronized (lock) {
+        for (PerImageReader pir : perImageReaders.values()) {
+          pir.close();
+        }
+        perImageReaders.clear();
+        if (lastReaderDequeuedFrom != null) {
+          lastReaderDequeuedFrom.close();
+          lastReaderDequeuedFrom = null;
+        }
+        imageReaderQueue.clear();
+      }
+      createNewReader = true;
     }
 
     private void releaseInternal() {
