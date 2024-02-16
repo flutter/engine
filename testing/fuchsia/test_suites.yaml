@@ -13,6 +13,8 @@
   package: fml_tests-0.far
 - test_command: test run fuchsia-pkg://fuchsia.com/display_list_tests#meta/display_list_tests.cm
   package: display_list_tests-0.far
+  disabled: on arm64 because of the slowness
+  variant: x64
 - test_command: test run fuchsia-pkg://fuchsia.com/display_list_render_tests#meta/display_list_render_tests.cm
   package: display_list_render_tests-0.far
   disabled: on arm64 because of the slowness
