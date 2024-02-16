@@ -107,7 +107,7 @@ std::shared_ptr<ContextVK> ContextVK::Create(Settings settings) {
 size_t ContextVK::ChooseThreadCountForWorkers(size_t hardware_concurrency) {
   // Never create more than 4 worker threads. Attempt to use up to
   // half of the available concurrency.
-  return std::clamp(hardware_concurrency / 2ull, /*min=*/1ull, /*max=*/4ull);
+  return std::clamp(hardware_concurrency / 2ull, /*lo=*/1ull, /*hi=*/4ull);
 }
 
 namespace {
