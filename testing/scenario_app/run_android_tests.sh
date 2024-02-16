@@ -9,6 +9,12 @@
 
 set -e
 
+# Check number of args.
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <variant> [flags*]"
+  exit 1
+fi
+
 # Needed because if it is set, cd may print the path it changed to.
 unset CDPATH
 
@@ -38,6 +44,7 @@ SRC_DIR="$(
   pwd -P
 )"
 OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
+CONTENTS_GOLDEN="$SRC_DIR/flutter/testing/scenario_app_android_output.txt"
 
 # TODO(matanlurey): If the test runner was purely in Dart, this would not have
 # been necesesary to repeat. However my best guess is the Dart script was seen
@@ -88,5 +95,9 @@ cd $SCRIPT_DIR
 "$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart run \
   "$SCRIPT_DIR"/bin/android_integration_tests.dart \
   --out-dir="$OUT_DIR" \
+<<<<<<< HEAD
   --logs-dir="$LOGS_DIR" \
+=======
+  --output-contents-golden="$CONTENTS_GOLDEN" \
+>>>>>>> upstream/main
   "$@"

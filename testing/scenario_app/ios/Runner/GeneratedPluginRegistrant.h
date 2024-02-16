@@ -4,8 +4,8 @@
 
 // clang-format off
 
-#ifndef FLUTTER_TESTING_SCENARIO_APP_IOS_RUNNER_GENERATEDPLUGINREGISTRANT_H_
-#define FLUTTER_TESTING_SCENARIO_APP_IOS_RUNNER_GENERATEDPLUGINREGISTRANT_H_
+#ifndef GeneratedPluginRegistrant_h
+#define GeneratedPluginRegistrant_h
 
 #import <Flutter/Flutter.h>
 
@@ -16,4 +16,4 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
-#endif  // FLUTTER_TESTING_SCENARIO_APP_IOS_RUNNER_GENERATEDPLUGINREGISTRANT_H_
+#endif /* GeneratedPluginRegistrant_h */
