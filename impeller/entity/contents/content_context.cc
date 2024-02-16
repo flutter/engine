@@ -662,9 +662,16 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   }
 
   auto cmd_buffer = GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
-      /*mip_count=*/1, "Bootstrap RenderPass");
+  RenderTarget render_target;
+  if (GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
+    render_target = RenderTarget::CreateOffscreenMSAA(
+        *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
+        /*mip_count=*/1, "Bootstrap RenderPass");
+  } else {
+    render_target = RenderTarget::CreateOffscreen(
+        *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
+        /*mip_count=*/1, "Bootstrap RenderPass");
+  }
   auto render_pass = cmd_buffer->CreateRenderPass(render_target);
   render_pass->EncodeCommands();
   RecordCommandBuffer(std::move(cmd_buffer));
