@@ -38,6 +38,7 @@ SRC_DIR="$(
   pwd -P
 )"
 OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
+CONTENTS_GOLDEN="$SRC_DIR/flutter/testing/scenario_app_android_output.txt"
 
 # Dump the logcat and symbolize stack traces before exiting.
 function dumpLogcat {
@@ -68,4 +69,5 @@ cd $SCRIPT_DIR
 "$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart run \
   "$SCRIPT_DIR"/bin/android_integration_tests.dart \
   --out-dir="$OUT_DIR" \
+  --output-contents-golden="$CONTENTS_GOLDEN" \
   "$@"

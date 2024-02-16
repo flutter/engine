@@ -54,20 +54,15 @@ File _makeTempFile(String prefix) {
   return result;
 }
 
-/// The main entrypoint for the program, returns `exitCode`.
-int run(List<String> args) {
-  if (args.length != 2) {
-    throw Exception('usage: <path to golden> <path to directory>');
-  }
-  final String goldenPath = args[0];
+/// Run the diff of the contents of a directory at [dirPath] and the contents of
+/// a file at [goldenPath].  Returns 0 if there is no diff.
+int dirContentsDiff(String goldenPath, String dirPath) {
   if (!File(goldenPath).existsSync()) {
     throw Exception('unable to find `$goldenPath`');
   }
-  final String dirPath = args[1];
   if (!Directory(dirPath).existsSync()) {
     throw Exception('unable to find `$dirPath`');
   }
-
   int result = 0;
   final File tempFile = _makeTempFile('dir_contents_diff');
   try {
@@ -87,4 +82,14 @@ int run(List<String> args) {
   }
 
   return result;
+}
+
+/// The main entrypoint for the program, returns `exitCode`.
+int run(List<String> args) {
+  if (args.length != 2) {
+    throw Exception('usage: <path to golden> <path to directory>');
+  }
+  final String goldenPath = args[0];
+  final String dirPath = args[1];
+  return dirContentsDiff(goldenPath, dirPath);
 }

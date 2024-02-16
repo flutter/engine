@@ -8,6 +8,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:args/args.dart';
+import 'package:dir_contents_diff/dir_contents_diff.dart' show dirContentsDiff;
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart';
 import 'package:process/process.dart';
@@ -61,6 +62,9 @@ void main(List<String> args) async {
       'enable-impeller',
       help: 'Enable Impeller for the Android app.',
     )
+    ..addOption('output-contents-golden',
+      help:
+        'Path to a file that will be used to check the contents of the output to make sure everything was created.')
     ..addOption(
       'impeller-backend',
       help: 'The Impeller backend to use for the Android app.',
@@ -88,6 +92,7 @@ void main(List<String> args) async {
       final bool useSkiaGold = results['use-skia-gold'] as bool;
       final String? smokeTest = results['smoke-test'] as String?;
       final bool enableImpeller = results['enable-impeller'] as bool;
+      final String? contentsGolden = results['output-contents-golden'] as String?;
       final _ImpellerBackend? impellerBackend = _ImpellerBackend.tryParse(results['impeller-backend'] as String?);
       if (enableImpeller && impellerBackend == null) {
         panic(<String>['invalid graphics-backend', results['impeller-backend'] as String? ?? '<null>']);
@@ -99,6 +104,7 @@ void main(List<String> args) async {
         useSkiaGold: useSkiaGold,
         enableImpeller: enableImpeller,
         impellerBackend: impellerBackend,
+        contentsGolden: contentsGolden,
       );
       exit(0);
     },
@@ -135,6 +141,7 @@ Future<void> _run({
   required bool useSkiaGold,
   required bool enableImpeller,
   required _ImpellerBackend? impellerBackend,
+  required String? contentsGolden,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -207,7 +214,7 @@ Future<void> _run({
 
   final IOSink logcat = File(logcatPath).openWrite();
   try {
-    await step('Creating screenshot directory...', () async {
+    await step('Creating screenshot directory `$screenshotPath`...', () async {
       Directory(screenshotPath).createSync(recursive: true);
     });
 
@@ -352,6 +359,16 @@ Future<void> _run({
     await step('Wait for Skia gold comparisons...', () async {
       await Future.wait(pendingComparisons);
     });
+
+    if (contentsGolden != null) {
+      // Check the output here.
+      await step('Check output files...', () async {
+        final int exitCode = dirContentsDiff(contentsGolden, screenshotPath);
+        if (exitCode != 0) {
+          panic(<String>['Output contents incorrect.']);
+        }
+      });
+    }
 
     await step('Flush logcat...', () async {
       await logcat.flush();
