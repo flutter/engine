@@ -608,6 +608,10 @@ void ContentContext::FlushCommandBuffers() const {
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
+  if (GetContext()->IsTestingFake()) {
+    return;
+  }
+
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
 
   // Initialize commonly used shaders that aren't defaults. These settings were

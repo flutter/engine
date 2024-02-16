@@ -88,7 +88,7 @@ fml::Status RecordingRenderPass::Draw() {
   if (delegate_) {
     return delegate_->Draw();
   }
-  return {};
+  return fml::Status();
 }
 
 // |RenderPass|
