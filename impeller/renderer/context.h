@@ -186,11 +186,6 @@ class Context {
     FML_CHECK(false && "not supported in this context");
   }
 
-  /// Whether this class is a testing fake.
-  ///
-  /// This method is visible for testing.
-  virtual bool IsTestingFake() const { return false; }
-
  protected:
   Context();
 

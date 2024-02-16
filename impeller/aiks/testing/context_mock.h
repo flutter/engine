@@ -117,8 +117,6 @@ class ContextMock : public Context {
               (const override));
 
   MOCK_METHOD(void, Shutdown, (), (override));
-
-  bool IsTestingFake() const override { return true; }
 };
 
 }  // namespace testing

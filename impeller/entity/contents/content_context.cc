@@ -608,10 +608,6 @@ void ContentContext::FlushCommandBuffers() const {
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
-  if (GetContext()->IsTestingFake()) {
-    return;
-  }
-
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
 
   // Initialize commonly used shaders that aren't defaults. These settings were
@@ -629,12 +625,12 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
       options.blend_mode = mode;
       options.primitive_type = geometry;
       CreateIfNeeded(solid_fill_pipelines_, options);
-      if (context_->GetCapabilities()->SupportsSSBO()) {
+      CreateIfNeeded(texture_pipelines_, options);
+      if (GetContext()->GetCapabilities()->SupportsSSBO()) {
         CreateIfNeeded(linear_gradient_ssbo_fill_pipelines_, options);
         CreateIfNeeded(radial_gradient_ssbo_fill_pipelines_, options);
         CreateIfNeeded(sweep_gradient_ssbo_fill_pipelines_, options);
         CreateIfNeeded(conical_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(texture_pipelines_, options);
       }
     }
   }

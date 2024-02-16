@@ -1016,6 +1016,9 @@ class ContentContext {
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
     TypedPipeline* pipeline = CreateIfNeeded(container, opts);
+    if (!pipeline) {
+      return nullptr;
+    }
     return pipeline->WaitAndGet();
   }
 
