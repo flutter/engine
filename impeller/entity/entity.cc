@@ -111,8 +111,8 @@ static const Scalar kDepthEpsilon = 1.0f / std::pow(2, 18);
 
 float Entity::GetShaderClipDepth() const {
   FML_LOG(ERROR) << "shader depth: " << new_clip_depth_ * kDepthEpsilon
-                 << "new_clip_depth_: " << new_clip_depth_
-                 << "epsilon: " << kDepthEpsilon;
+                 << " new_clip_depth_: " << new_clip_depth_
+                 << " epsilon: " << kDepthEpsilon;
   return new_clip_depth_ * kDepthEpsilon;
 }
 
