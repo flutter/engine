@@ -33,8 +33,8 @@ $ ./testing/scenario_app/run_android_tests.sh android_debug_unopt_arm64 --smoke-
 ```
 
 The result of `adb logcat` and screenshots taken during the test will be stored
-in a logs directory, which is either `FLUTTER_LOGS_DIR` (on CI) or locally in
-`out/.../scenario_app/logs`.
+in a logs directory, which is either `FLUTTER_LOGS_DIR` (if set, such as on CI)
+or locally in `out/.../scenario_app/logs`.
 
 ## CI Configuration
 
