@@ -3,4 +3,6 @@
     <color name="colorPrimary">#008577</color>
     <color name="colorPrimaryDark">#00574B</color>
     <color name="colorAccent">#D81B60</color>
+    <!-- See https://github.com/flutter/flutter/issues/143602 -->
+    <color name="background">#000000 </color>
 </resources>
