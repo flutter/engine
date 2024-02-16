@@ -12,7 +12,6 @@ from pathlib import Path
 
 import argparse
 import errno
-from functools import reduce
 import glob
 import logging
 import logging.handlers
