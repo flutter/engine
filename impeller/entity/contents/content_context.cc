@@ -664,22 +664,6 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
     VALIDATION_LOG << "Failed to set bootstrap texture.";
   }
-
-  auto cmd_buffer = GetContext()->CreateCommandBuffer();
-  RenderTarget render_target;
-  if (GetContext()->GetCapabilities()->SupportsOffscreenMSAA()) {
-    render_target = RenderTarget::CreateOffscreenMSAA(
-        *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
-        /*mip_count=*/1, "Bootstrap RenderPass");
-  } else {
-    render_target = RenderTarget::CreateOffscreen(
-        *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
-        /*mip_count=*/1, "Bootstrap RenderPass");
-  }
-  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
-  render_pass->EncodeCommands();
-  RecordCommandBuffer(std::move(cmd_buffer));
-  FlushCommandBuffers();
 }
 
 }  // namespace impeller

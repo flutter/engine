@@ -333,9 +333,7 @@ TEST(ContentContext, InitializeCommonlyUsedShadersIfNeeded) {
   FakeAllocator& fake_allocator =
       FakeAllocator::Cast(*context->GetResourceAllocator());
 
-  ASSERT_EQ(fake_allocator.textures.size(), 3u);
-  // 1 for the blit bootstrap, 2 for the render pass setup.
-  EXPECT_TRUE(fake_allocator.textures[0]->did_set_contents);
+  ASSERT_EQ(fake_allocator.textures.size(), 1u);
 }
 
 }  // namespace testing
