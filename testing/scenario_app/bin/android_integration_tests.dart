@@ -18,7 +18,7 @@ import 'utils/logs.dart';
 import 'utils/process_manager_extension.dart';
 import 'utils/screenshot_transformer.dart';
 
-void _withTemporaryCwd(String path, void Function() callback) async {
+void _withTemporaryCwd(String path, void Function() callback) {
   final String originalCwd = Directory.current.path;
   Directory.current = Directory(path).parent.path;
 
