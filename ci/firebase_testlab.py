@@ -141,7 +141,7 @@ def main():
       if return_code in FTL_INFRA_FAILURE_CODES:
         print('Firebase test %s failed with infrastructure error code: %s' % (apk, return_code))
         continue
-      elif return_code != 0:
+      if return_code != 0:
         print('Firebase test %s failed with code: %s' % (apk, return_code))
         sys.exit(return_code)
 
