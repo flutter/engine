@@ -15,13 +15,12 @@ namespace flutter {
 class MockPlatformViewManager : public PlatformViewPlugin {
  public:
   MockPlatformViewManager(FlutterWindowsEngine* engine)
-      : PlatformViewPlugin(engine->messenger_wrapper(), engine->task_runner()) {}
+      : PlatformViewPlugin(engine->messenger_wrapper(), engine->task_runner()) {
+  }
 
   ~MockPlatformViewManager() {}
 
-  MOCK_METHOD(bool,
-              AddPlatformView,
-              (PlatformViewId id, std::string_view));
+  MOCK_METHOD(bool, AddPlatformView, (PlatformViewId id, std::string_view));
 };
 
 }  // namespace flutter

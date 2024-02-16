@@ -45,7 +45,6 @@ class PlatformViewManager {
 
  private:
   std::unique_ptr<MethodChannel<EncodableValue>> channel_;
-
 };
 
 }  // namespace flutter

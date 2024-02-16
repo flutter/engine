@@ -45,7 +45,9 @@ class PlatformViewPlugin : public PlatformViewManager {
   // | PlatformViewManager |
   // id must correspond to an identifier that has already been added with
   // AddPlatformView.
-  bool FocusPlatformView(PlatformViewId id, FocusChangeDirection direction, bool focus) override;
+  bool FocusPlatformView(PlatformViewId id,
+                         FocusChangeDirection direction,
+                         bool focus) override;
 
  private:
   std::unordered_map<std::string, FlutterPlatformViewTypeEntry>

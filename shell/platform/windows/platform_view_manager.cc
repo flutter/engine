@@ -35,11 +35,12 @@ PlatformViewManager::PlatformViewManager(BinaryMessenger* binary_messenger)
         } else if (call.method_name() == "focus") {
           const auto& id =
               std::get<std::int32_t>(args.find(EncodableValue("id"))->second);
-          const auto& direction =
-              std::get<std::int32_t>(args.find(EncodableValue("direction"))->second);
+          const auto& direction = std::get<std::int32_t>(
+              args.find(EncodableValue("direction"))->second);
           const auto& focus =
               std::get<bool>(args.find(EncodableValue("focus"))->second);
-          if (FocusPlatformView(id, static_cast<FocusChangeDirection>(direction), focus)) {
+          if (FocusPlatformView(
+                  id, static_cast<FocusChangeDirection>(direction), focus)) {
             result->Success();
           } else {
             result->Error("FocusPlatformView", "Failed to focus platform view");

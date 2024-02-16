@@ -6,23 +6,31 @@
 
 namespace flutter {
 
-PlatformViewPlugin::PlatformViewPlugin(BinaryMessenger* messenger, TaskRunner* task_runner) : PlatformViewManager(messenger), task_runner_(task_runner) {}
+PlatformViewPlugin::PlatformViewPlugin(BinaryMessenger* messenger,
+                                       TaskRunner* task_runner)
+    : PlatformViewManager(messenger), task_runner_(task_runner) {}
 
 PlatformViewPlugin::~PlatformViewPlugin() {}
 
-std::optional<HWND> PlatformViewPlugin::GetNativeHandleForId(PlatformViewId id) const {
+std::optional<HWND> PlatformViewPlugin::GetNativeHandleForId(
+    PlatformViewId id) const {
   return std::nullopt;
 }
 
-void PlatformViewPlugin::RegisterPlatformViewType(std::string_view type_name, const FlutterPlatformViewTypeEntry& type) {}
+void PlatformViewPlugin::RegisterPlatformViewType(
+    std::string_view type_name,
+    const FlutterPlatformViewTypeEntry& type) {}
 
 void PlatformViewPlugin::InstantiatePlatformView(PlatformViewId id) {}
 
-bool PlatformViewPlugin::AddPlatformView(PlatformViewId id, std::string_view type_name) {
+bool PlatformViewPlugin::AddPlatformView(PlatformViewId id,
+                                         std::string_view type_name) {
   return true;
 }
 
-bool PlatformViewPlugin::FocusPlatformView(PlatformViewId id, FocusChangeDirection direction, bool focus) {
+bool PlatformViewPlugin::FocusPlatformView(PlatformViewId id,
+                                           FocusChangeDirection direction,
+                                           bool focus) {
   return true;
 }
 
