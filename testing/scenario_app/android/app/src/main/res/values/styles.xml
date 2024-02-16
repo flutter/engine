@@ -3,7 +3,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-         <!-- See https://github.com/flutter/flutter/issues/143602 -->
-        <item name="android:windowBackground">@color/background</item>
+        <!-- See https://github.com/flutter/flutter/issues/143602 -->
+        <item name="android:windowBackground">@color/colorBackground</item>
     </style>
 </resources>
