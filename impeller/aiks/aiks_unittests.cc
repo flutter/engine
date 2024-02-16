@@ -1976,8 +1976,8 @@ TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 2llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
@@ -2001,8 +2001,8 @@ TEST_P(AiksTest,
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
   ASSERT_EQ(spy->render_passes_.size(),
-            GetBackend() == PlaygroundBackend::kOpenGLES ? 5llu : 4llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+            GetBackend() == PlaygroundBackend::kOpenGLES ? 4llu : 3llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
@@ -2021,8 +2021,8 @@ TEST_P(AiksTest, DrawRectAbsorbsClears) {
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 2llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
@@ -2041,8 +2041,8 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRRect) {
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 2llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
 }
 
@@ -2061,8 +2061,8 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegativeRotation) {
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 2llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 1llu);
 }
 
@@ -2081,8 +2081,8 @@ TEST_P(AiksTest, DrawRectAbsorbsClearsNegative) {
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {301, 301});
 
-  ASSERT_EQ(spy->render_passes_.size(), 2llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 2llu);
 }
 
@@ -2105,8 +2105,8 @@ TEST_P(AiksTest, ClipRectElidesNoOpClips) {
   AiksContext renderer(mock_context, nullptr);
   std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
 
-  ASSERT_EQ(spy->render_passes_.size(), 2llu);
-  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[1];
+  ASSERT_EQ(spy->render_passes_.size(), 1llu);
+  std::shared_ptr<RenderPass> render_pass = spy->render_passes_[0];
   ASSERT_EQ(render_pass->GetCommands().size(), 0llu);
 }
 
