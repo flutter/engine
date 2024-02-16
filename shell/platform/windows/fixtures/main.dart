@@ -167,14 +167,18 @@ void sendCreatePlatformViewMethod() async {
   const int valueString = 7;
   const int valueMap = 13;
   const int valueInt32 = 3;
+  const String method = 'create';
+  const String typeKey = 'viewType';
+  const String typeValue = 'type';
+  const String idKey = 'id';
   final List<int> data = <int>[
     // Method name
-    valueString, 'create'.length, ...utf8.encode('create'),
+    valueString, method.length, ...utf8.encode(method),
     // Method arguments: {'type': 'type':, 'id': 0}
     valueMap, 2,
-    valueString, 'type'.length, ...utf8.encode('type'),
-    valueString, 'type'.length, ...utf8.encode('type'),
-    valueString, 'id'.length, ...utf8.encode('id'),
+    valueString, typeKey.length, ...utf8.encode(typeKey),
+    valueString, typeValue.length, ...utf8.encode(typeValue),
+    valueString, idKey.length, ...utf8.encode(idKey),
     valueInt32, 0, 0, 0, 0,
   ];
 
