@@ -38,11 +38,6 @@ class GPUTracerVK;
 class DescriptorPoolRecyclerVK;
 class CommandQueueVK;
 
-/// Choose the number of worker threads the context_vk will create.
-///
-/// Visible for testing.
-size_t ChooseThreadCountForWorkers(size_t hardware_concurrency);
-
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
                         public std::enable_shared_from_this<ContextVK> {
@@ -58,6 +53,11 @@ class ContextVK final : public Context,
 
     Settings(Settings&&) = default;
   };
+
+  /// Choose the number of worker threads the context_vk will create.
+  ///
+  /// Visible for testing.
+  static size_t ChooseThreadCountForWorkers(size_t hardware_concurrency);
 
   static std::shared_ptr<ContextVK> Create(Settings settings);
 
