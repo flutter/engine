@@ -66,6 +66,13 @@ void main(List<String> args) async {
       help: 'The Impeller backend to use for the Android app.',
       allowed: <String>['vulkan', 'opengles'],
       defaultsTo: 'vulkan',
+    )
+    ..addOption(
+      'logs-dir',
+      help: 'The directory to store the logs and screenshots. Defaults to '
+            'the value of the FLUTTER_LOGS_DIR environment variable, if set, '
+            'otherwise it defaults to a path within out-dir.',
+      defaultsTo: Platform.environment['FLUTTER_LOGS_DIR'],
     );
 
   runZonedGuarded(
@@ -92,6 +99,7 @@ void main(List<String> args) async {
       if (enableImpeller && impellerBackend == null) {
         panic(<String>['invalid graphics-backend', results['impeller-backend'] as String? ?? '<null>']);
       }
+      final Directory logsDir = Directory(results['logs-dir'] as String? ?? join(outDir.path, 'scenario_app', 'logs'));
       await _run(
         outDir: outDir,
         adb: adb,
@@ -99,6 +107,7 @@ void main(List<String> args) async {
         useSkiaGold: useSkiaGold,
         enableImpeller: enableImpeller,
         impellerBackend: impellerBackend,
+        logsDir: logsDir,
       );
       exit(0);
     },
@@ -135,6 +144,7 @@ Future<void> _run({
   required bool useSkiaGold,
   required bool enableImpeller,
   required _ImpellerBackend? impellerBackend,
+  required Directory logsDir,
 }) async {
   const ProcessManager pm = LocalProcessManager();
 
@@ -147,11 +157,12 @@ Future<void> _run({
   }
 
   final String scenarioAppPath = join(outDir.path, 'scenario_app');
-  final String logcatPath = join(scenarioAppPath, 'logcat.txt');
-  final String screenshotPath = join(scenarioAppPath, 'screenshots');
+  final String logcatPath = join(logsDir.path, 'logcat.txt');
+  final String screenshotPath = join(logsDir.path, 'screenshots');
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
   final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
   final File appApk = File(join(apkOutPath, 'debug', 'app-debug.apk'));
+  log('writing logs and screenshots to ${logsDir.path}');
 
   if (!testApk.existsSync()) {
     panic(<String>['test apk does not exist: ${testApk.path}', 'make sure to build the selected engine variant']);
