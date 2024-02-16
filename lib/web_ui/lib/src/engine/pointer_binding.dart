@@ -642,7 +642,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     final double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
 
     print('Diff: $diff; lastScrollEvent: ${trackpadScrollStartWheelEvent != null}');
-    if (diff < 100 * 1000 && trackpadScrollStartWheelEvent != null) {
+    if (diff < 100 && trackpadScrollStartWheelEvent != null) {
       return trackpadScrollStartWheelEvent.deltaX > trackpadScrollStartWheelEvent.deltaY;
     }
     _trackpadScrollStartWheelEvent = event;
