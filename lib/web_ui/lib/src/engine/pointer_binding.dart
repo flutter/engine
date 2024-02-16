@@ -573,6 +573,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     // For all events without this acceleration curve applied, the wheelDelta
     // values are by convention three times greater than the delta values and with
     // the opposite sign.
+    print('wheelDelta: $wheelDelta; delta: $delta');
     if (wheelDelta == null) {
       return false;
     }
@@ -581,6 +582,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   bool _isTrackpadEvent(DomWheelEvent event) {
+    if (browserEngine != BrowserEngine.firefox) return true;
     // This function relies on deprecated and non-standard implementation
     // details. Useful reference material can be found below.
     //
@@ -595,10 +597,15 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       // wheel events.
       return false;
     }
-    if (_isAcceleratedMouseWheelDelta(event.deltaX, event.wheelDeltaX) ||
-        _isAcceleratedMouseWheelDelta(event.deltaY, event.wheelDeltaY)) {
+    final bool acceleratedX = _isAcceleratedMouseWheelDelta(event.deltaX, event.wheelDeltaX);
+    print('acceleratedX: $acceleratedX');
+    final bool acceleratedY = _isAcceleratedMouseWheelDelta(event.deltaY, event.wheelDeltaY);
+    print('acceleratedY: $acceleratedY');
+    // todo: This incorrectly detects trackpad events as mouse events.
+    if (acceleratedX || acceleratedY) {
       return false;
     }
+    print('deltaX: ${event.deltaX}; deltaY: ${event.deltaY}; wheelDeltaX: ${event.wheelDeltaX}; wheelDeltaY: ${event.wheelDeltaY};');
     if (((event.deltaX % 120 == 0) && (event.deltaY % 120 == 0)) ||
         (((event.wheelDeltaX ?? 1) % 120 == 0) && ((event.wheelDeltaY ?? 1) % 120) == 0)) {
       // While not in any formal web standard, `blink` and `webkit` browsers use
@@ -631,10 +638,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   bool _isLockedHorizontally(DomWheelEvent event) {
-    DomWheelEvent? trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
-    double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
+    final DomWheelEvent? trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
+    final double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
 
-    if (diff < 10 * 1000 && trackpadScrollStartWheelEvent != null) {
+    print('Diff: $diff; lastScrollEvent: ${trackpadScrollStartWheelEvent != null}');
+    if (diff < 100 * 1000 && trackpadScrollStartWheelEvent != null) {
       return trackpadScrollStartWheelEvent.deltaX > trackpadScrollStartWheelEvent.deltaY;
     }
     _trackpadScrollStartWheelEvent = event;
@@ -642,10 +650,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   bool _isLockedVertically(DomWheelEvent event) {
-    DomWheelEvent? trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
-    double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
+    final DomWheelEvent? trackpadScrollStartWheelEvent = _trackpadScrollStartWheelEvent;
+    final double diff = (event.timeStamp ?? double.infinity) - (_lastWheelEvent?.timeStamp ?? 0.0);
 
-    if (diff < 10 * 1000 && trackpadScrollStartWheelEvent != null) {
+    print('Diff: $diff; lastScrollEvent: ${trackpadScrollStartWheelEvent != null}');
+    if (diff < 100 && trackpadScrollStartWheelEvent != null) {
       return trackpadScrollStartWheelEvent.deltaX < trackpadScrollStartWheelEvent.deltaY;
     }
     _trackpadScrollStartWheelEvent = event;
@@ -669,9 +678,10 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     double deltaX = event.deltaX;
     double deltaY = event.deltaY;
 
+    print('trackpad: ${_isTrackpadEvent(event)}');
     if (_isTrackpadEvent(event) && _isLockedVertically(event)) {
       deltaX = 0;
-    } else if (_isTrackpadEvent(event) && _isLockedVertically(event)) {
+    } else if (_isTrackpadEvent(event) && _isLockedHorizontally(event)) {
       deltaY = 0;
     }
 
