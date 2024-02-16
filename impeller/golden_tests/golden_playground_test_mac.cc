@@ -63,13 +63,6 @@ const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
 static const std::vector<std::string> kSkipTests = {
-    IMP_AIKSTEST(GaussianBlurAnimatedBackdrop),
-    IMP_AIKSTEST(CanRenderBackdropBlurInteractive),
-    IMP_AIKSTEST(ClippedBlurFilterRendersCorrectlyInteractive),
-    IMP_AIKSTEST(GradientStrokesRenderCorrectly),
-    IMP_AIKSTEST(SolidStrokesRenderCorrectly),
-    IMP_AIKSTEST(GaussianBlurRotatedAndClippedInteractive),
-    IMP_AIKSTEST(CoverageOriginShouldBeAccountedForInSubpasses),
     // TextRotated is flakey and we can't seem to get it to stabilize on Skia
     // Gold.
     IMP_AIKSTEST(TextRotated),
@@ -77,10 +70,7 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CanRenderClippedRuntimeEffects_Vulkan",
 };
 
-static const std::vector<std::string> kVulkanDenyValidationTests = {
-    // TODO(https://github.com/flutter/flutter/issues/142080): remove this.
-    "impeller_Play_AiksTest_EmptySaveLayerRendersWithClear_Vulkan",
-};
+static const std::vector<std::string> kVulkanDenyValidationTests = {};
 
 namespace {
 std::string GetTestName() {
@@ -102,14 +92,19 @@ std::string GetGoldenFilename() {
 
 bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
+    FML_LOG(ERROR) << "Failed to collect screenshot for test " << GetTestName();
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
-  return screenshot->WriteToPNG(
-      testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
+  if (!screenshot->WriteToPNG(
+          testing::WorkingDirectory::Instance()->GetFilenamePath(filename))) {
+    FML_LOG(ERROR) << "Failed to write screenshot to " << filename;
+    return false;
+  }
+  return true;
 }
 
 bool ShouldTestHaveVulkanValidations() {
