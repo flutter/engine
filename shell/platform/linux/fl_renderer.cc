@@ -57,9 +57,11 @@ static void fl_renderer_class_init(FlRendererClass* klass) {
 static void fl_renderer_init(FlRenderer* self) {}
 
 gboolean fl_renderer_start(FlRenderer* self, FlView* view, GError** error) {
-  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
+
   priv->view = view;
   gboolean result = FL_RENDERER_GET_CLASS(self)->create_contexts(
       self, GTK_WIDGET(view), &priv->main_context, &priv->resource_context,
@@ -77,6 +79,7 @@ gboolean fl_renderer_start(FlRenderer* self, FlView* view, GError** error) {
 }
 
 FlView* fl_renderer_get_view(FlRenderer* self) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), NULL);
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
   return priv->view;
@@ -85,16 +88,24 @@ FlView* fl_renderer_get_view(FlRenderer* self) {
 GdkGLContext* fl_renderer_get_context(FlRenderer* self) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), NULL);
+
   return priv->main_context;
 }
 
 void* fl_renderer_get_proc_address(FlRenderer* self, const char* name) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), NULL);
+
   return reinterpret_cast<void*>(eglGetProcAddress(name));
 }
 
 gboolean fl_renderer_make_current(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
+
   if (priv->main_context) {
     gdk_gl_context_make_current(priv->main_context);
   }
@@ -105,6 +116,9 @@ gboolean fl_renderer_make_current(FlRenderer* self, GError** error) {
 gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
+
   if (priv->resource_context) {
     gdk_gl_context_make_current(priv->resource_context);
   }
@@ -113,11 +127,16 @@ gboolean fl_renderer_make_resource_current(FlRenderer* self, GError** error) {
 }
 
 gboolean fl_renderer_clear_current(FlRenderer* self, GError** error) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
+
   gdk_gl_context_clear_current();
+
   return TRUE;
 }
 
 guint32 fl_renderer_get_fbo(FlRenderer* self) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), 0);
+
   // There is only one frame buffer object - always return that.
   return 0;
 }
@@ -126,6 +145,7 @@ gboolean fl_renderer_create_backing_store(
     FlRenderer* self,
     const FlutterBackingStoreConfig* config,
     FlutterBackingStore* backing_store_out) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
   return FL_RENDERER_GET_CLASS(self)->create_backing_store(self, config,
                                                            backing_store_out);
 }
@@ -133,6 +153,7 @@ gboolean fl_renderer_create_backing_store(
 gboolean fl_renderer_collect_backing_store(
     FlRenderer* self,
     const FlutterBackingStore* backing_store) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
   return FL_RENDERER_GET_CLASS(self)->collect_backing_store(self,
                                                             backing_store);
 }
@@ -142,6 +163,8 @@ void fl_renderer_wait_for_frame(FlRenderer* self,
                                 int target_height) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+
+  g_return_if_fail(FL_IS_RENDERER(self));
 
   priv->target_width = target_width;
   priv->target_height = target_height;
@@ -159,6 +182,8 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
                                     size_t layers_count) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
+
+  g_return_val_if_fail(FL_IS_RENDERER(self), FALSE);
 
   // ignore incoming frame with wrong dimensions in trivial case with just one
   // layer
