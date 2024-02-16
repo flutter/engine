@@ -645,32 +645,30 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
     CreateIfNeeded(clip_pipelines_, options);
   }
 
-  if (GetContext()->GetBackendType() == Context::BackendType::kVulkan) {
-    // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
-    // observed to take 10s of ms as an internal shader is compiled to perform
-    // the operation. Similarly, the initial render pass can also take 10s of ms
-    // for a similar reason. Because the context object is initialized far
-    // before the first frame, create a trivial texture and render pass to force
-    // the driver to compiler these shaders before the frame begins.
-    TextureDescriptor desc;
-    desc.size = {1, 1};
-    desc.storage_mode = StorageMode::kHostVisible;
-    desc.format = context_->GetCapabilities()->GetDefaultColorFormat();
-    auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
-    uint32_t color = 0;
-    if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
-      VALIDATION_LOG << "Failed to set bootstrap texture.";
-    }
-
-    auto cmd_buffer = GetContext()->CreateCommandBuffer();
-    auto render_target = RenderTarget::CreateOffscreenMSAA(
-        *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
-        /*mip_count=*/1, "Bootstrap RenderPass");
-    auto render_pass = cmd_buffer->CreateRenderPass(render_target);
-    render_pass->EncodeCommands();
-    RecordCommandBuffer(std::move(cmd_buffer));
-    FlushCommandBuffers();
+  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
+  // observed to take 10s of ms as an internal shader is compiled to perform
+  // the operation. Similarly, the initial render pass can also take 10s of ms
+  // for a similar reason. Because the context object is initialized far
+  // before the first frame, create a trivial texture and render pass to force
+  // the driver to compiler these shaders before the frame begins.
+  TextureDescriptor desc;
+  desc.size = {1, 1};
+  desc.storage_mode = StorageMode::kHostVisible;
+  desc.format = context_->GetCapabilities()->GetDefaultColorFormat();
+  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+  uint32_t color = 0;
+  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
+    VALIDATION_LOG << "Failed to set bootstrap texture.";
   }
+
+  auto cmd_buffer = GetContext()->CreateCommandBuffer();
+  auto render_target = RenderTarget::CreateOffscreenMSAA(
+      *GetContext(), *GetRenderTargetCache(), ISize{1, 1},
+      /*mip_count=*/1, "Bootstrap RenderPass");
+  auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+  render_pass->EncodeCommands();
+  RecordCommandBuffer(std::move(cmd_buffer));
+  FlushCommandBuffers();
 }
 
 }  // namespace impeller
