@@ -333,7 +333,11 @@ TEST(ContentContext, InitializeCommonlyUsedShadersIfNeeded) {
   FakeAllocator& fake_allocator =
       FakeAllocator::Cast(*context->GetResourceAllocator());
 
-  ASSERT_EQ(fake_allocator.textures.size(), 1u);
+#if IMPELLER_ENABLE_3D
+  EXPECT_EQ(fake_allocator.textures.size(), 2u);
+#else
+  EXPECT_EQ(fake_allocator.textures.size(), 1u);
+#endif  // IMPELLER_ENABLE_3D
 }
 
 }  // namespace testing
