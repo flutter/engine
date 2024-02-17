@@ -612,6 +612,11 @@ void ContentContext::FlushCommandBuffers() const {
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
+  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+    // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
+    // runs.
+    return;
+  }
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
 
   // Initialize commonly used shaders that aren't defaults. These settings were
