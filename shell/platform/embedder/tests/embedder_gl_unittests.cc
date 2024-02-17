@@ -4736,6 +4736,8 @@ TEST_F(EmbedderTest, CanRenderWithImpellerOpenGL) {
                             "impeller_gl_gradient.png"),
       rendered_scene));
 
+  // The scene will be rendered by the compositor, and the surface present
+  // callback should not be invoked.
   ASSERT_FALSE(present_called);
 }
 
