@@ -544,7 +544,11 @@ void FlutterWindowsEngine::SendKeyEvent(const FlutterKeyEvent& event,
                                         FlutterKeyEventCallback callback,
                                         void* user_data) {
   if (engine_) {
-    embedder_api_.SendKeyEvent(engine_, &event, callback, user_data);
+    if (canSendKeyboardEvents_) {
+      embedder_api_.SendKeyEvent(engine_, &event, callback, user_data);
+    } else {
+      callback(false, user_data);
+    }
   }
 }
 
@@ -656,6 +660,8 @@ void FlutterWindowsEngine::InitializeKeyboard() {
     FML_LOG(ERROR) << "Cannot initialize keyboard on Windows headless mode.";
   }
 
+  canSendKeyboardEvents_ = false;
+
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
@@ -682,8 +688,8 @@ FlutterWindowsEngine::CreateKeyboardKeyHandler(
             return SendKeyEvent(event, callback, user_data);
           },
           get_key_state, map_vk_to_scan));
-  keyboard_key_handler->AddDelegate(
-      std::make_unique<KeyboardKeyChannelHandler>(messenger));
+  keyboard_key_handler->AddDelegate(std::make_unique<KeyboardKeyChannelHandler>(
+      messenger, [this]() { return canSendKeyboardEvents_; }));
   keyboard_key_handler->InitKeyboardChannel();
   return keyboard_key_handler;
 }
@@ -851,6 +857,8 @@ void FlutterWindowsEngine::OnChannelUpdate(std::string name, bool listening) {
     lifecycle_manager_->BeginProcessingExit();
   } else if (name == "flutter/lifecycle" && listening) {
     lifecycle_manager_->BeginProcessingLifecycle();
+  } else if (name == "flutter/keydata" && listening) {
+    canSendKeyboardEvents_ = true;
   }
 }
 

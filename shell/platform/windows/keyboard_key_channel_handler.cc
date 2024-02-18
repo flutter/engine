@@ -100,12 +100,14 @@ int GetModsForKeyState() {
 }  // namespace
 
 KeyboardKeyChannelHandler::KeyboardKeyChannelHandler(
-    flutter::BinaryMessenger* messenger)
+    flutter::BinaryMessenger* messenger,
+    CanSendHandler can_send)
     : channel_(
           std::make_unique<flutter::BasicMessageChannel<rapidjson::Document>>(
               messenger,
               kChannelName,
-              &flutter::JsonMessageCodec::GetInstance())) {}
+              &flutter::JsonMessageCodec::GetInstance())),
+      can_send_(can_send) {}
 
 KeyboardKeyChannelHandler::~KeyboardKeyChannelHandler() = default;
 
@@ -154,13 +156,19 @@ void KeyboardKeyChannelHandler::KeyboardHook(
       callback(false);
       return;
   }
-  channel_->Send(event, [callback = std::move(callback)](const uint8_t* reply,
-                                                         size_t reply_size) {
-    auto decoded = flutter::JsonMessageCodec::GetInstance().DecodeMessage(
-        reply, reply_size);
-    bool handled = decoded ? (*decoded)[kHandledKey].GetBool() : false;
-    callback(handled);
-  });
+
+  if (can_send_()) {
+    channel_->Send(event, [callback = std::move(callback)](const uint8_t* reply,
+                                                           size_t reply_size) {
+      auto decoded = flutter::JsonMessageCodec::GetInstance().DecodeMessage(
+          reply, reply_size);
+      bool handled = decoded ? (*decoded)[kHandledKey].GetBool() : false;
+      callback(handled);
+    });
+  } else {
+    // std::cerr << " >>>>>> CAN NOT SEND >>>>>> \n";
+    callback(false);
+  }
 }
 
 }  // namespace flutter

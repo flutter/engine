@@ -383,6 +383,9 @@ class FlutterWindowsEngine {
   // Handlers for keyboard events from Windows.
   std::unique_ptr<KeyboardHandlerBase> keyboard_key_handler_;
 
+  // Wether the framework is ready to receive keyboard events.
+  bool canSendKeyboardEvents_ = false;
+
   // Handlers for text events from Windows.
   std::unique_ptr<TextInputPlugin> text_input_plugin_;
 

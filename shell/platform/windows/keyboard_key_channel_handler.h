@@ -24,9 +24,12 @@ namespace flutter {
 class KeyboardKeyChannelHandler
     : public KeyboardKeyHandler::KeyboardKeyHandlerDelegate {
  public:
+  using CanSendHandler = std::function<bool()>;
+
   // Create a |KeyboardKeyChannelHandler| by specifying the messenger
   // through which the events are sent.
-  explicit KeyboardKeyChannelHandler(flutter::BinaryMessenger* messenger);
+  explicit KeyboardKeyChannelHandler(flutter::BinaryMessenger* messenger,
+                                     CanSendHandler can_send);
 
   ~KeyboardKeyChannelHandler();
 
@@ -46,6 +49,9 @@ class KeyboardKeyChannelHandler
  private:
   // The Flutter system channel for key event messages.
   std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
+
+  // A callback which returns a bool indicating if key events can be sent.
+  CanSendHandler can_send_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(KeyboardKeyChannelHandler);
 };

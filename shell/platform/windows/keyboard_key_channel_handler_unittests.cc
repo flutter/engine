@@ -51,7 +51,7 @@ TEST(KeyboardKeyChannelHandlerTest, KeyboardHookHandling) {
         }
       });
 
-  KeyboardKeyChannelHandler handler(&messenger);
+  KeyboardKeyChannelHandler handler(&messenger, []() { return true; });
   bool last_handled = false;
 
   handler.KeyboardHook(
@@ -106,7 +106,7 @@ TEST(KeyboardKeyChannelHandlerTest, ExtendedKeysAreSentToRedispatch) {
         }
       });
 
-  KeyboardKeyChannelHandler handler(&messenger);
+  KeyboardKeyChannelHandler handler(&messenger, []() { return true; });
   bool last_handled = true;
 
   // Extended key flag is passed to redispatched events if set.
@@ -140,7 +140,8 @@ TEST(KeyboardKeyChannelHandlerTest, DeadKeysDoNotCrash) {
         return true;
       });
 
-  KeyboardKeyChannelHandler handler(&messenger);
+  KeyboardKeyChannelHandler handler(&messenger, []() { return true; });
+
   // Extended key flag is passed to redispatched events if set.
   handler.KeyboardHook(0xDD, 0x1a, WM_KEYDOWN, 0x8000005E, false, false,
                        [](bool handled) {});
@@ -164,7 +165,8 @@ TEST(KeyboardKeyChannelHandlerTest, EmptyResponsesDoNotCrash) {
         return true;
       });
 
-  KeyboardKeyChannelHandler handler(&messenger);
+  KeyboardKeyChannelHandler handler(&messenger, []() { return true; });
+
   handler.KeyboardHook(64, kUnhandledScanCode, WM_KEYDOWN, L'b', false, false,
                        [](bool handled) {});
 
