@@ -210,5 +210,15 @@ TEST(CapabilitiesVKTest,
   ASSERT_EQ(context, nullptr);
 }
 
+TEST(ContextVKTest, WarmUpFunctionCreatesRenderPass) {
+  const std::shared_ptr<ContextVK> context = MockVulkanContextBuilder().Build();
+
+  context->InitializeCommonlyUsedShadersIfNeeded();
+
+  auto functions = GetMockVulkanFunctions(context->GetDevice());
+  ASSERT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkCreateRenderPass") != functions->end());
+}
+
 }  // namespace testing
 }  // namespace impeller
