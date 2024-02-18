@@ -578,7 +578,6 @@ std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
 // device as the driver will lazily bootstrap and compile shaders to do so.
 // The render pass does not need to be begun or executed.
 void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
-  FML_LOG(ERROR) << "a";
   RenderTargetAllocator rt_allocator(GetResourceAllocator());
   RenderTarget render_target =
       RenderTarget::CreateOffscreenMSAA(*this, rt_allocator, {1, 1}, 1);
