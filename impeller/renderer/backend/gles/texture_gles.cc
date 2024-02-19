@@ -232,7 +232,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     return false;
   }
 
-  if (mapping->GetSize() < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
+  if (mapping->GetSize() < tex_descriptor.GetByteSizeOfRegion(region)) {
     return false;
   }
 
@@ -283,9 +283,10 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       tex_data = data->data->GetMapping();
     }
 
-    {
-      TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
-                   std::to_string(data->data->GetSize()).c_str());
+    TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
+                 std::to_string(data->data->GetSize()).c_str());
+    const auto& size = tex_descriptor.GetSize();
+    if (region == IRect::MakeLTRB(0, 0, size.GetWidth(), size.GetHeight())) {
       gl.TexImage2D(texture_target,         // target
                     0u,                     // LOD level
                     data->internal_format,  // internal format
@@ -295,6 +296,19 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
                     data->external_format,  // external format
                     data->type,             // type
                     tex_data                // data
+      );
+    } else {
+      gl.TexSubImage2D(texture_target,         // target
+                       0u,                     // LOD level
+                       data->internal_format,  // internal format
+                       region.GetX(),          // xoffset
+                       region.GetY(),          // yoffset
+                       region.GetWidth(),      // width
+                       region.GetHeight(),     // height
+                       data->external_format,  // external format
+                       data->type,             // type
+                       tex_data                // data
+
       );
     }
   };

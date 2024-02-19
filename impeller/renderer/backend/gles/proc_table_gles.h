@@ -37,12 +37,10 @@ struct AutoErrorCheck {
       }
       if (GLErrorIsFatal(error)) {
         FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
-                       << error << ")"
-                       << " encountered on call to " << name;
+                       << error << ")" << " encountered on call to " << name;
       } else {
         FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
-                       << ")"
-                       << " encountered on call to " << name;
+                       << ")" << " encountered on call to " << name;
       }
     }
   }
@@ -174,6 +172,7 @@ struct GLProc {
   PROC(StencilMaskSeparate);                 \
   PROC(StencilOpSeparate);                   \
   PROC(TexImage2D);                          \
+  PROC(TexSubImage2D);                       \
   PROC(TexParameteri);                       \
   PROC(TexParameterfv);                      \
   PROC(Uniform1fv);                          \

@@ -59,6 +59,13 @@ struct TextureDescriptor {
     return size.width * BytesPerPixelForPixelFormat(format);
   }
 
+  constexpr size_t GetByteSizeOfRegion(IRect region) const {
+    if (!IsValid()) {
+      return 0u;
+    }
+    return region.Area() * BytesPerPixelForPixelFormat(format);
+  }
+
   constexpr bool SamplingOptionsAreValid() const {
     const auto count = static_cast<uint64_t>(sample_count);
     return IsMultisampleCapable(type) ? count > 1 : count == 1;

@@ -89,10 +89,10 @@ bool TextureMTL::OnSetContents(const uint8_t* contents,
 
   const auto& desc = GetTextureDescriptor();
 
-  // Out of bounds access. TODO check region size
-  // if (length != desc.GetByteSizeOfBaseMipLevel()) {
-  //   return false;
-  // }
+  // Out of bounds access.
+  if (length != desc.GetByteSizeOfRegion(region)) {
+    return false;
+  }
 
   const auto region_mtl = MTLRegionMake2D(
       region.GetX(), region.GetY(), region.GetWidth(), region.GetHeight());
