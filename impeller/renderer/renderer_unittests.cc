@@ -1203,7 +1203,8 @@ TEST_P(RendererTest, StencilMask) {
         }
       }
       if (!render_target.GetStencilAttachment()->texture->SetContents(
-              stencil_contents.data(), stencil_contents.size(), 0, false)) {
+              stencil_contents.data(), stencil_contents.size(), std::nullopt, 0,
+              false)) {
         VALIDATION_LOG << "Could not upload stencil contents to device memory";
         return false;
       }

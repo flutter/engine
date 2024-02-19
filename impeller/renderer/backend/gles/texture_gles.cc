@@ -190,12 +190,14 @@ struct TexImage2DData {
 // |Texture|
 bool TextureGLES::OnSetContents(const uint8_t* contents,
                                 size_t length,
+                                IRect region,
                                 size_t slice) {
-  return OnSetContents(CreateMappingWithCopy(contents, length), slice);
+  return OnSetContents(CreateMappingWithCopy(contents, length), region, slice);
 }
 
 // |Texture|
 bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                                IRect region,
                                 size_t slice) {
   if (!mapping) {
     return false;

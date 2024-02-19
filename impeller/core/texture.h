@@ -22,10 +22,26 @@ class Texture {
 
   [[nodiscard]] bool SetContents(const uint8_t* contents,
                                  size_t length,
+                                 std::optional<IRect> region = std::nullopt,
                                  size_t slice = 0,
                                  bool is_opaque = false);
 
+  /// Set the contents of this texture with new data.
+  ///
+  /// [region]  The region specifies an area of the destination texture in
+  ///           pixels to replace. If not provided, this defaults to the entire
+  ///           texture.
+  ///
+  ///           If a region smaller than the texture size is provided, the
+  ///           contents are treated as containing tightly packed pixel data of
+  ///           that region. Only the portion of the texture in this region is
+  ///           replaced and existing data is preserved.
+  ///
+  ///           For example, to replace the top left 10 x 10 region of a larger
+  ///           100 x 100 texture, the region is {0, 0, 10, 10} and the expected
+  ///           buffer size in bytes is 100 x bpp.
   [[nodiscard]] bool SetContents(std::shared_ptr<const fml::Mapping> mapping,
+                                 std::optional<IRect> region = std::nullopt,
                                  size_t slice = 0,
                                  bool is_opaque = false);
 
@@ -55,10 +71,12 @@ class Texture {
 
   [[nodiscard]] virtual bool OnSetContents(const uint8_t* contents,
                                            size_t length,
+                                           IRect region,
                                            size_t slice) = 0;
 
   [[nodiscard]] virtual bool OnSetContents(
       std::shared_ptr<const fml::Mapping> mapping,
+      IRect region,
       size_t slice) = 0;
 
   bool mipmap_generated_ = false;

@@ -178,13 +178,16 @@ class MockTexture : public Texture {
   MOCK_METHOD(void, SetLabel, (std::string_view label), (override));
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(ISize, GetSize, (), (const, override));
+  MOCK_METHOD(
+      bool,
+      OnSetContents,
+      (const uint8_t* contents, size_t length, IRect region, size_t slice),
+      (override));
   MOCK_METHOD(bool,
               OnSetContents,
-              (const uint8_t* contents, size_t length, size_t slice),
-              (override));
-  MOCK_METHOD(bool,
-              OnSetContents,
-              (std::shared_ptr<const fml::Mapping> mapping, size_t slice),
+              (std::shared_ptr<const fml::Mapping> mapping,
+               IRect region,
+               size_t slice),
               (override));
 };
 

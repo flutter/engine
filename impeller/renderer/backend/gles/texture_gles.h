@@ -78,6 +78,7 @@ class TextureGLES final : public Texture,
 
   // |Texture|
   bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     IRect region,
                      size_t slice) override;
 
   // |Texture|

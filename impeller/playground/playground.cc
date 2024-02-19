@@ -483,9 +483,9 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
   texture->SetLabel("Texture cube");
 
   for (size_t i = 0; i < fixture_names.size(); i++) {
-    auto uploaded =
-        texture->SetContents(images[i].GetAllocation()->GetMapping(),
-                             images[i].GetAllocation()->GetSize(), i);
+    auto uploaded = texture->SetContents(
+        images[i].GetAllocation()->GetMapping(),
+        images[i].GetAllocation()->GetSize(), /*region=*/std::nullopt, i);
     if (!uploaded) {
       VALIDATION_LOG << "Could not upload texture to device memory.";
       return nullptr;

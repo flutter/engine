@@ -30,6 +30,7 @@ void TextureVK::SetLabel(std::string_view label) {
 
 bool TextureVK::OnSetContents(const uint8_t* contents,
                               size_t length,
+                              IRect region,
                               size_t slice) {
   if (!IsValid() || !contents) {
     return false;
@@ -129,10 +130,12 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
 }
 
 bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                              IRect region,
                               size_t slice) {
   // Vulkan has no threading restrictions. So we can pass this data along to the
   // client rendering API immediately.
-  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), region,
+                       slice);
 }
 
 bool TextureVK::IsValid() const {

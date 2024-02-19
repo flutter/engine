@@ -49,12 +49,14 @@ class FakeTexture : public Texture {
 
   bool OnSetContents(const uint8_t* contents,
                      size_t length,
+                     IRect region,
                      size_t slice) override {
     did_set_contents = true;
     return true;
   }
 
   bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     IRect region,
                      size_t slice) override {
     did_set_contents = true;
     return true;
