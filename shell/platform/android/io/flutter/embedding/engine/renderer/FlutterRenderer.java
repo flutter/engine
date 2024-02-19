@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -433,7 +432,7 @@ public class FlutterRenderer implements TextureRegistry {
 
     private Object lock = new Object();
     // REQUIRED: The following fields must only be accessed when lock is held.
-    private final LinkedList<PerImageReader> imageReaderQueue = new LinkedList<PerImageReader>();
+    private final ArrayList<PerImageReader> imageReaderQueue = new ArrayList<PerImageReader>();
     private final HashMap<ImageReader, PerImageReader> perImageReaders =
         new HashMap<ImageReader, PerImageReader>();
     private PerImageReader lastReaderDequeuedFrom = null;
@@ -452,7 +451,7 @@ public class FlutterRenderer implements TextureRegistry {
     /** Internal class: state held per ImageReader. */
     private class PerImageReader {
       public final ImageReader reader;
-      private final LinkedList<PerImage> imageQueue = new LinkedList<PerImage>();
+      private final ArrayList<PerImage> imageQueue = new ArrayList<PerImage>();
       private boolean closed = false;
 
       private final ImageReader.OnImageAvailableListener onImageAvailableListener =
@@ -485,7 +484,7 @@ public class FlutterRenderer implements TextureRegistry {
         imageQueue.add(perImage);
         // If we fall too far behind we will skip some frames.
         while (imageQueue.size() > 2) {
-          PerImage r = imageQueue.removeFirst();
+          PerImage r = imageQueue.remove(0);
           r.image.close();
         }
         return perImage;
@@ -495,7 +494,7 @@ public class FlutterRenderer implements TextureRegistry {
         if (imageQueue.size() == 0) {
           return null;
         }
-        PerImage r = imageQueue.removeFirst();
+        PerImage r = imageQueue.remove(0);
         return r;
       }
 
@@ -535,12 +534,12 @@ public class FlutterRenderer implements TextureRegistry {
       }
       // Prune nodes from the head of the ImageReader queue.
       while (imageReaderQueue.size() > 1) {
-        PerImageReader r = imageReaderQueue.peekFirst();
+        PerImageReader r = imageReaderQueue.get(0);
         if (!r.canPrune()) {
           // No more ImageReaders can be pruned this round.
           break;
         }
-        imageReaderQueue.removeFirst();
+        imageReaderQueue.remove(0);
         perImageReaders.remove(r.reader);
         r.close();
       }
@@ -580,7 +579,8 @@ public class FlutterRenderer implements TextureRegistry {
     PerImage dequeueImage() {
       PerImage r = null;
       synchronized (lock) {
-        for (PerImageReader reader : imageReaderQueue) {
+        for (int i = 0; i < imageReaderQueue.size(); i++) {
+          PerImageReader reader = imageReaderQueue.get(i);
           r = reader.dequeueImage();
           if (r == null) {
             // This reader is probably about to get pruned.
@@ -618,8 +618,8 @@ public class FlutterRenderer implements TextureRegistry {
 
     private void releaseInternal() {
       released = true;
-      for (PerImageReader pir : perImageReaders.values()) {
-        pir.close();
+      for (int i = 0; i < perImageReaders.size(); i++) {
+        perImageReaders.get(i).close();
       }
       perImageReaders.clear();
       imageReaderQueue.clear();
@@ -735,7 +735,7 @@ public class FlutterRenderer implements TextureRegistry {
           // Create a new ImageReader and add it to the queue.
           return getOrCreatePerImageReader(createImageReader());
         }
-        return imageReaderQueue.peekLast();
+        return imageReaderQueue.get(imageReaderQueue.size() - 1);
       }
     }
 
@@ -809,8 +809,8 @@ public class FlutterRenderer implements TextureRegistry {
     public int numImages() {
       int r = 0;
       synchronized (lock) {
-        for (PerImageReader reader : imageReaderQueue) {
-          r += reader.imageQueue.size();
+        for (int i = 0; i < imageReaderQueue.size(); i++) {
+          r += imageReaderQueue.get(i).imageQueue.size();
         }
       }
       return r;
