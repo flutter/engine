@@ -74,6 +74,7 @@ class TextureGLES final : public Texture,
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
                      size_t length,
+                     IRect region,
                      size_t slice) override;
 
   // |Texture|

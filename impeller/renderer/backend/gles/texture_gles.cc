@@ -268,7 +268,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
                                            data,                        //
                                            size = tex_descriptor.size,  //
                                            texture_type,                //
-                                           texture_target               //
+                                           texture_target,              //
+                                           region                       //
   ](const auto& reactor) {
     auto gl_handle = reactor.GetGLHandle(handle);
     if (!gl_handle.has_value()) {
@@ -285,8 +286,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
 
     TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
                  std::to_string(data->data->GetSize()).c_str());
-    const auto& size = tex_descriptor.GetSize();
-    if (region == IRect::MakeLTRB(0, 0, size.GetWidth(), size.GetHeight())) {
+    if (region == IRect::MakeLTRB(0, 0, size.width, size.height)) {
       gl.TexImage2D(texture_target,         // target
                     0u,                     // LOD level
                     data->internal_format,  // internal format
@@ -300,7 +300,6 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     } else {
       gl.TexSubImage2D(texture_target,         // target
                        0u,                     // LOD level
-                       data->internal_format,  // internal format
                        region.GetX(),          // xoffset
                        region.GetY(),          // yoffset
                        region.GetWidth(),      // width
