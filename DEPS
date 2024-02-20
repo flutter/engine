@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '9d86359b5fe8b7b5d6e4163a7979277f9dbd7dea',
+  'skia_revision': '4d1a02cbabcd2ae6b9ad041bdf2b330a7a24a60f',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
