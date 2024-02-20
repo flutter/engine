@@ -25,8 +25,8 @@ namespace {
 using ::testing::Invoke;
 using ::testing::ReturnRef;
 
-static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
-                     const fml::closure& task) {
+void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
+              const fml::closure& task) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(task_runner, [&latch, &task] {
     task();
@@ -600,10 +600,12 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
         });
       }));
 
-  static fml::AutoResetWaitableEvent callback_ready_latch;
+  fml::AutoResetWaitableEvent callback_ready_latch;
   callback_ready_latch.Reset();
   AddNativeCallback("NotifyNative",
-                    [](auto args) { callback_ready_latch.Signal(); });
+                    CREATE_NATIVE_ENTRY([&callback_ready_latch](auto args) {
+                      callback_ready_latch.Signal();
+                    }));
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
@@ -622,8 +624,8 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   engine_context->Run(std::move(configuration));
 
   engine_context->EngineTaskSync([](Engine& engine) {
-    engine.AddView(1, {1, 10, 10, 22, 0});
-    engine.AddView(2, {1, 10, 10, 22, 0});
+    engine.AddView(1, ViewportMetrics{1, 10, 10, 22, 0});
+    engine.AddView(2, ViewportMetrics{1, 10, 10, 22, 0});
   });
 
   callback_ready_latch.Wait();
@@ -752,9 +754,9 @@ TEST_F(EngineTest, AnimatorSubmitPartialViewsForWarmUp) {
     // Schedule a frame to make the animator create a continuation.
     engine.ScheduleFrame(true);
     // Add multiple views.
-    engine.AddView(0, {1, 10, 10, 22, 0});
-    engine.AddView(1, {1, 10, 10, 22, 0});
-    engine.AddView(2, {1, 10, 10, 22, 0});
+    engine.AddView(0, ViewportMetrics{1, 10, 10, 22, 0});
+    engine.AddView(1, ViewportMetrics{1, 10, 10, 22, 0});
+    engine.AddView(2, ViewportMetrics{1, 10, 10, 22, 0});
   });
 
   continuation_ready_latch.Wait();

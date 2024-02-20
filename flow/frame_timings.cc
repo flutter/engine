@@ -13,6 +13,31 @@
 
 namespace flutter {
 
+namespace {
+
+const char* StateToString(FrameTimingsRecorder::State state) {
+#ifndef NDEBUG
+  switch (state) {
+    case FrameTimingsRecorder::State::kUninitialized:
+      return "kUninitialized";
+    case FrameTimingsRecorder::State::kVsync:
+      return "kVsync";
+    case FrameTimingsRecorder::State::kBuildStart:
+      return "kBuildStart";
+    case FrameTimingsRecorder::State::kBuildEnd:
+      return "kBuildEnd";
+    case FrameTimingsRecorder::State::kRasterStart:
+      return "kRasterStart";
+    case FrameTimingsRecorder::State::kRasterEnd:
+      return "kRasterEnd";
+  };
+  FML_UNREACHABLE();
+#endif
+  return "";
+}
+
+}  // namespace
+
 std::atomic<uint64_t> FrameTimingsRecorder::frame_number_gen_ = {1};
 
 FrameTimingsRecorder::FrameTimingsRecorder()
@@ -252,27 +277,6 @@ uint64_t FrameTimingsRecorder::GetFrameNumber() const {
 
 const char* FrameTimingsRecorder::GetFrameNumberTraceArg() const {
   return frame_number_trace_arg_val_.c_str();
-}
-
-static const char* StateToString(FrameTimingsRecorder::State state) {
-#ifndef NDEBUG
-  switch (state) {
-    case FrameTimingsRecorder::State::kUninitialized:
-      return "kUninitialized";
-    case FrameTimingsRecorder::State::kVsync:
-      return "kVsync";
-    case FrameTimingsRecorder::State::kBuildStart:
-      return "kBuildStart";
-    case FrameTimingsRecorder::State::kBuildEnd:
-      return "kBuildEnd";
-    case FrameTimingsRecorder::State::kRasterStart:
-      return "kRasterStart";
-    case FrameTimingsRecorder::State::kRasterEnd:
-      return "kRasterEnd";
-  };
-  FML_UNREACHABLE();
-#endif
-  return "";
 }
 
 void FrameTimingsRecorder::AssertInState(State state) const {
