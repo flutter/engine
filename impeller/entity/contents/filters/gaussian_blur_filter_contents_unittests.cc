@@ -487,5 +487,86 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
   }
 }
 
+TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamples) {
+  KernelPipeline::FragmentShader::KernelSamples kernel_samples = {
+      .sample_count = 5,
+      .samples =
+          {
+              {
+                  .uv_offset = Vector2(-2, 0),
+                  .coefficient = 0.1f,
+              },
+              {
+                  .uv_offset = Vector2(-1, 0),
+                  .coefficient = 0.2f,
+              },
+              {
+                  .uv_offset = Vector2(0, 0),
+                  .coefficient = 0.4f,
+              },
+              {
+                  .uv_offset = Vector2(1, 0),
+                  .coefficient = 0.2f,
+              },
+              {
+                  .uv_offset = Vector2(2, 0),
+                  .coefficient = 0.1f,
+              },
+          },
+  };
+
+  KernelPipeline::FragmentShader::KernelSamples fast_kernel_samples =
+      LerpHackKernelSamples(kernel_samples);
+  EXPECT_EQ(fast_kernel_samples.sample_count, 3);
+
+  KernelPipeline::FragmentShader::KernelSample* samples =
+      kernel_samples.samples;
+  KernelPipeline::FragmentShader::KernelSample* fast_samples =
+      fast_kernel_samples.samples;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Check output kernel.
+
+  EXPECT_FLOAT_EQ(fast_samples[0].uv_offset.x, -1.3333333);
+  EXPECT_FLOAT_EQ(fast_samples[0].uv_offset.y, 0);
+  // 0.1428571429 = 0.1 / (0.1 + 0.4 + 0.2)
+  EXPECT_FLOAT_EQ(fast_samples[0].coefficient, 0.1428571429);
+  EXPECT_FLOAT_EQ(fast_samples[1].uv_offset.x, 0);
+  EXPECT_FLOAT_EQ(fast_samples[1].uv_offset.y, 0);
+  // 0.5714285714 = 0.4 / (0.1 + 0.4 + 0.2)
+  EXPECT_FLOAT_EQ(fast_samples[1].coefficient, 0.5714285714);
+  EXPECT_FLOAT_EQ(fast_samples[2].uv_offset.x, 1.3333333);
+  EXPECT_FLOAT_EQ(fast_samples[2].uv_offset.y, 0);
+  // 0.2857142857 = 0.4 / (0.1 + 0.4 + 0.2)
+  EXPECT_FLOAT_EQ(fast_samples[2].coefficient, 0.2857142857);
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Check output of fast kernel versus original kernel.
+
+  Scalar data[5] = {0.25, 0.5, 0.5, 1.0, 0.2};
+  Scalar original_output =
+      samples[0].coefficient * data[0] + samples[1].coefficient * data[1] +
+      samples[2].coefficient * data[2] + samples[3].coefficient * data[3] +
+      samples[4].coefficient * data[4];
+
+  auto lerp = [](const Point& point, Scalar left, Scalar right) {
+    Scalar int_part;
+    Scalar fract = fabsf(modf(point.x, &int_part));
+    if (point.x < 0) {
+      return left * fract + right * (1.0 - fract);
+    } else {
+      return left * (1.0 - fract) + right * fract;
+    }
+  };
+  Scalar fast_output =
+      /*1st*/ lerp(fast_samples[0].uv_offset, data[0], data[1]) *
+          fast_samples[0].coefficient +
+      /*2nd*/ data[2] * fast_samples[1].coefficient +
+      /*3rd*/ lerp(fast_samples[2].uv_offset, data[3], data[4]) *
+          fast_samples[2].coefficient;
+
+  EXPECT_NEAR(original_output, fast_output, 0.01);
+}
+
 }  // namespace testing
 }  // namespace impeller

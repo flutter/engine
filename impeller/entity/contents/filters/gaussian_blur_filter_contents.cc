@@ -106,6 +106,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
         SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
+        linear_sampler_descriptor.mip_filter = MipFilter::kLinear;
         TextureFillVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
         TextureFillFragmentShader::BindTextureSampler(
@@ -167,6 +168,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
         SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
+        linear_sampler_descriptor.mip_filter = MipFilter::kLinear;
         GaussianBlurFragmentShader::BindTextureSampler(
             pass, input_texture,
             renderer.GetContext()->GetSamplerLibrary()->GetSampler(
@@ -174,7 +176,8 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
         GaussianBlurVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
         GaussianBlurFragmentShader::BindKernelSamples(
-            pass, host_buffer.EmplaceUniform(GenerateBlurInfo(blur_info)));
+            pass, host_buffer.EmplaceUniform(
+                      LerpHackKernelSamples(GenerateBlurInfo(blur_info))));
         return pass.Draw().ok();
       };
   if (destination_target.has_value()) {
@@ -502,6 +505,39 @@ KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
   // Make sure everything adds up to 1.
   for (auto& sample : result.samples) {
     sample.coefficient /= tally;
+  }
+
+  return result;
+}
+
+KernelPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
+    KernelPipeline::FragmentShader::KernelSamples parameters) {
+  KernelPipeline::FragmentShader::KernelSamples result;
+  result.sample_count = ((parameters.sample_count - 1) / 2) + 1;
+  int32_t middle = result.sample_count / 2;
+  int32_t j = 0;
+  Scalar coefficient_tally = 0.0f;
+  for (int i = 0; i < result.sample_count; i++) {
+    if (i == middle) {
+      result.samples[i] = parameters.samples[j++];
+    } else {
+      KernelPipeline::FragmentShader::KernelSample left = parameters.samples[j];
+      KernelPipeline::FragmentShader::KernelSample right =
+          parameters.samples[j + 1];
+      Scalar right_coefficient = right.coefficient / left.coefficient;
+      result.samples[i] = KernelPipeline::FragmentShader::KernelSample{
+          .uv_offset = left.uv_offset.Lerp(
+              right.uv_offset, right_coefficient / (1.0f + right_coefficient)),
+          .coefficient = left.coefficient,
+      };
+      j += 2;
+    }
+    coefficient_tally += result.samples[i].coefficient;
+  }
+
+  // Normalize.
+  for (int i = 0; i < result.sample_count; i++) {
+    result.samples[i].coefficient /= coefficient_tally;
   }
 
   return result;
