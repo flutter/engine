@@ -487,7 +487,7 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
   }
 }
 
-TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamples) {
+TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesSimple) {
   KernelPipeline::FragmentShader::KernelSamples kernel_samples = {
       .sample_count = 5,
       .samples =
@@ -566,6 +566,61 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamples) {
           fast_samples[2].coefficient;
 
   EXPECT_NEAR(original_output, fast_output, 0.01);
+}
+
+TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesComplex) {
+  Scalar sigma = 10.0f;
+  int32_t blur_radius = static_cast<int32_t>(
+      std::ceil(GaussianBlurFilterContents::CalculateBlurRadius(sigma)));
+  BlurParameters parameters = {.blur_uv_offset = Point(1, 0),
+                               .blur_sigma = sigma,
+                               .blur_radius = blur_radius,
+                               .step_size = 1};
+  KernelPipeline::FragmentShader::KernelSamples kernel_samples =
+      GenerateBlurInfo(parameters);
+  EXPECT_EQ(kernel_samples.sample_count, 33);
+  KernelPipeline::FragmentShader::KernelSamples fast_kernel_samples =
+      LerpHackKernelSamples(kernel_samples);
+  EXPECT_EQ(fast_kernel_samples.sample_count, 17);
+  float data[33];
+  srand(0);
+  for (int i = 0; i < 33; i++) {
+    data[i] = 255.0 * static_cast<double>(rand()) / RAND_MAX;
+  }
+
+  auto sampler = [data](Point point) -> Scalar {
+    FML_CHECK(point.y == 0.0f);
+    FML_CHECK(point.x >= -16);
+    FML_CHECK(point.x <= 16);
+    Scalar fint_part;
+    Scalar fract = fabsf(modf(point.x, &fint_part));
+    if (fract == 0) {
+      int32_t int_part = static_cast<int32_t>(fint_part) + 16;
+      return data[int_part];
+    } else {
+      int32_t left = static_cast<int32_t>(floor(point.x)) + 16;
+      int32_t right = static_cast<int32_t>(ceil(point.x)) + 16;
+      if (point.x < 0) {
+        return fract * data[left] + (1.0 - fract) * data[right];
+      } else {
+        return (1.0 - fract) * data[left] + fract * data[right];
+      }
+    }
+  };
+
+  Scalar output = 0.0;
+  for (int i = 0; i < kernel_samples.sample_count; ++i) {
+    auto sample = kernel_samples.samples[i];
+    output += sample.coefficient * sampler(sample.uv_offset);
+  }
+
+  Scalar fast_output = 0.0;
+  for (int i = 0; i < fast_kernel_samples.sample_count; ++i) {
+    auto sample = fast_kernel_samples.samples[i];
+    fast_output += sample.coefficient * sampler(sample.uv_offset);
+  }
+
+  EXPECT_NEAR(output, fast_output, 0.1);
 }
 
 }  // namespace testing
