@@ -42,7 +42,7 @@
                 },
                 {
                     "nane": "test:GeneratedPluginRegistant.java omitted",
-                    "script": "flutter/ci/test/format_no_generated_java.sh"
+                    "script": "flutter/ci/test/format_no_generated_java_test.sh"
                 },
                 {
                     "language": "python3",
