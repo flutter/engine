@@ -1,4 +1,4 @@
-Signature: ef9bb3b61dff7f43f2f4efedc627a0fd
+Signature: eb73f4e1f13e4aa76521d602858e2f30
 
 ====================================================================================================
 LIBRARY: etc1
@@ -396,6 +396,7 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
+FILE: ../../../flutter/third_party/skia/relnotes/PreferStillImage.md
 FILE: ../../../flutter/third_party/skia/relnotes/SkSurfaceProps-Flags.md
 FILE: ../../../flutter/third_party/skia/relnotes/TickToProcessEvents.md
 FILE: ../../../flutter/third_party/skia/relnotes/VkDeviceLostCallback.md
@@ -5063,7 +5064,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/base/SkTDArray.cpp + ../../../flut
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkEncodedInfo.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkParseEncodedOrigin.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkWuffsCodec.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/codec/SkWuffsCodec.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkCanvasPriv.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkColorSpaceXformSteps.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkColorSpaceXformSteps.h + ../../../flutter/third_party/skia/LICENSE
@@ -5279,7 +5279,6 @@ FILE: ../../../flutter/third_party/skia/src/base/SkTDArray.cpp
 FILE: ../../../flutter/third_party/skia/src/codec/SkEncodedInfo.cpp
 FILE: ../../../flutter/third_party/skia/src/codec/SkParseEncodedOrigin.cpp
 FILE: ../../../flutter/third_party/skia/src/codec/SkWuffsCodec.cpp
-FILE: ../../../flutter/third_party/skia/src/codec/SkWuffsCodec.h
 FILE: ../../../flutter/third_party/skia/src/core/SkCanvasPriv.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkColorSpaceXformSteps.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkColorSpaceXformSteps.h
@@ -8829,7 +8828,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/base/SkTime.h + ../../../flutter/t
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkImageGenerator_FromEncoded.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/codec/SkJpegConstants.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_opts.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_opts_hsw.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_opts_ssse3.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkBlitMask.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkBlitMask_opts.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -9121,7 +9119,6 @@ FILE: ../../../flutter/third_party/skia/src/base/SkTime.h
 FILE: ../../../flutter/third_party/skia/src/codec/SkImageGenerator_FromEncoded.cpp
 FILE: ../../../flutter/third_party/skia/src/codec/SkJpegConstants.h
 FILE: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_opts.cpp
-FILE: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_opts_hsw.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkBitmapProcState_opts_ssse3.cpp
 FILE: ../../../flutter/third_party/skia/src/core/SkBlitMask.h
 FILE: ../../../flutter/third_party/skia/src/core/SkBlitMask_opts.cpp
