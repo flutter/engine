@@ -510,6 +510,15 @@ KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
   return result;
 }
 
+// This works by shrinking the kernel size by 2 and relying on lerp to read
+// between the samples.
+//
+// Here is how the math is devised for collapsing 2 samples into 1:
+// output = coeff[a] * sample(pos[a]) + coeff[b] * sample(pos[b])
+// output = coeff[a] * (sample(pos[a]) + (coeff[b]/coeff[a]) * sample(pos[b]))
+// fract = (coeff[b] / coeff[a])
+// output = coeff[a] * (sample(pos[a]) + fract * sample(pos[b]))
+// output = coeff[a] * sample(lerp(pos[a], pos[b], frac / (1 + fract)))
 KernelPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
     KernelPipeline::FragmentShader::KernelSamples parameters) {
   KernelPipeline::FragmentShader::KernelSamples result;
