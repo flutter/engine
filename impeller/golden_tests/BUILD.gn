@@ -21,7 +21,10 @@ impeller_component("golden_playground_test") {
 
   if (is_mac) {
     sources += [ "golden_playground_test_mac.cc" ]
-    deps += [ ":metal_screenshot" ]
+    deps += [
+      ":metal_screenshot",
+      "//third_party/abseil-cpp/absl/base:no_destructor",
+    ]
   } else {
     sources += [ "golden_playground_test_stub.cc" ]
   }
@@ -81,6 +84,8 @@ if (is_mac) {
       "//flutter/impeller/aiks:aiks_unittests_golden",
       "//flutter/impeller/fixtures",
       "//flutter/third_party/swiftshader",
+      "//third_party/angle:libEGL",
+      "//third_party/angle:libGLESv2",
       "//third_party/googletest:gtest",
     ]
   }

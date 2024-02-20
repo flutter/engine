@@ -125,12 +125,13 @@ class RenderPass : public ResourceBinder {
       BufferView view);
 
   // |ResourceBinder|
-  virtual bool BindResource(ShaderStage stage,
-                            DescriptorType type,
-                            const SampledImageSlot& slot,
-                            const ShaderMetadata& metadata,
-                            std::shared_ptr<const Texture> texture,
-                            std::shared_ptr<const Sampler> sampler) override;
+  virtual bool BindResource(
+      ShaderStage stage,
+      DescriptorType type,
+      const SampledImageSlot& slot,
+      const ShaderMetadata& metadata,
+      std::shared_ptr<const Texture> texture,
+      const std::unique_ptr<const Sampler>& sampler) override;
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
@@ -156,6 +157,10 @@ class RenderPass : public ResourceBinder {
   PixelFormat GetRenderTargetPixelFormat() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      Whether the render target has a depth attachment.
+  bool HasDepthAttachment() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      Whether the render target has an stencil attachment.
   bool HasStencilAttachment() const;
 
@@ -168,6 +173,7 @@ class RenderPass : public ResourceBinder {
   // a const reference.
   const SampleCount sample_count_;
   const PixelFormat pixel_format_;
+  const bool has_depth_attachment_;
   const bool has_stencil_attachment_;
   const ISize render_target_size_;
   const RenderTarget render_target_;

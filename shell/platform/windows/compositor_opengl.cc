@@ -93,7 +93,8 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
 
 bool CompositorOpenGL::Present(const FlutterLayer** layers,
                                size_t layers_count) {
-  if (!engine_->view()) {
+  FlutterWindowsView* view = engine_->view();
+  if (!view) {
     return false;
   }
 
@@ -106,7 +107,7 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
       return false;
     }
 
-    return ClearSurface();
+    return Clear(view);
   }
 
   // TODO: Support compositing layers and platform views.
@@ -124,11 +125,16 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
 
   // Check if this frame can be presented. This resizes the surface if a resize
   // is pending and |width| and |height| match the target size.
-  if (!engine_->view()->OnFrameGenerated(width, height)) {
+  if (!view->OnFrameGenerated(width, height)) {
     return false;
   }
 
-  if (!engine_->egl_manager()->MakeCurrent()) {
+  // |OnFrameGenerated| should return false if the surface isn't valid.
+  FML_DCHECK(view->surface() != nullptr);
+  FML_DCHECK(view->surface()->IsValid());
+
+  egl::WindowSurface* surface = view->surface();
+  if (!surface->MakeCurrent()) {
     return false;
   }
 
@@ -154,18 +160,23 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
                        GL_NEAREST            // filter
   );
 
-  if (!engine_->egl_manager()->SwapBuffers()) {
+  if (!surface->SwapBuffers()) {
     return false;
   }
 
-  engine_->view()->OnFramePresented();
+  view->OnFramePresented();
   return true;
 }
 
 bool CompositorOpenGL::Initialize() {
   FML_DCHECK(!is_initialized_);
 
-  if (!engine_->egl_manager()->MakeCurrent()) {
+  egl::Manager* manager = engine_->egl_manager();
+  if (!manager) {
+    return false;
+  }
+
+  if (!manager->render_context()->MakeCurrent()) {
     return false;
   }
 
@@ -180,24 +191,31 @@ bool CompositorOpenGL::Initialize() {
   return true;
 }
 
-bool CompositorOpenGL::ClearSurface() {
+bool CompositorOpenGL::Clear(FlutterWindowsView* view) {
   FML_DCHECK(is_initialized_);
 
-  // Resize the surface if needed.
-  engine_->view()->OnEmptyFrameGenerated();
+  // Check if this frame can be presented. This resizes the surface if needed.
+  if (!view->OnEmptyFrameGenerated()) {
+    return false;
+  }
 
-  if (!engine_->egl_manager()->MakeCurrent()) {
+  // |OnEmptyFrameGenerated| should return false if the surface isn't valid.
+  FML_DCHECK(view->surface() != nullptr);
+  FML_DCHECK(view->surface()->IsValid());
+
+  egl::WindowSurface* surface = view->surface();
+  if (!surface->MakeCurrent()) {
     return false;
   }
 
   gl_->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  if (!engine_->egl_manager()->SwapBuffers()) {
+  if (!surface->SwapBuffers()) {
     return false;
   }
 
-  engine_->view()->OnFramePresented();
+  view->OnFramePresented();
   return true;
 }
 

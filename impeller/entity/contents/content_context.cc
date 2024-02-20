@@ -6,7 +6,9 @@
 
 #include <memory>
 
+#include "fml/trace_event.h"
 #include "impeller/base/strings.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
@@ -15,6 +17,7 @@
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/texture_mipmap.h"
 #include "impeller/tessellator/tessellator.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -152,15 +155,67 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
          "has_depth_stencil_attachments="
       << has_depth_stencil_attachments;
   if (maybe_stencil.has_value()) {
-    StencilAttachmentDescriptor stencil = maybe_stencil.value();
-    stencil.stencil_compare = stencil_compare;
-    stencil.depth_stencil_pass = stencil_operation;
-    desc.SetStencilAttachmentDescriptors(stencil);
+    StencilAttachmentDescriptor front_stencil = maybe_stencil.value();
+    StencilAttachmentDescriptor back_stencil = front_stencil;
+
+    switch (stencil_mode) {
+      case StencilMode::kIgnore:
+        front_stencil.stencil_compare = CompareFunction::kAlways;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kSetToRef:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kNonZeroWrite:
+        front_stencil.stencil_compare = CompareFunction::kAlways;
+        front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
+        back_stencil.stencil_compare = CompareFunction::kAlways;
+        back_stencil.depth_stencil_pass = StencilOperation::kDecrementWrap;
+        desc.SetStencilAttachmentDescriptors(front_stencil, back_stencil);
+        break;
+      case StencilMode::kEvenOddWrite:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
+        front_stencil.stencil_failure = StencilOperation::kDecrementWrap;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kCoverCompare:
+        front_stencil.stencil_compare = CompareFunction::kNotEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipRestore:
+        front_stencil.stencil_compare = CompareFunction::kLess;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipIncrement:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kIncrementClamp;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipDecrement:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kDecrementClamp;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kLegacyClipCompare:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+    }
   }
   if (maybe_depth.has_value()) {
     DepthAttachmentDescriptor depth = maybe_depth.value();
-    depth.depth_compare = CompareFunction::kAlways;
-    depth.depth_write_enabled = false;
+    depth.depth_write_enabled = depth_write_enabled;
+    depth.depth_compare = depth_compare;
+    desc.SetDepthStencilAttachmentDescriptor(depth);
   }
 
   desc.SetPrimitiveType(primitive_type);
@@ -200,7 +255,8 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())),
+      pending_command_buffers_(std::make_unique<PendingCommandBuffers>()) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -238,64 +294,49 @@ ContentContext::ContentContext(
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
     framebuffer_blend_color_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal});
     framebuffer_blend_colorburn_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kColorBurn), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kColorBurn), supports_decal});
     framebuffer_blend_colordodge_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kColorDodge), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kColorDodge), supports_decal});
     framebuffer_blend_darken_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kDarken), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kDarken), supports_decal});
     framebuffer_blend_difference_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kDifference), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kDifference), supports_decal});
     framebuffer_blend_exclusion_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kExclusion), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kExclusion), supports_decal});
     framebuffer_blend_hardlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kHardLight), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kHardLight), supports_decal});
     framebuffer_blend_hue_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kHue), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kHue), supports_decal});
     framebuffer_blend_lighten_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
     framebuffer_blend_multiply_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kMultiply), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kMultiply), supports_decal});
     framebuffer_blend_overlay_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kOverlay), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kOverlay), supports_decal});
     framebuffer_blend_saturation_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kSaturation), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kSaturation), supports_decal});
     framebuffer_blend_screen_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kScreen), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kScreen), supports_decal});
     framebuffer_blend_softlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal},
-        UseSubpassInput::kYes);
+        {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
   }
 
   blend_color_pipelines_.CreateDefault(
@@ -365,7 +406,11 @@ ContentContext::ContentContext(
                                                  options_trianglestrip);
   srgb_to_linear_filter_pipelines_.CreateDefault(*context_,
                                                  options_trianglestrip);
-  glyph_atlas_pipelines_.CreateDefault(*context_, options);
+  glyph_atlas_pipelines_.CreateDefault(
+      *context_, options,
+      {static_cast<Scalar>(
+          GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
+          PixelFormat::kA8UNormInt)});
   glyph_atlas_color_pipelines_.CreateDefault(*context_, options);
   geometry_color_pipelines_.CreateDefault(*context_, options);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
@@ -417,6 +462,7 @@ ContentContext::ContentContext(
                                           *context_, clip_pipeline_descriptor));
 
   is_valid_ = true;
+  InitializeCommonlyUsedShadersIfNeeded();
 }
 
 ContentContext::~ContentContext() = default;
@@ -429,20 +475,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     const std::string& label,
     ISize texture_size,
     const SubpassCallback& subpass_callback,
-    bool msaa_enabled) const {
+    bool msaa_enabled,
+    int32_t mip_count) const {
   const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
-        SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA,
         std::nullopt  // stencil_attachment_config
     );
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size, /*mip_count=*/1,
-        SPrintF("%s Offscreen", label.c_str()),
+        *context, *GetRenderTargetCache(), texture_size,
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig,  //
         std::nullopt  // stencil_attachment_config
     );
@@ -477,9 +524,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  if (!sub_command_buffer->EncodeAndSubmit(sub_renderpass)) {
+  if (!sub_renderpass->EncodeCommands()) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
+
+  const std::shared_ptr<Texture>& target_texture =
+      subpass_target.GetRenderTargetTexture();
+  if (target_texture->GetMipCount() > 1) {
+    fml::Status mipmap_status =
+        AddMipmapGeneration(sub_command_buffer, context, target_texture);
+    if (!mipmap_status.ok()) {
+      return mipmap_status;
+    }
+  }
+
+  RecordCommandBuffer(std::move(sub_command_buffer));
 
   return subpass_target;
 }
@@ -529,6 +588,86 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
     } else {
       it++;
     }
+  }
+}
+
+void ContentContext::RecordCommandBuffer(
+    std::shared_ptr<CommandBuffer> command_buffer) const {
+  // Metal systems seem to have a limit on the number of command buffers that
+  // can be created concurrently, which appears to be in the range of 50 or so
+  // command buffers. When this limit is hit, creation of further command
+  // buffers will fail. To work around this, we regularly flush the
+  // command buffers on the metal backend.
+  if (GetContext()->GetBackendType() == Context::BackendType::kMetal) {
+    GetContext()->GetCommandQueue()->Submit({command_buffer});
+  } else {
+    pending_command_buffers_->command_buffers.push_back(
+        std::move(command_buffer));
+  }
+}
+
+void ContentContext::FlushCommandBuffers() const {
+  auto buffers = std::move(pending_command_buffers_->command_buffers);
+  GetContext()->GetCommandQueue()->Submit(buffers);
+}
+
+void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
+  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+    // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
+    // runs.
+    return;
+  }
+  TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
+
+  // Initialize commonly used shaders that aren't defaults. These settings were
+  // chosen based on the knowledge that we mix and match triangle and
+  // triangle-strip geometry, and also have fairly agressive srcOver to src
+  // blend mode conversions.
+  auto options = ContentContextOptions{
+      .sample_count = SampleCount::kCount4,
+      .color_attachment_pixel_format =
+          context_->GetCapabilities()->GetDefaultColorFormat()};
+
+  for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
+    for (const auto geometry :
+         {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
+      options.blend_mode = mode;
+      options.primitive_type = geometry;
+      CreateIfNeeded(solid_fill_pipelines_, options);
+      CreateIfNeeded(texture_pipelines_, options);
+      if (GetContext()->GetCapabilities()->SupportsSSBO()) {
+        CreateIfNeeded(linear_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(radial_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(sweep_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(conical_gradient_ssbo_fill_pipelines_, options);
+      }
+    }
+  }
+
+  options.blend_mode = BlendMode::kDestination;
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  for (const auto stencil_mode :
+       {ContentContextOptions::StencilMode::kLegacyClipIncrement,
+        ContentContextOptions::StencilMode::kLegacyClipDecrement,
+        ContentContextOptions::StencilMode::kLegacyClipRestore}) {
+    options.stencil_mode = stencil_mode;
+    CreateIfNeeded(clip_pipelines_, options);
+  }
+
+  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
+  // observed to take 10s of ms as an internal shader is compiled to perform
+  // the operation. Similarly, the initial render pass can also take 10s of ms
+  // for a similar reason. Because the context object is initialized far
+  // before the first frame, create a trivial texture and render pass to force
+  // the driver to compiler these shaders before the frame begins.
+  TextureDescriptor desc;
+  desc.size = {1, 1};
+  desc.storage_mode = StorageMode::kHostVisible;
+  desc.format = context_->GetCapabilities()->GetDefaultColorFormat();
+  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+  uint32_t color = 0;
+  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
+    VALIDATION_LOG << "Failed to set bootstrap texture.";
   }
 }
 

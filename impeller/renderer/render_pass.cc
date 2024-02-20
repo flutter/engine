@@ -12,6 +12,7 @@ RenderPass::RenderPass(std::shared_ptr<const Context> context,
     : context_(std::move(context)),
       sample_count_(target.GetSampleCount()),
       pixel_format_(target.GetRenderTargetPixelFormat()),
+      has_depth_attachment_(target.GetDepthAttachment().has_value()),
       has_stencil_attachment_(target.GetStencilAttachment().has_value()),
       render_target_size_(target.GetRenderTargetSize()),
       render_target_(target),
@@ -25,6 +26,10 @@ SampleCount RenderPass::GetSampleCount() const {
 
 PixelFormat RenderPass::GetRenderTargetPixelFormat() const {
   return pixel_format_;
+}
+
+bool RenderPass::HasDepthAttachment() const {
+  return has_depth_attachment_;
 }
 
 bool RenderPass::HasStencilAttachment() const {
@@ -153,9 +158,9 @@ bool RenderPass::BindResource(ShaderStage stage,
                               const SampledImageSlot& slot,
                               const ShaderMetadata& metadata,
                               std::shared_ptr<const Texture> texture,
-                              std::shared_ptr<const Sampler> sampler) {
+                              const std::unique_ptr<const Sampler>& sampler) {
   return pending_.BindResource(stage, type, slot, metadata, std::move(texture),
-                               std::move(sampler));
+                               sampler);
 }
 
 }  // namespace impeller

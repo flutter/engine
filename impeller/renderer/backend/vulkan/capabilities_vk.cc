@@ -157,10 +157,6 @@ static const char* GetDeviceExtensionName(OptionalDeviceExtensionVK ext) {
   switch (ext) {
     case OptionalDeviceExtensionVK::kEXTPipelineCreationFeedback:
       return VK_EXT_PIPELINE_CREATION_FEEDBACK_EXTENSION_NAME;
-    case OptionalDeviceExtensionVK::kARMRasterizationOrderAttachmentAccess:
-      return VK_ARM_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
-    case OptionalDeviceExtensionVK::kEXTRasterizationOrderAttachmentAccess:
-      return VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME;
     case OptionalDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -258,7 +254,6 @@ static bool PhysicalDeviceSupportsRequiredFormats(
   const auto has_color_format =
       HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm);
   const auto has_stencil_format =
-      HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint) ||
       HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint) ||
       HasSuitableDepthStencilFormat(device, vk::Format::eD24UnormS8Uint);
   return has_color_format && has_stencil_format;
@@ -355,10 +350,8 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
 
   if (HasSuitableDepthStencilFormat(device, vk::Format::eS8Uint)) {
     default_stencil_format_ = PixelFormat::kS8UInt;
-  } else if (default_stencil_format_ != PixelFormat::kUnknown) {
+  } else if (default_depth_stencil_format_ != PixelFormat::kUnknown) {
     default_stencil_format_ = default_depth_stencil_format_;
-  } else {
-    return false;
   }
 
   device_properties_ = device.getProperties();
@@ -406,18 +399,6 @@ bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
     });
   }
 
-  {
-    supports_framebuffer_fetch_ =
-        (optional_device_extensions_.find(
-             OptionalDeviceExtensionVK::
-                 kARMRasterizationOrderAttachmentAccess) !=
-             optional_device_extensions_.end() ||
-         optional_device_extensions_.find(
-             OptionalDeviceExtensionVK::
-                 kEXTRasterizationOrderAttachmentAccess) !=
-             optional_device_extensions_.end());
-  }
-
   return true;
 }
 
@@ -448,7 +429,7 @@ bool CapabilitiesVK::SupportsTextureToTextureBlits() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsFramebufferFetch() const {
-  return supports_framebuffer_fetch_;
+  return true;
 }
 
 // |Capabilities|
@@ -501,6 +482,10 @@ bool CapabilitiesVK::HasOptionalDeviceExtension(
     OptionalDeviceExtensionVK extension) const {
   return optional_device_extensions_.find(extension) !=
          optional_device_extensions_.end();
+}
+
+PixelFormat CapabilitiesVK::GetDefaultGlyphAtlasFormat() const {
+  return PixelFormat::kR8UNormInt;
 }
 
 }  // namespace impeller

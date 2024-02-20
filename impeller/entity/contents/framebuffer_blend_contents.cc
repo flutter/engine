@@ -46,7 +46,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
       Rect::MakeSize(pass.GetRenderTargetSize()),  // coverage_limit
       std::nullopt,                                // sampler_descriptor
       true,                                        // msaa_enabled
-      "FramebufferBlendContents Snapshot");        // label
+      /*mip_count=*/1,
+      "FramebufferBlendContents Snapshot");  // label
 
   if (!src_snapshot.has_value()) {
     return true;
@@ -132,10 +133,12 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
     src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
     src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
   }
-  auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-      src_sampler_descriptor);
+  const std::unique_ptr<const Sampler>& src_sampler =
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+          src_sampler_descriptor);
   FS::BindTextureSamplerSrc(pass, src_snapshot->texture, src_sampler);
 
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = pass.GetOrthographicTransform() * src_snapshot->transform;
   frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));

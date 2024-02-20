@@ -37,8 +37,8 @@ TEST_P(AiksTest, RotateColorFilteredPath) {
           ColorFilter::MakeBlend(BlendMode::kSourceIn, Color::AliceBlue()),
   };
 
-  canvas.DrawPath(std::move(arrow_stem), paint);
-  canvas.DrawPath(std::move(arrow_head), paint);
+  canvas.DrawPath(arrow_stem, paint);
+  canvas.DrawPath(arrow_head, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -125,7 +125,7 @@ TEST_P(AiksTest, CanRenderDifferencePaths) {
   canvas.DrawImage(
       std::make_shared<Image>(CreateTextureForFixture("boston.jpg")), {10, 10},
       Paint{});
-  canvas.DrawPath(std::move(path), paint);
+  canvas.DrawPath(path, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -185,11 +185,13 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     static float scale = 3;
     static bool add_circle_clip = true;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
-    ImGui::SliderFloat("Scale", &scale, 0, 6);
-    ImGui::Checkbox("Circle clip", &add_circle_clip);
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
+      ImGui::SliderFloat("Scale", &scale, 0, 6);
+      ImGui::Checkbox("Circle clip", &add_circle_clip);
+      ImGui::End();
+    }
 
     Canvas canvas;
     canvas.Scale(GetContentScale());
@@ -213,8 +215,12 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     canvas.Scale(Vector2(scale, scale));
 
     if (add_circle_clip) {
-      auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
-          Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
+      static PlaygroundPoint circle_clip_point_a(Point(60, 300), 20,
+                                                 Color::Red());
+      static PlaygroundPoint circle_clip_point_b(Point(600, 300), 20,
+                                                 Color::Red());
+      auto [handle_a, handle_b] =
+          DrawPlaygroundLine(circle_clip_point_a, circle_clip_point_b);
 
       auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
       Point point_a = screen_to_canvas * handle_a * GetContentScale();
@@ -229,7 +235,7 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
       paint.stroke_join = join;
       for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
         paint.stroke_cap = cap;
-        canvas.DrawPath(path.Clone(), paint);
+        canvas.DrawPath(path, paint);
         canvas.Translate({80, 0});
       }
       canvas.Translate({-240, 60});

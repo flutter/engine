@@ -9,6 +9,7 @@
 
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 namespace impeller {
@@ -63,14 +64,19 @@ class SurfaceContextVK : public Context,
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   // |Context|
-  void Shutdown() override;
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 
   // |Context|
-  void SetSyncPresentation(bool value) override;
+  void Shutdown() override;
 
-  [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface);
+  [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface,
+                                      const ISize& size);
 
   std::unique_ptr<Surface> AcquireNextSurface();
+
+  /// @brief Mark the current swapchain configuration as dirty, forcing it to be
+  ///        recreated on the next frame.
+  void UpdateSurfaceSize(const ISize& size) const;
 
 #ifdef FML_OS_ANDROID
   vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;

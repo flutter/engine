@@ -12,7 +12,7 @@ namespace impeller {
 class RecordingRenderPass : public RenderPass {
  public:
   explicit RecordingRenderPass(std::shared_ptr<RenderPass> delegate,
-                               const std::shared_ptr<Context>& context,
+                               const std::shared_ptr<const Context>& context,
                                const RenderTarget& render_target);
 
   ~RecordingRenderPass() = default;
@@ -66,7 +66,7 @@ class RecordingRenderPass : public RenderPass {
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler) override;
+                    const std::unique_ptr<const Sampler>& sampler) override;
 
   // |RenderPass|
   void OnSetLabel(std::string label) override;

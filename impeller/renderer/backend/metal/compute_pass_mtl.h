@@ -61,10 +61,16 @@ class ComputePassMTL final : public ComputePass {
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler) override;
+                    const std::unique_ptr<const Sampler>& sampler) override;
 
   // |ComputePass|
   bool EncodeCommands() const override;
+
+  // |ComputePass|
+  void AddBufferMemoryBarrier() override;
+
+  // |ComputePass|
+  void AddTextureMemoryBarrier() override;
 
   ComputePassMTL(const ComputePassMTL&) = delete;
 

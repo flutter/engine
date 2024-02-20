@@ -238,7 +238,7 @@ TEST_P(EntityTest, CanDrawRRect) {
                   .SetConvexity(Convexity::kConvex)
                   .AddRoundedRect(Rect::MakeXYWH(100, 100, 100, 100), 10.0)
                   .TakePath();
-  contents->SetGeometry(Geometry::MakeFillPath(std::move(path)));
+  contents->SetGeometry(Geometry::MakeFillPath(path));
   contents->SetColor(Color::Red());
 
   Entity entity;
@@ -269,7 +269,7 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<SolidColorContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 5.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
   contents->SetColor(Color::Red());
   entity.SetContents(std::move(contents));
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
@@ -289,7 +289,7 @@ TEST_P(EntityTest, StrokeWithTextureContents) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
   auto contents = std::make_unique<TiledTextureContents>();
-  contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 100.0));
+  contents->SetGeometry(Geometry::MakeStrokePath(path, 100.0));
   contents->SetTexture(bridge);
   contents->SetTileModes(Entity::TileMode::kClamp, Entity::TileMode::kClamp);
   entity.SetContents(std::move(contents));
@@ -300,20 +300,21 @@ TEST_P(EntityTest, TriangleInsideASquare) {
   auto callback = [&](ContentContext& context, RenderPass& pass) {
     Point offset(100, 100);
 
-    Point a =
-        IMPELLER_PLAYGROUND_POINT(Point(10, 10) + offset, 20, Color::White());
-    Point b =
-        IMPELLER_PLAYGROUND_POINT(Point(210, 10) + offset, 20, Color::White());
-    Point c =
-        IMPELLER_PLAYGROUND_POINT(Point(210, 210) + offset, 20, Color::White());
-    Point d =
-        IMPELLER_PLAYGROUND_POINT(Point(10, 210) + offset, 20, Color::White());
-    Point e =
-        IMPELLER_PLAYGROUND_POINT(Point(50, 50) + offset, 20, Color::White());
-    Point f =
-        IMPELLER_PLAYGROUND_POINT(Point(100, 50) + offset, 20, Color::White());
-    Point g =
-        IMPELLER_PLAYGROUND_POINT(Point(50, 150) + offset, 20, Color::White());
+    static PlaygroundPoint point_a(Point(10, 10) + offset, 20, Color::White());
+    Point a = DrawPlaygroundPoint(point_a);
+    static PlaygroundPoint point_b(Point(210, 10) + offset, 20, Color::White());
+    Point b = DrawPlaygroundPoint(point_b);
+    static PlaygroundPoint point_c(Point(210, 210) + offset, 20,
+                                   Color::White());
+    Point c = DrawPlaygroundPoint(point_c);
+    static PlaygroundPoint point_d(Point(10, 210) + offset, 20, Color::White());
+    Point d = DrawPlaygroundPoint(point_d);
+    static PlaygroundPoint point_e(Point(50, 50) + offset, 20, Color::White());
+    Point e = DrawPlaygroundPoint(point_e);
+    static PlaygroundPoint point_f(Point(100, 50) + offset, 20, Color::White());
+    Point f = DrawPlaygroundPoint(point_f);
+    static PlaygroundPoint point_g(Point(50, 150) + offset, 20, Color::White());
+    Point g = DrawPlaygroundPoint(point_g);
     Path path = PathBuilder{}
                     .MoveTo(a)
                     .LineTo(b)
@@ -329,7 +330,7 @@ TEST_P(EntityTest, TriangleInsideASquare) {
     Entity entity;
     entity.SetTransform(Matrix::MakeScale(GetContentScale()));
     auto contents = std::make_unique<SolidColorContents>();
-    contents->SetGeometry(Geometry::MakeStrokePath(std::move(path), 20.0));
+    contents->SetGeometry(Geometry::MakeStrokePath(path, 20.0));
     contents->SetColor(Color::Red());
     entity.SetContents(std::move(contents));
 
@@ -364,8 +365,8 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     auto render_path = [width = width, &context, &pass, &world_matrix](
                            const Path& path, Cap cap, Join join) {
       auto contents = std::make_unique<SolidColorContents>();
-      contents->SetGeometry(Geometry::MakeStrokePath(path.Clone(), width,
-                                                     miter_limit, cap, join));
+      contents->SetGeometry(
+          Geometry::MakeStrokePath(path, width, miter_limit, cap, join));
       contents->SetColor(Color::Red());
 
       Entity entity;
@@ -392,10 +393,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kButt demo.
     {
       Point off = Point(0, 0) * padding + margin;
-      auto [a, b] = IMPELLER_PLAYGROUND_LINE(off + a_def, off + b_def, r,
-                                             Color::Black(), Color::White());
-      auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
-                                             Color::Black(), Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::Black());
+      static PlaygroundPoint point_b(off + b_def, r, Color::White());
+      auto [a, b] = DrawPlaygroundLine(point_a, point_b);
+      static PlaygroundPoint point_c(off + c_def, r, Color::Black());
+      static PlaygroundPoint point_d(off + d_def, r, Color::White());
+      auto [c, d] = DrawPlaygroundLine(point_c, point_d);
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kButt, Join::kBevel);
     }
@@ -403,10 +406,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kSquare demo.
     {
       Point off = Point(1, 0) * padding + margin;
-      auto [a, b] = IMPELLER_PLAYGROUND_LINE(off + a_def, off + b_def, r,
-                                             Color::Black(), Color::White());
-      auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
-                                             Color::Black(), Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::Black());
+      static PlaygroundPoint point_b(off + b_def, r, Color::White());
+      auto [a, b] = DrawPlaygroundLine(point_a, point_b);
+      static PlaygroundPoint point_c(off + c_def, r, Color::Black());
+      static PlaygroundPoint point_d(off + d_def, r, Color::White());
+      auto [c, d] = DrawPlaygroundLine(point_c, point_d);
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kSquare, Join::kBevel);
     }
@@ -414,10 +419,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Cap::kRound demo.
     {
       Point off = Point(2, 0) * padding + margin;
-      auto [a, b] = IMPELLER_PLAYGROUND_LINE(off + a_def, off + b_def, r,
-                                             Color::Black(), Color::White());
-      auto [c, d] = IMPELLER_PLAYGROUND_LINE(off + c_def, off + d_def, r,
-                                             Color::Black(), Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::Black());
+      static PlaygroundPoint point_b(off + b_def, r, Color::White());
+      auto [a, b] = DrawPlaygroundLine(point_a, point_b);
+      static PlaygroundPoint point_c(off + c_def, r, Color::Black());
+      static PlaygroundPoint point_d(off + d_def, r, Color::White());
+      auto [c, d] = DrawPlaygroundLine(point_c, point_d);
       render_path(PathBuilder{}.AddCubicCurve(a, b, d, c).TakePath(),
                   Cap::kRound, Join::kBevel);
     }
@@ -425,9 +432,15 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Join::kBevel demo.
     {
       Point off = Point(0, 1) * padding + margin;
-      Point a = IMPELLER_PLAYGROUND_POINT(off + a_def, r, Color::White());
-      Point b = IMPELLER_PLAYGROUND_POINT(off + e_def, r, Color::White());
-      Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
+      static PlaygroundPoint point_a =
+          PlaygroundPoint(off + a_def, r, Color::White());
+      static PlaygroundPoint point_b =
+          PlaygroundPoint(off + e_def, r, Color::White());
+      static PlaygroundPoint point_c =
+          PlaygroundPoint(off + c_def, r, Color::White());
+      Point a = DrawPlaygroundPoint(point_a);
+      Point b = DrawPlaygroundPoint(point_b);
+      Point c = DrawPlaygroundPoint(point_c);
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
           Cap::kButt, Join::kBevel);
@@ -436,9 +449,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Join::kMiter demo.
     {
       Point off = Point(1, 1) * padding + margin;
-      Point a = IMPELLER_PLAYGROUND_POINT(off + a_def, r, Color::White());
-      Point b = IMPELLER_PLAYGROUND_POINT(off + e_def, r, Color::White());
-      Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::White());
+      static PlaygroundPoint point_b(off + e_def, r, Color::White());
+      static PlaygroundPoint point_c(off + c_def, r, Color::White());
+      Point a = DrawPlaygroundPoint(point_a);
+      Point b = DrawPlaygroundPoint(point_b);
+      Point c = DrawPlaygroundPoint(point_c);
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
           Cap::kButt, Join::kMiter);
@@ -447,9 +463,12 @@ TEST_P(EntityTest, StrokeCapAndJoinTest) {
     // Join::kRound demo.
     {
       Point off = Point(2, 1) * padding + margin;
-      Point a = IMPELLER_PLAYGROUND_POINT(off + a_def, r, Color::White());
-      Point b = IMPELLER_PLAYGROUND_POINT(off + e_def, r, Color::White());
-      Point c = IMPELLER_PLAYGROUND_POINT(off + c_def, r, Color::White());
+      static PlaygroundPoint point_a(off + a_def, r, Color::White());
+      static PlaygroundPoint point_b(off + e_def, r, Color::White());
+      static PlaygroundPoint point_c(off + c_def, r, Color::White());
+      Point a = DrawPlaygroundPoint(point_a);
+      Point b = DrawPlaygroundPoint(point_b);
+      Point c = DrawPlaygroundPoint(point_c);
       render_path(
           PathBuilder{}.MoveTo(a).LineTo(b).LineTo(c).Close().TakePath(),
           Cap::kButt, Join::kRound);
@@ -478,7 +497,7 @@ TEST_P(EntityTest, CubicCurveTest) {
           .TakePath();
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
@@ -522,7 +541,7 @@ TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransform) {
 
     Entity entity;
     entity.SetTransform(result_transform);
-    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -752,7 +771,7 @@ TEST_P(EntityTest, CubicCurveAndOverlapTest) {
           .TakePath();
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
@@ -905,10 +924,12 @@ TEST_P(EntityTest, BlendingModeOptions) {
     BlendMode selected_mode = blend_mode_values[current_blend_index];
 
     Point a, b, c, d;
-    std::tie(a, b) = IMPELLER_PLAYGROUND_LINE(
-        Point(400, 100), Point(200, 300), 20, Color::White(), Color::White());
-    std::tie(c, d) = IMPELLER_PLAYGROUND_LINE(
-        Point(470, 190), Point(270, 390), 20, Color::White(), Color::White());
+    static PlaygroundPoint point_a(Point(400, 100), 20, Color::White());
+    static PlaygroundPoint point_b(Point(200, 300), 20, Color::White());
+    std::tie(a, b) = DrawPlaygroundLine(point_a, point_b);
+    static PlaygroundPoint point_c(Point(470, 190), 20, Color::White());
+    static PlaygroundPoint point_d(Point(270, 390), 20, Color::White());
+    std::tie(c, d) = DrawPlaygroundLine(point_c, point_d);
 
     bool result = true;
     result = result &&
@@ -952,7 +973,7 @@ TEST_P(EntityTest, BezierCircleScaled) {
                     .TakePath();
     entity.SetTransform(
         Matrix::MakeScale({scale, scale, 1.0}).Translate({-90, -20, 0}));
-    entity.SetContents(SolidColorContents::Make(std::move(path), Color::Red()));
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
     return entity.Render(context, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -987,14 +1008,14 @@ TEST_P(EntityTest, Filters) {
 }
 
 TEST_P(EntityTest, GaussianBlurFilter) {
-  auto boston = CreateTextureForFixture("boston.jpg");
+  auto boston =
+      CreateTextureForFixture("boston.jpg", /*enable_mipmapping=*/true);
   ASSERT_TRUE(boston);
 
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     const char* input_type_names[] = {"Texture", "Solid Color"};
     const char* blur_type_names[] = {"Image blur", "Mask blur"};
-    const char* pass_variation_names[] = {"New", "2D Directional",
-                                          "Directional"};
+    const char* pass_variation_names[] = {"New"};
     const char* blur_style_names[] = {"Normal", "Solid", "Outer", "Inner"};
     const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
     const FilterContents::BlurStyle blur_styles[] = {
@@ -1107,13 +1128,6 @@ TEST_P(EntityTest, GaussianBlurFilter) {
             FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
             blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
         break;
-      case 2: {
-        Vector2 blur_vector(blur_sigma_x.sigma, blur_sigma_y.sigma);
-        blur = FilterContents::MakeDirectionalGaussianBlur(
-            FilterInput::Make(input), Sigma{blur_vector.GetLength()},
-            blur_vector.Normalize());
-        break;
-      }
     };
     FML_CHECK(blur);
 
@@ -1746,13 +1760,16 @@ TEST_P(EntityTest, RRectShadowTest) {
     }
     ImGui::End();
 
-    auto [top_left, bottom_right] = IMPELLER_PLAYGROUND_LINE(
-        Point(200, 200), Point(600, 400), 30, Color::White(), Color::White());
+    static PlaygroundPoint top_left_point(Point(200, 200), 30, Color::White());
+    static PlaygroundPoint bottom_right_point(Point(600, 400), 30,
+                                              Color::White());
+    auto [top_left, bottom_right] =
+        DrawPlaygroundLine(top_left_point, bottom_right_point);
     auto rect =
         Rect::MakeLTRB(top_left.x, top_left.y, bottom_right.x, bottom_right.y);
 
     auto contents = std::make_unique<SolidRRectBlurContents>();
-    contents->SetRRect(rect, corner_radius);
+    contents->SetRRect(rect, {corner_radius, corner_radius});
     contents->SetColor(color);
     contents->SetSigma(Radius(blur_radius));
 
@@ -2450,8 +2467,8 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
                         .LineTo({120, 190})
                         .LineTo({190, 120})
                         .TakePath();
-  auto geometry = Geometry::MakeStrokePath(std::move(arrow_head), 15.0, 4.0,
-                                           Cap::kRound, Join::kRound);
+  auto geometry = Geometry::MakeStrokePath(arrow_head, 15.0, 4.0, Cap::kRound,
+                                           Join::kRound);
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));
@@ -2545,11 +2562,6 @@ TEST_P(EntityTest, PointFieldGeometryCoverage) {
             Rect::MakeLTRB(35, 15, 135, 205));
 }
 
-TEST_P(EntityTest, PointFieldCanUseCompute) {
-  EXPECT_EQ(PointFieldGeometry::CanUseCompute(*GetContentContext()),
-            GetContext()->GetBackendType() == Context::BackendType::kMetal);
-}
-
 TEST_P(EntityTest, ColorFilterContentsWithLargeGeometry) {
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
@@ -2596,6 +2608,8 @@ class TestRenderTargetAllocator : public RenderTargetAllocator {
 
   std::vector<TextureDescriptor> GetDescriptors() const { return allocated_; }
 
+  void ResetDescriptors() { allocated_.clear(); }
+
  private:
   std::vector<TextureDescriptor> allocated_;
 };
@@ -2633,6 +2647,7 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   auto content_context = ContentContext(
       GetContext(), TypographerContextSkia::Make(), test_allocator);
   pass->AddEntity(std::move(entity));
+  test_allocator->ResetDescriptors();
 
   EXPECT_TRUE(pass->Render(content_context, rt));
 
@@ -2644,18 +2659,22 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
 
     EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
-  } else if (test_allocator->GetDescriptors().size() == 9u) {
+  } else if (test_allocator->GetDescriptors().size() == 7u) {
     // Onscreen render target.
     EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
     EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
     EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(1000, 1000));
 
-    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[6].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[7].size, ISize(200, 200));
+  } else if (test_allocator->GetDescriptors().size() == 4u) {
+    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
+    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
+
+    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
+    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
   } else {
     EXPECT_TRUE(false);
   }
@@ -2692,39 +2711,6 @@ TEST_P(EntityTest, DecalSpecializationAppliedToMorphologyFilter) {
   std::vector<Scalar> expected_constants = {decal_supported};
   ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
             expected_constants);
-}
-
-TEST_P(EntityTest, FramebufferFetchPipelinesDeclareUsage) {
-  auto content_context =
-      ContentContext(GetContext(), TypographerContextSkia::Make());
-  if (!content_context.GetDeviceCapabilities().SupportsFramebufferFetch()) {
-    GTEST_SKIP() << "Framebuffer fetch not supported.";
-  }
-
-  ContentContextOptions options;
-  options.color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt;
-  auto color_burn =
-      content_context.GetFramebufferBlendColorBurnPipeline(options);
-
-  EXPECT_TRUE(color_burn->GetDescriptor().UsesSubpassInput());
-}
-
-TEST_P(EntityTest, PipelineDescriptorEqAndHash) {
-  auto desc_1 = std::make_shared<PipelineDescriptor>();
-  auto desc_2 = std::make_shared<PipelineDescriptor>();
-
-  EXPECT_TRUE(desc_1->IsEqual(*desc_2));
-  EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
-
-  desc_1->SetUseSubpassInput(UseSubpassInput::kYes);
-
-  EXPECT_FALSE(desc_1->IsEqual(*desc_2));
-  EXPECT_NE(desc_1->GetHash(), desc_2->GetHash());
-
-  desc_2->SetUseSubpassInput(UseSubpassInput::kYes);
-
-  EXPECT_TRUE(desc_1->IsEqual(*desc_2));
-  EXPECT_EQ(desc_1->GetHash(), desc_2->GetHash());
 }
 
 // This doesn't really tell you if the hashes will have frequent

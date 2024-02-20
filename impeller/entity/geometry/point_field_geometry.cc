@@ -17,7 +17,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (CanUseCompute(renderer)) {
+  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass);
   }
   auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
@@ -40,7 +40,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (CanUseCompute(renderer)) {
+  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
     return GetPositionBufferGPU(renderer, entity, pass, texture_coverage,
                                 effect_transform);
   }
@@ -135,7 +135,7 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   if (radius_ < 0.0) {
     return {};
   }
-  auto determinant = entity.GetTransform().GetDeterminant();
+  Scalar determinant = entity.GetTransform().GetDeterminant();
   if (determinant == 0) {
     return {};
   }
@@ -143,26 +143,23 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar radius = std::max(radius_, min_size);
 
-  auto vertices_per_geom = ComputeCircleDivisions(
+  size_t vertices_per_geom = ComputeCircleDivisions(
       entity.GetTransform().GetMaxBasisLength() * radius, round_);
 
-  auto points_per_circle = 3 + (vertices_per_geom - 3) * 3;
-  auto total = points_per_circle * points_.size();
+  size_t points_per_circle = 3 + (vertices_per_geom - 3) * 3;
+  size_t total = points_per_circle * points_.size();
 
-  auto cmd_buffer = renderer.GetContext()->CreateCommandBuffer();
-  auto compute_pass = cmd_buffer->CreateComputePass();
-  auto& host_buffer = renderer.GetTransientsBuffer();
+  std::shared_ptr<CommandBuffer> cmd_buffer =
+      renderer.GetContext()->CreateCommandBuffer();
+  std::shared_ptr<ComputePass> compute_pass = cmd_buffer->CreateComputePass();
+  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
 
-  auto points_data =
+  BufferView points_data =
       host_buffer.Emplace(points_.data(), points_.size() * sizeof(Point),
                           DefaultUniformAlignment());
 
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total * sizeof(Point);
-  buffer_desc.storage_mode = StorageMode::kDevicePrivate;
-
-  auto geometry_buffer = DeviceBuffer::AsBufferView(
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc));
+  BufferView geometry_buffer =
+      host_buffer.Emplace(nullptr, total * sizeof(Point), alignof(Point));
 
   BufferView output;
   {
@@ -190,16 +187,12 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   }
 
   if (texture_coverage.has_value() && effect_transform.has_value()) {
-    DeviceBufferDescriptor buffer_desc;
-    buffer_desc.size = total * sizeof(Vector4);
-    buffer_desc.storage_mode = StorageMode::kDevicePrivate;
-
-    auto geometry_uv_buffer = DeviceBuffer::AsBufferView(
-        renderer.GetContext()->GetResourceAllocator()->CreateBuffer(
-            buffer_desc));
+    BufferView geometry_uv_buffer =
+        host_buffer.Emplace(nullptr, total * sizeof(Vector4), alignof(Vector4));
 
     using UV = UvComputeShader;
 
+    compute_pass->AddBufferMemoryBarrier();
     compute_pass->SetCommandLabel("UV Geometry");
     compute_pass->SetPipeline(renderer.GetUvComputePipeline());
 
@@ -219,13 +212,14 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
     output = geometry_uv_buffer;
   }
 
-  if (!compute_pass->EncodeCommands() || !cmd_buffer->SubmitCommands()) {
+  if (!compute_pass->EncodeCommands()) {
     return {};
   }
+  renderer.RecordCommandBuffer(std::move(cmd_buffer));
 
   return {
       .type = PrimitiveType::kTriangle,
-      .vertex_buffer = {.vertex_buffer = output,
+      .vertex_buffer = {.vertex_buffer = std::move(output),
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
@@ -262,14 +256,6 @@ size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
 // |Geometry|
 GeometryVertexType PointFieldGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
-}
-
-// Compute is disabled for Vulkan because the barriers are incorrect, see
-// also: https://github.com/flutter/flutter/issues/140798 .
-bool PointFieldGeometry::CanUseCompute(const ContentContext& renderer) {
-  return renderer.GetDeviceCapabilities().SupportsCompute() &&
-         renderer.GetContext()->GetBackendType() ==
-             Context::BackendType::kMetal;
 }
 
 // |Geometry|

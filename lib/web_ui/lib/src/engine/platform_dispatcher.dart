@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -77,8 +78,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
-    _setAppLifecycleState(ui.AppLifecycleState.resumed);
-    viewManager.onViewDisposed.listen((_) {
+    AppLifecycleState.instance.addListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.addListener(invokeOnViewFocusChange);
+    domDocument.body?.append(accessibilityPlaceholder);
+    _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
       // View creation/resize is handled by the `_didResize` handler in the
       // EngineFlutterView itself.
@@ -86,9 +89,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     });
   }
 
+  late StreamSubscription<int> _onViewDisposedListener;
+
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
   static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
+
+  @visibleForTesting
+  final DomElement accessibilityPlaceholder = EngineSemantics
+    .instance
+    .semanticsHelper
+    .prepareAccessibilityPlaceholder();
 
   PlatformConfiguration configuration = PlatformConfiguration(
     locales: parseBrowserLanguages(),
@@ -111,6 +122,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _disconnectFontSizeObserver();
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
+    AppLifecycleState.instance.removeListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.removeListener(invokeOnViewFocusChange);
+    accessibilityPlaceholder.remove();
+    _onViewDisposedListener.cancel();
     viewManager.dispose();
   }
 
@@ -212,6 +227,37 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       invoke(_onMetricsChanged, _onMetricsChangedZone);
     }
   }
+
+  @override
+  ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
+  ui.ViewFocusChangeCallback? _onViewFocusChange;
+  Zone? _onViewFocusChangeZone;
+  @override
+  set onViewFocusChange(ui.ViewFocusChangeCallback? callback) {
+    _onViewFocusChange = callback;
+    _onViewFocusChangeZone = Zone.current;
+  }
+
+  // Engine code should use this method instead of the callback directly.
+  // Otherwise zones won't work properly.
+  void invokeOnViewFocusChange(ui.ViewFocusEvent viewFocusEvent) {
+    invoke1<ui.ViewFocusEvent>(
+      _onViewFocusChange,
+      _onViewFocusChangeZone,
+      viewFocusEvent,
+    );
+  }
+
+
+  @override
+  void requestViewFocusChange({
+    required int viewId,
+    required ui.ViewFocusState state,
+    required ui.ViewFocusDirection direction,
+  }) {
+    // TODO(tugorez): implement this method. At the moment will be a no op call.
+  }
+
 
   /// A set of views which have rendered in the current `onBeginFrame` or
   /// `onDrawFrame` scope.
@@ -760,27 +806,25 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  @override
   Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
-    assert(view != null || implicitView != null,
-        'Calling render without a FlutterView');
-    if (view == null && implicitView == null) {
+    final EngineFlutterView? target = (view ?? implicitView) as EngineFlutterView?;
+    assert(target != null, 'Calling render without a FlutterView');
+    if (target == null) {
       // If there is no view to render into, then this is a no-op.
       return;
     }
-    final ui.FlutterView viewToRender = view ?? implicitView!;
 
     // Only render in an `onDrawFrame` or `onBeginFrame` scope. This is checked
     // by checking if the `_viewsRenderedInCurrentFrame` is non-null and this
     // view hasn't been rendered already in this scope.
     final bool shouldRender =
-        _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
+        _viewsRenderedInCurrentFrame?.add(target) ?? false;
     // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
     // order to perform golden tests in Flutter framework because on the HTML
     // renderer, golden tests render to DOM and then take a browser screenshot,
     // https://github.com/flutter/flutter/issues/137073.
     if (shouldRender || renderer.rendererTag == 'html') {
-      await renderer.renderScene(scene, viewToRender);
+      await renderer.renderScene(scene, target);
     }
   }
 
@@ -931,7 +975,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
-  // Called by FlutterViewEmbedder when browser languages change.
+  // Called by `_onLocaleChangedSubscription` when browser languages change.
   void updateLocales() {
     configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
@@ -1033,10 +1077,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   void _setAppLifecycleState(ui.AppLifecycleState state) {
-    sendPlatformMessage(
+    invokeOnPlatformMessage(
       'flutter/lifecycle',
-      ByteData.sublistView(utf8.encode(state.toString())),
-      null,
+      const StringCodec().encodeMessage(state.toString()),
+      (_) {},
     );
   }
 

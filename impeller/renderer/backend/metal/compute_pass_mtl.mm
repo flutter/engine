@@ -32,7 +32,8 @@ ComputePassMTL::ComputePassMTL(std::shared_ptr<const Context> context,
   if (!buffer_) {
     return;
   }
-  encoder_ = [buffer_ computeCommandEncoder];
+  encoder_ = [buffer_ computeCommandEncoderWithDispatchType:
+                          MTLDispatchType::MTLDispatchTypeConcurrent];
   if (!encoder_) {
     return;
   }
@@ -68,6 +69,16 @@ void ComputePassMTL::SetPipeline(
 }
 
 // |ComputePass|
+void ComputePassMTL::AddBufferMemoryBarrier() {
+  [encoder_ memoryBarrierWithScope:MTLBarrierScopeBuffers];
+}
+
+// |ComputePass|
+void ComputePassMTL::AddTextureMemoryBarrier() {
+  [encoder_ memoryBarrierWithScope:MTLBarrierScopeTextures];
+}
+
+// |ComputePass|
 bool ComputePassMTL::BindResource(ShaderStage stage,
                                   DescriptorType type,
                                   const ShaderUniformSlot& slot,
@@ -93,13 +104,14 @@ bool ComputePassMTL::BindResource(ShaderStage stage,
 }
 
 // |ComputePass|
-bool ComputePassMTL::BindResource(ShaderStage stage,
-                                  DescriptorType type,
-                                  const SampledImageSlot& slot,
-                                  const ShaderMetadata& metadata,
-                                  std::shared_ptr<const Texture> texture,
-                                  std::shared_ptr<const Sampler> sampler) {
-  if (!sampler->IsValid() || !texture->IsValid()) {
+bool ComputePassMTL::BindResource(
+    ShaderStage stage,
+    DescriptorType type,
+    const SampledImageSlot& slot,
+    const ShaderMetadata& metadata,
+    std::shared_ptr<const Texture> texture,
+    const std::unique_ptr<const Sampler>& sampler) {
+  if (!sampler || !texture->IsValid()) {
     return false;
   }
 

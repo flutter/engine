@@ -1087,7 +1087,7 @@ enum Clip {
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
 /// to use for that operation.
-class Paint {
+final class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   Paint();
@@ -2131,6 +2131,9 @@ base class _NativeCodec extends NativeFieldWrapperClass1 implements Codec {
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Codec::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'Codec(${_cachedFrameCount == null ? "" : "$_cachedFrameCount frames"})';
 }
 
 /// Instantiates an image [Codec].
@@ -3110,6 +3113,9 @@ base class _NativePath extends NativeFieldWrapperClass1 implements Path {
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return PathMetrics._(this, forceClosed);
   }
+
+  @override
+  String toString() => 'Path';
 }
 
 /// The geometric description of a tangent: the angle at a point.
@@ -4465,35 +4471,31 @@ base class FragmentProgram extends NativeFieldWrapperClass1 {
     // the same encoding here so that users can load assets with the same
     // key they have written in the pubspec.
     final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
-    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    final FragmentProgram? program = _shaderRegistry[encodedKey];
     if (program != null) {
       return Future<FragmentProgram>.value(program);
     }
     return Future<FragmentProgram>.microtask(() {
       final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
-      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      _shaderRegistry[encodedKey] = program;
       return program;
     });
   }
 
   // This is a cache of shaders that have been loaded by
-  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
-  // so that the case where an in-use program is requested again can be fast,
-  // but programs that are no longer referenced are not retained because of the
-  // cache.
-  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
-      <String, WeakReference<FragmentProgram>>{};
+  // FragmentProgram.fromAsset. It holds a strong reference to theFragmentPrograms
+  // The native engine will retain the resources associated with this shader
+  // program (PSO variants) until shutdown, so maintaining a strong reference
+  // here ensures we do not perform extra work if the dart object is continually
+  // re-initialized.
+  static final Map<String, FragmentProgram> _shaderRegistry =
+      <String, FragmentProgram>{};
 
   static void _reinitializeShader(String assetKey) {
     // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
-    final WeakReference<FragmentProgram>? programRef = _shaderRegistry[assetKey];
-    if (programRef == null) {
-      return;
-    }
-
-    final FragmentProgram? program = programRef.target;
+    final FragmentProgram? program = _shaderRegistry[assetKey];
     if (program == null) {
       return;
     }
@@ -6242,6 +6244,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
   external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
+
+  @override
+  String toString() => 'Canvas(recording: ${_recorder != null})';
 }
 
 /// Signature for [Picture] lifecycle events.
@@ -6385,6 +6390,9 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
   @override
   @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Picture::GetAllocationSize', isLeaf: true)
   external int get approximateBytesUsed;
+
+  @override
+  String toString() => 'Picture';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -6442,6 +6450,9 @@ base class _NativePictureRecorder extends NativeFieldWrapperClass1 implements Pi
   external void _endRecording(_NativePicture outPicture);
 
   _NativeCanvas? _canvas;
+
+  @override
+  String toString() => 'PictureRecorder(recording: $isRecording)';
 }
 
 /// A single shadow.
@@ -6899,6 +6910,9 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
 
   @Native<Void Function(Pointer<Void>, Handle, Int32, Int32)>(symbol: 'ImageDescriptor::instantiateCodec')
   external void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight);
+
+  @override
+  String toString() => 'ImageDescriptor(width: ${_width ?? '?'}, height: ${_height ?? '?'}, bytes per pixel: ${_bytesPerPixel ?? '?'})';
 }
 
 /// Generic callback signature, used by [_futurize].

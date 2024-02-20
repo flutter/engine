@@ -3,11 +3,22 @@
 // found in the LICENSE file.
 
 #include <memory>
+#include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/command_queue.h"
 
 #include "impeller/aiks/testing/context_spy.h"
 
 namespace impeller {
 namespace testing {
+
+fml::Status NoopCommandQueue::Submit(
+    const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
+    const CompletionCallback& completion_callback) {
+  if (completion_callback) {
+    completion_callback(CommandBuffer::Status::kCompleted);
+  }
+  return fml::Status();
+}
 
 std::shared_ptr<ContextSpy> ContextSpy::Make() {
   return std::shared_ptr<ContextSpy>(new ContextSpy());
@@ -22,6 +33,11 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
   ON_CALL(*mock_context, IsValid).WillByDefault([real_context]() {
     return real_context->IsValid();
   });
+
+  ON_CALL(*mock_context, GetBackendType)
+      .WillByDefault([real_context]() -> Context::BackendType {
+        return real_context->GetBackendType();
+      });
 
   ON_CALL(*mock_context, GetCapabilities)
       .WillByDefault(
@@ -48,6 +64,10 @@ std::shared_ptr<ContextMock> ContextSpy::MakeContext(
 
   ON_CALL(*mock_context, GetPipelineLibrary).WillByDefault([real_context]() {
     return real_context->GetPipelineLibrary();
+  });
+
+  ON_CALL(*mock_context, GetCommandQueue).WillByDefault([shared_this]() {
+    return shared_this->command_queue_;
   });
 
   ON_CALL(*mock_context, CreateCommandBuffer)

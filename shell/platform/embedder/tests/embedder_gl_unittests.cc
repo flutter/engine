@@ -26,6 +26,7 @@
 #include "flutter/fml/thread.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/runtime/dart_vm.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "flutter/shell/platform/embedder/tests/embedder_config_builder.h"
 #include "flutter/shell/platform/embedder/tests/embedder_test.h"
@@ -4345,7 +4346,7 @@ TEST_F(EmbedderTest, ObjectsPostedViaPortsServicedOnSecondaryTaskHeap) {
     trampoline = [&](Dart_Handle handle) {
       ASSERT_TRUE(tonic::DartConverter<bool>::FromDart(handle));
       auto task_grade = fml::MessageLoopTaskQueues::GetCurrentTaskSourceGrade();
-      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartMicroTasks);
+      EXPECT_EQ(task_grade, fml::TaskSourceGrade::kDartEventLoop);
       event.Signal();
     };
     ASSERT_EQ(FlutterEnginePostDartObject(engine.get(), port, &object),
@@ -4697,6 +4698,47 @@ TEST_F(EmbedderTest,
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kSuccess);
   latch.Wait();
+}
+
+TEST_F(EmbedderTest, CanRenderWithImpellerOpenGL) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  EmbedderConfigBuilder builder(context);
+
+  bool present_called = false;
+  static_cast<EmbedderTestContextGL&>(context).SetGLPresentCallback(
+      [&present_called](FlutterPresentInfo present_info) {
+        present_called = true;
+      });
+
+  builder.AddCommandLineArgument("--enable-impeller");
+  builder.SetDartEntrypoint("render_gradient");
+  builder.SetOpenGLRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kOpenGLFramebuffer);
+
+  auto rendered_scene = context.GetNextSceneImage();
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  ASSERT_TRUE(ImageMatchesFixture(
+      FixtureNameForBackend(EmbedderTestContextType::kOpenGLContext,
+                            "impeller_gl_gradient.png"),
+      rendered_scene));
+
+  // The scene will be rendered by the compositor, and the surface present
+  // callback should not be invoked.
+  ASSERT_FALSE(present_called);
 }
 
 INSTANTIATE_TEST_SUITE_P(

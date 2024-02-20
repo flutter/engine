@@ -121,8 +121,7 @@ FlutterWindow::FlutterWindow(
     int height,
     std::shared_ptr<WindowsProcTable> windows_proc_table,
     std::unique_ptr<TextInputManager> text_input_manager)
-    : binding_handler_delegate_(nullptr),
-      touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
+    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
       text_input_manager_(std::move(text_input_manager)),
       ax_fragment_root_(nullptr) {
@@ -148,14 +147,19 @@ FlutterWindow::FlutterWindow(
   current_cursor_ = ::LoadCursor(nullptr, IDC_ARROW);
 }
 
+// Base constructor for mocks
+FlutterWindow::FlutterWindow()
+    : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId) {}
+
 FlutterWindow::~FlutterWindow() {
-  OnWindowStateEvent(WindowStateEvent::kHide);
   Destroy();
 }
 
 void FlutterWindow::SetView(WindowBindingHandlerDelegate* window) {
   binding_handler_delegate_ = window;
-  direct_manipulation_owner_->SetBindingHandlerDelegate(window);
+  if (direct_manipulation_owner_) {
+    direct_manipulation_owner_->SetBindingHandlerDelegate(window);
+  }
   if (restored_ && window) {
     OnWindowStateEvent(WindowStateEvent::kShow);
   }
@@ -173,7 +177,7 @@ PhysicalWindowBounds FlutterWindow::GetPhysicalWindowBounds() {
 }
 
 void FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
-  current_cursor_ = GetCursorByName(cursor_name);
+  SetFlutterCursor(GetCursorByName(cursor_name));
 }
 
 void FlutterWindow::SetFlutterCursor(HCURSOR cursor) {

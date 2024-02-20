@@ -27,6 +27,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   vk::ImageView GetImageView() const;
 
+  vk::ImageView GetRenderTargetView() const;
+
   bool SetLayout(const BarrierVK& barrier) const;
 
   vk::ImageLayout SetLayoutWithoutEncoding(vk::ImageLayout layout) const;
@@ -38,9 +40,41 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   // |Texture|
   ISize GetSize() const override;
 
+  void SetMipMapGenerated() { mipmap_generated_ = true; }
+
+  bool IsSwapchainImage() const { return source_->IsSwapchainImage(); }
+
+  // These methods should only be used by render_pass_vk.h
+
+  /// Store the last framebuffer object used with this texture.
+  ///
+  /// This field is only set if this texture is used as the resolve texture
+  /// of a render pass. By construction, this framebuffer should be compatible
+  /// with any future render passes.
+  void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer);
+
+  /// Store the last render pass object used with this texture.
+  ///
+  /// This field is only set if this texture is used as the resolve texture
+  /// of a render pass. By construction, this framebuffer should be compatible
+  /// with any future render passes.
+  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& render_pass);
+
+  /// Retrieve the last framebuffer object used with this texture.
+  ///
+  /// May be nullptr if no previous framebuffer existed.
+  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
+
+  /// Retrieve the last render pass object used with this texture.
+  ///
+  /// May be nullptr if no previous render pass existed.
+  SharedHandleVK<vk::RenderPass> GetRenderPass() const;
+
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
+  SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
+  SharedHandleVK<vk::RenderPass> render_pass_ = nullptr;
 
   // |Texture|
   void SetLabel(std::string_view label) override;

@@ -18,14 +18,10 @@ class MockManager : public flutter::egl::Manager {
  public:
   MockManager() : Manager(false) {}
 
-  MOCK_METHOD(bool, CreateSurface, (HWND, EGLint, EGLint), (override));
-  MOCK_METHOD(void, ResizeSurface, (HWND, EGLint, EGLint, bool), (override));
-  MOCK_METHOD(void, DestroySurface, (), (override));
-
-  MOCK_METHOD(bool, MakeCurrent, (), (override));
-  MOCK_METHOD(void, SetVSyncEnabled, (bool), (override));
-
-  MOCK_METHOD(bool, SwapBuffers, (), (override));
+  MOCK_METHOD(std::unique_ptr<flutter::egl::WindowSurface>,
+              CreateWindowSurface,
+              (HWND, size_t, size_t),
+              (override));
 
   MOCK_METHOD(flutter::egl::Context*, render_context, (), (const, override));
   MOCK_METHOD(flutter::egl::Context*, resource_context, (), (const, override));

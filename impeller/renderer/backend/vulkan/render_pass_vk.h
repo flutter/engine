@@ -11,6 +11,7 @@
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
@@ -47,7 +48,7 @@ class RenderPassVK final : public RenderPass {
   bool has_index_buffer_ = false;
   bool has_label_ = false;
   bool pipeline_valid_ = false;
-  vk::Pipeline last_pipeline_;
+  bool pipeline_uses_input_attachments_ = false;
   vk::DescriptorSet descriptor_set_ = {};
   vk::PipelineLayout pipeline_layout_ = {};
 
@@ -106,7 +107,7 @@ class RenderPassVK final : public RenderPass {
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
                     std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler) override;
+                    const std::unique_ptr<const Sampler>& sampler) override;
 
   bool BindResource(size_t binding,
                     DescriptorType type,
@@ -123,8 +124,8 @@ class RenderPassVK final : public RenderPass {
 
   SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
       const ContextVK& context,
-      const std::shared_ptr<CommandBufferVK>& command_buffer,
-      bool has_subpass_dependency) const;
+      const SharedHandleVK<vk::RenderPass>& recycled_renderpass,
+      const std::shared_ptr<CommandBufferVK>& command_buffer) const;
 
   SharedHandleVK<vk::Framebuffer> CreateVKFramebuffer(
       const ContextVK& context,

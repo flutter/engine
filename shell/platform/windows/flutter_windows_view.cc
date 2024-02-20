@@ -40,11 +40,34 @@ bool SurfaceWillUpdate(size_t cur_width,
 
 /// Update the surface's swap interval to block until the v-blank iff
 /// the system compositor is disabled.
-void UpdateVsync(const FlutterWindowsEngine& engine, bool needs_vsync) {
+void UpdateVsync(const FlutterWindowsEngine& engine,
+                 egl::WindowSurface* surface,
+                 bool needs_vsync) {
   egl::Manager* egl_manager = engine.egl_manager();
   if (!egl_manager) {
     return;
   }
+
+  auto update_vsync = [egl_manager, surface, needs_vsync]() {
+    if (!surface || !surface->IsValid()) {
+      return;
+    }
+
+    if (!surface->MakeCurrent()) {
+      FML_LOG(ERROR) << "Unable to make the render surface current to update "
+                        "the swap interval";
+      return;
+    }
+
+    if (!surface->SetVSyncEnabled(needs_vsync)) {
+      FML_LOG(ERROR) << "Unable to update the render surface's swap interval";
+    }
+
+    if (!egl_manager->render_context()->ClearCurrent()) {
+      FML_LOG(ERROR) << "Unable to clear current surface after updating "
+                        "the swap interval";
+    }
+  };
 
   // Updating the vsync makes the EGL context and render surface current.
   // If the engine is running, the render surface should only be made current on
@@ -52,27 +75,19 @@ void UpdateVsync(const FlutterWindowsEngine& engine, bool needs_vsync) {
   // exist yet and the render surface can be made current on the platform
   // thread.
   if (engine.running()) {
-    engine.PostRasterThreadTask([egl_manager, needs_vsync]() {
-      egl_manager->SetVSyncEnabled(needs_vsync);
-    });
+    engine.PostRasterThreadTask(update_vsync);
   } else {
-    egl_manager->SetVSyncEnabled(needs_vsync);
-
-    // Release the EGL context so that the raster thread can use it.
-    if (!egl_manager->render_context()->ClearCurrent()) {
-      FML_LOG(ERROR)
-          << "Unable to clear current surface after updating the swap interval";
-      return;
-    }
+    update_vsync();
   }
 }
 
 }  // namespace
 
 FlutterWindowsView::FlutterWindowsView(
+    FlutterWindowsEngine* engine,
     std::unique_ptr<WindowBindingHandler> window_binding,
     std::shared_ptr<WindowsProcTable> windows_proc_table)
-    : windows_proc_table_(std::move(windows_proc_table)) {
+    : engine_(engine), windows_proc_table_(std::move(windows_proc_table)) {
   if (windows_proc_table_ == nullptr) {
     windows_proc_table_ = std::make_shared<WindowsProcTable>();
   }
@@ -83,62 +98,63 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
+  // The view owns the child window.
+  // Notify the engine the view's child window will no longer be visible.
+  engine_->OnWindowStateEvent(GetWindowHandle(), WindowStateEvent::kHide);
+
   // The engine renders into the view's surface. The engine must be
   // shutdown before the view's resources can be destroyed.
-  if (engine_) {
-    engine_->Stop();
-  }
+  engine_->Stop();
 
   DestroyRenderSurface();
 }
 
-void FlutterWindowsView::SetEngine(FlutterWindowsEngine* engine) {
-  FML_DCHECK(engine_ == nullptr);
-  FML_DCHECK(engine != nullptr);
-
-  engine_ = engine;
-
-  engine_->SetView(this);
-
-  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-
-  SendWindowMetrics(bounds.width, bounds.height,
-                    binding_handler_->GetDpiScale());
-}
-
-void FlutterWindowsView::OnEmptyFrameGenerated() {
+bool FlutterWindowsView::OnEmptyFrameGenerated() {
   // Called on the raster thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
+  if (surface_ == nullptr || !surface_->IsValid()) {
+    return false;
+  }
+
   if (resize_status_ != ResizeState::kResizeStarted) {
-    return;
+    return true;
+  }
+
+  if (!ResizeRenderSurface(resize_target_height_, resize_target_width_)) {
+    return false;
   }
 
   // Platform thread is blocked for the entire duration until the
-  // resize_status_ is set to kDone.
-  engine_->egl_manager()->ResizeSurface(GetWindowHandle(), resize_target_width_,
-                                        resize_target_height_, NeedsVsync());
+  // resize_status_ is set to kDone by |OnFramePresented|.
   resize_status_ = ResizeState::kFrameGenerated;
+  return true;
 }
 
 bool FlutterWindowsView::OnFrameGenerated(size_t width, size_t height) {
   // Called on the raster thread.
   std::unique_lock<std::mutex> lock(resize_mutex_);
 
+  if (surface_ == nullptr || !surface_->IsValid()) {
+    return false;
+  }
+
   if (resize_status_ != ResizeState::kResizeStarted) {
     return true;
   }
 
-  if (resize_target_width_ == width && resize_target_height_ == height) {
-    // Platform thread is blocked for the entire duration until the
-    // resize_status_ is set to kDone.
-    engine_->egl_manager()->ResizeSurface(GetWindowHandle(), width, height,
-                                          NeedsVsync());
-    resize_status_ = ResizeState::kFrameGenerated;
-    return true;
+  if (resize_target_width_ != width || resize_target_height_ != height) {
+    return false;
   }
 
-  return false;
+  if (!ResizeRenderSurface(resize_target_width_, resize_target_height_)) {
+    return false;
+  }
+
+  // Platform thread is blocked for the entire duration until the
+  // resize_status_ is set to kDone by |OnFramePresented|.
+  resize_status_ = ResizeState::kFrameGenerated;
+  return true;
 }
 
 void FlutterWindowsView::UpdateFlutterCursor(const std::string& cursor_name) {
@@ -165,13 +181,15 @@ bool FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
     return true;
   }
 
+  if (!surface_ || !surface_->IsValid()) {
+    SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
+    return true;
+  }
+
   // We're using OpenGL rendering. Resizing the surface must happen on the
   // raster thread.
-  EGLint surface_width, surface_height;
-  engine_->egl_manager()->GetSurfaceDimensions(&surface_width, &surface_height);
-
   bool surface_will_update =
-      SurfaceWillUpdate(surface_width, surface_height, width, height);
+      SurfaceWillUpdate(surface_->width(), surface_->height(), width, height);
   if (!surface_will_update) {
     SendWindowMetrics(width, height, binding_handler_->GetDpiScale());
     return true;
@@ -635,22 +653,66 @@ bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
 }
 
 void FlutterWindowsView::CreateRenderSurface() {
-  if (engine_ && engine_->egl_manager()) {
-    PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-    engine_->egl_manager()->CreateSurface(GetWindowHandle(), bounds.width,
-                                          bounds.height);
+  FML_DCHECK(surface_ == nullptr);
 
-    UpdateVsync(*engine_, NeedsVsync());
+  if (engine_->egl_manager()) {
+    PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
+    surface_ = engine_->egl_manager()->CreateWindowSurface(
+        GetWindowHandle(), bounds.width, bounds.height);
+
+    UpdateVsync(*engine_, surface_.get(), NeedsVsync());
 
     resize_target_width_ = bounds.width;
     resize_target_height_ = bounds.height;
   }
 }
 
-void FlutterWindowsView::DestroyRenderSurface() {
-  if (engine_ && engine_->egl_manager()) {
-    engine_->egl_manager()->DestroySurface();
+bool FlutterWindowsView::ResizeRenderSurface(size_t width, size_t height) {
+  FML_DCHECK(surface_ != nullptr);
+
+  // No-op if the surface is already the desired size.
+  if (width == surface_->width() && height == surface_->height()) {
+    return true;
   }
+
+  auto const existing_vsync = surface_->vsync_enabled();
+
+  // TODO: Destroying the surface and re-creating it is expensive.
+  // Ideally this would use ANGLE's automatic surface sizing instead.
+  // See: https://github.com/flutter/flutter/issues/79427
+  if (!surface_->Destroy()) {
+    FML_LOG(ERROR) << "View resize failed to destroy surface";
+    return false;
+  }
+
+  std::unique_ptr<egl::WindowSurface> resized_surface =
+      engine_->egl_manager()->CreateWindowSurface(GetWindowHandle(), width,
+                                                  height);
+  if (!resized_surface) {
+    FML_LOG(ERROR) << "View resize failed to create surface";
+    return false;
+  }
+
+  if (!resized_surface->MakeCurrent() ||
+      !resized_surface->SetVSyncEnabled(existing_vsync)) {
+    // Surfaces block until the v-blank by default.
+    // Failing to update the vsync might result in unnecessary blocking.
+    // This regresses performance but not correctness.
+    FML_LOG(ERROR) << "View resize failed to set vsync";
+  }
+
+  surface_ = std::move(resized_surface);
+  return true;
+}
+
+void FlutterWindowsView::DestroyRenderSurface() {
+  if (surface_) {
+    surface_->Destroy();
+  }
+}
+
+egl::WindowSurface* FlutterWindowsView::surface() const {
+  return surface_.get();
 }
 
 void FlutterWindowsView::OnHighContrastChanged() {
@@ -661,7 +723,7 @@ HWND FlutterWindowsView::GetWindowHandle() const {
   return binding_handler_->GetWindowHandle();
 }
 
-FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
+FlutterWindowsEngine* FlutterWindowsView::GetEngine() const {
   return engine_;
 }
 
@@ -708,13 +770,11 @@ void FlutterWindowsView::UpdateSemanticsEnabled(bool enabled) {
 }
 
 void FlutterWindowsView::OnDwmCompositionChanged() {
-  UpdateVsync(*engine_, NeedsVsync());
+  UpdateVsync(*engine_, surface_.get(), NeedsVsync());
 }
 
 void FlutterWindowsView::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
-  if (engine_) {
-    engine_->OnWindowStateEvent(hwnd, event);
-  }
+  engine_->OnWindowStateEvent(hwnd, event);
 }
 
 bool FlutterWindowsView::NeedsVsync() const {

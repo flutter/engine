@@ -67,6 +67,7 @@ static std::unique_ptr<Capabilities> InferMetalCapabilities(
       .SetSupportsComputeSubgroups(DeviceSupportsComputeSubgroups(device))
       .SetSupportsReadFromResolve(true)
       .SetSupportsDeviceTransientTextures(true)
+      .SetDefaultGlyphAtlasFormat(PixelFormat::kA8UNormInt)
       .Build();
 }
 
@@ -128,6 +129,7 @@ ContextMTL::ContextMTL(
 
   device_capabilities_ =
       InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
+  command_queue_ip_ = std::make_shared<CommandQueue>();
 #ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
 #endif  // IMPELLER_DEBUG
@@ -392,6 +394,11 @@ void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
   if (!new_is_disabled) {
     parent_.FlushTasksAwaitingGPU();
   }
+}
+
+// |Context|
+std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
+  return command_queue_ip_;
 }
 
 }  // namespace impeller

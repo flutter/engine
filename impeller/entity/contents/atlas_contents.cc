@@ -246,14 +246,16 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
+    frame_info.depth = entity.GetShaderClipDepth();
 
     auto dst_sampler_descriptor = sampler_descriptor_;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-        dst_sampler_descriptor);
+    const std::unique_ptr<const Sampler>& dst_sampler =
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            dst_sampler_descriptor);
     FS::BindTextureSamplerDst(pass, texture_, dst_sampler);
     frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
@@ -303,6 +305,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
                                  std::nullopt,          // coverage_limit
                                  std::nullopt,          // sampler_descriptor
                                  true,                  // msaa_enabled
+                                 /*mip_count=*/1,
                                  "AtlasContents Snapshot");  // label
   if (!snapshot.has_value()) {
     return false;
@@ -402,6 +405,7 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
   frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frame_info.alpha = alpha_;
@@ -488,6 +492,7 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
+  frame_info.depth = entity.GetShaderClipDepth();
   frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
   FS::FragInfo frag_info;

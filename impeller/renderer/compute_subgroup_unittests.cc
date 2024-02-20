@@ -143,8 +143,9 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
         pass.GetRenderTarget().GetStencilAttachment().has_value();
     options.blend_mode = BlendMode::kSourceIn;
     options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
 
     pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
@@ -158,6 +159,7 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
                      .index_type = IndexType::kNone});
 
     VS::FrameInfo frame_info;
+    frame_info.depth = 0.0;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
@@ -340,8 +342,9 @@ TEST_P(ComputeSubgroupTest, LargePath) {
         pass.GetRenderTarget().GetStencilAttachment().has_value();
     options.blend_mode = BlendMode::kSourceIn;
     options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
 
     pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
@@ -355,6 +358,7 @@ TEST_P(ComputeSubgroupTest, LargePath) {
                      .index_type = IndexType::kNone});
 
     VS::FrameInfo frame_info;
+    frame_info.depth = 0.0;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();
@@ -418,8 +422,9 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
         pass.GetRenderTarget().GetStencilAttachment().has_value();
     options.blend_mode = BlendMode::kSourceIn;
     options.primitive_type = PrimitiveType::kTriangleStrip;
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
+
+    options.stencil_mode =
+        ContentContextOptions::StencilMode::kLegacyClipIncrement;
 
     pass.SetPipeline(renderer.GetSolidFillPipeline(options));
 
@@ -433,6 +438,7 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
                      .index_type = IndexType::kNone});
 
     VS::FrameInfo frame_info;
+    frame_info.depth = 0.0;
     auto world_matrix = Matrix::MakeScale(GetContentScale());
     frame_info.mvp = pass.GetOrthographicTransform() * world_matrix;
     frame_info.color = Color::Red().Premultiply();

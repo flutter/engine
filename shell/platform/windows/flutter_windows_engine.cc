@@ -58,7 +58,7 @@ FlutterRendererConfig GetOpenGLRendererConfig() {
     if (!host->egl_manager()) {
       return false;
     }
-    return host->egl_manager()->MakeCurrent();
+    return host->egl_manager()->render_context()->MakeCurrent();
   };
   config.open_gl.clear_current = [](void* user_data) -> bool {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
@@ -483,9 +483,15 @@ bool FlutterWindowsEngine::Stop() {
   return false;
 }
 
-void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
-  view_ = view;
+std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
+    std::unique_ptr<WindowBindingHandler> window) {
+  auto view = std::make_unique<FlutterWindowsView>(this, std::move(window),
+                                                   windows_proc_table_);
+
+  view_ = view.get();
   InitializeKeyboard();
+
+  return std::move(view);
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
