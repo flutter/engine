@@ -84,7 +84,7 @@ void UpdateVsync(const FlutterWindowsEngine& engine,
 }  // namespace
 
 FlutterWindowsView::FlutterWindowsView(
-    int64_t view_id,
+    FlutterViewId view_id,
     FlutterWindowsEngine* engine,
     std::unique_ptr<WindowBindingHandler> window_binding,
     std::shared_ptr<WindowsProcTable> windows_proc_table)

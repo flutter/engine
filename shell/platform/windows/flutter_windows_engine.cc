@@ -527,7 +527,7 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
   return std::chrono::nanoseconds(interval);
 }
 
-FlutterWindowsView* FlutterWindowsEngine::view(int64_t view_id) const {
+FlutterWindowsView* FlutterWindowsEngine::view(FlutterViewId view_id) const {
   FML_DCHECK(view_id == kImplicitViewId);
 
   return view_;

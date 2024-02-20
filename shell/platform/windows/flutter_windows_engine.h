@@ -48,7 +48,7 @@ namespace flutter {
 //
 // See:
 // https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html
-constexpr int64_t kImplicitViewId = 0;
+constexpr FlutterViewId kImplicitViewId = 0;
 
 class FlutterWindowsView;
 
@@ -123,7 +123,7 @@ class FlutterWindowsEngine {
 
   // The view displaying this engine's content, if any. This will be null for
   // headless engines.
-  FlutterWindowsView* view(int64_t view_id) const;
+  FlutterWindowsView* view(FlutterViewId view_id) const;
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();
