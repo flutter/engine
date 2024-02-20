@@ -18,7 +18,7 @@ unset CDPATH
 function follow_links() (
   cd -P "$(dirname -- "$1")"
   file="$PWD/$(basename -- "$1")"
-  while [[ -L "$file" ]]; do
+  while [[ -h "$file" ]]; do
     cd -P "$(dirname -- "$file")"
     file="$(readlink -- "$file")"
     cd -P "$(dirname -- "$file")"
