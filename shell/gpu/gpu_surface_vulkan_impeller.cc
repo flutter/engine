@@ -58,7 +58,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
   }
 
   auto& context_vk = impeller::SurfaceContextVK::Cast(*impeller_context_);
-  std::unique_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
+  std::shared_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
 
   if (!surface) {
     FML_LOG(ERROR) << "No surface available.";

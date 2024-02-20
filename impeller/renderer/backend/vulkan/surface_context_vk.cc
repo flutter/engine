@@ -4,11 +4,16 @@
 
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
 #include "impeller/renderer/surface.h"
+
+#if FML_OS_ANDROID
+#include "impeller/renderer/backend/vulkan/swapchain/ahb/ahb_swapchain_vk.h"
+#endif  // #FML_OS_ANDROID
 
 namespace impeller {
 
@@ -64,7 +69,7 @@ void SurfaceContextVK::Shutdown() {
 
 bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface,
                                         const ISize& size) {
-  auto swapchain = SwapchainVK::Create(parent_, std::move(surface), size);
+  auto swapchain = KHRSwapchainVK::Create(parent_, std::move(surface), size);
   if (!swapchain) {
     VALIDATION_LOG << "Could not create swapchain.";
     return false;
@@ -77,7 +82,23 @@ bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface,
   return true;
 }
 
-std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
+#ifdef FML_OS_ANDROID
+
+bool SurfaceContextVK::SetWindowSurface(ANativeWindow* window) {
+  if (!parent_->GetInstance()) {
+    return false;
+  }
+  auto swapchain = AHBSwapchainVK::Create(parent_, window);
+  if (!swapchain) {
+    return false;
+  }
+  swapchain_ = std::move(swapchain);
+  return true;
+}
+
+#endif  // FML_OS_ANDROID
+
+std::shared_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
   if (!surface) {
@@ -93,31 +114,11 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
 }
 
 void SurfaceContextVK::UpdateSurfaceSize(const ISize& size) const {
+  if (!swapchain_) {
+    return;
+  }
   swapchain_->UpdateSurfaceSize(size);
 }
-
-#ifdef FML_OS_ANDROID
-
-vk::UniqueSurfaceKHR SurfaceContextVK::CreateAndroidSurface(
-    ANativeWindow* window) const {
-  if (!parent_->GetInstance()) {
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
-  }
-
-  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
-  auto surface_res =
-      parent_->GetInstance().createAndroidSurfaceKHRUnique(create_info);
-
-  if (surface_res.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create Android surface, error: "
-                   << vk::to_string(surface_res.result);
-    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
-  }
-
-  return std::move(surface_res.value);
-}
-
-#endif  // FML_OS_ANDROID
 
 const vk::Device& SurfaceContextVK::GetDevice() const {
   return parent_->GetDevice();

@@ -30,7 +30,7 @@ bool Renderer::IsValid() const {
   return is_valid_;
 }
 
-bool Renderer::Render(std::unique_ptr<Surface> surface,
+bool Renderer::Render(const std::shared_ptr<Surface>& surface,
                       const RenderCallback& render_callback) const {
   TRACE_EVENT0("impeller", "Renderer::Render");
   if (!IsValid()) {

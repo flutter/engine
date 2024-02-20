@@ -1,0 +1,26 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("../../tools/impeller.gni")
+
+impeller_component("android") {
+  sources = [
+    "hardware_buffer.cc",
+    "hardware_buffer.h",
+    "native_window.cc",
+    "native_window.h",
+    "proc_table.cc",
+    "proc_table.h",
+    "surface_control.cc",
+    "surface_control.h",
+    "surface_transaction.cc",
+    "surface_transaction.h",
+  ]
+
+  public_deps = [
+    "../../base",
+    "../../geometry",
+    "//flutter/fml",
+  ]
+}
