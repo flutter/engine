@@ -14,6 +14,9 @@ Future<void> step(String msg, Future<void> Function() fn) async {
   stdout.writeln('-> $_green$msg$_reset');
   try {
     await fn();
+  } catch (_) {
+    stderr.writeln('~~ ${_red}Failed$_reset');
+    rethrow;
   } finally {
     stdout.writeln('<- ${_gray}Done$_reset');
   }
@@ -23,9 +26,11 @@ void log(String msg) {
   stdout.writeln('$_gray$msg$_reset');
 }
 
-void panic(List<String> messages) {
+final class Panic extends Error {}
+
+Never panic(List<String> messages) {
   for (final String message in messages) {
     stderr.writeln('$_red$message$_reset');
   }
-  throw 'panic';
+  throw Panic();
 }

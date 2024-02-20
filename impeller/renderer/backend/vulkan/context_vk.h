@@ -54,6 +54,11 @@ class ContextVK final : public Context,
     Settings(Settings&&) = default;
   };
 
+  /// Choose the number of worker threads the context_vk will create.
+  ///
+  /// Visible for testing.
+  static size_t ChooseThreadCountForWorkers(size_t hardware_concurrency);
+
   static std::shared_ptr<ContextVK> Create(Settings settings);
 
   uint64_t GetHash() const { return hash_; }
@@ -90,11 +95,6 @@ class ContextVK final : public Context,
 
   // |Context|
   void Shutdown() override;
-
-  // |Context|
-  void SetSyncPresentation(bool value) override { sync_presentation_ = value; }
-
-  bool GetSyncPresentation() const { return sync_presentation_; }
 
   void SetOffscreenFormat(PixelFormat pixel_format);
 
@@ -137,18 +137,6 @@ class ContextVK final : public Context,
 
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
-
-  /// @brief A single-threaded task runner that should only be used for
-  ///        submitKHR.
-  ///
-  /// SubmitKHR will block until all previously submitted command buffers have
-  /// been scheduled. If there are no platform views in the scene (excluding
-  /// texture backed platform views). Then it is safe for SwapchainImpl::Present
-  /// to return before submit has completed. To do so, we offload the submit
-  /// command to a specialized single threaded task runner. The single thread
-  /// ensures that we do not queue up too much work and that the submissions
-  /// proceed in order.
-  const fml::RefPtr<fml::TaskRunner> GetQueueSubmitRunner() const;
 
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
@@ -197,12 +185,10 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
-  std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
 
-  bool sync_presentation_ = false;
   const uint64_t hash_;
 
   bool is_valid_ = false;

@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "fml/macros.h"
-#include "fml/thread_local.h"
 #include "impeller/base/thread_safety.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 #include "third_party/swiftshader/include/vulkan/vulkan_core.h"
@@ -105,7 +104,7 @@ class MockDevice final {
 
 void noop() {}
 
-FML_THREAD_LOCAL std::vector<std::string> g_instance_extensions;
+static thread_local std::vector<std::string> g_instance_extensions;
 
 VkResult vkEnumerateInstanceExtensionProperties(
     const char* pLayerName,
@@ -125,7 +124,7 @@ VkResult vkEnumerateInstanceExtensionProperties(
   return VK_SUCCESS;
 }
 
-FML_THREAD_LOCAL std::vector<std::string> g_instance_layers;
+static thread_local std::vector<std::string> g_instance_layers;
 
 VkResult vkEnumerateInstanceLayerProperties(uint32_t* pPropertyCount,
                                             VkLayerProperties* pProperties) {
@@ -154,19 +153,16 @@ VkResult vkEnumeratePhysicalDevices(VkInstance instance,
   return VK_SUCCESS;
 }
 
+static thread_local std::function<void(VkPhysicalDevice physicalDevice,
+                                       VkFormat format,
+                                       VkFormatProperties* pFormatProperties)>
+    g_format_properties_callback;
+
 void vkGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice physicalDevice,
     VkFormat format,
     VkFormatProperties* pFormatProperties) {
-  if (format == VK_FORMAT_B8G8R8A8_UNORM) {
-    pFormatProperties->optimalTilingFeatures =
-        static_cast<VkFormatFeatureFlags>(
-            vk::FormatFeatureFlagBits::eColorAttachment);
-  } else if (format == VK_FORMAT_S8_UINT) {
-    pFormatProperties->optimalTilingFeatures =
-        static_cast<VkFormatFeatureFlags>(
-            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-  }
+  g_format_properties_callback(physicalDevice, format, pFormatProperties);
 }
 
 void vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
@@ -265,6 +261,7 @@ VkResult vkAllocateCommandBuffers(
     const VkCommandBufferAllocateInfo* pAllocateInfo,
     VkCommandBuffer* pCommandBuffers) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkAllocateCommandBuffers");
   *pCommandBuffers =
       reinterpret_cast<VkCommandBuffer>(mock_device->NewCommandBuffer());
   return VK_SUCCESS;
@@ -508,6 +505,12 @@ VkResult vkGetFenceStatus(VkDevice device, VkFence fence) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
   MockFence* mock_fence = reinterpret_cast<MockFence*>(fence);
   return mock_fence->GetStatus();
+}
+
+VkResult vkResetFences(VkDevice device,
+                       uint32_t fenceCount,
+                       const VkFence* fences) {
+  return VK_SUCCESS;
 }
 
 VkResult vkCreateDebugUtilsMessengerEXT(
@@ -777,6 +780,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkWaitForFences;
   } else if (strcmp("vkGetFenceStatus", pName) == 0) {
     return (PFN_vkVoidFunction)vkGetFenceStatus;
+  } else if (strcmp("vkResetFences", pName) == 0) {
+    return (PFN_vkVoidFunction)vkResetFences;
   } else if (strcmp("vkCreateDebugUtilsMessengerEXT", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateDebugUtilsMessengerEXT;
   } else if (strcmp("vkSetDebugUtilsObjectNameEXT", pName) == 0) {
@@ -814,7 +819,24 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
 }  // namespace
 
 MockVulkanContextBuilder::MockVulkanContextBuilder()
-    : instance_extensions_({"VK_KHR_surface", "VK_MVK_macos_surface"}) {}
+    : instance_extensions_({"VK_KHR_surface", "VK_MVK_macos_surface"}),
+      format_properties_callback_([](VkPhysicalDevice physicalDevice,
+                                     VkFormat format,
+                                     VkFormatProperties* pFormatProperties) {
+        if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+          pFormatProperties->optimalTilingFeatures =
+              static_cast<VkFormatFeatureFlags>(
+                  vk::FormatFeatureFlagBits::eColorAttachment);
+        } else if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+          pFormatProperties->optimalTilingFeatures =
+              static_cast<VkFormatFeatureFlags>(
+                  vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+        } else if (format == VK_FORMAT_S8_UINT) {
+          pFormatProperties->optimalTilingFeatures =
+              static_cast<VkFormatFeatureFlags>(
+                  vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+        }
+      }) {}
 
 std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   auto message_loop = fml::ConcurrentMessageLoop::Create();
@@ -825,6 +847,7 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   }
   g_instance_extensions = instance_extensions_;
   g_instance_layers = instance_layers_;
+  g_format_properties_callback = format_properties_callback_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
   return result;
 }

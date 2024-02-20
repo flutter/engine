@@ -44,6 +44,12 @@
 
 namespace flutter {
 
+// The implicit view's ID.
+//
+// See:
+// https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html
+constexpr FlutterViewId kImplicitViewId = 0;
+
 class FlutterWindowsView;
 
 // Update the thread priority for the Windows engine.
@@ -111,12 +117,13 @@ class FlutterWindowsEngine {
   // Returns false if stopping the engine fails, or if it was not running.
   virtual bool Stop();
 
-  // Sets the view that is displaying this engine's content.
-  void SetView(FlutterWindowsView* view);
+  // Create the view that is displaying this engine's content.
+  std::unique_ptr<FlutterWindowsView> CreateView(
+      std::unique_ptr<WindowBindingHandler> window);
 
   // The view displaying this engine's content, if any. This will be null for
   // headless engines.
-  FlutterWindowsView* view() { return view_; }
+  FlutterWindowsView* view(FlutterViewId view_id) const;
 
   // Returns the currently configured Plugin Registrar.
   FlutterDesktopPluginRegistrarRef GetRegistrar();

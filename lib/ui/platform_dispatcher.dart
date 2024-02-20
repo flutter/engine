@@ -314,33 +314,19 @@ class PlatformDispatcher {
   /// callback is invoked indicating the new view that has focus and the direction
   /// in which focus was received. For example, if focus is moved to the [FlutterView]
   /// with ID 2 in the forward direction (could be the result of pressing tab)
-  /// the callback receives the following [ViewFocusEvent]:
-  ///
-  /// ```dart
-  /// ViewFocusEvent(
-  ///   viewId: 2,
-  ///   state: ViewFocusState.focused,
-  ///   direction: ViewFocusDirection.forward,
-  /// )
-  /// ```
+  /// the callback receives a [ViewFocusEvent] with [ViewFocusState.focused] and
+  /// [ViewFocusDirection.forward].
   ///
   /// Typically, receivers of this event respond by moving the focus to the first
   /// focusable widget inside the [FlutterView] with ID 2. If a view receives
-  /// focus in the backwards direction (could be the result of pressing shift + tab),
+  /// focus in the backward direction (could be the result of pressing shift + tab),
   /// typically the last focusable widget inside that view is focused.
   ///
   /// The platform may remove focus from a [FlutterView]. For example, on the web,
   /// the browser can move focus to another element, or to the browser's built-in UI.
   /// On desktop, the operating system can switch to another window (e.g. using Alt + Tab on Windows).
-  /// In scenarios like these, [onViewFocusChange] will be invoked with an event like this:
-  ///
-  /// ```dart
-  /// ViewFocusEvent(
-  ///   viewId: 2,
-  ///   state: ViewFocusState.unfocused,
-  ///   direction: ViewFocusDirection.undefined,
-  /// )
-  /// ```
+  /// In scenarios like these, [onViewFocusChange] will be invoked with [ViewFocusState.unfocused] and
+  /// [ViewFocusDirection.undefined].
   ///
   /// Receivers typically respond to this event by removing all focus indications
   /// from the app.
@@ -368,15 +354,8 @@ class PlatformDispatcher {
   /// Requests a focus change of the [FlutterView] with ID [viewId].
   ///
   /// If an app would like to request the engine to move focus, in forward direction,
-  /// to the [FlutterView] with ID 1 the following call should be made:
-  ///
-  /// ```dart
-  /// PlatformDispatcher.instance.requestViewFocusChange(
-  ///   viewId: 1,
-  ///   state: ViewFocusSate.focused,
-  ///   direction: ViewFocusDirection.forward,
-  /// );
-  /// ```
+  /// to the [FlutterView] with ID 1 it should call this method with [ViewFocusState.focused]
+  /// and [ViewFocusDirection.forward].
   ///
   /// There is no need to call this method if the view in question already has
   /// focus as it won't have any effect.
@@ -2711,8 +2690,8 @@ enum ViewFocusDirection {
   /// This is typically result of the user pressing tab.
   forward,
 
-  /// Indicates the focus transition was performed in a backwards direction.
+  /// Indicates the focus transition was performed in a backward direction.
   ///
   /// This is typically result of the user pressing shift + tab.
-  backwards,
+  backward,
 }
