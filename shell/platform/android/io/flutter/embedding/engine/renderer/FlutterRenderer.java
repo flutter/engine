@@ -619,7 +619,10 @@ public class FlutterRenderer implements TextureRegistry {
     private void releaseInternal() {
       released = true;
       for (int i = 0; i < perImageReaders.size(); i++) {
-        perImageReaders.get(i).close();
+        PerImageReader reader = perImageReaders.get(i);
+        if (reader != null) {
+          reader.close();
+        }
       }
       perImageReaders.clear();
       imageReaderQueue.clear();
