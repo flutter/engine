@@ -29,7 +29,7 @@ class Surface {
 
   const RenderTarget& GetTargetRenderPassDescriptor() const;
 
-  virtual bool Present() const;
+  virtual bool Present();
 
  private:
   RenderTarget desc_;

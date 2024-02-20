@@ -34,7 +34,7 @@ const RenderTarget& Surface::GetTargetRenderPassDescriptor() const {
   return desc_;
 }
 
-bool Surface::Present() const {
+bool Surface::Present() {
   return false;
 };
 

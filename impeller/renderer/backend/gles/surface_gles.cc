@@ -86,7 +86,7 @@ SurfaceGLES::SurfaceGLES(SwapCallback swap_callback,
 SurfaceGLES::~SurfaceGLES() = default;
 
 // |Surface|
-bool SurfaceGLES::Present() const {
+bool SurfaceGLES::Present() {
   return swap_callback_ ? swap_callback_() : false;
 }
 

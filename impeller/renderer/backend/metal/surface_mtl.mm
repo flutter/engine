@@ -223,7 +223,7 @@ IRect SurfaceMTL::coverage() const {
 }
 
 // |Surface|
-bool SurfaceMTL::Present() const {
+bool SurfaceMTL::Present() {
   auto context = context_.lock();
   if (!context) {
     return false;

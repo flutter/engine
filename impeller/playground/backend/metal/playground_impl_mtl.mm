@@ -107,7 +107,7 @@ PlaygroundImpl::WindowHandle PlaygroundImplMTL::GetWindowHandle() const {
 }
 
 // |PlaygroundImpl|
-std::unique_ptr<Surface> PlaygroundImplMTL::AcquireSurfaceFrame(
+std::shared_ptr<Surface> PlaygroundImplMTL::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
   if (!data_->metal_layer) {
     return nullptr;

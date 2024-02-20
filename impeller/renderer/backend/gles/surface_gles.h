@@ -35,7 +35,7 @@ class SurfaceGLES final : public Surface {
   SurfaceGLES(SwapCallback swap_callback, const RenderTarget& target_desc);
 
   // |Surface|
-  bool Present() const override;
+  bool Present() override;
 
   SurfaceGLES(const SurfaceGLES&) = delete;
 
