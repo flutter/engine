@@ -798,12 +798,12 @@ TEST_P(AiksTest, CanRenderTextFrameSTB) {
 }
 
 TEST_P(AiksTest, TextFrameSubpixelAlignment) {
-  std::array<Scalar, 20> phase_offsets;
-  for (Scalar& offset : phase_offsets) {
-    auto rand = std::rand();  // NOLINT
-    offset = (static_cast<float>(rand) / static_cast<float>(RAND_MAX)) * k2Pi;
-  }
-
+  // "Random" numbers between 0 and 1. Hardcoded to avoid flakiness in goldens.
+  std::array<Scalar, 20> phase_offsets = {
+      7.82637e-06, 0.131538,  0.755605,   0.45865,   0.532767,
+      0.218959,    0.0470446, 0.678865,   0.679296,  0.934693,
+      0.383502,    0.519416,  0.830965,   0.0345721, 0.0534616,
+      0.5297,      0.671149,  0.00769819, 0.383416,  0.0668422};
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     static float font_size = 20;
     static float phase_variation = 0.2;
@@ -822,11 +822,12 @@ TEST_P(AiksTest, TextFrameSubpixelAlignment) {
     canvas.Scale(GetContentScale());
 
     for (size_t i = 0; i < phase_offsets.size(); i++) {
-      auto position = Point(
-          200 + magnitude * std::sin((-phase_offsets[i] * phase_variation +
-                                      GetSecondsElapsed() * speed)),  //
-          200 + i * font_size * 1.1                                   //
-      );
+      auto position =
+          Point(200 + magnitude *
+                          std::sin((-phase_offsets[i] * k2Pi * phase_variation +
+                                    GetSecondsElapsed() * speed)),  //
+                200 + i * font_size * 1.1                           //
+          );
       if (!RenderTextInCanvasSkia(
               GetContext(), canvas,
               "the quick brown fox jumped over "
@@ -3525,10 +3526,10 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   canvas.DrawRRect(Rect::MakeLTRB(0, 0, 100, 100), {10, 10}, {});  // Depth 2
   canvas.Save();
   {
-    canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 5
-    canvas.SaveLayer({});                                          // Depth 3
+    canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 4
+    canvas.SaveLayer({});                                          // Depth 4
     {
-      canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 4
+      canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 3
     }
     canvas.Restore();  // Restore the savelayer.
   }
@@ -3538,9 +3539,13 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   auto picture = canvas.EndRecordingAsPicture();
   std::array<uint32_t, 5> expected = {
       2,  // DrawRRect
-      4,  // ClipRRect
-      3,  // SaveLayer
-      4,  // DrawRRect
+      4,  // ClipRRect -- Has a depth value equal to the max depth of all the
+          //              content it affect. In this case, the SaveLayer and all
+          //              its contents are affected.
+      4,  // SaveLayer -- The SaveLayer is drawn to the parent pass after its
+          //              contents are rendered, so it should have a depth value
+          //              greater than all its contents.
+      3,  // DrawRRect
       5,  // Restore (will be removed once we switch to the clip depth approach)
   };
   std::vector<uint32_t> actual;
@@ -3557,7 +3562,7 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 
   ASSERT_EQ(actual.size(), expected.size());
   for (size_t i = 0; i < expected.size(); i++) {
-    EXPECT_EQ(actual[i], expected[i]) << "Index: " << i;
+    EXPECT_EQ(expected[i], actual[i]) << "Index: " << i;
   }
 }
 
