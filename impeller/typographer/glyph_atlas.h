@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
@@ -83,6 +84,8 @@ class GlyphAtlas {
   /// @param[in]  rect  The rectangle
   ///
   void AddTypefaceGlyphPosition(const FontGlyphPair& pair, Rect rect);
+
+  void RemoveTypefaceGlyphPosition(const FontGlyphPair& pair);
 
   //----------------------------------------------------------------------------
   /// @brief      Get the number of unique font-glyph pairs in this atlas.

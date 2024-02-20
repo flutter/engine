@@ -46,6 +46,16 @@ class Texture {
                                  size_t slice = 0,
                                  bool is_opaque = false);
 
+  struct ContentUpdate {
+    IRect region;
+    BufferView buffer_view;
+  };
+
+  [[nodiscard]] bool SetContents(const ContentUpdate updates[],
+                                 size_t update_count,
+                                 size_t slice = 0,
+                                 bool is_opaque = false);
+
   virtual bool IsValid() const = 0;
 
   virtual ISize GetSize() const = 0;
@@ -78,6 +88,12 @@ class Texture {
   [[nodiscard]] virtual bool OnSetContents(const BufferView& buffer_view,
                                            IRect region,
                                            size_t slice) = 0;
+
+  [[nodiscard]] virtual bool OnSetContents(const ContentUpdate updates[],
+                                           size_t update_count,
+                                           size_t slice) {
+    return false;
+  }
 
   bool mipmap_generated_ = false;
 

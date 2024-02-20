@@ -55,6 +55,7 @@ const DeviceBufferDescriptor& DeviceBuffer::GetDeviceBufferDescriptor() const {
 
   if (offset + source_range.length > desc_.size) {
     // Out of bounds of this buffer.
+    FML_LOG(ERROR) << "OOB";
     return false;
   }
 

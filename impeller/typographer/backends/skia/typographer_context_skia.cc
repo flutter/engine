@@ -5,17 +5,20 @@
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 #include <numeric>
+#include <unordered_set>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/formats.h"
 #include "impeller/typographer/backends/skia/glyph_atlas_context_skia.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
+#include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "impeller/typographer/typographer_context.h"
 #include "include/core/SkColor.h"
@@ -44,26 +47,27 @@ constexpr auto kPadding = 2;
 
 class ImpellerAllocator : public SkBitmap::Allocator {
  public:
-  ImpellerAllocator(std::shared_ptr<DeviceBuffer> device_buffer,
-                    std::vector<std::pair<size_t, size_t>> offsets)
-      : device_buffer_(std::move(device_buffer)),
-        offsets_(std::move(offsets)) {}
+  explicit ImpellerAllocator(std::shared_ptr<impeller::Allocator> allocator)
+      : allocator_(std::move(allocator)) {}
 
-  bool allocPixelRef(SkBitmap* bitmap) override {
-    auto [offset, size] = offsets_[count_];
-    count_++;
+  std::shared_ptr<impeller::DeviceBuffer> GetDeviceBuffer() const {
+    return buffer_;
+  }
+
+  bool allocPixelRef(SkBitmap* bitmap) {
     const SkImageInfo& info = bitmap->info();
     if (kUnknown_SkColorType == info.colorType() || info.width() < 0 ||
         info.height() < 0 || !info.validRowBytes(bitmap->rowBytes())) {
       return false;
     }
 
-    auto expected_size = ((bitmap->height() - 1) * bitmap->rowBytes()) +
-                         (bitmap->width() * bitmap->bytesPerPixel());
-    if (expected_size != size) {
-      FML_LOG(ERROR) << "Size mismatch : expected " << expected_size
-                     << " and got " << size;
-    }
+    impeller::DeviceBufferDescriptor descriptor;
+    descriptor.storage_mode = impeller::StorageMode::kHostVisible;
+    descriptor.size = ((bitmap->height() - 1) * bitmap->rowBytes()) +
+                      (bitmap->width() * bitmap->bytesPerPixel());
+
+    std::shared_ptr<impeller::DeviceBuffer> device_buffer =
+        allocator_->CreateBuffer(descriptor);
 
     struct ImpellerPixelRef final : public SkPixelRef {
       ImpellerPixelRef(int w, int h, void* s, size_t r)
@@ -73,17 +77,16 @@ class ImpellerAllocator : public SkBitmap::Allocator {
     };
 
     auto pixel_ref = sk_sp<SkPixelRef>(new ImpellerPixelRef(
-        info.width(), info.height(), device_buffer_->OnGetContents() + offset,
+        info.width(), info.height(), device_buffer->OnGetContents(),
         bitmap->rowBytes()));
 
     bitmap->setPixelRef(std::move(pixel_ref), 0, 0);
+    buffer_ = std::move(device_buffer);
     return true;
   }
 
- private:
-  std::shared_ptr<DeviceBuffer> device_buffer_;
-  std::vector<std::pair<size_t, size_t>> offsets_;
-  size_t count_ = 0u;
+  std::shared_ptr<DeviceBuffer> buffer_;
+  std::shared_ptr<impeller::Allocator> allocator_;
 };
 
 std::shared_ptr<TypographerContext> TypographerContextSkia::Make() {
@@ -137,6 +140,7 @@ static size_t PairsFitInAtlasOfSize(
 static bool CanAppendToExistingAtlas(
     const std::shared_ptr<GlyphAtlas>& atlas,
     const std::vector<FontGlyphPair>& extra_pairs,
+    const std::vector<FontGlyphPair>& all_glyphs,
     std::vector<Rect>& glyph_positions,
     ISize atlas_size,
     const std::shared_ptr<RectanglePacker>& rect_packer) {
@@ -150,17 +154,21 @@ static bool CanAppendToExistingAtlas(
   // from extra_pairs.
   FML_DCHECK(glyph_positions.size() == 0);
   glyph_positions.reserve(extra_pairs.size());
+  std::vector<FontGlyphPair> missing_pairs;
+  bool broken = false;
   for (size_t i = 0; i < extra_pairs.size(); i++) {
     const FontGlyphPair& pair = extra_pairs[i];
 
     const auto glyph_size =
         ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
-                              glyph_size.height + kPadding,  //
-                              &location_in_atlas             //
-                              )) {
-      return false;
+    if (broken || !rect_packer->addRect(glyph_size.width + kPadding,   //
+                                        glyph_size.height + kPadding,  //
+                                        &location_in_atlas             //
+                                        )) {
+      missing_pairs.push_back(pair);
+      broken = true;
+      continue;
     }
     glyph_positions.emplace_back(Rect::MakeXYWH(location_in_atlas.x(),  //
                                                 location_in_atlas.y(),  //
@@ -169,6 +177,54 @@ static bool CanAppendToExistingAtlas(
                                                 ));
   }
 
+  // Some glyphs may not have fit. Next we'll check if any existing glyphs
+  // can be evicted to make room for new glyphs. This generally works well
+  // for emojis as they generally all have rectangular bounds, and if they're
+  // the same font size they'll mostly be the same shape.
+  if (!missing_pairs.empty()) {
+    if (missing_pairs.size() > 36) {
+      return false;
+    }
+    std::vector<std::pair<Rect, FontGlyphPair>> free_spots = {};
+    atlas->IterateGlyphs([&all_glyphs, &free_spots](const ScaledFont& font,
+                                                    const Glyph& glyph,
+                                                    const Rect& bounds) {
+      if (std::find_if(all_glyphs.begin(), all_glyphs.end(),
+                       [&font, glyph](const FontGlyphPair& pair) {
+                         return pair.scaled_font.font.IsEqual(font.font) &&
+                                pair.scaled_font.scale == font.scale &&
+                                glyph.index == pair.glyph.index;
+                       }) == all_glyphs.end()) {
+        free_spots.push_back(
+            std::make_pair(bounds, FontGlyphPair{font, glyph}));
+      }
+      return true;
+    });
+    if (free_spots.empty()) {
+      return false;
+    }
+    for (const auto& pair : missing_pairs) {
+      const auto glyph_size =
+          ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
+      size_t j = 0u;
+      bool found = false;
+      for (; j < free_spots.size(); j++) {
+        const auto& [bounds, free_pair] = free_spots[j];
+        if (glyph_size.width <= bounds.GetWidth() &&
+            glyph_size.height <= bounds.GetHeight()) {
+          found = true;
+          break;
+        }
+      }
+      if (found) {
+        glyph_positions.emplace_back(free_spots[j].first);
+        atlas->RemoveTypefaceGlyphPosition(free_spots[j].second);
+        free_spots[j].first = Rect::MakeLTRB(0, 0, 0, 0);
+      } else {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
@@ -250,9 +306,8 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                               const std::shared_ptr<Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
-  size_t required_allocator_size = 0u;
 
-  std::vector<std::pair<size_t, size_t>> offsets = {};
+  std::vector<Texture::ContentUpdate> updates;
   for (const FontGlyphPair& pair : new_pairs) {
     auto pos = atlas.FindFontGlyphBounds(pair);
     if (!pos.has_value()) {
@@ -260,44 +315,6 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     }
     auto rect = pos.value();
     if (rect.IsEmpty()) {
-      continue;
-    }
-    auto bounds = ISize(static_cast<int32_t>(std::ceil(rect.GetWidth())),
-                        static_cast<int32_t>(std::ceil(rect.GetHeight())));
-    offsets.push_back(std::make_pair(required_allocator_size, bounds.Area()));
-    required_allocator_size += bounds.Area();
-  }
-  if (required_allocator_size == 0) {
-    return true;
-  }
-
-  DeviceBufferDescriptor desc;
-  desc.storage_mode = StorageMode::kHostVisible;
-  desc.size = required_allocator_size * (has_color ? 4u : 1u);
-
-  if (has_color) {
-    for (auto i = 0u; i < offsets.size(); i++) {
-      offsets[i] = std::make_pair(offsets[i].first * 4, offsets[i].second * 4);
-    }
-  }
-
-  auto device_buffer = allocator->CreateBuffer(desc);
-  if (!device_buffer) {
-    return false;
-  }
-
-  auto bitmap_allocator = ImpellerAllocator(device_buffer, offsets);
-
-  auto i = 0u;
-  for (const FontGlyphPair& pair : new_pairs) {
-    auto pos = atlas.FindFontGlyphBounds(pair);
-    if (!pos.has_value()) {
-      i++;
-      continue;
-    }
-    auto rect = pos.value();
-    if (rect.IsEmpty()) {
-      i++;
       continue;
     }
     auto bounds = ISize(static_cast<int32_t>(std::ceil(rect.GetWidth())),
@@ -316,7 +333,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     auto bitmap = SkBitmap();
     bitmap.setInfo(image_info);
-    if (!bitmap.tryAllocPixels(&bitmap_allocator)) {
+    if (!bitmap.tryAllocPixels()) {
       return false;
     }
 
@@ -332,15 +349,27 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
               Rect::MakeLTRB(0, 0, rect.GetWidth(), rect.GetHeight()),
               has_color);
 
-    auto [offset, size] = offsets[i];
-    i++;
-    if (!texture->SetContents(
-            device_buffer->OnGetContents() + offset, size,
-            IRect::MakeLTRB(rect.GetX(), rect.GetY(), rect.GetRight(),
-                            rect.GetBottom()))) {
+    const auto& pixmap = bitmap.pixmap();
+    DeviceBufferDescriptor desc;
+    desc.storage_mode = StorageMode::kHostVisible;
+    desc.size = pixmap.rowBytes() * pixmap.height();
+    auto device_buffer = allocator->CreateBuffer(desc);
+    if (!device_buffer->CopyHostBuffer(
+            reinterpret_cast<uint8_t*>(bitmap.getAddr(0, 0)), {0, desc.size})) {
       return false;
     }
+
+    updates.push_back(Texture::ContentUpdate{
+        .region = IRect::MakeLTRB(rect.GetX(), rect.GetY(), rect.GetRight(),
+                                  rect.GetBottom()),
+        .buffer_view = DeviceBuffer::AsBufferView(device_buffer),
+    });
   }
+
+  if (!texture->SetContents(updates.data(), updates.size())) {
+    return false;
+  }
+
   return true;
 }
 
@@ -413,7 +442,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   const auto& pixmap = bitmap->pixmap();
 
   TextureDescriptor texture_descriptor;
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  texture_descriptor.storage_mode = StorageMode::kDevicePrivate;
   texture_descriptor.format = format;
   texture_descriptor.size = atlas_size;
 
@@ -457,12 +486,14 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
   std::vector<FontGlyphPair> new_glyphs;
+  std::vector<FontGlyphPair> all_glyphs;
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
     const FontGlyphAtlas* font_glyph_atlas =
         last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
     if (font_glyph_atlas) {
       for (const Glyph& glyph : font_value.second) {
+        all_glyphs.emplace_back(FontGlyphPair{scaled_font, glyph});
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
           new_glyphs.emplace_back(scaled_font, glyph);
         }
@@ -470,6 +501,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     } else {
       for (const Glyph& glyph : font_value.second) {
         new_glyphs.emplace_back(scaled_font, glyph);
+        all_glyphs.emplace_back(FontGlyphPair{scaled_font, glyph});
       }
     }
   }
@@ -484,8 +516,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
   if (last_atlas->GetType() == type &&
-      CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
-                               atlas_context->GetAtlasSize(),
+      CanAppendToExistingAtlas(last_atlas, new_glyphs, all_glyphs,
+                               glyph_positions, atlas_context->GetAtlasSize(),
                                atlas_context->GetRectPacker())) {
     // The old bitmap will be reused and only the additional glyphs will be
     // added.

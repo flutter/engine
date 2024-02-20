@@ -91,6 +91,11 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
                      size_t slice) override;
 
   // |Texture|
+  bool OnSetContents(const ContentUpdate updates[],
+                     size_t update_count,
+                     size_t slice) override;
+
+  // |Texture|
   bool IsValid() const override;
 
   TextureVK(const TextureVK&) = delete;

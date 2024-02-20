@@ -56,6 +56,22 @@ bool Texture::SetContents(const BufferView& buffer_view,
   return true;
 }
 
+bool Texture::SetContents(const ContentUpdate updates[],
+                          size_t update_count,
+                          size_t slice,
+                          bool is_opaque) {
+  if (!IsSliceValid(slice)) {
+    VALIDATION_LOG << "Invalid slice for texture.";
+    return false;
+  }
+  if (!OnSetContents(updates, update_count, slice)) {
+    return false;
+  }
+  coordinate_system_ = TextureCoordinateSystem::kUploadFromHost;
+  is_opaque_ = is_opaque;
+  return true;
+}
+
 bool Texture::IsOpaque() const {
   return is_opaque_;
 }
