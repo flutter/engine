@@ -1,6 +1,7 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
@@ -13,7 +14,6 @@ import '../svg.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
-import 'embedded_views_diff.dart';
 import 'overlay_scene_optimizer.dart';
 import 'path.dart';
 import 'picture.dart';
@@ -365,8 +365,8 @@ class HtmlViewEmbedder {
     }
     final Rendering rendering = createOptimizedRendering(
         pictures, _compositionOrder, _currentCompositionParams);
-    final List<OverlayGroup>? overlayGroups =
-        _updateOverlays(rendering);
+    final List<OverlayGroup>? overlayGroups = _updateOverlays(rendering);
+    _activeRendering = rendering;
     if (overlayGroups != null) {
       _activeOverlayGroups = overlayGroups;
     }
@@ -483,12 +483,14 @@ class HtmlViewEmbedder {
   // composition order of the current and previous frame, respectively.
   //
   // TODO(hterkelsen): Test this more thoroughly.
-  List<OverlayGroup>? _updateOverlays(
-      Rendering rendering) {
+  List<OverlayGroup>? _updateOverlays(Rendering rendering) {
     if (rendering.equalsForRendering(_activeRendering)) {
       // The rendering has not changed, continue using the assigned overlays.
       return null;
     }
+    final List<int> indexMap =
+        _getIndexMapFromPreviousRendering(_activeRendering, rendering);
+    print('index map: $indexMap');
     // Group platform views from their composition order.
     // Each group contains one visible view, and any number of invisible views
     // before or after that visible view.
@@ -506,6 +508,51 @@ class HtmlViewEmbedder {
     viewsNeedingOverlays.forEach(_initializeOverlay);
     assert(_overlays.length == viewsNeedingOverlays.length);
     return overlayGroups;
+  }
+
+  List<int> _getIndexMapFromPreviousRendering(
+      Rendering previous, Rendering next) {
+    assert(!previous.equalsForRendering(next),
+        'Should not be in this method if the Renderings are equal');
+    final List<int> result = <int>[];
+    int index = 0;
+
+    final int maxLength =
+        math.min(previous.entities.length, next.entities.length);
+
+    // A canvas in the previous rendering can only be used once in the next
+    // rendering. So if it is matched with one in the next rendering, mark it
+    // here so it is only matched once.
+    final Set<int> alreadyClaimedCanvases = <int>{};
+
+    // Add the unchanged elements from the beginning of the list.
+    while (index < maxLength &&
+        previous.entities[index].equalsForRendering(next.entities[index])) {
+      result.add(index);
+      if (previous.entities[index] is RenderingRenderCanvas) {
+        alreadyClaimedCanvases.add(index);
+      }
+      index += 1;
+    }
+
+    while (index < next.entities.length) {
+      for (int oldIndex = 0;
+          oldIndex < previous.entities.length;
+          oldIndex += 1) {
+        if (previous.entities[oldIndex]
+                .equalsForRendering(next.entities[index]) &&
+            !alreadyClaimedCanvases.contains(oldIndex)) {
+          result.add(oldIndex);
+          if (previous.entities[oldIndex] is RenderingRenderCanvas) {
+            alreadyClaimedCanvases.add(oldIndex);
+          }
+          break;
+        }
+      }
+      index += 1;
+    }
+
+    return result;
   }
 
   // Group the platform views into "overlay groups". These are sublists
