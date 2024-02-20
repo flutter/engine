@@ -31,15 +31,14 @@ typedef struct _FlKeyEvent {
   // Modifier state.
   GdkModifierType state;
   // Keyboard group.
-  guint8 group;
+  guint group;
   // The original event.
   GdkEvent* origin;
 } FlKeyEvent;
 
 /**
  * fl_key_event_new_from_gdk_event:
- * @event: the #GdkEvent this #FlKeyEvent is based on. The #event must be a
- * #GdkEventKey, and will be destroyed by #fl_key_event_dispose.
+ * @event: the #GdkEvent this #FlKeyEvent is based on.
  *
  * Create a new #FlKeyEvent based on a #GdkEvent.
  *

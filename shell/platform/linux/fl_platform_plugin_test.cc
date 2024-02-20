@@ -227,7 +227,7 @@ TEST(FlPlatformPluginTest, ExitApplication) {
 }
 
 TEST(FlPlatformPluginTest, ExitApplicationDispose) {
-  gtk_init(0, nullptr);
+  gtk_init();
 
   gboolean dispose_called = false;
   FlTestApplication* application = fl_test_application_new(&dispose_called);

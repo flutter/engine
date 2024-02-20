@@ -10,7 +10,7 @@ pkg_config("x11") {
 }
 
 pkg_config("gtk") {
-  packages = [ "gtk+-3.0" ]
+  packages = [ "gtk4" ]
 }
 
 pkg_config("egl") {
