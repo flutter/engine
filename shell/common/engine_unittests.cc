@@ -25,6 +25,8 @@ namespace {
 using ::testing::Invoke;
 using ::testing::ReturnRef;
 
+fml::AutoResetWaitableEvent native_latch;
+
 void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
               const fml::closure& task) {
   fml::AutoResetWaitableEvent latch;
@@ -600,12 +602,8 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
         });
       }));
 
-  fml::AutoResetWaitableEvent callback_ready_latch;
-  callback_ready_latch.Reset();
-  AddNativeCallback("NotifyNative",
-                    CREATE_NATIVE_ENTRY([&callback_ready_latch](auto args) {
-                      callback_ready_latch.Signal();
-                    }));
+  native_latch.Reset();
+  AddNativeCallback("NotifyNative", [](auto args) { native_latch.Signal(); });
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
@@ -628,7 +626,7 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
     engine.AddView(2, ViewportMetrics{1, 10, 10, 22, 0});
   });
 
-  callback_ready_latch.Wait();
+  native_latch.Wait();
 
   engine_context->EngineTaskSync(
       [](Engine& engine) { engine.ScheduleFrame(); });
