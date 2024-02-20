@@ -529,16 +529,13 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesSimple) {
 
   EXPECT_FLOAT_EQ(fast_samples[0].uv_offset.x, -1.3333333);
   EXPECT_FLOAT_EQ(fast_samples[0].uv_offset.y, 0);
-  // 0.1428571429 = 0.1 / (0.1 + 0.4 + 0.2)
-  EXPECT_FLOAT_EQ(fast_samples[0].coefficient, 0.1428571429);
+  EXPECT_FLOAT_EQ(fast_samples[0].coefficient, 0.3);
   EXPECT_FLOAT_EQ(fast_samples[1].uv_offset.x, 0);
   EXPECT_FLOAT_EQ(fast_samples[1].uv_offset.y, 0);
-  // 0.5714285714 = 0.4 / (0.1 + 0.4 + 0.2)
-  EXPECT_FLOAT_EQ(fast_samples[1].coefficient, 0.5714285714);
+  EXPECT_FLOAT_EQ(fast_samples[1].coefficient, 0.4);
   EXPECT_FLOAT_EQ(fast_samples[2].uv_offset.x, 1.3333333);
   EXPECT_FLOAT_EQ(fast_samples[2].uv_offset.y, 0);
-  // 0.2857142857 = 0.4 / (0.1 + 0.4 + 0.2)
-  EXPECT_FLOAT_EQ(fast_samples[2].coefficient, 0.2857142857);
+  EXPECT_FLOAT_EQ(fast_samples[2].coefficient, 0.3);
 
   //////////////////////////////////////////////////////////////////////////////
   // Check output of fast kernel versus original kernel.

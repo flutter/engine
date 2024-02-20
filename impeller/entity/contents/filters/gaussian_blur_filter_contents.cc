@@ -512,13 +512,6 @@ KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
 
 // This works by shrinking the kernel size by 2 and relying on lerp to read
 // between the samples.
-//
-// Here is how the math is devised for collapsing 2 samples into 1:
-// output = coeff[a] * sample(pos[a]) + coeff[b] * sample(pos[b])
-// output = coeff[a] * (sample(pos[a]) + (coeff[b]/coeff[a]) * sample(pos[b]))
-// fract = (coeff[b] / coeff[a])
-// output = coeff[a] * (sample(pos[a]) + fract * sample(pos[b]))
-// output = coeff[a] * sample(lerp(pos[a], pos[b], frac / (1 + fract)))
 KernelPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
     KernelPipeline::FragmentShader::KernelSamples parameters) {
   KernelPipeline::FragmentShader::KernelSamples result;
@@ -533,11 +526,11 @@ KernelPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
       KernelPipeline::FragmentShader::KernelSample left = parameters.samples[j];
       KernelPipeline::FragmentShader::KernelSample right =
           parameters.samples[j + 1];
-      Scalar right_coefficient = right.coefficient / left.coefficient;
       result.samples[i] = KernelPipeline::FragmentShader::KernelSample{
-          .uv_offset = left.uv_offset.Lerp(
-              right.uv_offset, right_coefficient / (1.0f + right_coefficient)),
-          .coefficient = left.coefficient,
+          .uv_offset = (left.uv_offset * left.coefficient +
+                        right.uv_offset * right.coefficient) /
+                       (left.coefficient + right.coefficient),
+          .coefficient = left.coefficient + right.coefficient,
       };
       j += 2;
     }
