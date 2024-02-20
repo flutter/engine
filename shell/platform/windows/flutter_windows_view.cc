@@ -655,7 +655,7 @@ bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
                                                   height);
 }
 
-int64_t FlutterWindowsView::view_id() const {
+FlutterViewId FlutterWindowsView::view_id() const {
   return view_id_;
 }
 
