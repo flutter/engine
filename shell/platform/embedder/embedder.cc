@@ -1220,8 +1220,8 @@ static std::unique_ptr<flutter::EmbedderRenderTarget>
 MakeRenderTargetFromSkSurface(FlutterBackingStore backing_store,
                               sk_sp<SkSurface> skia_surface,
                               fml::closure on_release) {
-  return MakeRenderTargetFromSkSurface(backing_store, skia_surface, on_release,
-                                       nullptr, nullptr);
+  return MakeRenderTargetFromSkSurface(backing_store, std::move(skia_surface),
+                                       std::move(on_release), nullptr, nullptr);
 }
 
 static std::unique_ptr<flutter::EmbedderRenderTarget>
