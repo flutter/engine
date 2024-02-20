@@ -178,15 +178,19 @@ static FlValue* build_editing_delta(EditingDelta delta) {
   });
 }
 
-static void send_key_event(FlTextInputPlugin* plugin,
-                           gint keyval,
-                           gint state = 0) {
-  GdkEvent* gdk_event = gdk_event_new(GDK_KEY_PRESS);
-  gdk_event->key.keyval = keyval;
-  gdk_event->key.state = state;
-  FlKeyEvent* key_event = fl_key_event_new_from_gdk_event(gdk_event);
-  fl_text_input_plugin_filter_keypress(plugin, key_event);
-  fl_key_event_dispose(key_event);
+static void send_key_event(
+    FlTextInputPlugin* plugin,
+    guint keyval,
+    GdkModifierType state = static_cast<GdkModifierType>(0)) {
+  FlKeyEvent key_event{
+      .time = 0,
+      .is_press = TRUE,
+      .keycode = 0,
+      .keyval = keyval,
+      .state = state,
+      .group = 0,
+  };
+  fl_text_input_plugin_filter_keypress(plugin, &key_event);
 }
 
 TEST(FlTextInputPluginTest, MessageHandler) {
@@ -703,9 +707,9 @@ TEST(FlTextInputPluginTest, SurroundingText) {
   messenger.ReceiveMessage("flutter/textinput", set_state);
 
   // retrieve
-  EXPECT_CALL(context, gtk_im_context_set_surrounding(
+  EXPECT_CALL(context, gtk_im_context_set_surrounding_with_selection(
                            ::testing::Eq<GtkIMContext*>(context),
-                           ::testing::StrEq("Flutter"), 7, 3));
+                           ::testing::StrEq("Flutter"), 7, 3, 3));
 
   gboolean retrieved = false;
   g_signal_emit_by_name(context, "retrieve-surrounding", &retrieved, nullptr);

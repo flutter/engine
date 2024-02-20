@@ -23,33 +23,39 @@ class MockIMContext {
   operator GtkIMContext*();
 
   MOCK_METHOD(void,
-              gtk_im_context_set_client_window,
-              (GtkIMContext * context, GdkWindow* window));
+              gtk_im_context_set_client_widget,
+              (GtkIMContext * context, GtkWidget* widget));
   MOCK_METHOD(void,
               gtk_im_context_get_preedit_string,
               (GtkIMContext * context,
-               gchar** str,
+               char** str,
                PangoAttrList** attrs,
-               gint* cursor_pos));
+               int* cursor_pos));
   MOCK_METHOD(gboolean,
               gtk_im_context_filter_keypress,
-              (GtkIMContext * context, GdkEventKey* event));
+              (GtkIMContext * context, GdkEvent* event));
   MOCK_METHOD(gboolean, gtk_im_context_focus_in, (GtkIMContext * context));
   MOCK_METHOD(void, gtk_im_context_focus_out, (GtkIMContext * context));
   MOCK_METHOD(void, gtk_im_context_reset, (GtkIMContext * context));
   MOCK_METHOD(void,
               gtk_im_context_set_cursor_location,
-              (GtkIMContext * context, GdkRectangle* area));
+              (GtkIMContext * context, const GdkRectangle* area));
   MOCK_METHOD(void,
               gtk_im_context_set_use_preedit,
               (GtkIMContext * context, gboolean use_preedit));
-  MOCK_METHOD(
-      void,
-      gtk_im_context_set_surrounding,
-      (GtkIMContext * context, const gchar* text, gint len, gint cursor_index));
+  MOCK_METHOD(void,
+              gtk_im_context_set_surrounding_with_selection,
+              (GtkIMContext * context,
+               const char* text,
+               int len,
+               int cursor_index,
+               int anchor_index));
   MOCK_METHOD(gboolean,
-              gtk_im_context_get_surrounding,
-              (GtkIMContext * context, gchar** text, gint* cursor_index));
+              gtk_im_context_get_surrounding_with_selection,
+              (GtkIMContext * context,
+               char** text,
+               int* cursor_index,
+               int* anchor_index));
 
  private:
   GtkIMContext* instance_ = nullptr;

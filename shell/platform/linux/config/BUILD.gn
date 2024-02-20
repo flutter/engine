@@ -10,7 +10,11 @@ pkg_config("x11") {
 }
 
 pkg_config("gtk") {
-  packages = [ "gtk+-3.0" ]
+  packages = [ "gtk4" ]
+}
+
+pkg_config("atk-bridge") {
+  packages = [ "atk-bridge-2.0" ]
 }
 
 pkg_config("egl") {

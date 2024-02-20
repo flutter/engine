@@ -242,95 +242,14 @@ class ScrollingTester {
   FlScrollingManager* manager_;
 };
 
-// Disgusting hack but could not find any way to create a GdkDevice
-struct _FakeGdkDevice {
-  GObject parent_instance;
-  gchar* name;
-  GdkInputSource source;
-};
-GdkDevice* makeFakeDevice(GdkInputSource source) {
-  _FakeGdkDevice* device =
-      static_cast<_FakeGdkDevice*>(g_malloc0(sizeof(_FakeGdkDevice)));
-  device->source = source;
-  // Bully the type checker
-  (reinterpret_cast<GTypeInstance*>(device))->g_class =
-      static_cast<GTypeClass*>(g_malloc0(sizeof(GTypeClass)));
-  (reinterpret_cast<GTypeInstance*>(device))->g_class->g_type = GDK_TYPE_DEVICE;
-  return reinterpret_cast<GdkDevice*>(device);
-}
-
-TEST(FlScrollingManagerTest, DiscreteDirectionional) {
-  ScrollingTester tester;
-  std::vector<MousePointerEventRecord> mouse_records;
-  std::vector<PointerPanZoomEventRecord> pan_zoom_records;
-  tester.recordMousePointerCallsTo(mouse_records);
-  tester.recordPointerPanZoomCallsTo(pan_zoom_records);
-  GdkDevice* mouse = makeFakeDevice(GDK_SOURCE_MOUSE);
-  GdkEventScroll* event =
-      reinterpret_cast<GdkEventScroll*>(gdk_event_new(GDK_SCROLL));
-  event->time = 1;
-  event->x = 4.0;
-  event->y = 8.0;
-  event->device = mouse;
-  event->direction = GDK_SCROLL_UP;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
-  EXPECT_EQ(pan_zoom_records.size(), 0u);
-  EXPECT_EQ(mouse_records.size(), 1u);
-  EXPECT_EQ(mouse_records[0].x, 4.0);
-  EXPECT_EQ(mouse_records[0].y, 8.0);
-  EXPECT_EQ(mouse_records[0].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
-  EXPECT_EQ(mouse_records[0].scroll_delta_x, 0);
-  EXPECT_EQ(mouse_records[0].scroll_delta_y, 53 * -1.0);
-  event->direction = GDK_SCROLL_DOWN;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
-  EXPECT_EQ(pan_zoom_records.size(), 0u);
-  EXPECT_EQ(mouse_records.size(), 2u);
-  EXPECT_EQ(mouse_records[1].x, 4.0);
-  EXPECT_EQ(mouse_records[1].y, 8.0);
-  EXPECT_EQ(mouse_records[1].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
-  EXPECT_EQ(mouse_records[1].scroll_delta_x, 0);
-  EXPECT_EQ(mouse_records[1].scroll_delta_y, 53 * 1.0);
-  event->direction = GDK_SCROLL_LEFT;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
-  EXPECT_EQ(pan_zoom_records.size(), 0u);
-  EXPECT_EQ(mouse_records.size(), 3u);
-  EXPECT_EQ(mouse_records[2].x, 4.0);
-  EXPECT_EQ(mouse_records[2].y, 8.0);
-  EXPECT_EQ(mouse_records[2].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
-  EXPECT_EQ(mouse_records[2].scroll_delta_x, 53 * -1.0);
-  EXPECT_EQ(mouse_records[2].scroll_delta_y, 0);
-  event->direction = GDK_SCROLL_RIGHT;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
-  EXPECT_EQ(pan_zoom_records.size(), 0u);
-  EXPECT_EQ(mouse_records.size(), 4u);
-  EXPECT_EQ(mouse_records[3].x, 4.0);
-  EXPECT_EQ(mouse_records[3].y, 8.0);
-  EXPECT_EQ(mouse_records[3].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
-  EXPECT_EQ(mouse_records[3].scroll_delta_x, 53 * 1.0);
-  EXPECT_EQ(mouse_records[3].scroll_delta_y, 0);
-}
-
 TEST(FlScrollingManagerTest, DiscreteScrolling) {
   ScrollingTester tester;
   std::vector<MousePointerEventRecord> mouse_records;
   std::vector<PointerPanZoomEventRecord> pan_zoom_records;
   tester.recordMousePointerCallsTo(mouse_records);
   tester.recordPointerPanZoomCallsTo(pan_zoom_records);
-  GdkDevice* mouse = makeFakeDevice(GDK_SOURCE_MOUSE);
-  GdkEventScroll* event =
-      reinterpret_cast<GdkEventScroll*>(gdk_event_new(GDK_SCROLL));
-  event->time = 1;
-  event->x = 4.0;
-  event->y = 8.0;
-  event->delta_x = 1.0;
-  event->delta_y = 2.0;
-  event->device = mouse;
-  event->direction = GDK_SCROLL_SMOOTH;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
+  fl_scrolling_manager_set_last_mouse_position(tester.manager(), 4.0, 8.0);
+  fl_scrolling_manager_handle_scroll_event(tester.manager(), 1, 1.0, 2.0);
   EXPECT_EQ(pan_zoom_records.size(), 0u);
   EXPECT_EQ(mouse_records.size(), 1u);
   EXPECT_EQ(mouse_records[0].x, 4.0);
@@ -347,17 +266,9 @@ TEST(FlScrollingManagerTest, Panning) {
   std::vector<PointerPanZoomEventRecord> pan_zoom_records;
   tester.recordMousePointerCallsTo(mouse_records);
   tester.recordPointerPanZoomCallsTo(pan_zoom_records);
-  GdkDevice* touchpad = makeFakeDevice(GDK_SOURCE_TOUCHPAD);
-  GdkEventScroll* event =
-      reinterpret_cast<GdkEventScroll*>(gdk_event_new(GDK_SCROLL));
-  event->time = 1;
-  event->x = 4.0;
-  event->y = 8.0;
-  event->delta_x = 1.0;
-  event->delta_y = 2.0;
-  event->device = touchpad;
-  event->direction = GDK_SCROLL_SMOOTH;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
+  fl_scrolling_manager_set_last_mouse_position(tester.manager(), 4.0, 8.0);
+  fl_scrolling_manager_handle_scroll_begin_event(tester.manager(), 1);
+  fl_scrolling_manager_handle_scroll_event(tester.manager(), 2, 1.0, 2.0);
   EXPECT_EQ(pan_zoom_records.size(), 2u);
   EXPECT_EQ(mouse_records.size(), 0u);
   EXPECT_EQ(pan_zoom_records[0].x, 4.0);
@@ -368,32 +279,31 @@ TEST(FlScrollingManagerTest, Panning) {
   EXPECT_EQ(pan_zoom_records[1].x, 4.0);
   EXPECT_EQ(pan_zoom_records[1].y, 8.0);
   EXPECT_EQ(pan_zoom_records[1].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
+            2000lu);  // Milliseconds -> Microseconds
   EXPECT_EQ(pan_zoom_records[1].phase, kPanZoomUpdate);
-  EXPECT_EQ(pan_zoom_records[1].pan_x, 53 * -1.0);  // directions get swapped
-  EXPECT_EQ(pan_zoom_records[1].pan_y, 53 * -2.0);
+  EXPECT_EQ(pan_zoom_records[1].pan_x, -1.0);  // directions get swapped
+  EXPECT_EQ(pan_zoom_records[1].pan_y, -2.0);
   EXPECT_EQ(pan_zoom_records[1].scale, 1.0);
   EXPECT_EQ(pan_zoom_records[1].rotation, 0.0);
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
+  fl_scrolling_manager_handle_scroll_event(tester.manager(), 3, 1.0, 2.0);
   EXPECT_EQ(pan_zoom_records.size(), 3u);
   EXPECT_EQ(mouse_records.size(), 0u);
   EXPECT_EQ(pan_zoom_records[2].x, 4.0);
   EXPECT_EQ(pan_zoom_records[2].y, 8.0);
   EXPECT_EQ(pan_zoom_records[2].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
+            3000lu);  // Milliseconds -> Microseconds
   EXPECT_EQ(pan_zoom_records[2].phase, kPanZoomUpdate);
-  EXPECT_EQ(pan_zoom_records[2].pan_x, 53 * -2.0);  // directions get swapped
-  EXPECT_EQ(pan_zoom_records[2].pan_y, 53 * -4.0);
+  EXPECT_EQ(pan_zoom_records[2].pan_x, -2.0);  // directions get swapped
+  EXPECT_EQ(pan_zoom_records[2].pan_y, -4.0);
   EXPECT_EQ(pan_zoom_records[2].scale, 1.0);
   EXPECT_EQ(pan_zoom_records[2].rotation, 0.0);
-  event->is_stop = true;
-  fl_scrolling_manager_handle_scroll_event(tester.manager(), event, 1.0);
+  fl_scrolling_manager_handle_scroll_end_event(tester.manager(), 4);
   EXPECT_EQ(pan_zoom_records.size(), 4u);
   EXPECT_EQ(mouse_records.size(), 0u);
   EXPECT_EQ(pan_zoom_records[3].x, 4.0);
   EXPECT_EQ(pan_zoom_records[3].y, 8.0);
   EXPECT_EQ(pan_zoom_records[3].timestamp,
-            1000lu);  // Milliseconds -> Microseconds
+            4000lu);  // Milliseconds -> Microseconds
   EXPECT_EQ(pan_zoom_records[3].phase, kPanZoomEnd);
 }
 

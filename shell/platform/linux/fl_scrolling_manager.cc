@@ -71,80 +71,50 @@ void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
   self->last_y = y;
 }
 
+void fl_scrolling_manager_handle_scroll_begin_event(FlScrollingManager* self,
+                                                    guint32 event_time) {
+  self->pan_x = 0;
+  self->pan_y = 0;
+  fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
+      self->view_delegate, event_time * kMicrosecondsPerMillisecond,
+      self->last_x, self->last_y, kPanZoomStart, 0, 0, 0, 0);
+  self->pan_started = TRUE;
+}
+
 void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
-                                              GdkEventScroll* scroll_event,
-                                              gint scale_factor) {
+                                              guint32 event_time,
+                                              gdouble dx,
+                                              gdouble dy) {
   g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
 
-  GdkEvent* event = reinterpret_cast<GdkEvent*>(scroll_event);
-
-  guint event_time = gdk_event_get_time(event);
-  gdouble event_x = 0.0, event_y = 0.0;
-  gdk_event_get_coords(event, &event_x, &event_y);
-  gdouble scroll_delta_x = 0.0, scroll_delta_y = 0.0;
-  GdkScrollDirection event_direction = GDK_SCROLL_SMOOTH;
-  if (gdk_event_get_scroll_direction(event, &event_direction)) {
-    if (event_direction == GDK_SCROLL_UP) {
-      scroll_delta_x = 0;
-      scroll_delta_y = -1;
-    } else if (event_direction == GDK_SCROLL_DOWN) {
-      scroll_delta_x = 0;
-      scroll_delta_y = 1;
-    } else if (event_direction == GDK_SCROLL_LEFT) {
-      scroll_delta_x = -1;
-      scroll_delta_y = 0;
-    } else if (event_direction == GDK_SCROLL_RIGHT) {
-      scroll_delta_x = 1;
-      scroll_delta_y = 0;
-    }
+  if (self->pan_started) {
+    self->pan_x += -dx;
+    self->pan_y += -dy;
+    fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
+        self->view_delegate, event_time * kMicrosecondsPerMillisecond,
+        self->last_x, self->last_y, kPanZoomUpdate, self->pan_x, self->pan_y, 1,
+        0);
   } else {
-    gdk_event_get_scroll_deltas(event, &scroll_delta_x, &scroll_delta_y);
-  }
+    // The multiplier is taken from the Chromium source
+    // (ui/events/x/events_x_utils.cc).
+    const int kScrollOffsetMultiplier = 53;
 
-  // The multiplier is taken from the Chromium source
-  // (ui/events/x/events_x_utils.cc).
-  const int kScrollOffsetMultiplier = 53;
-  scroll_delta_x *= kScrollOffsetMultiplier * scale_factor;
-  scroll_delta_y *= kScrollOffsetMultiplier * scale_factor;
-
-  if (gdk_device_get_source(gdk_event_get_source_device(event)) ==
-      GDK_SOURCE_TOUCHPAD) {
-    scroll_delta_x *= -1;
-    scroll_delta_y *= -1;
-    if (gdk_event_is_scroll_stop_event(event)) {
-      fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
-          self->view_delegate, event_time * kMicrosecondsPerMillisecond,
-          event_x * scale_factor, event_y * scale_factor, kPanZoomEnd,
-          self->pan_x, self->pan_y, 0, 0);
-      self->pan_started = FALSE;
-    } else {
-      if (!self->pan_started) {
-        self->pan_x = 0;
-        self->pan_y = 0;
-        fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
-            self->view_delegate, event_time * kMicrosecondsPerMillisecond,
-            event_x * scale_factor, event_y * scale_factor, kPanZoomStart, 0, 0,
-            0, 0);
-        self->pan_started = TRUE;
-      }
-      self->pan_x += scroll_delta_x;
-      self->pan_y += scroll_delta_y;
-      fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
-          self->view_delegate, event_time * kMicrosecondsPerMillisecond,
-          event_x * scale_factor, event_y * scale_factor, kPanZoomUpdate,
-          self->pan_x, self->pan_y, 1, 0);
-    }
-  } else {
-    self->last_x = event_x * scale_factor;
-    self->last_y = event_y * scale_factor;
     fl_scrolling_view_delegate_send_mouse_pointer_event(
         self->view_delegate,
         FlutterPointerPhase::kMove /* arbitrary value, phase will be ignored as
                                       this is a discrete scroll event */
         ,
-        event_time * kMicrosecondsPerMillisecond, event_x * scale_factor,
-        event_y * scale_factor, scroll_delta_x, scroll_delta_y, 0);
+        event_time * kMicrosecondsPerMillisecond, self->last_x, self->last_y,
+        dx * kScrollOffsetMultiplier, dy * kScrollOffsetMultiplier, 1);
   }
+}
+
+void fl_scrolling_manager_handle_scroll_end_event(FlScrollingManager* self,
+                                                  guint32 event_time) {
+  fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
+      self->view_delegate, event_time * kMicrosecondsPerMillisecond,
+      self->last_x, self->last_y, kPanZoomEnd, self->pan_x, self->pan_y, 0, 0);
+  self->pan_started = FALSE;
 }
 
 void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self) {

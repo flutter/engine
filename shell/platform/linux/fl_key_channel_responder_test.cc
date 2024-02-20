@@ -133,15 +133,6 @@ void test_lock_event(guint key_code,
   g_main_loop_run(loop);
 }
 
-// Test sending a "NumLock" keypress.
-TEST(FlKeyChannelResponderTest, SendNumLockKeyEvent) {
-  test_lock_event(GDK_KEY_Num_Lock,
-                  "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, "
-                  "keyCode: 65407, modifiers: 16}",
-                  "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, "
-                  "keyCode: 65407, modifiers: 0}");
-}
-
 // Test sending a "CapsLock" keypress.
 TEST(FlKeyChannelResponderTest, SendCapsLockKeyEvent) {
   test_lock_event(GDK_KEY_Caps_Lock,
