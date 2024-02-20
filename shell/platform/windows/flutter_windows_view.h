@@ -33,11 +33,15 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
   FlutterWindowsView(
+      int64_t view_id,
       FlutterWindowsEngine* engine,
       std::unique_ptr<WindowBindingHandler> window_binding,
       std::shared_ptr<WindowsProcTable> windows_proc_table = nullptr);
 
   virtual ~FlutterWindowsView();
+
+  // Get the view's unique identifier.
+  int64_t view_id() const;
 
   // Creates rendering surface for Flutter engine to draw into.
   // Should be called before calling FlutterEngineRun using this view.
@@ -378,6 +382,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // If true, rendering to the window should synchronize with the vsync
   // to prevent screen tearing.
   bool NeedsVsync() const;
+
+  // The view's unique identifier.
+  int64_t view_id_;
 
   // The engine associated with this view.
   FlutterWindowsEngine* engine_ = nullptr;
