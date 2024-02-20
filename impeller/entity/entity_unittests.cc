@@ -307,7 +307,7 @@ TEST_P(EntityTest, SetContentsWithRegion) {
     bytes[i + 3] = 255;
   }
   if (!bridge->SetContents(bytes.data(), bytes.size(),
-                           IRect::MakeLTRB(50, 50, 100, 100))) {
+                           IRect::MakeLTRB(50, 50, 150, 150))) {
     VALIDATION_LOG << "Failed to set contents?";
     return;
   }
