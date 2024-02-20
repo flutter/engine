@@ -735,6 +735,9 @@ public class FlutterRenderer implements TextureRegistry {
           // Create a new ImageReader and add it to the queue.
           return getOrCreatePerImageReader(createImageReader());
         }
+        if (imageReaderQueue.size() == 0) {
+          return null;
+        }
         return imageReaderQueue.get(imageReaderQueue.size() - 1);
       }
     }
