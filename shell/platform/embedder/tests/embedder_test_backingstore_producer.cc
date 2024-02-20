@@ -288,7 +288,7 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
     return false;
   }
 
-  auto userdata = new GLUserData{nullptr, surface};
+  auto userdata = new SWUserData{surface};
 
   backing_store_out->type = kFlutterBackingStoreTypeSoftware;
   backing_store_out->user_data = userdata;
@@ -297,7 +297,7 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware(
   backing_store_out->software.height = pixmap.height();
   backing_store_out->software.user_data = userdata;
   backing_store_out->software.destruction_callback = [](void* user_data) {
-    delete reinterpret_cast<GLUserData*>(user_data);
+    delete reinterpret_cast<SWUserData*>(user_data);
   };
 
   return true;
@@ -325,7 +325,7 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
     return false;
   }
 
-  auto userdata = new GLUserData{nullptr, surface};
+  auto userdata = new SWUserData{surface};
 
   backing_store_out->type = kFlutterBackingStoreTypeSoftware2;
   backing_store_out->user_data = userdata;
@@ -336,7 +336,7 @@ bool EmbedderTestBackingStoreProducer::CreateSoftware2(
   backing_store_out->software2.height = pixmap.height();
   backing_store_out->software2.user_data = userdata;
   backing_store_out->software2.destruction_callback = [](void* user_data) {
-    delete reinterpret_cast<GLUserData*>(user_data);
+    delete reinterpret_cast<SWUserData*>(user_data);
   };
   backing_store_out->software2.pixel_format = software_pixfmt_;
 

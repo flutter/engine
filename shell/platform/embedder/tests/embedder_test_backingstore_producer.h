@@ -35,10 +35,16 @@ class EmbedderTestBackingStoreProducer {
     FlutterVulkanImage* image;
   };
 
+  struct SWUserData {
+    sk_sp<SkSurface> surface;
+  };
+
+#ifdef SHELL_ENABLE_GL
   struct GLUserData {
     std::unique_ptr<TestGLOnscreenOnlySurface> gl_surface;
     sk_sp<SkSurface> surface;
   };
+#endif
 
   enum class RenderTargetType {
     kSoftwareBuffer,
@@ -56,7 +62,9 @@ class EmbedderTestBackingStoreProducer {
                                        kFlutterSoftwarePixelFormatNative32);
   ~EmbedderTestBackingStoreProducer();
 
+#ifdef SHELL_ENABLE_GL
   void SetEGLContext(std::shared_ptr<TestEGLContext> context);
+#endif
 
   bool Create(const FlutterBackingStoreConfig* config,
               FlutterBackingStore* renderer_out);
