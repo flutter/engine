@@ -458,7 +458,7 @@ void PlatformConfigurationNativeApi::Render(int64_t view_id,
   FML_DCHECK(view_id == kFlutterImplicitViewId);
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->Render(
-      scene, width, height);
+      view_id, scene, width, height);
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {
