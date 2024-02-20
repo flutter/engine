@@ -25,6 +25,8 @@ class RuntimeDelegate {
 
   virtual void ScheduleFrame(bool regenerate_layer_trees = true) = 0;
 
+  virtual void EndWarmUpFrame() = 0;
+
   virtual void Render(int64_t view_id,
                       std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) = 0;

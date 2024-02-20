@@ -6,6 +6,7 @@
 
 #include <cstring>
 
+#include "flutter/common/constants.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/shell_test.h"
@@ -78,6 +79,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD(std::string, DefaultRouteName, (), (override));
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
+  MOCK_METHOD(void, EndWarmUpFrame, (), (override));
   MOCK_METHOD(void,
               Render,
               (int64_t, std::unique_ptr<flutter::LayerTree>, float),
@@ -335,7 +337,6 @@ class EngineContext {
   fml::WeakPtr<IOManager> io_manager_;
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
 };
-
 }  // namespace
 
 TEST_F(EngineTest, Create) {
@@ -569,7 +570,10 @@ TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
   });
 }
 
-TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
+// The animator should submit to the pipeline the implicit view rendered in a
+// warm up frame if there's already a continuation (i.e. Animator::BeginFrame
+// has been called)
+TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
   MockAnimatorDelegate animator_delegate;
   std::unique_ptr<EngineContext> engine_context;
 
@@ -578,31 +582,27 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   EXPECT_CALL(delegate_, GetPlatformMessageHandler)
       .WillOnce(ReturnRef(platform_message_handler));
 
+  fml::AutoResetWaitableEvent continuation_ready_latch;
   fml::AutoResetWaitableEvent draw_latch;
   EXPECT_CALL(animator_delegate, OnAnimatorDraw)
-      .WillOnce(
-          Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
-            auto status =
-                pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-                  EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
-                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, 1);
-                  EXPECT_EQ(item->layer_tree_tasks[1]->view_id, 2);
-                });
-            EXPECT_EQ(status, PipelineConsumeResult::Done);
-            draw_latch.Signal();
-          }));
-  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
-      .WillOnce(Invoke([&engine_context](fml::TimePoint frame_target_time,
-                                         uint64_t frame_number) {
-        engine_context->EngineTaskSync([&](Engine& engine) {
-          engine.BeginFrame(frame_target_time, frame_number);
+      .WillOnce(Invoke([&draw_latch](
+                           const std::shared_ptr<FramePipeline>& pipeline) {
+        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+          EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
+          EXPECT_EQ(item->layer_tree_tasks[0]->view_id, kFlutterImplicitViewId);
         });
+        EXPECT_EQ(status, PipelineConsumeResult::Done);
+        draw_latch.Signal();
       }));
-
-  static fml::AutoResetWaitableEvent callback_ready_latch;
-  callback_ready_latch.Reset();
-  AddNativeCallback("NotifyNative",
-                    [](auto args) { callback_ready_latch.Signal(); });
+  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
+      .WillRepeatedly(
+          Invoke([&engine_context, &continuation_ready_latch](
+                     fml::TimePoint frame_target_time, uint64_t frame_number) {
+            continuation_ready_latch.Signal();
+            engine_context->EngineTaskSync([&](Engine& engine) {
+              engine.BeginFrame(frame_target_time, frame_number);
+            });
+          }));
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
@@ -617,19 +617,21 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
                                          std::move(animator));
 
+  engine_context->EngineTaskSync([](Engine& engine) {
+    // Schedule a frame to trigger Animator::BeginFrame to create a
+    // continuation. The continuation needs to be available before `Engine::Run`
+    // since the Dart program immediately schedules a warm up frame.
+    engine.ScheduleFrame(true);
+    // Add the implicit view so that the engine recognizes it and that its
+    // metrics is not empty.
+    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1.0, 10, 10, 1, 0});
+  });
+  continuation_ready_latch.Wait();
+
   auto configuration = RunConfiguration::InferFromSettings(settings_);
-  configuration.SetEntrypoint("onBeginFrameRendersMultipleViews");
+  configuration.SetEntrypoint("renderWarmUpImplicitView");
   engine_context->Run(std::move(configuration));
 
-  engine_context->EngineTaskSync([](Engine& engine) {
-    engine.AddView(1, {1, 10, 10, 22, 0});
-    engine.AddView(2, {1, 10, 10, 22, 0});
-  });
-
-  callback_ready_latch.Wait();
-
-  engine_context->EngineTaskSync(
-      [](Engine& engine) { engine.ScheduleFrame(); });
   draw_latch.Wait();
 }
 

@@ -340,6 +340,10 @@ void RuntimeController::ScheduleFrame() {
   client_.ScheduleFrame();
 }
 
+void RuntimeController::EndWarmUpFrame() {
+  client_.EndWarmUpFrame();
+}
+
 // |PlatformConfigurationClient|
 void RuntimeController::Render(int64_t view_id,
                                Scene* scene,

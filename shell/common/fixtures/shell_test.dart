@@ -2,10 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show utf8, json;
+import 'dart:async' show scheduleMicrotask;
+import 'dart:convert' show json, utf8;
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:ui';
+
+void expect(Object? a, Object? b) {
+  if (a != b) {
+    throw AssertionError('Expected $a to == $b');
+  }
+}
 
 void main() {}
 
@@ -349,11 +356,6 @@ Future<void> toImageSync() async {
 
   onBeforeToImageSync();
   final Image image = picture.toImageSync(20, 25);
-  void expect(Object? a, Object? b) {
-    if (a != b) {
-      throw 'Expected $a to == $b';
-    }
-  }
   expect(image.width, 20);
   expect(image.height, 25);
 
@@ -531,9 +533,17 @@ void testReportViewWidths() {
 }
 
 @pragma('vm:entry-point')
-void onBeginFrameRendersMultipleViews() {
-  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
-    for (final FlutterView view in PlatformDispatcher.instance.views) {
+void renderWarmUpImplicitView() {
+  bool beginFrameCalled = false;
+
+  PlatformDispatcher.instance.scheduleWarmUpFrame(
+    beginFrame: () {
+      expect(beginFrameCalled, false);
+      beginFrameCalled = true;
+    },
+    drawFrame: () {
+      expect(beginFrameCalled, true);
+
       final SceneBuilder builder = SceneBuilder();
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder);
@@ -542,11 +552,10 @@ void onBeginFrameRendersMultipleViews() {
       builder.addPicture(Offset.zero, picture);
 
       final Scene scene = builder.build();
-      view.render(scene);
+      PlatformDispatcher.instance.implicitView!.render(scene);
 
       scene.dispose();
       picture.dispose();
-    }
-  };
-  notifyNative();
+    },
+  );
 }
