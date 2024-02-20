@@ -188,20 +188,10 @@ static void DrawGlyph(SkCanvas* canvas,
 }
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
-                              const std::shared_ptr<SkBitmap>& bitmap,
-                              const std::vector<FontGlyphPair>& new_pairs) {
+                              const std::vector<FontGlyphPair>& new_pairs,
+                              const std::shared_ptr<Texture>& texture,
+                              const std::shared_ptr<Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
-  FML_DCHECK(bitmap != nullptr);
-
-  auto surface = SkSurfaces::WrapPixels(bitmap->pixmap());
-  if (!surface) {
-    return false;
-  }
-  auto canvas = surface->getCanvas();
-  if (!canvas) {
-    return false;
-  }
-
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
   for (const FontGlyphPair& pair : new_pairs) {
@@ -209,7 +199,49 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!pos.has_value()) {
       continue;
     }
-    DrawGlyph(canvas, pair.scaled_font, pair.glyph, pos.value(), has_color);
+    auto rect = pos.value();
+    if (rect.IsEmpty()) {
+      continue;
+    }
+    auto bounds = ISize(static_cast<int32_t>(std::ceil(rect.GetWidth())),
+                        static_cast<int32_t>(std::ceil(rect.GetHeight())));
+
+    SkImageInfo image_info;
+    switch (atlas.GetType()) {
+      case GlyphAtlas::Type::kAlphaBitmap:
+        image_info =
+            SkImageInfo::MakeA8(SkISize::Make(bounds.width, bounds.height));
+        break;
+      case GlyphAtlas::Type::kColorBitmap:
+        image_info = SkImageInfo::MakeN32Premul(bounds.width, bounds.height);
+        break;
+    }
+
+    auto bitmap = SkBitmap();
+    bitmap.setInfo(image_info);
+    if (!bitmap.tryAllocPixels()) {
+      return false;
+    }
+
+    auto surface = SkSurfaces::WrapPixels(bitmap.pixmap());
+    if (!surface) {
+      return false;
+    }
+    auto canvas = surface->getCanvas();
+    if (!canvas) {
+      return false;
+    }
+    DrawGlyph(canvas, pair.scaled_font, pair.glyph,
+              Rect::MakeLTRB(0, 0, rect.GetWidth(), rect.GetHeight()),
+              has_color);
+
+    if (!texture->SetContents(
+            static_cast<uint8_t*>(bitmap.getPixels()),
+            bitmap.pixmap().computeByteSize(),
+            IRect::MakeLTRB(rect.GetX(), rect.GetY(), rect.GetRight(),
+                            rect.GetBottom()))) {
+      return false;
+    }
   }
   return true;
 }
@@ -379,15 +411,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     // ---------------------------------------------------------------------------
     // Step 4a: Draw new font-glyph pairs into the existing bitmap.
     // ---------------------------------------------------------------------------
-    auto bitmap = atlas_context_skia.GetBitmap();
-    if (!UpdateAtlasBitmap(*last_atlas, bitmap, new_glyphs)) {
-      return nullptr;
-    }
-
-    // ---------------------------------------------------------------------------
-    // Step 5a: Update the existing texture with the updated bitmap.
-    // ---------------------------------------------------------------------------
-    if (!UpdateGlyphTextureAtlas(bitmap, last_atlas->GetTexture())) {
+    if (!UpdateAtlasBitmap(*last_atlas, new_glyphs, last_atlas->GetTexture(),
+                           context.GetResourceAllocator())) {
       return nullptr;
     }
     return last_atlas;
