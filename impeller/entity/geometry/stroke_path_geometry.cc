@@ -27,7 +27,8 @@ using JoinProc = std::function<void(VertexWriter& vtx_builder,
                                     const Point& position,
                                     const Point& start_offset,
                                     const Point& end_offset,
-                                    Scalar miter_limit,
+                                    Scalar miter_factor,  // (scaled limit)^2
+                                    Scalar dot_factor,    // 1/(half_width^2)
                                     Scalar scale)>;
 
 class PositionWriter {
@@ -79,8 +80,9 @@ class StrokeGenerator {
                   const CapProc<VertexWriter>& p_cap_proc,
                   const Scalar p_scale)
       : polyline(p_polyline),
-        stroke_width(p_stroke_width),
-        scaled_miter_limit(p_scaled_miter_limit),
+        half_stroke_width(p_stroke_width * 0.5f),
+        miter_factor(p_scaled_miter_limit * p_scaled_miter_limit),
+        dot_factor(1.0f / (half_stroke_width * half_stroke_width)),
         join_proc(p_join_proc),
         cap_proc(p_cap_proc),
         scale(p_scale) {}
@@ -96,9 +98,9 @@ class StrokeGenerator {
       auto contour_delta = contour_end_point_i - contour_start_point_i;
       if (contour_delta == 1) {
         Point p = polyline.GetPoint(contour_start_point_i);
-        cap_proc(vtx_builder, p, {-stroke_width * 0.5f, 0}, scale,
+        cap_proc(vtx_builder, p, {-half_stroke_width, 0}, scale,
                  /*reverse=*/false);
-        cap_proc(vtx_builder, p, {stroke_width * 0.5f, 0}, scale,
+        cap_proc(vtx_builder, p, {half_stroke_width, 0}, scale,
                  /*reverse=*/false);
         continue;
       } else if (contour_delta == 0) {
@@ -136,7 +138,7 @@ class StrokeGenerator {
       if (!polyline.contours[contour_i].is_closed) {
         Point cap_offset =
             Vector2(-contour.start_direction.y, contour.start_direction.x) *
-            stroke_width * 0.5f;  // Counterclockwise normal
+            half_stroke_width;  // Counterclockwise normal
         cap_proc(vtx_builder, polyline.GetPoint(contour_start_point_i),
                  cap_offset, scale, /*reverse=*/true);
       }
@@ -169,12 +171,12 @@ class StrokeGenerator {
       if (!contour.is_closed) {
         auto cap_offset =
             Vector2(-contour.end_direction.y, contour.end_direction.x) *
-            stroke_width * 0.5f;  // Clockwise normal
+            half_stroke_width;  // Clockwise normal
         cap_proc(vtx_builder, polyline.GetPoint(contour_end_point_i - 1),
                  cap_offset, scale, /*reverse=*/false);
       } else {
         join_proc(vtx_builder, polyline.GetPoint(contour_start_point_i), offset,
-                  contour_first_offset, scaled_miter_limit, scale);
+                  contour_first_offset, miter_factor, dot_factor, scale);
       }
     }
   }
@@ -195,7 +197,7 @@ class StrokeGenerator {
       direction = (polyline.GetPoint(point_i) - polyline.GetPoint(point_i - 1))
                       .Normalize();
     }
-    return Vector2{-direction.y, direction.x} * stroke_width * 0.5f;
+    return Vector2{-direction.y, direction.x} * half_stroke_width;
   }
 
   void AddVerticesForLinearComponent(VertexWriter& vtx_builder,
@@ -228,7 +230,7 @@ class StrokeGenerator {
       if (!is_last_component && is_end_of_component) {
         // Generate join from the current line to the next line.
         join_proc(vtx_builder, polyline.GetPoint(point_i + 1), previous_offset,
-                  offset, scaled_miter_limit, scale);
+                  offset, miter_factor, dot_factor, scale);
       }
     }
   }
@@ -264,15 +266,16 @@ class StrokeGenerator {
         // Generate join from the current line to the next line.
         if (!is_last_component) {
           join_proc(vtx_builder, polyline.GetPoint(point_i + 1),
-                    previous_offset, offset, scaled_miter_limit, scale);
+                    previous_offset, offset, miter_factor, dot_factor, scale);
         }
       }
     }
   }
 
   const Path::Polyline& polyline;
-  const Scalar stroke_width;
-  const Scalar scaled_miter_limit;
+  const Scalar half_stroke_width;
+  const Scalar miter_factor;
+  const Scalar dot_factor;
   const JoinProc<VertexWriter>& join_proc;
   const CapProc<VertexWriter>& cap_proc;
   const Scalar scale;
@@ -374,13 +377,11 @@ void CreateMiterJoin(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& start_offset,
                      const Point& end_offset,
-                     Scalar miter_limit,
+                     Scalar miter_factor,
+                     Scalar dot_factor,
                      Scalar scale) {
-  Point start_normal = start_offset.Normalize();
-  Point end_normal = end_offset.Normalize();
-
   // 1 for no joint (straight line), 0 for max joint (180 degrees).
-  Scalar alignment = (start_normal.Dot(end_normal) + 1) / 2;
+  Scalar alignment = (start_offset.Dot(end_offset) * dot_factor + 1) / 2;
   if (ScalarNearlyEqual(alignment, 1)) {
     return;
   }
@@ -389,7 +390,7 @@ void CreateMiterJoin(VertexWriter& vtx_builder,
                                                 start_offset, end_offset);
 
   Point miter_point = (((start_offset + end_offset) / 2) / alignment);
-  if (miter_point.GetDistanceSquared({0, 0}) > miter_limit * miter_limit) {
+  if (miter_point.GetDistanceSquared({0, 0}) > miter_factor) {
     return;  // Convert to bevel when we exceed the miter limit.
   }
 
@@ -404,13 +405,11 @@ void CreateRoundJoin(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& start_offset,
                      const Point& end_offset,
-                     Scalar miter_limit,
+                     Scalar miter_factor,
+                     Scalar dot_factor,
                      Scalar scale) {
-  Point start_normal = start_offset.Normalize();
-  Point end_normal = end_offset.Normalize();
-
   // 0 for no joint (straight line), 1 for max joint (180 degrees).
-  Scalar alignment = 1 - (start_normal.Dot(end_normal) + 1) / 2;
+  Scalar alignment = 1 - (start_offset.Dot(end_offset) * dot_factor + 1) / 2;
   if (ScalarNearlyEqual(alignment, 0)) {
     return;
   }
@@ -445,7 +444,8 @@ void CreateBevelJoin(VertexWriter& vtx_builder,
                      const Point& position,
                      const Point& start_offset,
                      const Point& end_offset,
-                     Scalar miter_limit,
+                     Scalar miter_factor,
+                     Scalar dot_factor,
                      Scalar scale) {
   CreateBevelAndGetDirection(vtx_builder, position, start_offset, end_offset);
 }
