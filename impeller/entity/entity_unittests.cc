@@ -299,6 +299,8 @@ TEST_P(EntityTest, StrokeWithTextureContents) {
 TEST_P(EntityTest, SetContentsWithRegion) {
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
 
+  // Replace part of the texture with a red (or really any solid color)
+  // rectangle.
   std::vector<uint8_t> bytes(100 * 100 * 4);
   for (auto i = 0u; i < bytes.size(); i += 4) {
     bytes[i] = 255;
@@ -306,11 +308,8 @@ TEST_P(EntityTest, SetContentsWithRegion) {
     bytes[i + 2] = 0;
     bytes[i + 3] = 255;
   }
-  if (!bridge->SetContents(bytes.data(), bytes.size(),
-                           IRect::MakeLTRB(50, 50, 150, 150))) {
-    VALIDATION_LOG << "Failed to set contents?";
-    return;
-  }
+  ASSERT_TRUE(bridge->SetContents(bytes.data(), bytes.size(),
+                                  IRect::MakeLTRB(50, 50, 150, 150)));
 
   Entity entity;
   entity.SetTransform(Matrix::MakeScale(GetContentScale()));
