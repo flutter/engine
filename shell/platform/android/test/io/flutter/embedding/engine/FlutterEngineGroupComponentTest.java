@@ -27,7 +27,7 @@ import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.systemchannels.NavigationChannel;
 import io.flutter.plugin.platform.PlatformViewsController;
-import io.flutter.plugins.GeneratedPluginRegistrant;
+import io.flutter.plugins.FakeGeneratedPluginRegistrant;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.After;
@@ -58,7 +58,7 @@ public class FlutterEngineGroupComponentTest {
     jniAttached = false;
     when(mockFlutterJNI.isAttached()).thenAnswer(invocation -> jniAttached);
     doAnswer(invocation -> jniAttached = true).when(mockFlutterJNI).attachToNative();
-    GeneratedPluginRegistrant.clearRegisteredEngines();
+    FakeGeneratedPluginRegistrant.clearRegisteredEngines();
 
     when(mockFlutterLoader.findAppBundlePath()).thenReturn("some/path/to/flutter_assets");
 
@@ -103,7 +103,7 @@ public class FlutterEngineGroupComponentTest {
 
   @After
   public void tearDown() {
-    GeneratedPluginRegistrant.clearRegisteredEngines();
+    FakeGeneratedPluginRegistrant.clearRegisteredEngines();
     engineGroupUnderTest = null;
     firstEngineUnderTest = null;
   }
@@ -281,7 +281,7 @@ public class FlutterEngineGroupComponentTest {
     when(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins())
         .thenReturn(true);
     assertTrue(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins());
-    assertEquals(0, GeneratedPluginRegistrant.getRegisteredEngines().size());
+    assertEquals(0, FakeGeneratedPluginRegistrant.getRegisteredEngines().size());
 
     FlutterEngine firstEngine =
         engineGroup.createAndRunEngine(
@@ -291,7 +291,7 @@ public class FlutterEngineGroupComponentTest {
                 .setWaitForRestorationData(waitForRestorationData)
                 .setAutomaticallyRegisterPlugins(automaticallyRegisterPlugins));
 
-    assertEquals(1, GeneratedPluginRegistrant.getRegisteredEngines().size());
+    assertEquals(1, FakeGeneratedPluginRegistrant.getRegisteredEngines().size());
     assertEquals(controller, firstEngine.getPlatformViewsController());
     assertEquals(
         waitForRestorationData, firstEngine.getRestorationChannel().waitForRestorationData);
@@ -331,7 +331,7 @@ public class FlutterEngineGroupComponentTest {
     when(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins())
         .thenReturn(true);
     assertTrue(FlutterInjector.instance().flutterLoader().automaticallyRegisterPlugins());
-    assertEquals(0, GeneratedPluginRegistrant.getRegisteredEngines().size());
+    assertEquals(0, FakeGeneratedPluginRegistrant.getRegisteredEngines().size());
 
     FlutterEngine secondEngine =
         engineGroupUnderTest.createAndRunEngine(
@@ -344,6 +344,6 @@ public class FlutterEngineGroupComponentTest {
     assertEquals(
         waitForRestorationData, secondEngine.getRestorationChannel().waitForRestorationData);
     assertEquals(controller, secondEngine.getPlatformViewsController());
-    assertEquals(0, GeneratedPluginRegistrant.getRegisteredEngines().size());
+    assertEquals(0, FakeGeneratedPluginRegistrant.getRegisteredEngines().size());
   }
 }

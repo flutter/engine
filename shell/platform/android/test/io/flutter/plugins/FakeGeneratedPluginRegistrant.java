@@ -13,7 +13,7 @@ import java.util.List;
  * <p>Used to test engine logic which interacts with the generated class.
  */
 @VisibleForTesting
-public class GeneratedPluginRegistrant {
+public class FakeGeneratedPluginRegistrant {
   private static final List<FlutterEngine> registeredEngines = new ArrayList<>();
   public static @Nullable RuntimeException pluginRegistrationException;
 

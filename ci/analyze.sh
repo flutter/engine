@@ -28,7 +28,10 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
+SRC_DIR="$(
+  cd "$SCRIPT_DIR/../.."
+  pwd -P
+)"
 FLUTTER_DIR="$SRC_DIR/flutter"
 DART_BIN="$SRC_DIR/out/host_debug_unopt/dart-sdk/bin"
 DART="$DART_BIN/dart"
@@ -58,15 +61,26 @@ echo ""
 
 # Check that dart libraries conform.
 echo "Checking the integrity of the Web SDK"
-(cd "$FLUTTER_DIR/web_sdk"; "$DART" pub get)
-(cd "$FLUTTER_DIR/web_sdk/web_test_utils"; "$DART" pub get)
-(cd "$FLUTTER_DIR/web_sdk/web_engine_tester"; "$DART" pub get)
+(
+  cd "$FLUTTER_DIR/web_sdk"
+  "$DART" pub get
+)
+(
+  cd "$FLUTTER_DIR/web_sdk/web_test_utils"
+  "$DART" pub get
+)
+(
+  cd "$FLUTTER_DIR/web_sdk/web_engine_tester"
+  "$DART" pub get
+)
 
 "$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/web_sdk"
 
 WEB_SDK_TEST_FILES="$FLUTTER_DIR/web_sdk/test/*"
-for testFile in $WEB_SDK_TEST_FILES
-do
+for testFile in $WEB_SDK_TEST_FILES; do
   echo "Running $testFile"
-  (cd "$FLUTTER_DIR"; FLUTTER_DIR="$FLUTTER_DIR" "$DART" --enable-asserts $testFile)
+  (
+    cd "$FLUTTER_DIR"
+    FLUTTER_DIR="$FLUTTER_DIR" "$DART" --enable-asserts $testFile
+  )
 done
