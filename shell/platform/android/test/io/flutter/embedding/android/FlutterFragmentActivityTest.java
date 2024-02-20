@@ -162,7 +162,7 @@ public class FlutterFragmentActivityTest {
       throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
-    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
+    assertTrue(FakeGeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, false);
     FlutterFragmentActivity spyFlutterActivity = spy(activity);
