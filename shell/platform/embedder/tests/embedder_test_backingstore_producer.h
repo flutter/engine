@@ -33,10 +33,11 @@ class EmbedderTestBackingStoreProducer {
   struct UserData {
     UserData() : surface(nullptr), image(nullptr){};
 
-    UserData(sk_sp<SkSurface> surface) : surface(surface), image(nullptr){};
+    explicit UserData(sk_sp<SkSurface> surface)
+        : surface(std::move(surface)), image(nullptr){};
 
     UserData(sk_sp<SkSurface> surface, FlutterVulkanImage* vk_image)
-        : surface(surface), image(vk_image){};
+        : surface(std::move(surface)), image(vk_image){};
 
     sk_sp<SkSurface> surface;
     FlutterVulkanImage* image;
@@ -44,7 +45,7 @@ class EmbedderTestBackingStoreProducer {
     UserData(sk_sp<SkSurface> surface,
              FlutterVulkanImage* vk_image,
              std::unique_ptr<TestGLOnscreenOnlySurface> gl_surface)
-        : surface(surface),
+        : surface(std::move(surface)),
           image(vk_image),
           gl_surface(std::move(gl_surface)){};
 
