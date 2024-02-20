@@ -1052,7 +1052,7 @@ TEST_F(ImageDecoderFixtureTest,
 
 TEST_F(ImageDecoderFixtureTest, NullCheckBuffer) {
   auto context = std::make_shared<impeller::TestImpellerContext>();
-  auto allocator = ImpellerAllocator(context.GetResourceAllocator());
+  auto allocator = ImpellerAllocator(context->GetResourceAllocator());
 
   EXPECT_FALSE(allocator.allocPixelRef(nullptr));
 }
