@@ -60,12 +60,12 @@ void Animator::EnqueueTraceFlowId(uint64_t trace_flow_id) {
 
 void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
-  // Both frame_timings_recorder_ and layer_trees_tasks_ must be empty if not
-  // between BeginFrame and EndFrame.
-  FML_DCHECK(frame_timings_recorder_ == nullptr);
-  FML_DCHECK(layer_trees_tasks_.empty());
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
+  // Clear layer trees rendered out of a frame. Only Animator::Render called
+  // within a frame is used.
+  layer_trees_tasks_.clear();
+
   frame_request_number_++;
 
   frame_timings_recorder_ = std::move(frame_timings_recorder);
@@ -119,7 +119,7 @@ void Animator::BeginFrame(
 }
 
 void Animator::EndFrame() {
-  FML_CHECK(frame_timings_recorder_ != nullptr);
+  FML_DCHECK(frame_timings_recorder_ != nullptr);
   if (!layer_trees_tasks_.empty()) {
     // The build is completed in OnAnimatorBeginFrame.
     frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
@@ -142,7 +142,7 @@ void Animator::EndFrame() {
       delegate_.OnAnimatorDraw(layer_tree_pipeline_);
     }
   }
-  frame_timings_recorder_ = nullptr;  // Ensure it's cleared.
+  frame_timings_recorder_ = nullptr;
 
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
@@ -170,8 +170,6 @@ void Animator::EndFrame() {
         },
         kNotifyIdleTaskWaitTime);
   }
-  // Both frame_timings_recorder_ and layer_trees_tasks_ must be empty if not
-  // between BeginFrame and EndFrame.
   FML_DCHECK(layer_trees_tasks_.empty());
   FML_DCHECK(frame_timings_recorder_ == nullptr);
 }
@@ -179,9 +177,16 @@ void Animator::EndFrame() {
 void Animator::Render(int64_t view_id,
                       std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
-  FML_CHECK(frame_timings_recorder_ != nullptr);
-
   has_rendered_ = true;
+
+  if (!frame_timings_recorder_) {
+    // Framework can directly call render with a built scene. A major reason is
+    // to render warm up frames.
+    frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
+    const fml::TimePoint placeholder_time = fml::TimePoint::Now();
+    frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
+    frame_timings_recorder_->RecordBuildStart(placeholder_time);
+  }
 
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
@@ -270,9 +275,9 @@ void Animator::AwaitVSync() {
 }
 
 void Animator::EndWarmUpFrame() {
-  // Do nothing. The warm up frame does not need any additional work to end the
-  // frame for now. This will change once the pipeline supports multi-view.
-  // https://github.com/flutter/flutter/issues/142851
+  if (!layer_trees_tasks_.empty()) {
+    EndFrame();
+  }
 }
 
 void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,
