@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
@@ -78,7 +79,7 @@ class TextureGLES final : public Texture,
                      size_t slice) override;
 
   // |Texture|
-  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+  bool OnSetContents(const BufferView& buffer_view,
                      IRect region,
                      size_t slice) override;
 

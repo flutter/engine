@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "flutter/fml/mapping.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/geometry/size.h"
@@ -40,7 +41,7 @@ class Texture {
   ///           For example, to replace the top left 10 x 10 region of a larger
   ///           100 x 100 texture, the region is {0, 0, 10, 10} and the expected
   ///           buffer size in bytes is 100 x bpp.
-  [[nodiscard]] bool SetContents(std::shared_ptr<const fml::Mapping> mapping,
+  [[nodiscard]] bool SetContents(const BufferView& buffer_view,
                                  std::optional<IRect> region = std::nullopt,
                                  size_t slice = 0,
                                  bool is_opaque = false);
@@ -74,10 +75,9 @@ class Texture {
                                            IRect region,
                                            size_t slice) = 0;
 
-  [[nodiscard]] virtual bool OnSetContents(
-      std::shared_ptr<const fml::Mapping> mapping,
-      IRect region,
-      size_t slice) = 0;
+  [[nodiscard]] virtual bool OnSetContents(const BufferView& buffer_view,
+                                           IRect region,
+                                           size_t slice) = 0;
 
   bool mipmap_generated_ = false;
 

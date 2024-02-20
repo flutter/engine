@@ -28,11 +28,7 @@ std::shared_ptr<Texture> DeviceBuffer::AsTexture(
   if (!texture) {
     return nullptr;
   }
-  if (!texture->SetContents(std::make_shared<fml::NonOwnedMapping>(
-          OnGetContents(), desc_.size))) {
-    return nullptr;
-  }
-  return texture;
+  return nullptr;
 }
 
 const DeviceBufferDescriptor& DeviceBuffer::GetDeviceBufferDescriptor() const {

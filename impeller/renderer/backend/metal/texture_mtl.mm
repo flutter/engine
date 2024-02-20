@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/texture_descriptor.h"
 
 namespace impeller {
@@ -69,13 +70,14 @@ void TextureMTL::SetLabel(std::string_view label) {
 }
 
 // |Texture|
-bool TextureMTL::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+bool TextureMTL::OnSetContents(const BufferView& buffer_view,
                                IRect region,
                                size_t slice) {
   // Metal has no threading restrictions. So we can pass this data along to the
   // client rendering API immediately.
-  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), region,
-                       slice);
+  return OnSetContents(
+      buffer_view.buffer->OnGetContents() + buffer_view.range.offset,
+      buffer_view.range.length, region, slice);
 }
 
 // |Texture|

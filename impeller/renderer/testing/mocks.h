@@ -185,9 +185,7 @@ class MockTexture : public Texture {
       (override));
   MOCK_METHOD(bool,
               OnSetContents,
-              (std::shared_ptr<const fml::Mapping> mapping,
-               IRect region,
-               size_t slice),
+              (const BufferView& buffer_view, IRect region, size_t slice),
               (override));
 };
 

@@ -33,7 +33,7 @@ bool Texture::SetContents(const uint8_t* contents,
   return true;
 }
 
-bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
+bool Texture::SetContents(const BufferView& buffer_view,
                           std::optional<IRect> region,
                           size_t slice,
                           bool is_opaque) {
@@ -41,11 +41,11 @@ bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
     VALIDATION_LOG << "Invalid slice for texture.";
     return false;
   }
-  if (!mapping) {
+  if (!buffer_view) {
     return false;
   }
   auto& desc = GetTextureDescriptor();
-  if (!OnSetContents(std::move(mapping),
+  if (!OnSetContents(buffer_view,
                      region.value_or(IRect::MakeLTRB(0, 0, desc.size.width,
                                                      desc.size.height)),
                      slice)) {

@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/texture.h"
 
 namespace impeller {
@@ -64,7 +65,7 @@ class TextureMTL final : public Texture,
                      size_t slice) override;
 
   // |Texture|
-  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+  bool OnSetContents(const BufferView& buffer_view,
                      IRect region,
                      size_t slice) override;
   // |Texture|

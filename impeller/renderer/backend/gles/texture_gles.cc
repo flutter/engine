@@ -192,22 +192,14 @@ bool TextureGLES::OnSetContents(const uint8_t* contents,
                                 size_t length,
                                 IRect region,
                                 size_t slice) {
-  return OnSetContents(CreateMappingWithCopy(contents, length), region, slice);
+  return OnSetContents(BufferView{}, region, slice);
 }
 
 // |Texture|
-bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+bool TextureGLES::OnSetContents(const BufferView& buffer_view,
                                 IRect region,
                                 size_t slice) {
-  if (!mapping) {
-    return false;
-  }
-
-  if (mapping->GetSize() == 0u) {
-    return true;
-  }
-
-  if (mapping->GetMapping() == nullptr) {
+  if (!buffer_view) {
     return false;
   }
 
@@ -232,7 +224,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     return false;
   }
 
-  if (mapping->GetSize() < tex_descriptor.GetByteSizeOfRegion(region)) {
+  if (buffer_view.range.length < tex_descriptor.GetByteSizeOfRegion(region)) {
     return false;
   }
 
@@ -257,8 +249,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       break;
   }
 
-  auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
-                                               std::move(mapping));
+  auto data = std::make_shared<TexImage2DData>(tex_descriptor.format, nullptr);
   if (!data || !data->IsValid()) {
     VALIDATION_LOG << "Invalid texture format.";
     return false;

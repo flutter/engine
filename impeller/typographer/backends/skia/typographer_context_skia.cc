@@ -11,15 +11,28 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/device_buffer.h"
+#include "impeller/core/device_buffer_descriptor.h"
+#include "impeller/core/formats.h"
 #include "impeller/typographer/backends/skia/glyph_atlas_context_skia.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "impeller/typographer/typographer_context.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkSize.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkFont.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
+#include "third_party/skia/include/core/SkMallocPixelRef.h"
+#include "third_party/skia/include/core/SkPixelRef.h"
+#include "third_party/skia/include/core/SkPixmap.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkSamplingOptions.h"
+#include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace impeller {
@@ -28,6 +41,50 @@ namespace impeller {
 //              the underlying causes of the overlap.
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
+
+class ImpellerAllocator : public SkBitmap::Allocator {
+ public:
+  ImpellerAllocator(std::shared_ptr<DeviceBuffer> device_buffer,
+                    std::vector<std::pair<size_t, size_t>> offsets)
+      : device_buffer_(std::move(device_buffer)),
+        offsets_(std::move(offsets)) {}
+
+  bool allocPixelRef(SkBitmap* bitmap) override {
+    auto [offset, size] = offsets_[count_];
+    count_++;
+    const SkImageInfo& info = bitmap->info();
+    if (kUnknown_SkColorType == info.colorType() || info.width() < 0 ||
+        info.height() < 0 || !info.validRowBytes(bitmap->rowBytes())) {
+      return false;
+    }
+
+    auto expected_size = ((bitmap->height() - 1) * bitmap->rowBytes()) +
+                         (bitmap->width() * bitmap->bytesPerPixel());
+    if (expected_size != size) {
+      FML_LOG(ERROR) << "Size mismatch : expected " << expected_size
+                     << " and got " << size;
+    }
+
+    struct ImpellerPixelRef final : public SkPixelRef {
+      ImpellerPixelRef(int w, int h, void* s, size_t r)
+          : SkPixelRef(w, h, s, r) {}
+
+      ~ImpellerPixelRef() override {}
+    };
+
+    auto pixel_ref = sk_sp<SkPixelRef>(new ImpellerPixelRef(
+        info.width(), info.height(), device_buffer_->OnGetContents() + offset,
+        bitmap->rowBytes()));
+
+    bitmap->setPixelRef(std::move(pixel_ref), 0, 0);
+    return true;
+  }
+
+ private:
+  std::shared_ptr<DeviceBuffer> device_buffer_;
+  std::vector<std::pair<size_t, size_t>> offsets_;
+  size_t count_ = 0u;
+};
 
 std::shared_ptr<TypographerContext> TypographerContextSkia::Make() {
   return std::make_shared<TypographerContextSkia>();
@@ -193,7 +250,9 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
                               const std::shared_ptr<Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
+  size_t required_allocator_size = 0u;
 
+  std::vector<std::pair<size_t, size_t>> offsets = {};
   for (const FontGlyphPair& pair : new_pairs) {
     auto pos = atlas.FindFontGlyphBounds(pair);
     if (!pos.has_value()) {
@@ -201,6 +260,44 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     }
     auto rect = pos.value();
     if (rect.IsEmpty()) {
+      continue;
+    }
+    auto bounds = ISize(static_cast<int32_t>(std::ceil(rect.GetWidth())),
+                        static_cast<int32_t>(std::ceil(rect.GetHeight())));
+    offsets.push_back(std::make_pair(required_allocator_size, bounds.Area()));
+    required_allocator_size += bounds.Area();
+  }
+  if (required_allocator_size == 0) {
+    return true;
+  }
+
+  DeviceBufferDescriptor desc;
+  desc.storage_mode = StorageMode::kHostVisible;
+  desc.size = required_allocator_size * (has_color ? 4u : 1u);
+
+  if (has_color) {
+    for (auto i = 0u; i < offsets.size(); i++) {
+      offsets[i] = std::make_pair(offsets[i].first * 4, offsets[i].second * 4);
+    }
+  }
+
+  auto device_buffer = allocator->CreateBuffer(desc);
+  if (!device_buffer) {
+    return false;
+  }
+
+  auto bitmap_allocator = ImpellerAllocator(device_buffer, offsets);
+
+  auto i = 0u;
+  for (const FontGlyphPair& pair : new_pairs) {
+    auto pos = atlas.FindFontGlyphBounds(pair);
+    if (!pos.has_value()) {
+      i++;
+      continue;
+    }
+    auto rect = pos.value();
+    if (rect.IsEmpty()) {
+      i++;
       continue;
     }
     auto bounds = ISize(static_cast<int32_t>(std::ceil(rect.GetWidth())),
@@ -219,7 +316,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     auto bitmap = SkBitmap();
     bitmap.setInfo(image_info);
-    if (!bitmap.tryAllocPixels()) {
+    if (!bitmap.tryAllocPixels(&bitmap_allocator)) {
       return false;
     }
 
@@ -235,9 +332,10 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
               Rect::MakeLTRB(0, 0, rect.GetWidth(), rect.GetHeight()),
               has_color);
 
+    auto [offset, size] = offsets[i];
+    i++;
     if (!texture->SetContents(
-            static_cast<uint8_t*>(bitmap.getPixels()),
-            bitmap.pixmap().computeByteSize(),
+            device_buffer->OnGetContents() + offset, size,
             IRect::MakeLTRB(rect.GetX(), rect.GetY(), rect.GetRight(),
                             rect.GetBottom()))) {
       return false;
@@ -296,13 +394,9 @@ static bool UpdateGlyphTextureAtlas(std::shared_ptr<SkBitmap> bitmap,
   FML_DCHECK(bitmap != nullptr);
   auto texture_descriptor = texture->GetTextureDescriptor();
 
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
-      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
-  );
-
-  return texture->SetContents(mapping);
+  return texture->SetContents(
+      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),
+      texture_descriptor.GetByteSizeOfBaseMipLevel());
 }
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
@@ -334,13 +428,9 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   }
   texture->SetLabel("GlyphAtlas");
 
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
-      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
-  );
-
-  if (!texture->SetContents(mapping)) {
+  if (!texture->SetContents(
+          reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),
+          texture_descriptor.GetByteSizeOfBaseMipLevel())) {
     return nullptr;
   }
   return texture;
