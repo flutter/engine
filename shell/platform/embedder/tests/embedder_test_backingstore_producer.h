@@ -31,20 +31,26 @@ namespace testing {
 class EmbedderTestBackingStoreProducer {
  public:
   struct UserData {
-    SkSurface* surface;
+    UserData() : surface(nullptr), image(nullptr){};
+
+    UserData(sk_sp<SkSurface> surface) : surface(surface), image(nullptr){};
+
+    UserData(sk_sp<SkSurface> surface, FlutterVulkanImage* vk_image)
+        : surface(surface), image(vk_image){};
+
+    sk_sp<SkSurface> surface;
     FlutterVulkanImage* image;
-  };
-
-  struct SWUserData {
-    sk_sp<SkSurface> surface;
-  };
-
 #ifdef SHELL_ENABLE_GL
-  struct GLUserData {
+    UserData(sk_sp<SkSurface> surface,
+             FlutterVulkanImage* vk_image,
+             std::unique_ptr<TestGLOnscreenOnlySurface> gl_surface)
+        : surface(surface),
+          image(vk_image),
+          gl_surface(std::move(gl_surface)){};
+
     std::unique_ptr<TestGLOnscreenOnlySurface> gl_surface;
-    sk_sp<SkSurface> surface;
-  };
 #endif
+  };
 
   enum class RenderTargetType {
     kSoftwareBuffer,

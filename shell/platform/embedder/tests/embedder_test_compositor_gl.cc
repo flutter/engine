@@ -60,7 +60,7 @@ bool EmbedderTestCompositorGL::UpdateOffscrenComposition(
     switch (layer->type) {
       case kFlutterLayerContentTypeBackingStore: {
         auto gl_user_data =
-            reinterpret_cast<EmbedderTestBackingStoreProducer::GLUserData*>(
+            reinterpret_cast<EmbedderTestBackingStoreProducer::UserData*>(
                 layer->backing_store->user_data);
 
         if (gl_user_data->gl_surface != nullptr) {
