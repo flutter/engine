@@ -30,6 +30,8 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
+
 import io.flutter.Log;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -164,7 +166,7 @@ class SingleViewPresentation extends Presentation {
       WindowManager windowManagerDelegate =
           (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
       state.windowManagerHandler =
-          new WindowManagerHandler(windowManagerDelegate, state.fakeWindowViewGroup);
+              new WindowManagerHandler(windowManagerDelegate, state.fakeWindowViewGroup);
     }
 
     container = new FrameLayout(getContext());
@@ -385,9 +387,10 @@ class SingleViewPresentation extends Presentation {
    * WebView (as the selection handles are implemented as popup windows).
    *
    * This static proxy overrides the addView, removeView, removeViewImmediate, and updateViewLayout methods
-   * to prevent these crashes, and passes all other calls to the delegate.
+   * to prevent these crashes, and forwards all other calls to the delegate.
    */
-  class WindowManagerHandler implements WindowManager {
+  @VisibleForTesting
+  static class WindowManagerHandler implements WindowManager {
     private static final String TAG = "PlatformViewsController";
 
     private final WindowManager delegate;
