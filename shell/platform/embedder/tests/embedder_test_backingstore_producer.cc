@@ -80,7 +80,7 @@ void EmbedderTestBackingStoreProducer::SetEGLContext(
   // Ideally this would be set in the constructor, however we can't do that
   // without introducing different constructors depending on different graphics
   // APIs, which is a bit ugly.
-  test_egl_context_ = context;
+  test_egl_context_ = std::move(context);
 }
 #endif
 

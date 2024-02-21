@@ -199,7 +199,7 @@ TestEGLContext::~TestEGLContext() {
 TestGLOnscreenOnlySurface::TestGLOnscreenOnlySurface(
     std::shared_ptr<TestEGLContext> context,
     SkISize size)
-    : surface_size_(size), egl_context_(context) {
+    : surface_size_(size), egl_context_(std::move(context)) {
   const EGLint attributes[] = {
       EGL_WIDTH,  size.width(),   //
       EGL_HEIGHT, size.height(),  //
@@ -399,7 +399,7 @@ TestGLSurface::TestGLSurface(SkISize surface_size)
 
 TestGLSurface::TestGLSurface(std::shared_ptr<TestEGLContext> egl_context,
                              SkISize surface_size)
-    : TestGLOnscreenOnlySurface(egl_context, surface_size) {
+    : TestGLOnscreenOnlySurface(std::move(egl_context), surface_size) {
   {
     const EGLint offscreen_surface_attributes[] = {
         EGL_WIDTH,  1,  //
