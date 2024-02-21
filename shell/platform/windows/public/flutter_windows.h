@@ -221,7 +221,7 @@ typedef HWND (*FlutterPlatformViewFactory)(
 typedef struct {
   size_t struct_size;
   FlutterPlatformViewFactory factory;
-  void* user_data;  // Arbitrary user data supplied to the cretaion struct.
+  void* user_data;  // Arbitrary user data supplied to the creation struct.
 } FlutterPlatformViewTypeEntry;
 
 // ========== View ==========
