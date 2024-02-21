@@ -418,7 +418,6 @@ void testMain() {
       expect(dispatcher.accessibilityPlaceholder.isConnected, isFalse);
     });
 
-
     test('scheduleWarmupFrame should call both callbacks', () async {
       bool beginFrameCalled = false;
       final Completer<void> drawFrameCalled = Completer<void>();
