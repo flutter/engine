@@ -14,6 +14,8 @@ before it will work.
 The tool has the following commands.
 
 * `help` - Prints helpful information about commands and usage.
+* `format` - Formats files in the engine tree using various off-the-shelf
+formatters.
 * `query builds` - Lists the CI builds described under `ci/builders` that the
 host platform is capable of executing.
 
@@ -23,7 +25,6 @@ There are currently many missing features. Some overall goals are listed in the
 GitHub issue [here](https://github.com/flutter/flutter/issues/132807). Some
 desirable new features would do the following:
 
-* Support Windows hosts.
 * Add a `doctor` command.
 * Update the engine checkout so that engine developers no longer have to remeber
 to run `gclient sync -D`.

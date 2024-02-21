@@ -7,6 +7,8 @@ import 'package:args/command_runner.dart';
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../environment.dart';
+import 'command.dart';
+import 'format_command.dart';
 import 'query_command.dart';
 
 /// The root command runner.
@@ -17,10 +19,16 @@ final class ToolCommandRunner extends CommandRunner<int> {
     required this.environment,
     required this.configs,
   }) : super(toolName, toolDescription) {
-    addCommand(QueryCommand(
-      environment: environment,
-      configs: configs,
-    ));
+    final List<CommandBase> commands = <CommandBase>[
+      FormatCommand(
+        environment: environment,
+      ),
+      QueryCommand(
+        environment: environment,
+        configs: configs,
+      ),
+    ];
+    commands.forEach(addCommand);
   }
 
   /// The name of the tool as reported in the tool's usage and help
@@ -41,7 +49,7 @@ final class ToolCommandRunner extends CommandRunner<int> {
   @override
   Future<int> run(Iterable<String> args) async {
     try{
-      return await runCommand(parse(args)) ?? 1;
+      return await runCommand(parse(args)) ?? 0;
     } on FormatException catch (e) {
       environment.logger.error(e);
       return 1;

@@ -1,3 +1,4 @@
+DrawSolidBlueScreenTest.png
 ExternalTextureTests_testCanvasSurface.png
 ExternalTextureTests_testCroppedMediaSurface_bottomLeft.png
 ExternalTextureTests_testCroppedMediaSurface_topRight.png
@@ -58,3 +59,5 @@ PlatformViewWithTextureViewUiTest_testPlatformViewTransform.png
 PlatformViewWithTextureViewUiTest_testPlatformViewTwoIntersectingOverlays.png
 PlatformViewWithTextureViewUiTest_testPlatformViewWithoutOverlayIntersection.png
 SpawnEngineTests_testSpawnedEngine.png
+logcat.txt
+noop.txt
