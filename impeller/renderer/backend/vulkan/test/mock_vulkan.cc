@@ -42,6 +42,8 @@ struct MockImage {};
 
 struct MockSemaphore {};
 
+struct MockFramebuffer {};
+
 static ISize currentImageSize = ISize{1, 1};
 
 class MockDevice final {
@@ -339,6 +341,8 @@ VkResult vkCreateRenderPass(VkDevice device,
                             const VkAllocationCallbacks* pAllocator,
                             VkRenderPass* pRenderPass) {
   *pRenderPass = reinterpret_cast<VkRenderPass>(0x12341234);
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkCreateRenderPass");
   return VK_SUCCESS;
 }
 
@@ -684,6 +688,14 @@ VkResult vkAcquireNextImageKHR(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkCreateFramebuffer(VkDevice device,
+                             const VkFramebufferCreateInfo* pCreateInfo,
+                             const VkAllocationCallbacks* pAllocator,
+                             VkFramebuffer* pFramebuffer) {
+  *pFramebuffer = reinterpret_cast<VkFramebuffer>(new MockFramebuffer());
+  return VK_SUCCESS;
+}
+
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -812,6 +824,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkDestroySurfaceKHR;
   } else if (strcmp("vkAcquireNextImageKHR", pName) == 0) {
     return (PFN_vkVoidFunction)vkAcquireNextImageKHR;
+  } else if (strcmp("vkCreateFramebuffer", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateFramebuffer;
   }
   return noop;
 }
