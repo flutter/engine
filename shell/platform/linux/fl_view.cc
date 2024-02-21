@@ -622,62 +622,6 @@ static void size_allocate_cb(FlView* self) {
   handle_geometry_changed(self);
 }
 
-static void fl_view_constructed(GObject* object) {
-  FlView* self = FL_VIEW(object);
-
-  self->event_box = gtk_event_box_new();
-  gtk_widget_set_hexpand(self->event_box, TRUE);
-  gtk_widget_set_vexpand(self->event_box, TRUE);
-  gtk_container_add(GTK_CONTAINER(self), self->event_box);
-  gtk_widget_show(self->event_box);
-  gtk_widget_add_events(self->event_box,
-                        GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
-                            GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
-                            GDK_SMOOTH_SCROLL_MASK);
-
-  g_signal_connect_swapped(self->event_box, "button-press-event",
-                           G_CALLBACK(button_press_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "button-release-event",
-                           G_CALLBACK(button_release_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "scroll-event",
-                           G_CALLBACK(scroll_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "motion-notify-event",
-                           G_CALLBACK(motion_notify_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "enter-notify-event",
-                           G_CALLBACK(enter_notify_event_cb), self);
-  g_signal_connect_swapped(self->event_box, "leave-notify-event",
-                           G_CALLBACK(leave_notify_event_cb), self);
-  GtkGesture* zoom = gtk_gesture_zoom_new(self->event_box);
-  g_signal_connect_swapped(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb),
-                           self);
-  g_signal_connect_swapped(zoom, "scale-changed",
-                           G_CALLBACK(gesture_zoom_update_cb), self);
-  g_signal_connect_swapped(zoom, "end", G_CALLBACK(gesture_zoom_end_cb), self);
-  GtkGesture* rotate = gtk_gesture_rotate_new(self->event_box);
-  g_signal_connect_swapped(rotate, "begin",
-                           G_CALLBACK(gesture_rotation_begin_cb), self);
-  g_signal_connect_swapped(rotate, "angle-changed",
-                           G_CALLBACK(gesture_rotation_update_cb), self);
-  g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
-                           self);
-
-  self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
-  gtk_widget_show(GTK_WIDGET(self->gl_area));
-  gtk_container_add(GTK_CONTAINER(self->event_box), GTK_WIDGET(self->gl_area));
-
-  g_signal_connect_swapped(self->gl_area, "create-context",
-                           G_CALLBACK(create_context_cb), self);
-  g_signal_connect_swapped(self->gl_area, "realize", G_CALLBACK(realize_cb),
-                           self);
-  g_signal_connect_swapped(self->gl_area, "render", G_CALLBACK(render_cb),
-                           self);
-  g_signal_connect_swapped(self->gl_area, "unrealize", G_CALLBACK(unrealize_cb),
-                           self);
-
-  g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(size_allocate_cb),
-                           self);
-}
-
 static void fl_view_set_property(GObject* object,
                                  guint prop_id,
                                  const GValue* value,
@@ -774,7 +718,6 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
 
 static void fl_view_class_init(FlViewClass* klass) {
   GObjectClass* object_class = G_OBJECT_CLASS(klass);
-  object_class->constructed = fl_view_constructed;
   object_class->set_property = fl_view_set_property;
   object_class->get_property = fl_view_get_property;
   object_class->notify = fl_view_notify;
@@ -798,6 +741,58 @@ static void fl_view_class_init(FlViewClass* klass) {
 
 static void fl_view_init(FlView* self) {
   gtk_widget_set_can_focus(GTK_WIDGET(self), TRUE);
+
+  self->event_box = gtk_event_box_new();
+  gtk_widget_set_hexpand(self->event_box, TRUE);
+  gtk_widget_set_vexpand(self->event_box, TRUE);
+  gtk_container_add(GTK_CONTAINER(self), self->event_box);
+  gtk_widget_show(self->event_box);
+  gtk_widget_add_events(self->event_box,
+                        GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK |
+                            GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
+                            GDK_SMOOTH_SCROLL_MASK);
+
+  g_signal_connect_swapped(self->event_box, "button-press-event",
+                           G_CALLBACK(button_press_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "button-release-event",
+                           G_CALLBACK(button_release_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "scroll-event",
+                           G_CALLBACK(scroll_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "motion-notify-event",
+                           G_CALLBACK(motion_notify_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "enter-notify-event",
+                           G_CALLBACK(enter_notify_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "leave-notify-event",
+                           G_CALLBACK(leave_notify_event_cb), self);
+  GtkGesture* zoom = gtk_gesture_zoom_new(self->event_box);
+  g_signal_connect_swapped(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb),
+                           self);
+  g_signal_connect_swapped(zoom, "scale-changed",
+                           G_CALLBACK(gesture_zoom_update_cb), self);
+  g_signal_connect_swapped(zoom, "end", G_CALLBACK(gesture_zoom_end_cb), self);
+  GtkGesture* rotate = gtk_gesture_rotate_new(self->event_box);
+  g_signal_connect_swapped(rotate, "begin",
+                           G_CALLBACK(gesture_rotation_begin_cb), self);
+  g_signal_connect_swapped(rotate, "angle-changed",
+                           G_CALLBACK(gesture_rotation_update_cb), self);
+  g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
+                           self);
+
+  self->gl_area = GTK_GL_AREA(gtk_gl_area_new());
+  gtk_widget_show(GTK_WIDGET(self->gl_area));
+  gtk_container_add(GTK_CONTAINER(self->event_box), GTK_WIDGET(self->gl_area));
+
+  g_signal_connect_swapped(self->gl_area, "create-context",
+                           G_CALLBACK(create_context_cb), self);
+  g_signal_connect_swapped(self->gl_area, "realize", G_CALLBACK(realize_cb),
+                           self);
+  g_signal_connect_swapped(self->gl_area, "render", G_CALLBACK(render_cb),
+                           self);
+  g_signal_connect_swapped(self->gl_area, "unrealize", G_CALLBACK(unrealize_cb),
+                           self);
+
+  g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(size_allocate_cb),
+                           self);
 }
 
 G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
