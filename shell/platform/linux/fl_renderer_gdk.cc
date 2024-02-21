@@ -68,7 +68,6 @@ gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
   if (self->main_context == nullptr) {
     return FALSE;
   }
-  gdk_gl_context_set_use_es(self->main_context, TRUE);
   if (!gdk_gl_context_realize(self->main_context, error)) {
     return FALSE;
   }
@@ -77,7 +76,6 @@ gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
   if (self->resource_context == nullptr) {
     return FALSE;
   }
-  gdk_gl_context_set_use_es(self->resource_context, TRUE);
   if (!gdk_gl_context_realize(self->resource_context, error)) {
     return FALSE;
   }
