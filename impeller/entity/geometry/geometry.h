@@ -33,7 +33,7 @@ struct GeometryResult {
     kPreventOverdraw,
   };
 
-  PrimitiveType type;
+  PrimitiveType type = PrimitiveType::kTriangleStrip;
   VertexBuffer vertex_buffer;
   Matrix transform;
   Mode mode = Mode::kNormal;
