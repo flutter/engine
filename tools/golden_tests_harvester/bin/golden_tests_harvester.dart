@@ -41,27 +41,7 @@ class FakeSkiaGoldClient implements SkiaGoldClient {
   }
 
   @override
-  String cleanTestName(String fileName) {
-    throw UnimplementedError();
-  }
-
-  @override
-  List<String> getCIArguments() {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<String?> getExpectationForTest(String testName) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<List<int>> getImageBytes(String imageHash) {
-    throw UnimplementedError();
-  }
-
-  @override
-  String getTraceID(String testName) {
     throw UnimplementedError();
   }
 
@@ -76,8 +56,7 @@ class FakeSkiaGoldClient implements SkiaGoldClient {
 }
 
 void _printUsage() {
-  Logger.instance
-      .log('dart run ./bin/golden_tests_harvester.dart <working_dir>');
+  Logger.instance.log('dart run ./bin/golden_tests_harvester.dart <working_dir>');
 }
 
 Future<void> main(List<String> arguments) async {

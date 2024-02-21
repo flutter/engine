@@ -20,6 +20,9 @@ dependencies:
   engine_repo_tools: any
   process: any
 
+dev_dependencies: 
+  litetest: any
+
 dependency_overrides:
   collection:
     path: ../../../third_party/dart/third_party/pkg/collection
@@ -27,8 +30,12 @@ dependency_overrides:
     path: ../../../third_party/dart/third_party/pkg/crypto
   engine_repo_tools:
     path: ../../tools/pkg/engine_repo_tools
+  expect:
+    path: ../../../third_party/dart/pkg/expect
   file:
     path: ../../../third_party/dart/third_party/pkg/file/packages/file
+  litetest:
+    path: ../../testing/litetest
   meta:
     path: ../../../third_party/dart/pkg/meta
   path:
@@ -37,5 +44,7 @@ dependency_overrides:
     path: ../../third_party/pkg/platform
   process:
     path: ../../third_party/pkg/process
+  smith:
+    path: ../../../third_party/dart/pkg/smith
   typed_data:
     path: ../../../third_party/dart/third_party/pkg/typed_data
