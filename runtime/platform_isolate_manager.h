@@ -21,7 +21,7 @@ class PlatformIsolateManager {
   /// cannot be registered after the manager is shutdown. Callable from any
   /// thread. The result may be obsolete immediately after the call, except when
   /// called on the platform thread.
-  bool IsShutdown() const { return is_shutdown_; }
+  bool IsShutdown();
 
   /// Register an isolate in the list of platform isolates. Callable from any
   /// thread.
@@ -40,9 +40,9 @@ class PlatformIsolateManager {
   bool IsRegistered(Dart_Isolate isolate);
 
  private:
-  std::mutex platform_isolates_lock_;
+  std::recursive_mutex lock_;
   std::unordered_set<Dart_Isolate> platform_isolates_;
-  std::atomic<bool> is_shutdown_ = false;
+  bool is_shutdown_ = false;
 };
 
 }  // namespace flutter

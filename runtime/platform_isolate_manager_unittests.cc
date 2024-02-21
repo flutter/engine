@@ -234,10 +234,8 @@ TEST_F(PlatformIsolateManagerTest, RegistrationAfterShutdown) {
 }
 
 TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
-  // The goal of this test is to hit the second is_shutdown_ check in
-  // PlatformIsolateManager::RegisterPlatformIsolate. There's no way to do this
-  // reliably, so just try to generate race conditions by creating Isolates on
-  // multiple threads, while shutting down the manager.
+  // Try to generate race conditions by creating Isolates on multiple threads,
+  // while shutting down the manager.
   TestWithRootIsolate([this]() {
     PlatformIsolateManager mgr;
     EXPECT_FALSE(mgr.IsShutdown());

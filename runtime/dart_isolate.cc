@@ -1286,11 +1286,13 @@ void DartIsolate::OnShutdownCallback() {
 }
 
 void DartIsolate::OnMessageEpilogue(Dart_Handle result) {
-  if (is_platform_isolate_ && Dart_CurrentIsolate() != nullptr) {
+  if (is_platform_isolate_) {
     FML_DCHECK(Dart_CurrentIsolate() == isolate());
     FML_DCHECK(platform_isolate_pending_messages_ > 0);
     --platform_isolate_pending_messages_;
     if (platform_isolate_pending_messages_ == 0 && !Dart_HasLivePorts()) {
+      // The VM will invoke the OnShutdownCallback, which will deregister the
+      // isolate from the platform isolate manager.
       Dart_ShutdownIsolate();
     }
   }

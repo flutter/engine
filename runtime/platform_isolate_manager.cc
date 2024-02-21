@@ -8,16 +8,18 @@
 
 namespace flutter {
 
+bool PlatformIsolateManager::IsShutdown() {
+  std::scoped_lock lock(lock_);
+  return is_shutdown_;
+}
+
 bool PlatformIsolateManager::RegisterPlatformIsolate(Dart_Isolate isolate) {
-  if (is_shutdown_) {
-    return false;
-  }
-  std::scoped_lock lock(platform_isolates_lock_);
+  std::scoped_lock lock(lock_);
   if (is_shutdown_) {
     // It's possible shutdown occured while we were trying to aquire the lock.
     return false;
   }
-  FML_DCHECK(platform_isolates_.count(isolate) == 0);
+  FML_DCHECK(platform_isolates_.find(isolate) == platform_isolates_.end());
   platform_isolates_.insert(isolate);
   return true;
 }
@@ -29,16 +31,13 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
   // we're on the platform thread.
   // TODO(flutter/flutter#136314): Assert that we're on the platform thread.
   // Need a method that works for ShutdownPlatformIsolates() too.
+  std::scoped_lock lock(lock_);
   if (is_shutdown_) {
     // Removal during ShutdownPlatformIsolates. Ignore, to avoid modifying
     // platform_isolates_ during iteration.
     return;
   }
-  std::scoped_lock lock(platform_isolates_lock_);
-  // Since this method and ShutdownPlatformIsolates() are both on the same
-  // platform thread, is_shutdown_ can't have changed.
-  FML_DCHECK(!is_shutdown_);
-  FML_DCHECK(platform_isolates_.count(isolate) != 0);
+  FML_DCHECK(platform_isolates_.find(isolate) != platform_isolates_.end());
   platform_isolates_.erase(isolate);
 }
 
@@ -46,7 +45,7 @@ void PlatformIsolateManager::ShutdownPlatformIsolates() {
   // TODO(flutter/flutter#136314): Assert that we're on the platform thread.
   // There's no current UIDartState here, so platform_isolate.cc's method won't
   // work.
-  std::scoped_lock lock(platform_isolates_lock_);
+  std::scoped_lock lock(lock_);
   is_shutdown_ = true;
   for (Dart_Isolate isolate : platform_isolates_) {
     Dart_EnterIsolate(isolate);
@@ -56,8 +55,8 @@ void PlatformIsolateManager::ShutdownPlatformIsolates() {
 }
 
 bool PlatformIsolateManager::IsRegistered(Dart_Isolate isolate) {
-  std::scoped_lock lock(platform_isolates_lock_);
-  return platform_isolates_.count(isolate) != 0;
+  std::scoped_lock lock(lock_);
+  return platform_isolates_.find(isolate) != platform_isolates_.end();
 }
 
 }  // namespace flutter

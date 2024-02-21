@@ -442,6 +442,8 @@ class DartIsolate : public UIDartState {
   const bool is_spawning_in_group_;
   std::string domain_network_policy_;
   uint32_t platform_isolate_pending_messages_ = 0;
+
+  // Owned by the RuntimeController, which outlives this DartIsolate.
   PlatformIsolateManager* platform_isolate_manager_ = nullptr;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(

@@ -8,6 +8,8 @@ import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 
+int counter = 0;
+
 void main() {
   test('PlatformIsolate isRunningInPlatformThread, false cases', () async {
     final bool isPlatThread =
@@ -29,6 +31,35 @@ void main() {
       return isRunningInPlatformThread();
     });
     expect(isPlatThread, isTrue);
+  });
+
+  test('PlatformIsolate runInPlatformThread, retains state', () async {
+    await runInPlatformThread(() => ++counter);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await runInPlatformThread(() => ++counter);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await runInPlatformThread(() => ++counter);
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+    final counterValue = await runInPlatformThread(() => counter);
+    expect(counterValue, 3);
+  });
+
+  test('PlatformIsolate runInPlatformThread, concurrent jobs', () async {
+    final future1 = runInPlatformThread(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      return 1;
+    });
+    final future2 = runInPlatformThread(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      return 2;
+    });
+    final future3 = runInPlatformThread(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      return 3;
+    });
+    expect(await future1, 1);
+    expect(await future2, 2);
+    expect(await future3, 3);
   });
 
   test('PlatformIsolate runInPlatformThread, send and receive messages',
