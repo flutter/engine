@@ -49,7 +49,7 @@ uint32_t Surface::renderPictures(SkPicture** pictures, int count) {
   }
 
   // Releasing picturePointers here and will recreate the unique_ptr on the
-  // other thread See skwasm_renderPicturesOnWorker
+  // other thread See surface_renderPicturesOnWorker
   skwasm_dispatchRenderPictures(_thread, this, picturePointers.release(), count,
                                 callbackId);
   return callbackId;

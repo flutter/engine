@@ -20,7 +20,6 @@ part 'annotations.dart';
 part 'canvas.dart';
 part 'channel_buffers.dart';
 part 'compositing.dart';
-part 'frame_timings.dart';
 part 'geometry.dart';
 part 'hash_codes.dart';
 part 'initialization.dart';
