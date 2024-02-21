@@ -173,4 +173,22 @@ vk::ImageView TextureVK::GetRenderTargetView() const {
   return source_->GetRenderTargetView();
 }
 
+void TextureVK::SetFramebuffer(
+    const SharedHandleVK<vk::Framebuffer>& framebuffer) {
+  source_->SetFramebuffer(framebuffer);
+}
+
+void TextureVK::SetRenderPass(
+    const SharedHandleVK<vk::RenderPass>& render_pass) {
+  source_->SetRenderPass(render_pass);
+}
+
+SharedHandleVK<vk::Framebuffer> TextureVK::GetFramebuffer() const {
+  return source_->GetFramebuffer();
+}
+
+SharedHandleVK<vk::RenderPass> TextureVK::GetRenderPass() const {
+  return source_->GetRenderPass();
+}
+
 }  // namespace impeller

@@ -291,6 +291,8 @@ TEST_P(RendererTest, CanRenderToTexture) {
   auto pipeline_desc =
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   pipeline_desc->SetSampleCount(SampleCount::kCount1);
+  pipeline_desc->ClearDepthAttachment();
+  pipeline_desc->SetStencilPixelFormat(PixelFormat::kS8UInt);
 
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
@@ -398,7 +400,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
             Tessellator{}.Tessellate(
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath(FillType::kPositive),
+                    .TakePath(FillType::kOdd),
                 1.0f,
                 [&builder](const float* vertices, size_t vertices_count,
                            const uint16_t* indices, size_t indices_count) {

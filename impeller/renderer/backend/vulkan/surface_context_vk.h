@@ -69,9 +69,6 @@ class SurfaceContextVK : public Context,
   // |Context|
   void Shutdown() override;
 
-  // |Context|
-  void SetSyncPresentation(bool value) override;
-
   [[nodiscard]] bool SetWindowSurface(vk::UniqueSurfaceKHR surface,
                                       const ISize& size);
 
@@ -80,6 +77,8 @@ class SurfaceContextVK : public Context,
   /// @brief Mark the current swapchain configuration as dirty, forcing it to be
   ///        recreated on the next frame.
   void UpdateSurfaceSize(const ISize& size) const;
+
+  void InitializeCommonlyUsedShadersIfNeeded() const override;
 
 #ifdef FML_OS_ANDROID
   vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;

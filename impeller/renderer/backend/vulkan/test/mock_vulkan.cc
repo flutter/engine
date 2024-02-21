@@ -42,6 +42,8 @@ struct MockImage {};
 
 struct MockSemaphore {};
 
+struct MockFramebuffer {};
+
 static ISize currentImageSize = ISize{1, 1};
 
 class MockDevice final {
@@ -153,19 +155,16 @@ VkResult vkEnumeratePhysicalDevices(VkInstance instance,
   return VK_SUCCESS;
 }
 
+static thread_local std::function<void(VkPhysicalDevice physicalDevice,
+                                       VkFormat format,
+                                       VkFormatProperties* pFormatProperties)>
+    g_format_properties_callback;
+
 void vkGetPhysicalDeviceFormatProperties(
     VkPhysicalDevice physicalDevice,
     VkFormat format,
     VkFormatProperties* pFormatProperties) {
-  if (format == VK_FORMAT_B8G8R8A8_UNORM) {
-    pFormatProperties->optimalTilingFeatures =
-        static_cast<VkFormatFeatureFlags>(
-            vk::FormatFeatureFlagBits::eColorAttachment);
-  } else if (format == VK_FORMAT_S8_UINT) {
-    pFormatProperties->optimalTilingFeatures =
-        static_cast<VkFormatFeatureFlags>(
-            vk::FormatFeatureFlagBits::eDepthStencilAttachment);
-  }
+  g_format_properties_callback(physicalDevice, format, pFormatProperties);
 }
 
 void vkGetPhysicalDeviceProperties(VkPhysicalDevice physicalDevice,
@@ -264,6 +263,7 @@ VkResult vkAllocateCommandBuffers(
     const VkCommandBufferAllocateInfo* pAllocateInfo,
     VkCommandBuffer* pCommandBuffers) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkAllocateCommandBuffers");
   *pCommandBuffers =
       reinterpret_cast<VkCommandBuffer>(mock_device->NewCommandBuffer());
   return VK_SUCCESS;
@@ -341,6 +341,8 @@ VkResult vkCreateRenderPass(VkDevice device,
                             const VkAllocationCallbacks* pAllocator,
                             VkRenderPass* pRenderPass) {
   *pRenderPass = reinterpret_cast<VkRenderPass>(0x12341234);
+  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
+  mock_device->AddCalledFunction("vkCreateRenderPass");
   return VK_SUCCESS;
 }
 
@@ -507,6 +509,12 @@ VkResult vkGetFenceStatus(VkDevice device, VkFence fence) {
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
   MockFence* mock_fence = reinterpret_cast<MockFence*>(fence);
   return mock_fence->GetStatus();
+}
+
+VkResult vkResetFences(VkDevice device,
+                       uint32_t fenceCount,
+                       const VkFence* fences) {
+  return VK_SUCCESS;
 }
 
 VkResult vkCreateDebugUtilsMessengerEXT(
@@ -680,6 +688,14 @@ VkResult vkAcquireNextImageKHR(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkCreateFramebuffer(VkDevice device,
+                             const VkFramebufferCreateInfo* pCreateInfo,
+                             const VkAllocationCallbacks* pAllocator,
+                             VkFramebuffer* pFramebuffer) {
+  *pFramebuffer = reinterpret_cast<VkFramebuffer>(new MockFramebuffer());
+  return VK_SUCCESS;
+}
+
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -776,6 +792,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkWaitForFences;
   } else if (strcmp("vkGetFenceStatus", pName) == 0) {
     return (PFN_vkVoidFunction)vkGetFenceStatus;
+  } else if (strcmp("vkResetFences", pName) == 0) {
+    return (PFN_vkVoidFunction)vkResetFences;
   } else if (strcmp("vkCreateDebugUtilsMessengerEXT", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateDebugUtilsMessengerEXT;
   } else if (strcmp("vkSetDebugUtilsObjectNameEXT", pName) == 0) {
@@ -806,6 +824,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkDestroySurfaceKHR;
   } else if (strcmp("vkAcquireNextImageKHR", pName) == 0) {
     return (PFN_vkVoidFunction)vkAcquireNextImageKHR;
+  } else if (strcmp("vkCreateFramebuffer", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateFramebuffer;
   }
   return noop;
 }
@@ -813,7 +833,24 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
 }  // namespace
 
 MockVulkanContextBuilder::MockVulkanContextBuilder()
-    : instance_extensions_({"VK_KHR_surface", "VK_MVK_macos_surface"}) {}
+    : instance_extensions_({"VK_KHR_surface", "VK_MVK_macos_surface"}),
+      format_properties_callback_([](VkPhysicalDevice physicalDevice,
+                                     VkFormat format,
+                                     VkFormatProperties* pFormatProperties) {
+        if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+          pFormatProperties->optimalTilingFeatures =
+              static_cast<VkFormatFeatureFlags>(
+                  vk::FormatFeatureFlagBits::eColorAttachment);
+        } else if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+          pFormatProperties->optimalTilingFeatures =
+              static_cast<VkFormatFeatureFlags>(
+                  vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+        } else if (format == VK_FORMAT_S8_UINT) {
+          pFormatProperties->optimalTilingFeatures =
+              static_cast<VkFormatFeatureFlags>(
+                  vk::FormatFeatureFlagBits::eDepthStencilAttachment);
+        }
+      }) {}
 
 std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   auto message_loop = fml::ConcurrentMessageLoop::Create();
@@ -824,6 +861,7 @@ std::shared_ptr<ContextVK> MockVulkanContextBuilder::Build() {
   }
   g_instance_extensions = instance_extensions_;
   g_instance_layers = instance_layers_;
+  g_format_properties_callback = format_properties_callback_;
   std::shared_ptr<ContextVK> result = ContextVK::Create(std::move(settings));
   return result;
 }
