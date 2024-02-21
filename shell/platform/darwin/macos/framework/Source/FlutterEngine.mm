@@ -749,10 +749,10 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
                       FlutterEngine* engine = weakSelf;
                       if (engine) {
                         // It is a bit unfortunate that embedder requires OnVSync call on
-                        // main thread just to immediately redispatch it to UI thread.
+                        // platform thread just to immediately redispatch it to UI thread.
                         // We are already on UI thread right now, but have to do the
                         // extra hop to main thread.
-                        [engine->_threadSynchronizer performOnMainThread:^{
+                        [engine->_threadSynchronizer performOnPlatformThread:^{
                           engine->_embedderAPI.OnVsync(_engine, baton, timeNanos, targetTimeNanos);
                         }];
                       }

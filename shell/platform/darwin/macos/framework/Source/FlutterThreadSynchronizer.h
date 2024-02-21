@@ -46,7 +46,7 @@
  * The block will be performed even if the platform thread is blocked waiting
  * for a commit.
  */
-- (void)performOnMainThread:(nonnull dispatch_block_t)block;
+- (void)performOnPlatformThread:(nonnull dispatch_block_t)block;
 
 /**
  * Requests the synchronizer to track another view.

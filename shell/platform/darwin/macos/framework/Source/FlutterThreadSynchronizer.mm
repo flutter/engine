@@ -164,7 +164,7 @@
   event.Wait();
 }
 
-- (void)performOnMainThread:(nonnull dispatch_block_t)block {
+- (void)performOnPlatformThread:(nonnull dispatch_block_t)block {
   std::unique_lock<std::mutex> lock(_mutex);
   _scheduledBlocks.push_back(block);
   if (_beginResizeWaiting) {
