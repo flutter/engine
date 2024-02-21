@@ -10875,8 +10875,6 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_engine_private.h + ../../../flu
 ORIGIN: ../../../flutter/shell/platform/linux/fl_engine_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_event_channel.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_event_channel_test.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/linux/fl_gl_area.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/linux/fl_gl_area.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_gnome_settings.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_gnome_settings.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_gnome_settings_test.cc + ../../../flutter/LICENSE
@@ -13736,8 +13734,6 @@ FILE: ../../../flutter/shell/platform/linux/fl_engine_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_engine_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_event_channel.cc
 FILE: ../../../flutter/shell/platform/linux/fl_event_channel_test.cc
-FILE: ../../../flutter/shell/platform/linux/fl_gl_area.cc
-FILE: ../../../flutter/shell/platform/linux/fl_gl_area.h
 FILE: ../../../flutter/shell/platform/linux/fl_gnome_settings.cc
 FILE: ../../../flutter/shell/platform/linux/fl_gnome_settings.h
 FILE: ../../../flutter/shell/platform/linux/fl_gnome_settings_test.cc
