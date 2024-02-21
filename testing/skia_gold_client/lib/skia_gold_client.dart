@@ -257,12 +257,17 @@ class SkiaGoldClient {
     final ProcessResult result = await _runCommand(imgtestCommand);
 
     if (result.exitCode != 0) {
-      final StringBuffer buf = StringBuffer()
-        ..writeln('Skia Gold imgtest add failed.')
-        ..writeln('An error occurred when adding a golden file test with ')
-        ..writeln('goldctl.')
+final StringBuffer buf = StringBuffer()
+        ..writeln('Skia Gold received an unapproved image in post-submit ')
+        ..writeln('testing. Golden file images in flutter/engine are triaged ')
+        ..writeln('in pre-submit during code review for the given PR.')
         ..writeln()
-        ..writeln('Debug information for Gold:')
+        ..writeln('Visit https://flutter-engine-gold.skia.org/ to view and approve ')
+        ..writeln('the image(s), or revert the associated change. For more ')
+        ..writeln('information, visit the wiki: ')
+        ..writeln('https://github.com/flutter/flutter/wiki/Writing-a-golden-file-test-for-package:flutter')
+        ..writeln()
+        ..writeln('Debug information for Gold --------------------------------')
         ..writeln('stdout: ${result.stdout}')
         ..writeln('stderr: ${result.stderr}');
       throw Exception(buf.toString());
