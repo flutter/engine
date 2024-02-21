@@ -181,14 +181,12 @@ AndroidShellHolder::AndroidShellHolder(
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     const std::shared_ptr<ThreadHost>& thread_host,
     std::unique_ptr<Shell> shell,
-    std::unique_ptr<APKAssetProvider> apk_asset_provider,
     const fml::WeakPtr<PlatformViewAndroid>& platform_view)
     : settings_(settings),
       jni_facade_(jni_facade),
       platform_view_(platform_view),
       thread_host_(thread_host),
-      shell_(std::move(shell)),
-      apk_asset_provider_(std::move(apk_asset_provider)) {
+      shell_(std::move(shell)) {
   FML_DCHECK(jni_facade);
   FML_DCHECK(shell_);
   FML_DCHECK(shell_->IsSetup());
@@ -258,7 +256,8 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
 
   // TODO(xster): could be worth tracing this to investigate whether
   // the IsolateConfiguration could be cached somewhere.
-  auto config = BuildRunConfiguration(entrypoint, libraryUrl, entrypoint_args);
+  auto config = BuildRunConfiguration(asset_manager_, entrypoint, libraryUrl,
+                                      entrypoint_args);
   if (!config) {
     // If the RunConfiguration was null, the kernel blob wasn't readable.
     // Fail the whole thing.
@@ -269,13 +268,13 @@ std::unique_ptr<AndroidShellHolder> AndroidShellHolder::Spawn(
       shell_->Spawn(std::move(config.value()), initial_route,
                     on_create_platform_view, on_create_rasterizer);
 
-  return std::unique_ptr<AndroidShellHolder>(new AndroidShellHolder(
-      GetSettings(), jni_facade, thread_host_, std::move(shell),
-      apk_asset_provider_->Clone(), weak_platform_view));
+  return std::unique_ptr<AndroidShellHolder>(
+      new AndroidShellHolder(GetSettings(), jni_facade, thread_host_,
+                             std::move(shell), weak_platform_view));
 }
 
 void AndroidShellHolder::Launch(
-    std::unique_ptr<APKAssetProvider> apk_asset_provider,
+    std::shared_ptr<AssetManager> asset_manager,
     const std::string& entrypoint,
     const std::string& libraryUrl,
     const std::vector<std::string>& entrypoint_args) {
@@ -283,8 +282,9 @@ void AndroidShellHolder::Launch(
     return;
   }
 
-  apk_asset_provider_ = std::move(apk_asset_provider);
-  auto config = BuildRunConfiguration(entrypoint, libraryUrl, entrypoint_args);
+  asset_manager_ = asset_manager;
+  auto config = BuildRunConfiguration(asset_manager, entrypoint, libraryUrl,
+                                      entrypoint_args);
   if (!config) {
     return;
   }
@@ -313,6 +313,7 @@ void AndroidShellHolder::NotifyLowMemoryWarning() {
 }
 
 std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
+    std::shared_ptr<flutter::AssetManager> asset_manager,
     const std::string& entrypoint,
     const std::string& libraryUrl,
     const std::vector<std::string>& entrypoint_args) const {
@@ -331,8 +332,8 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
         IsolateConfiguration::CreateForKernel(std::move(kernel_blob));
   }
 
-  RunConfiguration config(std::move(isolate_configuration));
-  config.AddAssetResolver(apk_asset_provider_->Clone());
+  RunConfiguration config(std::move(isolate_configuration),
+                          std::move(asset_manager));
 
   {
     if (!entrypoint.empty() && !libraryUrl.empty()) {
