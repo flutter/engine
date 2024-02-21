@@ -38,7 +38,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding.OnSaveInstanceStateListener;
-import io.flutter.plugins.FakeGeneratedPluginRegistrant;
+import io.flutter.plugins.GeneratedPluginRegistrant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -59,7 +59,7 @@ public class FlutterActivityTest {
   @Before
   public void setUp() {
     FlutterInjector.reset();
-    FakeGeneratedPluginRegistrant.clearRegisteredEngines();
+    GeneratedPluginRegistrant.clearRegisteredEngines();
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     when(mockFlutterJNI.isAttached()).thenReturn(true);
     FlutterJNI.Factory mockFlutterJNIFactory = mock(FlutterJNI.Factory.class);
@@ -70,7 +70,7 @@ public class FlutterActivityTest {
 
   @After
   public void tearDown() {
-    FakeGeneratedPluginRegistrant.clearRegisteredEngines();
+    GeneratedPluginRegistrant.clearRegisteredEngines();
     FlutterInjector.reset();
   }
 
@@ -310,7 +310,7 @@ public class FlutterActivityTest {
     // configureFlutterEngine which registers the plugins.
     activity.onCreate(null);
 
-    List<FlutterEngine> registeredEngines = FakeGeneratedPluginRegistrant.getRegisteredEngines();
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     assertEquals(1, registeredEngines.size());
     assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
   }
@@ -423,7 +423,7 @@ public class FlutterActivityTest {
     FlutterActivityWithProvidedEngine flutterActivity = activityController.get();
     flutterActivity.configureFlutterEngine(flutterActivity.getFlutterEngine());
 
-    List<FlutterEngine> registeredEngines = FakeGeneratedPluginRegistrant.getRegisteredEngines();
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
     // and once by the default FlutterActivity.configureFlutterEngine implementation.
     // Test that it doesn't happen.

@@ -26,7 +26,7 @@ import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
-import io.flutter.plugins.FakeGeneratedPluginRegistrant;
+import io.flutter.plugins.GeneratedPluginRegistrant;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
@@ -43,7 +43,7 @@ public class FlutterFragmentActivityTest {
   @Before
   public void setUp() {
     FlutterInjector.reset();
-    FakeGeneratedPluginRegistrant.clearRegisteredEngines();
+    GeneratedPluginRegistrant.clearRegisteredEngines();
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);
     when(mockFlutterJNI.isAttached()).thenReturn(true);
     FlutterJNI.Factory mockFlutterJNIFactory = mock(FlutterJNI.Factory.class);
@@ -54,7 +54,7 @@ public class FlutterFragmentActivityTest {
 
   @After
   public void tearDown() {
-    FakeGeneratedPluginRegistrant.clearRegisteredEngines();
+    GeneratedPluginRegistrant.clearRegisteredEngines();
     FlutterInjector.reset();
   }
 
@@ -117,7 +117,7 @@ public class FlutterFragmentActivityTest {
       scenario.onActivity(
           activity -> {
             List<FlutterEngine> registeredEngines =
-                FakeGeneratedPluginRegistrant.getRegisteredEngines();
+                GeneratedPluginRegistrant.getRegisteredEngines();
             assertEquals(1, registeredEngines.size());
             assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
           });
@@ -131,13 +131,13 @@ public class FlutterFragmentActivityTest {
       scenario.onActivity(
           activity -> {
             List<FlutterEngine> registeredEngines =
-                FakeGeneratedPluginRegistrant.getRegisteredEngines();
+                GeneratedPluginRegistrant.getRegisteredEngines();
             assertEquals(1, registeredEngines.size());
             assertEquals(activity.getFlutterEngine(), registeredEngines.get(0));
           });
     }
 
-    List<FlutterEngine> registeredEngines = FakeGeneratedPluginRegistrant.getRegisteredEngines();
+    List<FlutterEngine> registeredEngines = GeneratedPluginRegistrant.getRegisteredEngines();
     // This might cause the plugins to be registered twice, once by the FlutterEngine constructor,
     // and once by the default FlutterFragmentActivity.configureFlutterEngine implementation.
     // Test that it doesn't happen.
@@ -149,7 +149,7 @@ public class FlutterFragmentActivityTest {
       throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
-    assertTrue(FakeGeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
+    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, true);
     FlutterFragmentActivity spyFlutterActivity = spy(activity);
@@ -162,7 +162,7 @@ public class FlutterFragmentActivityTest {
       throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
-    assertTrue(FakeGeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
+    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     Bundle bundle = new Bundle();
     bundle.putBoolean(HANDLE_DEEPLINKING_META_DATA_KEY, false);
     FlutterFragmentActivity spyFlutterActivity = spy(activity);
@@ -175,7 +175,7 @@ public class FlutterFragmentActivityTest {
       throws PackageManager.NameNotFoundException {
     FlutterFragmentActivity activity =
         Robolectric.buildActivity(FlutterFragmentActivityWithProvidedEngine.class).get();
-    assertTrue(FakeGeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
+    assertTrue(GeneratedPluginRegistrant.getRegisteredEngines().isEmpty());
     // Creates an empty bundle.
     Bundle bundle = new Bundle();
     FlutterFragmentActivity spyFlutterActivity = spy(activity);
