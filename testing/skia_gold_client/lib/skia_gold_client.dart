@@ -257,11 +257,15 @@ class SkiaGoldClient {
     final ProcessResult result = await _runCommand(imgtestCommand);
 
     if (result.exitCode != 0) {
-      // We do not want to throw for non-zero exit codes here, as an intentional
-      // change or new golden file test expect non-zero exit codes. Logging here
-      // is meant to inform when an unexpected result occurs.
-      print('goldctl imgtest add stdout: ${result.stdout}');
-      print('goldctl imgtest add stderr: ${result.stderr}');
+      final StringBuffer buf = StringBuffer()
+        ..writeln('Skia Gold imgtest add failed.')
+        ..writeln('An error occurred when adding a golden file test with ')
+        ..writeln('goldctl.')
+        ..writeln()
+        ..writeln('Debug information for Gold:')
+        ..writeln('stdout: ${result.stdout}')
+        ..writeln('stderr: ${result.stderr}');
+      throw Exception(buf.toString());
     } else if (verbose) {
       print('stdout:\n${result.stdout}');
       print('stderr:\n${result.stderr}');
