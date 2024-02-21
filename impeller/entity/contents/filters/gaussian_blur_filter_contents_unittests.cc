@@ -11,6 +11,12 @@
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/renderer/testing/mocks.h"
 
+#if FML_OS_MACOSX
+#define IMPELLER_RAND arc4random
+#else
+#define IMPELLER_RAND rand
+#endif
+
 namespace impeller {
 namespace testing {
 
@@ -582,7 +588,7 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesComplex) {
   float data[33];
   srand(0);
   for (int i = 0; i < 33; i++) {
-    data[i] = 255.0 * static_cast<double>(arc4random()) / RAND_MAX;
+    data[i] = 255.0 * static_cast<double>(IMPELLER_RAND()) / RAND_MAX;
   }
 
   auto sampler = [data](Point point) -> Scalar {
