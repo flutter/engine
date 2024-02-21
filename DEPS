@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '9d86359b5fe8b7b5d6e4163a7979277f9dbd7dea',
+  'skia_revision': '8fa858855820c5cba1448b0a756de5c4dafd28ba',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -1000,7 +1000,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'gKg6HlBeR52y-cMhu1lFKv7wxHoEM8Nw-b_pWokiVAkC'
+        'version': 'dLhvv964txwnSlvNw-qiuPtzH97grhOfLDOeg3QQKucC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
@@ -1019,7 +1019,7 @@ deps = {
    },
 
   'src/third_party/impeller-cmake-example': {
-     'url': Var('flutter_git') + '/third_party/impeller-cmake-example.git' + '@' + 'd1a26a51dc6890e5f851749e3d8e048703f24f51',
+     'url': Var('flutter_git') + '/third_party/impeller-cmake-example.git' + '@' + 'c44e8093972c969acf171be72591e408a85fdc53',
      'condition': 'download_impeller_cmake_example',
   },
 
