@@ -21,8 +21,8 @@ class FrameTimingRecorder {
   /// These two metrics are collected early in the process, before the respective
   /// scene builders are created. These are instead treated as global state, which
   /// are used to initialize any recorders that are created by the scene builders.
-  static late int _currentFrameVsyncStart;
-  static late int _currentFrameBuildStart;
+  static int _currentFrameVsyncStart = 0;
+  static int _currentFrameBuildStart = 0;
 
   static void recordCurrentFrameVsync() {
     if (frameTimingsEnabled) {
