@@ -14,6 +14,27 @@ extern "C" {
 // Declare functions that are currently in-progress and shall be exposed to the
 // public facing API upon completion.
 
+typedef int64_t PlatformViewId;
+
+typedef struct {
+  size_t struct_size;
+  HWND parent_window;
+  const char* platform_view_type;
+  // user_data may hold any necessary additional information for creating a new
+  // platform view. For example, an instance of FlutterWindow.
+  void* user_data;
+  PlatformViewId platform_view_id;
+} FlutterPlatformViewCreationParameters;
+
+typedef HWND (*FlutterPlatformViewFactory)(
+    const FlutterPlatformViewCreationParameters*);
+
+typedef struct {
+  size_t struct_size;
+  FlutterPlatformViewFactory factory;
+  void* user_data;  // Arbitrary user data supplied to the creation struct.
+} FlutterPlatformViewTypeEntry;
+
 FLUTTER_EXPORT void FlutterDesktopEngineRegisterPlatformViewType(
     FlutterDesktopEngineRef engine,
     const char* view_type_name,

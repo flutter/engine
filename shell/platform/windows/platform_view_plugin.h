@@ -30,17 +30,17 @@ class PlatformViewPlugin : public PlatformViewManager {
   void RegisterPlatformViewType(std::string_view type_name,
                                 const FlutterPlatformViewTypeEntry& type);
 
+  // | PlatformViewManager |
+  // type_name must correspond to a string that has already been registered
+  // with RegisterPlatformViewType.
+  bool AddPlatformView(PlatformViewId id, std::string_view type_name) override;
+
   // Create a queued platform view instance after it has been added.
   // id must correspond to an identifier that has already been added with
   // AddPlatformView.
   // This method will create the platform view within a task queued to the
   // engine's TaskRunner, which will run on the UI thread.
   void InstantiatePlatformView(PlatformViewId id);
-
-  // | PlatformViewManager |
-  // type_name must correspond to a string that has already been registered
-  // with RegisterPlatformViewType.
-  bool AddPlatformView(PlatformViewId id, std::string_view type_name) override;
 
   // | PlatformViewManager |
   // id must correspond to an identifier that has already been added with
