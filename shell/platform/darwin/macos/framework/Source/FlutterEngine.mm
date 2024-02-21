@@ -1097,6 +1097,7 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 - (void)onVSync:(uintptr_t)baton {
   @synchronized(_vsyncWaiters) {
+    // TODO(knopp): Use vsync waiter for correct view.
     FlutterVSyncWaiter* waiter = [_vsyncWaiters objectForKey:@(kFlutterImplicitViewId)];
     [waiter waitForVSync:baton];
   }
