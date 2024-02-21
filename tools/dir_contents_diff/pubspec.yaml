@@ -3,6 +3,7 @@ environment:
   sdk: '>=3.2.0-0 <4.0.0'
 dev_dependencies:
   litetest: any
+  path: any
 dependency_overrides:
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
