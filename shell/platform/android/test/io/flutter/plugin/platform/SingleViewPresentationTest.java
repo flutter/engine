@@ -24,12 +24,11 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
-
-import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
@@ -97,14 +96,14 @@ public class SingleViewPresentationTest {
   public void windowManagerHandler_passesCorrectlyToFakeWindowViewGroup() {
     // Mock the WindowManager and FakeWindowViewGroup that get used by the WindowManagerHandler.
     WindowManager mockWindowManager = mock(WindowManager.class);
-    SingleViewPresentation.FakeWindowViewGroup mockFakeWindowViewGroup
-            = mock(SingleViewPresentation.FakeWindowViewGroup.class);
+    SingleViewPresentation.FakeWindowViewGroup mockFakeWindowViewGroup =
+        mock(SingleViewPresentation.FakeWindowViewGroup.class);
 
     View mockView = mock(View.class);
     ViewGroup.LayoutParams mockLayoutParams = mock(ViewGroup.LayoutParams.class);
 
-    SingleViewPresentation.WindowManagerHandler windowManagerHandler
-            = new SingleViewPresentation.WindowManagerHandler(mockWindowManager, mockFakeWindowViewGroup);
+    SingleViewPresentation.WindowManagerHandler windowManagerHandler =
+        new SingleViewPresentation.WindowManagerHandler(mockWindowManager, mockFakeWindowViewGroup);
 
     // removeViewImmediate
     windowManagerHandler.removeViewImmediate(mockView);
@@ -137,8 +136,8 @@ public class SingleViewPresentationTest {
     View mockView = mock(View.class);
     ViewGroup.LayoutParams mockLayoutParams = mock(ViewGroup.LayoutParams.class);
 
-    SingleViewPresentation.WindowManagerHandler windowManagerHandler
-            = new SingleViewPresentation.WindowManagerHandler(mockWindowManager, null);
+    SingleViewPresentation.WindowManagerHandler windowManagerHandler =
+        new SingleViewPresentation.WindowManagerHandler(mockWindowManager, null);
 
     // removeViewImmediate
     windowManagerHandler.removeViewImmediate(mockView);
@@ -163,11 +162,11 @@ public class SingleViewPresentationTest {
   public void windowManagerHandler_forwardsAllOtherCallsToDelegate() {
     // Mock the WindowManager and FakeWindowViewGroup that get used by the WindowManagerHandler.
     WindowManager mockWindowManager = mock(WindowManager.class);
-    SingleViewPresentation.FakeWindowViewGroup mockFakeWindowViewGroup
-            = mock(SingleViewPresentation.FakeWindowViewGroup.class);
+    SingleViewPresentation.FakeWindowViewGroup mockFakeWindowViewGroup =
+        mock(SingleViewPresentation.FakeWindowViewGroup.class);
 
-    SingleViewPresentation.WindowManagerHandler windowManagerHandler
-            = new SingleViewPresentation.WindowManagerHandler(mockWindowManager, mockFakeWindowViewGroup);
+    SingleViewPresentation.WindowManagerHandler windowManagerHandler =
+        new SingleViewPresentation.WindowManagerHandler(mockWindowManager, mockFakeWindowViewGroup);
 
     // Verify that all other calls get forwarded to the delegate.
     Executor mockExecutor = mock(Executor.class);

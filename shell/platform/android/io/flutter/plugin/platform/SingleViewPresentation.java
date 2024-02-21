@@ -31,7 +31,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-
 import io.flutter.Log;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -166,7 +165,7 @@ class SingleViewPresentation extends Presentation {
       WindowManager windowManagerDelegate =
           (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
       state.windowManagerHandler =
-              new WindowManagerHandler(windowManagerDelegate, state.fakeWindowViewGroup);
+          new WindowManagerHandler(windowManagerDelegate, state.fakeWindowViewGroup);
     }
 
     container = new FrameLayout(getContext());
