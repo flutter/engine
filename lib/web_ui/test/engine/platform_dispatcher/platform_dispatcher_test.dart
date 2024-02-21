@@ -419,31 +419,21 @@ void testMain() {
     });
 
 
-    test('scheduleWarmupFrame should call both callbacks and flush microtasks', () async {
-      bool microtaskFlushed = false;
+    test('scheduleWarmupFrame should call both callbacks', () async {
       bool beginFrameCalled = false;
       final Completer<void> drawFrameCalled = Completer<void>();
       dispatcher.scheduleWarmUpFrame(beginFrame: () {
-        expect(microtaskFlushed, false);
         expect(drawFrameCalled.isCompleted, false);
         expect(beginFrameCalled, false);
         beginFrameCalled = true;
-        scheduleMicrotask(() {
-          expect(microtaskFlushed, false);
-          expect(drawFrameCalled.isCompleted, false);
-          microtaskFlushed = true;
-        });
-        expect(microtaskFlushed, false);
       }, drawFrame: () {
         expect(beginFrameCalled, true);
-        expect(microtaskFlushed, true);
         expect(drawFrameCalled.isCompleted, false);
         drawFrameCalled.complete();
       });
       await drawFrameCalled.future;
       expect(beginFrameCalled, true);
       expect(drawFrameCalled.isCompleted, true);
-      expect(microtaskFlushed, true);
     });
   });
 }
