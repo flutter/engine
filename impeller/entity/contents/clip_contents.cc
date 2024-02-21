@@ -176,6 +176,11 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
                                  RenderPass& pass) const {
   using VS = ClipPipeline::VertexShader;
 
+  if constexpr (ContentContext::kEnableStencilThenCover) {
+    VALIDATION_LOG << "ClipRestoreContents is not supported with StC enabled.";
+    return false;
+  }
+
   pass.SetCommandLabel("Restore Clip");
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;

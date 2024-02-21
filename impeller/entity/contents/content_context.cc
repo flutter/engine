@@ -164,12 +164,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         front_stencil.depth_stencil_pass = StencilOperation::kKeep;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kSetToRef:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
-        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
       case StencilMode::kNonZeroWrite:
         front_stencil.stencil_compare = CompareFunction::kAlways;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
@@ -185,7 +179,13 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         break;
       case StencilMode::kCoverCompare:
         front_stencil.stencil_compare = CompareFunction::kNotEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kCoverCompareInverted:
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
       case StencilMode::kLegacyClipRestore:

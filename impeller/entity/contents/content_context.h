@@ -293,15 +293,22 @@ struct ContentContextOptions {
     kIgnore,
     /// Overwrite the stencil content to the ref value. Used for resetting the
     /// stencil buffer after a stencil-then-cover operation.
-    kSetToRef,
-    /// Draw the stencil for the nonzero fill path rule.
     kNonZeroWrite,
     /// Draw the stencil for the evenoff fill path rule.
+    /// The stencil ref should always be 0 for draw calls using this mode.
     kEvenOddWrite,
     /// Used for draw calls which fill in the stenciled area. Intended to be
     /// used after `kNonZeroWrite` or `kEvenOddWrite` is used to set up the
-    /// stencil buffer.
+    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    /// The stencil ref should always be 0 for draw calls using this mode.
     kCoverCompare,
+    /// The opposite of `kCoverCompare`. Used for draw calls which fill in the
+    /// non-stenciled area (intersection clips). Intended to be used after
+    /// `kNonZeroWrite` or `kEvenOddWrite` is used to set up the stencil buffer.
+    /// Also cleans up the stencil buffer by resetting everything to zero.
+    /// The stencil ref should always be 0 for draw calls using this mode.
+    kCoverCompareInverted,
 
     // Operations to control the legacy clip implementation, which forms a
     // heightmap on the stencil buffer.
@@ -386,6 +393,16 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  /// This setting does two things:
+  /// 1. Enables clipping with the depth buffer, freeing up the stencil buffer.
+  ///    See also: https://github.com/flutter/flutter/issues/138460
+  /// 2. Switches the generic tessellation fallback to use stencil-then-cover.
+  ///    See also: https://github.com/flutter/flutter/issues/123671
+  ///
+  // TODO(bdero): Remove this setting once StC is fully de-risked
+  //              https://github.com/flutter/flutter/issues/123671
+  static constexpr bool kEnableStencilThenCover = false;
 
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
