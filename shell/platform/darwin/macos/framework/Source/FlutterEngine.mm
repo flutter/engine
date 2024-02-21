@@ -471,13 +471,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
 }
 
+static const int kMainThreadPriority = 47;
+
 static void SetThreadPriority(FlutterThreadPriority priority) {
   if (priority == kDisplay || priority == kRaster) {
     pthread_t thread = pthread_self();
     sched_param param;
     int policy;
     if (!pthread_getschedparam(thread, &policy, &param)) {
-      param.sched_priority = 47;  // Same priority as main thread.
+      param.sched_priority = kMainThreadPriority;
       pthread_setschedparam(thread, policy, &param);
     }
     pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
