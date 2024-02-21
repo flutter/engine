@@ -7,6 +7,7 @@ package io.flutter.plugin.platform;
 import static android.os.Build.VERSION_CODES.KITKAT;
 import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.R;
+import static android.os.Build.VERSION_CODES.S;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -157,8 +158,12 @@ public class SingleViewPresentationTest {
     verifyNoInteractions(mockWindowManager);
   }
 
+  // This section tests that WindowManagerHandler forwards all of the non-special case calls to the
+  // delegate WindowManager. Because this must include some deprecated WindowManager method calls
+  // (because the proxy overrides every method), we suppress deprecation warnings here.
   @Test
-  @Config(minSdk = R)
+  @Config(minSdk = S)
+  @SuppressWarnings("deprecation")
   public void windowManagerHandler_forwardsAllOtherCallsToDelegate() {
     // Mock the WindowManager and FakeWindowViewGroup that get used by the WindowManagerHandler.
     WindowManager mockWindowManager = mock(WindowManager.class);

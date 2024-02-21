@@ -401,6 +401,7 @@ class SingleViewPresentation extends Presentation {
     }
 
     @Override
+    @Deprecated
     public Display getDefaultDisplay() {
       return delegate.getDefaultDisplay();
     }
