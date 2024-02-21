@@ -370,6 +370,7 @@ class HtmlViewEmbedder {
     if (overlayGroups != null) {
       _activeOverlayGroups = overlayGroups;
     }
+    print('RENDERING: ${rendering.entities}');
     assert(
       _context.pictureRecorders.length >= _overlays.length,
       'There should be at least as many picture recorders '

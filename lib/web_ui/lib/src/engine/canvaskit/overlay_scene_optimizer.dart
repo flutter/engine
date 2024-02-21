@@ -69,6 +69,11 @@ class RenderingRenderCanvas extends RenderingEntity {
   bool equalsForRendering(RenderingEntity other) {
     return other is RenderingRenderCanvas;
   }
+
+  @override
+  String toString() {
+    return '$RenderingRenderCanvas(${pictures.length} pictures)';
+  }
 }
 
 /// A platform view to be rendered.
@@ -81,6 +86,11 @@ class RenderingPlatformView extends RenderingEntity {
   @override
   bool equalsForRendering(RenderingEntity other) {
     return other is RenderingPlatformView && other.viewId == viewId;
+  }
+
+  @override
+  String toString() {
+    return '$RenderingPlatformView($viewId)';
   }
 }
 
