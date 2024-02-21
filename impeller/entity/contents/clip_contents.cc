@@ -73,18 +73,17 @@ bool ClipContents::CanInheritOpacity(const Entity& entity) const {
 
 void ClipContents::SetInheritedOpacity(Scalar opacity) {}
 
-bool ClipContents::RenderDepthClip(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass,
-    Entity::ClipOperation clip_op,
-    const std::shared_ptr<Geometry>& geometry) const {
+bool ClipContents::RenderDepthClip(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass,
+                                   Entity::ClipOperation clip_op,
+                                   const Geometry& geometry) const {
   using VS = ClipPipeline::VertexShader;
 
   VS::FrameInfo info;
   info.depth = entity.GetShaderClipDepth();
 
-  auto geometry_result = geometry->GetPositionBuffer(renderer, entity, pass);
+  auto geometry_result = geometry.GetPositionBuffer(renderer, entity, pass);
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kDestination;
 
@@ -135,7 +134,12 @@ bool ClipContents::RenderDepthClip(
     case Entity::ClipOperation::kDifference:
       pass.SetCommandLabel("Difference Clip");
       options.stencil_mode = ContentContextOptions::StencilMode::kCoverCompare;
-      cover_area = geometry->GetCoverage(entity.GetTransform()).value();
+      std::optional<Rect> maybe_cover_area =
+          geometry.GetCoverage(entity.GetTransform());
+      if (!maybe_cover_area.has_value()) {
+        return true;
+      }
+      cover_area = maybe_cover_area.value();
       break;
   }
   auto points = cover_area.GetPoints();
@@ -153,12 +157,11 @@ bool ClipContents::RenderDepthClip(
   return pass.Draw().ok();
 }
 
-bool ClipContents::RenderStencilClip(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass,
-    Entity::ClipOperation clip_op,
-    const std::shared_ptr<Geometry>& geometry) const {
+bool ClipContents::RenderStencilClip(const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass,
+                                     Entity::ClipOperation clip_op,
+                                     const Geometry& geometry) const {
   using VS = ClipPipeline::VertexShader;
 
   VS::FrameInfo info;
@@ -206,7 +209,7 @@ bool ClipContents::RenderStencilClip(
         ContentContextOptions::StencilMode::kLegacyClipIncrement;
   }
 
-  auto geometry_result = geometry->GetPositionBuffer(renderer, entity, pass);
+  auto geometry_result = geometry.GetPositionBuffer(renderer, entity, pass);
   options.primitive_type = geometry_result.type;
   pass.SetPipeline(renderer.GetClipPipeline(options));
 
@@ -217,15 +220,17 @@ bool ClipContents::RenderStencilClip(
 
   return pass.Draw().ok();
 }
-// NOLINTEND(unneeded-internal-declaration)
 
 bool ClipContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
+  if (!geometry_) {
+    return true;
+  }
   if constexpr (ContentContext::kEnableStencilThenCover) {
-    return RenderDepthClip(renderer, entity, pass, clip_op_, geometry_);
+    return RenderDepthClip(renderer, entity, pass, clip_op_, *geometry_);
   } else {
-    return RenderStencilClip(renderer, entity, pass, clip_op_, geometry_);
+    return RenderStencilClip(renderer, entity, pass, clip_op_, *geometry_);
   }
 }
 

@@ -53,12 +53,12 @@ class ClipContents final : public Contents {
                        const Entity& entity,
                        RenderPass& pass,
                        Entity::ClipOperation clip_op,
-                       const std::shared_ptr<Geometry>& geometry) const;
+                       const Geometry& geometry) const;
   bool RenderStencilClip(const ContentContext& renderer,
                          const Entity& entity,
                          RenderPass& pass,
                          Entity::ClipOperation clip_op,
-                         const std::shared_ptr<Geometry>& geometry) const;
+                         const Geometry& geometry) const;
 
   std::shared_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
