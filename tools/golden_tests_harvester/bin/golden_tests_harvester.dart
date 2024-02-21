@@ -46,6 +46,11 @@ class FakeSkiaGoldClient implements SkiaGoldClient {
   }
 
   @override
+  String getTraceID(String testName) {
+    throw UnimplementedError();
+  }
+
+  @override
   HttpClient get httpClient => throw UnimplementedError();
 
   @override
@@ -56,7 +61,8 @@ class FakeSkiaGoldClient implements SkiaGoldClient {
 }
 
 void _printUsage() {
-  Logger.instance.log('dart run ./bin/golden_tests_harvester.dart <working_dir>');
+  Logger.instance
+      .log('dart run ./bin/golden_tests_harvester.dart <working_dir>');
 }
 
 Future<void> main(List<String> arguments) async {
