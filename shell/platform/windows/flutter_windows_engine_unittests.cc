@@ -1175,7 +1175,7 @@ TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
   builder.SetDartEntrypoint("sendCreatePlatformViewMethod");
   auto engine = builder.Build();
 
-  EngineModifier modifier(engine.get());
+  EngineModifier modifier{engine.get()};
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
 
   bool received_call = false;
