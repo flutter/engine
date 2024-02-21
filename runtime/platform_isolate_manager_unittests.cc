@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/thread_local.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/runtime/platform_isolate_manager.h"
@@ -31,7 +30,7 @@ using IsolateDataMap =
 // Using a thread local isolate data map so that MultithreadedCreation test
 // can avoid using locks while creating isolates on multiple threads. A lock
 // would sync up the threads, so would defeat the purpose of the test.
-FML_THREAD_LOCAL fml::ThreadLocalUniquePtr<IsolateDataMap> isolate_data_map_;
+static thread_local std::unique_ptr<IsolateDataMap> isolate_data_map_;
 
 class PlatformIsolateManagerTest : public FixtureTest {
  public:

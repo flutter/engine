@@ -173,7 +173,6 @@ class UIDartState : public tonic::DartState {
 
   virtual Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
                                              Dart_Port isolate_ready_port_id,
-                                             const char* debug_name,
                                              char** error);
 
  protected:

@@ -399,7 +399,6 @@ class DartIsolate : public UIDartState {
   ///
   Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
                                      Dart_Port port_id,
-                                     const char* debug_name,
                                      char** error) override;
 
   bool LoadLoadingUnit(

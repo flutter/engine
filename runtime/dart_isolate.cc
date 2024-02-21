@@ -285,7 +285,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
                                                 Dart_Port port_id,
-                                                const char* debug_name,
                                                 char** error) {
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
@@ -354,13 +353,13 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   (*isolate_data)->platform_isolate_manager_ = platform_isolate_manager;
 
   IsolateMaker isolate_maker =
-      [parent_isolate, debug_name](
+      [parent_isolate](
           std::shared_ptr<DartIsolateGroupData>* unused_isolate_group_data,
           std::shared_ptr<DartIsolate>* isolate_data, Dart_IsolateFlags* flags,
           char** error) {
         return Dart_CreateIsolateInGroup(
             /*group_member=*/parent_isolate,
-            /*name=*/debug_name,
+            /*name=*/"PlatformIsolate",
             /*shutdown_callback=*/
             reinterpret_cast<Dart_IsolateShutdownCallback>(
                 DartIsolate::SpawnIsolateShutdownCallback),
@@ -409,6 +408,16 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_DeletePersistentHandle(entry_point_handle);
     Dart_Handle isolate_ready_port = Dart_NewSendPort(port_id);
+
+    // Disable Isolate.exit().
+    Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
+    FML_CHECK(!tonic::CheckAndHandleError(isolate_lib));
+    Dart_Handle isolate_type = Dart_GetNonNullableType(
+        isolate_lib, tonic::ToDart("Isolate"), 0, nullptr);
+    FML_CHECK(!tonic::CheckAndHandleError(isolate_type));
+    Dart_Handle result = Dart_SetField(isolate_type,
+                                       tonic::ToDart("_mayExit"), Dart_False());
+    FML_CHECK(!tonic::CheckAndHandleError(result));
 
     tonic::DartInvoke(entry_point, {isolate_ready_port});
 

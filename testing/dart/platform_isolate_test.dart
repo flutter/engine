@@ -94,4 +94,8 @@ void main() {
       expect(() => runInPlatformThread(() => print('Unreachable')), throws);
     });
   });
+
+  test('PlatformIsolate runInPlatformThread, exit disabled', () async {
+    await runInPlatformThread(() => expect(() => Isolate.exit(), throws));
+  });
 }
