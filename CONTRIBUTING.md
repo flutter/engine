@@ -62,13 +62,13 @@ in postsubmit.
 
 ### Skia Gold
 
-The Flutter engine uses [Skia Gold][] for image comparison tests which fail if:
+The Flutter engine uses [Skia Gold][skia_gold] for image comparison tests which fail if:
 
 - The image is different from an accepted baseline.
 - An image is not uploaded but is expected to be (see
   [`dir_contents_diff`][dir_contents_diff]).
 
-[skia gold]: https://flutter-engine-gold.skia.org/
+[skia_gold]: https://flutter-engine-gold.skia.org/
 [dir_contents_diff]: ./tools/dir_contents_diff/
 
 Any untriaged failures will block presubmit and postsubmit tests.
