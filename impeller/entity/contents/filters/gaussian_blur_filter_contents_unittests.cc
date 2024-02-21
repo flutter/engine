@@ -582,7 +582,7 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesComplex) {
   float data[33];
   srand(0);
   for (int i = 0; i < 33; i++) {
-    data[i] = 255.0 * static_cast<double>(rand()) / RAND_MAX;
+    data[i] = 255.0 * static_cast<double>(arc4random()) / RAND_MAX;
   }
 
   auto sampler = [data](Point point) -> Scalar {
