@@ -21,7 +21,7 @@ dependencies:
   engine_repo_tools: any
   process: any
 
-dev_dependencies: 
+dev_dependencies:
   litetest: any
   process_fakes: any
 

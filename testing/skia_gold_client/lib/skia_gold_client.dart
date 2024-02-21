@@ -34,7 +34,7 @@ interface class SkiaGoldClient {
   /// used to generate the screenshots.
   SkiaGoldClient(
     this.workDirectory, {
-    this.dimensions, 
+    this.dimensions,
     this.verbose = false,
     io.HttpClient? httpClient,
     ProcessManager? processManager,
@@ -62,7 +62,7 @@ interface class SkiaGoldClient {
 
   /// Whether the current environment is a presubmit job.
   bool get _isPresubmit {
-    return 
+    return
         isLuciEnv(environment: _environment) &&
         isAvailable(environment: _environment) &&
         _environment.containsKey(_kPresubmitEnvName);
@@ -70,7 +70,7 @@ interface class SkiaGoldClient {
 
   /// Whether the current environment is a postsubmit job.
   bool get _isPostsubmit {
-    return 
+    return
         isLuciEnv(environment: _environment) &&
         isAvailable(environment: _environment) &&
         !_environment.containsKey(_kPresubmitEnvName);
