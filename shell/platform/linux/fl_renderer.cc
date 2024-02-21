@@ -57,7 +57,7 @@ typedef struct {
 
 G_DEFINE_TYPE_WITH_PRIVATE(FlRenderer, fl_renderer, G_TYPE_OBJECT)
 
-// Returns the log for the given OpenGL shader.
+// Returns the log for the given OpenGL shader. Must be freed by the caller.
 static gchar* get_shader_log(GLuint shader) {
   int log_length;
   gchar* log;
@@ -70,7 +70,7 @@ static gchar* get_shader_log(GLuint shader) {
   return log;
 }
 
-// Returns the log for the given OpenGL program.
+// Returns the log for the given OpenGL program. Must be freed by the caller.
 static gchar* get_program_log(GLuint program) {
   int log_length;
   gchar* log;
