@@ -255,7 +255,8 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
         g_ptr_array_add(priv->textures, g_object_ref(provider));
       } break;
       case kFlutterLayerContentTypePlatformView: {
-        // Currently unsupported.
+        // TODO(robert-ancell) Not implemented -
+        // https://github.com/flutter/flutter/issues/41724
       } break;
     }
   }
