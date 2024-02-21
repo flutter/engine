@@ -13,7 +13,7 @@
 
 namespace flutter {
 
-// Possible reasons for change of keyboard foucs.
+// Possible reasons for change of keyboard focus.
 enum class FocusChangeDirection {
   kProgrammatic,  // Un-directed focus change.
   kForward,       // Keyboard focus moves forwards, e.g. TAB key.
