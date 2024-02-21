@@ -28,7 +28,7 @@ ContentContextOptions OptionsFromPass(const RenderPass& pass) {
 
   opts.has_depth_stencil_attachments = has_depth_stencil_attachments;
   if constexpr (ContentContext::kEnableStencilThenCover) {
-    opts.depth_compare = CompareFunction::kGreaterEqual;
+    opts.depth_compare = CompareFunction::kGreater;
   }
   return opts;
 }
