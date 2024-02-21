@@ -511,7 +511,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.currentRecorder;
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     recorder?.recordBuildFinish();
     recorder?.recordRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {

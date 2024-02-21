@@ -401,7 +401,7 @@ class SkwasmRenderer implements Renderer {
   // https://github.com/flutter/flutter/issues/137073.
   @override
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.currentRecorder;
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     recorder?.recordBuildFinish();
 
     view as EngineFlutterView;

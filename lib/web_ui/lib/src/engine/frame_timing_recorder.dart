@@ -6,8 +6,9 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 class FrameTimingRecorder {
-  int? _vsyncStartMicros;
-  int? _buildStartMicros;
+  final int _vsyncStartMicros = _currentFrameVsyncStart;
+  final int _buildStartMicros = _currentFrameBuildStart;
+
   int? _buildFinishMicros;
   int? _rasterStartMicros;
   int? _rasterFinishMicros;
@@ -17,14 +18,23 @@ class FrameTimingRecorder {
   /// This list is periodically reported to the framework (see [_kFrameTimingsSubmitInterval]).
   static List<ui.FrameTiming> _frameTimings = <ui.FrameTiming>[];
 
-  static void startFrame() {
-    _currentFrameTimingRecorder = frameTimingsEnabled
-      ? FrameTimingRecorder()
-      : null;
+  /// These two metrics are collected early in the process, before the respective
+  /// scene builders are created. These are instead treated as global state, which
+  /// are used to initialize any recorders that are created by the scene builders.
+  static late int _currentFrameVsyncStart;
+  static late int _currentFrameBuildStart;
+
+  static void recordCurrentFrameVsync() {
+    if (frameTimingsEnabled) {
+      _currentFrameVsyncStart = _nowMicros();
+    }
   }
 
-  static FrameTimingRecorder? _currentFrameTimingRecorder;
-  static FrameTimingRecorder? get currentRecorder => _currentFrameTimingRecorder;
+  static void recordCurrentFrameBuildStart() {
+    if (frameTimingsEnabled) {
+      _currentFrameBuildStart = _nowMicros();
+    }
+  }
 
   /// The last time (in microseconds) we submitted frame timings.
   static int _frameTimingsLastSubmitTime = _nowMicros();
@@ -49,16 +59,6 @@ class FrameTimingRecorder {
     return (domWindow.performance.now() * 1000).toInt();
   }
 
-  void recordVsyncStart([int? vsyncStart]) {
-    assert(_vsyncStartMicros == null, "can't record vsync start more than once");
-    _vsyncStartMicros = vsyncStart ?? _nowMicros();
-  }
-
-  void recordBuildStart([int? buildStart]) {
-    assert(_buildStartMicros == null, "can't record build start more than once");
-    _buildStartMicros = buildStart ?? _nowMicros();
-  }
-
   void recordBuildFinish([int? buildFinish]) {
     assert(_buildFinishMicros == null, "can't record build finish more than once");
     _buildFinishMicros = buildFinish ?? _nowMicros();
@@ -76,15 +76,14 @@ class FrameTimingRecorder {
 
   void submitTimings() {
     assert(
-      _buildStartMicros != null &&
       _buildFinishMicros != null &&
       _rasterStartMicros != null &&
       _rasterFinishMicros != null,
       'Attempted to submit an incomplete timings.'
     );
     final ui.FrameTiming timing = ui.FrameTiming(
-      vsyncStart: _vsyncStartMicros!,
-      buildStart: _buildStartMicros!,
+      vsyncStart: _vsyncStartMicros,
+      buildStart: _buildStartMicros,
       buildFinish: _buildFinishMicros!,
       rasterStart: _rasterStartMicros!,
       rasterFinish: _rasterFinishMicros!,

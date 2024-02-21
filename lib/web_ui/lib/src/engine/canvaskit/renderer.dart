@@ -417,7 +417,7 @@ class CanvasKitRenderer implements Renderer {
         "Unable to render to a view which hasn't been registered");
     final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;
     final RenderQueue renderQueue = rasterizer.queue;
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.currentRecorder;
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     if (renderQueue.current != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
