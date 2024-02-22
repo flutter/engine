@@ -13,9 +13,7 @@ import os
 
 from create_xcframework import create_xcframework  # pylint: disable=import-error
 
-buildroot_dir = os.path.abspath(
-    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
-)
+buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..', '..'))
 
 ARCH_SUBPATH = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
 DSYMUTIL = os.path.join(
@@ -221,13 +219,10 @@ def zip_xcframework_archive(dst):
       'FlutterMacOS.xcframework/macos-arm64_x84_64/'
       'FlutterMacOS.framework/Versions/A/FlutterMacOS'
   )
-  embed_codesign_configuration(
-      os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements
-  )
+  embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements)
 
   embed_codesign_configuration(
-      os.path.join(dst, 'without_entitlements.txt'),
-      filepath_without_entitlements
+      os.path.join(dst, 'without_entitlements.txt'), filepath_without_entitlements
   )
 
   subprocess.check_call([
