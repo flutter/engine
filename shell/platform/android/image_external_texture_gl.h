@@ -17,8 +17,8 @@
 #include "flutter/impeller/toolkit/egl/image.h"
 #include "flutter/impeller/toolkit/gles/texture.h"
 
+#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/shell/platform/android/android_context_gl_skia.h"
-#include "flutter/shell/platform/android/ndk_helpers.h"
 
 namespace flutter {
 
@@ -33,7 +33,9 @@ class ImageExternalTextureGL : public ImageExternalTexture {
   void Attach(PaintContext& context) override;
   void Detach() override;
   void ProcessFrame(PaintContext& context, const SkRect& bounds) override;
-  void UpdateImage(JavaLocalRef& hardware_buffer, PaintContext& context);
+  void UpdateImage(JavaLocalRef& hardware_buffer,
+                   const SkRect& bounds,
+                   PaintContext& context);
 
   virtual sk_sp<flutter::DlImage> CreateDlImage(
       PaintContext& context,

@@ -106,15 +106,6 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     return;
   }
 
-  // Without this, the playground will timeout waiting for the presentation.
-  // It's better to have some Vulkan validation tests running on CI to catch
-  // regressions, but for now this is a workaround.
-  //
-  // TODO(matanlurey): https://github.com/flutter/flutter/issues/134852.
-  //
-  // (Note, if you're using MoltenVK, or Linux, you can comment out this line).
-  context_vk->SetSyncPresentation(true);
-
   VkSurfaceKHR vk_surface;
   auto res = vk::Result{::glfwCreateWindowSurface(
       context_vk->GetInstance(),  // instance
@@ -158,8 +149,8 @@ std::unique_ptr<Surface> PlaygroundImplVK::AcquireSurfaceFrame(
 
   int width = 0;
   int height = 0;
-  ::glfwGetWindowSize(reinterpret_cast<GLFWwindow*>(handle_.get()), &width,
-                      &height);
+  ::glfwGetFramebufferSize(reinterpret_cast<GLFWwindow*>(handle_.get()), &width,
+                           &height);
   size_ = ISize{width, height};
   surface_context_vk->UpdateSurfaceSize(ISize{width, height});
 

@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <optional>
-#include <set>
 #include <tuple>
 #include <vector>
 
@@ -30,9 +29,6 @@ enum class Join {
 enum class FillType {
   kNonZero,  // The default winding order.
   kOdd,
-  kPositive,
-  kNegative,
-  kAbsGeqTwo,
 };
 
 enum class Convexity {
@@ -200,6 +196,9 @@ class Path {
   // builder from affecting the existing taken paths.
   struct Data {
     Data() = default;
+
+    Data(Data&& other) = default;
+
     Data(const Data& other) = default;
 
     ~Data() = default;
@@ -211,11 +210,9 @@ class Path {
     std::vector<ContourComponent> contours;
 
     std::optional<Rect> bounds;
-
-    bool locked = false;
   };
 
-  explicit Path(const Data& data);
+  explicit Path(Data data);
 
   std::shared_ptr<const Data> data_;
 };

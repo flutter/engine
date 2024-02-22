@@ -1,7 +1,6 @@
 {
     "builds": [
         {
-            "archives": [],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -25,7 +24,46 @@
             }
         },
         {
-            "archives": [],
+            "cas_archive": false,
+            "drone_dimensions": [
+                "device_type=none",
+                "kvm=1",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
+            },
+            "gn": [
+                "--fuchsia",
+                "--fuchsia-cpu",
+                "arm64",
+                "--runtime-mode",
+                "profile",
+                "--no-lto"
+            ],
+            "name": "fuchsia_profile_arm64_tester",
+            "ninja": {
+                "config": "fuchsia_profile_arm64",
+                "targets": [
+                    "flutter/shell/platform/fuchsia:fuchsia",
+                    "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
+                    "fuchsia_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "name": "arm64 emulator based profile / aot tests",
+                    "language": "python3",
+                    "script": "flutter/tools/fuchsia/with_envs.py",
+                    "parameters": [
+                        "testing/fuchsia/run_tests.py",
+                        "fuchsia_profile_arm64"
+                    ]
+                }
+            ]
+        },
+        {
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -49,7 +87,46 @@
             }
         },
         {
-            "archives": [],
+            "cas_archive": false,
+            "drone_dimensions": [
+                "device_type=none",
+                "kvm=1",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
+            },
+            "gn": [
+                "--fuchsia",
+                "--fuchsia-cpu",
+                "arm64",
+                "--runtime-mode",
+                "release",
+                "--no-lto"
+            ],
+            "name": "fuchsia_release_arm64_tester",
+            "ninja": {
+                "config": "fuchsia_release_arm64",
+                "targets": [
+                    "flutter/shell/platform/fuchsia:fuchsia",
+                    "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
+                    "fuchsia_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "name": "arm64 emulator based release tests",
+                    "language": "python3",
+                    "script": "flutter/tools/fuchsia/with_envs.py",
+                    "parameters": [
+                        "testing/fuchsia/run_tests.py",
+                        "fuchsia_release_arm64"
+                    ]
+                }
+            ]
+        },
+        {
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -69,8 +146,7 @@
             "ninja": {
                 "config": "fuchsia_debug_arm64",
                 "targets": [
-                    "flutter/shell/platform/fuchsia:fuchsia",
-                    "fuchsia_tests"
+                    "flutter/shell/platform/fuchsia:fuchsia"
                 ]
             },
             "tests": [
@@ -85,6 +161,46 @@
                         "--engine-version",
                         "${REVISION}",
                         "--upload"
+                    ]
+                }
+            ]
+        },
+        {
+            "cas_archive": false,
+            "drone_dimensions": [
+                "device_type=none",
+                "kvm=1",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
+            },
+            "gn": [
+                "--fuchsia",
+                "--fuchsia-cpu",
+                "arm64",
+                "--runtime-mode",
+                "debug",
+                "--no-lto"
+            ],
+            "name": "fuchsia_debug_arm64_tester",
+            "ninja": {
+                "config": "fuchsia_debug_arm64",
+                "targets": [
+                    "flutter/shell/platform/fuchsia:fuchsia",
+                    "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
+                    "fuchsia_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "name": "arm64 emulator based debug tests",
+                    "language": "python3",
+                    "script": "flutter/tools/fuchsia/with_envs.py",
+                    "parameters": [
+                        "testing/fuchsia/run_tests.py",
+                        "fuchsia_debug_arm64"
                     ]
                 }
             ]
@@ -113,6 +229,7 @@
             }
         },
         {
+            "cas_archive": false,
             "drone_dimensions": [
                 "device_type=none",
                 "kvm=1",
@@ -127,9 +244,74 @@
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
+                "profile",
+                "--no-lto"
+            ],
+            "name": "fuchsia_profile_x64_tester",
+            "ninja": {
+                "config": "fuchsia_profile_x64",
+                "targets": [
+                    "flutter/shell/platform/fuchsia:fuchsia",
+                    "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
+                    "fuchsia_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "name": "x64 emulator based profile / aot tests",
+                    "language": "python3",
+                    "script": "flutter/tools/fuchsia/with_envs.py",
+                    "parameters": [
+                        "testing/fuchsia/run_tests.py",
+                        "fuchsia_profile_x64"
+                    ]
+                }
+            ]
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
+            },
+            "gn": [
+                "--fuchsia",
+                "--fuchsia-cpu",
+                "x64",
+                "--runtime-mode",
                 "release"
             ],
             "name": "fuchsia_release_x64",
+            "ninja": {
+                "config": "fuchsia_release_x64",
+                "targets": [
+                    "flutter/shell/platform/fuchsia:fuchsia"
+                ]
+            }
+        },
+        {
+            "cas_archive": false,
+            "drone_dimensions": [
+                "device_type=none",
+                "kvm=1",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
+            },
+            "gn": [
+                "--fuchsia",
+                "--fuchsia-cpu",
+                "x64",
+                "--runtime-mode",
+                "release",
+                "--no-lto"
+            ],
+            "name": "fuchsia_release_x64_tester",
             "ninja": {
                 "config": "fuchsia_release_x64",
                 "targets": [
@@ -153,7 +335,6 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "kvm=1",
                 "os=Linux"
             ],
             "gclient_variables": {
@@ -172,9 +353,7 @@
             "ninja": {
                 "config": "fuchsia_debug_x64",
                 "targets": [
-                    "flutter/shell/platform/fuchsia:fuchsia",
-                    "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
-                    "fuchsia_tests"
+                    "flutter/shell/platform/fuchsia:fuchsia"
                 ]
             },
             "tests": [
@@ -190,6 +369,41 @@
                         "${REVISION}",
                         "--upload"
                     ]
+                }
+            ]
+        },
+        {
+            "cas_archive": false,
+            "drone_dimensions": [
+                "device_type=none",
+                "kvm=1",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "run_fuchsia_emu": true
+            },
+            "gn": [
+                "--fuchsia",
+                "--fuchsia-cpu",
+                "x64",
+                "--runtime-mode",
+                "debug",
+                "--no-lto"
+            ],
+            "name": "fuchsia_debug_x64_tester",
+            "ninja": {
+                "config": "fuchsia_debug_x64",
+                "targets": [
+                    "flutter/shell/platform/fuchsia:fuchsia",
+                    "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
+                    "fuchsia_tests"
+                ]
+            },
+            "tests": [
+                {
+                    "name": "run_tests test",
+                    "script": "flutter/testing/fuchsia/run_tests_test.py"
                 },
                 {
                     "name": "x64 emulator based debug tests",

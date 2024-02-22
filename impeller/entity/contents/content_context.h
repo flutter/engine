@@ -287,21 +287,34 @@ struct PendingCommandBuffers {
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
   enum class StencilMode : uint8_t {
-    // Operations used for stencil-then-cover
-
     /// Turn the stencil test off. Used when drawing without stencil-then-cover.
     kIgnore,
-    /// Overwrite the stencil content to the ref value. Used for resetting the
-    /// stencil buffer after a stencil-then-cover operation.
-    kSetToRef,
-    /// Draw the stencil for the nonzero fill path rule.
-    kNonZeroWrite,
-    /// Draw the stencil for the evenoff fill path rule.
-    kEvenOddWrite,
+
+    // Operations used for stencil-then-cover
+
+    /// Draw the stencil for the NonZero fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilNonZeroFill,
+    /// Draw the stencil for the EvenOdd fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilEvenOddFill,
     /// Used for draw calls which fill in the stenciled area. Intended to be
-    /// used after `kNonZeroWrite` or `kEvenOddWrite` is used to set up the
-    /// stencil buffer.
+    /// used after `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set
+    /// up the stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
     kCoverCompare,
+    /// The opposite of `kCoverCompare`. Used for draw calls which fill in the
+    /// non-stenciled area (intersection clips). Intended to be used after
+    /// `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set up the
+    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kCoverCompareInverted,
 
     // Operations to control the legacy clip implementation, which forms a
     // heightmap on the stencil buffer.
@@ -386,6 +399,16 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  /// This setting does two things:
+  /// 1. Enables clipping with the depth buffer, freeing up the stencil buffer.
+  ///    See also: https://github.com/flutter/flutter/issues/138460
+  /// 2. Switches the generic tessellation fallback to use stencil-then-cover.
+  ///    See also: https://github.com/flutter/flutter/issues/123671
+  ///
+  // TODO(bdero): Remove this setting once StC is fully de-risked
+  //              https://github.com/flutter/flutter/issues/123671
+  static constexpr bool kEnableStencilThenCover = false;
 
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
@@ -816,6 +839,14 @@ class ContentContext {
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
 
+  /// Run backend specific additional setup and create common shader variants.
+  ///
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
+  void InitializeCommonlyUsedShadersIfNeeded() const;
+
   struct RuntimeEffectPipelineKey {
     std::string unique_entrypoint_name;
     ContentContextOptions options;
@@ -1007,6 +1038,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
+    TypedPipeline* pipeline = CreateIfNeeded(container, opts);
+    if (!pipeline) {
+      return nullptr;
+    }
+    return pipeline->WaitAndGet();
+  }
+
+  template <class TypedPipeline>
+  TypedPipeline* CreateIfNeeded(Variants<TypedPipeline>& container,
+                                ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
     }
@@ -1015,16 +1056,17 @@ class ContentContext {
       opts.wireframe = true;
     }
 
-    if (auto found = container.Get(opts)) {
-      return found->WaitAndGet();
+    if (TypedPipeline* found = container.Get(opts)) {
+      return found;
     }
 
-    auto prototype = container.GetDefault();
+    TypedPipeline* prototype = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != nullptr);
 
-    auto pipeline = prototype->WaitAndGet();
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+        prototype->WaitAndGet();
     if (!pipeline) {
       return nullptr;
     }
@@ -1036,10 +1078,10 @@ class ContentContext {
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
-    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
-    auto variant_pipeline = variant->WaitAndGet();
+    std::unique_ptr<TypedPipeline> variant =
+        std::make_unique<TypedPipeline>(std::move(variant_future));
     container.Set(opts, std::move(variant));
-    return variant_pipeline;
+    return container.Get(opts);
   }
 
   bool is_valid_ = false;

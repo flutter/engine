@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -78,6 +79,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
     AppLifecycleState.instance.addListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.addListener(invokeOnViewFocusChange);
+    domDocument.body?.append(accessibilityPlaceholder);
     _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
       // View creation/resize is handled by the `_didResize` handler in the
@@ -91,6 +94,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The [EnginePlatformDispatcher] singleton.
   static EnginePlatformDispatcher get instance => _instance;
   static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
+
+  @visibleForTesting
+  final DomElement accessibilityPlaceholder = EngineSemantics
+    .instance
+    .semanticsHelper
+    .prepareAccessibilityPlaceholder();
 
   PlatformConfiguration configuration = PlatformConfiguration(
     locales: parseBrowserLanguages(),
@@ -114,6 +123,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
     AppLifecycleState.instance.removeListener(_setAppLifecycleState);
+    ViewFocusBinding.instance.removeListener(invokeOnViewFocusChange);
+    accessibilityPlaceholder.remove();
     _onViewDisposedListener.cancel();
     viewManager.dispose();
   }
@@ -771,6 +782,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     scheduleFrameCallback!();
   }
 
+  @override
+  void scheduleWarmUpFrame({required ui.VoidCallback beginFrame, required ui.VoidCallback drawFrame}) {
+    Timer.run(beginFrame);
+    // We use timers here to ensure that microtasks flush in between.
+    //
+    // TODO(dkwingsmt): This logic was moved from the framework and is different
+    // from how Web renders a regular frame, which doesn't flush microtasks
+    // between the callbacks at all (see `initializeEngineServices`). We might
+    // want to change this. See the to-do in `initializeEngineServices` and
+    // https://github.com/flutter/engine/pull/50570#discussion_r1496671676
+    Timer.run(drawFrame);
+  }
+
   /// Updates the application's rendering on the GPU with the newly provided
   /// [Scene]. This function must be called within the scope of the
   /// [onBeginFrame] or [onDrawFrame] callbacks being invoked. If this function
@@ -795,27 +819,25 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    scheduling of frames.
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
-  @override
   Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
-    assert(view != null || implicitView != null,
-        'Calling render without a FlutterView');
-    if (view == null && implicitView == null) {
+    final EngineFlutterView? target = (view ?? implicitView) as EngineFlutterView?;
+    assert(target != null, 'Calling render without a FlutterView');
+    if (target == null) {
       // If there is no view to render into, then this is a no-op.
       return;
     }
-    final ui.FlutterView viewToRender = view ?? implicitView!;
 
     // Only render in an `onDrawFrame` or `onBeginFrame` scope. This is checked
     // by checking if the `_viewsRenderedInCurrentFrame` is non-null and this
     // view hasn't been rendered already in this scope.
     final bool shouldRender =
-        _viewsRenderedInCurrentFrame?.add(viewToRender) ?? false;
+        _viewsRenderedInCurrentFrame?.add(target) ?? false;
     // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
     // order to perform golden tests in Flutter framework because on the HTML
     // renderer, golden tests render to DOM and then take a browser screenshot,
     // https://github.com/flutter/flutter/issues/137073.
     if (shouldRender || renderer.rendererTag == 'html') {
-      await renderer.renderScene(scene, viewToRender);
+      await renderer.renderScene(scene, target);
     }
   }
 

@@ -91,10 +91,6 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   return surface;
 }
 
-void SurfaceContextVK::SetSyncPresentation(bool value) {
-  parent_->SetSyncPresentation(value);
-}
-
 void SurfaceContextVK::UpdateSurfaceSize(const ISize& size) const {
   swapchain_->UpdateSurfaceSize(size);
 }
@@ -124,6 +120,10 @@ vk::UniqueSurfaceKHR SurfaceContextVK::CreateAndroidSurface(
 
 const vk::Device& SurfaceContextVK::GetDevice() const {
   return parent_->GetDevice();
+}
+
+void SurfaceContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
+  parent_->InitializeCommonlyUsedShadersIfNeeded();
 }
 
 }  // namespace impeller
