@@ -5,46 +5,10 @@
 import("//build/fuchsia/config.gni")
 import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/src/cmc.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 
-# Compiles a CML file for a V2 component.
-#
-# manifest (required):
-#   The path to the .cml file for the component. Should include the file extension.
-# output (optional):
-#   The path for the output .cm file. Should include the file extension.
-template("_compile_cml") {
-  assert(defined(invoker.manifest), "_compile_cml must define manifest")
-
-  action(target_name) {
-    forward_variables_from(invoker,
-                           [
-                             "deps",
-                             "testonly",
-                             "visibility",
-                           ])
-    script = "//flutter/tools/fuchsia/compile_cml.py"
-
-    inputs = [ "$fuchsia_tool_dir/cmc" ]
-    sources = [ invoker.manifest ]
-
-    args = [
-      "--cmc-bin",
-      rebase_path("$fuchsia_tool_dir/cmc"),
-      "--manifest-file",
-      rebase_path(invoker.manifest),
-      "--output",
-      rebase_path(invoker.output, root_build_dir),
-      "--includepath",
-      rebase_path("$fuchsia_sdk/pkg/", root_build_dir),
-      "--includepath",
-      get_path_info(invoker.manifest, "dir"),
-      "--includepath",
-      rebase_path("//"),
-    ]
-    outputs = [ invoker.output ]
-  }
-}
+# TODO(zijiehe): May use fuchsia_package in gn-sdk if possible.
 
 # Creates a Fuchsia archive (.far) file using PM from the Fuchsia SDK.
 #
@@ -170,6 +134,7 @@ template("_fuchsia_archive") {
       inputs += invoker.inputs
     }
 
+    # TODO(zijiehe): pm is less preferred than ffx package.
     args = [
       "--pm-bin",
       rebase_path("$fuchsia_tool_dir/pm"),
@@ -229,15 +194,13 @@ template("fuchsia_archive") {
   }
 
   if (defined(invoker.cml_file)) {
-    _far_base_dir = "$root_out_dir/${target_name}_far"
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
-    _compile_cml(_compile_cml_target) {
+    cmc_compile(_compile_cml_target) {
       forward_variables_from(invoker, [ "testonly" ])
 
       manifest = invoker.cml_file
-      output = "$_far_base_dir/meta/${_cml_file_name}.cm"
     }
     _deps += [ ":$_compile_cml_target" ]
   }
@@ -282,15 +245,13 @@ template("fuchsia_test_archive") {
   }
 
   if (defined(invoker.cml_file)) {
-    _far_base_dir = "$root_out_dir/${target_name}_far"
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
-    _compile_cml(_compile_cml_target) {
+    cmc_compile(_compile_cml_target) {
       forward_variables_from(invoker, [ "testonly" ])
 
       manifest = invoker.cml_file
-      output = "$_far_base_dir/meta/${_cml_file_name}.cm"
     }
     _deps += [ ":$_compile_cml_target" ]
   } else {
@@ -313,16 +274,13 @@ template("fuchsia_test_archive") {
       outputs = [ generated_cml_file ]
     }
 
-    far_base_dir = "$root_out_dir/${target_name}_far"
-
     # Compile the resulting interpolated test suite's cml.
     compile_test_suite_cml_target = "${test_suite}_test_suite_compile_cml"
-    _compile_cml(compile_test_suite_cml_target) {
+    cmc_compile(compile_test_suite_cml_target) {
       testonly = true
       deps = [ ":$interpolate_cml_target" ]
 
       manifest = generated_cml_file
-      output = "$far_base_dir/meta/${test_suite}.cm"
     }
 
     _deps += [ ":$compile_test_suite_cml_target" ]
