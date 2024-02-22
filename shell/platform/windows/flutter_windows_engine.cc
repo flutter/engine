@@ -493,7 +493,7 @@ std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
   auto view = std::make_unique<FlutterWindowsView>(
       kImplicitViewId, this, std::move(window), windows_proc_table_);
 
-  view_ = view.get();
+  views_[kImplicitViewId] = view.get();
   InitializeKeyboard();
 
   return std::move(view);
@@ -528,9 +528,12 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
 }
 
 FlutterWindowsView* FlutterWindowsEngine::view(FlutterViewId view_id) const {
-  FML_DCHECK(view_id == kImplicitViewId);
+  auto iterator = views_.find(view_id);
+  if (iterator == views_.end()) {
+    return nullptr;
+  }
 
-  return view_;
+  return iterator->second;
 }
 
 // Returns the currently configured Plugin Registrar.
@@ -669,7 +672,7 @@ void FlutterWindowsEngine::SendSystemLocales() {
 }
 
 void FlutterWindowsEngine::InitializeKeyboard() {
-  if (view_ == nullptr) {
+  if (views_.empty()) {
     FML_LOG(ERROR) << "Cannot initialize keyboard on Windows headless mode.";
   }
 
@@ -756,16 +759,24 @@ bool FlutterWindowsEngine::DispatchSemanticsAction(
 }
 
 void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
-  if (engine_ && semantics_enabled_ != enabled) {
-    semantics_enabled_ = enabled;
-    embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
-    view_->UpdateSemanticsEnabled(enabled);
+  if (!engine_ || semantics_enabled_ == enabled) {
+    return;
+  }
+
+  semantics_enabled_ = enabled;
+  embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
+
+  for (auto iterator = views_.begin(); iterator != views_.end(); iterator++) {
+    iterator->second->UpdateSemanticsEnabled(enabled);
   }
 }
 
 void FlutterWindowsEngine::OnPreEngineRestart() {
   // Reset the keyboard's state on hot restart.
-  if (view_) {
+  // TODO(loicsharma): Always reset the keyboard once
+  // it no longer depends on the implicit view.
+  // https://github.com/flutter/flutter/issues/115611
+  if (!views_.empty()) {
     InitializeKeyboard();
   }
 }
@@ -821,7 +832,15 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
       std::string text =
           std::get<std::string>(data_map.at(EncodableValue("message")));
       std::wstring wide_text = fml::Utf8ToWideString(text);
-      view_->AnnounceAlert(wide_text);
+
+      // TODO(loicsharma): Remove implicit view assumption.
+      // https://github.com/flutter/flutter/issues/142845
+      auto view = this->view(kImplicitViewId);
+      if (!view) {
+        return;
+      }
+
+      view->AnnounceAlert(wide_text);
     }
   }
   SendPlatformMessageResponse(message->response_handle,
@@ -843,7 +862,9 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
 }
 
 void FlutterWindowsEngine::OnDwmCompositionChanged() {
-  view_->OnDwmCompositionChanged();
+  for (auto iterator = views_.begin(); iterator != views_.end(); iterator++) {
+    iterator->second->OnDwmCompositionChanged();
+  }
 }
 
 void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,
