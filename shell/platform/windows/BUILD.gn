@@ -8,6 +8,7 @@ import("//flutter/shell/platform/glfw/config.gni")
 import("//flutter/testing/testing.gni")
 
 _public_headers = [ "public/flutter_windows.h" ]
+_internal_headers = [ "flutter_windows_internal.h" ]
 
 config("relative_angle_headers") {
   include_dirs = [ "//third_party/angle/include" ]
@@ -24,7 +25,7 @@ config("relative_flutter_windows_headers") {
 # The headers are a separate source set since the client wrapper is allowed
 # to depend on the public headers, but none of the rest of the code.
 source_set("flutter_windows_headers") {
-  public = _public_headers
+  public = _public_headers + _internal_headers
 
   public_deps = [ "//flutter/shell/platform/common:common_cpp_library_headers" ]
 
@@ -80,7 +81,6 @@ source_set("flutter_windows_source") {
     "flutter_windows.cc",
     "flutter_windows_engine.cc",
     "flutter_windows_engine.h",
-    "flutter_windows_internal.h",
     "flutter_windows_texture_registrar.cc",
     "flutter_windows_texture_registrar.h",
     "flutter_windows_view.cc",
