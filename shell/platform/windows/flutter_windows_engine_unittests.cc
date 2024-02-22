@@ -650,6 +650,7 @@ class MockFlutterWindowsView : public FlutterWindowsView {
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
 };
 
+// Verify the view is notified of accessibility announcements.
 TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncement) {
   auto& context = GetContext();
   WindowsConfigBuilder builder{context};
@@ -687,7 +688,7 @@ TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncement) {
   }
 }
 
-// Verify the app can send an accessibility announcement while in headless mode.
+// Verify the app can send accessibility announcements while in headless mode.
 TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncementHeadless) {
   auto& context = GetContext();
   WindowsConfigBuilder builder{context};

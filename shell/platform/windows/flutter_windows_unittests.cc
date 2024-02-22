@@ -386,26 +386,5 @@ TEST_F(WindowsTest, Lifecycle) {
                /* bRepaint*/ false);
 }
 
-// Verify the app can send an accessibility announcement while in headless mode.
-TEST_F(WindowsTest, HeadlessA11yAnnouncement) {
-  auto& context = GetContext();
-  WindowsConfigBuilder builder(context);
-  builder.SetDartEntrypoint("sendAccessiblityAlert");
-
-  fml::AutoResetWaitableEvent latch;
-  auto native_entry =
-      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); });
-  context.AddNativeFunction("Signal", native_entry);
-
-  EnginePtr engine{builder.RunHeadless()};
-  ASSERT_NE(engine, nullptr);
-
-  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
-  windows_engine->UpdateSemanticsEnabled(true);
-
-  // Wait until signal has been called.
-  latch.Wait();
-}
-
 }  // namespace testing
 }  // namespace flutter
