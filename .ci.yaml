@@ -44,6 +44,7 @@ platform_properties:
         ]
       device_type: none
       os: Windows-10
+
 # The current android emulator config names can be found here:
 # https://chromium.googlesource.com/chromium/src.git/+/HEAD/tools/android/avd/proto
 # You may use those names for the android_virtual_device version.
@@ -290,6 +291,14 @@ targets:
       config_name: linux_web_engine
     drone_dimensions:
       - os=Linux
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - lib/web_ui/**
+      - web_sdk/**
+      - tools/**
+      - ci/**
+      - flutter_frontend_server/**
 
   - name: Linux linux_unopt
     recipe: engine_v2/engine_v2
