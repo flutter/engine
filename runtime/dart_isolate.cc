@@ -1286,7 +1286,7 @@ void DartIsolate::OnShutdownCallback() {
 }
 
 void DartIsolate::OnMessageEpilogue(Dart_Handle result) {
-  if (is_platform_isolate_) {
+  if (is_platform_isolate_ && Dart_CurrentIsolate() != nullptr) {
     FML_DCHECK(Dart_CurrentIsolate() == isolate());
     FML_DCHECK(platform_isolate_pending_messages_ > 0);
     --platform_isolate_pending_messages_;

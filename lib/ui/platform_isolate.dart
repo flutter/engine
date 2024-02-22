@@ -25,18 +25,18 @@ part of dart.ui;
 ///
 /// This method can only be invoked from the main isolate.
 Future<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
-  final sendPort = _platformRunnerSendPort;
+  final SendPort? sendPort = _platformRunnerSendPort;
   if (sendPort != null) {
     return _sendComputation(sendPort, computation);
   } else {
     return _platformRunnerSendPortFuture
-        .then((port) => _sendComputation(port, computation));
+        .then((SendPort port) => _sendComputation(port, computation));
   }
 }
 
 SendPort? _platformRunnerSendPort;
 final Future<SendPort> _platformRunnerSendPortFuture = _spawnPlatformIsolate();
-final Map<int, Completer<Object?>> _pending = {};
+final Map<int, Completer<Object?>> _pending = <int, Completer<Object?>>{};
 int _nextId = 0;
 
 Future<SendPort> _spawnPlatformIsolate() {
@@ -56,9 +56,9 @@ Future<SendPort> _spawnPlatformIsolate() {
       Isolate.current.addOnExitListener(message.computationPort);
       sendPortCompleter.complete(message.computationPort);
     } else if (message is _ComputationResult) {
-      final resultCompleter = _pending.remove(message.id)!;
-      final remoteStack = message.remoteStack;
-      final remoteError = message.remoteError;
+      final Completer<Object?> resultCompleter = _pending.remove(message.id)!;
+      final Object? remoteStack = message.remoteStack;
+      final Object? remoteError = message.remoteError;
       if (remoteStack != null) {
         if (remoteStack is StackTrace) {
           // Typed error.
@@ -93,8 +93,8 @@ Future<SendPort> _spawnPlatformIsolate() {
 
 Future<R> _sendComputation<R>(
     SendPort port, FutureOr<R> Function() computation) {
-  final id = ++_nextId;
-  final resultCompleter = Completer<R>();
+  final int id = ++_nextId;
+  final Completer<R> resultCompleter = Completer<R>();
   _pending[id] = resultCompleter;
   port.send(_ComputationRequest(id, computation));
   return resultCompleter.future;
@@ -111,9 +111,9 @@ void _platformIsolateMain<T>(SendPort sendPort) {
     try {
       final FutureOr<Object?> potentiallyAsyncResult = message.computation();
       if (potentiallyAsyncResult is Future<Object?>) {
-        potentiallyAsyncResult.then((result) {
+        potentiallyAsyncResult.then((Object? result) {
           sendPort.send(_ComputationResult(message.id, result, null, null));
-        }, onError: (e, s) {
+        }, onError: (Object? e, Object? s) {
           sendPort.send(_ComputationResult(message.id, null, e, s ?? StackTrace.empty));
         });
       } else {

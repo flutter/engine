@@ -40,20 +40,20 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 100));
     await runInPlatformThread(() => ++counter);
     await Future<void>.delayed(const Duration(milliseconds: 100));
-    final counterValue = await runInPlatformThread(() => counter);
+    final int counterValue = await runInPlatformThread(() => counter);
     expect(counterValue, 3);
   });
 
   test('PlatformIsolate runInPlatformThread, concurrent jobs', () async {
-    final future1 = runInPlatformThread(() async {
+    final Future<int> future1 = runInPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       return 1;
     });
-    final future2 = runInPlatformThread(() async {
+    final Future<int> future2 = runInPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       return 2;
     });
-    final future3 = runInPlatformThread(() async {
+    final Future<int> future3 = runInPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       return 3;
     });
