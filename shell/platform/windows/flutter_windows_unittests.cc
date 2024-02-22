@@ -116,10 +116,8 @@ TEST_F(WindowsTest, LaunchCustomEntrypointInEngineRunInvocation) {
 TEST_F(WindowsTest, LaunchHeadlessEngine) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
-  EnginePtr engine{builder.InitializeEngine()};
+  EnginePtr engine{builder.RunHeadless()};
   ASSERT_NE(engine, nullptr);
-
-  ASSERT_TRUE(FlutterDesktopEngineRun(engine.get(), nullptr));
 }
 
 // Verify that accessibility features are initialized when a view is created.
@@ -386,6 +384,27 @@ TEST_F(WindowsTest, Lifecycle) {
   // "hidden" app lifecycle event.
   ::MoveWindow(hwnd, /* X */ 0, /* Y */ 0, /* nWidth*/ 100, /* nHeight*/ 100,
                /* bRepaint*/ false);
+}
+
+// Verify the app can send an accessibility announcement while in headless mode.
+TEST_F(WindowsTest, HeadlessA11yAnnouncement) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  builder.SetDartEntrypoint("sendAccessiblityAlert");
+
+  fml::AutoResetWaitableEvent latch;
+  auto native_entry =
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); });
+  context.AddNativeFunction("Signal", native_entry);
+
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  windows_engine->UpdateSemanticsEnabled(true);
+
+  // Wait until signal has been called.
+  latch.Wait();
 }
 
 }  // namespace testing

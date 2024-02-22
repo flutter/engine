@@ -836,11 +836,9 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
       // TODO(loicsharma): Remove implicit view assumption.
       // https://github.com/flutter/flutter/issues/142845
       auto view = this->view(kImplicitViewId);
-      if (!view) {
-        return;
+      if (view) {
+        view->AnnounceAlert(wide_text);
       }
-
-      view->AnnounceAlert(wide_text);
     }
   }
   SendPlatformMessageResponse(message->response_handle,
