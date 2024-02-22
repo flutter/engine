@@ -109,7 +109,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
           // CanvasSurfaceRenderer doesn't work correctly when used with ImageSurfaceRenderer.
           // Use MediaSurfaceRenderer for now.
           return new ImageSurfaceRenderer(
-              selectSurfaceRenderer("media", extras), extras.getParcelable("crop", Rect.class));
+              selectSurfaceRenderer("media", extras), extras.getParcelable("crop"));
         } else {
           throw new RuntimeException("ImageSurfaceRenderer not supported");
         }
