@@ -52,8 +52,6 @@ OUT_DIR = os.path.join(DIR_SRC_ROOT, 'out', VARIANT)
 class TestCase(NamedTuple):
   package: str
   args: str = ''
-  # If using legacy /core/testing:system-tests real, it's non-hermetic and should be replaced by a flutter test realm.
-  system_tests: bool = False
 
 
 class _BundledTestRunner(TestRunner):
@@ -68,12 +66,8 @@ class _BundledTestRunner(TestRunner):
     returncode = 0
     for test in self.tests:
       assert test.package.endswith('.cm')
-      if test.system_tests:
-        realm = '/core/testing:system-tests'
-      else:
-        realm = None
       test_runner = ExecutableTestRunner(
-          OUT_DIR, test.args.split(), test.package, self._target_id, None, self.logs_dir, [], realm
+          OUT_DIR, test.args.split(), test.package, self._target_id, None, self.logs_dir, [], None
       )
       # pylint: disable=protected-access
       test_runner._package_deps = self._package_deps
@@ -116,18 +110,14 @@ def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
 # Visible for testing
 def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   test_cases = []
-  for test in tests:
-    system_tests = 'system_tests' in test and (
-        test['system_tests'] == True or test['system_tests'] == 'true'
-    )
-    test = test['test_command']
+  for test in [t['test_command'] for t in tests]:
     assert test.startswith('test run ')
     test = test[len('test run '):]
     if ' -- ' in test:
       package, args = test.split(' -- ', 1)
-      test_cases.append(TestCase(package=package, args=args, system_tests=system_tests))
+      test_cases.append(TestCase(package=package, args=args))
     else:
-      test_cases.append(TestCase(package=test, system_tests=system_tests))
+      test_cases.append(TestCase(package=test))
   return test_cases
 
 
