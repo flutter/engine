@@ -47,11 +47,11 @@
                 },
                 {
                     "name": "run: ban GeneratedPluginRegistrant.java",
-                    "script": "flutter/ci/ban_generated_plugin_registrant.sh"
+                    "script": "flutter/ci/ban_generated_plugin_registrant_java.sh"
                 },
                 {
                     "name": "test: ban GeneratedPluginRegistrant.java",
-                    "script": "flutter/ci/test/ban_generated_plugin_registrant_test.sh"
+                    "script": "flutter/ci/test/ban_generated_plugin_registrant_java_test.sh"
                 },
                 {
                     "language": "python3",
