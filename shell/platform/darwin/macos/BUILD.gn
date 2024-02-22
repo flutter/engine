@@ -309,11 +309,11 @@ action("flutter_framework") {
   outputs = [ "$root_out_dir/FlutterMacOS.xcframework" ]
   args = [
     "--frameworks",
-    rebase_path("$_flutter_framework_dir"),
+    rebase_path(_flutter_framework_dir),
     "--name",
     "FlutterMacOS",
     "--location",
-    rebase_path("$root_out_dir"),
+    rebase_path(root_out_dir),
   ]
   deps = [ ":_generate_symlinks_and_verify_framework_module" ]
 }
