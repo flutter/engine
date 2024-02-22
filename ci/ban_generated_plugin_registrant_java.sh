@@ -18,7 +18,7 @@ unset CDPATH
 function follow_links() (
   cd -P "$(dirname -- "$1")"
   file="$PWD/$(basename -- "$1")"
-  while [[ -h "$file" ]]; do
+  while [[ -L "$file" ]]; do
     cd -P "$(dirname -- "$file")"
     file="$(readlink -- "$file")"
     cd -P "$(dirname -- "$file")"
@@ -28,7 +28,10 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
+SRC_DIR="$(
+  cd "$SCRIPT_DIR/../.."
+  pwd -P
+)"
 
 # Check if a file named **/GeneratedPluginRegistrant.java exists in the project.
 # If it does, fail the build and print a message to the user pointing them to
@@ -40,21 +43,21 @@ SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 EXPECTED_PATHS=("./shell/platform/android/test/io/flutter/plugins/GeneratedPluginRegistrant.java")
 
 # Temporarily change the working directory to the root of the Flutter project.
-pushd "$SRC_DIR/flutter" > /dev/null
+pushd "$SRC_DIR/flutter" >/dev/null
 
 # Find all files named GeneratedPluginRegistrant.java in the project.
 GENERATED_PLUGIN_REGISTRANT_PATHS=$(find . -name "GeneratedPluginRegistrant.java")
 
-# Check for GeneratedPluginRegistrant.java in unexpected locations
+# Check for GeneratedPluginRegistrant.java in unexpected locations, except in third_party.
 for expected_path in "${EXPECTED_PATHS[@]}"; do
-    found_files=$(find . -name "GeneratedPluginRegistrant.java" -not -path "$expected_path")
+  found_files=$(echo "$GENERATED_PLUGIN_REGISTRANT_PATHS" | grep -v "\.\/third_party\/" | grep -v "$expected_path")
 
-    for file in $found_files; do
-        echo "Error: Unexpected GeneratedPluginRegistrant.java found: $file"
-        echo "Please remove the unexpected file and see: https://github.com/flutter/flutter/issues/143782"
-        exit 1
-    done
+  for file in $found_files; do
+    echo "Error: Unexpected GeneratedPluginRegistrant.java found: $file"
+    echo "Please remove the unexpected file and see: https://github.com/flutter/flutter/issues/143782"
+    exit 1
+  done
 done
 
 # Change back to the original working directory.
-popd > /dev/null
+popd >/dev/null
