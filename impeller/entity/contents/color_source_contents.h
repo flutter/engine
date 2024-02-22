@@ -167,6 +167,7 @@ class ColorSourceContents : public Contents {
 
         /// Cover draw.
 
+        options.blend_mode = entity.GetBlendMode();
         options.stencil_mode =
             ContentContextOptions::StencilMode::kCoverCompare;
         std::optional<Rect> maybe_cover_area =

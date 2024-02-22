@@ -2788,7 +2788,11 @@ TEST_P(EntityTest, FillPathGeometryGetPositionBufferReturnsExpectedMode) {
                     .Close()
                     .TakePath();
     GeometryResult result = get_result(path);
-    EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
+    if constexpr (ContentContext::kEnableStencilThenCover) {
+      EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
+    } else {
+      EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
+    }
   }
 }
 

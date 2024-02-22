@@ -408,7 +408,7 @@ class ContentContext {
   ///
   // TODO(bdero): Remove this setting once StC is fully de-risked
   //              https://github.com/flutter/flutter/issues/123671
-  static constexpr bool kEnableStencilThenCover = false;
+  static constexpr bool kEnableStencilThenCover = true;
 
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
@@ -793,6 +793,7 @@ class ContentContext {
       ISize texture_size,
       const SubpassCallback& subpass_callback,
       bool msaa_enabled = true,
+      bool depth_stencil_enabled = false,
       int32_t mip_count = 1) const;
 
   /// Makes a subpass that will render to `subpass_target`.
