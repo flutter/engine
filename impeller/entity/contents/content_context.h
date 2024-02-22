@@ -286,11 +286,54 @@ struct PendingCommandBuffers {
 /// Flutter application may easily require building hundreds of PSOs in total,
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
+  enum class StencilMode : uint8_t {
+    /// Turn the stencil test off. Used when drawing without stencil-then-cover.
+    kIgnore,
+
+    // Operations used for stencil-then-cover
+
+    /// Draw the stencil for the NonZero fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilNonZeroFill,
+    /// Draw the stencil for the EvenOdd fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilEvenOddFill,
+    /// Used for draw calls which fill in the stenciled area. Intended to be
+    /// used after `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set
+    /// up the stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kCoverCompare,
+    /// The opposite of `kCoverCompare`. Used for draw calls which fill in the
+    /// non-stenciled area (intersection clips). Intended to be used after
+    /// `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set up the
+    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kCoverCompareInverted,
+
+    // Operations to control the legacy clip implementation, which forms a
+    // heightmap on the stencil buffer.
+
+    /// Slice the clip heightmap to a new maximum height.
+    kLegacyClipRestore,
+    /// Increment the stencil heightmap.
+    kLegacyClipIncrement,
+    /// Decrement the stencil heightmap (used for difference clipping only).
+    kLegacyClipDecrement,
+    /// Used for applying clips to all non-clip draw calls.
+    kLegacyClipCompare,
+  };
+
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction depth_compare = CompareFunction::kAlways;
-  CompareFunction stencil_compare = CompareFunction::kEqual;
-  StencilOperation stencil_operation = StencilOperation::kKeep;
+  StencilMode stencil_mode =
+      ContentContextOptions::StencilMode::kLegacyClipCompare;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_depth_stencil_attachments = true;
@@ -304,8 +347,7 @@ struct ContentContextOptions {
       static_assert(sizeof(o.blend_mode) == 1);
       static_assert(sizeof(o.sample_count) == 1);
       static_assert(sizeof(o.depth_compare) == 1);
-      static_assert(sizeof(o.stencil_compare) == 1);
-      static_assert(sizeof(o.stencil_operation) == 1);
+      static_assert(sizeof(o.stencil_mode) == 1);
       static_assert(sizeof(o.primitive_type) == 1);
       static_assert(sizeof(o.color_attachment_pixel_format) == 1);
 
@@ -316,11 +358,10 @@ struct ContentContextOptions {
              // enums
              static_cast<uint64_t>(o.color_attachment_pixel_format) << 8 |
              static_cast<uint64_t>(o.primitive_type) << 16 |
-             static_cast<uint64_t>(o.stencil_operation) << 24 |
-             static_cast<uint64_t>(o.stencil_compare) << 32 |
-             static_cast<uint64_t>(o.depth_compare) << 40 |
-             static_cast<uint64_t>(o.blend_mode) << 48 |
-             static_cast<uint64_t>(o.sample_count) << 56;
+             static_cast<uint64_t>(o.stencil_mode) << 24 |
+             static_cast<uint64_t>(o.depth_compare) << 32 |
+             static_cast<uint64_t>(o.blend_mode) << 40 |
+             static_cast<uint64_t>(o.sample_count) << 48;
     }
   };
 
@@ -331,8 +372,7 @@ struct ContentContextOptions {
              lhs.blend_mode == rhs.blend_mode &&
              lhs.depth_write_enabled == rhs.depth_write_enabled &&
              lhs.depth_compare == rhs.depth_compare &&
-             lhs.stencil_compare == rhs.stencil_compare &&
-             lhs.stencil_operation == rhs.stencil_operation &&
+             lhs.stencil_mode == rhs.stencil_mode &&
              lhs.primitive_type == rhs.primitive_type &&
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
@@ -359,6 +399,16 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  /// This setting does two things:
+  /// 1. Enables clipping with the depth buffer, freeing up the stencil buffer.
+  ///    See also: https://github.com/flutter/flutter/issues/138460
+  /// 2. Switches the generic tessellation fallback to use stencil-then-cover.
+  ///    See also: https://github.com/flutter/flutter/issues/123671
+  ///
+  // TODO(bdero): Remove this setting once StC is fully de-risked
+  //              https://github.com/flutter/flutter/issues/123671
+  static constexpr bool kEnableStencilThenCover = false;
 
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
@@ -789,6 +839,14 @@ class ContentContext {
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
 
+  /// Run backend specific additional setup and create common shader variants.
+  ///
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
+  void InitializeCommonlyUsedShadersIfNeeded() const;
+
   struct RuntimeEffectPipelineKey {
     std::string unique_entrypoint_name;
     ContentContextOptions options;
@@ -980,6 +1038,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
+    TypedPipeline* pipeline = CreateIfNeeded(container, opts);
+    if (!pipeline) {
+      return nullptr;
+    }
+    return pipeline->WaitAndGet();
+  }
+
+  template <class TypedPipeline>
+  TypedPipeline* CreateIfNeeded(Variants<TypedPipeline>& container,
+                                ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
     }
@@ -988,16 +1056,17 @@ class ContentContext {
       opts.wireframe = true;
     }
 
-    if (auto found = container.Get(opts)) {
-      return found->WaitAndGet();
+    if (TypedPipeline* found = container.Get(opts)) {
+      return found;
     }
 
-    auto prototype = container.GetDefault();
+    TypedPipeline* prototype = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != nullptr);
 
-    auto pipeline = prototype->WaitAndGet();
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+        prototype->WaitAndGet();
     if (!pipeline) {
       return nullptr;
     }
@@ -1009,10 +1078,10 @@ class ContentContext {
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
-    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
-    auto variant_pipeline = variant->WaitAndGet();
+    std::unique_ptr<TypedPipeline> variant =
+        std::make_unique<TypedPipeline>(std::move(variant_future));
     container.Set(opts, std::move(variant));
-    return variant_pipeline;
+    return container.Get(opts);
   }
 
   bool is_valid_ = false;

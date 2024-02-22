@@ -23,6 +23,9 @@ const int32_t GaussianBlurFilterContents::kBlurFilterRequiredMipCount = 4;
 
 namespace {
 
+// 48 comes from kernel.glsl.
+const int32_t kMaxKernelSize = 48;
+
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
   SamplerDescriptor sampler_desc;
@@ -86,6 +89,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
         pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
 
         TextureFillVertexShader::FrameInfo frame_info;
+        frame_info.depth = 0.0;
         frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
         frame_info.texture_sampler_y_coord_scale = 1.0;
         frame_info.alpha = 1.0;
@@ -170,7 +174,8 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
         GaussianBlurVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
         GaussianBlurFragmentShader::BindKernelSamples(
-            pass, host_buffer.EmplaceUniform(GenerateBlurInfo(blur_info)));
+            pass, host_buffer.EmplaceUniform(
+                      LerpHackKernelSamples(GenerateBlurInfo(blur_info))));
         return pass.Draw().ok();
       };
   if (destination_target.has_value()) {
@@ -188,6 +193,10 @@ Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
   Rect result = Rect::MakeOriginSize(rect.GetOrigin() - reference.GetOrigin(),
                                      rect.GetSize());
   return result.Scale(1.0f / Vector2(reference.GetSize()));
+}
+
+int ScaleBlurRadius(Scalar radius, Scalar scalar) {
+  return static_cast<int>(std::round(radius * scalar));
 }
 }  // namespace
 
@@ -207,7 +216,27 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
   if (sigma <= 4) {
     return 1.0;
   }
-  return 4.0 / sigma;
+  Scalar raw_result = 4.0 / sigma;
+  // Round to the nearest 1/(2^n) to get the best quality down scaling.
+  Scalar exponent = round(log2f(raw_result));
+  // Don't scale down below 1/16th to preserve signal.
+  exponent = std::max(-4.0f, exponent);
+  Scalar rounded = powf(2.0f, exponent);
+  Scalar result = rounded;
+  // Extend the range of the 1/8th downsample based on the effective kernel size
+  // for the blur.
+  if (rounded < 0.125f) {
+    Scalar rounded_plus = powf(2.0f, exponent + 1);
+    Scalar blur_radius = CalculateBlurRadius(sigma);
+    int kernel_size_plus = (ScaleBlurRadius(blur_radius, rounded_plus) * 2) + 1;
+    // This constant was picked by looking at the results to make sure no
+    // shimmering was introduced at the highest sigma values that downscale to
+    // 1/16th.
+    static constexpr int32_t kEighthDownsampleKernalWidthMax = 41;
+    result = kernel_size_plus <= kEighthDownsampleKernalWidthMax ? rounded_plus
+                                                                 : rounded;
+  }
+  return result;
 };
 
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
@@ -364,8 +393,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       BlurParameters{
           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
           .blur_sigma = scaled_sigma.y * effective_scalar.y,
-          .blur_radius =
-              static_cast<int>(std::round(blur_radius.y * effective_scalar.y)),
+          .blur_radius = ScaleBlurRadius(blur_radius.y, effective_scalar.y),
           .step_size = 1,
       },
       /*destination_target=*/std::nullopt, blur_uvs);
@@ -386,8 +414,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       BlurParameters{
           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
           .blur_sigma = scaled_sigma.x * effective_scalar.x,
-          .blur_radius =
-              static_cast<int>(std::round(blur_radius.x * effective_scalar.x)),
+          .blur_radius = ScaleBlurRadius(blur_radius.x, effective_scalar.x),
           .step_size = 1,
       },
       pass3_destination, blur_uvs);
@@ -451,8 +478,7 @@ KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
   KernelPipeline::FragmentShader::KernelSamples result;
   result.sample_count =
       ((2 * parameters.blur_radius) / parameters.step_size) + 1;
-  // 32 comes from kernel.glsl.
-  FML_CHECK(result.sample_count < 32);
+  FML_CHECK(result.sample_count < kMaxKernelSize);
 
   // Chop off the last samples if the radius >= 3 where they account for < 1.56%
   // of the result.
@@ -477,6 +503,34 @@ KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
   // Make sure everything adds up to 1.
   for (auto& sample : result.samples) {
     sample.coefficient /= tally;
+  }
+
+  return result;
+}
+
+// This works by shrinking the kernel size by 2 and relying on lerp to read
+// between the samples.
+KernelPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
+    KernelPipeline::FragmentShader::KernelSamples parameters) {
+  KernelPipeline::FragmentShader::KernelSamples result;
+  result.sample_count = ((parameters.sample_count - 1) / 2) + 1;
+  int32_t middle = result.sample_count / 2;
+  int32_t j = 0;
+  for (int i = 0; i < result.sample_count; i++) {
+    if (i == middle) {
+      result.samples[i] = parameters.samples[j++];
+    } else {
+      KernelPipeline::FragmentShader::KernelSample left = parameters.samples[j];
+      KernelPipeline::FragmentShader::KernelSample right =
+          parameters.samples[j + 1];
+      result.samples[i] = KernelPipeline::FragmentShader::KernelSample{
+          .uv_offset = (left.uv_offset * left.coefficient +
+                        right.uv_offset * right.coefficient) /
+                       (left.coefficient + right.coefficient),
+          .coefficient = left.coefficient + right.coefficient,
+      };
+      j += 2;
+    }
   }
 
   return result;

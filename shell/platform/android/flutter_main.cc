@@ -18,6 +18,7 @@
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/android/jni_util.h"
+#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/fml/platform/android/paths_android.h"
 #include "flutter/fml/size.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
@@ -38,21 +39,6 @@ extern const intptr_t kPlatformStrongDillSize;
 }
 
 namespace {
-
-// This is only available on API 23+, so dynamically look it up.
-// This method is only called once at shell creation.
-// Do this in C++ because the API is available at level 23 here, but only 29+ in
-// Java.
-bool IsATraceEnabled() {
-  auto libandroid = fml::NativeLibrary::Create("libandroid.so");
-  FML_CHECK(libandroid);
-  auto atrace_fn =
-      libandroid->ResolveFunction<bool (*)(void)>("ATrace_isEnabled");
-  if (atrace_fn) {
-    return atrace_fn.value()();
-  }
-  return false;
-}
 
 fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
@@ -95,7 +81,7 @@ void FlutterMain::Init(JNIEnv* env,
   // Turn systracing on if ATrace_isEnabled is true and the user did not already
   // request systracing
   if (!settings.trace_systrace) {
-    settings.trace_systrace = IsATraceEnabled();
+    settings.trace_systrace = NDKHelpers::ATrace_isEnabled();
     if (settings.trace_systrace) {
       __android_log_print(
           ANDROID_LOG_INFO, "Flutter",

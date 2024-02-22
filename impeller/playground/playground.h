@@ -15,8 +15,8 @@
 #include "impeller/core/runtime_types.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
-#include "impeller/image/compressed_image.h"
-#include "impeller/image/decompressed_image.h"
+#include "impeller/playground/image/compressed_image.h"
+#include "impeller/playground/image/decompressed_image.h"
 #include "impeller/playground/switches.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/renderer.h"
@@ -121,10 +121,7 @@ class Playground {
   void SetWindowSize(ISize size);
 
  private:
-  struct GLFWInitializer;
-
   fml::TimeDelta start_time_;
-  std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
   std::shared_ptr<Context> context_;
   std::unique_ptr<Renderer> renderer_;

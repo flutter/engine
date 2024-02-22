@@ -176,7 +176,6 @@ void Canvas::Save(bool create_subpass,
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetNewClipDepth(++current_depth_);
     subpass->SetEnableOffscreenCheckerboard(
         debug_options.offscreen_texture_checkerboard);
     if (backdrop_filter) {
@@ -210,16 +209,20 @@ bool Canvas::Restore() {
     return false;
   }
   size_t num_clips = transform_stack_.back().num_clips;
+  current_pass_->PopClips(num_clips, current_depth_);
+
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
-    current_pass_->PopClips(num_clips, current_depth_);
+    current_pass_->SetNewClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
 
   transform_stack_.pop_back();
-  if (num_clips > 0) {
-    RestoreClip();
+  if constexpr (!ContentContext::kEnableStencilThenCover) {
+    if (num_clips > 0) {
+      RestoreClip();
+    }
   }
 
   return true;
@@ -596,7 +599,6 @@ void Canvas::RestoreClip() {
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetClipDepth(GetClipDepth());
 
-  // TODO(bdero): To be removed when swapping the clip strategy.
   AddEntityToCurrentPass(std::move(entity));
 }
 
@@ -618,35 +620,6 @@ void Canvas::DrawPoints(std::vector<Point> points,
                                /*round=*/point_style == PointStyle::kRound)));
 
   AddEntityToCurrentPass(std::move(entity));
-}
-
-void Canvas::DrawPicture(const Picture& picture) {
-  if (!picture.pass) {
-    return;
-  }
-
-  // Clone the base pass and account for the CTM updates.
-  auto pass = picture.pass->Clone();
-
-  pass->IterateAllElements([&](auto& element) -> bool {
-    if (auto entity = std::get_if<Entity>(&element)) {
-      entity->IncrementStencilDepth(GetClipDepth());
-      entity->SetTransform(GetCurrentTransform() * entity->GetTransform());
-      return true;
-    }
-
-    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      subpass->get()->SetClipDepth(subpass->get()->GetClipDepth() +
-                                   GetClipDepth());
-      return true;
-    }
-
-    FML_UNREACHABLE();
-  });
-
-  GetCurrentPass().AddSubpassInline(std::move(pass));
-
-  RestoreClip();
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,

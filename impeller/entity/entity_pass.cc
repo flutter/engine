@@ -4,6 +4,7 @@
 
 #include "impeller/entity/entity_pass.h"
 
+#include <limits>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -765,6 +766,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
+    msaa_backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
@@ -901,9 +903,10 @@ bool EntityPass::OnRender(
   }
   auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
-  if (!collapsed_parent_pass && GetClearColor(clear_color_size).has_value()) {
-    // Force the pass context to create at least one new pass if the clear color
-    // is present.
+  if (!collapsed_parent_pass) {
+    // Always force the pass to construct the render pass object, even if there
+    // is not a clear color. This ensures that the attachment textures are
+    // cleared/transitioned to the right state.
     pass_context.GetRenderPass(pass_depth);
   }
 
@@ -922,6 +925,7 @@ bool EntityPass::OnRender(
     backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetClipDepth(clip_depth_floor);
+    backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
 
     RenderElement(backdrop_entity, clip_depth_floor, pass_context, pass_depth,
                   renderer, clip_coverage_stack, global_pass_position);
@@ -1151,40 +1155,6 @@ bool EntityPass::IterateUntilSubpass(
 
 size_t EntityPass::GetElementCount() const {
   return elements_.size();
-}
-
-std::unique_ptr<EntityPass> EntityPass::Clone() const {
-  std::vector<Element> new_elements;
-  new_elements.reserve(elements_.size());
-
-  for (const auto& element : elements_) {
-    if (auto entity = std::get_if<Entity>(&element)) {
-      new_elements.push_back(entity->Clone());
-      continue;
-    }
-    if (auto subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      new_elements.push_back(subpass->get()->Clone());
-      continue;
-    }
-    FML_UNREACHABLE();
-  }
-
-  auto pass = std::make_unique<EntityPass>();
-  pass->SetElements(std::move(new_elements));
-  pass->active_clips_.insert(pass->active_clips_.begin(), active_clips_.begin(),
-                             active_clips_.end());
-  pass->backdrop_filter_reads_from_pass_texture_ =
-      backdrop_filter_reads_from_pass_texture_;
-  pass->advanced_blend_reads_from_pass_texture_ =
-      advanced_blend_reads_from_pass_texture_;
-  pass->backdrop_filter_proc_ = backdrop_filter_proc_;
-  pass->blend_mode_ = blend_mode_;
-  pass->delegate_ = delegate_;
-  pass->new_clip_depth_ = new_clip_depth_;
-  // Note: I tried also adding flood clip and bounds limit but one of the
-  // two caused rendering in wonderous to break. It's 10:51 PM, and I'm
-  // ready to move on.
-  return pass;
 }
 
 void EntityPass::SetTransform(Matrix transform) {

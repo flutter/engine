@@ -95,9 +95,7 @@ G_DEFINE_TYPE_WITH_CODE(
                                       fl_view_text_input_delegate_iface_init))
 
 // Signal handler for GtkWidget::delete-event
-static gboolean window_delete_event_cb(GtkWidget* widget,
-                                       GdkEvent* event,
-                                       FlView* self) {
+static gboolean window_delete_event_cb(FlView* self) {
   fl_platform_plugin_request_app_exit(self->platform_plugin);
   // Stop the event from propagating.
   return TRUE;
@@ -113,13 +111,16 @@ static void init_keyboard(FlView* self) {
   g_autoptr(GtkIMContext) im_context = gtk_im_multicontext_new();
   gtk_im_context_set_client_window(im_context, window);
 
+  g_clear_object(&self->text_input_plugin);
   self->text_input_plugin = fl_text_input_plugin_new(
       messenger, im_context, FL_TEXT_INPUT_VIEW_DELEGATE(self));
+  g_clear_object(&self->keyboard_manager);
   self->keyboard_manager =
       fl_keyboard_manager_new(messenger, FL_KEYBOARD_VIEW_DELEGATE(self));
 }
 
 static void init_scrolling(FlView* self) {
+  g_clear_object(&self->scrolling_manager);
   self->scrolling_manager =
       fl_scrolling_manager_new(FL_SCROLLING_VIEW_DELEGATE(self));
 }
@@ -242,9 +243,6 @@ static void update_semantics_node_cb(FlEngine* engine,
 static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
-  g_clear_object(&self->keyboard_manager);
-  g_clear_object(&self->text_input_plugin);
-  g_clear_object(&self->scrolling_manager);
   init_keyboard(self);
   init_scrolling(self);
 }
@@ -290,11 +288,10 @@ static void fl_view_keyboard_delegate_iface_init(
   iface->redispatch_event = [](FlKeyboardViewDelegate* view_delegate,
                                std::unique_ptr<FlKeyEvent> in_event) {
     FlKeyEvent* event = in_event.release();
-    GdkEvent* gdk_event = reinterpret_cast<GdkEvent*>(event->origin);
-    GdkEventType event_type = gdk_event_get_event_type(gdk_event);
+    GdkEventType event_type = gdk_event_get_event_type(event->origin);
     g_return_if_fail(event_type == GDK_KEY_PRESS ||
                      event_type == GDK_KEY_RELEASE);
-    gdk_event_put(gdk_event);
+    gdk_event_put(event->origin);
     fl_key_event_dispose(event);
   };
 
@@ -357,9 +354,8 @@ static void fl_view_text_input_delegate_iface_init(
 }
 
 // Signal handler for GtkWidget::button-press-event
-static gboolean button_press_event_cb(GtkWidget* widget,
-                                      GdkEventButton* button_event,
-                                      FlView* self) {
+static gboolean button_press_event_cb(FlView* self,
+                                      GdkEventButton* button_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(button_event);
 
   // Flutter doesn't handle double and triple click events.
@@ -375,17 +371,14 @@ static gboolean button_press_event_cb(GtkWidget* widget,
 }
 
 // Signal handler for GtkWidget::button-release-event
-static gboolean button_release_event_cb(GtkWidget* widget,
-                                        GdkEventButton* button_event,
-                                        FlView* self) {
+static gboolean button_release_event_cb(FlView* self,
+                                        GdkEventButton* button_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(button_event);
   return send_pointer_button_event(self, event);
 }
 
 // Signal handler for GtkWidget::scroll-event
-static gboolean scroll_event_cb(GtkWidget* widget,
-                                GdkEventScroll* event,
-                                FlView* self) {
+static gboolean scroll_event_cb(FlView* self, GdkEventScroll* event) {
   // TODO(robert-ancell): Update to use GtkEventControllerScroll when we can
   // depend on GTK 3.24.
 
@@ -396,9 +389,8 @@ static gboolean scroll_event_cb(GtkWidget* widget,
 }
 
 // Signal handler for GtkWidget::motion-notify-event
-static gboolean motion_notify_event_cb(GtkWidget* widget,
-                                       GdkEventMotion* motion_event,
-                                       FlView* self) {
+static gboolean motion_notify_event_cb(FlView* self,
+                                       GdkEventMotion* motion_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(motion_event);
 
   if (self->engine == nullptr) {
@@ -426,9 +418,8 @@ static gboolean motion_notify_event_cb(GtkWidget* widget,
 }
 
 // Signal handler for GtkWidget::enter-notify-event
-static gboolean enter_notify_event_cb(GtkWidget* widget,
-                                      GdkEventCrossing* crossing_event,
-                                      FlView* self) {
+static gboolean enter_notify_event_cb(FlView* self,
+                                      GdkEventCrossing* crossing_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(crossing_event);
 
   if (self->engine == nullptr) {
@@ -441,9 +432,8 @@ static gboolean enter_notify_event_cb(GtkWidget* widget,
 }
 
 // Signal handler for GtkWidget::leave-notify-event
-static gboolean leave_notify_event_cb(GtkWidget* widget,
-                                      GdkEventCrossing* crossing_event,
-                                      FlView* self) {
+static gboolean leave_notify_event_cb(FlView* self,
+                                      GdkEventCrossing* crossing_event) {
   GdkEvent* event = reinterpret_cast<GdkEvent*>(crossing_event);
 
   guint event_time = gdk_event_get_time(event);
@@ -473,7 +463,7 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
   return TRUE;
 }
 
-static void keymap_keys_changed_cb(GdkKeymap* keymapf, FlView* self) {
+static void keymap_keys_changed_cb(FlView* self) {
   if (self->keyboard_layout_notifier == nullptr) {
     return;
   }
@@ -481,50 +471,36 @@ static void keymap_keys_changed_cb(GdkKeymap* keymapf, FlView* self) {
   self->keyboard_layout_notifier();
 }
 
-static void gesture_rotation_begin_cb(GtkGestureRotate* gesture,
-                                      GdkEventSequence* sequence,
-                                      FlView* self) {
+static void gesture_rotation_begin_cb(FlView* self) {
   fl_scrolling_manager_handle_rotation_begin(self->scrolling_manager);
 }
 
-static void gesture_rotation_update_cb(GtkGestureRotate* widget,
+static void gesture_rotation_update_cb(FlView* self,
                                        gdouble rotation,
-                                       gdouble delta,
-                                       FlView* self) {
+                                       gdouble delta) {
   fl_scrolling_manager_handle_rotation_update(self->scrolling_manager,
                                               rotation);
 }
 
-static void gesture_rotation_end_cb(GtkGestureRotate* gesture,
-                                    GdkEventSequence* sequence,
-                                    FlView* self) {
+static void gesture_rotation_end_cb(FlView* self) {
   fl_scrolling_manager_handle_rotation_end(self->scrolling_manager);
 }
 
-static void gesture_zoom_begin_cb(GtkGestureZoom* gesture,
-                                  GdkEventSequence* sequence,
-                                  FlView* self) {
+static void gesture_zoom_begin_cb(FlView* self) {
   fl_scrolling_manager_handle_zoom_begin(self->scrolling_manager);
 }
 
-static void gesture_zoom_update_cb(GtkGestureZoom* widget,
-                                   gdouble scale,
-                                   FlView* self) {
+static void gesture_zoom_update_cb(FlView* self, gdouble scale) {
   fl_scrolling_manager_handle_zoom_update(self->scrolling_manager, scale);
 }
 
-static void gesture_zoom_end_cb(GtkGestureZoom* gesture,
-                                GdkEventSequence* sequence,
-                                FlView* self) {
+static void gesture_zoom_end_cb(FlView* self) {
   fl_scrolling_manager_handle_zoom_end(self->scrolling_manager);
 }
 
-static gboolean window_state_event_cb(GtkWidget* widget,
-                                      GdkEvent* event,
-                                      gpointer user_data) {
-  g_return_val_if_fail(FL_IS_VIEW(user_data), FALSE);
-  g_return_val_if_fail(FL_IS_ENGINE(FL_VIEW(user_data)->engine), FALSE);
-  FlView* self = FL_VIEW(user_data);
+static gboolean window_state_event_cb(FlView* self, GdkEvent* event) {
+  g_return_val_if_fail(FL_IS_ENGINE(self->engine), FALSE);
+
   GdkWindowState state = event->window_state.new_window_state;
   GdkWindowState previous_state = self->window_state;
   self->window_state = state;
@@ -543,8 +519,7 @@ static gboolean window_state_event_cb(GtkWidget* widget,
   return FALSE;
 }
 
-static void realize_cb(GtkWidget* widget) {
-  FlView* self = FL_VIEW(widget);
+static void realize_cb(FlView* self) {
   g_autoptr(GError) error = nullptr;
 
   // Handle requests by the user to close the application.
@@ -552,13 +527,13 @@ static void realize_cb(GtkWidget* widget) {
 
   // Listen to window state changes.
   self->window_state_cb_id =
-      g_signal_connect(toplevel_window, "window-state-event",
-                       G_CALLBACK(window_state_event_cb), self);
+      g_signal_connect_swapped(toplevel_window, "window-state-event",
+                               G_CALLBACK(window_state_event_cb), self);
   self->window_state =
       gdk_window_get_state(gtk_widget_get_window(toplevel_window));
 
-  g_signal_connect(toplevel_window, "delete-event",
-                   G_CALLBACK(window_delete_event_cb), self);
+  g_signal_connect_swapped(toplevel_window, "delete-event",
+                           G_CALLBACK(window_delete_event_cb), self);
 
   init_keyboard(self);
 
@@ -575,8 +550,7 @@ static void realize_cb(GtkWidget* widget) {
   handle_geometry_changed(self);
 }
 
-static void configure_cb(GtkWidget* widget, GdkEventConfigure event) {
-  FlView* self = FL_VIEW(widget);
+static void size_allocate_cb(FlView* self) {
   handle_geometry_changed(self);
 }
 
@@ -610,34 +584,37 @@ static void fl_view_constructed(GObject* object) {
                             GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK |
                             GDK_SMOOTH_SCROLL_MASK);
 
-  g_signal_connect(self->event_box, "button-press-event",
-                   G_CALLBACK(button_press_event_cb), self);
-  g_signal_connect(self->event_box, "button-release-event",
-                   G_CALLBACK(button_release_event_cb), self);
-  g_signal_connect(self->event_box, "scroll-event", G_CALLBACK(scroll_event_cb),
-                   self);
-  g_signal_connect(self->event_box, "motion-notify-event",
-                   G_CALLBACK(motion_notify_event_cb), self);
-  g_signal_connect(self->event_box, "enter-notify-event",
-                   G_CALLBACK(enter_notify_event_cb), self);
-  g_signal_connect(self->event_box, "leave-notify-event",
-                   G_CALLBACK(leave_notify_event_cb), self);
-  self->keymap_keys_changed_cb_id = g_signal_connect(
+  g_signal_connect_swapped(self->event_box, "button-press-event",
+                           G_CALLBACK(button_press_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "button-release-event",
+                           G_CALLBACK(button_release_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "scroll-event",
+                           G_CALLBACK(scroll_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "motion-notify-event",
+                           G_CALLBACK(motion_notify_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "enter-notify-event",
+                           G_CALLBACK(enter_notify_event_cb), self);
+  g_signal_connect_swapped(self->event_box, "leave-notify-event",
+                           G_CALLBACK(leave_notify_event_cb), self);
+  self->keymap_keys_changed_cb_id = g_signal_connect_swapped(
       self->keymap, "keys-changed", G_CALLBACK(keymap_keys_changed_cb), self);
   GtkGesture* zoom = gtk_gesture_zoom_new(self->event_box);
-  g_signal_connect(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb), self);
-  g_signal_connect(zoom, "scale-changed", G_CALLBACK(gesture_zoom_update_cb),
-                   self);
-  g_signal_connect(zoom, "end", G_CALLBACK(gesture_zoom_end_cb), self);
+  g_signal_connect_swapped(zoom, "begin", G_CALLBACK(gesture_zoom_begin_cb),
+                           self);
+  g_signal_connect_swapped(zoom, "scale-changed",
+                           G_CALLBACK(gesture_zoom_update_cb), self);
+  g_signal_connect_swapped(zoom, "end", G_CALLBACK(gesture_zoom_end_cb), self);
   GtkGesture* rotate = gtk_gesture_rotate_new(self->event_box);
-  g_signal_connect(rotate, "begin", G_CALLBACK(gesture_rotation_begin_cb),
-                   self);
-  g_signal_connect(rotate, "angle-changed",
-                   G_CALLBACK(gesture_rotation_update_cb), self);
-  g_signal_connect(rotate, "end", G_CALLBACK(gesture_rotation_end_cb), self);
+  g_signal_connect_swapped(rotate, "begin",
+                           G_CALLBACK(gesture_rotation_begin_cb), self);
+  g_signal_connect_swapped(rotate, "angle-changed",
+                           G_CALLBACK(gesture_rotation_update_cb), self);
+  g_signal_connect_swapped(rotate, "end", G_CALLBACK(gesture_rotation_end_cb),
+                           self);
 
-  g_signal_connect(self, "realize", G_CALLBACK(realize_cb), self);
-  g_signal_connect(self, "size-allocate", G_CALLBACK(configure_cb), self);
+  g_signal_connect_swapped(self, "realize", G_CALLBACK(realize_cb), self);
+  g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(size_allocate_cb),
+                           self);
 }
 
 static void fl_view_set_property(GObject* object,

@@ -961,6 +961,7 @@ class InputConfiguration {
       : inputType = EngineInputType.fromName(
           flutterInputConfiguration.readJson('inputType').readString('name'),
           isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
+          isMultiline: flutterInputConfiguration.readJson('inputType').tryBool('isMultiline') ?? false,
         ),
         inputAction =
             flutterInputConfiguration.tryString('inputAction') ?? 'TextInputAction.done',
@@ -1280,7 +1281,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       activeDomElement.setAttribute('type', 'password');
     }
 
-    if (config.inputType == EngineInputType.none) {
+    if (config.inputType.inputmodeAttribute == 'none') {
       activeDomElement.setAttribute('inputmode', 'none');
     }
 
@@ -1939,19 +1940,19 @@ class TextInputSetClient extends TextInputCommand {
 /// Creates the text editing strategy used in non-a11y mode.
 DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing textEditing) {
   DefaultTextEditingStrategy strategy;
-  if (browserEngine == BrowserEngine.webkit &&
-      operatingSystem == OperatingSystem.iOs) {
+
+  if(operatingSystem == OperatingSystem.iOs) {
     strategy = IOSTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.webkit) {
-    strategy = SafariDesktopTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.blink &&
-      operatingSystem == OperatingSystem.android) {
+  } else if(operatingSystem == OperatingSystem.android) {
     strategy = AndroidTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.firefox) {
+  } else if(browserEngine == BrowserEngine.webkit) {
+    strategy = SafariDesktopTextEditingStrategy(textEditing);
+  } else if(browserEngine == BrowserEngine.firefox) {
     strategy = FirefoxTextEditingStrategy(textEditing);
   } else {
     strategy = GloballyPositionedTextEditingStrategy(textEditing);
   }
+
   return strategy;
 }
 
