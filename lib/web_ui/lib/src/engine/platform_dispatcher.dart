@@ -79,7 +79,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
     AppLifecycleState.instance.addListener(_setAppLifecycleState);
-    ViewFocusBinding.instance.addListener(invokeOnViewFocusChange);
+    _viewFocusBinding.init();
     domDocument.body?.append(accessibilityPlaceholder);
     _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
@@ -123,7 +123,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
     AppLifecycleState.instance.removeListener(_setAppLifecycleState);
-    ViewFocusBinding.instance.removeListener(invokeOnViewFocusChange);
+    _viewFocusBinding.dispose();
     accessibilityPlaceholder.remove();
     _onViewDisposedListener.cancel();
     viewManager.dispose();
@@ -227,6 +227,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       invoke(_onMetricsChanged, _onMetricsChangedZone);
     }
   }
+
+  late final ViewFocusBinding _viewFocusBinding = ViewFocusBinding(
+    viewManager: viewManager,
+    onViewFocusChange: invokeOnViewFocusChange,
+  );
 
   @override
   ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
