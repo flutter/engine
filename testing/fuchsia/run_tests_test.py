@@ -54,6 +54,23 @@ class RunTestsTest(unittest.TestCase):
          run_tests.TestCase(package='def', args='--args')]
     )
 
+  def test_build_test_cases_with_system_tests(self):
+    test_cases = run_tests.build_test_cases([
+        {'test_command': 'test run 1', 'system_tests': True},
+        {'test_command': 'test run 2', 'system_tests': 'true'},
+        {'test_command': 'test run 3', 'system_tests': False},
+        {'test_command': 'test run 4', 'system_tests': 'false'},
+        {'test_command': 'test run 5'},
+    ])
+    self.assertEqual(
+        test_cases,
+        [run_tests.TestCase(package='1', system_tests=True),
+         run_tests.TestCase(package='2', system_tests=True),
+         run_tests.TestCase(package='3', system_tests=False),
+         run_tests.TestCase(package='4', system_tests=False),
+         run_tests.TestCase(package='5', system_tests=False)]
+    )
+
 
 if __name__ == '__main__':
   try:
