@@ -43,6 +43,7 @@ if (build_glfw_shell) {
 }
 
 _public_headers = [
+  "public/flutter_linux/fl_application.h",
   "public/flutter_linux/fl_basic_message_channel.h",
   "public/flutter_linux/fl_binary_codec.h",
   "public/flutter_linux/fl_binary_messenger.h",
@@ -99,6 +100,7 @@ source_set("flutter_linux_sources") {
     "fl_accessibility_plugin.cc",
     "fl_accessible_node.cc",
     "fl_accessible_text_field.cc",
+    "fl_application.cc",
     "fl_backing_store_provider.cc",
     "fl_basic_message_channel.cc",
     "fl_binary_codec.cc",
