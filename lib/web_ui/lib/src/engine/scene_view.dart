@@ -20,6 +20,7 @@ typedef RenderResult = ({
 // composite pictures into the canvases in the DOM tree it builds.
 abstract class PictureRenderer {
   FutureOr<RenderResult> renderPictures(List<ScenePicture> picture);
+  ScenePicture clipPicture(ScenePicture picture, ui.Rect clip);
 }
 
 class _SceneRender {
@@ -96,12 +97,7 @@ class EngineSceneView {
       return picture;
     }
 
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, clip);
-    canvas.clipRect(clip);
-    canvas.drawPicture(picture);
-
-    return recorder.endRecording() as ScenePicture;
+    return pictureRenderer.clipPicture(picture, clip);
   }
 
   ui.Rect? _getScreenBounds() {
