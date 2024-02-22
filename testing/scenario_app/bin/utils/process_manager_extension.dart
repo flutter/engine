@@ -19,15 +19,19 @@ Future<int> pipeProcessStreams(
   final StreamSubscription<String> stdoutSub = process.stdout
     .transform(utf8.decoder)
     .transform<String>(const LineSplitter())
-    .listen((String line) {
-      out!.writeln('[stdout] $line');
-    }, onDone: stdoutCompleter.complete);
+    .listen(out.writeln, onDone: stdoutCompleter.complete);
 
   final Completer<void> stderrCompleter = Completer<void>();
   final StreamSubscription<String> stderrSub = process.stderr
     .transform(utf8.decoder)
     .transform<String>(const LineSplitter())
     .listen((String line) {
+      // From looking at historic logs, it seems that the stderr output is rare.
+      // Instead of prefacing every line with [stdout] unnecessarily, we'll just
+      // use [stderr] to indicate that it's from the stderr stream.
+      //
+      // For example, a historic log which has 0 occurrences of stderr:
+      // https://gist.github.com/matanlurey/84cf9c903ef6d507dcb63d4c303ca45f
       out!.writeln('[stderr] $line');
     }, onDone: stderrCompleter.complete);
 
