@@ -97,11 +97,13 @@ bool ClipContents::RenderDepthClip(const ContentContext& renderer,
   switch (geometry_result.mode) {
     case GeometryResult::Mode::kNonZero:
       pass.SetCommandLabel("Clip stencil preparation (NonZero)");
-      options.stencil_mode = ContentContextOptions::StencilMode::kNonZeroWrite;
+      options.stencil_mode =
+          ContentContextOptions::StencilMode::kStencilNonZeroFill;
       break;
     case GeometryResult::Mode::kEvenOdd:
       pass.SetCommandLabel("Clip stencil preparation (EvenOdd)");
-      options.stencil_mode = ContentContextOptions::StencilMode::kEvenOddWrite;
+      options.stencil_mode =
+          ContentContextOptions::StencilMode::kStencilEvenOddFill;
       break;
     case GeometryResult::Mode::kNormal:
     case GeometryResult::Mode::kPreventOverdraw:

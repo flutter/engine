@@ -287,27 +287,33 @@ struct PendingCommandBuffers {
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
   enum class StencilMode : uint8_t {
-    // Operations used for stencil-then-cover
-
     /// Turn the stencil test off. Used when drawing without stencil-then-cover.
     kIgnore,
-    /// Overwrite the stencil content to the ref value. Used for resetting the
-    /// stencil buffer after a stencil-then-cover operation.
-    kNonZeroWrite,
-    /// Draw the stencil for the evenoff fill path rule.
-    /// The stencil ref should always be 0 for draw calls using this mode.
-    kEvenOddWrite,
+
+    // Operations used for stencil-then-cover
+
+    /// Draw the stencil for the NonZero fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilNonZeroFill,
+    /// Draw the stencil for the EvenOdd fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilEvenOddFill,
     /// Used for draw calls which fill in the stenciled area. Intended to be
-    /// used after `kNonZeroWrite` or `kEvenOddWrite` is used to set up the
-    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// used after `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set
+    /// up the stencil buffer. Also cleans up the stencil buffer by resetting
     /// everything to zero.
-    /// The stencil ref should always be 0 for draw calls using this mode.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
     kCoverCompare,
     /// The opposite of `kCoverCompare`. Used for draw calls which fill in the
     /// non-stenciled area (intersection clips). Intended to be used after
-    /// `kNonZeroWrite` or `kEvenOddWrite` is used to set up the stencil buffer.
-    /// Also cleans up the stencil buffer by resetting everything to zero.
-    /// The stencil ref should always be 0 for draw calls using this mode.
+    /// `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set up the
+    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
     kCoverCompareInverted,
 
     // Operations to control the legacy clip implementation, which forms a

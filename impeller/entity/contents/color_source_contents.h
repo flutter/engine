@@ -143,12 +143,12 @@ class ColorSourceContents : public Contents {
           case GeometryResult::Mode::kNonZero:
             pass.SetCommandLabel("Stencil preparation (NonZero)");
             options.stencil_mode =
-                ContentContextOptions::StencilMode::kNonZeroWrite;
+                ContentContextOptions::StencilMode::kStencilNonZeroFill;
             break;
           case GeometryResult::Mode::kEvenOdd:
             pass.SetCommandLabel("Stencil preparation (EvenOdd)");
             options.stencil_mode =
-                ContentContextOptions::StencilMode::kEvenOddWrite;
+                ContentContextOptions::StencilMode::kStencilEvenOddFill;
             break;
           default:
             FML_UNREACHABLE();
