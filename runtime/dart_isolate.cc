@@ -415,8 +415,8 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_Handle isolate_type = Dart_GetNonNullableType(
         isolate_lib, tonic::ToDart("Isolate"), 0, nullptr);
     FML_CHECK(!tonic::CheckAndHandleError(isolate_type));
-    Dart_Handle result = Dart_SetField(isolate_type,
-                                       tonic::ToDart("_mayExit"), Dart_False());
+    Dart_Handle result =
+        Dart_SetField(isolate_type, tonic::ToDart("_mayExit"), Dart_False());
     FML_CHECK(!tonic::CheckAndHandleError(result));
 
     tonic::DartInvoke(entry_point, {isolate_ready_port});
