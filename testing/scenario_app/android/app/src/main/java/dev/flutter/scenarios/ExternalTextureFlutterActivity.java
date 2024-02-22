@@ -151,7 +151,8 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
   @Override
   public void onFlutterUiDisplayed() {
-    surfaceTextureEntry = Objects.requireNonNull(getFlutterEngine()).getRenderer().createSurfaceTexture();
+    surfaceTextureEntry =
+        Objects.requireNonNull(getFlutterEngine()).getRenderer().createSurfaceTexture();
     SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
     surfaceTexture.setDefaultBufferSize(SURFACE_WIDTH, SURFACE_HEIGHT);
     flutterRenderer.attach(new Surface(surfaceTexture), firstFrameLatch);
@@ -261,7 +262,9 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
     private void decodeThreadMain() {
       try {
-        MediaCodec codec = MediaCodec.createDecoderByType(Objects.requireNonNull(format.getString(MediaFormat.KEY_MIME)));
+        MediaCodec codec =
+            MediaCodec.createDecoderByType(
+                Objects.requireNonNull(format.getString(MediaFormat.KEY_MIME)));
         codec.configure(format, surface, null, 0);
         codec.start();
 
