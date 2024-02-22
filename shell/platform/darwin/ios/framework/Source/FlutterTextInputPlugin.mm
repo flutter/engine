@@ -883,6 +883,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   [self.editMenuInteraction presentEditMenuWithConfiguration:config];
 }
 
+- (void)hideEditMenu API_AVAILABLE(ios(16.0)) {
+  [self.editMenuInteraction dismissMenu];
+}
+
 - (void)configureWithDictionary:(NSDictionary*)configuration {
   NSDictionary* inputType = configuration[kKeyboardType];
   NSString* keyboardAppearance = configuration[kKeyboardAppearance];
@@ -2547,6 +2551,10 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
       [encodedTargetRect[@"width"] doubleValue], [encodedTargetRect[@"height"] doubleValue]);
   CGRect localTargetRect = [self.hostView convertRect:globalTargetRect toView:self.activeView];
   [self.activeView showEditMenuWithTargetRect:localTargetRect];
+}
+
+- (void)hideEditMenu {
+  [self.activeView hideEditMenu];
 }
 
 - (void)setEditableSizeAndTransform:(NSDictionary*)dictionary {
