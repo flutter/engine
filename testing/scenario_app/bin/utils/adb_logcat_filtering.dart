@@ -32,9 +32,9 @@ library;
 /// ```txt
 /// 02-22 13:54:39.839   549  3683 I ActivityManager: Force stopping dev.flutter.scenarios appid=10226 user=0: start instr
 /// ```
-/// 
+///
 /// ## Implementation notes
-/// 
+///
 /// The reason this is an extension type and not a class is partially to use the
 /// language feature, and partially because extension types work really well
 /// with lazy parsing.
@@ -50,7 +50,7 @@ extension type const AdbLogLine._(Match _match) {
   static final RegExp _pattern = RegExp(r'([^A-Z]*)([A-Z])\s([^:]*)\:\s(.*)');
 
   /// Parses the given [adbLogCatLine] into a structured form.
-  /// 
+  ///
   /// Returns `null` if the line does not match the expected format.
   static AdbLogLine? tryParse(String adbLogCatLine) {
     final Match? match = _pattern.firstMatch(adbLogCatLine);

@@ -264,10 +264,10 @@ Future<void> _run({
       if (exitCode != 0) {
         panic(<String>['could not clear logs']);
       }
-      
+
       logcatProcess = await pm.start(<String>[adb.path, 'logcat', '-T', '1']);
       final (Future<int> logcatExitCode, Stream<String> logcatOutput) = getProcessStreams(logcatProcess);
-      
+
       logcatProcessExitCode = logcatExitCode;
       logcatOutput.listen((String line) {
         // Always write to the full log.
