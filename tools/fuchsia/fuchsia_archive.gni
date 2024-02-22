@@ -194,6 +194,7 @@ template("fuchsia_archive") {
   }
 
   if (defined(invoker.cml_file)) {
+    _far_base_dir = "$root_out_dir/${target_name}_far"
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
@@ -246,6 +247,7 @@ template("fuchsia_test_archive") {
   }
 
   if (defined(invoker.cml_file)) {
+    _far_base_dir = "$root_out_dir/${target_name}_far"
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
