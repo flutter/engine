@@ -39,6 +39,11 @@ Future<void> testMain() async {
 
 void runSemanticsTests() {
   setUp(() {
+    // Disable the JAWS workaround even on Windows. Otherwise, test code becomes
+    // too noisy with `if (isWindows)`. The JAWS issue is already covered by a
+    // separate `semantics_crawler_test.dart`.
+    useJawsWorkaroundForLabels = false;
+
     EngineSemantics.debugResetSemantics();
   });
 
