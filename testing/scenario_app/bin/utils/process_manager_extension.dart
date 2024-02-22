@@ -32,14 +32,14 @@ import 'package:process/process.dart';
     .map((String line) => '[stderr] $line')
     .listen(outputController.add, onDone: stderrCompleter.complete);
 
-  final Future<void> onExit = (
-    stdoutCompleter.future,
-    stderrCompleter.future,
-    stderrSub.cancel(),
-    stdoutSub.cancel(),
-  ).wait;
+  final Future<int> exitCode = process.exitCode.then<int>((int code) {
+    stdoutSub.cancel();
+    stderrSub.cancel();
+    outputController.close();
+    return code;
+  });
 
-  return (onExit.then((_) => process.exitCode), outputController.stream);
+  return (exitCode, outputController.stream);
 }
 
 /// Pipes the [process] streams and writes them to [out] sink.
