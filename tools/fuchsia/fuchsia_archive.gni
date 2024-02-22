@@ -3,9 +3,9 @@
 # found in the LICENSE file.
 
 import("//build/fuchsia/config.gni")
-import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 
 # Compiles a CML file for a V2 component.
 #
