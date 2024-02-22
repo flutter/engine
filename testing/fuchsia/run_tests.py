@@ -117,7 +117,9 @@ def resolve_packages(tests: Iterable[Mapping[str, Any]]) -> Set[str]:
 def build_test_cases(tests: Iterable[Mapping[str, Any]]) -> List[TestCase]:
   test_cases = []
   for test in tests:
-    system_tests = 'system_tests' in test and (test['system_tests'] == True or test['system_tests'] == 'true')
+    system_tests = 'system_tests' in test and (
+        test['system_tests'] == True or test['system_tests'] == 'true'
+    )
     test = test['test_command']
     assert test.startswith('test run ')
     test = test[len('test run '):]
