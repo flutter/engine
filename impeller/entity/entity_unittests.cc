@@ -2676,7 +2676,13 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
     EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
     EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
   } else {
-    EXPECT_TRUE(false);
+    std::stringstream sizes;
+    for (const auto& desc : test_allocator->GetDescriptors()) {
+      sizes << "\nISize" << desc.size;
+    }
+    EXPECT_TRUE(false) << "Unexpected number of render targets. Total: "
+                       << test_allocator->GetDescriptors().size()
+                       << "\nExpected sizes: " << sizes.str();
   }
 }
 
