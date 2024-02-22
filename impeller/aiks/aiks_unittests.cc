@@ -169,6 +169,36 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   return context->GetCommandQueue()->Submit({buffer}).ok();
 }
 
+TEST_P(AiksTest, CanRenderMultiContourPaths) {
+  auto texture = CreateTextureForFixture("table_mountain_nx.png",
+                                         /*enable_mipmapping=*/true);
+  GenerateMipmap(GetContext(), texture, "table_mountain_nx");
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.Translate({100.0f, 100.0f, 0});
+  Paint paint;
+  paint.color = Color::White();
+  paint.style = Paint::Style::kFill;
+
+  auto draw_path = [&]() {
+    PathBuilder path_builder;
+    path_builder.AddCircle({150, 150}, 150);
+    path_builder.AddRoundedRect(Rect::MakeLTRB(300, 300, 600, 600), 10);
+    canvas.DrawPath(path_builder.TakePath(), paint);
+  };
+
+  // Solid color source.
+  paint.color_source = ColorSource::MakeColor();
+  draw_path();
+
+  // Image color source.
+  paint.color_source = ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
+                                              Entity::TileMode::kClamp, {}, {});
+  draw_path();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 void CanRenderTiledTexture(AiksTest* aiks_test,
                            Entity::TileMode tile_mode,
                            Matrix local_matrix = {}) {
@@ -3547,13 +3577,8 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
           //              contents are rendered, so it should have a depth value
           //              greater than all its contents.
       3,  // DrawRRect
+      5,  // Restore (no longer necessary when clipping on the depth buffer)
   };
-
-  if constexpr (!ContentContext::kEnableStencilThenCover) {
-    expected.push_back(  //
-        5  // Restore (no longer necessary when clipping on the depth buffer)
-    );
-  }
 
   std::vector<uint32_t> actual;
 
