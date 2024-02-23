@@ -13,13 +13,17 @@ template("_compile_cml") {
   assert(defined(invoker.manifest), "_compile_cml must define manifest")
 
   # Create an empty depfile, it's not used in flutter.
-  write_file(
-      "${target_gen_dir}/${target_name}/${target_name}.d",
-      [],
-      "list lines")
+  write_file("${target_gen_dir}/${target_name}/${target_name}.d",
+             [],
+             "list lines")
 
   cmc_compile(target_name) {
-    forward_variables_from(invoker, [ "deps", "manifest", "testonly" ])
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "manifest",
+                             "testonly",
+                           ])
     output_file = invoker.output
   }
 }
