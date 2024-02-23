@@ -228,7 +228,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
-  late final ViewFocusBinding _viewFocusBinding = 
+  late final ViewFocusBinding _viewFocusBinding =
     ViewFocusBinding(viewManager, invokeOnViewFocusChange);
 
   @override
