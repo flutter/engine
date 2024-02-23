@@ -597,7 +597,6 @@ void Canvas::RestoreClip() {
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetClipDepth(GetClipDepth());
 
-  // TODO(bdero): To be removed when swapping the clip strategy.
   AddEntityToCurrentPass(std::move(entity));
 }
 

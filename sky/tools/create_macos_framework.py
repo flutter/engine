@@ -11,14 +11,14 @@ import shutil
 import sys
 import os
 
-buildroot_dir = os.path.abspath(
-    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
-)
+from create_xcframework import create_xcframework  # pylint: disable=import-error
+
+buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..', '..'))
 
 ARCH_SUBPATH = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
 DSYMUTIL = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'buildtools', ARCH_SUBPATH,
-    'clang', 'bin', 'dsymutil'
+    os.path.dirname(__file__), '..', '..', '..', 'buildtools', ARCH_SUBPATH, 'clang', 'bin',
+    'dsymutil'
 )
 
 out_dir = os.path.join(buildroot_dir, 'out')
@@ -26,7 +26,7 @@ out_dir = os.path.join(buildroot_dir, 'out')
 
 def main():
   parser = argparse.ArgumentParser(
-      description='Creates FlutterMacOS.framework for macOS'
+      description='Creates FlutterMacOS.framework and FlutterMacOS.xcframework for macOS'
   )
 
   parser.add_argument('--dst', type=str, required=True)
@@ -39,17 +39,14 @@ def main():
 
   args = parser.parse_args()
 
-  dst = (
-      args.dst
-      if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst)
-  )
+  dst = (args.dst if os.path.isabs(args.dst) else os.path.join(buildroot_dir, args.dst))
   arm64_out_dir = (
-      args.arm64_out_dir if os.path.isabs(args.arm64_out_dir) else
-      os.path.join(buildroot_dir, args.arm64_out_dir)
+      args.arm64_out_dir
+      if os.path.isabs(args.arm64_out_dir) else os.path.join(buildroot_dir, args.arm64_out_dir)
   )
   x64_out_dir = (
-      args.x64_out_dir if os.path.isabs(args.x64_out_dir) else
-      os.path.join(buildroot_dir, args.x64_out_dir)
+      args.x64_out_dir
+      if os.path.isabs(args.x64_out_dir) else os.path.join(buildroot_dir, args.x64_out_dir)
   )
 
   fat_framework = os.path.join(dst, 'FlutterMacOS.framework')
@@ -84,9 +81,7 @@ def main():
 
   regenerate_symlinks(fat_framework)
 
-  fat_framework_binary = os.path.join(
-      fat_framework, 'Versions', 'A', 'FlutterMacOS'
-  )
+  fat_framework_binary = os.path.join(fat_framework, 'Versions', 'A', 'FlutterMacOS')
 
   # Create the arm64/x64 fat framework.
   subprocess.check_call([
@@ -97,15 +92,17 @@ def main():
   versions_path = os.path.join(fat_framework, 'Versions')
   subprocess.check_call(['chmod', '-R', 'og+r', versions_path])
   # Find all the files below the target dir with owner execute permission
-  find_subprocess = subprocess.Popen([
-      'find', versions_path, '-perm', '-100', '-print0'
-  ],
+  find_subprocess = subprocess.Popen(['find', versions_path, '-perm', '-100', '-print0'],
                                      stdout=subprocess.PIPE)
   # Add execute permission for other and group for all files that had it for owner.
   xargs_subprocess = subprocess.Popen(['xargs', '-0', 'chmod', 'og+x'],
                                       stdin=find_subprocess.stdout)
   find_subprocess.wait()
   xargs_subprocess.wait()
+
+  # Create XCFramework from the arm64 and x64 fat framework.
+  xcframeworks = [fat_framework]
+  create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks)
 
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
@@ -131,17 +128,10 @@ def regenerate_symlinks(fat_framework):
       os.path.join('Versions', 'Current', 'FlutterMacOS'),
       os.path.join(fat_framework, 'FlutterMacOS')
   )
+  os.symlink(os.path.join('Versions', 'Current', 'Headers'), os.path.join(fat_framework, 'Headers'))
+  os.symlink(os.path.join('Versions', 'Current', 'Modules'), os.path.join(fat_framework, 'Modules'))
   os.symlink(
-      os.path.join('Versions', 'Current', 'Headers'),
-      os.path.join(fat_framework, 'Headers')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Modules'),
-      os.path.join(fat_framework, 'Modules')
-  )
-  os.symlink(
-      os.path.join('Versions', 'Current', 'Resources'),
-      os.path.join(fat_framework, 'Resources')
+      os.path.join('Versions', 'Current', 'Resources'), os.path.join(fat_framework, 'Resources')
   )
 
 
@@ -156,8 +146,7 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, fat_framework_binary])
     if args.zip:
       dsym_dst = os.path.join(dst, 'FlutterMacOS.dSYM')
-      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'],
-                            cwd=dsym_dst)
+      subprocess.check_call(['zip', '-r', '-y', 'FlutterMacOS.dSYM.zip', '.'], cwd=dsym_dst)
       # Double zip to make it consistent with legacy artifacts.
       # TODO(fujino): remove this once https://github.com/flutter/flutter/issues/125067 is resolved
       subprocess.check_call([
@@ -188,13 +177,11 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     filepath_without_entitlements = 'FlutterMacOS.framework.zip/Versions/A/FlutterMacOS'
 
     embed_codesign_configuration(
-        os.path.join(framework_dst, 'entitlements.txt'),
-        filepath_with_entitlements
+        os.path.join(framework_dst, 'entitlements.txt'), filepath_with_entitlements
     )
 
     embed_codesign_configuration(
-        os.path.join(framework_dst, 'without_entitlements.txt'),
-        filepath_without_entitlements
+        os.path.join(framework_dst, 'without_entitlements.txt'), filepath_without_entitlements
     )
     subprocess.check_call([
         'zip',
@@ -222,6 +209,32 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     final_src_path = os.path.join(framework_dst, 'FlutterMacOS.framework_.zip')
     final_dst_path = os.path.join(dst, 'FlutterMacOS.framework.zip')
     shutil.move(final_src_path, final_dst_path)
+
+    zip_xcframework_archive(dst)
+
+
+def zip_xcframework_archive(dst):
+  filepath_with_entitlements = ''
+  filepath_without_entitlements = (
+      'FlutterMacOS.xcframework/macos-arm64_x84_64/'
+      'FlutterMacOS.framework/Versions/A/FlutterMacOS'
+  )
+  embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements)
+
+  embed_codesign_configuration(
+      os.path.join(dst, 'without_entitlements.txt'), filepath_without_entitlements
+  )
+
+  subprocess.check_call([
+      'zip',
+      '-r',
+      '-y',
+      'framework.zip',
+      'FlutterMacOS.xcframework',
+      'entitlements.txt',
+      'without_entitlements.txt',
+  ],
+                        cwd=dst)
 
 
 if __name__ == '__main__':
