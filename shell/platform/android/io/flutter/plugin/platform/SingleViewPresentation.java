@@ -13,27 +13,19 @@ import android.app.Presentation;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.MutableContextWrapper;
-import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.WindowMetrics;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
-import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /*
  * A presentation used for hosting a single Android view in a virtual display.
@@ -72,7 +64,7 @@ class SingleViewPresentation extends Presentation {
 
     // Contains views that were added directly to the window manager (e.g
     // android.widget.PopupWindow).
-    private FakeWindowViewGroup fakeWindowViewGroup;
+    private SingleViewFakeWindowViewGroup fakeWindowViewGroup;
   }
 
   // A reference to the current accessibility bridge to which accessibility events will be
@@ -159,7 +151,7 @@ class SingleViewPresentation extends Presentation {
     // This makes sure we preserve alpha for the VD's content.
     getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
     if (state.fakeWindowViewGroup == null) {
-      state.fakeWindowViewGroup = new FakeWindowViewGroup(getContext());
+      state.fakeWindowViewGroup = new SingleViewFakeWindowViewGroup(getContext());
     }
     if (state.windowManagerHandler == null) {
       WindowManager windowManagerDelegate =
@@ -229,58 +221,6 @@ class SingleViewPresentation extends Presentation {
     return state.platformView;
   }
 
-  /*
-   * A view group that implements the same layout protocol that exist between the WindowManager and its direct
-   * children.
-   *
-   * Currently only a subset of the protocol is supported (gravity, x, and y).
-   */
-  static class FakeWindowViewGroup extends ViewGroup {
-    // Used in onLayout to keep the bounds of the current view.
-    // We keep it as a member to avoid object allocations during onLayout which are discouraged.
-    private final Rect viewBounds;
-
-    // Used in onLayout to keep the bounds of the child views.
-    // We keep it as a member to avoid object allocations during onLayout which are discouraged.
-    private final Rect childRect;
-
-    public FakeWindowViewGroup(Context context) {
-      super(context);
-      viewBounds = new Rect();
-      childRect = new Rect();
-    }
-
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-      for (int i = 0; i < getChildCount(); i++) {
-        View child = getChildAt(i);
-        WindowManager.LayoutParams params = (WindowManager.LayoutParams) child.getLayoutParams();
-        viewBounds.set(l, t, r, b);
-        Gravity.apply(
-            params.gravity,
-            child.getMeasuredWidth(),
-            child.getMeasuredHeight(),
-            viewBounds,
-            params.x,
-            params.y,
-            childRect);
-        child.layout(childRect.left, childRect.top, childRect.right, childRect.bottom);
-      }
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-      for (int i = 0; i < getChildCount(); i++) {
-        View child = getChildAt(i);
-        child.measure(atMost(widthMeasureSpec), atMost(heightMeasureSpec));
-      }
-      super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
-
-    private static int atMost(int measureSpec) {
-      return MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(measureSpec), MeasureSpec.AT_MOST);
-    }
-  }
 
   /** Answers calls for {@link InputMethodManager} with an instance cached at creation time. */
   // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
@@ -377,111 +317,6 @@ class SingleViewPresentation extends Presentation {
     }
   }
 
-  /*
-   * A static proxy handler for a WindowManager with custom overrides.
-   *
-   * The presentation's window manager delegates all calls to the default window manager.
-   * WindowManager#addView calls triggered by views that are attached to the virtual display are crashing
-   * (see: https://github.com/flutter/flutter/issues/20714). This was triggered when selecting text in an embedded
-   * WebView (as the selection handles are implemented as popup windows).
-   *
-   * This static proxy overrides the addView, removeView, removeViewImmediate, and updateViewLayout methods
-   * to prevent these crashes, and forwards all other calls to the delegate.
-   */
-  @VisibleForTesting
-  static class WindowManagerHandler implements WindowManager {
-    private static final String TAG = "PlatformViewsController";
-
-    private final WindowManager delegate;
-    FakeWindowViewGroup fakeWindowRootView;
-
-    WindowManagerHandler(WindowManager delegate, FakeWindowViewGroup fakeWindowViewGroup) {
-      this.delegate = delegate;
-      fakeWindowRootView = fakeWindowViewGroup;
-    }
-
-    @Override
-    @Deprecated
-    public Display getDefaultDisplay() {
-      return delegate.getDefaultDisplay();
-    }
-
-    @Override
-    public void removeViewImmediate(View view) {
-      if (fakeWindowRootView == null) {
-        Log.w(TAG, "Embedded view called removeViewImmediate while detached from presentation");
-        return;
-      }
-      view.clearAnimation();
-      fakeWindowRootView.removeView(view);
-    }
-
-    @Override
-    public void addView(View view, ViewGroup.LayoutParams params) {
-      if (fakeWindowRootView == null) {
-        Log.w(TAG, "Embedded view called addView while detached from presentation");
-        return;
-      }
-      fakeWindowRootView.addView(view, params);
-    }
-
-    @Override
-    public void updateViewLayout(View view, ViewGroup.LayoutParams params) {
-      if (fakeWindowRootView == null) {
-        Log.w(TAG, "Embedded view called updateViewLayout while detached from presentation");
-        return;
-      }
-      fakeWindowRootView.updateViewLayout(view, params);
-    }
-
-    @Override
-    public void removeView(View view) {
-      if (fakeWindowRootView == null) {
-        Log.w(TAG, "Embedded view called removeView while detached from presentation");
-        return;
-      }
-      fakeWindowRootView.removeView(view);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    @NonNull
-    @Override
-    public WindowMetrics getCurrentWindowMetrics() {
-      return delegate.getCurrentWindowMetrics();
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    @NonNull
-    @Override
-    public WindowMetrics getMaximumWindowMetrics() {
-      return delegate.getMaximumWindowMetrics();
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public boolean isCrossWindowBlurEnabled() {
-      return delegate.isCrossWindowBlurEnabled();
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void addCrossWindowBlurEnabledListener(@NonNull Consumer<Boolean> listener) {
-      delegate.addCrossWindowBlurEnabledListener(listener);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void addCrossWindowBlurEnabledListener(
-        @NonNull Executor executor, @NonNull Consumer<Boolean> listener) {
-      delegate.addCrossWindowBlurEnabledListener(executor, listener);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void removeCrossWindowBlurEnabledListener(@NonNull Consumer<Boolean> listener) {
-      delegate.removeCrossWindowBlurEnabledListener(listener);
-    }
-  }
 
   private static class AccessibilityDelegatingFrameLayout extends FrameLayout {
     private final AccessibilityEventsDelegate accessibilityEventsDelegate;

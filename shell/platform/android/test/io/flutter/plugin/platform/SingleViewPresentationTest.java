@@ -97,34 +97,34 @@ public class SingleViewPresentationTest {
   public void windowManagerHandler_passesCorrectlyToFakeWindowViewGroup() {
     // Mock the WindowManager and FakeWindowViewGroup that get used by the WindowManagerHandler.
     WindowManager mockWindowManager = mock(WindowManager.class);
-    SingleViewPresentation.FakeWindowViewGroup mockFakeWindowViewGroup =
-        mock(SingleViewPresentation.FakeWindowViewGroup.class);
+    SingleViewFakeWindowViewGroup mockSingleViewFakeWindowViewGroup =
+        mock(SingleViewFakeWindowViewGroup.class);
 
     View mockView = mock(View.class);
     ViewGroup.LayoutParams mockLayoutParams = mock(ViewGroup.LayoutParams.class);
 
-    SingleViewPresentation.WindowManagerHandler windowManagerHandler =
-        new SingleViewPresentation.WindowManagerHandler(mockWindowManager, mockFakeWindowViewGroup);
+    WindowManagerHandler windowManagerHandler =
+        new WindowManagerHandler(mockWindowManager, mockSingleViewFakeWindowViewGroup);
 
     // removeViewImmediate
     windowManagerHandler.removeViewImmediate(mockView);
     verify(mockView).clearAnimation();
-    verify(mockFakeWindowViewGroup).removeView(mockView);
+    verify(mockSingleViewFakeWindowViewGroup).removeView(mockView);
     verifyNoInteractions(mockWindowManager);
 
     // addView
     windowManagerHandler.addView(mockView, mockLayoutParams);
-    verify(mockFakeWindowViewGroup).addView(mockView, mockLayoutParams);
+    verify(mockSingleViewFakeWindowViewGroup).addView(mockView, mockLayoutParams);
     verifyNoInteractions(mockWindowManager);
 
     // updateViewLayout
     windowManagerHandler.updateViewLayout(mockView, mockLayoutParams);
-    verify(mockFakeWindowViewGroup).updateViewLayout(mockView, mockLayoutParams);
+    verify(mockSingleViewFakeWindowViewGroup).updateViewLayout(mockView, mockLayoutParams);
     verifyNoInteractions(mockWindowManager);
 
     // removeView
     windowManagerHandler.updateViewLayout(mockView, mockLayoutParams);
-    verify(mockFakeWindowViewGroup).removeView(mockView);
+    verify(mockSingleViewFakeWindowViewGroup).removeView(mockView);
     verifyNoInteractions(mockWindowManager);
   }
 
@@ -137,8 +137,8 @@ public class SingleViewPresentationTest {
     View mockView = mock(View.class);
     ViewGroup.LayoutParams mockLayoutParams = mock(ViewGroup.LayoutParams.class);
 
-    SingleViewPresentation.WindowManagerHandler windowManagerHandler =
-        new SingleViewPresentation.WindowManagerHandler(mockWindowManager, null);
+    WindowManagerHandler windowManagerHandler =
+        new WindowManagerHandler(mockWindowManager, null);
 
     // removeViewImmediate
     windowManagerHandler.removeViewImmediate(mockView);
@@ -167,11 +167,11 @@ public class SingleViewPresentationTest {
   public void windowManagerHandler_forwardsAllOtherCallsToDelegate() {
     // Mock the WindowManager and FakeWindowViewGroup that get used by the WindowManagerHandler.
     WindowManager mockWindowManager = mock(WindowManager.class);
-    SingleViewPresentation.FakeWindowViewGroup mockFakeWindowViewGroup =
-        mock(SingleViewPresentation.FakeWindowViewGroup.class);
+    SingleViewFakeWindowViewGroup mockSingleViewFakeWindowViewGroup =
+        mock(SingleViewFakeWindowViewGroup.class);
 
-    SingleViewPresentation.WindowManagerHandler windowManagerHandler =
-        new SingleViewPresentation.WindowManagerHandler(mockWindowManager, mockFakeWindowViewGroup);
+    WindowManagerHandler windowManagerHandler =
+        new WindowManagerHandler(mockWindowManager, mockSingleViewFakeWindowViewGroup);
 
     // Verify that all other calls get forwarded to the delegate.
     Executor mockExecutor = mock(Executor.class);
