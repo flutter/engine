@@ -76,7 +76,7 @@
                     ],
                     "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
                     "parameters": [
-                        "--out-dir=out/android_debug_api33_x64"
+                        "--out-dir=../out/android_debug_api33_x64"
                     ]
                 }
             ]

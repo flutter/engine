@@ -51,7 +51,7 @@
                     ],
                     "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
                     "parameters": [
-                        "--out-dir=out/android_emulator_opengles_debug_x64",
+                        "--out-dir=../out/android_emulator_opengles_debug_x64",
                         "--enable-impeller",
                         "--impeller-backend=opengles"
                     ]
