@@ -44,4 +44,8 @@ void AndroidContext::SetImpellerContext(
   impeller_context_ = context;
 }
 
+bool AndroidContext::IsUsingImpeller() const {
+  return false;
+}
+
 }  // namespace flutter

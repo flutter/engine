@@ -324,6 +324,8 @@ class PlatformView {
     /// @return     The settings.
     ///
     virtual const Settings& OnPlatformViewGetSettings() const = 0;
+
+    virtual void UpdateImpellerState(bool impeller_enabled) = 0;
   };
 
   //----------------------------------------------------------------------------

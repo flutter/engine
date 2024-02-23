@@ -228,6 +228,9 @@ struct Settings {
   // must be available to the application.
   bool enable_vulkan_validation = false;
 
+  /// Enable fallback to Skia OpenGLES instead of Impeller OpenGLES.
+  bool enable_skia_fallback = true;
+
   // Enable GPU tracing in GLES backends.
   // Some devices claim to support the required APIs but crash on their usage.
   bool enable_opengl_gpu_tracing = false;

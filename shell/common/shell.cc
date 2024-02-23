@@ -1200,6 +1200,11 @@ const Settings& Shell::OnPlatformViewGetSettings() const {
   return settings_;
 }
 
+// |PlatformView::Delegate|
+void Shell::UpdateImpellerState(bool impeller_enabled) {
+  settings_.enable_impeller = impeller_enabled;
+}
+
 // |Animator::Delegate|
 void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
                                  uint64_t frame_number) {

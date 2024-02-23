@@ -28,6 +28,7 @@ class AndroidContextGLImpeller : public AndroidContext {
   bool OnscreenContextClearCurrent();
   std::unique_ptr<impeller::egl::Surface> CreateOnscreenSurface(
       EGLNativeWindowType window);
+  bool IsUsingImpeller() const override;
 
  private:
   class ReactorWorker;

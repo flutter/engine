@@ -19,6 +19,10 @@ enum class AndroidRenderingAPI {
   /// @brief Attempt to create a Vulkan surface, if that fails then fall back
   /// to GLES.
   kAutoselect,
+
+  /// @brief Attempt to create a Vulkan surface, if that fails then fall back
+  /// to Skia.
+  kAutoselectSkia,
 };
 
 //------------------------------------------------------------------------------
@@ -33,6 +37,8 @@ class AndroidContext {
   AndroidRenderingAPI RenderingApi() const;
 
   virtual bool IsValid() const;
+
+  virtual bool IsUsingImpeller() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Setter for the Skia context to be used by subsequent

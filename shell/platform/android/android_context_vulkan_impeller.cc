@@ -85,4 +85,8 @@ bool AndroidContextVulkanImpeller::IsValid() const {
   return is_valid_;
 }
 
+bool AndroidContextVulkanImpeller::IsUsingImpeller() const {
+  return true;
+}
+
 }  // namespace flutter

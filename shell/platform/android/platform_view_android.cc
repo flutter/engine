@@ -20,6 +20,7 @@
 #include "flutter/shell/platform/android/android_surface_software.h"
 #include "flutter/shell/platform/android/image_external_texture_gl.h"
 #include "flutter/shell/platform/android/surface_texture_external_texture_gl.h"
+#include "impeller/base/validation.h"
 #if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
 #include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
 #include "flutter/shell/platform/android/image_external_texture_vk.h"
@@ -75,7 +76,8 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     const std::optional<std::string>& impeller_backend,
     bool enable_vulkan_validation,
     bool enable_opengl_gpu_tracing,
-    bool enable_vulkan_gpu_tracing) {
+    bool enable_vulkan_gpu_tracing,
+    bool enable_skia_fallback) {
   if (use_software_rendering) {
     FML_DCHECK(!enable_impeller);
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
@@ -103,6 +105,10 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 
     // Default value is Vulkan with GLES fallback.
     AndroidRenderingAPI backend = AndroidRenderingAPI::kAutoselect;
+    if (enable_skia_fallback) {
+      // Impeller Vulkan with Skia GLES fallback.
+      backend = AndroidRenderingAPI::kAutoselectSkia;
+    }
     if (impeller_backend.has_value()) {
       if (impeller_backend.value() == "opengles") {
         backend = AndroidRenderingAPI::kOpenGLES;
@@ -122,12 +128,28 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
         return std::make_unique<AndroidContextVulkanImpeller>(
             enable_vulkan_validation, enable_vulkan_gpu_tracing);
       case AndroidRenderingAPI::kAutoselect: {
+        impeller::ScopedValidationDisable disable_logs;
         auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
             enable_vulkan_validation, enable_vulkan_gpu_tracing);
-        if (!vulkan_backend->IsValid()) {
+        if (!vulkan_backend || !vulkan_backend->IsValid()) {
           return std::make_unique<AndroidContextGLImpeller>(
               std::make_unique<impeller::egl::Display>(),
               enable_opengl_gpu_tracing);
+        }
+        return vulkan_backend;
+      }
+      case AndroidRenderingAPI::kAutoselectSkia: {
+        impeller::ScopedValidationDisable disable_logs;
+        auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
+            enable_vulkan_validation, enable_vulkan_gpu_tracing);
+        if (!vulkan_backend || !vulkan_backend->IsValid()) {
+          FML_LOG(ERROR) << "choose skia";
+          return std::make_unique<AndroidContextGLSkia>(
+              AndroidRenderingAPI::kOpenGLES,               //
+              fml::MakeRefCounted<AndroidEnvironmentGL>(),  //
+              task_runners,                                 //
+              msaa_samples                                  //
+          );
         }
         return vulkan_backend;
       }
@@ -161,8 +183,8 @@ PlatformViewAndroid::PlatformViewAndroid(
               delegate.OnPlatformViewGetSettings().impeller_backend,
               delegate.OnPlatformViewGetSettings().enable_vulkan_validation,
               delegate.OnPlatformViewGetSettings().enable_opengl_gpu_tracing,
-              delegate.OnPlatformViewGetSettings().enable_vulkan_gpu_tracing)) {
-}
+              delegate.OnPlatformViewGetSettings().enable_vulkan_gpu_tracing,
+              delegate.OnPlatformViewGetSettings().enable_skia_fallback)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
@@ -178,9 +200,10 @@ PlatformViewAndroid::PlatformViewAndroid(
     FML_CHECK(android_context_->IsValid())
         << "Could not create surface from invalid Android context.";
     surface_factory_ = std::make_shared<AndroidSurfaceFactoryImpl>(
-        android_context_,                                     //
-        delegate.OnPlatformViewGetSettings().enable_impeller  //
+        android_context_,                   //
+        android_context->IsUsingImpeller()  //
     );
+    delegate.UpdateImpellerState(android_context->IsUsingImpeller());
     android_surface_ = surface_factory_->CreateSurface();
     FML_CHECK(android_surface_ && android_surface_->IsValid())
         << "Could not create an OpenGL, Vulkan or Software surface to set up "

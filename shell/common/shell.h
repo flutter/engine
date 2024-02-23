@@ -472,7 +472,7 @@ class Shell final : public PlatformView::Delegate,
   std::shared_ptr<ResourceCacheLimitCalculator>
       resource_cache_limit_calculator_;
   size_t resource_cache_limit_;
-  const Settings settings_;
+  Settings settings_;
   DartVMRef vm_;
   mutable std::mutex time_recorder_mutex_;
   std::optional<fml::TimePoint> latest_frame_target_time_;
@@ -631,6 +631,9 @@ class Shell final : public PlatformView::Delegate,
 
   // |PlatformView::Delegate|
   const Settings& OnPlatformViewGetSettings() const override;
+
+  // |PlatformView::Delegate|
+  void UpdateImpellerState(bool impeller_enabled) override;
 
   // |PlatformView::Delegate|
   void LoadDartDeferredLibrary(

@@ -100,6 +100,8 @@ class MockPlatformViewDelegate : public PlatformView::Delegate {
               (std::unique_ptr<AssetResolver> updated_asset_resolver,
                AssetResolver::AssetResolverType type),
               (override));
+
+  MOCK_METHOD(void, UpdateImpellerState, (bool), (override));
 };
 }  // namespace
 

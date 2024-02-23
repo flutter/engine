@@ -21,6 +21,9 @@ class AndroidContextVulkanImpeller : public AndroidContext {
   // |AndroidContext|
   bool IsValid() const override;
 
+  // |AndroidContext|
+  bool IsUsingImpeller() const override;
+
  private:
   fml::RefPtr<fml::NativeLibrary> vulkan_dylib_;
   bool is_valid_ = false;

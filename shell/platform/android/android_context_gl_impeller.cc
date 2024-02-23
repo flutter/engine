@@ -204,6 +204,10 @@ bool AndroidContextGLImpeller::ResourceContextClearCurrent() {
   return offscreen_context_->ClearCurrent();
 }
 
+bool AndroidContextGLImpeller::IsUsingImpeller() const {
+  return true;
+}
+
 bool AndroidContextGLImpeller::ResourceContextMakeCurrent(
     impeller::egl::Surface* offscreen_surface) {
   if (!offscreen_context_ || !offscreen_surface) {
