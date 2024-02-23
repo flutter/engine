@@ -9,26 +9,27 @@ import 'package:ui/ui.dart' as ui;
 /// Tracks the [FlutterView]s focus changes.
 final class ViewFocusBinding {
   /// Creates a [ViewFocusBinding] instance.
-  ViewFocusBinding({
-    required FlutterViewManager viewManager,
-    required ui.ViewFocusChangeCallback onViewFocusChange,
-  }):
-    _viewManager = viewManager,
-    _onViewFocusChange = onViewFocusChange;
+  ViewFocusBinding(this._viewManager) {
+    _init();
+  }
 
   final FlutterViewManager _viewManager;
-  final ui.ViewFocusChangeCallback _onViewFocusChange;
+
+  Stream<ui.ViewFocusEvent> get onViewFocusChange => _onViewFocusChangeController.stream;
+  final StreamController<ui.ViewFocusEvent> _onViewFocusChangeController =
+      StreamController<ui.ViewFocusEvent>.broadcast(sync: true);
+
+  StreamSubscription<int>? _onViewCreatedListener;
 
   int? _lastViewId;
   ui.ViewFocusDirection _viewFocusDirection = ui.ViewFocusDirection.forward;
-  StreamSubscription<int>? _onViewCreatedListener;
 
-  void init() {
+  void _init() {
     domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
     domDocument.body?.addEventListener(_focusin, _handleFocusin);
     domDocument.body?.addEventListener(_focusout, _handleFocusout);
-    _onViewCreatedListener = _viewManager.onViewCreated.listen(_markViewAsFocusable);
+    _onViewCreatedListener = _viewManager.onViewCreated.listen(_handleViewCreated);
   }
 
   void dispose() {
@@ -61,45 +62,46 @@ final class ViewFocusBinding {
   });
 
   void _handleFocusChange(DomElement? focusedElement) {
-    final int? lastViewId = _lastViewId;
     final int? viewId = _viewId(focusedElement);
-    if (viewId == lastViewId) {
+    if (viewId == _lastViewId) {
       return;
     }
 
     final ui.ViewFocusEvent event;
-    if (viewId != null) {
+    if (viewId == null) {
+      event = ui.ViewFocusEvent(
+        viewId: _lastViewId!,
+        state: ui.ViewFocusState.unfocused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+    } else {
       event = ui.ViewFocusEvent(
         viewId: viewId,
         state: ui.ViewFocusState.focused,
         direction: _viewFocusDirection,
       );
-    } else {
-      event = ui.ViewFocusEvent(
-        viewId: lastViewId!,
-        state: ui.ViewFocusState.unfocused,
-        direction: ui.ViewFocusDirection.undefined,
-      );
     }
-    _lastViewId = viewId;
-    _markViewAsFocusable(lastViewId);
+    _markViewAsFocusable(_lastViewId, reachableByKeyboard: true);
     _markViewAsFocusable(viewId, reachableByKeyboard: false);
-    _onViewFocusChange(event);
+    _lastViewId = viewId;
+    _onViewFocusChangeController.add(event);
   }
 
   int? _viewId(DomElement? element) {
-    final DomElement? viewElement = element?.closest(DomManager.flutterViewTagName);
-    for (final EngineFlutterView view in _viewManager.views) {
-      if (view.dom.rootElement == viewElement) {
-        return view.viewId;
-      }
+    final DomElement? rootElement = element?.closest(DomManager.flutterViewTagName);
+    if (rootElement == null) {
+      return null;
     }
-    return null;
+    return _viewManager.viewIdForRootElement(rootElement);
+  }
+
+  void _handleViewCreated(int viewId) {
+    _markViewAsFocusable(viewId, reachableByKeyboard: true);
   }
 
   void _markViewAsFocusable(
     int? viewId, {
-    bool reachableByKeyboard = true,
+    required bool reachableByKeyboard,
   }) {
     if (viewId == null) {
       return;
