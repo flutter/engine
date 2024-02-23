@@ -333,7 +333,8 @@ std::optional<RunConfiguration> AndroidShellHolder::BuildRunConfiguration(
   }
 
   RunConfiguration config(std::move(isolate_configuration),
-                          std::move(asset_manager));
+                          asset_manager ? std::move(asset_manager)
+                                        : std::make_shared<AssetManager>());
 
   {
     if (!entrypoint.empty() && !libraryUrl.empty()) {

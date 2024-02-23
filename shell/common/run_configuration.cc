@@ -49,6 +49,8 @@ RunConfiguration::RunConfiguration(
     std::shared_ptr<AssetManager> asset_manager)
     : isolate_configuration_(std::move(configuration)),
       asset_manager_(std::move(asset_manager)) {
+  FML_DCHECK(asset_manager_);
+  FML_DCHECK(isolate_configuration_);
   PersistentCache::SetAssetManager(asset_manager_);
 }
 
