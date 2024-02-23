@@ -95,7 +95,9 @@ class AssetResolver {
 
   virtual bool operator==(const AssetResolver& other) const = 0;
 
-  bool operator!=(const AssetResolver& other) { return !operator==(other); }
+  bool operator!=(const AssetResolver& other) const {
+    return !operator==(other);
+  }
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(AssetResolver);
