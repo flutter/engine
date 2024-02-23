@@ -20,6 +20,11 @@ void main() {
 }
 
 Future<void> testMain() async {
+  // Disable the JAWS workaround even on Windows. Otherwise, test code becomes
+  // too noisy with `if (isWindows)`. The JAWS issue is already covered by a
+  // separate `semantics_crawler_test.dart`.
+  useJawsWorkaroundForLabels = false;
+
   await bootstrapAndRunApp();
 
   test('Can create multiple views each with its own semantics tree', () async {
