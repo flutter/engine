@@ -811,11 +811,12 @@ class PlatformDispatcher {
   /// Schedule a frame to run as soon as possible, rather than waiting for the
   /// engine to request a frame in response to a system "Vsync" signal.
   ///
-  /// This method is used during application startup so that the first frame
-  /// (which is likely to be quite expensive) can start a few extra milliseconds
-  /// earlier. Using it in other situations might lead to unintended results,
-  /// such as screen tearing. Depending on platforms and situations, the warm up
-  /// frame might or might not be actually rendered onto the screen.
+  /// The application can call this method as soon as it starts up so that the
+  /// first frame (which is likely to be quite expensive) can start a few extra
+  /// milliseconds earlier. Using it in other situations might lead to
+  /// unintended results, such as screen tearing. Depending on platforms and
+  /// situations, the warm up frame might or might not be actually rendered onto
+  /// the screen.
   ///
   /// For more introduction to the warm up frame, see
   /// [SchedulerBinding.scheduleWarmUpFrame].

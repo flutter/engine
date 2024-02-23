@@ -339,7 +339,6 @@ class EngineContext {
   fml::WeakPtr<IOManager> io_manager_;
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
 };
-
 }  // namespace
 
 TEST_F(EngineTest, Create) {

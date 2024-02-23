@@ -786,6 +786,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void scheduleWarmUpFrame({required ui.VoidCallback beginFrame, required ui.VoidCallback drawFrame}) {
     Timer.run(beginFrame);
     // We use timers here to ensure that microtasks flush in between.
+    //
+    // TODO(dkwingsmt): This logic was moved from the framework and is different
+    // from how Web renders a regular frame, which doesn't flush microtasks
+    // between the callbacks at all (see `initializeEngineServices`). We might
+    // want to change this. See the to-do in `initializeEngineServices` and
+    // https://github.com/flutter/engine/pull/50570#discussion_r1496671676
     Timer.run(drawFrame);
   }
 
