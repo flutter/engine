@@ -194,7 +194,7 @@ template("fuchsia_archive") {
   }
 
   if (defined(invoker.cml_file)) {
-    # _far_base_dir = "$root_out_dir/${target_name}_far"
+    _far_base_dir = "$root_out_dir/${target_name}_far"
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
@@ -202,7 +202,7 @@ template("fuchsia_archive") {
       forward_variables_from(invoker, [ "testonly" ])
 
       manifest = invoker.cml_file
-      # output_file = "$_far_base_dir/meta/${_cml_file_name}.cm"
+      output_file = "$_far_base_dir/meta/${_cml_file_name}.cm"
     }
     _deps += [ ":$_compile_cml_target" ]
   }
@@ -247,7 +247,7 @@ template("fuchsia_test_archive") {
   }
 
   if (defined(invoker.cml_file)) {
-    # _far_base_dir = "$root_out_dir/${target_name}_far"
+    _far_base_dir = "$root_out_dir/${target_name}_far"
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
@@ -255,7 +255,7 @@ template("fuchsia_test_archive") {
       forward_variables_from(invoker, [ "testonly" ])
 
       manifest = invoker.cml_file
-      # output_file = "$_far_base_dir/meta/${_cml_file_name}.cm"
+      output_file = "$_far_base_dir/meta/${_cml_file_name}.cm"
     }
     _deps += [ ":$_compile_cml_target" ]
   } else {
@@ -278,7 +278,7 @@ template("fuchsia_test_archive") {
       outputs = [ generated_cml_file ]
     }
 
-    # far_base_dir = "$root_out_dir/${target_name}_far"
+    far_base_dir = "$root_out_dir/${target_name}_far"
 
     # Compile the resulting interpolated test suite's cml.
     compile_test_suite_cml_target = "${test_suite}_test_suite_compile_cml"
@@ -287,7 +287,7 @@ template("fuchsia_test_archive") {
       deps = [ ":$interpolate_cml_target" ]
 
       manifest = generated_cml_file
-      # output_file = "$far_base_dir/meta/${test_suite}.cm"
+      output_file = "$far_base_dir/meta/${test_suite}.cm"
     }
 
     _deps += [ ":$compile_test_suite_cml_target" ]
