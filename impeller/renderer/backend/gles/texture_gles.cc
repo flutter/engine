@@ -269,7 +269,9 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
                                            size = tex_descriptor.size,  //
                                            texture_type,                //
                                            texture_target,              //
-                                           region                       //
+                                           region,                      //
+                                           contents_initialized =
+                                               contents_initialized_  //
   ](const auto& reactor) {
     auto gl_handle = reactor.GetGLHandle(handle);
     if (!gl_handle.has_value()) {
@@ -286,7 +288,9 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
 
     TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
                  std::to_string(data->data->GetSize()).c_str());
-    if (region == IRect::MakeLTRB(0, 0, size.width, size.height)) {
+    if (!contents_initialized) {
+      // GL_INVALID_OPERATION is generated if the texture array has not been
+      // defined by a previous glTexImage2D operation.
       gl.TexImage2D(texture_target,         // target
                     0u,                     // LOD level
                     data->internal_format,  // internal format
@@ -295,21 +299,20 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
                     0u,                     // border
                     data->external_format,  // external format
                     data->type,             // type
-                    tex_data                // data
-      );
-    } else {
-      gl.TexSubImage2D(texture_target,         // target
-                       0u,                     // LOD level
-                       region.GetX(),          // xoffset
-                       region.GetY(),          // yoffset
-                       region.GetWidth(),      // width
-                       region.GetHeight(),     // height
-                       data->external_format,  // external format
-                       data->type,             // type
-                       tex_data                // data
-
+                    nullptr                 // data
       );
     }
+    gl.TexSubImage2D(texture_target,         // target
+                     0u,                     // LOD level
+                     region.GetX(),          // xoffset
+                     region.GetY(),          // yoffset
+                     region.GetWidth(),      // width
+                     region.GetHeight(),     // height
+                     data->external_format,  // external format
+                     data->type,             // type
+                     tex_data                // data
+
+    );
   };
 
   contents_initialized_ = reactor_->AddOperation(texture_upload);
