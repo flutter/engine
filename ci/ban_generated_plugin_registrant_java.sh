@@ -56,15 +56,13 @@ trap cleanup EXIT
 echo "Finding all files named GeneratedPluginRegistrant.java in the project..."
 GENERATED_PLUGIN_REGISTRANT_PATHS=$(find . -name "GeneratedPluginRegistrant.java")
 
-# Check for GeneratedPluginRegistrant.java in unexpected locations, except in third_party.
-for expected_path in "${EXPECTED_PATHS[@]}"; do
-  found_files=$(echo "$GENERATED_PLUGIN_REGISTRANT_PATHS" | grep -v "\.\/third_party\/" | grep -v "$expected_path")
-
-  for file in $found_files; do
-    echo "Error: Unexpected GeneratedPluginRegistrant.java found: $file"
-    echo "Please remove the unexpected file and see: https://github.com/flutter/flutter/issues/143782"
+# Iterate over the found paths and check if they are expected.
+for path in $GENERATED_PLUGIN_REGISTRANT_PATHS; do
+  if [[ ! " ${EXPECTED_PATHS[@]} " =~ " ${path} " ]]; then
+    echo "ERROR: Found unexpected file named GeneratedPluginRegistrant.java at $path."
+    echo "Please remove this file from the project."
     exit 1
-  done
+  fi
 done
 
-echo "Done"
+echo "Done."
