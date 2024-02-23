@@ -9,22 +9,17 @@ import 'package:ui/ui.dart' as ui;
 /// Tracks the [FlutterView]s focus changes.
 final class ViewFocusBinding {
   /// Creates a [ViewFocusBinding] instance.
-  ViewFocusBinding(this._viewManager) {
-    _init();
-  }
+  ViewFocusBinding(this._viewManager, this._onViewFocusChange);
 
   final FlutterViewManager _viewManager;
-
-  Stream<ui.ViewFocusEvent> get onViewFocusChange => _onViewFocusChangeController.stream;
-  final StreamController<ui.ViewFocusEvent> _onViewFocusChangeController =
-      StreamController<ui.ViewFocusEvent>.broadcast(sync: true);
-
-  StreamSubscription<int>? _onViewCreatedListener;
+  final ui.ViewFocusChangeCallback _onViewFocusChange;
 
   int? _lastViewId;
   ui.ViewFocusDirection _viewFocusDirection = ui.ViewFocusDirection.forward;
 
-  void _init() {
+  StreamSubscription<int>? _onViewCreatedListener;
+
+  void init() {
     domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
     domDocument.body?.addEventListener(_focusin, _handleFocusin);
@@ -84,7 +79,7 @@ final class ViewFocusBinding {
     _markViewAsFocusable(_lastViewId, reachableByKeyboard: true);
     _markViewAsFocusable(viewId, reachableByKeyboard: false);
     _lastViewId = viewId;
-    _onViewFocusChangeController.add(event);
+    _onViewFocusChange(event);
   }
 
   int? _viewId(DomElement? element) {

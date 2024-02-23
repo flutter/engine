@@ -77,9 +77,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     HighContrastSupport.instance.addListener(_updateHighContrast);
     _addFontSizeObserver();
     _addLocaleChangedListener();
-    _addViewFocusChangeListener();
     registerHotRestartListener(dispose);
     AppLifecycleState.instance.addListener(_setAppLifecycleState);
+    _viewFocusBinding.init();
     domDocument.body?.append(accessibilityPlaceholder);
     _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
@@ -121,7 +121,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _removeBrightnessMediaQueryListener();
     _disconnectFontSizeObserver();
     _removeLocaleChangedListener();
-    _removeViewFocusChangeListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
     AppLifecycleState.instance.removeListener(_setAppLifecycleState);
     _viewFocusBinding.dispose();
@@ -229,17 +228,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
-  late final ViewFocusBinding _viewFocusBinding = ViewFocusBinding(viewManager);
-  StreamSubscription<ui.ViewFocusEvent>? _onViewFocusChangeSubscription;
-
-  void _addViewFocusChangeListener() {
-    _onViewFocusChangeSubscription = _viewFocusBinding.onViewFocusChange.listen(
-      invokeOnViewFocusChange,
-    );
-  }
-  void _removeViewFocusChangeListener() {
-    _onViewFocusChangeSubscription?.cancel();
-  }
+  late final ViewFocusBinding _viewFocusBinding = 
+    ViewFocusBinding(viewManager, invokeOnViewFocusChange);
 
   @override
   ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
@@ -261,7 +251,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     );
   }
 
-
   @override
   void requestViewFocusChange({
     required int viewId,
@@ -270,7 +259,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }) {
     // TODO(tugorez): implement this method. At the moment will be a no op call.
   }
-
 
   /// A set of views which have rendered in the current `onBeginFrame` or
   /// `onDrawFrame` scope.
