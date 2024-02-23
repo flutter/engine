@@ -59,6 +59,13 @@ class APKAssetProvider final : public AssetResolver {
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override;
 
+  // |AssetResolver|
+  const APKAssetProvider* as_apk_asset_provider() const override {
+    return this;
+  }
+
+  bool operator==(const AssetResolver& other) const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(APKAssetProvider);
 };
 
