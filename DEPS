@@ -257,7 +257,7 @@ vars = {
 
   # The version / instance id of the cipd:chromium/fuchsia/gn-sdk which will be
   # used altogether with fuchsia-sdk to generate gn based build rules.
-  'fuchsia_gn_sdk_version': 'GEILx3JhMHrLut6n15rcvfmdudN_txrEbV70XHeqmusC',
+  'fuchsia_gn_sdk_version': 'BRsK4JIBtjKGmCJGsQfpomxyr51m_Ii9nyL_9H19ESYC',
 }
 
 gclient_gn_args_file = 'src/third_party/dart/build/config/gclient_args.gni'
