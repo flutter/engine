@@ -6,6 +6,7 @@ import("//build/fuchsia/config.gni")
 import("//flutter/tools/fuchsia/fuchsia_debug_symbols.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/cmc.gni")
+import("//flutter/tools/fuchsia/gn-sdk/src/package.gni")
 import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 
 # TODO(zijiehe): May use fuchsia_package in gn-sdk if possible.
@@ -120,10 +121,20 @@ template("_fuchsia_archive") {
   }
 
   manifest_json_file = "${root_out_dir}/${target_name}_package_manifest.json"
+
+  prepare_package_inputs("${target_name}_package_inputs") {
+    deps = pkg.deps
+    archive_manifest = "${root_out_dir}/${target_name}.manifest"
+    testonly = pkg_testonly
+    pkg_out_dir = far_base_dir
+    package_name = pkg.package_name
+  }
+
   action(target_name) {
     script = "//flutter/tools/fuchsia/gen_package.py"
     deps = pkg_dir_deps + [
              ":${target_name}_dir",
+             ":${target_name}_package_inputs",
              ":${_dbg_symbols_target}",
            ]
 
