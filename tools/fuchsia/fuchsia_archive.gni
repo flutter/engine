@@ -198,6 +198,11 @@ template("fuchsia_archive") {
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
+    write_file(
+        "${target_gen_dir}/${_compile_cml_target}/${_compile_cml_target}.d",
+        [],
+        "list lines")
+
     cmc_compile(_compile_cml_target) {
       forward_variables_from(invoker, [ "testonly" ])
 
@@ -251,6 +256,11 @@ template("fuchsia_test_archive") {
     _cml_file_name = get_path_info(invoker.cml_file, "name")
     _compile_cml_target = "${target_name}_${_cml_file_name}_compile_cml"
 
+    write_file(
+        "${target_gen_dir}/${_compile_cml_target}/${_compile_cml_target}.d",
+        [],
+        "list lines")
+
     cmc_compile(_compile_cml_target) {
       forward_variables_from(invoker, [ "testonly" ])
 
@@ -282,6 +292,12 @@ template("fuchsia_test_archive") {
 
     # Compile the resulting interpolated test suite's cml.
     compile_test_suite_cml_target = "${test_suite}_test_suite_compile_cml"
+
+    write_file(
+        "${target_gen_dir}/${compile_test_suite_cml_target}/${compile_test_suite_cml_target}.d",
+        [],
+        "list lines")
+
     cmc_compile(compile_test_suite_cml_target) {
       testonly = true
       deps = [ ":$interpolate_cml_target" ]
