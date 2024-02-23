@@ -7,24 +7,26 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 /// Tracks the [FlutterView]s focus changes.
-mixin ViewFocusBinding {
-  FlutterViewManager get viewManager;
-  void invokeOnViewFocusChange(ui.ViewFocusEvent viewFocusEvent);
+final class ViewFocusBinding {
+  ViewFocusBinding(this._viewManager, this._onViewFocusChange);
+
+  final FlutterViewManager _viewManager;
+  final ui.ViewFocusChangeCallback _onViewFocusChange;
 
   int? _lastViewId;
   ui.ViewFocusDirection _viewFocusDirection = ui.ViewFocusDirection.forward;
 
   StreamSubscription<int>? _onViewCreatedListener;
 
-  void initViewFocusBindings() {
+  void init() {
     domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
     domDocument.body?.addEventListener(_focusin, _handleFocusin);
     domDocument.body?.addEventListener(_focusout, _handleFocusout);
-    _onViewCreatedListener = viewManager.onViewCreated.listen(_handleViewCreated);
+    _onViewCreatedListener = _viewManager.onViewCreated.listen(_handleViewCreated);
   }
 
-  void disposeViewFocusBindings() {
+  void dispose() {
     domDocument.body?.removeEventListener(_keyDown, _handleKeyDown);
     domDocument.body?.removeEventListener(_keyUp, _handleKeyUp);
     domDocument.body?.removeEventListener(_focusin, _handleFocusin);
@@ -76,7 +78,7 @@ mixin ViewFocusBinding {
     _markViewAsFocusable(_lastViewId, reachableByKeyboard: true);
     _markViewAsFocusable(viewId, reachableByKeyboard: false);
     _lastViewId = viewId;
-    invokeOnViewFocusChange(event);
+    _onViewFocusChange(event);
   }
 
   int? _viewId(DomElement? element) {
@@ -84,7 +86,7 @@ mixin ViewFocusBinding {
     if (rootElement == null) {
       return null;
     }
-    return viewManager.viewIdForRootElement(rootElement);
+    return _viewManager.viewIdForRootElement(rootElement);
   }
 
   void _handleViewCreated(int viewId) {
@@ -105,7 +107,7 @@ mixin ViewFocusBinding {
     // the flutter view and having it with a zero tabindex messes the focus
     // traversal order when pressing tab or shift tab.
     final int tabIndex = reachableByKeyboard ? 0 : -1;
-    viewManager[viewId]?.dom.rootElement.setAttribute('tabindex', tabIndex);
+    _viewManager[viewId]?.dom.rootElement.setAttribute('tabindex', tabIndex);
   }
 
   static const String _focusin = 'focusin';

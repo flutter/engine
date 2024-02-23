@@ -69,7 +69,7 @@ class HighContrastSupport {
 ///
 /// This is the central entry point for platform messages and configuration
 /// events from the platform.
-class EnginePlatformDispatcher extends ui.PlatformDispatcher with ViewFocusBinding {
+class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Private constructor, since only dart:ui is supposed to create one of
   /// these.
   EnginePlatformDispatcher() {
@@ -79,7 +79,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher with ViewFocusBindi
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
     AppLifecycleState.instance.addListener(_setAppLifecycleState);
-    initViewFocusBindings();
+    _viewFocusBinding.init();
     domDocument.body?.append(accessibilityPlaceholder);
     _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
@@ -123,7 +123,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher with ViewFocusBindi
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
     AppLifecycleState.instance.removeListener(_setAppLifecycleState);
-    disposeViewFocusBindings();
+    _viewFocusBinding.dispose();
     accessibilityPlaceholder.remove();
     _onViewDisposedListener.cancel();
     viewManager.dispose();
@@ -153,7 +153,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher with ViewFocusBindi
     EngineFlutterDisplay.instance,
   ];
 
-  @override
   late final FlutterViewManager viewManager = FlutterViewManager(this);
 
   /// The current list of windows.
@@ -229,6 +228,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher with ViewFocusBindi
     }
   }
 
+  late final ViewFocusBinding _viewFocusBinding =
+    ViewFocusBinding(viewManager, invokeOnViewFocusChange);
+
   @override
   ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
   ui.ViewFocusChangeCallback? _onViewFocusChange;
@@ -241,7 +243,6 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher with ViewFocusBindi
 
   // Engine code should use this method instead of the callback directly.
   // Otherwise zones won't work properly.
-  @override
   void invokeOnViewFocusChange(ui.ViewFocusEvent viewFocusEvent) {
     invoke1<ui.ViewFocusEvent>(
       _onViewFocusChange,
