@@ -98,7 +98,7 @@
                     ],
                     "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
                     "parameters": [
-                        "--out-dir=android_emulator_debug_x64",
+                        "--out-dir=out/android_emulator_debug_x64",
                         "--enable-impeller",
                         "--impeller-backend=vulkan"
                     ]
