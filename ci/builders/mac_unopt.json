@@ -273,6 +273,11 @@
                         "ios_debug_unopt_sim_arm64_extension_safe"
                     ],
                     "script": "flutter/testing/scenario_app/run_ios_tests.sh"
+                },
+                {
+                    "language": "dart",
+                    "name": "test: clangd",
+                    "script": "flutter/tools/clangd_check/bin/main.dart"
                 }
             ]
         }

@@ -81,6 +81,11 @@
                 },
                 {
                     "language": "dart",
+                    "name": "test: clangd",
+                    "script": "flutter/tools/clangd_check/bin/main.dart"
+                },
+                {
+                    "language": "dart",
                     "name": "test: Lint android host",
                     "script": "flutter/tools/android_lint/bin/main.dart"
                 },
