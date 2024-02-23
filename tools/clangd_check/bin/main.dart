@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -46,6 +50,7 @@ void main(List<String> args) {
     'command': final String path,
     'file': final String file,
   }) {
+    // Given a path like ../../flutter/foo.cc, we want to check foo.cc.
     checkFile = p.split(file).skip(3).join(p.separator);
     clangd ??= p.join(p.dirname(p.dirname(path.split(' ').first)), 'clang', 'bin', 'clangd');
   } else {

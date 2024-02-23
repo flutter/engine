@@ -277,7 +277,10 @@
                 {
                     "language": "dart",
                     "name": "test: clangd",
-                    "script": "flutter/tools/clangd_check/bin/main.dart"
+                    "script": "flutter/tools/clangd_check/bin/main.dart",
+                    "parameters": [
+                        "--clangd=buildtools/mac-x64/clang/bin/clangd"
+                    ]
                 }
             ]
         }
