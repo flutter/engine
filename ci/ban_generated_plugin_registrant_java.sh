@@ -45,7 +45,15 @@ EXPECTED_PATHS=("./shell/platform/android/test/io/flutter/plugins/GeneratedPlugi
 # Temporarily change the working directory to the root of the Flutter project.
 pushd "$SRC_DIR/flutter" >/dev/null
 
+# Change back to the original working directory.
+function cleanup() {
+  popd >/dev/null
+}
+
+trap cleanup EXIT
+
 # Find all files named GeneratedPluginRegistrant.java in the project.
+echo "Finding all files named GeneratedPluginRegistrant.java in the project..."
 GENERATED_PLUGIN_REGISTRANT_PATHS=$(find . -name "GeneratedPluginRegistrant.java")
 
 # Check for GeneratedPluginRegistrant.java in unexpected locations, except in third_party.
@@ -59,5 +67,4 @@ for expected_path in "${EXPECTED_PATHS[@]}"; do
   done
 done
 
-# Change back to the original working directory.
-popd >/dev/null
+echo "Done"
