@@ -43,6 +43,8 @@ class APKAssetProvider final : public AssetResolver {
   // delete the returned pointer.
   APKAssetProviderInternal* GetImpl() const { return impl_.get(); }
 
+  bool operator==(const AssetResolver& other) const override;
+
  private:
   std::shared_ptr<APKAssetProviderInternal> impl_;
 
@@ -63,8 +65,6 @@ class APKAssetProvider final : public AssetResolver {
   const APKAssetProvider* as_apk_asset_provider() const override {
     return this;
   }
-
-  bool operator==(const AssetResolver& other) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(APKAssetProvider);
 };
