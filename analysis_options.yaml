@@ -18,6 +18,19 @@ analyzer:
   exclude: # DIFFERENT FROM FLUTTER/FLUTTER
     # Fixture depends on dart:ui and raises false positives.
     - flutter_frontend_server/test/fixtures/lib/main.dart
+    # FIXME: DO NOT SUBMIT.
+    # We have a root `.dart_tool/packages_config.json`, so the entire repo is
+    # automatically treated as a single Dart package unless a pubspec.yaml file
+    # exists. Some of these directories do not follow that pattern and need to
+    # be ignored.
+    - lib/**
+    - examples/**
+    - impeller/**
+    - prebuilts/**
+    - runtime/**
+    - shell/**
+    - third_party/**
+    - web_sdk/**
 
 linter:
   rules:

@@ -68,6 +68,10 @@ linked_*.ds
 unlinked.ds
 unlinked_spec.ds
 
+# Allow the root .dart_tool/ directory to be checked in.
+!.dart_tool/package_config.json
+!.dart_tool/README.md
+
 # Android related
 **/android/**/gradle-wrapper.jar
 **/android/.gradle
