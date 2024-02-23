@@ -32,9 +32,8 @@ import 'package:process/process.dart';
     .map((String line) => '[stderr] $line')
     .listen(outputController.add, onDone: stderrCompleter.complete);
 
-  final Future<int> exitCode = process.exitCode.then<int>((int code) {
-    stdoutSub.cancel();
-    stderrSub.cancel();
+  final Future<int> exitCode = process.exitCode.then<int>((int code) async {
+    await (stdoutSub.cancel(), stderrSub.cancel()).wait;
     outputController.close();
     return code;
   });
