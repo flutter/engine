@@ -234,15 +234,15 @@ TEST(ConditionVariableTest, TestsCriticalSectionAfterWait) {
   ASSERT_EQ(sum, kThreadCount);
 }
 
-TEST(BaseTest, PromiseDestructWrapperValue) {
-  PromiseDestructWrapper<int> wrapper;
+TEST(BaseTest, NoExceptionPromiseValue) {
+  NoExceptionPromise<int> wrapper;
   std::future future = wrapper.get_future();
   wrapper.set_value(123);
   ASSERT_EQ(future.get(), 123);
 }
 
-TEST(BaseTest, PromiseDestructWrapperEmpty) {
-  auto wrapper = std::make_shared<PromiseDestructWrapper<int>>();
+TEST(BaseTest, NoExceptionPromiseEmpty) {
+  auto wrapper = std::make_shared<NoExceptionPromise<int>>();
   std::future future = wrapper->get_future();
 
   // Destroy the empty promise with the future still pending. Verify that the

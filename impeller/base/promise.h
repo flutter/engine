@@ -23,11 +23,11 @@ std::future<T> RealizedFuture(T t) {
 // By default the std::promise destructor will complete an empty promise with an
 // exception. This will fail because Flutter is built without exception support.
 template <typename T>
-class PromiseDestructWrapper {
+class NoExceptionPromise {
  public:
-  PromiseDestructWrapper() = default;
+  NoExceptionPromise() = default;
 
-  ~PromiseDestructWrapper() {
+  ~NoExceptionPromise() {
     if (!value_set_) {
       promise_.set_value({});
     }
