@@ -77,7 +77,10 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool enable_opengl_gpu_tracing,
     bool enable_vulkan_gpu_tracing) {
   if (use_software_rendering) {
-    FML_DCHECK(!enable_impeller);
+    FML_CHECK(!enable_impeller)
+        << "Software rendering is incompatible with Impeller.\n"
+           "Either configure your Device or Emulator to use \n"
+           "hardware acceleration or disable Impeller.";
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
   if (enable_impeller) {
