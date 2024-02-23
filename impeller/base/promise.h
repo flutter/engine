@@ -6,8 +6,6 @@
 #define FLUTTER_IMPELLER_BASE_PROMISE_H_
 
 #include <future>
-#include <optional>
-#include <utility>
 
 namespace impeller {
 
@@ -27,26 +25,24 @@ std::future<T> RealizedFuture(T t) {
 template <typename T>
 class PromiseDestructWrapper {
  public:
-  PromiseDestructWrapper() : promise_(std::in_place) {}
+  PromiseDestructWrapper() = default;
 
   ~PromiseDestructWrapper() {
-    if (promise_) {
-      promise_->set_value({});
+    if (!value_set_) {
+      promise_.set_value({});
     }
   }
 
-  std::future<T> get_future() {
-    FML_DCHECK(promise_);
-    return promise_->get_future();
-  }
+  std::future<T> get_future() { return promise_.get_future(); }
 
   void set_value(const T& value) {
-    promise_->set_value(value);
-    promise_.reset();
+    promise_.set_value(value);
+    value_set_ = true;
   }
 
  private:
-  std::optional<std::promise<T>> promise_;
+  std::promise<T> promise_;
+  bool value_set_ = false;
 };
 
 }  // namespace impeller
