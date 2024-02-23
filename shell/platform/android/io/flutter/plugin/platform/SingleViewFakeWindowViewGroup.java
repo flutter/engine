@@ -14,48 +14,48 @@ import android.view.WindowManager;
  * Currently only a subset of the protocol is supported (gravity, x, and y).
  */
 class SingleViewFakeWindowViewGroup extends ViewGroup {
-    // Used in onLayout to keep the bounds of the current view.
-    // We keep it as a member to avoid object allocations during onLayout which are discouraged.
-    private final Rect viewBounds;
+  // Used in onLayout to keep the bounds of the current view.
+  // We keep it as a member to avoid object allocations during onLayout which are discouraged.
+  private final Rect viewBounds;
 
-    // Used in onLayout to keep the bounds of the child views.
-    // We keep it as a member to avoid object allocations during onLayout which are discouraged.
-    private final Rect childRect;
+  // Used in onLayout to keep the bounds of the child views.
+  // We keep it as a member to avoid object allocations during onLayout which are discouraged.
+  private final Rect childRect;
 
-    public SingleViewFakeWindowViewGroup(Context context) {
-        super(context);
-        viewBounds = new Rect();
-        childRect = new Rect();
+  public SingleViewFakeWindowViewGroup(Context context) {
+    super(context);
+    viewBounds = new Rect();
+    childRect = new Rect();
+  }
+
+  @Override
+  protected void onLayout(boolean changed, int l, int t, int r, int b) {
+    for (int i = 0; i < getChildCount(); i++) {
+      View child = getChildAt(i);
+      WindowManager.LayoutParams params = (WindowManager.LayoutParams) child.getLayoutParams();
+      viewBounds.set(l, t, r, b);
+      Gravity.apply(
+          params.gravity,
+          child.getMeasuredWidth(),
+          child.getMeasuredHeight(),
+          viewBounds,
+          params.x,
+          params.y,
+          childRect);
+      child.layout(childRect.left, childRect.top, childRect.right, childRect.bottom);
     }
+  }
 
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            WindowManager.LayoutParams params = (WindowManager.LayoutParams) child.getLayoutParams();
-            viewBounds.set(l, t, r, b);
-            Gravity.apply(
-                    params.gravity,
-                    child.getMeasuredWidth(),
-                    child.getMeasuredHeight(),
-                    viewBounds,
-                    params.x,
-                    params.y,
-                    childRect);
-            child.layout(childRect.left, childRect.top, childRect.right, childRect.bottom);
-        }
+  @Override
+  protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    for (int i = 0; i < getChildCount(); i++) {
+      View child = getChildAt(i);
+      child.measure(atMost(widthMeasureSpec), atMost(heightMeasureSpec));
     }
+    super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+  }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        for (int i = 0; i < getChildCount(); i++) {
-            View child = getChildAt(i);
-            child.measure(atMost(widthMeasureSpec), atMost(heightMeasureSpec));
-        }
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-    }
-
-    private static int atMost(int measureSpec) {
-        return MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(measureSpec), MeasureSpec.AT_MOST);
-    }
+  private static int atMost(int measureSpec) {
+    return MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(measureSpec), MeasureSpec.AT_MOST);
+  }
 }

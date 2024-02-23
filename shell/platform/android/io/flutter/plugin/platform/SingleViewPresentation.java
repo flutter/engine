@@ -221,7 +221,6 @@ class SingleViewPresentation extends Presentation {
     return state.platformView;
   }
 
-
   /** Answers calls for {@link InputMethodManager} with an instance cached at creation time. */
   // TODO(mklim): This caches the IMM at construction time and won't pick up any changes. In rare
   // cases where the FlutterView changes windows this will return an outdated instance. This
@@ -316,7 +315,6 @@ class SingleViewPresentation extends Presentation {
       return false;
     }
   }
-
 
   private static class AccessibilityDelegatingFrameLayout extends FrameLayout {
     private final AccessibilityEventsDelegate accessibilityEventsDelegate;

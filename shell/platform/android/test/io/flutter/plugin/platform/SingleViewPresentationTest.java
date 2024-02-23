@@ -137,8 +137,7 @@ public class SingleViewPresentationTest {
     View mockView = mock(View.class);
     ViewGroup.LayoutParams mockLayoutParams = mock(ViewGroup.LayoutParams.class);
 
-    WindowManagerHandler windowManagerHandler =
-        new WindowManagerHandler(mockWindowManager, null);
+    WindowManagerHandler windowManagerHandler = new WindowManagerHandler(mockWindowManager, null);
 
     // removeViewImmediate
     windowManagerHandler.removeViewImmediate(mockView);

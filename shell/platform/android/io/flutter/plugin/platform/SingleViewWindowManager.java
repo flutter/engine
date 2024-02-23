@@ -30,96 +30,96 @@ import java.util.function.Consumer;
  */
 @VisibleForTesting
 abstract class SingleViewWindowManager implements WindowManager {
-    private static final String TAG = "PlatformViewsController";
+  private static final String TAG = "PlatformViewsController";
 
-    final WindowManager delegate;
-    SingleViewFakeWindowViewGroup fakeWindowRootView;
+  final WindowManager delegate;
+  SingleViewFakeWindowViewGroup fakeWindowRootView;
 
-    SingleViewWindowManager(
-            WindowManager delegate, SingleViewFakeWindowViewGroup fakeWindowViewGroup) {
-        this.delegate = delegate;
-        fakeWindowRootView = fakeWindowViewGroup;
+  SingleViewWindowManager(
+      WindowManager delegate, SingleViewFakeWindowViewGroup fakeWindowViewGroup) {
+    this.delegate = delegate;
+    fakeWindowRootView = fakeWindowViewGroup;
+  }
+
+  @Override
+  @Deprecated
+  public Display getDefaultDisplay() {
+    return delegate.getDefaultDisplay();
+  }
+
+  @Override
+  public void removeViewImmediate(View view) {
+    if (fakeWindowRootView == null) {
+      Log.w(TAG, "Embedded view called removeViewImmediate while detached from presentation");
+      return;
     }
+    view.clearAnimation();
+    fakeWindowRootView.removeView(view);
+  }
 
-    @Override
-    @Deprecated
-    public Display getDefaultDisplay() {
-        return delegate.getDefaultDisplay();
+  @Override
+  public void addView(View view, ViewGroup.LayoutParams params) {
+    if (fakeWindowRootView == null) {
+      Log.w(TAG, "Embedded view called addView while detached from presentation");
+      return;
     }
+    fakeWindowRootView.addView(view, params);
+  }
 
-    @Override
-    public void removeViewImmediate(View view) {
-        if (fakeWindowRootView == null) {
-            Log.w(TAG, "Embedded view called removeViewImmediate while detached from presentation");
-            return;
-        }
-        view.clearAnimation();
-        fakeWindowRootView.removeView(view);
+  @Override
+  public void updateViewLayout(View view, ViewGroup.LayoutParams params) {
+    if (fakeWindowRootView == null) {
+      Log.w(TAG, "Embedded view called updateViewLayout while detached from presentation");
+      return;
     }
+    fakeWindowRootView.updateViewLayout(view, params);
+  }
 
-    @Override
-    public void addView(View view, ViewGroup.LayoutParams params) {
-        if (fakeWindowRootView == null) {
-            Log.w(TAG, "Embedded view called addView while detached from presentation");
-            return;
-        }
-        fakeWindowRootView.addView(view, params);
+  @Override
+  public void removeView(View view) {
+    if (fakeWindowRootView == null) {
+      Log.w(TAG, "Embedded view called removeView while detached from presentation");
+      return;
     }
+    fakeWindowRootView.removeView(view);
+  }
 
-    @Override
-    public void updateViewLayout(View view, ViewGroup.LayoutParams params) {
-        if (fakeWindowRootView == null) {
-            Log.w(TAG, "Embedded view called updateViewLayout while detached from presentation");
-            return;
-        }
-        fakeWindowRootView.updateViewLayout(view, params);
-    }
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  @NonNull
+  @Override
+  public WindowMetrics getCurrentWindowMetrics() {
+    return delegate.getCurrentWindowMetrics();
+  }
 
-    @Override
-    public void removeView(View view) {
-        if (fakeWindowRootView == null) {
-            Log.w(TAG, "Embedded view called removeView while detached from presentation");
-            return;
-        }
-        fakeWindowRootView.removeView(view);
-    }
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  @NonNull
+  @Override
+  public WindowMetrics getMaximumWindowMetrics() {
+    return delegate.getMaximumWindowMetrics();
+  }
 
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    @NonNull
-    @Override
-    public WindowMetrics getCurrentWindowMetrics() {
-        return delegate.getCurrentWindowMetrics();
-    }
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  @Override
+  public boolean isCrossWindowBlurEnabled() {
+    return delegate.isCrossWindowBlurEnabled();
+  }
 
-    @RequiresApi(api = Build.VERSION_CODES.R)
-    @NonNull
-    @Override
-    public WindowMetrics getMaximumWindowMetrics() {
-        return delegate.getMaximumWindowMetrics();
-    }
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  @Override
+  public void addCrossWindowBlurEnabledListener(@NonNull Consumer<Boolean> listener) {
+    delegate.addCrossWindowBlurEnabledListener(listener);
+  }
 
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public boolean isCrossWindowBlurEnabled() {
-        return delegate.isCrossWindowBlurEnabled();
-    }
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  @Override
+  public void addCrossWindowBlurEnabledListener(
+      @NonNull Executor executor, @NonNull Consumer<Boolean> listener) {
+    delegate.addCrossWindowBlurEnabledListener(executor, listener);
+  }
 
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void addCrossWindowBlurEnabledListener(@NonNull Consumer<Boolean> listener) {
-        delegate.addCrossWindowBlurEnabledListener(listener);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void addCrossWindowBlurEnabledListener(
-            @NonNull Executor executor, @NonNull Consumer<Boolean> listener) {
-        delegate.addCrossWindowBlurEnabledListener(executor, listener);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void removeCrossWindowBlurEnabledListener(@NonNull Consumer<Boolean> listener) {
-        delegate.removeCrossWindowBlurEnabledListener(listener);
-    }
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  @Override
+  public void removeCrossWindowBlurEnabledListener(@NonNull Consumer<Boolean> listener) {
+    delegate.removeCrossWindowBlurEnabledListener(listener);
+  }
 }
