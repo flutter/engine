@@ -838,6 +838,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
+  void EndWarmUpFrame() override;
+
+  // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
   // |RuntimeDelegate|
@@ -963,7 +966,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|

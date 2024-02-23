@@ -164,28 +164,32 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         front_stencil.depth_stencil_pass = StencilOperation::kKeep;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kSetToRef:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
-        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kNonZeroWrite:
+      case StencilMode::kStencilNonZeroFill:
+        // The stencil ref should be 0 on commands that use this mode.
         front_stencil.stencil_compare = CompareFunction::kAlways;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
         back_stencil.stencil_compare = CompareFunction::kAlways;
         back_stencil.depth_stencil_pass = StencilOperation::kDecrementWrap;
         desc.SetStencilAttachmentDescriptors(front_stencil, back_stencil);
         break;
-      case StencilMode::kEvenOddWrite:
+      case StencilMode::kStencilEvenOddFill:
+        // The stencil ref should be 0 on commands that use this mode.
         front_stencil.stencil_compare = CompareFunction::kEqual;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
         front_stencil.stencil_failure = StencilOperation::kDecrementWrap;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
       case StencilMode::kCoverCompare:
+        // The stencil ref should be 0 on commands that use this mode.
         front_stencil.stencil_compare = CompareFunction::kNotEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kCoverCompareInverted:
+        // The stencil ref should be 0 on commands that use this mode.
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
       case StencilMode::kLegacyClipRestore:
@@ -476,23 +480,25 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled,
+    bool depth_stencil_enabled,
     int32_t mip_count) const {
   const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
+
+  std::optional<RenderTarget::AttachmentConfig> depth_stencil_config =
+      depth_stencil_enabled ? RenderTarget::kDefaultStencilAttachmentConfig
+                            : std::optional<RenderTarget::AttachmentConfig>();
+
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
         *context, *GetRenderTargetCache(), texture_size,
         /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfigMSAA,
-        std::nullopt  // stencil_attachment_config
-    );
+        RenderTarget::kDefaultColorAttachmentConfigMSAA, depth_stencil_config);
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
         *context, *GetRenderTargetCache(), texture_size,
         /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfig,  //
-        std::nullopt  // stencil_attachment_config
-    );
+        RenderTarget::kDefaultColorAttachmentConfig, depth_stencil_config);
   }
   return MakeSubpass(label, subpass_target, subpass_callback);
 }
@@ -612,12 +618,14 @@ void ContentContext::FlushCommandBuffers() const {
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
+  TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
+  GetContext()->InitializeCommonlyUsedShadersIfNeeded();
+
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
     // runs.
     return;
   }
-  TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
 
   // Initialize commonly used shaders that aren't defaults. These settings were
   // chosen based on the knowledge that we mix and match triangle and
