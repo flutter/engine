@@ -37,10 +37,10 @@ static VmaAllocationCreateFlags ToVmaAllocationBufferCreateFlags(
     case StorageMode::kHostVisible:
       if (!readback) {
         flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-        flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
       } else {
         flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
       }
+      flags |= VMA_ALLOCATION_CREATE_MAPPED_BIT;
       return flags;
     case StorageMode::kDevicePrivate:
       FML_DCHECK(!readback);

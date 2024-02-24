@@ -148,7 +148,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
 
   impeller::DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
-  buffer_desc.readback = false;  // set to false for testing.
+  buffer_desc.readback = true;  // set to false for testing.
   buffer_desc.size =
       texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
   auto buffer =
