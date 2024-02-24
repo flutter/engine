@@ -36,8 +36,8 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     SkISize dimensions) {
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
-
- auto func = [](void* addr, void* context) {
+  SkBitmap bitmap;
+  auto func = [](void* addr, void* context) {
     auto buffer =
         static_cast<std::shared_ptr<impeller::DeviceBuffer>*>(context);
     buffer->reset();
