@@ -34,22 +34,13 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     SkColorType color_type,
     SkISize dimensions) {
-  auto buffer_view = impeller::DeviceBuffer::AsBufferView(buffer);
-
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
 
   SkBitmap bitmap;
-  auto func = [](void* addr, void* context) {
-    auto buffer =
-        static_cast<std::shared_ptr<impeller::DeviceBuffer>*>(context);
-    buffer->reset();
-    delete buffer;
-  };
   auto bytes_per_pixel = image_info.bytesPerPixel();
   bitmap.installPixels(image_info, buffer->OnGetContents(),
-                       dimensions.width() * bytes_per_pixel, func,
-                       new std::shared_ptr<impeller::DeviceBuffer>(buffer));
+                       dimensions.width() * bytes_per_pixel);
   bitmap.setImmutable();
 
   sk_sp<SkImage> raster_image = SkImages::RasterFromBitmap(bitmap);
@@ -157,7 +148,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
 
   impeller::DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
-  buffer_desc.readback = true;
+  buffer_desc.readback = false;  // set to false for testing.
   buffer_desc.size =
       texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
   auto buffer =
