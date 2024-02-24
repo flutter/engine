@@ -37,10 +37,16 @@ sk_sp<SkImage> ConvertBufferToSkImage(
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
 
-  SkBitmap bitmap;
+ auto func = [](void* addr, void* context) {
+    auto buffer =
+        static_cast<std::shared_ptr<impeller::DeviceBuffer>*>(context);
+    buffer->reset();
+    delete buffer;
+  };
   auto bytes_per_pixel = image_info.bytesPerPixel();
   bitmap.installPixels(image_info, buffer->OnGetContents(),
-                       dimensions.width() * bytes_per_pixel);
+                       dimensions.width() * bytes_per_pixel, func,
+                       new std::shared_ptr<impeller::DeviceBuffer>(buffer));
   bitmap.setImmutable();
 
   sk_sp<SkImage> raster_image = SkImages::RasterFromBitmap(bitmap);
