@@ -76,7 +76,7 @@ extension type const AdbLogLine._(Match _match) {
 
   /// Returns `true` if the log line is verbose.
   bool isVerbose({String? filterToProcessId}) => !_isRelevant(filterToProcessId: filterToProcessId);
-  bool _isRelevant({String? filterToProcessId}) {   
+  bool _isRelevant({String? filterToProcessId}) {
     // Fatal errors are always useful.
     if (severity == 'F') {
       return true;
