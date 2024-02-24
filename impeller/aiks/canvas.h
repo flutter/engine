@@ -55,6 +55,22 @@ enum class SourceRectConstraint {
   kStrict,
 };
 
+/// Controls how much to trust the bounds rectangle given to SaveLayer.
+enum class SaveLayerBoundsPromise {
+  /// @brief The caller makes no claims related to the size of the bounds.
+  kUnknown,
+
+  /// @brief The caller claims the bounds are a reasonably tight estimate
+  ///        of the coverage of the contents and should contain all of the
+  ///        contents.
+  kContainsContents,
+
+  /// @brief The caller claims the bounds are a subset of an estimate of
+  ///        the reasonably tight bounds but likely clips off some of the
+  ///        contents.
+  kClipsContents,
+};
+
 class Canvas {
  public:
   struct DebugOptions {
@@ -75,9 +91,11 @@ class Canvas {
 
   void Save();
 
-  void SaveLayer(const Paint& paint,
-                 std::optional<Rect> bounds = std::nullopt,
-                 const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
+  void SaveLayer(
+      const Paint& paint,
+      std::optional<Rect> bounds = std::nullopt,
+      const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
+      SaveLayerBoundsPromise bounds_promise = SaveLayerBoundsPromise::kUnknown);
 
   bool Restore();
 

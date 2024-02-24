@@ -62,10 +62,28 @@ void EntityPass::SetDelegate(std::shared_ptr<EntityPassDelegate> delegate) {
 
 void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit) {
   bounds_limit_ = bounds_limit;
+  bounds_might_clip_ = bounds_limit.has_value();
+  bounds_are_snug_ = false;
 }
 
 std::optional<Rect> EntityPass::GetBoundsLimit() const {
   return bounds_limit_;
+}
+
+void EntityPass::SetBoundsMightClipContent(bool clips) {
+  bounds_might_clip_ = clips;
+}
+
+bool EntityPass::GetBoundsMightClipContent() const {
+  return bounds_might_clip_;
+}
+
+void EntityPass::SetBoundsAreSnug(bool clips) {
+  bounds_are_snug_ = clips;
+}
+
+bool EntityPass::GetBoundsAreSnug() const {
+  return bounds_are_snug_;
 }
 
 void EntityPass::AddEntity(Entity entity) {
@@ -201,6 +219,10 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
 std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
+  if (subpass.bounds_limit_.has_value() && subpass.GetBoundsAreSnug()) {
+    return subpass.bounds_limit_->TransformBounds(subpass.transform_);
+  }
+
   std::shared_ptr<FilterContents> image_filter =
       subpass.delegate_->WithImageFilter(Rect(), subpass.transform_);
 

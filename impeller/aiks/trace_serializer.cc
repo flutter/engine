@@ -258,4 +258,8 @@ void TraceSerializer::Write(const SourceRectConstraint& src_rect_constraint) {
   buffer_ << "[SourceRectConstraint] ";
 }
 
+void TraceSerializer::Write(const SaveLayerBoundsPromise& promise) {
+  buffer_ << "[SaveLayerBoundsPromise]";
+}
+
 }  // namespace impeller

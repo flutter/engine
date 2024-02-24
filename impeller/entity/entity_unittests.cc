@@ -119,7 +119,7 @@ auto CreatePassWithRectPath(Rect rect,
   return subpass;
 }
 
-TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
+TEST_P(EntityTest, EntityPassRespectsUntrustedSubpassBoundsLimit) {
   EntityPass pass;
 
   auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
@@ -144,6 +144,49 @@ TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
   auto coverage = pass.GetElementsCoverage(std::nullopt);
   ASSERT_TRUE(coverage.has_value());
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
+}
+
+TEST_P(EntityTest, EntityPassTrustsSnugSubpassBoundsLimit) {
+  EntityPass pass;
+
+  auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(10, 10, 90, 90),
+                                         Rect::MakeLTRB(5, 5, 95, 95));
+  auto subpass1 = CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
+                                         Rect::MakeLTRB(495, 495, 1005, 1005));
+
+  auto subpass0_coverage =
+      pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
+  EXPECT_TRUE(subpass0_coverage.has_value());
+  // First result is natural bounds
+  EXPECT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(10, 10, 90, 90));
+  subpass0->SetBoundsAreSnug(true);
+  subpass0_coverage = pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
+  EXPECT_TRUE(subpass0_coverage.has_value());
+  // Second result with snug flag is the overridden bounds
+  // (we lied about them being snug, but the property is respected)
+  EXPECT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(5, 5, 95, 95));
+
+  auto subpass1_coverage =
+      pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
+  EXPECT_TRUE(subpass1_coverage.has_value());
+  // First result is natural bounds
+  EXPECT_RECT_NEAR(subpass1_coverage.value(),
+                   Rect::MakeLTRB(500, 500, 1000, 1000));
+  subpass1->SetBoundsAreSnug(true);
+  subpass1_coverage = pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
+  EXPECT_TRUE(subpass1_coverage.has_value());
+  // Second result with snug flag is the overridden bounds
+  // (we lied about them being snug, but the property is respected)
+  EXPECT_RECT_NEAR(subpass1_coverage.value(),
+                   Rect::MakeLTRB(495, 495, 1005, 1005));
+
+  pass.AddSubpass(std::move(subpass0));
+  pass.AddSubpass(std::move(subpass1));
+
+  auto coverage = pass.GetElementsCoverage(std::nullopt);
+  EXPECT_TRUE(coverage.has_value());
+  // This result should be the union of the overridden bounds
+  EXPECT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(5, 5, 1005, 1005));
 }
 
 TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {

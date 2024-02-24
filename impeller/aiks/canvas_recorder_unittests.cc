@@ -56,6 +56,8 @@ class Serializer {
 
   void Write(const SourceRectConstraint& src_rect_constraint) {}
 
+  void Write(const SaveLayerBoundsPromise& promise) {}
+
   CanvasRecorderOp last_op_;
 };
 }  // namespace

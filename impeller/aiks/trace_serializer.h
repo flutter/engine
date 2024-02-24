@@ -60,6 +60,8 @@ class TraceSerializer {
 
   void Write(const SourceRectConstraint& src_rect_constraint);
 
+  void Write(const SaveLayerBoundsPromise& promise);
+
  private:
   std::stringstream buffer_;
 };

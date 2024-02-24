@@ -63,11 +63,47 @@ class EntityPass {
   ///         For consistency with Skia, we effectively treat this like a
   ///         rectangle clip by forcing the subpass texture size to never exceed
   ///         it.
+  ///
+  ///         The entity pass will assume that these bounds cause a clipping
+  ///         effect on the layer unless this call is followed up with a
+  ///         call to |SetBoundsClipsContent()| specifying otherwise.
   void SetBoundsLimit(std::optional<Rect> bounds_limit);
 
   /// @brief  Get the bounds limit, which is provided by the user when creating
   ///         a SaveLayer.
   std::optional<Rect> GetBoundsLimit() const;
+
+  /// @brief  Explicitly sets whether or not the bounds limit might
+  ///         potentially clip the contents of the pass.
+  ///         It is conservatively assumed to be true whenever a bounds
+  ///         limit is set and may be corrected by calling this method
+  ///         afterwards if the caller has good information that the
+  ///         bounds are large enough not to clip any of the contents.
+  ///
+  ///         This property does not promise that the bounds are otherwise
+  ///         a reasonably tight approximation of the coverage of the
+  ///         contents as in |GetBoundsAreSnug|.
+  void SetBoundsMightClipContent(bool clips);
+
+  /// @brief  Indicates if the bounds limit set using |SetBoundsLimit()|
+  ///         might clip the contents of the pass.
+  bool GetBoundsMightClipContent() const;
+
+  /// @brief  Explicitly sets whether or not the bounds are a reasonably
+  ///         tight approximation of (snug to) the contents of the pass.
+  ///         It is conservatively assumed to be false whenever a bounds
+  ///         limit is set and may be corrected by calling this method
+  ///         afterwards if the caller has good information that the
+  ///         bounds are reasonably sized to the contents, subject only
+  ///         to the conservative effects of approximation methods.
+  ///
+  ///         This property does not promise that the contents are not
+  ///         clipped as in |GetBoundsMightClipContents|.
+  void SetBoundsAreSnug(bool clips);
+
+  /// @brief  Indicates if the bounds limit set using |SetBoundsLimit()|
+  ///         is a reasonably tight estimate of the bounds of the contents.
+  bool GetBoundsAreSnug() const;
 
   size_t GetSubpassesDepth() const;
 
@@ -322,6 +358,8 @@ class EntityPass {
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
+  bool bounds_might_clip_ = false;
+  bool bounds_are_snug_ = false;
   std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
       std::make_unique<EntityPassClipRecorder>();
   int32_t required_mip_count_ = 1;
