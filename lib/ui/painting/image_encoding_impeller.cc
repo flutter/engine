@@ -166,6 +166,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
       encode_task(fml::Status(fml::StatusCode::kUnknown, ""));
       return;
     }
+    buffer->Invalidate();
     auto sk_image = ConvertBufferToSkImage(buffer, color_type, dimensions);
     encode_task(sk_image);
   };
