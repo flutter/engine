@@ -343,7 +343,7 @@ Future<void> _run({
 
         filterToProcessId ??= adbLogLine.tryParseProcess();
         if (filterToProcessId != null) {
-          // adbLogLine.printToStdout(verbose: verbose, filterToProcessId: filterToProcessId);
+          adbLogLine.printFormatted(hideVerbose: !verbose, filterToProcessId: filterToProcessId);
         }
       }, onError: (Object? err) {
         if (verbose) {

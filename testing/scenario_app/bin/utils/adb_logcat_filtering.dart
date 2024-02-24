@@ -54,7 +54,7 @@ extension type const AdbLogLine._(Match _match) {
   // 6. The actual log message.
   //
   // This regex is simple versus being more precise. Feel free to improve it.
-  static final RegExp _pattern = RegExp(r'(\d+-\d+\s[\d|:]+\.\d+)\s+(\d+)\s+(\d+)\s(\w)\s(\S+):\s*(.*)');
+  static final RegExp _pattern = RegExp(r'(\d+-\d+\s[\d|:]+\.\d+)\s+(\d+)\s+(\d+)\s(\w)\s(\S+)\s*:\s*(.*)');
 
   /// Parses the given [adbLogCatLine] into a structured form.
   ///
@@ -82,9 +82,24 @@ extension type const AdbLogLine._(Match _match) {
       return true;
     }
 
+    // Debug logs are rarely useful.
+    if (severity == 'D') {
+      return false;
+    }
+
     // If a process ID is specified, only include logs from that process.
-    if (process == filterToProcessId) {
-      return true;
+    if (filterToProcessId != null && process != filterToProcessId) {
+      return false;
+    }
+
+    // These are "known" noise tags.
+    if (const <String>{
+      'MonitoringInstr',
+      'ResourceExtractor',
+      'THREAD_STATE',
+      'ziparchive',
+    }.contains(name)) {
+      return false;
     }
 
     // These are "known" tags useful for debugging.
@@ -101,17 +116,18 @@ extension type const AdbLogLine._(Match _match) {
   }
 
   /// Logs the line to the console.
-  void printToStdout({required bool verbose, String? filterToProcessId}) {
-    if (!verbose || isVerbose(filterToProcessId: filterToProcessId)) {
+  void printFormatted({required bool hideVerbose, String? filterToProcessId}) {
+    // If the line is verbose, only print it if the verbose flag is set.
+    if (hideVerbose && isVerbose(filterToProcessId: filterToProcessId)) {
       return;
     }
-    if (severity == 'E' || severity == 'F') {
-      logWarning(line);
+    final String formatted = '$time [$severity] $name: $message';
+    if (severity == 'W' || severity == 'E' || severity == 'F') {
+      logWarning(formatted);
     } else if (name == 'TestRunner') {
-      logImportant(line);
+      logImportant(formatted);
     } else {
-      print('Got here verbose=$verbose, filterToProcessId=$filterToProcessId, this.name=$name');
-      log(line);
+      log(formatted);
     }
   }
 
