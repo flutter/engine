@@ -47,48 +47,52 @@ void main(List<String> args) async {
     ..addOption(
       'adb',
       help: 'Path to the adb tool',
-      defaultsTo: engine != null ? join(
-        engine.srcDir.path,
-        'third_party',
-        'android_tools',
-        'sdk',
-        'platform-tools',
-        'adb',
-      ) : null,
+      defaultsTo: engine != null
+          ? join(
+              engine.srcDir.path,
+              'third_party',
+              'android_tools',
+              'sdk',
+              'platform-tools',
+              'adb',
+            )
+          : null,
     )
     ..addOption(
       'ndk-stack',
       help: 'Path to the ndk-stack tool',
-      defaultsTo: engine != null ? join(
-        engine.srcDir.path,
-        'third_party',
-        'android_tools',
-        'ndk',
-        'prebuilt',
-        () {
-          if (Platform.isLinux) {
-            return 'linux-x86_64';
-          } else if (Platform.isMacOS) {
-            return 'darwin-x86_64';
-          } else if (Platform.isWindows) {
-            return 'windows-x86_64';
-          } else {
-            throw UnsupportedError('Unsupported platform: ${Platform.operatingSystem}');
-          }
-        }(),
-        'bin',
-        'ndk-stack',
-      ) : null,
+      defaultsTo: engine != null
+          ? join(
+              engine.srcDir.path,
+              'third_party',
+              'android_tools',
+              'ndk',
+              'prebuilt',
+              () {
+                if (Platform.isLinux) {
+                  return 'linux-x86_64';
+                } else if (Platform.isMacOS) {
+                  return 'darwin-x86_64';
+                } else if (Platform.isWindows) {
+                  return 'windows-x86_64';
+                } else {
+                  throw UnsupportedError('Unsupported platform: ${Platform.operatingSystem}');
+                }
+              }(),
+              'bin',
+              'ndk-stack',
+            )
+          : null,
     )
     ..addOption(
       'out-dir',
       help: 'Out directory',
-      defaultsTo:
-        engine?.
-        outputs().
-        where((Output o) => basename(o.path.path).startsWith('android_')).
-        firstOrNull?.
-        path.path,
+      defaultsTo: engine
+          ?.outputs()
+          .where((Output o) => basename(o.path.path).startsWith('android_'))
+          .firstOrNull
+          ?.path
+          .path,
     )
     ..addOption(
       'smoke-test',
@@ -105,15 +109,18 @@ void main(List<String> args) async {
     )
     ..addOption(
       'output-contents-golden',
-      help: 'Path to a file that contains the expected filenames of golden files.',
-      defaultsTo: engine != null ? join(
-        engine.srcDir.path,
-        'flutter',
-        'testing',
-        'scenario_app',
-        'android',
-        'expected_golden_output.txt',
-      ) : null,
+      help:
+          'Path to a file that contains the expected filenames of golden files.',
+      defaultsTo: engine != null
+          ? join(
+              engine.srcDir.path,
+              'flutter',
+              'testing',
+              'scenario_app',
+              'android',
+              'expected_golden_output.txt',
+            )
+          : null,
     )
     ..addOption(
       'impeller-backend',
@@ -124,8 +131,8 @@ void main(List<String> args) async {
     ..addOption(
       'logs-dir',
       help: 'The directory to store the logs and screenshots. Defaults to '
-            'the value of the FLUTTER_LOGS_DIR environment variable, if set, '
-            'otherwise it defaults to a path within out-dir.',
+          'the value of the FLUTTER_LOGS_DIR environment variable, if set, '
+          'otherwise it defaults to a path within out-dir.',
       defaultsTo: Platform.environment['FLUTTER_LOGS_DIR'],
     );
 
@@ -153,7 +160,10 @@ void main(List<String> args) async {
       final String? contentsGolden = results['output-contents-golden'] as String?;
       final _ImpellerBackend? impellerBackend = _ImpellerBackend.tryParse(results['impeller-backend'] as String?);
       if (enableImpeller && impellerBackend == null) {
-        panic(<String>['invalid graphics-backend', results['impeller-backend'] as String? ?? '<null>']);
+        panic(<String>[
+          'invalid graphics-backend',
+          results['impeller-backend'] as String? ?? '<null>'
+        ]);
       }
       final Directory logsDir = Directory(results['logs-dir'] as String? ?? join(outDir.path, 'scenario_app', 'logs'));
       final String? ndkStack = results['ndk-stack'] as String?;
@@ -215,7 +225,10 @@ Future<void> _run({
   const ProcessManager pm = LocalProcessManager();
 
   if (!outDir.existsSync()) {
-    panic(<String>['out-dir does not exist: $outDir', 'make sure to build the selected engine variant']);
+    panic(<String>[
+      'out-dir does not exist: $outDir',
+      'make sure to build the selected engine variant'
+    ]);
   }
 
   if (!adb.existsSync()) {
@@ -236,11 +249,17 @@ Future<void> _run({
   log('writing logs and screenshots to ${logsDir.path}');
 
   if (!testApk.existsSync()) {
-    panic(<String>['test apk does not exist: ${testApk.path}', 'make sure to build the selected engine variant']);
+    panic(<String>[
+      'test apk does not exist: ${testApk.path}',
+      'make sure to build the selected engine variant'
+    ]);
   }
 
   if (!appApk.existsSync()) {
-    panic(<String>['app apk does not exist: ${appApk.path}', 'make sure to build the selected engine variant']);
+    panic(<String>[
+      'app apk does not exist: ${appApk.path}',
+      'make sure to build the selected engine variant'
+    ]);
   }
 
   // Start a TCP socket in the host, and forward it to the device that runs the tests.
@@ -248,7 +267,7 @@ Future<void> _run({
   // for the screenshots.
   // On LUCI, the host uploads the screenshots to Skia Gold.
   SkiaGoldClient? skiaGoldClient;
-  late  ServerSocket server;
+  late ServerSocket server;
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   await step('Starting server...', () async {
     server = await ServerSocket.bind(InternetAddress.anyIPv4, _tcpPort);
@@ -259,7 +278,8 @@ Future<void> _run({
       if (verbose) {
         stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
       }
-      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) {
+      client.transform(const ScreenshotBlobTransformer()).listen(
+          (Screenshot screenshot) {
         final String fileName = screenshot.filename;
         final Uint8List fileContent = screenshot.fileContent;
         if (verbose) {
@@ -277,18 +297,15 @@ Future<void> _run({
         }
         if (isSkiaGoldClientAvailable) {
           final Future<void> comparison = skiaGoldClient!
-            .addImg(fileName, goldenFile,
-                    screenshotSize: screenshot.pixelCount)
-            .catchError((dynamic err) {
-              panic(<String>['skia gold comparison failed: $err']);
-            });
+              .addImg(fileName, goldenFile, screenshotSize: screenshot.pixelCount)
+              .catchError((dynamic err) {
+            panic(<String>['skia gold comparison failed: $err']);
+          });
           pendingComparisons.add(comparison);
         }
-      },
-      onError: (dynamic err) {
+      }, onError: (dynamic err) {
         panic(<String>['error while receiving bytes: $err']);
-      },
-      cancelOnError: true);
+      }, cancelOnError: true);
     });
   });
 
@@ -311,27 +328,26 @@ Future<void> _run({
       final (Future<int> logcatExitCode, Stream<String> logcatOutput) = getProcessStreams(logcatProcess);
 
       logcatProcessExitCode = logcatExitCode;
+      String? filterToProcessId;
+
       logcatOutput.listen((String line) {
         // Always write to the full log.
         logcat.writeln(line);
 
         // Conditionally parse and write to stderr.
         final AdbLogLine? adbLogLine = AdbLogLine.tryParse(line);
-        switch (adbLogLine?.process) {
-          case null:
-            break;
-          case 'ActivityManager':
-            // These are mostly noise, i.e. "D ActivityManager: freezing 24632 com.blah".
-            if (adbLogLine!.severity == 'D') {
-              break;
-            }
-          // TODO(matanlurey): Figure out why this isn't 'flutter.scenario' or similar.
-          // Also, why is there two different names?
-          case 'utter.scenario':
-          case 'utter.scenarios':
-          case 'flutter':
-          case 'FlutterJNI':
-            log('[adb] $line');
+        if (verbose || adbLogLine == null) {
+          log(line);
+          return;
+        }
+
+        filterToProcessId ??= adbLogLine.tryParseProcess();
+        if (filterToProcessId != null) {
+          // adbLogLine.printToStdout(verbose: verbose, filterToProcessId: filterToProcessId);
+        }
+      }, onError: (Object? err) {
+        if (verbose) {
+          logWarning('logcat stream error: $err');
         }
       });
     });
@@ -364,10 +380,7 @@ Future<void> _run({
       log('using dimensions: ${json.encode(dimensions)}');
       skiaGoldClient = SkiaGoldClient(
         outDir,
-        dimensions: <String, String>{
-          'AndroidAPILevel': connectedDeviceAPILevel,
-          'GraphicsBackend': enableImpeller ? 'impeller-${impellerBackend!.name}' : 'skia',
-        },
+        dimensions: dimensions,
       );
     });
 
@@ -412,11 +425,9 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-        if (smokeTestFullPath != null)
-          '-e class $smokeTestFullPath',
+        if (smokeTestFullPath != null) '-e class $smokeTestFullPath',
         'dev.flutter.scenarios.test/dev.flutter.TestRunner',
-        if (enableImpeller)
-          '-e enable-impeller',
+        if (enableImpeller) '-e enable-impeller',
         if (impellerBackend != null)
           '-e impeller-backend ${impellerBackend.name}',
       ]);
@@ -465,7 +476,8 @@ Future<void> _run({
       final int exitCode = await pm.runAndForward(<String>[
         adb.path,
         'reverse',
-        '--remove', 'tcp:3000',
+        '--remove',
+        'tcp:3000',
       ]);
       if (exitCode != 0) {
         panic(<String>['could not unforward port']);
@@ -473,14 +485,16 @@ Future<void> _run({
     });
 
     await step('Uninstalling app APK...', () async {
-      final int exitCode = await pm.runAndForward(<String>[adb.path, 'uninstall', 'dev.flutter.scenarios']);
+      final int exitCode = await pm.runAndForward(
+          <String>[adb.path, 'uninstall', 'dev.flutter.scenarios']);
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
       }
     });
 
     await step('Uninstalling test APK...', () async {
-      final int exitCode = await pm.runAndForward(<String>[adb.path, 'uninstall', 'dev.flutter.scenarios.test']);
+      final int exitCode = await pm.runAndForward(
+          <String>[adb.path, 'uninstall', 'dev.flutter.scenarios.test']);
       if (exitCode != 0) {
         panic(<String>['could not uninstall app apk']);
       }
