@@ -44,6 +44,8 @@ class Allocator {
 
   virtual ISize GetMaxTextureSizeSupported() const = 0;
 
+  virtual bool IsMemoryHostCoherent() const { return false; }
+
  protected:
   Allocator();
 

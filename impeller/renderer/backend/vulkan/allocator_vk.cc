@@ -148,6 +148,21 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   supports_memoryless_textures_ =
       capabilities.SupportsDeviceTransientTextures();
   is_valid_ = true;
+  vk::PhysicalDeviceMemoryProperties memory_properties;
+  physical_device.getMemoryProperties(&memory_properties);
+
+  for (auto i = 0u; i < memory_properties.memoryTypeCount; i++) {
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        vk::MemoryPropertyFlagBits::eHostCoherent) {
+      is_memory_host_coherent_ = true;
+      break;  // No need to check further if we found a host coherent memory
+              // type
+    }
+  }
+}
+
+bool AllocatorVK::IsMemoryHostCoherent() const {
+  return is_memory_host_coherent_;
 }
 
 AllocatorVK::~AllocatorVK() = default;

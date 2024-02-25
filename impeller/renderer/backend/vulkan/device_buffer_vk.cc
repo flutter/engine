@@ -40,9 +40,21 @@ bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
   if (source) {
     ::memmove(dest + offset, source + source_range.offset, source_range.length);
   }
-  ::vmaFlushAllocation(resource_->buffer.get().allocator,
-                       resource_->buffer.get().allocation, offset,
-                       source_range.length);
+
+  auto lockedContext = context_.lock();
+
+  if (!lockedContext) {
+    ::vmaFlushAllocation(resource_->buffer.get().allocator,
+                         resource_->buffer.get().allocation, offset,
+                         source_range.length);
+    return true;
+  }
+
+  if (!lockedContext->GetResourceAllocator()->IsMemoryHostCoherent()) {
+    ::vmaFlushAllocation(resource_->buffer.get().allocator,
+                         resource_->buffer.get().allocation, offset,
+                         source_range.length);
+  }
 
   return true;
 }
