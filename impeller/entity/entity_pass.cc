@@ -4,6 +4,7 @@
 
 #include "impeller/entity/entity_pass.h"
 
+#include <limits>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -765,6 +766,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
+    msaa_backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
@@ -837,6 +839,11 @@ bool EntityPass::RenderElement(Entity& element_entity,
       }
       clip_coverage_stack.resize(restoration_index + 1);
 
+      if constexpr (ContentContext::kEnableStencilThenCover) {
+        // Skip all clip restores when stencil-then-cover is enabled.
+        return true;
+      }
+
       if (!clip_coverage_stack.back().coverage.has_value()) {
         // Running this restore op won't make anything renderable, so skip it.
         return true;
@@ -901,9 +908,10 @@ bool EntityPass::OnRender(
   }
   auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
-  if (!collapsed_parent_pass && GetClearColor(clear_color_size).has_value()) {
-    // Force the pass context to create at least one new pass if the clear color
-    // is present.
+  if (!collapsed_parent_pass) {
+    // Always force the pass to construct the render pass object, even if there
+    // is not a clear color. This ensures that the attachment textures are
+    // cleared/transitioned to the right state.
     pass_context.GetRenderPass(pass_depth);
   }
 
@@ -922,6 +930,7 @@ bool EntityPass::OnRender(
     backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetClipDepth(clip_depth_floor);
+    backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
 
     RenderElement(backdrop_entity, clip_depth_floor, pass_context, pass_depth,
                   renderer, clip_coverage_stack, global_pass_position);

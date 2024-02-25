@@ -19,10 +19,12 @@ executable("flutter-embedder-test-bin") {
 
   sources = [ "flutter-embedder-test.cc" ]
 
-  # This is needed for //third_party/googletest for linking zircon symbols.
+  # This is needed for //flutter/third_party/googletest for linking zircon
+  # symbols.
   libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
   deps = [
+    "$fuchsia_sdk_root/fidl:fuchsia.inspect",
     "$fuchsia_sdk_root/fidl:fuchsia.logger",
     "$fuchsia_sdk_root/fidl:fuchsia.tracing.provider",
     "$fuchsia_sdk_root/fidl:fuchsia.ui.app",
@@ -39,8 +41,8 @@ executable("flutter-embedder-test-bin") {
     "//flutter/fml",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:check_view",
     "//flutter/shell/platform/fuchsia/flutter/tests/integration/utils:screenshot",
-    "//third_party/googletest:gtest",
-    "//third_party/googletest:gtest_main",
+    "//flutter/third_party/googletest:gtest",
+    "//flutter/third_party/googletest:gtest_main",
   ]
 }
 

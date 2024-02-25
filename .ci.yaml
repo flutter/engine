@@ -44,6 +44,7 @@ platform_properties:
         ]
       device_type: none
       os: Windows-10
+
 # The current android emulator config names can be found here:
 # https://chromium.googlesource.com/chromium/src.git/+/HEAD/tools/android/avd/proto
 # You may use those names for the android_virtual_device version.
@@ -61,6 +62,28 @@ targets:
     timeout: 60
     runIf:
       - .ci.yaml
+      - ci/builders/linux_android_emulator.json
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+      - testing/scenario_app/**
+
+  # TODO(matanlurey): OpenGLES is very flaky, https://github.com/flutter/flutter/issues/143626.
+  - name: Linux linux_android_emulator_opengles_tests
+    bringup: true
+    enabled_branches:
+      - main
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: linux_android_emulator_opengles
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
+    timeout: 60
+    runIf:
+      - .ci.yaml
+      - ci/builders/linux_android_emulator.json
       - DEPS
       - lib/ui/**
       - shell/platform/android/**
@@ -82,6 +105,7 @@ targets:
     timeout: 60
     runIf:
       - .ci.yaml
+      - ci/builders/linux_android_emulator_api_33.json
       - DEPS
       - lib/ui/**
       - shell/platform/android/**
@@ -94,7 +118,6 @@ targets:
     presubmit: false
     properties:
       cache_name: "builder"
-      cache_root: "cache"
       cache_paths: >-
         [
           "builder",
@@ -114,7 +137,6 @@ targets:
     presubmit: false
     properties:
       cache_name: "builder"
-      cache_root: "cache"
       cache_paths: >-
         [
           "builder",
@@ -133,7 +155,6 @@ targets:
     presubmit: false
     properties:
       cache_name: "builder"
-      cache_root: "cache"
       cache_paths: >-
         [
           "builder",
@@ -159,56 +180,12 @@ targets:
       config_name: linux_benchmarks
     timeout: 60
 
-  - name: Linux Fuchsia FEMU
-    recipe: engine/femu_test
-    properties:
-      add_recipes_cq: "true"
-      build_fuchsia: "true"
-      fuchsia_ctl_version: version:0.0.27
-      # ensure files from pre-production Fuchsia SDK tests are purged from cache
-      clobber: "true"
-      emulator_arch: "x64"
-      enable_cso: "true"
-    timeout: 60
-    # TODO(https://github.com/flutter/flutter/issues/138559): Re-enable/delete.
-    # runIfNot:
-    #   - lib/web_ui/**
-    #   - shell/platform/android/**
-    #   - shell/platform/darwin/**
-    #   - shell/platform/glfw/**
-    #   - shell/platform/linux/**
-    #   - shell/platform/windows/**
-    #   - web_sdk/**
-
-  - name: Linux Fuchsia arm64 FEMU
-    recipe: engine/femu_test
-    properties:
-      build_fuchsia: "true"
-      fuchsia_ctl_version: version:0.0.27
-      # ensure files from pre-production Fuchsia SDK tests are purged from cache
-      clobber: "true"
-      emulator_arch: "arm64"
-      enable_cso: "true"
-    timeout: 60
-    bringup: true
-    # TODO(https://github.com/flutter/flutter/issues/138559): Re-enable/delete.
-    # runIfNot:
-    #   - lib/web_ui/**
-    #   - shell/platform/android/**
-    #   - shell/platform/darwin/**
-    #   - shell/platform/glfw/**
-    #   - shell/platform/linux/**
-    #   - shell/platform/windows/**
-    #   - web_sdk/**
-
   - name: Linux linux_fuchsia
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       release_build: "true"
       config_name: linux_fuchsia
-    drone_dimensions:
-      - os=Linux
     dimensions:
       kvm: "1"
     # TODO(https://github.com/flutter/flutter/issues/138559): Re-enable/delete.
@@ -220,15 +197,6 @@ targets:
     #   - shell/platform/linux/**
     #   - shell/platform/windows/**
     #   - web_sdk/**
-
-  - name: Linux Framework Smoke Tests
-    recipe: engine/framework_smoke
-    enabled_branches:
-      - main
-    timeout: 60
-    properties:
-      gclient_variables: >-
-        {"use_rbe": true}
 
   - name: Linux linux_clang_tidy
     recipe: engine_v2/engine_v2
@@ -255,8 +223,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_arm_host_engine
-    drone_dimensions:
-      - os=Linux
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
@@ -269,8 +235,6 @@ targets:
         [
           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
-    drone_dimensions:
-      - os=Linux
 
   - name: Linux linux_host_desktop_engine
     recipe: engine_v2/engine_v2
@@ -279,8 +243,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_desktop_engine
-    drone_dimensions:
-      - os=Linux
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
@@ -289,8 +251,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_android_aot_engine
-    drone_dimensions:
-      - os=Linux
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
@@ -299,8 +259,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_android_debug_engine
-    drone_dimensions:
-      - os=Linux
 
   - name: Linux linux_license
     recipe: engine_v2/builder
@@ -316,8 +274,14 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_web_engine
-    drone_dimensions:
-      - os=Linux
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - lib/web_ui/**
+      - web_sdk/**
+      - tools/**
+      - ci/**
+      - flutter_frontend_server/**
 
   - name: Linux linux_unopt
     recipe: engine_v2/engine_v2
@@ -339,7 +303,6 @@ targets:
           {"dependency": "chrome_and_driver", "version": "version:119.0.6045.9"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
-      framework: "true"
       no_goma: "true"
       drone_dimensions: >
         ["device_type=none", "os=Linux"]
@@ -363,8 +326,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_android_aot_engine
-    drone_dimensions:
-      - os=Linux
 
   - name: Mac mac_clang_tidy
     recipe: engine_v2/engine_v2
@@ -402,10 +363,8 @@ targets:
         {
           "sdk_version": "15a240d"
         }
-    drone_dimensions:
-      - os=Mac-13
 
-  - name: Linux mac_unopt
+  - name: Mac mac_unopt
     recipe: engine_v2/engine_v2
     properties:
       config_name: mac_unopt
@@ -423,9 +382,6 @@ targets:
         {
           "sdk_version": "15a240d"
         }
-    drone_dimensions:
-      - os=Mac-13
-      - cpu=x86
 
   - name: Mac impeller-cmake-example
     bringup: true
@@ -442,8 +398,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_android_aot_engine
-    drone_dimensions:
-      - os=Windows
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
@@ -452,8 +406,6 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: windows_host_engine
-    drone_dimensions:
-      - os=Windows
 
   - name: Windows windows_arm_host_engine
     recipe: engine_v2/engine_v2
@@ -464,8 +416,6 @@ targets:
     properties:
       add_recipes_cq: "true"
       config_name: windows_arm_host_engine
-    drone_dimensions:
-      - os=Windows
 
   - name: Windows windows_unopt
     recipe: engine_v2/builder

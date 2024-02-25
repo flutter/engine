@@ -7,7 +7,6 @@
 
 #include <functional>
 #include <optional>
-#include <set>
 #include <tuple>
 #include <vector>
 
@@ -30,9 +29,6 @@ enum class Join {
 enum class FillType {
   kNonZero,  // The default winding order.
   kOdd,
-  kPositive,
-  kNegative,
-  kAbsGeqTwo,
 };
 
 enum class Convexity {

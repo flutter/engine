@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 
+#include "fml/status.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/cover_geometry.h"
@@ -50,7 +51,6 @@ GeometryResult Geometry::ComputePositionGeometry(
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
   };
 }
 
@@ -86,7 +86,6 @@ GeometryResult Geometry::ComputePositionUVGeometry(
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
   };
 }
 
@@ -158,7 +157,6 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
   };
 }
 
@@ -168,6 +166,10 @@ GeometryResult Geometry::GetPositionUVBuffer(Rect texture_coverage,
                                              const Entity& entity,
                                              RenderPass& pass) const {
   return {};
+}
+
+GeometryResult::Mode Geometry::GetResultMode() const {
+  return GeometryResult::Mode::kNormal;
 }
 
 std::shared_ptr<Geometry> Geometry::MakeFillPath(

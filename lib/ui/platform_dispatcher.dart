@@ -319,7 +319,7 @@ class PlatformDispatcher {
   ///
   /// Typically, receivers of this event respond by moving the focus to the first
   /// focusable widget inside the [FlutterView] with ID 2. If a view receives
-  /// focus in the backwards direction (could be the result of pressing shift + tab),
+  /// focus in the backward direction (could be the result of pressing shift + tab),
   /// typically the last focusable widget inside that view is focused.
   ///
   /// The platform may remove focus from a [FlutterView]. For example, on the web,
@@ -801,10 +801,46 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
+  ///  * [scheduleWarmUpFrame], which should only be used to schedule warm up
+  ///    frames.
   void scheduleFrame() => _scheduleFrame();
 
   @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
+
+  /// Schedule a frame to run as soon as possible, rather than waiting for the
+  /// engine to request a frame in response to a system "Vsync" signal.
+  ///
+  /// The application can call this method as soon as it starts up so that the
+  /// first frame (which is likely to be quite expensive) can start a few extra
+  /// milliseconds earlier. Using it in other situations might lead to
+  /// unintended results, such as screen tearing. Depending on platforms and
+  /// situations, the warm up frame might or might not be actually rendered onto
+  /// the screen.
+  ///
+  /// For more introduction to the warm up frame, see
+  /// [SchedulerBinding.scheduleWarmUpFrame].
+  ///
+  /// This method uses the provided callbacks as the begin frame callback and
+  /// the draw frame callback instead of [onBeginFrame] and [onDrawFrame].
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method, and
+  ///    introduces the warm up frame in more details.
+  ///  * [scheduleFrame], which schedules the frame at the next appropriate
+  ///    opportunity and should be used to render regular frames.
+  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame}) {
+    // We use timers here to ensure that microtasks flush in between.
+    Timer.run(beginFrame);
+    Timer.run(() {
+      drawFrame();
+      _endWarmUpFrame();
+    });
+  }
+
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::EndWarmUpFrame')
+  external static void _endWarmUpFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;
@@ -2690,8 +2726,8 @@ enum ViewFocusDirection {
   /// This is typically result of the user pressing tab.
   forward,
 
-  /// Indicates the focus transition was performed in a backwards direction.
+  /// Indicates the focus transition was performed in a backward direction.
   ///
   /// This is typically result of the user pressing shift + tab.
-  backwards,
+  backward,
 }

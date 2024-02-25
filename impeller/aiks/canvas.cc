@@ -176,7 +176,6 @@ void Canvas::Save(bool create_subpass,
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetNewClipDepth(++current_depth_);
     subpass->SetEnableOffscreenCheckerboard(
         debug_options.offscreen_texture_checkerboard);
     if (backdrop_filter) {
@@ -214,6 +213,7 @@ bool Canvas::Restore() {
 
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
+    current_pass_->SetNewClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -597,7 +597,6 @@ void Canvas::RestoreClip() {
   entity.SetContents(std::make_shared<ClipRestoreContents>());
   entity.SetClipDepth(GetClipDepth());
 
-  // TODO(bdero): To be removed when swapping the clip strategy.
   AddEntityToCurrentPass(std::move(entity));
 }
 
