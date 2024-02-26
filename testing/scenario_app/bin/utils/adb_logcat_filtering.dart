@@ -116,7 +116,7 @@ extension type const AdbLogLine._(Match _match) {
   }
 
   /// Logs the line to the console.
-  void printFormatted({required bool hideVerbose, String? filterToProcessId}) {
+  void printFormatted({required bool hideVerbose, required String filterToProcessId}) {
     // If the line is verbose, only print it if the verbose flag is set.
     if (hideVerbose && isVerbose(filterToProcessId: filterToProcessId)) {
       return;

@@ -109,8 +109,7 @@ void main(List<String> args) async {
     )
     ..addOption(
       'output-contents-golden',
-      help:
-          'Path to a file that contains the expected filenames of golden files.',
+      help: 'Path to a file that contains the expected filenames of golden files.',
       defaultsTo: engine != null
           ? join(
               engine.srcDir.path,
@@ -343,7 +342,7 @@ Future<void> _run({
 
         filterToProcessId ??= adbLogLine.tryParseProcess();
         if (filterToProcessId != null) {
-          adbLogLine.printFormatted(hideVerbose: !verbose, filterToProcessId: filterToProcessId);
+          adbLogLine.printFormatted(hideVerbose: !verbose, filterToProcessId: filterToProcessId!);
         }
       }, onError: (Object? err) {
         if (verbose) {
