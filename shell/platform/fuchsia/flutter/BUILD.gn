@@ -321,7 +321,7 @@ template("jit_runner") {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -392,7 +392,7 @@ template("aot_runner") {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -504,7 +504,8 @@ if (enable_unittests) {
       "vsync_waiter_unittest.cc",
     ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
@@ -537,7 +538,8 @@ if (enable_unittests) {
 
     sources = [ "runner_tzdata_unittest.cc" ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
@@ -563,7 +565,8 @@ if (enable_unittests) {
 
     sources = [ "runner_tzdata_missing_unittest.cc" ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
@@ -589,7 +592,7 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -602,7 +605,7 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
       {
@@ -630,7 +633,7 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -763,11 +766,11 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl2.dat"
       },
     ]

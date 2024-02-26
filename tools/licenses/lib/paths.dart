@@ -46,9 +46,22 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/flatbuffers/python',
   r'flutter/third_party/flatbuffers/rust',
   r'flutter/third_party/flatbuffers/ts',
+  r'flutter/third_party/freetype2/builds',
+  r'flutter/third_party/freetype2/src/tools',
   r'flutter/third_party/glfw/deps', // Only used by examples and tests; not linked in build.
   r'flutter/third_party/glfw/docs',
   r'flutter/third_party/gn',
+  r'flutter/third_party/harfbuzz/docs',
+  r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
+  r'flutter/third_party/icu/filters',
+  r'flutter/third_party/icu/fuzzers',
+  r'flutter/third_party/icu/scripts',
+  r'flutter/third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
+  r'flutter/third_party/icu/source/config',
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/burmesedict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/dtd',
   r'flutter/third_party/imgui',
   r'flutter/third_party/inja/doc', // documentation
   r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
@@ -156,20 +169,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/third_party/requirejs', // only used by DDC
   r'third_party/dart/tools', // not shipped in binary
   r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
-  r'third_party/freetype2/builds',
-  r'third_party/freetype2/src/tools',
   r'third_party/gradle',
-  r'third_party/harfbuzz/docs',
-  r'third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
-  r'third_party/icu/filters',
-  r'third_party/icu/fuzzers',
-  r'third_party/icu/scripts',
-  r'third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
-  r'third_party/icu/source/config',
-  r'third_party/icu/source/data/brkitr/dictionaries/burmesedict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/dtd',
   r'third_party/java', // only used for Android builds
   r'third_party/libcxx/benchmarks',
   r'third_party/libcxx/docs',
@@ -462,9 +462,9 @@ final List<Pattern> skippedFilePatterns = <Pattern>[
   RegExp(r'^flutter/third_party/boringssl/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/bn/[^/]+.go$'),
   RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/ec/[^/]+.go$'),
+  RegExp(r'^flutter/third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
   RegExp(r'^third_party/abseil-cpp/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^third_party/angle/(?:.+/)*[^/]+_unittest\.[^/]+$'),
   RegExp(r'^third_party/dart/(?:.+/)*[^/]+_test\.[^/]+$'),
-  RegExp(r'^third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
   RegExp(r'^third_party/zlib/(?:.+/)*[^/]+_unittest\.[^/]+$'),
 ];

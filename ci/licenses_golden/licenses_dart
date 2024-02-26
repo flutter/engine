@@ -1,4 +1,4 @@
-Signature: 883d839a9053f228d6eeed2c0af807d4
+Signature: aee8d76d23570c7efd9439c5f991502a
 
 ====================================================================================================
 LIBRARY: dart
@@ -4094,11 +4094,13 @@ ORIGIN: ../../../third_party/dart/runtime/bin/ifaddrs.cc + ../../../third_party/
 ORIGIN: ../../../third_party/dart/runtime/bin/ifaddrs.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/ifaddrs.cc
 FILE: ../../../third_party/dart/runtime/bin/ifaddrs.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2024, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -4134,6 +4136,7 @@ LIBRARY: dart
 ORIGIN: ../../../third_party/dart/sdk/lib/_macros/builders.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_macros/code.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_macros/diagnostic.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_macros/exceptions.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_macros/introspection.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_macros/macro.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_macros/macros.dart + ../../../third_party/dart/LICENSE
@@ -4142,6 +4145,7 @@ TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/sdk/lib/_macros/builders.dart
 FILE: ../../../third_party/dart/sdk/lib/_macros/code.dart
 FILE: ../../../third_party/dart/sdk/lib/_macros/diagnostic.dart
+FILE: ../../../third_party/dart/sdk/lib/_macros/exceptions.dart
 FILE: ../../../third_party/dart/sdk/lib/_macros/introspection.dart
 FILE: ../../../third_party/dart/sdk/lib/_macros/macro.dart
 FILE: ../../../third_party/dart/sdk/lib/_macros/macros.dart
@@ -4749,7 +4753,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/f344e2266468a502fc7f3d34eed51b6ceee7c780
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/e5e4aaceaf23200d0cf92ebed1506f915f364b4d
 /third_party/fallback_root_certificates/
 
 ====================================================================================================
