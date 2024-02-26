@@ -58,6 +58,7 @@ FlScrollingManager* fl_scrolling_manager_new(
 void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
                                                   gdouble x,
                                                   gdouble y) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
   self->last_x = x;
   self->last_y = y;
 }
@@ -65,6 +66,8 @@ void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* self,
 void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
                                               GdkEventScroll* scroll_event,
                                               gint scale_factor) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   GdkEvent* event = reinterpret_cast<GdkEvent*>(scroll_event);
 
   guint event_time = gdk_event_get_time(event);
@@ -137,6 +140,8 @@ void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* self,
 }
 
 void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   self->rotate_started = true;
   if (!self->zoom_started) {
     self->scale = 1;
@@ -149,6 +154,8 @@ void fl_scrolling_manager_handle_rotation_begin(FlScrollingManager* self) {
 
 void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
                                                  gdouble rotation) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   self->rotation = rotation;
   fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
       self->view_delegate, g_get_real_time(), self->last_x, self->last_y,
@@ -156,6 +163,8 @@ void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
 }
 
 void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   self->rotate_started = false;
   if (!self->zoom_started) {
     fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
@@ -165,6 +174,8 @@ void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self) {
 }
 
 void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   self->zoom_started = true;
   if (!self->rotate_started) {
     self->scale = 1;
@@ -177,6 +188,8 @@ void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self) {
 
 void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
                                              gdouble scale) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   self->scale = scale;
   fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
       self->view_delegate, g_get_real_time(), self->last_x, self->last_y,
@@ -184,6 +197,8 @@ void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
 }
 
 void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* self) {
+  g_return_if_fail(FL_IS_SCROLLING_MANAGER(self));
+
   self->zoom_started = false;
   if (!self->rotate_started) {
     fl_scrolling_view_delegate_send_pointer_pan_zoom_event(
