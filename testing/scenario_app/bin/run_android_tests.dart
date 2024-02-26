@@ -475,7 +475,7 @@ Future<void> _run({
     });
 
     if (enableImpeller) {
-      await step('Validating Impeller...', () {
+      await step('Validating Impeller...', () async {
         if (!seenImpeller) {
           panic(<String>[
             '--enable-impeller was specified, but Impeller was not used.',
