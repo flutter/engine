@@ -154,6 +154,7 @@ void fl_scrolling_manager_handle_rotation_update(FlScrollingManager* self,
       self->view_delegate, g_get_real_time(), self->last_x, self->last_y,
       kPanZoomUpdate, 0, 0, self->scale, self->rotation);
 }
+
 void fl_scrolling_manager_handle_rotation_end(FlScrollingManager* self) {
   self->rotate_started = false;
   if (!self->zoom_started) {
@@ -173,6 +174,7 @@ void fl_scrolling_manager_handle_zoom_begin(FlScrollingManager* self) {
         kPanZoomStart, 0, 0, 0, 0);
   }
 }
+
 void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
                                              gdouble scale) {
   self->scale = scale;
@@ -180,6 +182,7 @@ void fl_scrolling_manager_handle_zoom_update(FlScrollingManager* self,
       self->view_delegate, g_get_real_time(), self->last_x, self->last_y,
       kPanZoomUpdate, 0, 0, self->scale, self->rotation);
 }
+
 void fl_scrolling_manager_handle_zoom_end(FlScrollingManager* self) {
   self->zoom_started = false;
   if (!self->rotate_started) {
