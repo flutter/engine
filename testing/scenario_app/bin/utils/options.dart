@@ -9,6 +9,8 @@ import 'environment.dart';
 /// Command line options and parser for the Android `scenario_app` test runner.
 extension type const Options._(ArgResults _args) {
   /// Parses the command line [args] into a set of options.
+  ///
+  /// Throws a [FormatException] if command line arguments are invalid.
   factory Options.parse(
     List<String> args, {
     required Environment environment,
@@ -16,46 +18,36 @@ extension type const Options._(ArgResults _args) {
   }) {
     final ArgResults results = _parser(environment, localEngine).parse(args);
     final Options options = Options._(results);
-    
+
     // The 'adb' tool must exist.
     if (results['adb'] == null) {
-      throw ArgumentError('The --adb option must be set.');
+      throw const FormatException('The --adb option must be set.');
     } else if (!io.File(options.adb).existsSync()) {
-      throw ArgumentError('The adb tool does not exist at ${options.adb}.');
+      throw FormatException(
+        'The adb tool does not exist at ${options.adb}.',
+      );
     }
 
     // The 'ndk-stack' tool must exist.
     if (results['ndk-stack'] == null) {
-      throw ArgumentError('The --ndk-stack option must be set.');
+      throw const FormatException('The --ndk-stack option must be set.');
     } else if (!io.File(options.ndkStack).existsSync()) {
-      throw ArgumentError('The ndk-stack tool does not exist at ${options.ndkStack}.');
+      throw FormatException(
+        'The ndk-stack tool does not exist at ${options.ndkStack}.',
+      );
     }
 
     // The 'out-dir' must exist.
     if (results['out-dir'] == null) {
-      throw ArgumentError('The --out-dir option must be set.');
+      throw const FormatException('The --out-dir option must be set.');
     } else if (!io.Directory(options.outDir).existsSync()) {
-      throw ArgumentError('The out directory does not exist at ${options.outDir}.');
+      throw FormatException(
+        'The out directory does not exist at ${options.outDir}.',
+      );
     }
 
     return options;
   }
-
-  /// A subset of command line options used by the `scenario_app` runner.
-  ///
-  /// These options are expected to be parsed before the full set of options.
-  static final ArgParser _miniParser = ArgParser()
-    ..addFlag(
-      'verbose',
-      abbr: 'v',
-      help: 'Enable verbose logging',
-    )
-    ..addFlag(
-      'help',
-      abbr: 'h',
-      help: 'Print usage information',
-      negatable: false,
-    );
 
   /// Whether usage information should be shown based on command line [args].
   ///
@@ -73,8 +65,10 @@ extension type const Options._(ArgResults _args) {
   /// }
   /// ```
   static bool showUsage(List<String> args) {
-    final ArgResults results = _miniParser.parse(args);
-    return results['help'] as bool;
+    // If any of the arguments are '--help' or -'h'.
+    return args.isNotEmpty && args.any((String arg) {
+      return arg == '--help' || arg == '-h';
+    });
   }
 
   /// Whether verbose logging should be enabled based on command line [args].
@@ -90,8 +84,10 @@ extension type const Options._(ArgResults _args) {
   /// }
   /// ```
   static bool showVerbose(List<String> args) {
-    final ArgResults results = _miniParser.parse(args);
-    return results['verbose'] as bool;
+    // If any of the arguments are '--verbose' or -'v'.
+    return args.isNotEmpty && args.any((String arg) {
+      return arg == '--verbose' || arg == '-v';
+    });
   }
 
   /// Returns usage information for the `scenario_app` test runner.
@@ -261,7 +257,10 @@ extension type const Options._(ArgResults _args) {
   String get impellerBackend => _args['impeller-backend'] as String;
 
   /// Path to a directory where logs and screenshots are stored.
-  String get logsDir => _args['logs-dir'] as String;
+  String get logsDir {
+    final String? logsDir = _args['logs-dir'] as String?;
+    return logsDir ?? p.join(outDir, 'logs');
+  }
 
   /// Path to the Android Debug Bridge (adb) executable.
   String get adb => _args['adb'] as String;

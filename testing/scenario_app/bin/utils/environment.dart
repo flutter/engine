@@ -25,7 +25,7 @@ final class Environment {
   final bool showVerbose;
 
   /// What directory to store logs and screenshots in.
-  final String logsDir;
+  final String? logsDir;
 
   @override
   bool operator ==(Object o) {
