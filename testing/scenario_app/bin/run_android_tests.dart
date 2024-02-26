@@ -35,7 +35,7 @@ void main(List<String> args) async {
   // Show usage if requested.
   if (Options.showUsage(args)) {
     stdout.writeln(Options.usage(
-      environment: environment, 
+      environment: environment,
       localEngineDir: localEngineDir,
     ));
     return;
