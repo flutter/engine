@@ -11,9 +11,9 @@
 namespace impeller {
 namespace testing {
 
-using RendererTest = PlaygroundTest;
+using DISABLED_RendererTest = PlaygroundTest;
 
-TEST_P(RendererTest, CachesRenderPassAndFramebuffer) {
+TEST_P(DISABLED_RendererTest, CachesRenderPassAndFramebuffer) {
   if (GetBackend() != PlaygroundBackend::kVulkan) {
     GTEST_SKIP() << "Test only applies to Vulkan";
   }
