@@ -202,12 +202,25 @@ int ScaleBlurRadius(Scalar radius, Scalar scalar) {
 }
 
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
-                      Snapshot snapshot,
+                      Snapshot input_snapshot,
                       Entity blur_entity) {
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
       return blur_entity;
-    case FilterContents::BlurStyle::kInner:
+    case FilterContents::BlurStyle::kInner: {
+      auto shared_blur_entity =
+          std::make_shared<Entity>(std::move(blur_entity));
+      Entity entity;
+      entity.SetContents(Contents::MakeAnonymous(
+          [shared_blur_entity](const ContentContext& renderer,
+                               const Entity& entity, RenderPass& pass) {
+            return shared_blur_entity->Render(renderer, pass);
+          },
+          [shared_blur_entity](const Entity& entity) {
+            return shared_blur_entity->GetCoverage();
+          }));
+      return entity;
+    }
     case FilterContents::BlurStyle::kOuter:
     case FilterContents::BlurStyle::kSolid:
       FML_DLOG(ERROR) << "Unimplemented blur style";
