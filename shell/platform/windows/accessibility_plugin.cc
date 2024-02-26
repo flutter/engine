@@ -6,6 +6,7 @@
 
 #include <variant>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -26,16 +27,27 @@ static constexpr char kAnnounceValue[] = "announce";
 void HandleMessage(AccessibilityPlugin* plugin, const EncodableValue& message) {
   const auto* map = std::get_if<EncodableMap>(&message);
   if (!map) {
+    FML_LOG(ERROR) << "Accessibility message must be a map.";
     return;
   }
   const auto& type_itr = map->find(EncodableValue{kTypeKey});
   const auto& data_itr = map->find(EncodableValue{kDataKey});
-  if (type_itr == map->end() || data_itr == map->end()) {
+  if (type_itr == map->end()) {
+    FML_LOG(ERROR) << "Accessibility message must have a 'type' property.";
+    return;
+  }
+  if (data_itr == map->end()) {
+    FML_LOG(ERROR) << "Accessibility message must have a 'data' property.";
     return;
   }
   const auto* type = std::get_if<std::string>(&type_itr->second);
   const auto* data = std::get_if<EncodableMap>(&data_itr->second);
-  if (!type || !data) {
+  if (!type) {
+    FML_LOG(ERROR) << "Accessibility message 'type' property must be a string.";
+    return;
+  }
+  if (!data) {
+    FML_LOG(ERROR) << "Accessibility message 'data' property must be a map.";
     return;
   }
 
@@ -50,6 +62,9 @@ void HandleMessage(AccessibilityPlugin* plugin, const EncodableValue& message) {
     }
 
     plugin->Announce(*message);
+  } else {
+    FML_LOG(ERROR) << "Accessibility message type '" << *type
+                   << "' is not supported.";
   }
 }
 
