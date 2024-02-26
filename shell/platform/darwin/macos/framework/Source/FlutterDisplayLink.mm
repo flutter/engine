@@ -208,10 +208,9 @@ void DisplayLinkManager::OnDisplayLink(CVDisplayLinkRef display_link,
     }
   }
 
-  CFTimeInterval timestamp =
-      (CFTimeInterval)in_now->hostTime / (CFTimeInterval)in_now->videoTimeScale;
+  CFTimeInterval timestamp = (CFTimeInterval)in_now->hostTime / CVGetHostClockFrequency();
   CFTimeInterval target_timestamp =
-      (CFTimeInterval)in_output_time->hostTime / (CFTimeInterval)in_output_time->videoTimeScale;
+      (CFTimeInterval)in_output_time->hostTime / CVGetHostClockFrequency();
 
   for (_FlutterDisplayLink* client : clients) {
     [client didFireWithTimestamp:timestamp targetTimestamp:target_timestamp];
