@@ -208,7 +208,7 @@ extension type const Options._(ArgResults _args) {
             'Defaults to the latest updated out/ directory that starts with '
             '"android_" if the current working directory is within the engine '
             'repository.',
-        defaultsTo: localEngine
+        defaultsTo: environment.isCi ? null : localEngine
             ?.outputs()
             .where((Output o) => p.basename(o.path.path).startsWith('android_'))
             .firstOrNull
