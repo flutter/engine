@@ -1004,8 +1004,9 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     '/fuchsia/sdk/mac/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/third_party/dart/LICENSE': _RepositoryDartLicenseFile.new,
     '/third_party/khronos/LICENSE': _RepositoryKhronosLicenseFile.new,
-    '/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
-    '/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
+    '/flutter/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
+    '/flutter/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
+    '/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
   };
 
   _RepositoryFile createFile(fs.IoNode entry) {
