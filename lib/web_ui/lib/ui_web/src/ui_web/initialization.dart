@@ -56,67 +56,32 @@ Future<void> bootstrapEngine({
   }
 }
 
-/// The signature of the [detectCrawler] function.
-typedef CrawlerDetector = bool Function();
-
-/// Determines whether the current user agent is a web crawler, such as a search
-/// engine.
+/// Switches the web engine into the web crawler mode.
 ///
-/// The web engine calls this method once during initialization, and then it no
-/// longer calls this method. Overriding this function will have no effect after
-/// it has been called.
+/// In this mode the engine renders the semantics DOM tree in a way that's
+/// friendlier to web crawlers. For example, normally text appears only in
+/// `aria-label` attributes, but most crawlers ignore this attributes. When the
+/// crawler mode is enabled, the engine will put the text into an element as a
+/// DOM `Text` node (https://developer.mozilla.org/en-US/docs/Web/API/Text).
 ///
-/// Many crawlers ignore ARIA attributes as a source of app semantics. Therefore,
-/// if a crawler is detected, the web engine outputs semantic labels as text in
-/// a DOM `<span>` element, which crawlers know how to read.
+/// This function should only be called once. Calling it more than once will
+/// result in a `StateError` in debug mode, and it will have no effect in
+/// release mode.
 ///
-/// This function can be overriden by the app, by setting it to a different
-/// function. This can be useful when the app needs to support a crawler that's
-/// not known to the Flutter SDK.
-///
-/// The default implementation is [defaultDetectCrawler].
-CrawlerDetector detectCrawler = defaultDetectCrawler;
-
-// The list of known crawler user agent patterns. It should capture all of the
-// most important crawlers, and so it may change over time. However, it is not
-// meant to be comprehensive. Instead, the user can override `detectCrawler`
-// with a custom implementation. Developers can also share packages on pub.dev
-// that have sophisticated ways of detecting crawlers.
-final List<RegExp> _crawlerRegexes = <RegExp>[
-  // Covers the search engine and various specialized crawlers: https://developers.google.com/search/docs/crawling-indexing/overview-google-crawlers
-  RegExp(r'googlebot'),
-  RegExp(r'\-google'),
-
-  // https://www.bing.com/webmasters/help/which-crawlers-does-bing-use-8c184ec0
-  RegExp(r'bingbot'),
-
-  // https://help.yahoo.com/kb/SLN22600.html?guccounter=1&guce_referrer=aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS8&guce_referrer_sig=AQAAAHYCkkIs7cZnhukSWyF2fm5fvmF4O0hHyVAfflpLGgpkUyKE_oPtyuTbPEnHEw9hJfgfyD5mnYtUdWngKIq-aUwiRz_Kz7G_5I7jbyvZyiXyObYZlltmEazI-97JcSOG-AbDLdNMATVgEW23LgFVADYtPkr8VcsKfMem8B0eZBWA
-  RegExp(r'slurp'),
-
-  // https://duckduckgo.com/duckduckbot
-  RegExp(r'duckduckbot'),
-
-  // http://www.baidu.com/search/spider.html
-  RegExp(r'spider'),
-
-  // https://yandex.com/support/webmaster/robot-workings/user-agent.html
-  RegExp(r'yandexbot'),
-
-  // yjbanov: at the time of writing this code I didn't know which crawlers used
-  //          the "crawl" sub-string, but multiple sources recommended including
-  //          it, e.g.:
-  //
-  //          https://stackoverflow.com/questions/20084513/detect-search-crawlers-via-javascript
-  RegExp(r'crawl'),
-];
-
-/// The default implementation of [detectCrawler].
-///
-/// This implementation is likely not complete. The web is too big for the
-/// Flutter SDK to be able to detect them all. If a particular crawler is
-/// important but is missed by this implementation, [detectCrawler] can be
-/// overridden.
-bool defaultDetectCrawler() {
-  final String userAgent = getUserAgent().toLowerCase();
-  return _crawlerRegexes.any((RegExp regexp) => regexp.hasMatch(userAgent));
+/// It is expected that this function is called early in the app's
+/// initialization, before the framework renders the semantics tree, e.g. prior
+/// to invoking `runApp`. Calling it too late, such as after the first frame has
+/// been rendered or in response to a user action, may result in incorrect
+/// rendering of the semantics tree. The crawler may already have crawled the
+/// app and failed to find the data it needed to index it.
+void enableCrawlerMode() {
+  assert(
+    !_isCrawlerModeEnabled,
+    '`enableCrawlerMode` was called more than once.',
+  );
+  _isCrawlerModeEnabled = true;
 }
+
+/// Whether the crawler mode is enabled.
+bool get isCrawlerModeEnabled => _isCrawlerModeEnabled;
+bool _isCrawlerModeEnabled = false;

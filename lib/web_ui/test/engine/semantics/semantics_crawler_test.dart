@@ -9,6 +9,7 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web/initialization.dart';
 
 import '../../common/rendering.dart';
 import '../../common/test_initialization.dart';
@@ -29,8 +30,8 @@ Future<void> testMain() async {
   await bootstrapAndRunApp(withImplicitView: true);
   setUpRenderingForTests();
 
-  setUp(() {
-    isCrawlerUserAgent = true;
+  setUpAll(() {
+    enableCrawlerMode();
   });
 
   test('renders label text as DOM for crawler user agents and Windows screen readers', () async {

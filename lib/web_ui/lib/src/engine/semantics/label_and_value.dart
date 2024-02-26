@@ -27,20 +27,12 @@ import 'semantics.dart';
 ///   * https://github.com/FreedomScientific/standards-support/issues/759
 bool useJawsWorkaroundForLabels = operatingSystem == OperatingSystem.windows;
 
-/// Whether the current user agent is a web crawler, such as a search engine.
-///
-/// Crawlers, unfortunately, ignore ARIA labels, so the web engine also puts the
-/// text of the label into the DOM.
-///
-/// This value can be overridden in tests.
-bool isCrawlerUserAgent = ui_web.detectCrawler();
-
 /// Whether the current user agent requires the text to be rendered into DOM
 /// elements to function.
 ///
 /// For some user agents, such as search engines and JAWS on Windows
 /// `aria-label` is not sufficient.
-bool get userAgentNeedsDomText => isCrawlerUserAgent || useJawsWorkaroundForLabels;
+bool get userAgentNeedsDomText => ui_web.isCrawlerModeEnabled || useJawsWorkaroundForLabels;
 
 /// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.
 ///
