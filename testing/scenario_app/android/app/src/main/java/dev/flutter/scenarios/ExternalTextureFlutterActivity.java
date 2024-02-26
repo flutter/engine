@@ -417,13 +417,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         // IllegalStateException.
         // Simply log and return.
         Log.i(TAG, "Surface disconnected from ImageWriter", e);
-
-        if (onFirstFrame != null) {
-          onFirstFrame.countDown();
-          onFirstFrame = null;
-        }
         image.close();
-        return;
       }
 
       Log.v(TAG, "Output image");
