@@ -102,6 +102,11 @@ abstract class ViewRasterizer {
     viewEmbedder.dispose();
     displayFactory.dispose();
   }
+
+  /// Clears the state. Used in tests.
+  void debugClear() {
+    viewEmbedder.debugClear();
+  }
 }
 
 /// A [DisplayCanvas] is an abstraction for a canvas element which displays

@@ -33,6 +33,7 @@ void testMain() {
 
     tearDown(() {
       PlatformViewManager.instance.debugClear();
+      CanvasKitRenderer.instance.debugClear();
     });
 
     test('embeds interactive platform views', () async {
@@ -980,10 +981,8 @@ void testMain() {
   });
 
   test('can dispose without crashing', () async {
-    ui_web.platformViewRegistry.registerViewFactory(
-        'test-view',
-        (int viewId) =>
-            createDomHTMLDivElement()..className = 'platform-view',
+    ui_web.platformViewRegistry.registerViewFactory('test-view',
+        (int viewId) => createDomHTMLDivElement()..className = 'platform-view',
         isVisible: false);
 
     await createPlatformView(0, 'test-view');
@@ -1007,8 +1006,7 @@ void testMain() {
     ]);
 
     expect(() {
-      final HtmlViewEmbedder embedder =
-        (renderer as CanvasKitRenderer)
+      final HtmlViewEmbedder embedder = (renderer as CanvasKitRenderer)
           .debugGetRasterizerForView(implicitView)!
           .viewEmbedder;
       // The following line used to cause a "Concurrent modification during iteration"

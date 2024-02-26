@@ -619,6 +619,13 @@ class HtmlViewEmbedder {
     _viewsToRecomposite.clear();
     _activeCompositionOrder.clear();
     _compositionOrder.clear();
+    _activeRendering = Rendering();
+  }
+
+  /// Clears the state. Used in tests.
+  void debugClear() {
+    dispose();
+    rasterizer.removeOverlaysFromDom();
   }
 }
 
