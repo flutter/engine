@@ -26,17 +26,15 @@ struct _FlScrollingManager {
 
 G_DEFINE_TYPE(FlScrollingManager, fl_scrolling_manager, G_TYPE_OBJECT);
 
-static void fl_scrolling_manager_dispose(GObject* object);
+static void fl_scrolling_manager_dispose(GObject* object) {
+  G_OBJECT_CLASS(fl_scrolling_manager_parent_class)->dispose(object);
+}
 
 static void fl_scrolling_manager_class_init(FlScrollingManagerClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_scrolling_manager_dispose;
 }
 
 static void fl_scrolling_manager_init(FlScrollingManager* self) {}
-
-static void fl_scrolling_manager_dispose(GObject* object) {
-  G_OBJECT_CLASS(fl_scrolling_manager_parent_class)->dispose(object);
-}
 
 FlScrollingManager* fl_scrolling_manager_new(
     FlScrollingViewDelegate* view_delegate) {
