@@ -27,6 +27,14 @@ struct _FlScrollingManager {
 G_DEFINE_TYPE(FlScrollingManager, fl_scrolling_manager, G_TYPE_OBJECT);
 
 static void fl_scrolling_manager_dispose(GObject* object) {
+  FlScrollingManager* self = FL_SCROLLING_MANAGER(object);
+
+  if (self->view_delegate != nullptr) {
+    g_object_remove_weak_pointer(
+        object, reinterpret_cast<gpointer*>(&self->view_delegate));
+    self->view_delegate = nullptr;
+  }
+
   G_OBJECT_CLASS(fl_scrolling_manager_parent_class)->dispose(object);
 }
 
