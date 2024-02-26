@@ -327,7 +327,7 @@ Future<void> _run({
       final (Future<int> logcatExitCode, Stream<String> logcatOutput) = getProcessStreams(logcatProcess);
 
       logcatProcessExitCode = logcatExitCode;
-      String? filterToProcessId;
+      String? filterProcessId;
 
       logcatOutput.listen((String line) {
         // Always write to the full log.
@@ -340,10 +340,22 @@ Future<void> _run({
           return;
         }
 
-        filterToProcessId ??= adbLogLine.tryParseProcess();
-        if (filterToProcessId != null) {
-          adbLogLine.printFormatted(hideVerbose: !verbose, filterToProcessId: filterToProcessId!);
+        // If we haven't already found a process ID, try to find one.
+        // The process ID will help us filter out logs from other processes.
+        filterProcessId ??= adbLogLine.tryParseProcess();
+        
+        // If this is a "verbose" log, possibly skip it.
+        final bool isVerbose = adbLogLine.isVerbose(filterProcessId: filterProcessId);
+        if (isVerbose || filterProcessId == null) {
+          // We've requested verbose output, so print everything.
+          if (verbose) {
+            adbLogLine.printFormatted();
+          }
+          return; 
         }
+
+        // It's a non-verbose log, so print it.
+        adbLogLine.printFormatted();
       }, onError: (Object? err) {
         if (verbose) {
           logWarning('logcat stream error: $err');

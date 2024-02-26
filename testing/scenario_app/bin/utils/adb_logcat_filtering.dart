@@ -75,8 +75,8 @@ extension type const AdbLogLine._(Match _match) {
   }
 
   /// Returns `true` if the log line is verbose.
-  bool isVerbose({String? filterToProcessId}) => !_isRelevant(filterToProcessId: filterToProcessId);
-  bool _isRelevant({String? filterToProcessId}) {
+  bool isVerbose({String? filterProcessId}) => !_isRelevant(filterProcessId: filterProcessId);
+  bool _isRelevant({String? filterProcessId}) {
     // Fatal errors are always useful.
     if (severity == 'F') {
       return true;
@@ -84,11 +84,6 @@ extension type const AdbLogLine._(Match _match) {
 
     // Debug logs are rarely useful.
     if (severity == 'D') {
-      return false;
-    }
-
-    // If a process ID is specified, only include logs from that process.
-    if (filterToProcessId != null && process != filterToProcessId) {
       return false;
     }
 
@@ -111,16 +106,17 @@ extension type const AdbLogLine._(Match _match) {
       return true;
     }
 
+    // If a process ID is specified, exclude logs _not_ from that process.
+    if (filterProcessId != null && process != filterProcessId) {
+      return false;
+    }
+
     // And... whatever, include anything with the word "flutter".
     return name.toLowerCase().contains('flutter') || message.toLowerCase().contains('flutter');
   }
 
   /// Logs the line to the console.
-  void printFormatted({required bool hideVerbose, required String filterToProcessId}) {
-    // If the line is verbose, only print it if the verbose flag is set.
-    if (hideVerbose && isVerbose(filterToProcessId: filterToProcessId)) {
-      return;
-    }
+  void printFormatted() {
     final String formatted = '$time [$severity] $name: $message';
     if (severity == 'W' || severity == 'E' || severity == 'F') {
       logWarning(formatted);
