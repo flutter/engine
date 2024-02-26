@@ -34,9 +34,13 @@ public class ExternalTextureTests {
 
   @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
 
+  @Before
+  public void setUp() {
+    intent = intentRule.getIntent();
+  }
+
   @Test
   public void testCanvasSurface() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "canvas");
     ScreenshotUtil.capture(
@@ -46,7 +50,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.LOLLIPOP)
   public void testMediaSurface() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "media");
     ScreenshotUtil.capture(
@@ -56,7 +59,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.LOLLIPOP)
   public void testRotatedMediaSurface_90() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "media");
     intent.putExtra("rotation", 90);
@@ -67,7 +69,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.LOLLIPOP)
   public void testRotatedMediaSurface_180() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "media");
     intent.putExtra("rotation", 180);
@@ -78,7 +79,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.LOLLIPOP)
   public void testRotatedMediaSurface_270() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "media");
     intent.putExtra("rotation", 270);
@@ -89,7 +89,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.M)
   public void testCroppedMediaSurface_bottomLeft() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "image");
     intent.putExtra("crop", new Rect(0, 0, SURFACE_WIDTH / 2, SURFACE_HEIGHT / 2));
@@ -101,7 +100,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.M)
   public void testCroppedMediaSurface_topRight() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "image");
     intent.putExtra(
@@ -114,7 +112,6 @@ public class ExternalTextureTests {
   @Test
   @SdkSuppress(minSdkVersion = VERSION_CODES.M)
   public void testCroppedRotatedMediaSurface_bottomLeft_90() throws Exception {
-    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "image");
     intent.putExtra("crop", new Rect(0, 0, SURFACE_WIDTH / 2, SURFACE_HEIGHT / 2));
