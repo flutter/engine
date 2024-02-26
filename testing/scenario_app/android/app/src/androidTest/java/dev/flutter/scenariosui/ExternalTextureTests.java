@@ -13,6 +13,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 import dev.flutter.scenarios.ExternalTextureFlutterActivity;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
