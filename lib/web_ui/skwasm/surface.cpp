@@ -28,6 +28,9 @@ Surface::Surface() {
       this);
   // Listen to messages from the worker
   skwasm_registerMessageListener(_thread);
+
+  // Synchronize the time origin for the worker thread
+  skwasm_syncTimeOriginForThread(_thread);
 }
 
 // Main thread only
