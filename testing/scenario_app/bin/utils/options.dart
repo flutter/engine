@@ -105,16 +105,18 @@ extension type const Options._(ArgResults _args) {
   /// Unlike [_miniParser], this parser includes all options.
   static ArgParser _parser(Environment environment, Engine? localEngine) {
     final bool hideUnusualOptions = !environment.showVerbose;
-    return ArgParser()
+    return ArgParser(usageLineLength: 120)
       ..addFlag(
         'verbose',
         abbr: 'v',
         help: 'Enable verbose logging',
+        negatable: false,
       )
       ..addFlag(
         'help',
         abbr: 'h',
         help: 'Print usage information',
+        negatable: false,
       )
       ..addFlag(
         'use-skia-gold',
