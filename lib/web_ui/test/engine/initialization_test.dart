@@ -84,7 +84,7 @@ void testMain() {
   test('enable crawler mode', () {
     expect(isCrawlerModeEnabled, isFalse);
     enableCrawlerMode();
-    expect(isCrawlerModeEnabled, isFalse);
+    expect(isCrawlerModeEnabled, isTrue);
     expect(
       () => enableCrawlerMode(),
       throwsAssertionError,
