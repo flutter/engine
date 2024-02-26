@@ -232,7 +232,7 @@ extension type const Options._(ArgResults _args) {
             'expected_golden_output.txt.',
         defaultsTo: localEngine != null
             ? p.join(
-                localEngine.srcDir.path,
+                localEngine.flutterDir.path,
                 'testing',
                 'scenario_app',
                 'android',
