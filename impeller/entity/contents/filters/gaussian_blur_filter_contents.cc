@@ -200,6 +200,20 @@ Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
 int ScaleBlurRadius(Scalar radius, Scalar scalar) {
   return static_cast<int>(std::round(radius * scalar));
 }
+
+Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
+                      Snapshot snapshot,
+                      Entity blur_entity) {
+  switch (blur_style) {
+    case FilterContents::BlurStyle::kNormal:
+      return blur_entity;
+    case FilterContents::BlurStyle::kInner:
+    case FilterContents::BlurStyle::kOuter:
+    case FilterContents::BlurStyle::kSolid:
+      FML_DLOG(ERROR) << "Unimplemented blur style";
+      return blur_entity;
+  }
+}
 }  // namespace
 
 std::string_view GaussianBlurFilterContents::kNoMipsError =
@@ -208,8 +222,12 @@ std::string_view GaussianBlurFilterContents::kNoMipsError =
 GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_x,
     Scalar sigma_y,
-    Entity::TileMode tile_mode)
-    : sigma_x_(sigma_x), sigma_y_(sigma_y), tile_mode_(tile_mode) {}
+    Entity::TileMode tile_mode,
+    BlurStyle blur_style)
+    : sigma_x_(sigma_x),
+      sigma_y_(sigma_y),
+      tile_mode_(tile_mode),
+      blur_style_(blur_style) {}
 
 // This value was extracted from Skia, see:
 //  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/ganesh/GrBlurUtils.cpp#L2561-L2576
@@ -435,7 +453,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
-  return Entity::FromSnapshot(
+  auto blur_output_entity = Entity::FromSnapshot(
       Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
                .transform = input_snapshot->transform *
                             padding_snapshot_adjustment *
@@ -443,6 +461,13 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
+
+  if (!blur_output_entity.has_value()) {
+    return std::nullopt;
+  }
+
+  return ApplyBlurStyle(blur_style_, std::move(input_snapshot.value()),
+                        std::move(blur_output_entity.value()));
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {

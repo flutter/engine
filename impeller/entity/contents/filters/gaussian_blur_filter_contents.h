@@ -37,7 +37,8 @@ class GaussianBlurFilterContents final : public FilterContents {
 
   explicit GaussianBlurFilterContents(Scalar sigma_x,
                                       Scalar sigma_y,
-                                      Entity::TileMode tile_mode);
+                                      Entity::TileMode tile_mode,
+                                      BlurStyle blur_style);
 
   Scalar GetSigmaX() const { return sigma_x_; }
   Scalar GetSigmaY() const { return sigma_y_; }
@@ -94,6 +95,7 @@ class GaussianBlurFilterContents final : public FilterContents {
   const Scalar sigma_x_ = 0.0;
   const Scalar sigma_y_ = 0.0;
   const Entity::TileMode tile_mode_;
+  const BlurStyle blur_style_;
 };
 
 }  // namespace impeller

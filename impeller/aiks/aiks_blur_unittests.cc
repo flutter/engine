@@ -588,5 +588,24 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(AiksTest, GaussianBlurStyleInner) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  paint.color = Color::Green();
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kInner,
+      .sigma = Sigma(30),
+  };
+  canvas.DrawPath(PathBuilder()
+                      .MoveTo({200, 200})
+                      .LineTo({300, 400})
+                      .LineTo({100, 400})
+                      .Close()
+                      .TakePath(),
+                  paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
