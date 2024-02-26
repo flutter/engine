@@ -343,7 +343,7 @@ Future<void> _run({
         // If we haven't already found a process ID, try to find one.
         // The process ID will help us filter out logs from other processes.
         filterProcessId ??= adbLogLine.tryParseProcess();
-        
+
         // If this is a "verbose" log, possibly skip it.
         final bool isVerbose = adbLogLine.isVerbose(filterProcessId: filterProcessId);
         if (isVerbose || filterProcessId == null) {
@@ -351,7 +351,7 @@ Future<void> _run({
           if (verbose) {
             adbLogLine.printFormatted();
           }
-          return; 
+          return;
         }
 
         // It's a non-verbose log, so print it.

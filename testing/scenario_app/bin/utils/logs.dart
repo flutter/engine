@@ -23,8 +23,12 @@ Future<void> step(String msg, Future<void> Function() fn) async {
   }
 }
 
+void _logWithColor(String color, String msg) {
+  stdout.writeln('$color$msg$_reset');
+}
+
 void log(String msg) {
-  stdout.writeln('$_gray$msg$_reset');
+  _logWithColor(_gray, msg);
 }
 
 void logImportant(String msg) {
@@ -32,14 +36,14 @@ void logImportant(String msg) {
 }
 
 void logWarning(String msg) {
-  stderr.writeln('$_yellow$msg$_reset');
+  _logWithColor(_yellow, msg);
 }
 
 final class Panic extends Error {}
 
 Never panic(List<String> messages) {
   for (final String message in messages) {
-    stderr.writeln('$_red$message$_reset');
+    _logWithColor(_red, message);
   }
   throw Panic();
 }

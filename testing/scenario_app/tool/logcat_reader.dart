@@ -8,7 +8,7 @@ import 'dart:io' as io;
 // However this tool is not very important, so delete it if necessary.
 import '../bin/utils/adb_logcat_filtering.dart';
 
-/// A tiny tool to read `adb logcat` output and perform some analysis.
+/// A tiny tool to read saved `adb logcat` output and perform some analysis.
 ///
 /// This tool is not meant to be a full-fledged logcat reader. It's just a
 /// simple tool that uses the [AdbLogLine] extension type to parse results of
