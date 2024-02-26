@@ -19,6 +19,7 @@ import org.junit.runner.RunWith;
 @LargeTest
 public class SpawnMultiEngineTest {
   Intent intent;
+  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
 
   @Rule @NonNull
   public ActivityTestRule<SpawnMultiEngineActivity> activityRule =
@@ -27,7 +28,7 @@ public class SpawnMultiEngineTest {
 
   @Before
   public void setUp() {
-    intent = new Intent(Intent.ACTION_MAIN);
+    intent = intentRule.getIntent();
   }
 
   @Test

@@ -18,9 +18,11 @@ public final class DrawSolidBlueScreenTest {
       new ActivityTestRule<>(
           PlatformViewsActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
 
+  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
+
   @Test
   public void test() throws Exception {
-    Intent intent = new Intent(Intent.ACTION_MAIN);
+    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "solid_blue");
     ScreenshotUtil.capture(activityRule.launchActivity(intent), "DrawSolidBlueScreenTest");
   }

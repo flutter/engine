@@ -9,6 +9,7 @@ _android_sources = [
   "app/src/androidTest/java/dev/flutter/TestRunner.java",
   "app/src/androidTest/java/dev/flutter/scenarios/EngineLaunchE2ETest.java",
   "app/src/androidTest/java/dev/flutter/scenarios/ExampleInstrumentedTest.java",
+  "app/src/androidTest/java/dev/flutter/scenariosui/ArgumentAwareIntent.java",
   "app/src/androidTest/java/dev/flutter/scenariosui/DrawSolidBlueScreenTest.java",
   "app/src/androidTest/java/dev/flutter/scenariosui/ExternalTextureTests.java",
   "app/src/androidTest/java/dev/flutter/scenariosui/GetBitmapTests.java",

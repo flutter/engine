@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 @LargeTest
 public class PlatformViewUiTests {
   Intent intent;
+  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
 
   @Rule @NonNull
   public ActivityTestRule<PlatformViewsActivity> activityRule =
@@ -32,7 +33,7 @@ public class PlatformViewUiTests {
 
   @Before
   public void setUp() {
-    intent = new Intent(Intent.ACTION_MAIN);
+    intent = intentRule.getIntent();
     // Render a native android view.
     intent.putExtra("use_android_view", true);
     intent.putExtra("view_type", PlatformViewsActivity.TEXT_VIEW_PV);

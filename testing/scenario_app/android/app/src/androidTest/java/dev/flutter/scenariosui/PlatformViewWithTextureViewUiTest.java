@@ -20,6 +20,7 @@ import org.junit.runner.RunWith;
 @LargeTest
 public class PlatformViewWithTextureViewUiTest {
   Intent intent;
+  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
 
   @Rule @NonNull
   public ActivityTestRule<PlatformViewsActivity> activityRule =
@@ -32,7 +33,7 @@ public class PlatformViewWithTextureViewUiTest {
 
   @Before
   public void setUp() {
-    intent = new Intent(Intent.ACTION_MAIN);
+    intent = intentRule.getIntent();
     intent.putExtra("view_type", PlatformViewsActivity.TEXTURE_VIEW_PV);
   }
 

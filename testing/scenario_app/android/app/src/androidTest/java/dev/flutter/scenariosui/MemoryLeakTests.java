@@ -23,10 +23,12 @@ public class MemoryLeakTests {
       new ActivityTestRule<>(
           PlatformViewsActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
 
+  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
+
   @Test
   @FailTestOnLeak
   public void platformViewHybridComposition_launchActivityFinishAndLaunchAgain() throws Exception {
-    Intent intent = new Intent(Intent.ACTION_MAIN);
+    Intent intent = intentRule.getIntent();
     intent.putExtra("scenario_name", "platform_view");
     intent.putExtra("use_android_view", true);
     intent.putExtra("view_type", PlatformViewsActivity.TEXT_VIEW_PV);
