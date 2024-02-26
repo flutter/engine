@@ -34,7 +34,7 @@ public class PlatformViewWithSurfaceViewUiTest {
 
   @Before
   public void setUp() {
-    intent = inentRule.getIntent();
+    intent = intentRule.getIntent();
     // Render a texture.
     intent.putExtra("use_android_view", false);
     intent.putExtra("view_type", PlatformViewsActivity.SURFACE_VIEW_PV);
