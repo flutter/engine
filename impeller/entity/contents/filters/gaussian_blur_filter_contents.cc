@@ -218,13 +218,15 @@ class GeometryExtractor : public TypedContentsVisitor<ColorSourceContents> {
 
 std::shared_ptr<Geometry> GetGeometry(
     const std::shared_ptr<FilterInput>& input) {
+  std::shared_ptr<Geometry> result;
   std::visit(
-      [](auto&& arg) {
+      [&result](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, std::shared_ptr<FilterContents>>) {
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Contents>>) {
           GeometryExtractor extractor;
           arg->Visit(&extractor);
+          result = extractor.geometry_;
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture>>) {
         } else if constexpr (std::is_same_v<T, Rect>) {
         } else {
@@ -232,7 +234,7 @@ std::shared_ptr<Geometry> GetGeometry(
         }
       },
       input->GetInput());
-  return nullptr;
+  return result;
 }
 
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,

@@ -5,6 +5,9 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_TYPED_CONTENTS_VISITOR_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_TYPED_CONTENTS_VISITOR_H_
 
+// All of these includes are unfortunate, but this is the price we pay to be
+// able to use std::is_base_of_v.  The alternative is to maintain that in code
+// which could introduce bugs.
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/checkerboard_contents.h"
@@ -35,46 +38,68 @@ namespace impeller {
 
 template <typename BaseT, typename DerivedPtrT>
 struct IsDerivedOrSame
-    : std::integral_constant<
-          bool,
-          std::is_base_of_v<BaseT, std::remove_pointer_t<DerivedPtrT>> ||
-              std::is_same_v<BaseT, std::remove_pointer_t<DerivedPtrT>>> {};
+    : std::integral_constant<bool,
+                             std::is_base_of_v<BaseT, DerivedPtrT> ||
+                                 std::is_same_v<BaseT, DerivedPtrT>> {};
 
+/// A ContentsVisitor that only visits Contents of type `T` and its subclasses.
 template <typename T>
 class TypedContentsVisitor : public ContentsVisitor {
-  public:
+ public:
   virtual void TypedVisit(T* contents) = 0;
-  void Visit(AnonymousContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(AtlasColorContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(AtlasContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(AtlasTextureContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(BlendFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(BorderMaskBlurFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(CheckerboardContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(ClipContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(ClipRestoreContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(ColorMatrixFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(ConicalGradientContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(DirectionalMorphologyFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(FramebufferBlendContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(GaussianBlurFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(LinearGradientContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(LinearToSrgbFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(LocalMatrixFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(MatrixFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(RadialGradientContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(RuntimeEffectContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(SolidColorContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(SolidRRectBlurContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(SrgbToLinearFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(SweepGradientContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(TextContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(TextureContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(TiledTextureContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(VerticesColorContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(VerticesContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(VerticesUVContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
-  void Visit(YUVToRGBFilterContents* contents) override { if constexpr (IsDerivedOrSame<T, decltype(contents)>::value) { TypedVisit(contents); }}
+
+  template <typename ContentsT>
+  void DoVisit(ContentsT* contents) {
+    if constexpr (IsDerivedOrSame<T, ContentsT>::value) {
+      TypedVisit(contents);
+    }
+  }
+
+  void Visit(AnonymousContents* contents) override { DoVisit(contents); }
+  void Visit(AtlasColorContents* contents) override { DoVisit(contents); }
+  void Visit(AtlasContents* contents) override { DoVisit(contents); }
+  void Visit(AtlasTextureContents* contents) override { DoVisit(contents); }
+  void Visit(BlendFilterContents* contents) override { DoVisit(contents); }
+  void Visit(BorderMaskBlurFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(CheckerboardContents* contents) override { DoVisit(contents); }
+  void Visit(ClipContents* contents) override { DoVisit(contents); }
+  void Visit(ClipRestoreContents* contents) override { DoVisit(contents); }
+  void Visit(ColorMatrixFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(ConicalGradientContents* contents) override { DoVisit(contents); }
+  void Visit(DirectionalMorphologyFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(FramebufferBlendContents* contents) override { DoVisit(contents); }
+  void Visit(GaussianBlurFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(LinearGradientContents* contents) override { DoVisit(contents); }
+  void Visit(LinearToSrgbFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(LocalMatrixFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(MatrixFilterContents* contents) override { DoVisit(contents); }
+  void Visit(RadialGradientContents* contents) override { DoVisit(contents); }
+  void Visit(RuntimeEffectContents* contents) override { DoVisit(contents); }
+  void Visit(SolidColorContents* contents) override { DoVisit(contents); }
+  void Visit(SolidRRectBlurContents* contents) override { DoVisit(contents); }
+  void Visit(SrgbToLinearFilterContents* contents) override {
+    DoVisit(contents);
+  }
+  void Visit(SweepGradientContents* contents) override { DoVisit(contents); }
+  void Visit(TextContents* contents) override { DoVisit(contents); }
+  void Visit(TextureContents* contents) override { DoVisit(contents); }
+  void Visit(TiledTextureContents* contents) override { DoVisit(contents); }
+  void Visit(VerticesColorContents* contents) override { DoVisit(contents); }
+  void Visit(VerticesContents* contents) override { DoVisit(contents); }
+  void Visit(VerticesUVContents* contents) override { DoVisit(contents); }
+  void Visit(YUVToRGBFilterContents* contents) override { DoVisit(contents); }
 };
 
 }  // namespace impeller
