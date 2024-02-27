@@ -698,8 +698,11 @@ TEST_F(DartIsolateTest, SpawningAnIsolateDoesNotReloadKernel) {
 
 class FakePlatformConfigurationClient : public PlatformConfigurationClient {
  public:
-  PlatformIsolateManager mgr;
-  PlatformIsolateManager* GetPlatformIsolateManager() override { return &mgr; }
+  std::shared_ptr<PlatformIsolateManager> mgr =
+      std::shared_ptr<PlatformIsolateManager>(new PlatformIsolateManager());
+  std::shared_ptr<PlatformIsolateManager> GetPlatformIsolateManager() override {
+    return mgr;
+  }
 
   std::string DefaultRouteName() override { return ""; }
   void ScheduleFrame() override {}
@@ -769,7 +772,7 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAndShutdown) {
     ASSERT_TRUE(isolate);
     auto root_isolate = isolate->get();
     ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
-    EXPECT_FALSE(client.mgr.IsRegistered(root_isolate->isolate()));
+    EXPECT_FALSE(client.mgr->IsRegisteredForTestingOnly(root_isolate->isolate()));
 
     // Post a task to the platform_thread that just waits, to delay execution of
     // the platform isolate until we're ready.
@@ -801,7 +804,7 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAndShutdown) {
 
     ui_thread_latch.Wait();
     ASSERT_TRUE(platform_isolate);
-    EXPECT_TRUE(client.mgr.IsRegistered(platform_isolate));
+    EXPECT_TRUE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
 
     // Allow the platform isolate to run.
     platform_thread_latch.Signal();
@@ -811,7 +814,7 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAndShutdown) {
 
     // root isolate will be auto-shutdown
   }
-  EXPECT_FALSE(client.mgr.IsRegistered(platform_isolate));
+  EXPECT_FALSE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
 }
 
 TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
@@ -841,7 +844,7 @@ TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
   ASSERT_TRUE(isolate);
   auto root_isolate = isolate->get();
   ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
-  EXPECT_FALSE(client.mgr.IsRegistered(root_isolate->isolate()));
+  EXPECT_FALSE(client.mgr->IsRegisteredForTestingOnly(root_isolate->isolate()));
 
   fml::AutoResetWaitableEvent ui_thread_latch;
   Dart_Isolate platform_isolate = nullptr;
@@ -867,7 +870,7 @@ TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
 
   ui_thread_latch.Wait();
   ASSERT_TRUE(platform_isolate);
-  EXPECT_TRUE(client.mgr.IsRegistered(platform_isolate));
+  EXPECT_TRUE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
 
   // Post a task to the platform thread to shut down the platform isolate.
   fml::AutoResetWaitableEvent platform_thread_latch;
@@ -881,7 +884,7 @@ TEST_F(DartIsolateTest, PlatformIsolateEarlyShutdown) {
   platform_thread_latch.Wait();
 
   // The platform isolate should be shut down.
-  EXPECT_FALSE(client.mgr.IsRegistered(platform_isolate));
+  EXPECT_FALSE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
 
   // root isolate will be auto-shutdown
 }
@@ -957,10 +960,6 @@ TEST_F(DartIsolateTest, PlatformIsolateSendAndReceive) {
       }));
   epilogue_latch.Wait();
 
-  // The platform isolate has been shutdown because there are no more pending
-  // messages and the receive port is closed.
-  EXPECT_FALSE(client.mgr.IsRegistered(platform_isolate));
-
   // root isolate will be auto-shutdown
 }
 
@@ -1001,7 +1000,7 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAfterManagerShutdown) {
   fml::TaskRunner::RunNowOrPostTask(
       platform_thread,
       fml::MakeCopyable([&manager_shutdown_latch, &client]() mutable {
-        client.mgr.ShutdownPlatformIsolates();
+        client.mgr->ShutdownPlatformIsolates();
         manager_shutdown_latch.Signal();
       }));
   manager_shutdown_latch.Wait();
@@ -1074,9 +1073,9 @@ TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
       platform_thread, fml::MakeCopyable([&platform_thread_latch, &client,
                                           &platform_isolate]() mutable {
         platform_thread_latch.Wait();
-        client.mgr.ShutdownPlatformIsolates();
+        client.mgr->ShutdownPlatformIsolates();
         EXPECT_TRUE(platform_isolate);
-        EXPECT_FALSE(client.mgr.IsRegistered(platform_isolate));
+        EXPECT_FALSE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
       }));
 
   fml::AutoResetWaitableEvent ui_thread_latch;
@@ -1101,7 +1100,7 @@ TEST_F(DartIsolateTest, PlatformIsolateManagerShutdownBeforeMainRuns) {
       }));
   ui_thread_latch.Wait();
   ASSERT_TRUE(platform_isolate);
-  EXPECT_TRUE(client.mgr.IsRegistered(platform_isolate));
+  EXPECT_TRUE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
 
   // Allow the platform isolate to run, but its main is never run.
   platform_thread_latch.Signal();
@@ -1173,7 +1172,7 @@ TEST_F(DartIsolateTest, PlatformIsolateMainThrowsError) {
       }));
   ui_thread_latch.Wait();
   ASSERT_TRUE(platform_isolate);
-  EXPECT_TRUE(client.mgr.IsRegistered(platform_isolate));
+  EXPECT_TRUE(client.mgr->IsRegisteredForTestingOnly(platform_isolate));
 
   // Post a task to the platform_thread that runs after the platform isolate's
   // entry point, and wait for it to run.

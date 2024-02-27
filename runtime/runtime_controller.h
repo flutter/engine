@@ -615,8 +615,8 @@ class RuntimeController : public PlatformConfigurationClient {
     return root_isolate_;
   }
 
-  PlatformIsolateManager* GetPlatformIsolateManager() override {
-    return &platform_isolate_manager_;
+  std::shared_ptr<PlatformIsolateManager> GetPlatformIsolateManager() override {
+    return platform_isolate_manager_;
   }
 
   //--------------------------------------------------------------------------
@@ -656,7 +656,8 @@ class RuntimeController : public PlatformConfigurationClient {
   const fml::closure isolate_shutdown_callback_;
   std::shared_ptr<const fml::Mapping> persistent_isolate_data_;
   UIDartState::Context context_;
-  PlatformIsolateManager platform_isolate_manager_;
+  std::shared_ptr<PlatformIsolateManager> platform_isolate_manager_ =
+      std::shared_ptr<PlatformIsolateManager>(new PlatformIsolateManager());
   bool has_flushed_runtime_state_ = false;
 
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();

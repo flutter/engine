@@ -63,10 +63,8 @@ UIDartState::UIDartState(
     LogMessageCallback log_message_callback,
     std::shared_ptr<IsolateNameServer> isolate_name_server,
     bool is_root_isolate,
-    const UIDartState::Context& context,
-    std::function<void(Dart_Handle)> message_epilogue)
-    : DartState(-1, std::move(message_epilogue)),
-      add_callback_(std::move(add_callback)),
+    const UIDartState::Context& context)
+    : add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
       logger_prefix_(std::move(logger_prefix)),
       is_root_isolate_(is_root_isolate),

@@ -182,8 +182,7 @@ class UIDartState : public tonic::DartState {
               LogMessageCallback log_message_callback,
               std::shared_ptr<IsolateNameServer> isolate_name_server,
               bool is_root_isolate_,
-              const UIDartState::Context& context,
-              std::function<void(Dart_Handle)> message_epilogue);
+              const UIDartState::Context& context);
 
   ~UIDartState() override;
 

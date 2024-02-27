@@ -37,7 +37,7 @@ class PlatformIsolateManager {
 
   /// Returns whether an isolate is registered. For testing only. Callable from
   /// any thread.
-  bool IsRegistered(Dart_Isolate isolate);
+  bool IsRegisteredForTestingOnly(Dart_Isolate isolate);
 
  private:
   std::recursive_mutex lock_;

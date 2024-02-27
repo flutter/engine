@@ -438,10 +438,7 @@ class DartIsolate : public UIDartState {
   const bool is_platform_isolate_;
   const bool is_spawning_in_group_;
   std::string domain_network_policy_;
-  uint32_t platform_isolate_pending_messages_ = 0;
-
-  // Owned by the RuntimeController, which outlives this DartIsolate.
-  PlatformIsolateManager* platform_isolate_manager_ = nullptr;
+  std::shared_ptr<PlatformIsolateManager> platform_isolate_manager_;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
@@ -455,9 +452,12 @@ class DartIsolate : public UIDartState {
 
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
-              bool is_platform_isolate,
               const UIDartState::Context& context,
               bool is_spawning_in_group = false);
+
+  DartIsolate(const Settings& settings,
+              const UIDartState::Context& context,
+              std::shared_ptr<PlatformIsolateManager> platform_isolate_manager);
 
   //----------------------------------------------------------------------------
   /// @brief      Initializes the given (current) isolate.
@@ -482,8 +482,6 @@ class DartIsolate : public UIDartState {
   [[nodiscard]] bool MarkIsolateRunnable();
 
   void OnShutdownCallback();
-
-  void OnMessageEpilogue(Dart_Handle result);
 
   // |Dart_IsolateGroupCreateCallback|
   static Dart_Isolate DartIsolateGroupCreateCallback(

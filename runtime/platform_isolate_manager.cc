@@ -54,7 +54,7 @@ void PlatformIsolateManager::ShutdownPlatformIsolates() {
   platform_isolates_.clear();
 }
 
-bool PlatformIsolateManager::IsRegistered(Dart_Isolate isolate) {
+bool PlatformIsolateManager::IsRegisteredForTestingOnly(Dart_Isolate isolate) {
   std::scoped_lock lock(lock_);
   return platform_isolates_.find(isolate) != platform_isolates_.end();
 }

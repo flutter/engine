@@ -241,7 +241,7 @@ class PlatformConfigurationClient {
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const = 0;
 
-  virtual PlatformIsolateManager* GetPlatformIsolateManager() = 0;
+  virtual std::shared_ptr<PlatformIsolateManager> GetPlatformIsolateManager() = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();

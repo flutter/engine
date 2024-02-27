@@ -555,7 +555,7 @@ double RuntimeController::GetScaledFontSize(double unscaled_font_size,
 }
 
 void RuntimeController::ShutdownPlatformIsolates() {
-  platform_isolate_manager_.ShutdownPlatformIsolates();
+  platform_isolate_manager_->ShutdownPlatformIsolates();
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,

@@ -205,7 +205,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
       std::shared_ptr<DartIsolate>(new DartIsolate(
           /*settings=*/settings,
           /*is_root_isolate=*/true,
-          /*is_platform_isolate=*/false,
           /*context=*/context,
           /*is_spawning_in_group=*/!!spawning_isolate)));
 
@@ -288,8 +287,10 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
   FML_DCHECK(platform_config != nullptr);
-  PlatformIsolateManager* platform_isolate_manager =
+  std::shared_ptr<PlatformIsolateManager> platform_isolate_manager =
       platform_config->client()->GetPlatformIsolateManager();
+  std::weak_ptr<PlatformIsolateManager> weak_platform_isolate_manager =
+      platform_isolate_manager;
   if (platform_isolate_manager->IsShutdown()) {
     // Don't set the error string. We want to silently ignore this error,
     // because the engine is shutting down.
@@ -326,11 +327,15 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   // schedule the add function on the platform task runner.
   TaskObserverAdd old_task_observer_add = settings.task_observer_add;
   settings.task_observer_add = [old_task_observer_add, platform_task_runner,
-                                platform_isolate_manager](
+                                weak_platform_isolate_manager](
                                    intptr_t key, const fml::closure& callback) {
     platform_task_runner->PostTask([old_task_observer_add,
-                                    platform_isolate_manager, key, callback]() {
-      if (platform_isolate_manager->IsShutdown()) {
+                                    weak_platform_isolate_manager, key,
+                                    callback]() {
+      std::shared_ptr<PlatformIsolateManager> platform_isolate_manager =
+          weak_platform_isolate_manager.lock();
+      if (platform_isolate_manager == nullptr ||
+          platform_isolate_manager->IsShutdown()) {
         // Shutdown happened in between this task being posted, and it running.
         // platform_isolate has already been shut down. Do nothing.
         FML_LOG(INFO) << "Shutdown before platform isolate task observer added";
@@ -345,11 +350,8 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   context.advisory_script_entrypoint =
       isolate_group_data->GetAdvisoryScriptEntrypoint();
   auto isolate_data = std::make_unique<std::shared_ptr<DartIsolate>>(
-      std::shared_ptr<DartIsolate>(new DartIsolate(settings,  // settings
-                                                   false,     // is_root_isolate
-                                                   true,  // is_platform_isolate
-                                                   context)));  // context
-  (*isolate_data)->platform_isolate_manager_ = platform_isolate_manager;
+      std::shared_ptr<DartIsolate>(
+          new DartIsolate(settings, context, platform_isolate_manager)));
 
   IsolateMaker isolate_maker =
       [parent_isolate](
@@ -395,8 +397,11 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
   Dart_ExitScope();
 
   platform_task_runner->PostTask([entry_point_handle, platform_isolate,
-                                  platform_isolate_manager]() {
-    if (platform_isolate_manager->IsShutdown()) {
+                                  weak_platform_isolate_manager]() {
+    std::shared_ptr<PlatformIsolateManager> platform_isolate_manager =
+        weak_platform_isolate_manager.lock();
+    if (platform_isolate_manager == nullptr ||
+        platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
       // platform_isolate has already been shut down. Do nothing.
       FML_LOG(INFO) << "Shutdown before platform isolate entry point";
@@ -419,11 +424,6 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
 
     tonic::DartInvokeVoid(entry_point);
 
-    if (Dart_CurrentIsolate() == nullptr) {
-      // The platform isolate entry point caused the isolate to shut down.
-      return;
-    }
-
     Dart_ExitScope();
     Dart_ExitIsolate();  // Exit platform_isolate.
   });
@@ -433,7 +433,6 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
 
 DartIsolate::DartIsolate(const Settings& settings,
                          bool is_root_isolate,
-                         bool is_platform_isolate,
                          const UIDartState::Context& context,
                          bool is_spawning_in_group)
     : UIDartState(settings.task_observer_add,
@@ -443,13 +442,32 @@ DartIsolate::DartIsolate(const Settings& settings,
                   settings.log_message_callback,
                   DartVMRef::GetIsolateNameServer(),
                   is_root_isolate,
-                  context,
-                  [this](Dart_Handle result) { OnMessageEpilogue(result); }),
+                  context),
       may_insecurely_connect_to_all_domains_(
           settings.may_insecurely_connect_to_all_domains),
-      is_platform_isolate_(is_platform_isolate),
+      is_platform_isolate_(false),
       is_spawning_in_group_(is_spawning_in_group),
       domain_network_policy_(settings.domain_network_policy) {
+  phase_ = Phase::Uninitialized;
+}
+
+DartIsolate::DartIsolate(const Settings& settings,
+                         const UIDartState::Context& context,
+                         std::shared_ptr<PlatformIsolateManager> platform_isolate_manager)
+    : UIDartState(settings.task_observer_add,
+                  settings.task_observer_remove,
+                  settings.log_tag,
+                  settings.unhandled_exception_callback,
+                  settings.log_message_callback,
+                  DartVMRef::GetIsolateNameServer(),
+                  false,  // is_root_isolate
+                  context),
+      may_insecurely_connect_to_all_domains_(
+          settings.may_insecurely_connect_to_all_domains),
+      is_platform_isolate_(true),
+      is_spawning_in_group_(false),
+      domain_network_policy_(settings.domain_network_policy),
+      platform_isolate_manager_(std::move(platform_isolate_manager)) {
   phase_ = Phase::Uninitialized;
 }
 
@@ -555,10 +573,7 @@ void DartIsolate::SetMessageHandlingTaskRunner(
 
   message_handling_task_runner_ = runner;
 
-  message_handler().Initialize([this, runner](std::function<void()> task) {
-    if (is_platform_isolate_) {
-      ++platform_isolate_pending_messages_;
-    }
+  message_handler().Initialize([runner](std::function<void()> task) {
 #ifdef OS_FUCHSIA
     runner->PostTask([task = std::move(task)]() {
       TRACE_EVENT0("flutter", "DartIsolate::HandleMessage");
@@ -1073,7 +1088,6 @@ Dart_Isolate DartIsolate::DartIsolateGroupCreateCallback(
       std::shared_ptr<DartIsolate>(
           new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
                           false,       // is_root_isolate
-                          false,       // is_platform_isolate
                           context)));  // context
 
   Dart_Isolate vm_isolate = CreateDartIsolateGroup(
@@ -1127,7 +1141,6 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
       std::shared_ptr<DartIsolate>(
           new DartIsolate((*isolate_group_data)->GetSettings(),  // settings
                           false,       // is_root_isolate
-                          false,       // is_platform_isolate
                           context)));  // context
 
   // root isolate should have been created via CreateRootIsolate
@@ -1280,19 +1293,6 @@ void DartIsolate::OnShutdownCallback() {
       GetIsolateGroupData().GetIsolateShutdownCallback();
   if (isolate_shutdown_callback) {
     isolate_shutdown_callback();
-  }
-}
-
-void DartIsolate::OnMessageEpilogue(Dart_Handle result) {
-  if (is_platform_isolate_ && Dart_CurrentIsolate() != nullptr) {
-    FML_DCHECK(Dart_CurrentIsolate() == isolate());
-    FML_DCHECK(platform_isolate_pending_messages_ > 0);
-    --platform_isolate_pending_messages_;
-    if (platform_isolate_pending_messages_ == 0 && !Dart_HasLivePorts()) {
-      // The VM will invoke the OnShutdownCallback, which will deregister the
-      // isolate from the platform isolate manager.
-      Dart_ShutdownIsolate();
-    }
   }
 }
 
