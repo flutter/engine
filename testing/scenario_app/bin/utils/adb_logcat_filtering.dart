@@ -77,23 +77,23 @@ extension type const AdbLogLine._(Match _match) {
   }
 
   @visibleForTesting
-  static const Set<String> kKnownNoiseTags = <String>{
+  static const Set<String> knownNoiseTags = <String>{
     'MonitoringInstr',
     'ResourceExtractor',
-    'THREAD_STATE',
     'ziparchive',
   };
 
   @visibleForTesting
-  static const Set<String> kKnownUsefulGeneralTags = <String>{
+  static const Set<String> knownUsefulTags = <String>{
     'utter.scenario',
     'utter.scenarios',
     'TestRunner',
   };
 
   @visibleForTesting
-  static const Set<String> kKnownUsefulErrorTags = <String>{
+  static const Set<String> knownUsefulErrorTags = <String>{
     'androidemu',
+    'THREAD_STATE',
   };
 
   /// Returns `true` if the log line is verbose.
@@ -109,15 +109,15 @@ extension type const AdbLogLine._(Match _match) {
       return false;
     }
 
-    if (kKnownNoiseTags.contains(name)) {
+    if (knownNoiseTags.contains(name)) {
       return false;
     }
 
-    if (kKnownUsefulGeneralTags.contains(name)) {
+    if (knownUsefulTags.contains(name)) {
       return true;
     }
 
-    if (severity == 'E' && kKnownUsefulErrorTags.contains(name)) {
+    if (severity == 'E' && knownUsefulErrorTags.contains(name)) {
       return true;
     }
 

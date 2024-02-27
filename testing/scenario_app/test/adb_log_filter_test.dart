@@ -32,7 +32,7 @@ void main() {
   test('should never retain debug logs', () {
     final FakeAdbLogcat logcat = FakeAdbLogcat();
     final FakeAdbProcess process = logcat.withProcess();
-    final String tag = AdbLogLine.kKnownNoiseTags.first;
+    final String tag = AdbLogLine.knownNoiseTags.first;
     process.debug(tag, 'A debug message');
 
     final Iterable<String> filtered = filter(logcat.drain());
@@ -42,7 +42,7 @@ void main() {
   test('should never retain logs from known "noise" tags', () {
     final FakeAdbLogcat logcat = FakeAdbLogcat();
     final FakeAdbProcess process = logcat.withProcess();
-    final String tag = AdbLogLine.kKnownNoiseTags.first;
+    final String tag = AdbLogLine.knownNoiseTags.first;
     process.info(tag, 'Flutter flutter flutter');
 
     final Iterable<String> filtered = filter(logcat.drain());
@@ -52,7 +52,7 @@ void main() {
   test('should always retain logs from known "useful" tags', () {
     final FakeAdbLogcat logcat = FakeAdbLogcat();
     final FakeAdbProcess process = logcat.withProcess();
-    final String tag = AdbLogLine.kKnownUsefulGeneralTags.first;
+    final String tag = AdbLogLine.knownUsefulTags.first;
     process.info(tag, 'A useful message');
 
     final Iterable<String> filtered = filter(logcat.drain());
@@ -83,7 +83,7 @@ void main() {
   test('should retain E-level flags from known "useful" error tags', () {
     final FakeAdbLogcat logcat = FakeAdbLogcat();
     final FakeAdbProcess process = logcat.withProcess();
-    final String tag = AdbLogLine.kKnownUsefulErrorTags.first;
+    final String tag = AdbLogLine.knownUsefulErrorTags.first;
     process.error(tag, 'An error message');
     process.info(tag, 'An info message');
 
