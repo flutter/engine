@@ -451,9 +451,10 @@ DartIsolate::DartIsolate(const Settings& settings,
   phase_ = Phase::Uninitialized;
 }
 
-DartIsolate::DartIsolate(const Settings& settings,
-                         const UIDartState::Context& context,
-                         std::shared_ptr<PlatformIsolateManager> platform_isolate_manager)
+DartIsolate::DartIsolate(
+    const Settings& settings,
+    onst UIDartState::Context& context,
+    std::shared_ptr<PlatformIsolateManager> platform_isolate_manager)
     : UIDartState(settings.task_observer_add,
                   settings.task_observer_remove,
                   settings.log_tag,

@@ -772,7 +772,8 @@ TEST_F(DartIsolateTest, PlatformIsolateCreationAndShutdown) {
     ASSERT_TRUE(isolate);
     auto root_isolate = isolate->get();
     ASSERT_EQ(root_isolate->GetPhase(), DartIsolate::Phase::Running);
-    EXPECT_FALSE(client.mgr->IsRegisteredForTestingOnly(root_isolate->isolate()));
+    EXPECT_FALSE(
+        client.mgr->IsRegisteredForTestingOnly(root_isolate->isolate()));
 
     // Post a task to the platform_thread that just waits, to delay execution of
     // the platform isolate until we're ready.
