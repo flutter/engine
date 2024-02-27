@@ -80,7 +80,7 @@ void main(List<String> args) async {
         ndkStack: options.ndkStack,
       );
       onSigint.cancel();
-      exitCode = 0;
+      exit(0);
     },
     (Object error, StackTrace stackTrace) {
       onSigint.cancel();
