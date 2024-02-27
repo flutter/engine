@@ -604,9 +604,12 @@ TEST_P(AiksTest, GaussianBlurStyleInner) {
                       .Close()
                       .TakePath(),
                   paint);
+
+  // Draw another thing to make sure the clip area is reset.
   Paint red;
   red.color = Color::Red();
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

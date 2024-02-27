@@ -231,7 +231,11 @@ std::shared_ptr<Geometry> GetGeometry(
           arg->Visit(&extractor);
           result = extractor.geometry_;
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture>>) {
+          // TODO (https://github.com/flutter/flutter/issues/144266): I think
+          // gaussian blurs have to work first for this to happen.
         } else if constexpr (std::is_same_v<T, Rect>) {
+          // Does this ever happen?
+          FML_DCHECK(false) << "unimplemented";
         } else {
           static_assert(always_false_v<T>, "non-exhaustive visitor!");
         }
