@@ -249,41 +249,48 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                       const std::shared_ptr<FilterInput>& input,
                       const Snapshot& input_snapshot,
                       Entity blur_entity) {
+  if (blur_style == FilterContents::BlurStyle::kNormal) {
+    return blur_entity;
+  }
+  Entity::ClipOperation clip_operation;
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
-      return blur_entity;
-    case FilterContents::BlurStyle::kInner: {
-      std::shared_ptr<Geometry> geometry = GetGeometry(input);
-      auto shared_blur_entity =
-          std::make_shared<Entity>(std::move(blur_entity));
-      auto clipper = std::make_unique<ClipContents>();
-      clipper->SetClipOperation(Entity::ClipOperation::kIntersect);
-      clipper->SetGeometry(geometry);
-      auto restore = std::make_unique<ClipRestoreContents>();
-      Entity result;
-      result.SetTransform(entity.GetTransform());
-      result.SetContents(Contents::MakeAnonymous(
-          fml::MakeCopyable(
-              [shared_blur_entity, clipper = std::move(clipper),
-               restore = std::move(restore)](const ContentContext& renderer,
-                                             const Entity& entity,
-                                             RenderPass& pass) mutable {
-                bool result = true;
-                result = clipper->Render(renderer, entity, pass) && result;
-                result = shared_blur_entity->Render(renderer, pass) && result;
-                result = restore->Render(renderer, entity, pass) && result;
-                return result;
-              }),
-          [shared_blur_entity](const Entity& entity) {
-            return shared_blur_entity->GetCoverage();
-          }));
-      return result;
-    }
+      FML_UNREACHABLE();
+      break;
+    case FilterContents::BlurStyle::kInner:
+      clip_operation = Entity::ClipOperation::kIntersect;
+      break;
     case FilterContents::BlurStyle::kOuter:
+      clip_operation = Entity::ClipOperation::kDifference;
+      break;
     case FilterContents::BlurStyle::kSolid:
       FML_DLOG(ERROR) << "Unimplemented blur style";
       return blur_entity;
   }
+
+  std::shared_ptr<Geometry> geometry = GetGeometry(input);
+  auto shared_blur_entity = std::make_shared<Entity>(std::move(blur_entity));
+  auto clipper = std::make_unique<ClipContents>();
+  clipper->SetClipOperation(clip_operation);
+  clipper->SetGeometry(geometry);
+  auto restore = std::make_unique<ClipRestoreContents>();
+  Entity result;
+  result.SetTransform(entity.GetTransform());
+  result.SetContents(Contents::MakeAnonymous(
+      fml::MakeCopyable([shared_blur_entity, clipper = std::move(clipper),
+                         restore = std::move(restore)](
+                            const ContentContext& renderer,
+                            const Entity& entity, RenderPass& pass) mutable {
+        bool result = true;
+        result = clipper->Render(renderer, entity, pass) && result;
+        result = shared_blur_entity->Render(renderer, pass) && result;
+        result = restore->Render(renderer, entity, pass) && result;
+        return result;
+      }),
+      [shared_blur_entity](const Entity& entity) {
+        return shared_blur_entity->GetCoverage();
+      }));
+  return result;
 }
 }  // namespace
 
