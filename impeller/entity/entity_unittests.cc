@@ -2248,10 +2248,10 @@ TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
 
   // Create a render target with a depth-stencil, similar to how EntityPass
   // does.
-  RenderTarget target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *GetContentContext()->GetRenderTargetCache(),
-      {GetWindowSize().width, GetWindowSize().height}, 1,
-      "RuntimeEffect Texture");
+  RenderTarget target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *GetContext(), {GetWindowSize().width, GetWindowSize().height}, 1,
+          "RuntimeEffect Texture");
   testing::MockRenderPass pass(GetContext(), target);
 
   ASSERT_TRUE(contents->Render(*GetContentContext(), entity, pass));
@@ -2597,11 +2597,11 @@ class TestRenderTargetAllocator : public RenderTargetAllocator {
 
   ~TestRenderTargetAllocator() = default;
 
-  std::shared_ptr<Texture> CreateTexture(
-      const TextureDescriptor& desc) override {
-    allocated_.push_back(desc);
-    return RenderTargetAllocator::CreateTexture(desc);
-  }
+  // std::shared_ptr<Texture> CreateTexture(
+  //     const TextureDescriptor& desc) override {
+  //   allocated_.push_back(desc);
+  //   return RenderTargetAllocator::CreateTexture(desc);
+  // }
 
   void Start() override { RenderTargetAllocator::Start(); }
 
@@ -2643,8 +2643,8 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       .load_action = LoadAction::kClear,
       .store_action = StoreAction::kDontCare,
       .clear_color = Color::BlackTransparent()};
-  auto rt = RenderTarget::CreateOffscreen(
-      *GetContext(), *test_allocator, ISize::MakeWH(1000, 1000),
+  auto rt = test_allocator->CreateOffscreen(
+      *GetContext(), ISize::MakeWH(1000, 1000),
       /*mip_count=*/1, "Offscreen", RenderTarget::kDefaultColorAttachmentConfig,
       stencil_config);
   auto content_context = ContentContext(

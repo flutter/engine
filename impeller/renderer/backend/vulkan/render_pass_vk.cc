@@ -129,11 +129,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     TextureVK::Cast(*stencil->texture).SetLayout(barrier);
   }
 
-  // There may exist a previous recycled render pass that we can continue using.
-  // This is probably compatible with the render pass we are about to construct,
-  // but I have not conclusively proven this. If there are scenarios that
-  // produce validation warnings, we could use them to determine if we need
-  // additional checks at this point to determine reusability.
   if (recycled_renderpass != nullptr) {
     return recycled_renderpass;
   }
