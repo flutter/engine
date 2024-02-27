@@ -386,9 +386,7 @@ Future<void> _run({
         final _ImpellerBackend expectedImpellerBackend = impellerBackend ?? _ImpellerBackend.vulkan;
         if (actualImpellerBackend != expectedImpellerBackend) {
           panic(<String>[
-            '--enable-impeller was specified and expected to find '
-            '"${expectedImpellerBackend.name}", which did not match '
-            '"${actualImpellerBackend?.name ?? '<impeller disabled>'}".',
+            '--enable-impeller was specified and expected to find "${expectedImpellerBackend.name}", which did not match "${actualImpellerBackend?.name ?? '<impeller disabled>'}".',
           ]);
         }
       });
