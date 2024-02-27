@@ -157,6 +157,7 @@ Future<void> _run({
   late final ServerSocket server;
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   final List<Socket> pendingConnections = <Socket>[];
+  int comparisonsFailed = 0;
   await step('Starting server...', () async {
     server = await ServerSocket.bind(InternetAddress.anyIPv4, _tcpPort);
     if (verbose) {
@@ -186,8 +187,9 @@ Future<void> _run({
         if (isSkiaGoldClientAvailable) {
           final Future<void> comparison = skiaGoldClient!
               .addImg(fileName, goldenFile, screenshotSize: screenshot.pixelCount)
-              .catchError((dynamic err) {
-            panic(<String>['skia gold comparison failed: $err']);
+              .catchError((Object error) {
+            logWarning('skia gold comparison failed: $error');
+            comparisonsFailed++;
           });
           pendingComparisons.add(comparison);
         }
@@ -199,6 +201,7 @@ Future<void> _run({
 
   late Process logcatProcess;
   late Future<int> logcatProcessExitCode;
+  _ImpellerBackend? actualImpellerBackend;
 
   final IOSink logcat = File(logcatPath).openWrite();
   try {
@@ -221,6 +224,17 @@ Future<void> _run({
       logcatOutput.listen((String line) {
         // Always write to the full log.
         logcat.writeln(line);
+        if (enableImpeller && actualImpellerBackend == null && line.contains('Using the Impeller rendering backend')) {
+          if (line.contains('OpenGLES')) {
+            actualImpellerBackend = _ImpellerBackend.opengles;
+          } else if (line.contains('Vulkan')) {
+            actualImpellerBackend = _ImpellerBackend.vulkan;
+          } else {
+            panic(<String>[
+              'Impeller was enabled, but $line did not contain "OpenGLES" or "Vulkan".',
+            ]);
+          }
+        }
 
         // Conditionally parse and write to stderr.
         final AdbLogLine? adbLogLine = AdbLogLine.tryParse(line);
@@ -325,11 +339,13 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-        if (smokeTestFullPath != null) '-e class $smokeTestFullPath',
-        'dev.flutter.scenarios.test/dev.flutter.TestRunner',
-        if (enableImpeller) '-e enable-impeller',
+        if (smokeTestFullPath != null)
+          '-e class $smokeTestFullPath',
+        if (enableImpeller)
+          '-e enable-impeller true',
         if (impellerBackend != null)
           '-e impeller-backend ${impellerBackend.name}',
+        'dev.flutter.scenarios.test/dev.flutter.TestRunner',
       ]);
       if (exitCode != 0) {
         panic(<String>['instrumented tests failed to run']);
@@ -340,6 +356,8 @@ Future<void> _run({
       if (out.toString().contains('FAILURES!!!')) {
         stdout.write(out);
         panic(<String>['1 or more tests failed']);
+      } else if (comparisonsFailed > 0) {
+        panic(<String>['$comparisonsFailed Skia Gold comparisons failed']);
       }
     });
   } finally {
@@ -366,6 +384,17 @@ Future<void> _run({
       await logcat.close();
       log('wrote logcat to $logcatPath');
     });
+
+    if (enableImpeller) {
+      await step('Validating Impeller...', () async {
+        final _ImpellerBackend expectedImpellerBackend = impellerBackend ?? _ImpellerBackend.vulkan;
+        if (actualImpellerBackend != expectedImpellerBackend) {
+          panic(<String>[
+            '--enable-impeller was specified and expected to find "${expectedImpellerBackend.name}", which did not match "${actualImpellerBackend?.name ?? '<impeller disabled>'}".',
+          ]);
+        }
+      });
+    }
 
     await step('Symbolize stack traces', () async {
       final ProcessResult result = await pm.run(
