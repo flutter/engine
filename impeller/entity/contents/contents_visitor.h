@@ -17,6 +17,7 @@ class CheckerboardContents;
 class ClipContents;
 class ClipRestoreContents;
 class ColorMatrixFilterContents;
+class ColorSourceContentsVisitor;
 class ConicalGradientContents;
 class DirectionalMorphologyFilterContents;
 class FramebufferBlendContents;
@@ -62,7 +63,6 @@ class ContentsVisitor {
   virtual void Visit(MatrixFilterContents* contents) = 0;
   virtual void Visit(RadialGradientContents* contents) = 0;
   virtual void Visit(RuntimeEffectContents* contents) = 0;
-  virtual void Visit(SceneContents* contents) = 0;
   virtual void Visit(SolidColorContents* contents) = 0;
   virtual void Visit(SolidRRectBlurContents* contents) = 0;
   virtual void Visit(SrgbToLinearFilterContents* contents) = 0;

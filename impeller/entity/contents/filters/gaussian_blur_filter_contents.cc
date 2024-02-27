@@ -8,6 +8,8 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/color_source_contents.h"
+#include "impeller/entity/contents/typed_contents_visitor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
@@ -206,6 +208,14 @@ int ScaleBlurRadius(Scalar radius, Scalar scalar) {
   return static_cast<int>(std::round(radius * scalar));
 }
 
+class GeometryExtractor : public TypedContentsVisitor<ColorSourceContents> {
+ public:
+  void TypedVisit(ColorSourceContents* contents) override {
+    geometry_ = contents->GetGeometry();
+  }
+  std::shared_ptr<Geometry> geometry_;
+};
+
 std::shared_ptr<Geometry> GetGeometry(
     const std::shared_ptr<FilterInput>& input) {
   std::visit(
@@ -213,6 +223,8 @@ std::shared_ptr<Geometry> GetGeometry(
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, std::shared_ptr<FilterContents>>) {
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Contents>>) {
+          GeometryExtractor extractor;
+          arg->Visit(&extractor);
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture>>) {
         } else if constexpr (std::is_same_v<T, Rect>) {
         } else {

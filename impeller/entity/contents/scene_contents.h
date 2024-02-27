@@ -35,7 +35,9 @@ class SceneContents final : public ColorSourceContents {
               RenderPass& pass) const override;
 
   // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+  void Visit(ContentsVisitor* visitor) override {
+    FML_CHECK(false) << "unimplemented";
+  }
 
  private:
   Matrix camera_transform_;
