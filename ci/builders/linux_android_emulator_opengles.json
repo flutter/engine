@@ -34,8 +34,10 @@
             },
             "tests": [
                 {
-                    "language": "bash",
+                    "language": "dart",
                     "name": "Android Scenario App Integration Tests (Impeller/OpenGLES)",
+                    "test_timeout_secs": 900,
+                    "max_attempts": 2,
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
@@ -49,9 +51,9 @@
                     "contexts": [
                         "android_virtual_device"
                     ],
-                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
+                    "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
                     "parameters": [
-                        "android_emulator_opengles_debug_x64",
+                        "--out-dir=../out/android_emulator_opengles_debug_x64",
                         "--enable-impeller",
                         "--impeller-backend=opengles"
                     ]
