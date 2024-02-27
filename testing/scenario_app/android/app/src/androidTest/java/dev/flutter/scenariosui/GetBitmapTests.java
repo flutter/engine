@@ -25,11 +25,9 @@ public class GetBitmapTests {
       new ActivityTestRule<>(
           GetBitmapActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
 
-  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
-
   @Test
   public void getBitmap() throws Exception {
-    Intent intent = intentRule.getIntent();
+    Intent intent = new Intent(Intent.ACTION_MAIN);
     intent.putExtra("scenario_name", "get_bitmap");
     GetBitmapActivity activity = activityRule.launchActivity(intent);
     Bitmap bitmap = activity.getBitmap();

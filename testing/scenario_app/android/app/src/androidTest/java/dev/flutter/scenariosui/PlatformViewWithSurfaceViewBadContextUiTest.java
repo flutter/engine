@@ -19,7 +19,6 @@ import org.junit.runner.RunWith;
 @LargeTest
 public class PlatformViewWithSurfaceViewBadContextUiTest {
   Intent intent;
-  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
 
   @Rule @NonNull
   public ActivityTestRule<PlatformViewsActivity> activityRule =
@@ -32,7 +31,7 @@ public class PlatformViewWithSurfaceViewBadContextUiTest {
 
   @Before
   public void setUp() {
-    intent = intentRule.getIntent();
+    intent = new Intent(Intent.ACTION_MAIN);
     // Render a texture.
     intent.putExtra("use_android_view", false);
     intent.putExtra("view_type", PlatformViewsActivity.SURFACE_VIEW_BAD_CONTEXT_PV);

@@ -19,7 +19,6 @@ import org.junit.runner.RunWith;
 @LargeTest
 public class PlatformViewWithSurfaceViewHybridFallbackUiTest {
   Intent intent;
-  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
 
   @Rule @NonNull
   public ActivityTestRule<PlatformViewsActivity> activityRule =
@@ -32,7 +31,7 @@ public class PlatformViewWithSurfaceViewHybridFallbackUiTest {
 
   @Before
   public void setUp() {
-    intent = intentRule.getIntent();
+    intent = new Intent(Intent.ACTION_MAIN);
     // Request TLHC with fallback to HC.
     intent.putExtra("use_android_view", false);
     intent.putExtra("expect_android_view_fallback", true);

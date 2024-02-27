@@ -33,11 +33,9 @@ public class ExternalTextureTests {
           /*initialTouchMode=*/ false,
           /*launchActivity=*/ false);
 
-  @Rule @NonNull public ArgumentAwareIntent intentRule = new ArgumentAwareIntent();
-
   @Before
   public void setUp() {
-    intent = intentRule.getIntent();
+    intent = new Intent(Intent.ACTION_MAIN);
   }
 
   @Test
