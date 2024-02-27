@@ -30,6 +30,8 @@
 /// See also: <https://developer.android.com/tools/logcat>.
 library;
 
+import 'package:meta/meta.dart';
+
 import 'logs.dart';
 
 /// Represents a line of `adb logcat` output parsed into a structured form.
@@ -74,6 +76,21 @@ extension type const AdbLogLine._(Match _match) {
     return null;
   }
 
+  @visibleForTesting
+  static const Set<String> kKnownNoiseTags = <String>{
+    'MonitoringInstr',
+    'ResourceExtractor',
+    'THREAD_STATE',
+    'ziparchive',
+  };
+
+  @visibleForTesting
+  static const Set<String> kKnownUsefulTags = <String>{
+    'utter.scenario',
+    'utter.scenarios',
+    'TestRunner',
+  };
+
   /// Returns `true` if the log line is verbose.
   bool isVerbose({String? filterProcessId}) => !_isRelevant(filterProcessId: filterProcessId);
   bool _isRelevant({String? filterProcessId}) {
@@ -87,32 +104,22 @@ extension type const AdbLogLine._(Match _match) {
       return false;
     }
 
-    // These are "known" noise tags.
-    if (const <String>{
-      'MonitoringInstr',
-      'ResourceExtractor',
-      'THREAD_STATE',
-      'ziparchive',
-    }.contains(name)) {
+    if (kKnownNoiseTags.contains(name)) {
       return false;
     }
 
-    // These are "known" tags useful for debugging.
-    if (const <String>{
-      'utter.scenario',
-      'utter.scenarios',
-      'TestRunner',
-    }.contains(name)) {
+    if (kKnownUsefulTags.contains(name)) {
       return true;
     }
 
     // If a process ID is specified, exclude logs _not_ from that process.
-    if (filterProcessId != null && process != filterProcessId) {
-      return false;
+    if (filterProcessId == null) {
+      // YOLO, let's keep it anyway.
+      return name.toLowerCase().contains('flutter') ||
+          message.toLowerCase().contains('flutter');
+    } else {
+      return process == filterProcessId;
     }
-
-    // And... whatever, include anything with the word "flutter".
-    return name.toLowerCase().contains('flutter') || message.toLowerCase().contains('flutter');
   }
 
   /// Logs the line to the console.
