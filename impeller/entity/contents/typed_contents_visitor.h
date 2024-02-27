@@ -103,4 +103,4 @@ class TypedContentsVisitor : public ContentsVisitor {
 };
 
 }  // namespace impeller
-#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_VISITOR_H_
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_TYPED_CONTENTS_VISITOR_H_
