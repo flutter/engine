@@ -57,6 +57,9 @@ class FilterContentsFilterInput final : public FilterInput {
   // |FilterInput|
   virtual void SetRenderingMode(Entity::RenderingMode rendering_mode) override;
 
+  // |FilterInput|
+  void Visit(FilterInputVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   explicit FilterContentsFilterInput(std::shared_ptr<FilterContents> filter);
 

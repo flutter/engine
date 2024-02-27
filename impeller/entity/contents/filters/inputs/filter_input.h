@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/filters/inputs/filter_input_visitor.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/rect.h"
 
@@ -91,6 +92,8 @@ class FilterInput {
 
   /// @brief  Turns on subpass mode for filter inputs.
   virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
+
+  virtual void Visit(FilterInputVisitor* visitor) = 0;
 };
 
 }  // namespace impeller

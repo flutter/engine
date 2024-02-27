@@ -33,6 +33,9 @@ class PlaceholderFilterInput final : public FilterInput {
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
       Scalar scale) override;
 
+  // |FilterInput|
+  void Visit(FilterInputVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   Rect coverage_rect_;
 

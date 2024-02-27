@@ -9,6 +9,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/filters/inputs/filter_input_visitor.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/command.h"
@@ -203,13 +204,32 @@ int ScaleBlurRadius(Scalar radius, Scalar scalar) {
   return static_cast<int>(std::round(radius * scalar));
 }
 
+class GeometryExtractor : public FilterInputVisitor {
+ public:
+  void Visit(ContentsFilterInput* filter_input) {}
+  void Visit(FilterContentsFilterInput* filter_input) {}
+  void Visit(PlaceholderFilterInput* filter_input) {}
+  void Visit(TextureFilterInput* filter_input) {}
+  std::shared_ptr<Geometry> results_;
+};
+
+std::shared_ptr<Geometry> GetGeometry(
+    std::shared_ptr<FilterInput> filter_input) {
+  GeometryExtractor extractor;
+  filter_input->Visit(&extractor);
+  return extractor.results_;
+}
+
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
+                      const std::shared_ptr<FilterInput>& input,
                       Snapshot input_snapshot,
                       Entity blur_entity) {
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
       return blur_entity;
     case FilterContents::BlurStyle::kInner: {
+      std::shared_ptr<Geometry> geometry = GetGeometry(input);
+
       auto shared_blur_entity =
           std::make_shared<Entity>(std::move(blur_entity));
       auto clipper = std::make_unique<ClipContents>();
@@ -496,7 +516,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  return ApplyBlurStyle(blur_style_, std::move(input_snapshot.value()),
+  return ApplyBlurStyle(blur_style_, inputs[0],
+                        std::move(input_snapshot.value()),
                         std::move(blur_output_entity.value()));
 }
 
