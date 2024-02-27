@@ -5,7 +5,7 @@
 name: scenario_app
 publish_to: none
 environment:
-  sdk: '>=3.2.0-0 <4.0.0'
+  sdk: ^3.3.0
 
 # Do not add any dependencies that require more than what is provided in
 # //third_party/dart/pkg, //third_party/dart/third_party/pkg, or
@@ -18,6 +18,7 @@ dependencies:
   args: any
   dir_contents_diff: any
   engine_repo_tools: any
+  meta: any
   path: any
   process: any
   sky_engine: any
