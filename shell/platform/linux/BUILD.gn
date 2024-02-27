@@ -96,6 +96,7 @@ source_set("flutter_linux_sources") {
   configs += [ "//flutter/shell/platform/linux/config:gtk" ]
 
   sources = [
+    "fl_accessible_node.cc",
     "fl_backing_store_provider.cc",
     "fl_basic_message_channel.cc",
     "fl_binary_codec.cc",

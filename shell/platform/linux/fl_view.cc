@@ -8,6 +8,7 @@
 
 #include <cstring>
 
+#include "flutter/shell/platform/linux/fl_accessible_node.h"
 #include "flutter/shell/platform/linux/fl_backing_store_provider.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event.h"
@@ -51,6 +52,8 @@ struct _FlView {
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
 
+  GHashTable* accessible_nodes_by_id;
+
   GtkIMContext* im_context;
   GtkGesture* click_gesture;
   GtkEventController* motion_controller;
@@ -63,6 +66,8 @@ struct _FlView {
 };
 
 enum { kPropFlutterProject = 1, kPropLast };
+
+static void fl_view_accessible_iface_init(GtkAccessibleInterface* iface);
 
 static void fl_view_plugin_registry_iface_init(
     FlPluginRegistryInterface* iface);
@@ -80,14 +85,16 @@ G_DEFINE_TYPE_WITH_CODE(
     FlView,
     fl_view,
     GTK_TYPE_GL_AREA,
-    G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
-                          fl_view_plugin_registry_iface_init)
-        G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
-                              fl_view_keyboard_delegate_iface_init)
-            G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
-                                  fl_view_scrolling_delegate_iface_init)
-                G_IMPLEMENT_INTERFACE(fl_text_input_view_delegate_get_type(),
-                                      fl_view_text_input_delegate_iface_init))
+    G_IMPLEMENT_INTERFACE(GTK_TYPE_ACCESSIBLE, fl_view_accessible_iface_init)
+        G_IMPLEMENT_INTERFACE(fl_plugin_registry_get_type(),
+                              fl_view_plugin_registry_iface_init)
+            G_IMPLEMENT_INTERFACE(fl_keyboard_view_delegate_get_type(),
+                                  fl_view_keyboard_delegate_iface_init)
+                G_IMPLEMENT_INTERFACE(fl_scrolling_view_delegate_get_type(),
+                                      fl_view_scrolling_delegate_iface_init)
+                    G_IMPLEMENT_INTERFACE(
+                        fl_text_input_view_delegate_get_type(),
+                        fl_view_text_input_delegate_iface_init))
 
 #if 0
 // Signal handler for GtkWidget::delete-event
@@ -122,15 +129,72 @@ static void init_scrolling(FlView* self) {
       fl_scrolling_manager_new(FL_SCROLLING_VIEW_DELEGATE(self));
 }
 
-// Called when the engine updates accessibility nodes.
-static void update_semantics_node_cb(FlEngine* engine,
-                                     const FlutterSemanticsNode* node,
-                                     gpointer user_data) {
-  // FlView* self = FL_VIEW(user_data);
+static void add_node(FlView* self, int32_t id, FlAccessibleNode* node) {
+  g_hash_table_insert(self->accessible_nodes_by_id, GINT_TO_POINTER(id),
+                      reinterpret_cast<gpointer>(node));
+}
 
-  // AtkObject* accessible = gtk_widget_get_accessible(GTK_WIDGET(self));
-  // fl_view_accessible_handle_update_semantics(FL_VIEW_ACCESSIBLE(accessible),
-  //                                            update);
+static FlAccessibleNode* lookup_node(FlView* self, int32_t id) {
+  return FL_ACCESSIBLE_NODE(
+      g_hash_table_lookup(self->accessible_nodes_by_id, GINT_TO_POINTER(id)));
+}
+
+// Called when the engine updates accessibility.
+static void update_semantics_cb(FlEngine* engine,
+                                const FlutterSemanticsUpdate2* update,
+                                gpointer user_data) {
+  FlView* self = FL_VIEW(user_data);
+
+  g_printerr("update_semantics_cb\n");
+
+  for (size_t i = 0; i < update->node_count; i++) {
+    FlutterSemanticsNode2* node = update->nodes[i];
+
+    if (lookup_node(self, node->id) != nullptr) {
+      continue;
+    }
+
+    FlAccessibleNode* accessible_node = fl_accessible_node_new(
+        gtk_widget_get_display(GTK_WIDGET(self)), self->engine);
+    fl_accessible_node_set_bounds(
+        accessible_node, node->rect.left + node->transform.transX,
+        node->rect.top + node->transform.transY,
+        node->rect.right - node->rect.left, node->rect.bottom - node->rect.top);
+    add_node(self, node->id, accessible_node);
+  }
+
+  for (size_t i = 0; i < update->node_count; i++) {
+    FlutterSemanticsNode2* node = update->nodes[i];
+    FlAccessibleNode* accessible_node = lookup_node(self, node->id);
+
+    if (node->child_count > 0) {
+      fl_accessible_node_set_first_child(
+          accessible_node,
+          lookup_node(self, node->children_in_traversal_order[0]));
+    }
+    for (size_t j = 0; j < node->child_count; j++) {
+      int32_t child_id = node->children_in_traversal_order[j];
+      FlAccessibleNode* child_accessible_node = lookup_node(self, child_id);
+
+      fl_accessible_node_set_parent(child_accessible_node,
+                                    GTK_ACCESSIBLE(accessible_node));
+      if (j + 1 < node->child_count) {
+        fl_accessible_node_set_sibling(
+            child_accessible_node,
+            lookup_node(self, node->children_in_traversal_order[j + 1]));
+      }
+    }
+  }
+
+  FlAccessibleNode* root_node = lookup_node(self, 0);
+  fl_accessible_node_set_parent(root_node, GTK_ACCESSIBLE(self));
+
+  g_autoptr(GtkATContext) context =
+      gtk_accessible_get_at_context(GTK_ACCESSIBLE(self));
+  g_signal_emit_by_name(context, "state-change", nullptr);
+
+  gtk_accessible_update_property(GTK_ACCESSIBLE(self),
+                                 GTK_ACCESSIBLE_PROPERTY_LABEL, "", -1);
 }
 
 // Invoked by the engine right before the engine is restarted.
@@ -143,6 +207,21 @@ static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
 
   init_keyboard(self);
   init_scrolling(self);
+}
+
+// GtkAccessible::get_first_accessible_child.
+static GtkAccessible* fl_view_accessible_get_first_accessible_child(
+    GtkAccessible* accessible) {
+  FlView* self = FL_VIEW(accessible);
+  FlAccessibleNode* root_node = lookup_node(self, 0);
+  g_printerr("fl_view_accessible_get_first_accessible_child %p\n", root_node);
+  return root_node != nullptr ? GTK_ACCESSIBLE(g_object_ref(root_node))
+                              : nullptr;
+}
+
+static void fl_view_accessible_iface_init(GtkAccessibleInterface* iface) {
+  iface->get_first_accessible_child =
+      fl_view_accessible_get_first_accessible_child;
 }
 
 // Implements FlPluginRegistry::get_registrar_for_plugin.
@@ -508,6 +587,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->keyboard_manager);
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
+  g_clear_pointer(&self->accessible_nodes_by_id, g_hash_table_unref);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -577,6 +657,9 @@ static void fl_view_init(FlView* self) {
   g_signal_connect_swapped(self->key_controller, "event",
                            G_CALLBACK(key_event_cb), self);
   gtk_widget_add_controller(GTK_WIDGET(self), self->key_controller);
+
+  self->accessible_nodes_by_id = g_hash_table_new_full(
+      g_direct_hash, g_direct_equal, nullptr, g_object_unref);
 }
 
 G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
