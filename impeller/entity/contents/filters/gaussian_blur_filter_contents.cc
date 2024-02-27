@@ -223,6 +223,9 @@ std::shared_ptr<Geometry> GetGeometry(
       [&result](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, std::shared_ptr<FilterContents>>) {
+          GeometryExtractor extractor;
+          arg->Visit(&extractor);
+          result = extractor.geometry_;
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Contents>>) {
           GeometryExtractor extractor;
           arg->Visit(&extractor);
@@ -238,6 +241,7 @@ std::shared_ptr<Geometry> GetGeometry(
 }
 
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
+                      const Entity& entity,
                       const std::shared_ptr<FilterInput>& input,
                       Snapshot input_snapshot,
                       Entity blur_entity) {
@@ -249,15 +253,12 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       auto shared_blur_entity =
           std::make_shared<Entity>(std::move(blur_entity));
       auto clipper = std::make_unique<ClipContents>();
-      static int x = 0;
-      clipper->SetGeometry(Geometry::MakeCircle({200, 200}, x));
-      x += 5;
-      if (x > 1024)
-        x = 0;
       clipper->SetClipOperation(Entity::ClipOperation::kIntersect);
+      clipper->SetGeometry(geometry);
       auto restore = std::make_unique<ClipRestoreContents>();
-      Entity entity;
-      entity.SetContents(Contents::MakeAnonymous(
+      Entity result;
+      result.SetTransform(entity.GetTransform());
+      result.SetContents(Contents::MakeAnonymous(
           fml::MakeCopyable(
               [shared_blur_entity, clipper = std::move(clipper),
                restore = std::move(restore)](const ContentContext& renderer,
@@ -272,7 +273,7 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
           [shared_blur_entity](const Entity& entity) {
             return shared_blur_entity->GetCoverage();
           }));
-      return entity;
+      return result;
     }
     case FilterContents::BlurStyle::kOuter:
     case FilterContents::BlurStyle::kSolid:
@@ -532,7 +533,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  return ApplyBlurStyle(blur_style_, inputs[0],
+  return ApplyBlurStyle(blur_style_, entity, inputs[0],
                         std::move(input_snapshot.value()),
                         std::move(blur_output_entity.value()));
 }
