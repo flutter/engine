@@ -46,9 +46,9 @@ class HtmlViewEmbedder {
   /// * The number of clipping elements used last time the view was composited.
   final Map<int, ViewClipChain> _viewClipChains = <int, ViewClipChain>{};
 
-  /// The maximum number of overlays to create. Too many overlays can cause a
-  /// performance burden.
-  static const int maximumOverlays = 7;
+  /// The maximum number of render canvases to create. Too many canvases can
+  /// cause a performance burden.
+  static const int maximumCanvases = 8;
 
   /// Canvases used to draw on top of platform views, keyed by platform view ID.
   final Map<int, DisplayCanvas> _overlays = <int, DisplayCanvas>{};
@@ -357,14 +357,14 @@ class HtmlViewEmbedder {
     sceneHost.append(_svgPathDefs!);
   }
 
-  Future<void> submitFrame(
-      DisplayCanvas baseCanvas, CkPicture basePicture) async {
+  Future<void> submitFrame(CkPicture basePicture) async {
     final List<CkPicture> pictures = <CkPicture>[basePicture];
     for (final CkPictureRecorder recorder in _context.pictureRecorders) {
       pictures.add(recorder.endRecording());
     }
-    final Rendering rendering = createOptimizedRendering(
+    Rendering rendering = createOptimizedRendering(
         pictures, _compositionOrder, _currentCompositionParams);
+    rendering = _modifyRenderingForMaxCanvases(rendering);
     final List<OverlayGroup>? overlayGroups = _updateOverlays(rendering);
     _activeRendering = rendering;
     if (overlayGroups != null) {
@@ -378,12 +378,19 @@ class HtmlViewEmbedder {
     );
 
     final List<RenderingRenderCanvas> renderCanvases = rendering.canvases;
-    await rasterizer.rasterizeToCanvas(baseCanvas, renderCanvases[0].pictures);
+    int renderCanvasIndex = 0;
 
-    // The first render canvas is the base canvas, not an overlay, so skip it
-    // since we just rasterized to it above.
-    int renderCanvasIndex = 1;
     for (final OverlayGroup overlayGroup in _activeOverlayGroups) {
+      if (overlayGroup.isEmpty) {
+        // This is a canvas that comes before any platform views.
+        final DisplayCanvas baseCanvas = rasterizer.displayFactory.baseCanvas;
+        sceneHost.prepend(baseCanvas.hostElement);
+        final List<CkPicture> pictures =
+            renderCanvases[renderCanvasIndex].pictures;
+        renderCanvasIndex++;
+        await rasterizer.rasterizeToCanvas(baseCanvas, pictures);
+        continue;
+      }
       final DisplayCanvas overlay = _overlays[overlayGroup.last]!;
       final List<CkPicture> pictures =
           renderCanvases[renderCanvasIndex].pictures;
@@ -467,6 +474,49 @@ class HtmlViewEmbedder {
     }
   }
 
+  /// Modify the given rendering by removing canvases until the number of
+  /// canvases is less than or equal to the maximum number of canvases.
+  Rendering _modifyRenderingForMaxCanvases(Rendering rendering) {
+    final Rendering result = Rendering();
+    final int numCanvases = rendering.canvases.length;
+    if (numCanvases <= maximumCanvases) {
+      return rendering;
+    }
+    int numCanvasesToDelete = numCanvases - maximumCanvases;
+    final List<CkPicture> picturesForLastCanvas = <CkPicture>[];
+    final List<RenderingEntity> modifiedEntities =
+        List<RenderingEntity>.from(rendering.entities);
+    bool sawLastCanvas = false;
+    for (int i = rendering.entities.length - 1; i > 0; i--) {
+      final RenderingEntity entity = modifiedEntities[i];
+      if (entity is RenderingRenderCanvas) {
+        if (!sawLastCanvas) {
+          sawLastCanvas = true;
+          picturesForLastCanvas.insertAll(0, entity.pictures);
+          continue;
+        }
+        modifiedEntities.removeAt(i);
+        picturesForLastCanvas.insertAll(0, entity.pictures);
+        numCanvasesToDelete--;
+        if (numCanvasesToDelete == 0) {
+          break;
+        }
+      }
+    }
+    // Replace the pictures in the last canvas with all the pictures from the
+    // deleted canvases.
+    for (int i = modifiedEntities.length - 1; i > 0; i--) {
+      final RenderingEntity entity = modifiedEntities[i];
+      if (entity is RenderingRenderCanvas) {
+        entity.pictures.clear();
+        entity.pictures.addAll(picturesForLastCanvas);
+      }
+    }
+
+    result.entities.addAll(modifiedEntities);
+    return result;
+  }
+
   // Assigns overlays to the embedded views in the scene.
   //
   // This method attempts to be efficient by taking advantage of the
@@ -495,11 +545,11 @@ class HtmlViewEmbedder {
     // Group platform views from their composition order.
     // Each group contains one visible view, and any number of invisible views
     // before or after that visible view.
-    // TODO(harryterkelsen): Fix case where RenderCanvas isn't the first
-    //   element in the rendering.
     final List<OverlayGroup> overlayGroups = getOverlayGroups(rendering);
-    final List<int> viewsNeedingOverlays =
-        overlayGroups.map((OverlayGroup group) => group.last).toList();
+    final List<int> viewsNeedingOverlays = overlayGroups
+        .where((OverlayGroup group) => !group.isEmpty)
+        .map((OverlayGroup group) => group.last)
+        .toList();
 
     // Everything is going to be explicitly recomposited anyway. Release all
     // the surfaces and assign an overlay to all the surfaces needing one.
@@ -571,15 +621,26 @@ class HtmlViewEmbedder {
     for (final RenderingEntity entity in rendering.entities) {
       /// We are at an overlay, end the current group and start the next group.
       if (entity is RenderingRenderCanvas) {
-        if (!currentGroup.isEmpty) {
-          result.add(currentGroup);
-          currentGroup = OverlayGroup();
-        }
+        result.add(currentGroup);
+        currentGroup = OverlayGroup();
       } else if (entity is RenderingPlatformView) {
         currentGroup.add(entity.viewId);
       }
     }
+    assert(_overlayGroupsAreValid(result));
     return result;
+  }
+
+  bool _overlayGroupsAreValid(List<OverlayGroup> overlayGroups) {
+    // Overlay groups are valid if they are all non-empty except for (possibly)
+    // the first one.
+    for (int i = 0; i < overlayGroups.length; i++) {
+      final OverlayGroup overlayGroup = overlayGroups[i];
+      if (overlayGroup.isEmpty && i != 0) {
+        return false;
+      }
+    }
+    return true;
   }
 
   void _initializeOverlay(int viewId) {
