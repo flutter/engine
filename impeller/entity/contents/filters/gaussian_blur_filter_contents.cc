@@ -537,8 +537,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  return ApplyBlurStyle(blur_style_, entity, inputs[0],
-                        std::move(input_snapshot.value()),
+  return ApplyBlurStyle(blur_style_, entity, inputs[0], input_snapshot.value(),
                         std::move(blur_output_entity.value()));
 }
 
