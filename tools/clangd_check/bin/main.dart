@@ -61,20 +61,26 @@ void main(List<String> args) {
   }
 
   // Run clangd.
-  final io.ProcessResult result = io.Process.runSync(clangd, <String>[
-    '--compile-commands-dir',
-    compileCommandsDir,
-    '--check=$checkFile',
-  ]);
-  io.stdout.write(result.stdout);
-  io.stderr.write(result.stderr);
-  if ((result.stderr as String).contains('Path specified by --compile-commands-dir does not exist')) {
-    io.stdout.writeln('clangd_check failed: --compile-commands-dir does not exist');
+  try {
+    final io.ProcessResult result = io.Process.runSync(clangd, <String>[
+      '--compile-commands-dir',
+      compileCommandsDir,
+      '--check=$checkFile',
+    ]);
+    io.stdout.write(result.stdout);
+    io.stderr.write(result.stderr);
+    if ((result.stderr as String).contains('Path specified by --compile-commands-dir does not exist')) {
+      io.stdout.writeln('clangd_check failed: --compile-commands-dir does not exist');
+      io.exitCode = 1;
+    } else if ((result.stderr as String).contains('Failed to resolve path')) {
+      io.stdout.writeln('clangd_check failed: --check file does not exist');
+      io.exitCode = 1;
+    } else {
+      io.exitCode = result.exitCode;
+    }
+  } on io.ProcessException catch (e) {
+    io.stderr.writeln('Failed to run clangd: $e');
+    io.stderr.writeln(const JsonEncoder.withIndent('  ').convert(entry));
     io.exitCode = 1;
-  } else if ((result.stderr as String).contains('Failed to resolve path')) {
-    io.stdout.writeln('clangd_check failed: --check file does not exist');
-    io.exitCode = 1;
-  } else {
-    io.exitCode = result.exitCode;
   }
 }
