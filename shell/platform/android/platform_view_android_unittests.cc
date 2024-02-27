@@ -6,6 +6,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "shell/platform/android/context/android_context.h"
+#include "shell/platform/android/flutter_main.h"
 #include "third_party/googletest/googlemock/include/gmock/gmock-nice-strict.h"
 
 namespace flutter {
@@ -107,7 +108,7 @@ TEST(AndroidPlatformView, SelectsVulkanBasedOnApiLevel) {
   Settings settings;
   settings.enable_software_rendering = false;
   settings.enable_impeller = true;
-  settings.impeller_backend = "vulkan";
+  settings.requested_rendering_backend = "vulkan";
   NiceMock<MockPlatformViewDelegate> mock_delegate;
   EXPECT_CALL(mock_delegate, OnPlatformViewGetSettings)
       .WillRepeatedly(ReturnRef(settings));
@@ -123,10 +124,21 @@ TEST(AndroidPlatformView, SelectsVulkanBasedOnApiLevel) {
   int api_level = android_get_device_api_level();
   EXPECT_GT(api_level, 0);
   if (api_level >= 29) {
-    EXPECT_TRUE(context->RenderingApi() == AndroidRenderingAPI::kVulkan);
+    EXPECT_TRUE(context->RenderingApi() ==
+                AndroidRenderingAPI::kImpellerVulkan);
   } else {
-    EXPECT_TRUE(context->RenderingApi() == AndroidRenderingAPI::kOpenGLES);
+    EXPECT_TRUE(context->RenderingApi() ==
+                AndroidRenderingAPI::kImpellerOpenGLES);
   }
+}
+
+TEST(AndroidPlatformView, SoftwareRenderingNotSupportedWithImpeller) {
+  Settings settings;
+  settings.enable_software_rendering = true;
+  settings.enable_impeller = true;
+
+  ASSERT_DEATH(FlutterMain::SelectedRenderingAPI(settings),
+               "Impeller does not support software rendering");
 }
 
 }  // namespace testing

@@ -27,7 +27,6 @@ class MessageLoopImpl;
 /// \see fml::Wakeable
 class MessageLoop {
  public:
-  FML_EMBEDDER_ONLY
   static MessageLoop& GetCurrent();
 
   void Run();
