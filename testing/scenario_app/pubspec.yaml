@@ -26,7 +26,7 @@ dependencies:
   skia_gold_client: any
 
 dev_dependencies:
-  litetest:
+  litetest: any
 
 dependency_overrides:
   args:

@@ -52,7 +52,7 @@ void main() {
   test('should always retain logs from known "useful" tags', () {
     final FakeAdbLogcat logcat = FakeAdbLogcat();
     final FakeAdbProcess process = logcat.withProcess();
-    final String tag = AdbLogLine.kKnownUsefulTags.first;
+    final String tag = AdbLogLine.kKnownUsefulGeneralTags.first;
     process.info(tag, 'A useful message');
 
     final Iterable<String> filtered = filter(logcat.drain());
@@ -78,5 +78,17 @@ void main() {
     final Iterable<String> filtered = filter(logcat.drain(), filterProcessId: process.processId);
     expect(filtered, hasLength(1));
     expect(filtered.first, contains('SomeTag: A message with flutter'));
+  });
+
+  test('should retain E-level flags from known "useful" error tags', () {
+    final FakeAdbLogcat logcat = FakeAdbLogcat();
+    final FakeAdbProcess process = logcat.withProcess();
+    final String tag = AdbLogLine.kKnownUsefulErrorTags.first;
+    process.error(tag, 'An error message');
+    process.info(tag, 'An info message');
+
+    final Iterable<String> filtered = filter(logcat.drain());
+    expect(filtered, hasLength(1));
+    expect(filtered.first, contains('$tag: An error message'));
   });
 }
