@@ -2,17 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "common/settings.h"
-#include "impeller/base/validation.h"
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/shell/platform/android/flutter_main.h"
-
 #include <android/log.h>
-
 #include <optional>
 #include <vector>
 
+#include "common/settings.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
@@ -29,6 +25,8 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
+#include "flutter/shell/platform/android/flutter_main.h"
+#include "impeller/base/validation.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "txt/platform.h"
 
