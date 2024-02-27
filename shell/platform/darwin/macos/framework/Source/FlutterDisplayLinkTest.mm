@@ -4,10 +4,10 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDisplayLink.h"
 
+#import <AppKit/AppKit.h>
+
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/testing/testing.h"
-
-#import <AppKit/AppKit.h>
 
 @interface TestDisplayLinkDelegate : NSObject <FlutterDisplayLinkDelegate> {
   void (^_block)(CFTimeInterval timestamp, CFTimeInterval targetTimestamp);
