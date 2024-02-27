@@ -74,10 +74,10 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
 
   auto content_context = GetContentContext();
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100},
-      /*mip_count=*/1);
+  auto render_target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *content_context->GetContext(), {100, 100},
+          /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
 
   ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));

@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "flutter/testing/testing.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/entity_playground.h"
@@ -72,6 +73,7 @@ TEST_P(RenderTargetCacheTest, CachesUsedTexturesAcrossFrames) {
 }
 
 TEST_P(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
+  ScopedValidationDisable disable;
   auto allocator = std::make_shared<TestAllocator>();
   auto render_target_cache = RenderTargetCache(allocator);
 
