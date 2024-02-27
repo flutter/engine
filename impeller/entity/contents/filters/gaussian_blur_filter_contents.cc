@@ -28,6 +28,9 @@ namespace {
 // 48 comes from kernel.glsl.
 const int32_t kMaxKernelSize = 48;
 
+template <class>
+inline constexpr bool always_false_v = false;
+
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
   SamplerDescriptor sampler_desc;
@@ -203,13 +206,32 @@ int ScaleBlurRadius(Scalar radius, Scalar scalar) {
   return static_cast<int>(std::round(radius * scalar));
 }
 
+std::shared_ptr<Geometry> GetGeometry(
+    const std::shared_ptr<FilterInput>& input) {
+  std::visit(
+      [](auto&& arg) {
+        using T = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<T, std::shared_ptr<FilterContents>>) {
+        } else if constexpr (std::is_same_v<T, std::shared_ptr<Contents>>) {
+        } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture>>) {
+        } else if constexpr (std::is_same_v<T, Rect>) {
+        } else {
+          static_assert(always_false_v<T>, "non-exhaustive visitor!");
+        }
+      },
+      input->GetInput());
+  return nullptr;
+}
+
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
+                      const std::shared_ptr<FilterInput>& input,
                       Snapshot input_snapshot,
                       Entity blur_entity) {
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
       return blur_entity;
     case FilterContents::BlurStyle::kInner: {
+      std::shared_ptr<Geometry> geometry = GetGeometry(input);
       auto shared_blur_entity =
           std::make_shared<Entity>(std::move(blur_entity));
       auto clipper = std::make_unique<ClipContents>();
@@ -496,7 +518,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  return ApplyBlurStyle(blur_style_, std::move(input_snapshot.value()),
+  return ApplyBlurStyle(blur_style_, inputs[0],
+                        std::move(input_snapshot.value()),
                         std::move(blur_output_entity.value()));
 }
 
