@@ -6,6 +6,8 @@
 
 #include <cmath>
 
+#include "flutter/fml/make_copyable.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
@@ -210,12 +212,23 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
     case FilterContents::BlurStyle::kInner: {
       auto shared_blur_entity =
           std::make_shared<Entity>(std::move(blur_entity));
+      auto clipper = std::make_unique<ClipContents>();
+      static int x = 0;
+      clipper->SetGeometry(Geometry::MakeCircle({200, 200}, x));
+      x += 5;
+      if (x > 1024) x = 0;
+      clipper->SetClipOperation(Entity::ClipOperation::kIntersect);
       Entity entity;
       entity.SetContents(Contents::MakeAnonymous(
-          [shared_blur_entity](const ContentContext& renderer,
-                               const Entity& entity, RenderPass& pass) {
-            return shared_blur_entity->Render(renderer, pass);
-          },
+          fml::MakeCopyable([shared_blur_entity, clipper = std::move(clipper)](
+                                const ContentContext& renderer,
+                                const Entity& entity,
+                                RenderPass& pass) mutable {
+            bool result = true;
+            result = clipper->Render(renderer, entity, pass) && result;
+            result = shared_blur_entity->Render(renderer, pass) && result;
+            return result;
+          }),
           [shared_blur_entity](const Entity& entity) {
             return shared_blur_entity->GetCoverage();
           }));
