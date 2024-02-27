@@ -216,19 +216,23 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       static int x = 0;
       clipper->SetGeometry(Geometry::MakeCircle({200, 200}, x));
       x += 5;
-      if (x > 1024) x = 0;
+      if (x > 1024)
+        x = 0;
       clipper->SetClipOperation(Entity::ClipOperation::kIntersect);
+      auto restore = std::make_unique<ClipRestoreContents>();
       Entity entity;
       entity.SetContents(Contents::MakeAnonymous(
-          fml::MakeCopyable([shared_blur_entity, clipper = std::move(clipper)](
-                                const ContentContext& renderer,
-                                const Entity& entity,
-                                RenderPass& pass) mutable {
-            bool result = true;
-            result = clipper->Render(renderer, entity, pass) && result;
-            result = shared_blur_entity->Render(renderer, pass) && result;
-            return result;
-          }),
+          fml::MakeCopyable(
+              [shared_blur_entity, clipper = std::move(clipper),
+               restore = std::move(restore)](const ContentContext& renderer,
+                                             const Entity& entity,
+                                             RenderPass& pass) mutable {
+                bool result = true;
+                result = clipper->Render(renderer, entity, pass) && result;
+                result = shared_blur_entity->Render(renderer, pass) && result;
+                result = restore->Render(renderer, entity, pass) && result;
+                return result;
+              }),
           [shared_blur_entity](const Entity& entity) {
             return shared_blur_entity->GetCoverage();
           }));
