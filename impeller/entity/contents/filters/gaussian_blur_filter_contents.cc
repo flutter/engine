@@ -31,7 +31,7 @@ namespace {
 const int32_t kMaxKernelSize = 48;
 
 template <class>
-inline constexpr bool always_false_v = false;
+inline constexpr bool kAlwaysFalseV = false;
 
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
@@ -237,7 +237,7 @@ std::shared_ptr<Geometry> GetGeometry(
           // Does this ever happen?
           FML_DCHECK(false) << "unimplemented";
         } else {
-          static_assert(always_false_v<T>, "non-exhaustive visitor!");
+          static_assert(kAlwaysFalseV<T>, "non-exhaustive visitor!");
         }
       },
       input->GetInput());
@@ -247,7 +247,7 @@ std::shared_ptr<Geometry> GetGeometry(
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                       const Entity& entity,
                       const std::shared_ptr<FilterInput>& input,
-                      Snapshot input_snapshot,
+                      const Snapshot& input_snapshot,
                       Entity blur_entity) {
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
