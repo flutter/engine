@@ -35,8 +35,6 @@
 
 namespace flutter {
 
-constexpr int kMinimumAndroidApiLevelForVulkan = 29;
-
 AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
     const std::shared_ptr<AndroidContext>& context,
     bool enable_impeller)

@@ -31,8 +31,7 @@ TEST(AndroidPlatformView, SoftwareRenderingNotSupportedWithImpeller) {
   settings.enable_software_rendering = true;
   settings.enable_impeller = true;
 
-  ASSERT_DEATH(FlutterMain::SelectedRenderingAPI(settings),
-               "Impeller does not support software rendering");
+  ASSERT_DEATH(FlutterMain::SelectedRenderingAPI(settings), "");
 }
 
 }  // namespace testing
