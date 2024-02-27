@@ -3348,11 +3348,9 @@ TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
   picture.ToImage(aiks_context, {100, 100});
 
   size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    // max_mip_count =
-    //     std::max(it->texture->GetTextureDescriptor().mip_count,
-    //     max_mip_count);
+  for (auto it = cache->GetRenderTargetDataBegin();
+       it != cache->GetRenderTargetDataEnd(); ++it) {
+    max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
 }
@@ -3379,11 +3377,9 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
   picture.ToImage(aiks_context, {100, 100});
 
   size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    // max_mip_count =
-    //     std::max(it->texture->GetTextureDescriptor().mip_count,
-    //     max_mip_count);
+  for (auto it = cache->GetRenderTargetDataBegin();
+       it != cache->GetRenderTargetDataEnd(); ++it) {
+    max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
   // The log is FML_DLOG, so only check in debug builds.
@@ -3416,11 +3412,9 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
   picture.ToImage(aiks_context, {1024, 768});
 
   size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    // max_mip_count =
-    //     std::max(it->render_target->GetTextureDescriptor().mip_count,
-    //     max_mip_count);
+  for (auto it = cache->GetRenderTargetDataBegin();
+       it != cache->GetRenderTargetDataEnd(); ++it) {
+    max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
   // The log is FML_DLOG, so only check in debug builds.
@@ -3459,11 +3453,9 @@ TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
   picture.ToImage(aiks_context, {1024, 768});
 
   size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    // max_mip_count =
-    //     std::max(it->texture->GetTextureDescriptor().mip_count,
-    //     max_mip_count);
+  for (auto it = cache->GetRenderTargetDataBegin();
+       it != cache->GetRenderTargetDataEnd(); ++it) {
+    max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
   // The log is FML_DLOG, so only check in debug builds.

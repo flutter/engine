@@ -7,83 +7,83 @@
 #include "flutter/testing/testing.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/entity/entity_playground.h"
 #include "impeller/entity/render_target_cache.h"
+#include "impeller/playground/playground_test.h"
 #include "impeller/renderer/testing/mocks.h"
 
 namespace impeller {
 namespace testing {
 
-// class TestAllocator : public Allocator {
-//  public:
-//   TestAllocator() = default;
+using RenderTargetCacheTest = EntityPlayground;
+INSTANTIATE_PLAYGROUND_SUITE(RenderTargetCacheTest);
 
-//   ~TestAllocator() = default;
+class TestAllocator : public Allocator {
+ public:
+  TestAllocator() = default;
 
-//   ISize GetMaxTextureSizeSupported() const override {
-//     return ISize(1024, 1024);
-//   };
+  ~TestAllocator() = default;
 
-//   std::shared_ptr<DeviceBuffer> OnCreateBuffer(
-//       const DeviceBufferDescriptor& desc) override {
-//     if (should_fail) {
-//       return nullptr;
-//     }
-//     return std::make_shared<MockDeviceBuffer>(desc);
-//   };
+  ISize GetMaxTextureSizeSupported() const override {
+    return ISize(1024, 1024);
+  };
 
-//   virtual std::shared_ptr<Texture> OnCreateTexture(
-//       const TextureDescriptor& desc) override {
-//     if (should_fail) {
-//       return nullptr;
-//     }
-//     return std::make_shared<MockTexture>(desc);
-//   };
+  std::shared_ptr<DeviceBuffer> OnCreateBuffer(
+      const DeviceBufferDescriptor& desc) override {
+    if (should_fail) {
+      return nullptr;
+    }
+    return std::make_shared<MockDeviceBuffer>(desc);
+  };
 
-//   bool should_fail = false;
-// };
+  virtual std::shared_ptr<Texture> OnCreateTexture(
+      const TextureDescriptor& desc) override {
+    if (should_fail) {
+      return nullptr;
+    }
+    return std::make_shared<MockTexture>(desc);
+  };
 
-// TEST(RenderTargetCacheTest, CachesUsedTexturesAcrossFrames) {
-//   auto allocator = std::make_shared<TestAllocator>();
-//   auto render_target_cache = RenderTargetCache(allocator);
-//   auto desc = TextureDescriptor{
-//       .format = PixelFormat::kR8G8B8A8UNormInt,
-//       .size = ISize(100, 100),
-//       .usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)};
+  bool should_fail = false;
+};
 
-//   render_target_cache.Start();
-//   // Create two textures of the same exact size/shape. Both should be marked
-//   // as used this frame, so the cached data set will contain two.
-//   render_target_cache.CreateTexture(desc);
-//   render_target_cache.CreateTexture(desc);
+TEST_P(RenderTargetCacheTest, CachesUsedTexturesAcrossFrames) {
+  auto allocator = std::make_shared<TestAllocator>();
+  auto render_target_cache = RenderTargetCache(allocator);
 
-//   ASSERT_EQ(render_target_cache.CachedTextureCount(), 2u);
+  render_target_cache.Start();
+  // Create two render targets of the same exact size/shape. Both should be
+  // marked as used this frame, so the cached data set will contain two.
+  render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
+  render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
 
-//   render_target_cache.End();
-//   render_target_cache.Start();
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 2u);
 
-//   // Next frame, only create one texture. The set will still contain two,
-//   // but one will be removed at the end of the frame.
-//   render_target_cache.CreateTexture(desc);
-//   ASSERT_EQ(render_target_cache.CachedTextureCount(), 2u);
+  render_target_cache.End();
+  render_target_cache.Start();
 
-//   render_target_cache.End();
-//   ASSERT_EQ(render_target_cache.CachedTextureCount(), 1u);
-// }
+  // Next frame, only create one texture. The set will still contain two,
+  // but one will be removed at the end of the frame.
+  render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 2u);
 
-// TEST(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
-//   auto allocator = std::make_shared<TestAllocator>();
-//   auto render_target_cache = RenderTargetCache(allocator);
-//   auto desc = TextureDescriptor{
-//       .format = PixelFormat::kR8G8B8A8UNormInt,
-//       .size = ISize(100, 100),
-//       .usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)};
+  render_target_cache.End();
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 1u);
+}
 
-//   render_target_cache.Start();
-//   allocator->should_fail = true;
+TEST_P(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
+  auto allocator = std::make_shared<TestAllocator>();
+  auto render_target_cache = RenderTargetCache(allocator);
 
-//   ASSERT_EQ(render_target_cache.CreateTexture(desc), nullptr);
-//   ASSERT_EQ(render_target_cache.CachedTextureCount(), 0u);
-// }
+  render_target_cache.Start();
+  allocator->should_fail = true;
+
+  auto render_target =
+      render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
+
+  EXPECT_FALSE(render_target.IsValid());
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 0u);
+}
 
 }  // namespace testing
 }  // namespace impeller

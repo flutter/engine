@@ -49,12 +49,13 @@ class RenderTargetCache : public RenderTargetAllocator {
   size_t CachedTextureCount() const;
 
  private:
-  struct RenderPassData {
+  struct RenderTargetData {
     bool used_this_frame;
+    RenderTargetConfig config;
     RenderTarget render_target;
   };
 
-  std::vector<RenderPassData> render_pass_data_;
+  std::vector<RenderTargetData> render_target_data_;
 
   RenderTargetCache(const RenderTargetCache&) = delete;
 
@@ -62,13 +63,14 @@ class RenderTargetCache : public RenderTargetAllocator {
 
  public:
   /// Visible for testing.
-  std::vector<RenderPassData>::const_iterator GetTextureDataBegin() const {
-    return render_pass_data_.begin();
+  std::vector<RenderTargetData>::const_iterator GetRenderTargetDataBegin()
+      const {
+    return render_target_data_.begin();
   }
 
   /// Visible for testing.
-  std::vector<RenderPassData>::const_iterator GetTextureDataEnd() const {
-    return render_pass_data_.end();
+  std::vector<RenderTargetData>::const_iterator GetRenderTargetDataEnd() const {
+    return render_target_data_.end();
   }
 };
 

@@ -11,20 +11,20 @@ RenderTargetCache::RenderTargetCache(std::shared_ptr<Allocator> allocator)
     : RenderTargetAllocator(std::move(allocator)) {}
 
 void RenderTargetCache::Start() {
-  for (auto& td : render_pass_data_) {
+  for (auto& td : render_target_data_) {
     td.used_this_frame = false;
   }
 }
 
 void RenderTargetCache::End() {
-  std::vector<RenderPassData> retain;
+  std::vector<RenderTargetData> retain;
 
-  for (const auto& td : render_pass_data_) {
+  for (const auto& td : render_target_data_) {
     if (td.used_this_frame) {
       retain.push_back(td);
     }
   }
-  render_pass_data_.swap(retain);
+  render_target_data_.swap(retain);
 }
 
 RenderTarget RenderTargetCache::CreateOffscreen(
@@ -40,8 +40,8 @@ RenderTarget RenderTargetCache::CreateOffscreen(
       .has_msaa = false,
       .has_depth_stencil = stencil_attachment_config.has_value(),
   };
-  for (auto& render_target_data : render_pass_data_) {
-    const auto other_config = render_target_data.render_target.ToConfig();
+  for (auto& render_target_data : render_target_data_) {
+    const auto other_config = render_target_data.config;
     if (!render_target_data.used_this_frame && other_config == config) {
       render_target_data.used_this_frame = true;
       return render_target_data.render_target;
@@ -53,8 +53,10 @@ RenderTarget RenderTargetCache::CreateOffscreen(
   if (!created_target.IsValid()) {
     return created_target;
   }
-  render_pass_data_.push_back(
-      RenderPassData{.used_this_frame = true, .render_target = created_target});
+  render_target_data_.push_back(
+      RenderTargetData{.used_this_frame = true,
+                       .config = config,
+                       .render_target = created_target});
   return created_target;
 }
 
@@ -71,8 +73,8 @@ RenderTarget RenderTargetCache::CreateOffscreenMSAA(
       .has_msaa = true,
       .has_depth_stencil = stencil_attachment_config.has_value(),
   };
-  for (auto& render_target_data : render_pass_data_) {
-    const auto other_config = render_target_data.render_target.ToConfig();
+  for (auto& render_target_data : render_target_data_) {
+    const auto other_config = render_target_data.config;
     if (!render_target_data.used_this_frame && other_config == config) {
       render_target_data.used_this_frame = true;
       return render_target_data.render_target;
@@ -84,13 +86,15 @@ RenderTarget RenderTargetCache::CreateOffscreenMSAA(
   if (!created_target.IsValid()) {
     return created_target;
   }
-  render_pass_data_.push_back(
-      RenderPassData{.used_this_frame = true, .render_target = created_target});
+  render_target_data_.push_back(
+      RenderTargetData{.used_this_frame = true,
+                       .config = config,
+                       .render_target = created_target});
   return created_target;
 }
 
 size_t RenderTargetCache::CachedTextureCount() const {
-  return render_pass_data_.size();
+  return render_target_data_.size();
 }
 
 }  // namespace impeller
