@@ -36,6 +36,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Supplier;
+
+import io.flutter.view.TextureRegistry;
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,7 +56,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private final CountDownLatch firstFrameLatch = new CountDownLatch(2);
 
   private long textureId = 0;
-  private SurfaceTextureEntry surfaceTextureEntry;
+  private TextureRegistry.SurfaceProducer surfaceProducer;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -143,19 +145,18 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   public void onPause() {
     surfaceViewRenderer.destroy();
     flutterRenderer.destroy();
-    surfaceTextureEntry.release();
+    surfaceProducer.release();
     super.onPause();
   }
 
   @Override
   public void onFlutterUiDisplayed() {
-    surfaceTextureEntry =
-        Objects.requireNonNull(getFlutterEngine()).getRenderer().createSurfaceTexture();
-    SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
-    surfaceTexture.setDefaultBufferSize(SURFACE_WIDTH, SURFACE_HEIGHT);
-    flutterRenderer.attach(new Surface(surfaceTexture), firstFrameLatch);
+    surfaceProducer =
+        Objects.requireNonNull(getFlutterEngine()).getRenderer().createSurfaceProducer();
+    surfaceProducer.setSize(SURFACE_WIDTH, SURFACE_HEIGHT);
+    flutterRenderer.attach(surfaceProducer.getSurface(), firstFrameLatch);
     flutterRenderer.repaint();
-    textureId = surfaceTextureEntry.id();
+    textureId = surfaceProducer.id();
 
     super.onFlutterUiDisplayed();
   }
