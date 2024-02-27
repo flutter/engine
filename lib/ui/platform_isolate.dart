@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 part of dart.ui;
 
-/// Runs [computation] in the platform thread and returns the result.
+/// Runs [computation] on the platform thread and returns the result.
 ///
-/// Internally this creates an isolate in the platform thread that will be
-/// reused for subsequent [runInPlatformThread] calls. This means that global
+/// Internally this creates an isolate on the platform thread that will be
+/// reused for subsequent [runOnPlatformThread] calls. This means that global
 /// state is maintained in that isolate between calls.
 ///
 /// The [computation] and any state it captures will be sent to that isolate.
@@ -24,18 +24,21 @@ part of dart.ui;
 /// files and sockets (see [SendPort.send] for details).
 ///
 /// This method can only be invoked from the main isolate.
-Future<R> runInPlatformThread<R>(FutureOr<R> Function() computation) {
+Future<R> runOnPlatformThread<R>(FutureOr<R> Function() computation) {
+  if (isRunningOnPlatformThread) {
+    return Future<R>(computation);
+  }
   final SendPort? sendPort = _platformRunnerSendPort;
   if (sendPort != null) {
     return _sendComputation(sendPort, computation);
   } else {
-    return _platformRunnerSendPortFuture
+    return (_platformRunnerSendPortFuture ??= _spawnPlatformIsolate())
         .then((SendPort port) => _sendComputation(port, computation));
   }
 }
 
 SendPort? _platformRunnerSendPort;
-final Future<SendPort> _platformRunnerSendPortFuture = _spawnPlatformIsolate();
+Future<SendPort>? _platformRunnerSendPortFuture;
 final Map<int, Completer<Object?>> _pending = <int, Completer<Object?>>{};
 int _nextId = 0;
 
@@ -49,11 +52,14 @@ Future<SendPort> _spawnPlatformIsolate() {
       // pause and terminate capabilities aren't provided to the parent
       // isolate, and errors are fatal is false. But if the isolate does
       // shutdown unexpectedly, clear the singleton so we can create another.
-      // TODO(liamappelbe): Write a test that artificially hits this case, then
-      // terminate all pending computations and reset the static variables.
+      for (final Completer<Object?> completer in _pending.values) {
+        completer.completeError(RemoteError('PlatformIsolate shutdown unexpectedly', StackTrace.empty.toString()));
+      }
+      _pending.clear();
+      _platformRunnerSendPort = null;
+      _platformRunnerSendPortFuture = null;
     } else if (message is _PlatformIsolateReadyMessage) {
       _platformRunnerSendPort = message.computationPort;
-      Isolate.current.addOnExitListener(message.computationPort);
       sendPortCompleter.complete(message.computationPort);
     } else if (message is _ComputationResult) {
       final Completer<Object?> resultCompleter = _pending.remove(message.id)!;
@@ -73,17 +79,15 @@ Future<SendPort> _spawnPlatformIsolate() {
       } else {
         resultCompleter.complete(message.result);
       }
-    } else if (message is String) {
+    } else {
       // We encountered an error while starting the new isolate.
       throw IsolateSpawnException('Unable to spawn isolate: $message');
-    } else {
-      // This shouldn't happen.
-      throw IsolateSpawnException(
-          "Internal error: unexpected format for ready message: '$message'");
     }
   };
+  final Isolate parentIsolate = Isolate.current;
+  final SendPort sendPort = receiver.sendPort;
   try {
-    _nativeSpawn(_platformIsolateMain<SendPort>, receiver.sendPort);
+    _nativeSpawn(() => _platformIsolateMain(parentIsolate, sendPort));
   } on Object {
     receiver.close();
     rethrow;
@@ -100,7 +104,7 @@ Future<R> _sendComputation<R>(
   return resultCompleter.future;
 }
 
-void _platformIsolateMain<T>(SendPort sendPort) {
+void _platformIsolateMain(Isolate parentIsolate, SendPort sendPort) {
   final RawReceivePort computationPort = RawReceivePort();
   computationPort.handler = (_ComputationRequest? message) {
     if (message == null) {
@@ -114,27 +118,33 @@ void _platformIsolateMain<T>(SendPort sendPort) {
         potentiallyAsyncResult.then((Object? result) {
           sendPort.send(_ComputationResult(message.id, result, null, null));
         }, onError: (Object? e, Object? s) {
-          sendPort.send(_ComputationResult(message.id, null, e, s ?? StackTrace.empty));
+          sendPort.send(
+              _ComputationResult(message.id, null, e, s ?? StackTrace.empty));
         });
       } else {
-        sendPort.send(_ComputationResult(message.id, potentiallyAsyncResult, null, null));
+        sendPort.send(
+            _ComputationResult(message.id, potentiallyAsyncResult, null, null));
       }
     } catch (e, s) {
       // If sending fails, the error becomes an uncaught error.
       sendPort.send(_ComputationResult(message.id, null, e, s));
     }
   };
+  Isolate.current.addOnExitListener(sendPort);
+  parentIsolate.addOnExitListener(computationPort.sendPort);
   sendPort.send(_PlatformIsolateReadyMessage(computationPort.sendPort));
 }
 
-@Native<Void Function(Handle, Handle)>(
+@Native<Void Function(Handle)>(
     symbol: 'PlatformIsolateNativeApi::Spawn')
-external void _nativeSpawn(Function entryPoint, SendPort isolateReadyPort);
+external void _nativeSpawn(Function entryPoint);
 
-/// Returns whether the current isolate is running in the platform thread.
+/// Whether the current isolate is running on the platform thread.
+bool isRunningOnPlatformThread = _isRunningOnPlatformThread();
+
 @Native<Bool Function()>(
-    symbol: 'PlatformIsolateNativeApi::IsRunningInPlatformThread')
-external bool isRunningInPlatformThread();
+    symbol: 'PlatformIsolateNativeApi::IsRunningOnPlatformThread', isLeaf: true)
+external bool _isRunningOnPlatformThread();
 
 class _PlatformIsolateReadyMessage {
   _PlatformIsolateReadyMessage(this.computationPort);

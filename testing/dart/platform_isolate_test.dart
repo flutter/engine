@@ -11,49 +11,49 @@ import 'package:litetest/litetest.dart';
 int counter = 0;
 
 void main() {
-  test('PlatformIsolate isRunningInPlatformThread, false cases', () async {
+  test('PlatformIsolate isRunningOnPlatformThread, false cases', () async {
     final bool isPlatThread =
-        await Isolate.run(() => isRunningInPlatformThread());
+        await Isolate.run(() => isRunningOnPlatformThread);
     expect(isPlatThread, isFalse);
   });
 
-  test('PlatformIsolate runInPlatformThread', () async {
+  test('PlatformIsolate runOnPlatformThread', () async {
     final bool isPlatThread =
-        await runInPlatformThread(() => isRunningInPlatformThread());
+        await runOnPlatformThread(() => isRunningOnPlatformThread);
     expect(isPlatThread, isTrue);
   });
 
-  test('PlatformIsolate runInPlatformThread, async operations', () async {
-    final bool isPlatThread = await runInPlatformThread(() async {
+  test('PlatformIsolate runOnPlatformThread, async operations', () async {
+    final bool isPlatThread = await runOnPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await Future<void>.delayed(const Duration(milliseconds: 100));
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      return isRunningInPlatformThread();
+      return isRunningOnPlatformThread;
     });
     expect(isPlatThread, isTrue);
   });
 
-  test('PlatformIsolate runInPlatformThread, retains state', () async {
-    await runInPlatformThread(() => ++counter);
+  test('PlatformIsolate runOnPlatformThread, retains state', () async {
+    await runOnPlatformThread(() => ++counter);
     await Future<void>.delayed(const Duration(milliseconds: 100));
-    await runInPlatformThread(() => ++counter);
+    await runOnPlatformThread(() => ++counter);
     await Future<void>.delayed(const Duration(milliseconds: 100));
-    await runInPlatformThread(() => ++counter);
+    await runOnPlatformThread(() => ++counter);
     await Future<void>.delayed(const Duration(milliseconds: 100));
-    final int counterValue = await runInPlatformThread(() => counter);
+    final int counterValue = await runOnPlatformThread(() => counter);
     expect(counterValue, 3);
   });
 
-  test('PlatformIsolate runInPlatformThread, concurrent jobs', () async {
-    final Future<int> future1 = runInPlatformThread(() async {
+  test('PlatformIsolate runOnPlatformThread, concurrent jobs', () async {
+    final Future<int> future1 = runOnPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       return 1;
     });
-    final Future<int> future2 = runInPlatformThread(() async {
+    final Future<int> future2 = runOnPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       return 2;
     });
-    final Future<int> future3 = runInPlatformThread(() async {
+    final Future<int> future3 = runOnPlatformThread(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       return 3;
     });
@@ -62,7 +62,7 @@ void main() {
     expect(await future3, 3);
   });
 
-  test('PlatformIsolate runInPlatformThread, send and receive messages',
+  test('PlatformIsolate runOnPlatformThread, send and receive messages',
       () async {
     // Send numbers 1 to 10 to the platform isolate. The platform isolate
     // multiplies them by 100 and sends them back.
@@ -77,7 +77,7 @@ void main() {
       }
     });
     final SendPort sendPort = recvPort.sendPort;
-    await runInPlatformThread(() async {
+    await runOnPlatformThread(() async {
       final Completer<void> completer = Completer<void>();
       final RawReceivePort recvPort = RawReceivePort((Object message) {
         sendPort.send((message as int) * 100);
@@ -93,10 +93,10 @@ void main() {
     recvPort.close();
   });
 
-  test('PlatformIsolate runInPlatformThread, throws', () async {
+  test('PlatformIsolate runOnPlatformThread, throws', () async {
     bool throws = false;
     try {
-      await runInPlatformThread(() => throw 'Oh no!');
+      await runOnPlatformThread(() => throw 'Oh no!');
     } catch (error) {
       expect(error, 'Oh no!');
       throws = true;
@@ -104,10 +104,10 @@ void main() {
     expect(throws, true);
   });
 
-  test('PlatformIsolate runInPlatformThread, async throws', () async {
+  test('PlatformIsolate runOnPlatformThread, async throws', () async {
     bool throws = false;
     try {
-      await runInPlatformThread(() async {
+      await runOnPlatformThread(() async {
         await Future<void>.delayed(const Duration(milliseconds: 100));
         await Future<void>.delayed(const Duration(milliseconds: 100));
         await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -120,13 +120,20 @@ void main() {
     expect(throws, true);
   });
 
-  test('PlatformIsolate runInPlatformThread, root isolate only', () async {
+  test('PlatformIsolate runOnPlatformThread, disabled on helper isolates',
+      () async {
     await Isolate.run(() {
-      expect(() => runInPlatformThread(() => print('Unreachable')), throws);
+      expect(() => runOnPlatformThread(() => print('Unreachable')), throws);
     });
   });
 
-  test('PlatformIsolate runInPlatformThread, exit disabled', () async {
-    await runInPlatformThread(() => expect(() => Isolate.exit(), throws));
+  test('PlatformIsolate runOnPlatformThread, on platform isolate', () async {
+    final int result = await runOnPlatformThread(() => runOnPlatformThread(
+        () => runOnPlatformThread(() => runOnPlatformThread(() => 123))));
+    expect(result, 123);
+  });
+
+  test('PlatformIsolate runOnPlatformThread, exit disabled', () async {
+    await runOnPlatformThread(() => expect(() => Isolate.exit(), throws));
   });
 }

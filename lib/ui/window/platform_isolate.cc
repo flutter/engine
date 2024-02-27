@@ -13,8 +13,7 @@
 
 namespace flutter {
 
-void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
-                                     Dart_Handle isolate_ready_port) {
+void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point) {
   UIDartState* current_state = UIDartState::Current();
   FML_DCHECK(current_state != nullptr);
   if (!current_state->IsRootIsolate()) {
@@ -24,12 +23,8 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
         "PlatformIsolates can only be spawned on the root isolate."));
   }
 
-  Dart_Port isolate_ready_port_id;
-  Dart_SendPortGetId(isolate_ready_port, &isolate_ready_port_id);
-
   char* error = nullptr;
-  current_state->CreatePlatformIsolate(entry_point, isolate_ready_port_id,
-                                       &error);
+  current_state->CreatePlatformIsolate(entry_point, &error);
   if (error) {
     Dart_EnterScope();
     Dart_Handle error_handle = tonic::ToDart<const char*>(error);
@@ -38,11 +33,9 @@ void PlatformIsolateNativeApi::Spawn(Dart_Handle entry_point,
   }
 }
 
-bool PlatformIsolateNativeApi::IsRunningInPlatformThread() {
+bool PlatformIsolateNativeApi::IsRunningOnPlatformThread() {
   UIDartState* current_state = UIDartState::Current();
-  if (current_state == nullptr) {
-    return false;
-  }
+  FML_DCHECK(current_state != nullptr);
   fml::RefPtr<fml::TaskRunner> platform_task_runner =
       current_state->GetTaskRunners().GetPlatformTaskRunner();
   if (!platform_task_runner) {

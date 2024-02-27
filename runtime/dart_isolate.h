@@ -386,8 +386,6 @@ class DartIsolate : public UIDartState {
   ///
   /// @param[in]  entry_point   The entrypoint to invoke once the isolate is
   ///                           spawned. Will be run on the platform thread.
-  /// @param[in]  port_id       The port to pass to the entrypoint.
-  /// @param[in]  debug_name    The debug name of the new isolate.
   /// @param[out] error         If spawning fails inside the Dart VM, this is
   ///                           set to the error string. The error should be
   ///                           reported to the user. Otherwise it is set to
@@ -398,7 +396,6 @@ class DartIsolate : public UIDartState {
   /// @return     The newly created isolate, or null if spawning failed.
   ///
   Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
-                                     Dart_Port port_id,
                                      char** error) override;
 
   bool LoadLoadingUnit(

@@ -11,9 +11,9 @@ namespace flutter {
 
 class PlatformIsolateNativeApi {
  public:
-  static void Spawn(Dart_Handle entry_point, Dart_Handle isolate_ready_port);
+  static void Spawn(Dart_Handle entry_point);
 
-  static bool IsRunningInPlatformThread();
+  static bool IsRunningOnPlatformThread();
 };
 
 }  // namespace flutter

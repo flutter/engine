@@ -284,7 +284,6 @@ std::weak_ptr<DartIsolate> DartIsolate::CreateRootIsolate(
 }
 
 Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
-                                                Dart_Port port_id,
                                                 char** error) {
   *error = nullptr;
   PlatformConfiguration* platform_config = platform_configuration();
@@ -395,7 +394,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
       Dart_NewPersistentHandle(entry_point);
   Dart_ExitScope();
 
-  platform_task_runner->PostTask([entry_point_handle, platform_isolate, port_id,
+  platform_task_runner->PostTask([entry_point_handle, platform_isolate,
                                   platform_isolate_manager]() {
     if (platform_isolate_manager->IsShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
@@ -407,7 +406,6 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     Dart_EnterScope();
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_DeletePersistentHandle(entry_point_handle);
-    Dart_Handle isolate_ready_port = Dart_NewSendPort(port_id);
 
     // Disable Isolate.exit().
     Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
@@ -419,7 +417,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
         Dart_SetField(isolate_type, tonic::ToDart("_mayExit"), Dart_False());
     FML_CHECK(!tonic::CheckAndHandleError(result));
 
-    tonic::DartInvoke(entry_point, {isolate_ready_port});
+    tonic::DartInvokeVoid(entry_point);
 
     if (Dart_CurrentIsolate() == nullptr) {
       // The platform isolate entry point caused the isolate to shut down.

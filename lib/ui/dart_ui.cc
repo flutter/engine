@@ -113,7 +113,7 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage)       \
   V(PlatformConfigurationNativeApi::SendChannelUpdate)             \
   V(PlatformConfigurationNativeApi::GetScaledFontSize)             \
-  V(PlatformIsolateNativeApi::IsRunningInPlatformThread)           \
+  V(PlatformIsolateNativeApi::IsRunningOnPlatformThread)           \
   V(PlatformIsolateNativeApi::Spawn)                               \
   V(DartRuntimeHooks::Logger_PrintDebugString)                     \
   V(DartRuntimeHooks::Logger_PrintString)                          \

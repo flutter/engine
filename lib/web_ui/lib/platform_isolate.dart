@@ -4,10 +4,10 @@
 
 part of ui;
 
-/// Runs [computation] in the platform thread and returns the result.
+/// Runs [computation] on the platform thread and returns the result.
 ///
-/// Internally this creates an isolate in the platform thread that will be
-/// reused for subsequent [runInPlatformThread] calls. This means that global
+/// Internally this creates an isolate on the platform thread that will be
+/// reused for subsequent [runOnPlatformThread] calls. This means that global
 /// state is maintained in that isolate between calls.
 ///
 /// The [computation] and any state it captures will be sent to that isolate.
@@ -25,8 +25,8 @@ part of ui;
 /// files and sockets (see [SendPort.send] for details).
 ///
 /// This method can only be invoked from the main isolate.
-Future<R> runInPlatformThread<R>(FutureOr<R> Function() computation) =>
+Future<R> runOnPlatformThread<R>(FutureOr<R> Function() computation) =>
     Future<R>(computation);
 
-/// Returns whether the current isolate is running in the platform thread.
-bool isRunningInPlatformThread() => true;
+/// Returns whether the current isolate is running on the platform thread.
+bool isRunningOnPlatformThread = true;

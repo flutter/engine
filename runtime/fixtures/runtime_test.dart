@@ -190,22 +190,7 @@ void mainForPluginRegistrantTest() {
 }
 
 @pragma('vm:entry-point')
-SendPort createUnusedPort() {
-  return RawReceivePort().sendPort;
-}
-
-@pragma('vm:entry-point')
-SendPort createPortThatReplies() {
-  final port = RawReceivePort();
-  port.handler = (message) {
-    port.close();
-    (message as SendPort).send('Hello from root isolate!');
-  };
-  return port.sendPort;
-}
-
-@pragma('vm:entry-point')
-void mainForPlatformIsolates(SendPort isolateReadyPort) {
+void mainForPlatformIsolates() {
   passMessage('Platform isolate is ready');
 }
 
@@ -213,16 +198,24 @@ void mainForPlatformIsolates(SendPort isolateReadyPort) {
 void emptyMain(args) {}
 
 @pragma('vm:entry-point')
-void mainPlatformIsolateReplyPort(SendPort isolateReadyPort) {
-  final replyPort = RawReceivePort();
-  replyPort.handler = (message) {
-    replyPort.close();
-    passMessage('Platform isolate received: $message');
+Function createEntryPointForPlatIsoSendAndRecvTest() {
+  final port = RawReceivePort();
+  port.handler = (message) {
+    port.close();
+    (message as SendPort).send('Hello from root isolate!');
   };
-  isolateReadyPort.send(replyPort.sendPort);
+  final SendPort sendPort = port.sendPort;
+  return () {
+    final replyPort = RawReceivePort();
+    replyPort.handler = (message) {
+      replyPort.close();
+      passMessage('Platform isolate received: $message');
+    };
+    sendPort.send(replyPort.sendPort);
+  };
 }
 
 @pragma('vm:entry-point')
-void mainForPlatformIsolatesThrowError(SendPort isolateReadyPort) {
+void mainForPlatformIsolatesThrowError() {
   throw 'Error from platform isolate';
 }
