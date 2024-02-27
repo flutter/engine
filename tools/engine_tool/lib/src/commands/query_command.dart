@@ -5,14 +5,11 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import 'command.dart';
+import 'flags.dart';
 
-const String _allFlag = 'all';
-const String _builderFlag = 'builder';
-const String _verboseFlag = 'verbose';
-
-/// The root 'query' command.
+// ignore: public_member_api_docs
 final class QueryCommand extends CommandBase {
-  /// Constructs the 'query' command.
+  // ignore: public_member_api_docs
   QueryCommand({
     required super.environment,
     required this.configs,
@@ -20,19 +17,18 @@ final class QueryCommand extends CommandBase {
     // Add options here that are common to all queries.
     argParser
       ..addFlag(
-        _allFlag,
+        allFlag,
         abbr: 'a',
         help: 'List all results, even when not relevant on this platform',
         negatable: false,
       )
       ..addOption(
-        _builderFlag,
+        builderFlag,
         abbr: 'b',
         help: 'Restrict the query to a single builder.',
         allowed: <String>[
           for (final MapEntry<String, BuildConfig> entry in configs.entries)
-            if (entry.value.canRunOn(environment.platform))
-              entry.key,
+            if (entry.value.canRunOn(environment.platform)) entry.key,
         ],
         allowedHelp: <String, String>{
           // TODO(zanderso): Add human readable descriptions to the json files.
@@ -42,13 +38,13 @@ final class QueryCommand extends CommandBase {
         },
       )
       ..addFlag(
-        _verboseFlag,
+        verboseFlag,
         abbr: 'v',
         help: 'Respond to queries with extra information',
         negatable: false,
       );
 
-    addSubcommand(QueryBuildsCommand(
+    addSubcommand(QueryBuildersCommand(
       environment: environment,
       configs: configs,
     ));
@@ -62,13 +58,13 @@ final class QueryCommand extends CommandBase {
 
   @override
   String get description => 'Provides information about build configurations '
-                            'and tests.';
+      'and tests.';
 }
 
 /// The 'query builds' command.
-final class QueryBuildsCommand extends CommandBase {
+final class QueryBuildersCommand extends CommandBase {
   /// Constructs the 'query build' command.
-  QueryBuildsCommand({
+  QueryBuildersCommand({
     required super.environment,
     required this.configs,
   });
@@ -77,19 +73,19 @@ final class QueryBuildsCommand extends CommandBase {
   final Map<String, BuildConfig> configs;
 
   @override
-  String get name => 'builds';
+  String get name => 'builders';
 
   @override
-  String get description => 'Provides information about CI build '
-                            'configurations';
+  String get description => 'Provides information about CI builder '
+      'configurations';
 
   @override
   Future<int> run() async {
     // Loop through all configs, and log those that are compatible with the
     // current platform.
-    final bool all = parent!.argResults![_allFlag]! as bool;
-    final String? builderName = parent!.argResults![_builderFlag] as String?;
-    final bool verbose = parent!.argResults![_verboseFlag] as bool;
+    final bool all = parent!.argResults![allFlag]! as bool;
+    final String? builderName = parent!.argResults![builderFlag] as String?;
+    final bool verbose = parent!.argResults![verboseFlag] as bool;
     if (!verbose) {
       environment.logger.status(
         'Add --verbose to see detailed information about each builder',

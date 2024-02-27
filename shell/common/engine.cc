@@ -146,6 +146,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*image_generator_registry=*/result->GetImageGeneratorRegistry(),
       /*snapshot_delegate=*/std::move(snapshot_delegate));
   result->initial_route_ = initial_route;
+  result->asset_manager_ = asset_manager_;
   return result;
 }
 
@@ -174,7 +175,8 @@ fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
 
 bool Engine::UpdateAssetManager(
     const std::shared_ptr<AssetManager>& new_asset_manager) {
-  if (asset_manager_ == new_asset_manager) {
+  if (asset_manager_ && new_asset_manager &&
+      *asset_manager_ == *new_asset_manager) {
     return false;
   }
 
@@ -460,6 +462,10 @@ std::string Engine::DefaultRouteName() {
 
 void Engine::ScheduleFrame(bool regenerate_layer_trees) {
   animator_->RequestFrame(regenerate_layer_trees);
+}
+
+void Engine::EndWarmUpFrame() {
+  animator_->EndWarmUpFrame();
 }
 
 void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree,

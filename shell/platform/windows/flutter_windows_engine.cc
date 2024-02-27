@@ -183,14 +183,6 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<BinaryMessengerImpl>(messenger_->ToRef());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_->ToRef());
-  message_dispatcher_->SetMessageCallback(
-      kAccessibilityChannelName,
-      [](FlutterDesktopMessengerRef messenger,
-         const FlutterDesktopMessage* message, void* data) {
-        FlutterWindowsEngine* engine = static_cast<FlutterWindowsEngine*>(data);
-        engine->HandleAccessibilityMessage(messenger, message);
-      },
-      static_cast<void*>(this));
 
   texture_registrar_ =
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_);
@@ -219,6 +211,11 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   // https://github.com/flutter/flutter/issues/71099
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(plugin_registrar_.get());
+
+  accessibility_plugin_ = std::make_unique<AccessibilityPlugin>(this);
+  AccessibilityPlugin::SetUp(messenger_wrapper_.get(),
+                             accessibility_plugin_.get());
+
   cursor_handler_ =
       std::make_unique<CursorHandler>(messenger_wrapper_.get(), this);
   platform_handler_ =
@@ -340,7 +337,10 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
                                        void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    auto view = host->view();
+
+    // TODO(loicsharma): Remove implicit view assumption.
+    // https://github.com/flutter/flutter/issues/142845
+    auto view = host->view(kImplicitViewId);
     if (!view) {
       return;
     }
@@ -380,11 +380,17 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
   args.custom_task_runners = &custom_task_runners;
 
+  if (!platform_view_plugin_) {
+    platform_view_plugin_ = std::make_unique<PlatformViewPlugin>(
+        messenger_wrapper_.get(), task_runner_.get());
+  }
   if (egl_manager_) {
     auto resolver = [](const char* name) -> void* {
       return reinterpret_cast<void*>(::eglGetProcAddress(name));
     };
 
+    // TODO(schectman) Pass the platform view manager to the compositor
+    // constructors: https://github.com/flutter/flutter/issues/143375
     compositor_ = std::make_unique<CompositorOpenGL>(this, resolver);
   } else {
     compositor_ = std::make_unique<CompositorSoftware>(this);
@@ -483,9 +489,17 @@ bool FlutterWindowsEngine::Stop() {
   return false;
 }
 
-void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
-  view_ = view;
+std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
+    std::unique_ptr<WindowBindingHandler> window) {
+  // TODO(loicsharma): Remove implicit view assumption.
+  // https://github.com/flutter/flutter/issues/142845
+  auto view = std::make_unique<FlutterWindowsView>(
+      kImplicitViewId, this, std::move(window), windows_proc_table_);
+
+  view_ = view.get();
   InitializeKeyboard();
+
+  return std::move(view);
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
@@ -514,6 +528,12 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
   }
 
   return std::chrono::nanoseconds(interval);
+}
+
+FlutterWindowsView* FlutterWindowsEngine::view(FlutterViewId view_id) const {
+  FML_DCHECK(view_id == kImplicitViewId);
+
+  return view_;
 }
 
 // Returns the currently configured Plugin Registrar.
@@ -742,7 +762,9 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
-    view_->UpdateSemanticsEnabled(enabled);
+    if (view_) {
+      view_->UpdateSemanticsEnabled(enabled);
+    }
   }
 }
 
@@ -788,27 +810,6 @@ void FlutterWindowsEngine::SendAccessibilityFeatures() {
 
   embedder_api_.UpdateAccessibilityFeatures(
       engine_, static_cast<FlutterAccessibilityFeature>(flags));
-}
-
-void FlutterWindowsEngine::HandleAccessibilityMessage(
-    FlutterDesktopMessengerRef messenger,
-    const FlutterDesktopMessage* message) {
-  const auto& codec = StandardMessageCodec::GetInstance();
-  auto data = codec.DecodeMessage(message->message, message->message_size);
-  EncodableMap map = std::get<EncodableMap>(*data);
-  std::string type = std::get<std::string>(map.at(EncodableValue("type")));
-  if (type.compare("announce") == 0) {
-    if (semantics_enabled_) {
-      EncodableMap data_map =
-          std::get<EncodableMap>(map.at(EncodableValue("data")));
-      std::string text =
-          std::get<std::string>(data_map.at(EncodableValue("message")));
-      std::wstring wide_text = fml::Utf8ToWideString(text);
-      view_->AnnounceAlert(wide_text);
-    }
-  }
-  SendPlatformMessageResponse(message->response_handle,
-                              reinterpret_cast<const uint8_t*>(""), 0);
 }
 
 void FlutterWindowsEngine::RequestApplicationQuit(HWND hwnd,

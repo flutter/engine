@@ -27,6 +27,10 @@ ContentContextOptions OptionsFromPass(const RenderPass& pass) {
   FML_DCHECK(pass.HasDepthAttachment() == pass.HasStencilAttachment());
 
   opts.has_depth_stencil_attachments = has_depth_stencil_attachments;
+  if constexpr (ContentContext::kEnableStencilThenCover) {
+    opts.depth_compare = CompareFunction::kGreater;
+    opts.stencil_mode = ContentContextOptions::StencilMode::kIgnore;
+  }
   return opts;
 }
 
@@ -97,7 +101,7 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
             entity.GetTransform());
         return contents.Render(renderer, sub_entity, pass);
       },
-      msaa_enabled,
+      msaa_enabled, /*depth_stencil_enabled=*/true,
       std::min(mip_count, static_cast<int32_t>(subpass_size.MipCount())));
 
   if (!render_target.ok()) {

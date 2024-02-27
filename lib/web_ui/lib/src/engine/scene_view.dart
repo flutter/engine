@@ -9,20 +9,32 @@ import 'package:ui/ui.dart' as ui;
 
 const String kCanvasContainerTag = 'flt-canvas-container';
 
+typedef RenderResult = ({
+  List<DomImageBitmap> imageBitmaps,
+  int rasterStartMicros,
+  int rasterEndMicros,
+});
+
 // This is an interface that renders a `ScenePicture` as a `DomImageBitmap`.
 // It is optionally asynchronous. It is required for the `EngineSceneView` to
 // composite pictures into the canvases in the DOM tree it builds.
 abstract class PictureRenderer {
-  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture);
+  FutureOr<RenderResult> renderPictures(List<ScenePicture> picture);
+  ScenePicture clipPicture(ScenePicture picture, ui.Rect clip);
 }
 
 class _SceneRender {
-  _SceneRender(this.scene, this._completer) {
+  _SceneRender(
+    this.scene,
+    this._completer, {
+    this.recorder,
+  }) {
     scene.beginRender();
   }
 
   final EngineScene scene;
   final Completer<void> _completer;
+  final FrameTimingRecorder? recorder;
 
   void done() {
     scene.endRender();
@@ -47,24 +59,24 @@ class EngineSceneView {
   _SceneRender? _currentRender;
   _SceneRender? _nextRender;
 
-  Future<void> renderScene(EngineScene scene) {
+  Future<void> renderScene(EngineScene scene, FrameTimingRecorder? recorder) {
     if (_currentRender != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
       _nextRender?.done();
       final Completer<void> completer = Completer<void>();
-      _nextRender = _SceneRender(scene, completer);
+      _nextRender = _SceneRender(scene, completer, recorder: recorder);
       return completer.future;
     }
     final Completer<void> completer = Completer<void>();
-    _currentRender = _SceneRender(scene, completer);
+    _currentRender = _SceneRender(scene, completer, recorder: recorder);
     _kickRenderLoop();
     return completer.future;
   }
 
   Future<void> _kickRenderLoop() async {
     final _SceneRender current = _currentRender!;
-    await _renderScene(current.scene);
+    await _renderScene(current.scene, current.recorder);
     current.done();
     _currentRender = _nextRender;
     _nextRender = null;
@@ -75,19 +87,62 @@ class EngineSceneView {
     }
   }
 
-  Future<void> _renderScene(EngineScene scene) async {
+  ScenePicture _clipPictureIfNeeded(ScenePicture picture, ui.Rect clip) {
+    final ui.Rect pictureRect = picture.cullRect;
+    if (pictureRect.left >= clip.left &&
+        pictureRect.top >= clip.top &&
+        pictureRect.right <= clip.right &&
+        pictureRect.bottom <= clip.bottom) {
+      // The picture is already within the clip bounds.
+      return picture;
+    }
+
+    return pictureRenderer.clipPicture(picture, clip);
+  }
+
+  ui.Rect? _getScreenBounds() {
+    final DomScreen? screen = domWindow.screen;
+    if (screen == null) {
+      return null;
+    }
+    return ui.Rect.fromLTWH(0, 0, screen.width, screen.height);
+  }
+
+  Future<void> _renderScene(EngineScene scene, FrameTimingRecorder? recorder) async {
+    final ui.Rect? screenBounds = _getScreenBounds();
+    if (screenBounds == null) {
+      // The browser isn't displaying the document. Skip rendering.
+      return;
+    }
     final List<LayerSlice> slices = scene.rootLayer.slices;
-    final Iterable<Future<DomImageBitmap?>> renderFutures = slices.map(
-      (LayerSlice slice) async => switch (slice) {
-          PlatformViewSlice() => null,
-          PictureSlice() => pictureRenderer.renderPicture(slice.picture),
-        }
-    );
-    final List<DomImageBitmap?> renderedBitmaps = await Future.wait(renderFutures);
+    final List<ScenePicture> picturesToRender = <ScenePicture>[];
+    final List<ScenePicture> originalPicturesToRender = <ScenePicture>[];
+    for (final LayerSlice slice in slices) {
+      if (slice is PictureSlice && !slice.picture.cullRect.isEmpty) {
+        originalPicturesToRender.add(slice.picture);
+        final ScenePicture clippedPicture = _clipPictureIfNeeded(slice.picture, screenBounds);
+        picturesToRender.add(clippedPicture);
+      }
+    }
+    final Map<ScenePicture, DomImageBitmap> renderMap;
+    if (picturesToRender.isNotEmpty) {
+      final RenderResult renderResult = await pictureRenderer.renderPictures(picturesToRender);
+      renderMap = <ScenePicture, DomImageBitmap>{
+        for (int i = 0; i < picturesToRender.length; i++)
+          originalPicturesToRender[i]: renderResult.imageBitmaps[i],
+      };
+      recorder?.recordRasterStart(renderResult.rasterStartMicros);
+      recorder?.recordRasterFinish(renderResult.rasterEndMicros);
+    } else {
+      renderMap = <ScenePicture, DomImageBitmap>{};
+      recorder?.recordRasterStart();
+      recorder?.recordRasterFinish();
+    }
+    recorder?.submitTimings();
+
     final List<SliceContainer?> reusableContainers = List<SliceContainer?>.from(containers);
     final List<SliceContainer> newContainers = <SliceContainer>[];
-    for (int i = 0; i < slices.length; i++) {
-      final LayerSlice slice = slices[i];
+    for (final LayerSlice slice in slices) {
       switch (slice) {
         case PictureSlice():
           PictureSliceContainer? container;
@@ -100,13 +155,14 @@ class EngineSceneView {
             }
           }
 
+          final ui.Rect clippedBounds = slice.picture.cullRect.intersect(screenBounds);
           if (container != null) {
-            container.bounds = slice.picture.cullRect;
+            container.bounds = clippedBounds;
           } else {
-            container = PictureSliceContainer(slice.picture.cullRect);
+            container = PictureSliceContainer(clippedBounds);
           }
           container.updateContents();
-          container.renderBitmap(renderedBitmaps[i]!);
+          container.renderBitmap(renderMap[slice.picture]!);
           newContainers.add(container);
 
         case PlatformViewSlice():
