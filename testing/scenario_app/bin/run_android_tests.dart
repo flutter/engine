@@ -156,6 +156,7 @@ Future<void> _run({
   SkiaGoldClient? skiaGoldClient;
   late final ServerSocket server;
   final List<Future<void>> pendingComparisons = <Future<void>>[];
+  final List<Socket> pendingConnections = <Socket>[];
   await step('Starting server...', () async {
     server = await ServerSocket.bind(InternetAddress.anyIPv4, _tcpPort);
     if (verbose) {
@@ -165,6 +166,7 @@ Future<void> _run({
       if (verbose) {
         stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
       }
+      pendingConnections.add(client);
       client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) {
         final String fileName = screenshot.filename;
         final Uint8List fileContent = screenshot.fileContent;
@@ -189,6 +191,8 @@ Future<void> _run({
           });
           pendingComparisons.add(comparison);
         }
+      }, onDone: () {
+        pendingConnections.remove(client);
       });
     });
   });
@@ -340,6 +344,9 @@ Future<void> _run({
     });
   } finally {
     await server.close();
+    for (final Socket client in pendingConnections.toList()) {
+      client.close();
+    }
 
     await step('Killing test app and test runner...', () async {
       final int exitCode = await pm.runAndForward(<String>[adb.path, 'shell', 'am', 'force-stop', 'dev.flutter.scenarios']);
