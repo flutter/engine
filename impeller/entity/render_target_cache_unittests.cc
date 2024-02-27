@@ -49,8 +49,8 @@ class TestAllocator : public Allocator {
 };
 
 TEST_P(RenderTargetCacheTest, CachesUsedTexturesAcrossFrames) {
-  auto allocator = std::make_shared<TestAllocator>();
-  auto render_target_cache = RenderTargetCache(allocator);
+  auto render_target_cache =
+      RenderTargetCache(GetContext()->GetResourceAllocator());
 
   render_target_cache.Start();
   // Create two render targets of the same exact size/shape. Both should be
