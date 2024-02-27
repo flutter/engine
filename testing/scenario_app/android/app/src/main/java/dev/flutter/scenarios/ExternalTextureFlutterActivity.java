@@ -11,7 +11,6 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Shader.TileMode;
-import android.graphics.SurfaceTexture;
 import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.ImageReader;
@@ -36,9 +35,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Supplier;
-
 import io.flutter.view.TextureRegistry;
-import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
