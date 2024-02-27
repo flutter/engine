@@ -44,6 +44,9 @@ class RadialGradientContents final : public ColorSourceContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,

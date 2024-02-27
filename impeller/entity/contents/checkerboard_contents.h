@@ -31,6 +31,9 @@ class CheckerboardContents final : public Contents {
 
   void SetSquareSize(Scalar square_size);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   Color color_ = Color::Red().WithAlpha(0.25);
   Scalar square_size_ = 12;

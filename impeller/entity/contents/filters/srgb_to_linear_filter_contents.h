@@ -16,6 +16,9 @@ class SrgbToLinearFilterContents final : public ColorFilterContents {
 
   ~SrgbToLinearFilterContents() override;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(

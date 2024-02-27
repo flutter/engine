@@ -75,6 +75,9 @@ class AtlasContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   Rect ComputeBoundingBox() const;
 
@@ -117,6 +120,9 @@ class AtlasTextureContents final : public Contents {
 
   void SetSubAtlas(const std::shared_ptr<SubAtlasResult>& subatlas);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   const AtlasContents& parent_;
   Scalar alpha_ = 1.0;
@@ -149,6 +155,9 @@ class AtlasColorContents final : public Contents {
   void SetCoverage(Rect coverage);
 
   void SetSubAtlas(const std::shared_ptr<SubAtlasResult>& subatlas);
+
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
 
  private:
   const AtlasContents& parent_;

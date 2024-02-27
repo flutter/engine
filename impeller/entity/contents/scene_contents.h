@@ -34,6 +34,9 @@ class SceneContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   Matrix camera_transform_;
   std::shared_ptr<scene::Node> node_;

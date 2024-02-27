@@ -23,6 +23,9 @@ class ColorMatrixFilterContents final : public ColorFilterContents {
 
   void SetMatrix(const ColorMatrix& matrix);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(

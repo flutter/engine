@@ -17,6 +17,9 @@ class YUVToRGBFilterContents final : public FilterContents {
 
   void SetYUVColorSpace(YUVColorSpace yuv_color_space);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(

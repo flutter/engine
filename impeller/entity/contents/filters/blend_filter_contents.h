@@ -54,6 +54,9 @@ class BlendFilterContents : public ColorFilterContents {
   ///         been blended.
   void SetForegroundColor(std::optional<Color> color);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(

@@ -50,6 +50,9 @@ class SweepGradientContents final : public ColorSourceContents {
 
   const std::vector<Scalar>& GetStops() const;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,

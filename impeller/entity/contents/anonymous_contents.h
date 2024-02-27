@@ -29,6 +29,9 @@ class AnonymousContents final : public Contents {
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   RenderProc render_proc_;
   CoverageProc coverage_proc_;

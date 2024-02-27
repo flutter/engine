@@ -81,6 +81,9 @@ class TextureContents final : public Contents {
 
   void SetDeferApplyingOpacity(bool defer_applying_opacity);
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   std::string label_;
 

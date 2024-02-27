@@ -35,6 +35,9 @@ class DirectionalMorphologyFilterContents final : public FilterContents {
       const Matrix& effect_transform,
       const Rect& output_limit) const override;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(
