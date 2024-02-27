@@ -78,16 +78,24 @@ extension type const AdbLogLine._(Match _match) {
 
   @visibleForTesting
   static const Set<String> knownNoiseTags = <String>{
+    'CCodec',
+    'CCodecBufferChannel',
+    'CCodecConfig',
+    'Codec2Client',
+    'ColorUtils',
+    'DMABUFHEAPS',
+    'Gralloc4',
+    'MediaCodec',
     'MonitoringInstr',
     'ResourceExtractor',
+    'UsageTrackerFacilitator',
+    'hw-BpHwBinder',
     'ziparchive',
   };
 
   @visibleForTesting
   static const Set<String> knownUsefulTags = <String>{
-    'utter.scenario',
-    'utter.scenarios',
-    'TestRunner',
+    'ActivityManager',
   };
 
   @visibleForTesting
@@ -104,8 +112,8 @@ extension type const AdbLogLine._(Match _match) {
       return true;
     }
 
-    // Debug logs are rarely useful.
-    if (severity == 'D') {
+    // Verbose and debug logs are rarely useful.
+    if (severity == 'V' || severity == 'D') {
       return false;
     }
 
@@ -126,9 +134,9 @@ extension type const AdbLogLine._(Match _match) {
       // YOLO, let's keep it anyway.
       return name.toLowerCase().contains('flutter') ||
           message.toLowerCase().contains('flutter');
-    } else {
-      return process == filterProcessId;
     }
+
+    return process == filterProcessId;
   }
 
   /// Logs the line to the console.

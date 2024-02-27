@@ -91,4 +91,16 @@ void main() {
     expect(filtered, hasLength(1));
     expect(filtered.first, contains('$tag: An error message'));
   });
+
+  test('should filter out error logs from unimportant processes', () {
+    final FakeAdbLogcat logcat = FakeAdbLogcat();
+    final FakeAdbProcess process = logcat.withProcess();
+
+    // I hate this one.
+    const String tag = 'gs.intelligence';
+    process.error(tag, 'No package ID ff found for resource ID 0xffffffff.');
+
+    final Iterable<String> filtered = filter(logcat.drain());
+    expect(filtered, isEmpty);
+  });
 }
