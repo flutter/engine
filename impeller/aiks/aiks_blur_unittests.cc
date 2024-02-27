@@ -591,6 +591,9 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
 TEST_P(AiksTest, GaussianBlurStyleInner) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
+
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
   Paint paint;
   paint.color = Color::Green();
   paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
