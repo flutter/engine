@@ -383,7 +383,7 @@ Future<void> _run({
 
     if (enableImpeller) {
       await step('Validating Impeller...', () async {
-        _ImpellerBackend expectedImpellerBackend = impellerBackend ?? _ImpellerBackend.vulkan;
+        final _ImpellerBackend expectedImpellerBackend = impellerBackend ?? _ImpellerBackend.vulkan;
         if (actualImpellerBackend != expectedImpellerBackend) {
           panic(<String>[
             '--enable-impeller was specified and expected to find '
