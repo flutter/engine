@@ -44,12 +44,22 @@ class CanvasKitRenderer implements Renderer {
   DomElement? _sceneHost;
   DomElement? get sceneHost => _sceneHost;
 
-  /// This is an SkSurface backed by an OffScreenCanvas. This single Surface is
-  /// used to render to many RenderCanvases to produce the rendered scene.
-  final Surface offscreenSurface = Surface();
+  Rasterizer _rasterizer = _createRasterizer();
+
+  static Rasterizer _createRasterizer() {
+    if (isSafari || isFirefox) {
+      return MultiSurfaceRasterizer();
+    }
+    return OffscreenCanvasRasterizer();
+  }
+
+  /// Override the rasterizer with the given [_rasterizer]. Used in tests.
+  void debugOverrideRasterizer(Rasterizer testRasterizer) {
+    _rasterizer = testRasterizer;
+  }
 
   set resourceCacheMaxBytes(int bytes) =>
-      offscreenSurface.setSkiaResourceCacheMaxBytes(bytes);
+      _rasterizer.setResourceCacheMaxBytes(bytes);
 
   /// A surface used specifically for `Picture.toImage` when software rendering
   /// is supported.
@@ -65,6 +75,9 @@ class CanvasKitRenderer implements Renderer {
     _initialized ??= () async {
       if (windowFlutterCanvasKit != null) {
         canvasKit = windowFlutterCanvasKit!;
+      } else if (windowFlutterCanvasKitLoaded != null) {
+        // CanvasKit is being preloaded by flutter.js. Wait for it to complete.
+        canvasKit = await promiseToFuture<CanvasKit>(windowFlutterCanvasKitLoaded!);
       } else {
         canvasKit = await downloadCanvasKit();
         windowFlutterCanvasKit = canvasKit;
@@ -86,11 +99,6 @@ class CanvasKitRenderer implements Renderer {
       _instance = this;
     }();
     return _initialized;
-  }
-
-  @override
-  void reset(FlutterViewEmbedder embedder) {
-    // No work required.
   }
 
   @override
@@ -401,8 +409,48 @@ class CanvasKitRenderer implements Renderer {
   ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) =>
     CkParagraphBuilder(style);
 
+  // TODO(harryterkelsen): Merge this logic with the async logic in
+  // [EngineScene], https://github.com/flutter/flutter/issues/142072.
   @override
-  void renderScene(ui.Scene scene, ui.FlutterView view) {
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
+    assert(_rasterizers.containsKey(view.viewId),
+        "Unable to render to a view which hasn't been registered");
+    final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;
+    final RenderQueue renderQueue = rasterizer.queue;
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    if (renderQueue.current != null) {
+      // If a scene is already queued up, drop it and queue this one up instead
+      // so that the scene view always displays the most recently requested scene.
+      renderQueue.next?.completer.complete();
+      final Completer<void> completer = Completer<void>();
+      renderQueue.next = (scene: scene, completer: completer, recorder: recorder);
+      return completer.future;
+    }
+    final Completer<void> completer = Completer<void>();
+    renderQueue.current = (scene: scene, completer: completer, recorder: recorder);
+    unawaited(_kickRenderLoop(rasterizer));
+    return completer.future;
+  }
+
+  Future<void> _kickRenderLoop(ViewRasterizer rasterizer) async {
+    final RenderQueue renderQueue = rasterizer.queue;
+    final RenderRequest current = renderQueue.current!;
+    try {
+      await _renderScene(current.scene, rasterizer, current.recorder);
+      current.completer.complete();
+    } catch (error, stackTrace) {
+      current.completer.completeError(error, stackTrace);
+    }
+    renderQueue.current = renderQueue.next;
+    renderQueue.next = null;
+    if (renderQueue.current == null) {
+      return;
+    } else {
+      return _kickRenderLoop(rasterizer);
+    }
+  }
+
+  Future<void> _renderScene(ui.Scene scene, ViewRasterizer rasterizer, FrameTimingRecorder? recorder) async {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
@@ -410,24 +458,21 @@ class CanvasKitRenderer implements Renderer {
     // CanvasKit works differently from the HTML renderer in that in HTML
     // we update the DOM in SceneBuilder.build, which is these function calls
     // here are CanvasKit-only.
-    frameTimingsOnBuildFinish();
-    frameTimingsOnRasterStart();
+    recorder?.recordBuildFinish();
+    recorder?.recordRasterStart();
 
-    assert(_rasterizers.containsKey(view.viewId),
-        "Unable to render to a view which hasn't been registered");
-    final Rasterizer rasterizer = _rasterizers[view.viewId]!;
-
-    rasterizer.draw((scene as LayerScene).layerTree);
-    frameTimingsOnRasterFinish();
+    await rasterizer.draw((scene as LayerScene).layerTree);
+    recorder?.recordRasterFinish();
+    recorder?.submitTimings();
   }
 
   // Map from view id to the associated Rasterizer for that view.
-  final Map<int, Rasterizer> _rasterizers = <int, Rasterizer>{};
+  final Map<int, ViewRasterizer> _rasterizers = <int, ViewRasterizer>{};
 
   void _onViewCreated(int viewId) {
     final EngineFlutterView view =
         EnginePlatformDispatcher.instance.viewManager[viewId]!;
-    _rasterizers[view.viewId] = Rasterizer(view);
+    _rasterizers[view.viewId] = _rasterizer.createViewRasterizer(view);
   }
 
   void _onViewDisposed(int viewId) {
@@ -435,11 +480,11 @@ class CanvasKitRenderer implements Renderer {
     if (!_rasterizers.containsKey(viewId)) {
       return;
     }
-    final Rasterizer rasterizer = _rasterizers.remove(viewId)!;
+    final ViewRasterizer rasterizer = _rasterizers.remove(viewId)!;
     rasterizer.dispose();
   }
 
-  Rasterizer? debugGetRasterizerForView(EngineFlutterView view) {
+  ViewRasterizer? debugGetRasterizerForView(EngineFlutterView view) {
     return _rasterizers[view.viewId];
   }
 
@@ -447,7 +492,7 @@ class CanvasKitRenderer implements Renderer {
   void dispose() {
     _onViewCreatedListener?.cancel();
     _onViewDisposedListener?.cancel();
-    for (final Rasterizer rasterizer in _rasterizers.values) {
+    for (final ViewRasterizer rasterizer in _rasterizers.values) {
       rasterizer.dispose();
     }
     _rasterizers.clear();

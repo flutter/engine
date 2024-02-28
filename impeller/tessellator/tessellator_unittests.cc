@@ -17,7 +17,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
     Tessellator t;
-    auto path = PathBuilder{}.TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -29,7 +29,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // One point.
   {
     Tessellator t;
-    auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -41,8 +41,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Two points.
   {
     Tessellator t;
-    auto path =
-        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -59,7 +58,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
       auto coord = i * 1.0f;
       builder.AddLine({coord, coord}, {coord + 1, coord + 1});
     }
-    auto path = builder.TakePath(FillType::kPositive);
+    auto path = builder.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -71,8 +70,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Closure fails.
   {
     Tessellator t;
-    auto path =
-        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -416,15 +414,13 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
 
   auto test = [&tessellator](const Matrix& transform, const Rect& bounds,
                              const Size& radii) {
-    FML_DCHECK(radii.width * 2 <= bounds.GetSize().width) << radii << bounds;
-    FML_DCHECK(radii.height * 2 <= bounds.GetSize().height) << radii << bounds;
+    FML_DCHECK(radii.width * 2 <= bounds.GetWidth()) << radii << bounds;
+    FML_DCHECK(radii.height * 2 <= bounds.GetHeight()) << radii << bounds;
 
-    Scalar middle_left = bounds.GetOrigin().x + radii.width;
-    Scalar middle_top = bounds.GetOrigin().y + radii.height;
-    Scalar middle_right =
-        bounds.GetOrigin().x + bounds.GetSize().width - radii.width;
-    Scalar middle_bottom =
-        bounds.GetOrigin().y + bounds.GetSize().height - radii.height;
+    Scalar middle_left = bounds.GetX() + radii.width;
+    Scalar middle_top = bounds.GetY() + radii.height;
+    Scalar middle_right = bounds.GetX() + bounds.GetWidth() - radii.width;
+    Scalar middle_bottom = bounds.GetY() + bounds.GetHeight() - radii.height;
 
     auto generator = tessellator->FilledRoundRect(transform, bounds, radii);
     EXPECT_EQ(generator.GetTriangleType(), PrimitiveType::kTriangleStrip);
@@ -485,6 +481,19 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
   test(Matrix::MakeScale({0.002, 0.002, 0.0}),
        Rect::MakeXYWH(5000, 10000, 2000, 3000), {50, 70});
 }
+
+#if !NDEBUG
+TEST(TessellatorTest, ChecksConcurrentPolylineUsage) {
+  auto tessellator = std::make_shared<Tessellator>();
+  PathBuilder builder;
+  builder.AddLine({0, 0}, {100, 100});
+  auto path = builder.TakePath();
+
+  auto polyline = tessellator->CreateTempPolyline(path, 0.1);
+  EXPECT_DEBUG_DEATH(tessellator->CreateTempPolyline(path, 0.1),
+                     "point_buffer_");
+}
+#endif  // NDEBUG
 
 }  // namespace testing
 }  // namespace impeller

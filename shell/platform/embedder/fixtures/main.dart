@@ -167,6 +167,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
     )
     ..updateNode(
@@ -199,6 +200,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
@@ -235,6 +237,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
     )
     ..updateNode(
@@ -268,6 +271,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
     )
@@ -364,6 +368,7 @@ Future<void> a11y_string_attributes() async {
       decreasedValue: '41',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
     );
 
@@ -1308,8 +1313,21 @@ void pointer_data_packet() {
     (PointerDataPacket packet) {
     signalNativeCount(packet.data.length);
 
-    for (final pointerData in packet.data) {
+    for (final PointerData pointerData in packet.data) {
       signalNativeMessage(pointerData.toString());
+    }
+  };
+
+  signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void pointer_data_packet_view_id() {
+  PlatformDispatcher.instance.onPointerDataPacket = (PointerDataPacket packet) {
+    assert(packet.data.length == 1);
+
+    for (final PointerData pointerData in packet.data) {
+      signalNativeMessage('ViewID: ${pointerData.viewId}');
     }
   };
 
@@ -1342,6 +1360,24 @@ void render_gradient_retained() {
 
     builder.pop();
 
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_impeller_gl_test() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    final Paint paint = Paint();
+    paint.color = Color.fromARGB(255, 0, 0, 255);
+    final PictureRecorder baseRecorder = PictureRecorder();
+    final Canvas canvas = Canvas(baseRecorder);
+    canvas.drawPaint(Paint()..color = Color.fromARGB(255, 255, 0, 0));
+    canvas.drawRect(Rect.fromLTRB(20.0, 20.0, 200.0, 150.0), paint);
+    builder.addPicture(Offset.zero, baseRecorder.endRecording());
+    builder.pop();
     PlatformDispatcher.instance.views.first.render(builder.build());
   };
   PlatformDispatcher.instance.scheduleFrame();

@@ -24,7 +24,7 @@ impeller_component("utilities") {
 }
 
 impeller_component("compiler_lib") {
-  include_dirs = [ "//third_party/vulkan-deps/spirv-cross/src/" ]
+  include_dirs = [ "//flutter/third_party/vulkan-deps/spirv-cross/src/" ]
 
   # Current versions of libcxx have deprecated some of the UTF-16 string
   # conversion APIs.
@@ -48,6 +48,8 @@ impeller_component("compiler_lib") {
     "runtime_stage_data.h",
     "shader_bundle.cc",
     "shader_bundle.h",
+    "shader_bundle_data.cc",
+    "shader_bundle_data.h",
     "source_options.cc",
     "source_options.h",
     "spirv_compiler.cc",

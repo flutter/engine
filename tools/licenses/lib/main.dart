@@ -235,27 +235,6 @@ class _RepositoryReadmeIjgFile extends _RepositorySingleLicenseFile {
   }
 }
 
-class _RepositoryMpl2File extends _RepositorySingleLicenseFile {
-  _RepositoryMpl2File(_RepositoryDirectory parent, fs.TextFile io)
-    : super(parent, io, _parseLicense(io));
-
-  static License _parseLicense(fs.TextFile io) {
-    final String body = io.readString();
-    if (!body.startsWith('Mozilla Public License Version 2.0')) {
-      throw 'unexpected contents in file supposedly containing MPL';
-    }
-    return License.mozilla(body, origin: io.fullName);
-  }
-
-  @override
-  License? licenseWithName(String name) {
-    if (this.name == 'http://mozilla.org/MPL/2.0/') {
-      return license;
-    }
-    return null;
-  }
-}
-
 class _RepositoryDartLicenseFile extends _RepositorySingleLicenseFile {
   _RepositoryDartLicenseFile(_RepositoryDirectory parent, fs.TextFile io)
     : super(parent, io, _parseLicense(io));
@@ -626,24 +605,6 @@ class _RepositoryIcuLicenseFile extends _RepositorySingleLicenseFile {
       return template;
     }
     return super.licenseOfType(type);
-  }
-}
-
-Iterable<List<int>> splitIntList(List<int> data, int boundary) sync* {
-  int index = 0;
-  List<int> getOne() {
-    final int start = index;
-    int end = index;
-    while ((end < data.length) && (data[end] != boundary)) {
-      end += 1;
-    }
-    end += 1;
-    index = end;
-    return data.sublist(start, end).toList();
-  }
-
-  while (index < data.length) {
-    yield getOne();
   }
 }
 
@@ -1029,23 +990,22 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   static final RegExp _licenseNamePattern = RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|GPLv2|bsd|mit|mpl?|ftl|Apache)_*\b', caseSensitive: false);
 
   static const Map<String, _Constructor> _specialCaseFiles = <String, _Constructor>{
+    '/flutter/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
+    '/flutter/third_party/freetype2/LICENSE.TXT': _RepositoryFreetypeLicenseFile.new,
+    '/flutter/third_party/icu/LICENSE': _RepositoryIcuLicenseFile.new,
     '/flutter/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
     '/flutter/third_party/libjpeg-turbo/src/LICENSE': _RepositoryLibJpegTurboLicenseFile.new,
     '/flutter/third_party/libjpeg-turbo/src/README.ijg': _RepositoryReadmeIjgFile.new,
+    '/flutter/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
     '/flutter/third_party/rapidjson/LICENSE': _RepositoryOpaqueLicenseFile.new,
     '/flutter/third_party/rapidjson/license.txt': _RepositoryOpaqueLicenseFile.new,
+    '/flutter/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
     '/fuchsia/sdk/linux/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/fuchsia/sdk/mac/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
-    '/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
     '/third_party/dart/LICENSE': _RepositoryDartLicenseFile.new,
-    '/third_party/freetype2/LICENSE.TXT': _RepositoryFreetypeLicenseFile.new,
-    '/third_party/icu/LICENSE': _RepositoryIcuLicenseFile.new,
     '/third_party/khronos/LICENSE': _RepositoryKhronosLicenseFile.new,
     '/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
     '/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
-    '/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
-    '/third_party/root_certificates/LICENSE': _RepositoryMpl2File.new,
-    '/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
   };
 
   _RepositoryFile createFile(fs.IoNode entry) {
@@ -1456,7 +1416,7 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
     final fs.Directory flutterThirdPartyNode = findChildDirectory(flutterNode, 'third_party')!;
     final fs.Directory skiaNode = findChildDirectory(flutterThirdPartyNode, 'skia')!;
     return <_RepositoryDirectory>[
-      _RepositorySkiaDirectory(this, dartNode),
+      _RepositoryDartDirectory(this, dartNode),
       _RepositorySkiaDirectory(this, skiaNode),
     ];
   }
@@ -1480,23 +1440,8 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'boringssl') {
-      return _RepositoryBoringSSLDirectory(this, entry);
-    }
-    if (entry.name == 'expat') {
-      return _RepositoryExpatDirectory(this, entry);
-    }
-    if (entry.name == 'freetype2') {
-      return _RepositoryFreetypeDirectory(this, entry);
-    }
     if (entry.name == 'icu') {
       return _RepositoryIcuDirectory(this, entry);
-    }
-    if (entry.name == 'root_certificates') {
-      return _RepositoryRootCertificatesDirectory(this, entry);
-    }
-    if (entry.name == 'vulkan-deps') {
-      return _RepositoryGenericThirdPartyDirectory(this, entry);
     }
     if (entry.name == 'zlib') {
       return _RepositoryZLibDirectory(this, entry);
@@ -1601,30 +1546,18 @@ class _RepositoryIcuDirectory extends _RepositoryDirectory {
   }
 }
 
-class _RepositoryRootCertificatesDirectory extends _RepositoryDirectory {
-  _RepositoryRootCertificatesDirectory(_RepositoryDirectory super.parent, super.io);
-
-  static final RegExp _revinfoPattern = RegExp(r'^([^:]+): ([^@]+)@(.+)$');
+class _RepositoryFallbackRootCertificatesDirectory extends _RepositoryDirectory {
+  _RepositoryFallbackRootCertificatesDirectory(_RepositoryDirectory super.parent, super.io);
 
   @override
   String get officialSourceLocation {
-    final system.ProcessResult result = system.Process.runSync('gclient', <String>['revinfo'], workingDirectory: '$this');
+    final system.ProcessResult result = system.Process.runSync('git', <String>['rev-parse', 'HEAD'], workingDirectory: '$this');
     if (result.exitCode != 0) {
-      throw 'Failed to run "gclient revinfo"; got non-zero exit code ${result.exitCode}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}';
+      throw 'Failed to run "git rev-parse HEAD"; got non-zero exit code ${result.exitCode}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}';
     }
-    final List<String> matchingLines = (result.stdout as String).split('\n').where((String line) => line.startsWith('src/third_party/root_certificates:')).toList();
-    if (matchingLines.length != 1) {
-      throw 'Failed to find root_certificates in "gclient revinfo" output:\n${result.stdout}';
-    }
-    final Match? match = _revinfoPattern.matchAsPrefix(matchingLines.single);
-    if (match == null) {
-      throw 'Failed to find root_certificates in "gclient revinfo" output:\n${result.stdout}';
-    }
-    if ((match.group(1) != 'src/third_party/root_certificates') ||
-        (match.group(2) != 'https://dart.googlesource.com/root_certificates.git')) {
-      throw 'Failed to verify root_certificates entry in "gclient revinfo" output:\n${result.stdout}';
-    }
-    return 'https://dart.googlesource.com/root_certificates/+/${match.group(3)}';
+
+    final String rev = result.stdout as String;
+    return 'https://dart.googlesource.com/sdk/+/$rev/third_party/fallback_root_certificates/';
   }
 }
 
@@ -1649,6 +1582,33 @@ class _RepositoryZLibDirectory extends _RepositoryDirectory {
       return nearestLicenseWithName('LICENSE')!;
     }
     return super.nearestLicenseOfType(type);
+  }
+}
+
+class _RepositoryDartDirectory extends _RepositoryDirectory {
+  _RepositoryDartDirectory(_RepositoryDirectory super.parent, super.io);
+
+  @override
+  bool get isLicenseRoot => true;
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'third_party') {
+      return _RepositoryDartThirdPartyDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
+  }
+}
+
+class _RepositoryDartThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
+  _RepositoryDartThirdPartyDirectory(super.parent, super.io);
+
+  @override
+  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'fallback_root_certificates') {
+      return _RepositoryFallbackRootCertificatesDirectory(this, entry);
+    }
+    return super.createSubdirectory(entry);
   }
 }
 
@@ -1790,8 +1750,17 @@ class _RepositoryFlutterThirdPartyDirectory extends _RepositoryGenericThirdParty
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'boringssl') {
+      return _RepositoryBoringSSLDirectory(this, entry);
+    }
     if (entry.name == 'expat') {
       return _RepositoryExpatDirectory(this, entry);
+    }
+    if (entry.name == 'freetype2') {
+      return _RepositoryFreetypeDirectory(this, entry);
+    }
+    if (entry.name == 'vulkan-deps') {
+      return _RepositoryGenericThirdPartyDirectory(this, entry);
     }
     return super.createSubdirectory(entry);
   }

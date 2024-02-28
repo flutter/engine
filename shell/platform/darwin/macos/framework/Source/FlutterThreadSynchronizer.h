@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTHREADSYNCHRONIZER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTHREADSYNCHRONIZER_H_
+
 #import <Cocoa/Cocoa.h>
 
 /**
@@ -37,6 +40,13 @@
 - (void)performCommitForView:(int64_t)viewId
                         size:(CGSize)size
                       notify:(nonnull dispatch_block_t)notify;
+
+/**
+ * Schedules the given block to be performed on the platform thread.
+ * The block will be performed even if the platform thread is blocked waiting
+ * for a commit.
+ */
+- (void)performOnPlatformThread:(nonnull dispatch_block_t)block;
 
 /**
  * Requests the synchronizer to track another view.
@@ -96,3 +106,5 @@
 - (void)blockUntilFrameAvailable;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTHREADSYNCHRONIZER_H_

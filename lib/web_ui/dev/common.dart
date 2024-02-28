@@ -213,15 +213,12 @@ class DevNull implements StringSink {
   void writeln([Object? obj = '']) {}
 }
 
-/// Whether the felt command is running on Cirrus CI.
-bool get isCirrus => io.Platform.environment['CIRRUS_CI'] == 'true';
-
 /// Whether the felt command is running on LUCI.
 bool get isLuci => io.Platform.environment['LUCI_CONTEXT'] != null;
 
 /// Whether the felt command is running on one of the Continuous Integration
 /// environements.
-bool get isCi => isCirrus || isLuci;
+bool get isCi => isLuci;
 
 const String kChrome = 'chrome';
 const String kEdge = 'edge';
@@ -240,12 +237,11 @@ const List<String> kAllBrowserNames = <String>[
 /// The [browserName] matches the browser name passed as the `--browser` option.
 BrowserEnvironment getBrowserEnvironment(
   BrowserName browserName, {
-  required bool enableWasmGC,
   required bool useDwarf,
 }) {
   switch (browserName) {
     case BrowserName.chrome:
-      return ChromeEnvironment(enableWasmGC: enableWasmGC, useDwarf: useDwarf);
+      return ChromeEnvironment(useDwarf: useDwarf);
     case BrowserName.edge:
       return EdgeEnvironment();
     case BrowserName.firefox:

@@ -18,6 +18,7 @@
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/shell.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 #include "rapidjson/document.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 
@@ -74,7 +75,8 @@ Engine::Engine(Delegate& delegate,
                fml::RefPtr<SkiaUnrefQueue> unref_queue,
                fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
                std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-               const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)
+               const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+               impeller::RuntimeStageBackend runtime_stage_type)
     : Engine(delegate,
              dispatcher_maker,
              vm.GetConcurrentWorkerTaskRunner(),
@@ -106,6 +108,7 @@ Engine::Engine(Delegate& delegate,
           std::move(volatile_path_tracker),        // volatile path tracker
           vm.GetConcurrentWorkerTaskRunner(),      // concurrent task runner
           settings_.enable_impeller,               // enable impeller
+          runtime_stage_type,                      // runtime stage type
       });
 }
 
@@ -143,6 +146,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*image_generator_registry=*/result->GetImageGeneratorRegistry(),
       /*snapshot_delegate=*/std::move(snapshot_delegate));
   result->initial_route_ = initial_route;
+  result->asset_manager_ = asset_manager_;
   return result;
 }
 
@@ -171,7 +175,8 @@ fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
 
 bool Engine::UpdateAssetManager(
     const std::shared_ptr<AssetManager>& new_asset_manager) {
-  if (asset_manager_ == new_asset_manager) {
+  if (asset_manager_ && new_asset_manager &&
+      *asset_manager_ == *new_asset_manager) {
     return false;
   }
 
@@ -459,8 +464,11 @@ void Engine::ScheduleFrame(bool regenerate_layer_trees) {
   animator_->RequestFrame(regenerate_layer_trees);
 }
 
-void Engine::Render(int64_t view_id,
-                    std::unique_ptr<flutter::LayerTree> layer_tree,
+void Engine::EndWarmUpFrame() {
+  animator_->EndWarmUpFrame();
+}
+
+void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
                     float device_pixel_ratio) {
   if (!layer_tree) {
     return;
@@ -471,7 +479,7 @@ void Engine::Render(int64_t view_id,
     return;
   }
 
-  animator_->Render(view_id, std::move(layer_tree), device_pixel_ratio);
+  animator_->Render(std::move(layer_tree), device_pixel_ratio);
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,

@@ -4,14 +4,11 @@
 
 #include "linear_gradient_contents.h"
 
-#include "flutter/fml/logging.h"
 #include "impeller/core/formats.h"
-#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
@@ -71,62 +68,49 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
   using VS = LinearGradientFillPipeline::VertexShader;
   using FS = LinearGradientFillPipeline::FragmentShader;
 
-  auto gradient_data = CreateGradientBuffer(colors_, stops_);
-  auto gradient_texture =
-      CreateGradientTexture(gradient_data, renderer.GetContext());
-  if (gradient_texture == nullptr) {
-    return false;
-  }
-
-  FS::FragInfo frag_info;
-  frag_info.start_point = start_point_;
-  frag_info.end_point = end_point_;
-  frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.decal_border_color = decal_border_color_;
-  frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
-  frag_info.alpha = GetOpacityFactor();
-  frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
-                                 0.5 / gradient_texture->GetSize().height);
-
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
   VS::FrameInfo frame_info;
-  frame_info.mvp = geometry_result.transform;
   frame_info.matrix = GetInverseEffectTransform();
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "LinearGradientFill");
-  cmd.stencil_reference = entity.GetClipDepth();
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetLinearGradientFillPipeline(options);
+      };
+  return ColorSourceContents::DrawGeometry<VS>(
+      renderer, entity, pass, pipeline_callback, frame_info,
+      [this, &renderer](RenderPass& pass) {
+        auto gradient_data = CreateGradientBuffer(colors_, stops_);
+        auto gradient_texture =
+            CreateGradientTexture(gradient_data, renderer.GetContext());
+        if (gradient_texture == nullptr) {
+          return false;
+        }
 
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetLinearGradientFillPipeline(options);
+        FS::FragInfo frag_info;
+        frag_info.start_point = start_point_;
+        frag_info.end_point = end_point_;
+        frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
+        frag_info.decal_border_color = decal_border_color_;
+        frag_info.texture_sampler_y_coord_scale =
+            gradient_texture->GetYCoordScale();
+        frag_info.alpha = GetOpacityFactor();
+        frag_info.half_texel =
+            Vector2(0.5 / gradient_texture->GetSize().width,
+                    0.5 / gradient_texture->GetSize().height);
 
-  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-  SamplerDescriptor sampler_desc;
-  sampler_desc.min_filter = MinMagFilter::kLinear;
-  sampler_desc.mag_filter = MinMagFilter::kLinear;
-  FS::BindTextureSampler(
-      cmd, std::move(gradient_texture),
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc));
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+        pass.SetCommandLabel("LinearGradientFill");
 
-  if (!pass.AddCommand(std::move(cmd))) {
-    return false;
-  }
+        SamplerDescriptor sampler_desc;
+        sampler_desc.min_filter = MinMagFilter::kLinear;
+        sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-  if (geometry_result.prevent_overdraw) {
-    auto restore = ClipRestoreContents();
-    restore.SetRestoreCoverage(GetCoverage(entity));
-    return restore.Render(renderer, entity, pass);
-  }
-  return true;
+        FS::BindTextureSampler(
+            pass, std::move(gradient_texture),
+            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                sampler_desc));
+        FS::BindFragInfo(
+            pass, renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
+        return true;
+      });
 }
 
 bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
@@ -135,55 +119,39 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   using VS = LinearGradientSSBOFillPipeline::VertexShader;
   using FS = LinearGradientSSBOFillPipeline::FragmentShader;
 
-  FS::FragInfo frag_info;
-  frag_info.start_point = start_point_;
-  frag_info.end_point = end_point_;
-  frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  frag_info.decal_border_color = decal_border_color_;
-  frag_info.alpha = GetOpacityFactor();
-
-  auto& host_buffer = pass.GetTransientsBuffer();
-  auto colors = CreateGradientColors(colors_, stops_);
-
-  frag_info.colors_length = colors.size();
-  auto color_buffer =
-      host_buffer.Emplace(colors.data(), colors.size() * sizeof(StopData),
-                          DefaultUniformAlignment());
-
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
   frame_info.matrix = GetInverseEffectTransform();
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "LinearGradientSSBOFill");
-  cmd.stencil_reference = entity.GetClipDepth();
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetLinearGradientSSBOFillPipeline(options);
+      };
+  return ColorSourceContents::DrawGeometry<VS>(
+      renderer, entity, pass, pipeline_callback, frame_info,
+      [this, &renderer](RenderPass& pass) {
+        FS::FragInfo frag_info;
+        frag_info.start_point = start_point_;
+        frag_info.end_point = end_point_;
+        frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
+        frag_info.decal_border_color = decal_border_color_;
+        frag_info.alpha = GetOpacityFactor();
 
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetLinearGradientSSBOFillPipeline(options);
+        auto& host_buffer = renderer.GetTransientsBuffer();
+        auto colors = CreateGradientColors(colors_, stops_);
 
-  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
-  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-  FS::BindColorData(cmd, color_buffer);
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+        frag_info.colors_length = colors.size();
+        auto color_buffer =
+            host_buffer.Emplace(colors.data(), colors.size() * sizeof(StopData),
+                                DefaultUniformAlignment());
 
-  if (!pass.AddCommand(std::move(cmd))) {
-    return false;
-  }
+        pass.SetCommandLabel("LinearGradientSSBOFill");
 
-  if (geometry_result.prevent_overdraw) {
-    auto restore = ClipRestoreContents();
-    restore.SetRestoreCoverage(GetCoverage(entity));
-    return restore.Render(renderer, entity, pass);
-  }
-  return true;
+        FS::BindFragInfo(
+            pass, renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
+        FS::BindColorData(pass, color_buffer);
+
+        return true;
+      });
 }
 
 bool LinearGradientContents::ApplyColorFilter(

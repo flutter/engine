@@ -11,18 +11,14 @@ on:
 permissions: read-all
 
 jobs:
-  vuln-scan:
-    name: Vulnerability scanning
+  extract-deps:
+    name: Extract Dependencies
     runs-on: ubuntu-20.04
-    # run on flutter/engine push to main or PRs with 'vulnerability patch' label 
-    if: ${{  github.repository == 'flutter/engine' && (github.event_name == 'push' || github.event.label.name == 'vulnerability scan') }}
+    if: ${{ (github.repository == 'flutter/engine' && github.event_name == 'push') || github.event.label.name == 'vulnerability scan' }}
     permissions:
       # Needed to upload the SARIF results to code-scanning dashboard.
       security-events: write
-      actions: read
       contents: read
-      # Needed to access OIDC token.
-      id-token: write
     steps:
       - name: "Checkout code"
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
@@ -32,19 +28,28 @@ jobs:
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
         with:
           python-version: '3.7.7' # install the python version needed
-      - name: "extract and flatten deps"
-        run: python ci/deps_parser.py
-      - name: "scan deps for vulnerabilities"
-        run: python ci/scan_flattened_deps.py
-      # Upload the results as artifacts.
-      - name: "Upload artifact"
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32
+      - name: "extract deps, find commit hash, pass to osv-scanner"
+        run: python ci/scan_deps.py --output osv-lockfile-${{github.sha}}.json
+      - name: "upload osv-scanner deps"
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3
         with:
-          name: SARIF file
-          path: osvReport.sarif
-          retention-days: 5
-      # Upload the results to GitHub's code scanning dashboard.
-      - name: "Upload to security tab"
-        uses: github/codeql-action/upload-sarif@cdcdbb579706841c47f7063dda365e292e5cad7a
-        with:
-          sarif_file: osvReport.sarif
+          # use github.ref in name to avoid duplicated artifacts
+          name: osv-lockfile-${{github.sha}}
+          path: osv-lockfile-${{github.sha}}.json
+          retention-days: 2
+  vuln-scan:
+    name: Vulnerability scanning
+    needs:
+      extract-deps
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.6.2-beta1"
+    with:
+      # Download the artifact uploaded in extract-deps step
+      download-artifact: osv-lockfile-${{github.sha}}
+      scan-args: |-
+        --lockfile=osv-scanner:osv-lockfile-${{github.sha}}.json
+      fail-on-vuln: false
+    # makes sure the osv-formatted vulns are uploaded
+    permissions:
+      # Needed to upload the SARIF results to code-scanning dashboard.
+      security-events: write
+      contents: read

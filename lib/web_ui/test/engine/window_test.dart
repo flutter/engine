@@ -463,6 +463,39 @@ Future<void> testMain() async {
     await expectLater(completer.future, completes);
   });
 
+  test('sets global html attributes', () {
+    final DomElement host = createDomHTMLDivElement();
+    final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+
+    expect(host.getAttribute('flt-renderer'), 'html (requested explicitly)');
+    expect(host.getAttribute('flt-build-mode'), 'debug');
+
+    view.dispose();
+  });
+
+  test('in full-page mode, Flutter window replaces viewport meta tags', () {
+    final DomHTMLMetaElement existingMeta = createDomHTMLMetaElement()
+      ..name = 'viewport'
+      ..content = 'foo=bar';
+    domDocument.head!.append(existingMeta);
+    expect(existingMeta.isConnected, isTrue);
+
+    final EngineFlutterWindow implicitView = EngineFlutterView.implicit(dispatcher, null);
+    // The existing viewport meta tag should've been removed.
+    expect(existingMeta.isConnected, isFalse);
+    // And a new one should've been added.
+    final DomHTMLMetaElement? newMeta = domDocument.head!.querySelector('meta[name="viewport"]') as DomHTMLMetaElement?;
+    expect(newMeta, isNotNull);
+    newMeta!;
+    expect(newMeta.getAttribute('flt-viewport'), isNotNull);
+    expect(newMeta.name, 'viewport');
+    expect(newMeta.content, contains('width=device-width'));
+    expect(newMeta.content, contains('initial-scale=1.0'));
+    expect(newMeta.content, contains('maximum-scale=1.0'));
+    expect(newMeta.content, contains('user-scalable=no'));
+    implicitView.dispose();
+  });
+
   test('auto-view-id', () {
     final DomElement host = createDomHTMLDivElement();
     final EngineFlutterView implicit1 = EngineFlutterView.implicit(dispatcher, host);
@@ -551,10 +584,11 @@ Future<void> testMain() async {
         ..width = '10px'
         ..height = '10px';
       domDocument.body!.append(host);
+
       // Let the DOM settle before starting the test, so we don't get the first
       // 10,10 Size in the test. Otherwise, the ResizeObserver may trigger
       // unexpectedly after the test has started, and break our "first" result.
-      await Future<void>.delayed(const Duration(milliseconds: 250));
+      await view.onResize.first;
 
       metricsChangedCount = 0;
       view.platformDispatcher.onMetricsChanged = () {
@@ -574,7 +608,7 @@ Future<void> testMain() async {
       expect(view.physicalSize, const ui.Size(25.0, 25.0));
       expect(metricsChangedCount, 0);
 
-      // Resize the host to 20x20.
+      // Simulate the browser resizing the host to 20x20.
       host.style
         ..width = '20px'
         ..height = '20px';
@@ -598,6 +632,69 @@ Future<void> testMain() async {
       await view.onResize.first;
       // The view should maintain the debugPhysicalSizeOverride.
       expect(view.physicalSize, const ui.Size(100.0, 100.0));
+    });
+
+    test('can resize host', () async {
+      // Reset host style, so it tightly wraps the rootElement of the view.
+      // This style change will trigger a "onResize" event when all the DOM
+      // operations settle that we must await before taking measurements.
+      host.style
+        ..display = 'inline-block'
+        ..width = 'auto'
+        ..height = 'auto';
+
+      // Resize the host to 20x20 (physical pixels).
+      view.resize(const ui.Size.square(50));
+
+      await view.onResize.first;
+
+      // The host tightly wraps the rootElement:
+      expect(view.physicalSize, const ui.Size(50.0, 50.0));
+
+      // Inspect the rootElement directly:
+      expect(view.dom.rootElement.clientWidth, 50 / view.devicePixelRatio);
+      expect(view.dom.rootElement.clientHeight, 50 / view.devicePixelRatio);
+    });
+  });
+
+  group('physicalConstraints', () {
+    const double dpr = 2.5;
+    late DomHTMLDivElement host;
+    late EngineFlutterView view;
+
+    setUp(() async {
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(dpr);
+      host = createDomHTMLDivElement()
+        ..style.width = '640px'
+        ..style.height = '480px';
+      domDocument.body!.append(host);
+    });
+
+    tearDown(() {
+      host.remove();
+      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(null);
+    });
+
+    test('JsViewConstraints are passed and used to compute physicalConstraints', () async {
+      view = EngineFlutterView(
+        EnginePlatformDispatcher.instance,
+        host,
+        viewConstraints: JsViewConstraints(
+          minHeight: 320,
+          maxHeight: double.infinity,
+        ));
+
+      // All the metrics until now have been expressed in logical pixels, because
+      // they're coming from CSS/the browser, which works in logical pixels.
+      expect(view.physicalConstraints, const ViewConstraints(
+        minHeight: 320,
+        // ignore: avoid_redundant_argument_values
+        maxHeight: double.infinity,
+        minWidth: 640,
+        maxWidth: 640,
+      // However the framework expects physical pixels, so we multiply our expectations
+      // by the current DPR (2.5)
+      ) * dpr);
     });
   });
 }

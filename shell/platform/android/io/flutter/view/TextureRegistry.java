@@ -69,12 +69,6 @@ public interface TextureRegistry {
   /** Uses a Surface to populate the texture. */
   @Keep
   interface SurfaceProducer extends TextureEntry {
-    /** @return The identity of this texture. */
-    long id();
-
-    /** Deregisters and releases all resources . */
-    void release();
-
     /** Specify the size of this texture in physical pixels */
     void setSize(int width, int height);
 
@@ -94,17 +88,13 @@ public interface TextureRegistry {
      * @return a Surface to use for a drawing target for various APIs.
      */
     Surface getSurface();
+
+    void scheduleFrame();
   };
 
   /** A registry entry for a managed SurfaceTexture. */
   @Keep
   interface SurfaceTextureEntry extends TextureEntry {
-    /** @return The identity of this texture. */
-    long id();
-
-    /** Deregisters and releases all resources . */
-    void release();
-
     /** @return The managed SurfaceTexture. */
     @NonNull
     SurfaceTexture surfaceTexture();
@@ -118,12 +108,6 @@ public interface TextureRegistry {
 
   @Keep
   interface ImageTextureEntry extends TextureEntry {
-    /** @return the identity of this ImageTextureEntry */
-    long id();
-
-    /** Deregisters and releases all resources. */
-    void release();
-
     /**
      * Next paint will update texture to use the contents of image.
      *
@@ -151,7 +135,7 @@ public interface TextureRegistry {
   }
 
   @Keep
-  interface ImageConsumer extends TextureEntry {
+  interface ImageConsumer {
     /**
      * Retrieve the last Image produced. Drops all previously produced images.
      *
@@ -159,6 +143,18 @@ public interface TextureRegistry {
      *
      * @return Image or null.
      */
+    @Nullable
     public Image acquireLatestImage();
+  }
+
+  @Keep
+  interface GLTextureConsumer {
+    /**
+     * Retrieve the last GL texture produced.
+     *
+     * @return SurfaceTexture.
+     */
+    @NonNull
+    public SurfaceTexture getSurfaceTexture();
   }
 }

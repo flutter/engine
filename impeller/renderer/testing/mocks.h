@@ -10,6 +10,7 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -92,7 +93,7 @@ class MockBlitPass : public BlitPass {
 
 class MockRenderPass : public RenderPass {
  public:
-  MockRenderPass(std::weak_ptr<const Context> context,
+  MockRenderPass(std::shared_ptr<const Context> context,
                  const RenderTarget& target)
       : RenderPass(std::move(context), target) {}
   MOCK_METHOD(bool, IsValid, (), (const, override));
@@ -164,6 +165,11 @@ class MockImpellerContext : public Context {
               GetCapabilities,
               (),
               (const, override));
+
+  MOCK_METHOD(std::shared_ptr<CommandQueue>,
+              GetCommandQueue,
+              (),
+              (const, override));
 };
 
 class MockTexture : public Texture {
@@ -198,11 +204,21 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(PixelFormat, GetDefaultColorFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultStencilFormat, (), (const, override));
   MOCK_METHOD(PixelFormat, GetDefaultDepthStencilFormat, (), (const, override));
+  MOCK_METHOD(PixelFormat, GetDefaultGlyphAtlasFormat, (), (const, override));
+};
+
+class MockCommandQueue : public CommandQueue {
+ public:
+  MOCK_METHOD(fml::Status,
+              Submit,
+              (const std::vector<std::shared_ptr<CommandBuffer>>& buffers,
+               const CompletionCallback& cb),
+              (override));
 };
 
 class MockSamplerLibrary : public SamplerLibrary {
  public:
-  MOCK_METHOD(std::shared_ptr<const Sampler>,
+  MOCK_METHOD(const std::unique_ptr<const Sampler>&,
               GetSampler,
               (SamplerDescriptor descriptor),
               (override));
@@ -211,7 +227,6 @@ class MockSamplerLibrary : public SamplerLibrary {
 class MockSampler : public Sampler {
  public:
   explicit MockSampler(const SamplerDescriptor& desc) : Sampler(desc) {}
-  MOCK_METHOD(bool, IsValid, (), (const, override));
 };
 
 }  // namespace testing

@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "fml/closure.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/scene/scene_context.h"
 #include "impeller/scene/scene_encoder.h"
@@ -32,6 +33,9 @@ Node& Scene::GetRoot() {
 
 bool Scene::Render(const RenderTarget& render_target,
                    const Matrix& camera_transform) {
+  fml::ScopedCleanupClosure reset_state(
+      [context = scene_context_]() { context->GetTransientsBuffer().Reset(); });
+
   // Collect the render commands from the scene.
   SceneEncoder encoder;
   if (!root_.Render(encoder,
@@ -49,7 +53,10 @@ bool Scene::Render(const RenderTarget& render_target,
 
   // TODO(bdero): Do post processing.
 
-  if (!command_buffer->SubmitCommands()) {
+  if (!scene_context_->GetContext()
+           ->GetCommandQueue()
+           ->Submit({command_buffer})
+           .ok()) {
     FML_LOG(ERROR) << "Failed to submit command buffer.";
     return false;
   }

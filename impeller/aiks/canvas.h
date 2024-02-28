@@ -33,8 +33,9 @@ struct CanvasStackEntry {
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
   size_t clip_depth = 0u;
+  // The number of clips tracked for this canvas stack entry.
+  size_t num_clips = 0u;
   Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
-  bool contains_clips = false;
 };
 
 enum class PointStyle {
@@ -43,6 +44,15 @@ enum class PointStyle {
 
   /// @brief Points are drawn as circles.
   kSquare,
+};
+
+/// Controls the behavior of the source rectangle given to DrawImageRect.
+enum class SourceRectConstraint {
+  /// @brief Faster, but may sample outside the bounds of the source rectangle.
+  kFast,
+
+  /// @brief Sample only within the source rectangle. May be slower.
+  kStrict,
 };
 
 class Canvas {
@@ -97,7 +107,7 @@ class Canvas {
 
   void Rotate(Radians radians);
 
-  void DrawPath(Path path, const Paint& paint);
+  void DrawPath(const Path& path, const Paint& paint);
 
   void DrawPaint(const Paint& paint);
 
@@ -123,14 +133,16 @@ class Canvas {
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
-  void DrawImageRect(const std::shared_ptr<Image>& image,
-                     Rect source,
-                     Rect dest,
-                     const Paint& paint,
-                     SamplerDescriptor sampler = {});
+  void DrawImageRect(
+      const std::shared_ptr<Image>& image,
+      Rect source,
+      Rect dest,
+      const Paint& paint,
+      SamplerDescriptor sampler = {},
+      SourceRectConstraint src_rect_constraint = SourceRectConstraint::kFast);
 
   void ClipPath(
-      Path path,
+      const Path& path,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
   void ClipRect(
@@ -145,8 +157,6 @@ class Canvas {
       const Rect& rect,
       const Size& corner_radii,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
-
-  void DrawPicture(const Picture& picture);
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
@@ -170,6 +180,7 @@ class Canvas {
  private:
   std::unique_ptr<EntityPass> base_pass_;
   EntityPass* current_pass_ = nullptr;
+  uint64_t current_depth_ = 0u;
   std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
 
@@ -180,6 +191,8 @@ class Canvas {
   EntityPass& GetCurrentPass();
 
   size_t GetClipDepth() const;
+
+  void AddEntityToCurrentPass(Entity entity);
 
   void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
@@ -194,7 +207,7 @@ class Canvas {
   void RestoreClip();
 
   bool AttemptDrawBlurredRRect(const Rect& rect,
-                               Scalar corner_radius,
+                               Size corner_radius,
                                const Paint& paint);
 
   Canvas(const Canvas&) = delete;

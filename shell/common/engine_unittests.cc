@@ -6,16 +6,21 @@
 
 #include <cstring>
 
+#include "flutter/common/constants.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
+#include "fml/mapping.h"
 #include "gmock/gmock.h"
+#include "lib/ui/text/font_collection.h"
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
+#include "runtime/isolate_configuration.h"
+#include "shell/common/run_configuration.h"
 
 namespace flutter {
 
@@ -33,6 +38,41 @@ static void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
   });
   latch.Wait();
 }
+
+class FontManifestAssetResolver : public AssetResolver {
+ public:
+  FontManifestAssetResolver() {}
+
+  bool IsValid() const override { return true; }
+
+  bool IsValidAfterAssetManagerChange() const override { return true; }
+
+  AssetResolver::AssetResolverType GetType() const override {
+    return AssetResolver::AssetResolverType::kApkAssetProvider;
+  }
+
+  mutable size_t mapping_call_count = 0u;
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const override {
+    mapping_call_count++;
+    if (asset_name == "FontManifest.json") {
+      return std::make_unique<fml::DataMapping>("[{},{},{}]");
+    }
+    return nullptr;
+  }
+
+  std::vector<std::unique_ptr<fml::Mapping>> GetAsMappings(
+      const std::string& asset_pattern,
+      const std::optional<std::string>& subdir) const override {
+    return {};
+  };
+
+  bool operator==(const AssetResolver& other) const override {
+    auto mapping = GetAsMapping("FontManifest.json");
+    return memcmp(other.GetAsMapping("FontManifest.json")->GetMapping(),
+                  mapping->GetMapping(), mapping->GetSize()) == 0;
+  }
+};
 
 class MockDelegate : public Engine::Delegate {
  public:
@@ -78,9 +118,10 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD(std::string, DefaultRouteName, (), (override));
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
+  MOCK_METHOD(void, EndWarmUpFrame, (), (override));
   MOCK_METHOD(void,
               Render,
-              (int64_t, std::unique_ptr<flutter::LayerTree>, float),
+              (std::unique_ptr<flutter::LayerTree>, float),
               (override));
   MOCK_METHOD(void,
               UpdateSemantics,
@@ -174,6 +215,14 @@ class MockPlatformMessageHandler : public PlatformMessageHandler {
   MOCK_METHOD(void,
               InvokePlatformMessageEmptyResponseCallback,
               (int response_id),
+              (override));
+};
+
+class MockFontCollection : public FontCollection {
+ public:
+  MOCK_METHOD(void,
+              RegisterFonts,
+              (const std::shared_ptr<AssetManager>& asset_manager),
               (override));
 };
 
@@ -335,7 +384,6 @@ class EngineContext {
   fml::WeakPtr<IOManager> io_manager_;
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
 };
-
 }  // namespace
 
 TEST_F(EngineTest, Create) {
@@ -569,7 +617,10 @@ TEST_F(EngineTest, PassesLoadDartDeferredLibraryErrorToRuntime) {
   });
 }
 
-TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
+// The animator should submit to the pipeline the implicit view rendered in a
+// warm up frame if there's already a continuation (i.e. Animator::BeginFrame
+// has been called)
+TEST_F(EngineTest, AnimatorSubmitWarmUpImplicitView) {
   MockAnimatorDelegate animator_delegate;
   std::unique_ptr<EngineContext> engine_context;
 
@@ -578,31 +629,27 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   EXPECT_CALL(delegate_, GetPlatformMessageHandler)
       .WillOnce(ReturnRef(platform_message_handler));
 
+  fml::AutoResetWaitableEvent continuation_ready_latch;
   fml::AutoResetWaitableEvent draw_latch;
   EXPECT_CALL(animator_delegate, OnAnimatorDraw)
-      .WillOnce(
-          Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
-            auto status =
-                pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-                  EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
-                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, 1);
-                  EXPECT_EQ(item->layer_tree_tasks[1]->view_id, 2);
-                });
-            EXPECT_EQ(status, PipelineConsumeResult::Done);
-            draw_latch.Signal();
-          }));
-  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
-      .WillOnce(Invoke([&engine_context](fml::TimePoint frame_target_time,
-                                         uint64_t frame_number) {
-        engine_context->EngineTaskSync([&](Engine& engine) {
-          engine.BeginFrame(frame_target_time, frame_number);
+      .WillOnce(Invoke([&draw_latch](
+                           const std::shared_ptr<FramePipeline>& pipeline) {
+        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+          EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
+          EXPECT_EQ(item->layer_tree_tasks[0]->view_id, kFlutterImplicitViewId);
         });
+        EXPECT_EQ(status, PipelineConsumeResult::Done);
+        draw_latch.Signal();
       }));
-
-  static fml::AutoResetWaitableEvent callback_ready_latch;
-  callback_ready_latch.Reset();
-  AddNativeCallback("NotifyNative",
-                    [](auto args) { callback_ready_latch.Signal(); });
+  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
+      .WillRepeatedly(
+          Invoke([&engine_context, &continuation_ready_latch](
+                     fml::TimePoint frame_target_time, uint64_t frame_number) {
+            continuation_ready_latch.Signal();
+            engine_context->EngineTaskSync([&](Engine& engine) {
+              engine.BeginFrame(frame_target_time, frame_number);
+            });
+          }));
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
@@ -617,20 +664,105 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
                                          std::move(animator));
 
+  engine_context->EngineTaskSync([](Engine& engine) {
+    // Schedule a frame to trigger Animator::BeginFrame to create a
+    // continuation. The continuation needs to be available before `Engine::Run`
+    // since the Dart program immediately schedules a warm up frame.
+    engine.ScheduleFrame(true);
+    // Add the implicit view so that the engine recognizes it and that its
+    // metrics is not empty.
+    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1.0, 10, 10, 1, 0});
+  });
+  continuation_ready_latch.Wait();
+
   auto configuration = RunConfiguration::InferFromSettings(settings_);
-  configuration.SetEntrypoint("onBeginFrameRendersMultipleViews");
+  configuration.SetEntrypoint("renderWarmUpImplicitView");
   engine_context->Run(std::move(configuration));
 
-  engine_context->EngineTaskSync([](Engine& engine) {
-    engine.AddView(1, {1, 10, 10, 22, 0});
-    engine.AddView(2, {1, 10, 10, 22, 0});
-  });
-
-  callback_ready_latch.Wait();
-
-  engine_context->EngineTaskSync(
-      [](Engine& engine) { engine.ScheduleFrame(); });
   draw_latch.Wait();
+}
+
+TEST_F(EngineTest, SpawnedEngineInheritsAssetManager) {
+  PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    auto vm_ref = DartVMRef::Create(settings_);
+    EXPECT_CALL(*mock_runtime_controller, GetDartVM())
+        .WillRepeatedly(::testing::Return(vm_ref.get()));
+
+    // auto mock_font_collection = std::make_shared<MockFontCollection>();
+    // EXPECT_CALL(*mock_font_collection, RegisterFonts(::testing::_))
+    //     .WillOnce(::testing::Return());
+    auto engine = std::make_unique<Engine>(
+        /*delegate=*/delegate_,
+        /*dispatcher_maker=*/dispatcher_maker_,
+        /*image_decoder_task_runner=*/image_decoder_task_runner_,
+        /*task_runners=*/task_runners_,
+        /*settings=*/settings_,
+        /*animator=*/std::move(animator_),
+        /*io_manager=*/io_manager_,
+        /*font_collection=*/std::make_shared<FontCollection>(),
+        /*runtime_controller=*/std::move(mock_runtime_controller),
+        /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
+
+    EXPECT_EQ(engine->GetAssetManager(), nullptr);
+
+    auto asset_manager = std::make_shared<AssetManager>();
+    asset_manager->PushBack(std::make_unique<FontManifestAssetResolver>());
+    engine->UpdateAssetManager(asset_manager);
+    EXPECT_EQ(engine->GetAssetManager(), asset_manager);
+
+    auto spawn =
+        engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
+                      std::string(), io_manager_, snapshot_delegate_, nullptr);
+    EXPECT_TRUE(spawn != nullptr);
+    EXPECT_EQ(engine->GetAssetManager(), spawn->GetAssetManager());
+  });
+}
+
+TEST_F(EngineTest, UpdateAssetManagerWithEqualManagers) {
+  PostUITaskSync([this] {
+    MockRuntimeDelegate client;
+    auto mock_runtime_controller =
+        std::make_unique<MockRuntimeController>(client, task_runners_);
+    auto vm_ref = DartVMRef::Create(settings_);
+    EXPECT_CALL(*mock_runtime_controller, GetDartVM())
+        .WillRepeatedly(::testing::Return(vm_ref.get()));
+
+    auto mock_font_collection = std::make_shared<MockFontCollection>();
+    EXPECT_CALL(*mock_font_collection, RegisterFonts(::testing::_))
+        .WillOnce(::testing::Return());
+    auto engine = std::make_unique<Engine>(
+        /*delegate=*/delegate_,
+        /*dispatcher_maker=*/dispatcher_maker_,
+        /*image_decoder_task_runner=*/image_decoder_task_runner_,
+        /*task_runners=*/task_runners_,
+        /*settings=*/settings_,
+        /*animator=*/std::move(animator_),
+        /*io_manager=*/io_manager_,
+        /*font_collection=*/mock_font_collection,
+        /*runtime_controller=*/std::move(mock_runtime_controller),
+        /*gpu_disabled_switch=*/std::make_shared<fml::SyncSwitch>());
+
+    EXPECT_EQ(engine->GetAssetManager(), nullptr);
+
+    auto asset_manager = std::make_shared<AssetManager>();
+    asset_manager->PushBack(std::make_unique<FontManifestAssetResolver>());
+
+    auto asset_manager_2 = std::make_shared<AssetManager>();
+    asset_manager_2->PushBack(std::make_unique<FontManifestAssetResolver>());
+
+    EXPECT_NE(asset_manager, asset_manager_2);
+    EXPECT_TRUE(*asset_manager == *asset_manager_2);
+
+    engine->UpdateAssetManager(asset_manager);
+    EXPECT_EQ(engine->GetAssetManager(), asset_manager);
+
+    engine->UpdateAssetManager(asset_manager_2);
+    // Didn't change because they're equivalent.
+    EXPECT_EQ(engine->GetAssetManager(), asset_manager);
+  });
 }
 
 }  // namespace flutter

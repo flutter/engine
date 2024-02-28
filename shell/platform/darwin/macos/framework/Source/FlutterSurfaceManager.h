@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERSURFACEMANAGER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERSURFACEMANAGER_H_
+
 #import <Cocoa/Cocoa.h>
 #import <QuartzCore/QuartzCore.h>
 
@@ -66,8 +69,9 @@
  * and can be used to perform additional work, such as mutating platform views. It is guaranteed be
  * called in the same CATransaction.
  */
-- (void)present:(nonnull NSArray<FlutterSurfacePresentInfo*>*)surfaces
-         notify:(nullable dispatch_block_t)notify;
+- (void)presentSurfaces:(nonnull NSArray<FlutterSurfacePresentInfo*>*)surfaces
+                 atTime:(CFTimeInterval)presentationTime
+                 notify:(nullable dispatch_block_t)notify;
 
 @end
 
@@ -103,3 +107,5 @@
 @property(readonly, nonatomic, nonnull) NSArray<CALayer*>* layers;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERSURFACEMANAGER_H_

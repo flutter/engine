@@ -14,7 +14,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 class SkwasmRenderer implements Renderer {
   late SkwasmSurface surface;
-  late EngineSceneView sceneView;
+  EngineSceneView? _sceneView;
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -348,7 +348,6 @@ class SkwasmRenderer implements Renderer {
   @override
   FutureOr<void> initialize() {
     surface = SkwasmSurface();
-    sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
   }
 
   @override
@@ -401,18 +400,28 @@ class SkwasmRenderer implements Renderer {
   // TODO(harryterkelsen): Add multiview support,
   // https://github.com/flutter/flutter/issues/137073.
   @override
-  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) =>
-      sceneView.renderScene(scene as EngineScene);
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    recorder?.recordBuildFinish();
+
+    view as EngineFlutterView;
+    assert(view is EngineFlutterWindow, 'Skwasm does not support multi-view mode yet');
+    final EngineSceneView sceneView = _getSceneViewForView(view);
+    return sceneView.renderScene(scene as EngineScene, recorder);
+  }
+
+  EngineSceneView _getSceneViewForView(EngineFlutterView view) {
+    // TODO(mdebbar): Support multi-view mode.
+    if (_sceneView == null) {
+      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
+      final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+      implicitView.dom.setScene(_sceneView!.sceneElement);
+    }
+    return _sceneView!;
+  }
 
   @override
   String get rendererTag => 'skwasm';
-
-  @override
-  void reset(FlutterViewEmbedder embedder) {
-    // TODO(harryterkelsen): Do this operation on the appropriate Flutter View.
-    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.setScene(sceneView.sceneElement);
-  }
 
   static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
 
@@ -471,6 +480,16 @@ class SkwasmPictureRenderer implements PictureRenderer {
   SkwasmSurface surface;
 
   @override
-  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture) =>
-    surface.renderPicture(picture as SkwasmPicture);
+  FutureOr<RenderResult> renderPictures(List<ScenePicture> pictures) =>
+    surface.renderPictures(pictures.cast<SkwasmPicture>());
+
+  @override
+  ScenePicture clipPicture(ScenePicture picture, ui.Rect clip) {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder, clip);
+    canvas.clipRect(clip);
+    canvas.drawPicture(picture);
+
+    return recorder.endRecording() as ScenePicture;
+  }
 }

@@ -11,47 +11,66 @@
 #include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
+#include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
+#define GLFW_INCLUDE_NONE
+#include "third_party/glfw/include/GLFW/glfw3.h"
+
+#include "third_party/abseil-cpp/absl/base/no_destructor.h"
+
 namespace impeller {
+
+namespace {
+std::unique_ptr<PlaygroundImpl> MakeVulkanPlayground(bool enable_validations) {
+  FML_CHECK(::glfwInit() == GLFW_TRUE);
+  PlaygroundSwitches playground_switches;
+  playground_switches.enable_vulkan_validation = enable_validations;
+  return PlaygroundImpl::Create(PlaygroundBackend::kVulkan,
+                                playground_switches);
+}
+
+// Returns a static instance to a playground that can be used across tests.
+const std::unique_ptr<PlaygroundImpl>& GetSharedVulkanPlayground(
+    bool enable_validations) {
+  if (enable_validations) {
+    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+        vulkan_validation_playground(
+            MakeVulkanPlayground(/*enable_validations=*/true));
+    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
+    // removed when the thread local storage is removed.
+    static fml::ScopedCleanupClosure context_cleanup(
+        [&] { (*vulkan_validation_playground)->GetContext()->Shutdown(); });
+    return *vulkan_validation_playground;
+  } else {
+    static absl::NoDestructor<std::unique_ptr<PlaygroundImpl>>
+        vulkan_playground(MakeVulkanPlayground(/*enable_validations=*/false));
+    // TODO(https://github.com/flutter/flutter/issues/142237): This can be
+    // removed when the thread local storage is removed.
+    static fml::ScopedCleanupClosure context_cleanup(
+        [&] { (*vulkan_playground)->GetContext()->Shutdown(); });
+    return *vulkan_playground;
+  }
+}
+}  // namespace
+
+#define IMP_AIKSTEST(name)                         \
+  "impeller_Play_AiksTest_" #name "_Metal",        \
+      "impeller_Play_AiksTest_" #name "_OpenGLES", \
+      "impeller_Play_AiksTest_" #name "_Vulkan"
 
 // If you add a new playground test to the aiks unittests and you do not want it
 // to also be a golden test, then add the test name here.
 static const std::vector<std::string> kSkipTests = {
-    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Metal",
-    "impeller_Play_AiksTest_CanDrawPaintMultipleTimesInteractive_Vulkan",
-    "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_Metal",
-    "impeller_Play_AiksTest_CanRenderLinearGradientManyColorsUnevenStops_"
-    "Vulkan",
-    "impeller_Play_AiksTest_CanRenderRadialGradient_Metal",
-    "impeller_Play_AiksTest_CanRenderRadialGradient_Vulkan",
-    "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Metal",
-    "impeller_Play_AiksTest_CanRenderRadialGradientManyColors_Vulkan",
-    "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Metal",
-    "impeller_Play_AiksTest_CanRenderBackdropBlurInteractive_Vulkan",
-    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_Metal",
-    "impeller_Play_AiksTest_ClippedBlurFilterRendersCorrectlyInteractive_"
-    "Vulkan",
-    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Metal",
-    "impeller_Play_AiksTest_TextFrameSubpixelAlignment_Vulkan",
-    "impeller_Play_AiksTest_ColorWheel_Metal",
-    "impeller_Play_AiksTest_ColorWheel_Vulkan",
-    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Metal",
-    "impeller_Play_AiksTest_SolidStrokesRenderCorrectly_Vulkan",
-    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Metal",
-    "impeller_Play_AiksTest_GradientStrokesRenderCorrectly_Vulkan",
-    "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
-    "Metal",
-    "impeller_Play_AiksTest_CoverageOriginShouldBeAccountedForInSubpasses_"
-    "Vulkan",
-    "impeller_Play_AiksTest_SceneColorSource_Metal",
-    "impeller_Play_AiksTest_SceneColorSource_Vulkan",
     // TextRotated is flakey and we can't seem to get it to stabilize on Skia
     // Gold.
-    "impeller_Play_AiksTest_TextRotated_Metal",
-    "impeller_Play_AiksTest_TextRotated_Vulkan",
+    IMP_AIKSTEST(TextRotated),
+    // Runtime stage based tests get confused with a Metal context.
+    "impeller_Play_AiksTest_CanRenderClippedRuntimeEffects_Vulkan",
 };
+
+static const std::vector<std::string> kVulkanDenyValidationTests = {};
 
 namespace {
 std::string GetTestName() {
@@ -71,23 +90,35 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
+    FML_LOG(ERROR) << "Failed to collect screenshot for test " << GetTestName();
     return false;
   }
   std::string test_name = GetTestName();
   std::string filename = GetGoldenFilename();
   testing::GoldenDigest::Instance()->AddImage(
       test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
-  return screenshot->WriteToPNG(
-      testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
+  if (!screenshot->WriteToPNG(
+          testing::WorkingDirectory::Instance()->GetFilenamePath(filename))) {
+    FML_LOG(ERROR) << "Failed to write screenshot to " << filename;
+    return false;
+  }
+  return true;
+}
+
+bool ShouldTestHaveVulkanValidations() {
+  std::string test_name = GetTestName();
+  return std::find(kVulkanDenyValidationTests.begin(),
+                   kVulkanDenyValidationTests.end(),
+                   test_name) == kVulkanDenyValidationTests.end();
 }
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
-  GoldenPlaygroundTestImpl()
-      : screenshotter(new testing::MetalScreenshotter()) {}
-  std::unique_ptr<testing::MetalScreenshotter> screenshotter;
+  std::unique_ptr<PlaygroundImpl> test_vulkan_playground;
+  std::unique_ptr<PlaygroundImpl> test_opengl_playground;
+  std::unique_ptr<testing::Screenshotter> screenshotter;
   ISize window_size = ISize{1024, 768};
 };
 
@@ -116,10 +147,36 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  if (GetBackend() != PlaygroundBackend::kMetal &&
-      GetBackend() != PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("GoldenPlaygroundTest doesn't support this backend type.");
-    return;
+  bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+  switch (GetParam()) {
+    case PlaygroundBackend::kMetal:
+      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+      break;
+    case PlaygroundBackend::kVulkan: {
+      const std::unique_ptr<PlaygroundImpl>& playground =
+          GetSharedVulkanPlayground(enable_vulkan_validations);
+      pimpl_->screenshotter =
+          std::make_unique<testing::VulkanScreenshotter>(playground);
+      break;
+    }
+    case PlaygroundBackend::kOpenGLES: {
+      FML_CHECK(::glfwInit() == GLFW_TRUE);
+      PlaygroundSwitches playground_switches;
+      playground_switches.use_angle = true;
+      pimpl_->test_opengl_playground = PlaygroundImpl::Create(
+          PlaygroundBackend::kOpenGLES, playground_switches);
+      pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+          pimpl_->test_opengl_playground);
+      break;
+    }
+  }
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    const std::unique_ptr<PlaygroundImpl>& playground =
+        GetSharedVulkanPlayground(enable_vulkan_validations);
+    pimpl_->screenshotter =
+        std::make_unique<testing::VulkanScreenshotter>(playground);
   }
 
   std::string test_name = GetTestName();
@@ -149,6 +206,25 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
     AiksPlaygroundCallback
         callback) {  // NOLINT(performance-unnecessary-value-param)
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  std::optional<Picture> picture;
+  std::unique_ptr<testing::Screenshot> screenshot;
+  for (int i = 0; i < 2; ++i) {
+    picture = callback(renderer);
+    if (!picture.has_value()) {
+      return false;
+    }
+    screenshot = pimpl_->screenshotter->MakeScreenshot(
+        renderer, picture.value(), pimpl_->window_size);
+  }
+
+  return SaveScreenshot(std::move(screenshot));
+}
+
+bool GoldenPlaygroundTest::ImGuiBegin(const char* name,
+                                      bool* p_open,
+                                      ImGuiWindowFlags flags) {
   return false;
 }
 
@@ -165,21 +241,37 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
   return result;
 }
 
-std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-  auto fixture = flutter::testing::OpenFixtureAsMapping(asset_name);
+  const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(asset_name);
   if (!fixture || fixture->GetSize() == 0) {
-    return nullptr;
+    return {};
   }
-  auto stage = std::make_unique<RuntimeStage>(std::move(fixture));
-  if (!stage->IsValid()) {
-    return nullptr;
-  }
-  return stage;
+  return RuntimeStage::DecodeRuntimeStages(fixture);
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
   return pimpl_->screenshotter->GetPlayground().GetContext();
+}
+
+std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
+  if (GetParam() == PlaygroundBackend::kMetal) {
+    /// On Metal we create a context for each test.
+    return GetContext();
+  } else if (GetParam() == PlaygroundBackend::kVulkan) {
+    bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+    FML_CHECK(!pimpl_->test_vulkan_playground)
+        << "We don't support creating multiple contexts for one test";
+    pimpl_->test_vulkan_playground =
+        MakeVulkanPlayground(enable_vulkan_validations);
+    pimpl_->screenshotter = std::make_unique<testing::VulkanScreenshotter>(
+        pimpl_->test_vulkan_playground);
+    return pimpl_->test_vulkan_playground->GetContext();
+  } else {
+    /// On OpenGL we create a context for each test.
+    return GetContext();
+  }
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {

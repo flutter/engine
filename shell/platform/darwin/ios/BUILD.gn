@@ -53,17 +53,22 @@ source_set("flutter_framework_source_arc") {
     "//flutter/fml",
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/darwin/common:framework_common",
-    "//third_party/icu",
+    "//flutter/third_party/icu",
   ]
   public_configs = [ "//flutter:config" ]
 
   sources = [
+    "framework/Source/FlutterMetalLayer.h",
+    "framework/Source/FlutterMetalLayer.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
   ]
 
-  frameworks = [ "UIKit.framework" ]
+  frameworks = [
+    "UIKit.framework",
+    "IOSurface.framework",
+  ]
 }
 
 source_set("flutter_framework_source") {
@@ -257,6 +262,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterFakeKeyEvents.h",
     "framework/Source/FlutterFakeKeyEvents.mm",
     "framework/Source/FlutterKeyboardManagerTest.mm",
+    "framework/Source/FlutterMetalLayerTest.mm",
     "framework/Source/FlutterPlatformPluginTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
@@ -401,7 +407,7 @@ action("copy_framework_headers") {
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  sources = [ "//flutter/third_party/icu/flutter/icudtl.dat" ]
   outputs = [ "$_flutter_framework_dir/{{source_file_part}}" ]
 }
 

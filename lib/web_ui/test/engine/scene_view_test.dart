@@ -12,6 +12,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart';
 
+import '../common/test_initialization.dart';
 import 'scene_builder_utils.dart';
 
 void main() {
@@ -23,25 +24,41 @@ class StubPictureRenderer implements PictureRenderer {
       createDomCanvasElement(width: 500, height: 500);
 
   @override
-  Future<DomImageBitmap> renderPicture(ScenePicture picture) async {
-    renderedPictures.add(picture);
-    final ui.Rect cullRect = picture.cullRect;
-    final DomImageBitmap bitmap = (await createImageBitmap(
-      scratchCanvasElement as JSObject,
-      (x: 0, y: 0, width: cullRect.width.toInt(), height: cullRect.height.toInt())
-    ).toDart)! as DomImageBitmap;
-    return bitmap;
+  Future<RenderResult> renderPictures(List<ScenePicture> pictures) async {
+    renderedPictures.addAll(pictures);
+    final List<DomImageBitmap> bitmaps = await Future.wait(pictures.map((ScenePicture picture) {
+      final ui.Rect cullRect = picture.cullRect;
+      final Future<DomImageBitmap> bitmap = createImageBitmap(scratchCanvasElement as JSObject, (
+        x: 0,
+        y: 0,
+        width: cullRect.width.toInt(),
+        height: cullRect.height.toInt(),
+      ));
+      return bitmap;
+    }));
+    return (
+      imageBitmaps: bitmaps,
+      rasterStartMicros: 0,
+      rasterEndMicros: 0,
+    );
+  }
+
+  @override
+  ScenePicture clipPicture(ScenePicture picture, ui.Rect clip) {
+    clipRequests[picture] = clip;
+    return picture;
   }
 
   List<ScenePicture> renderedPictures = <ScenePicture>[];
+  Map<ScenePicture, ui.Rect> clipRequests = <ScenePicture, ui.Rect>{};
 }
 
 void testMain() {
   late EngineSceneView sceneView;
   late StubPictureRenderer stubPictureRenderer;
 
-  setUpAll(() {
-    ensureImplicitViewInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
   });
 
   setUp(() {
@@ -61,7 +78,7 @@ void testMain() {
     final EngineRootLayer rootLayer = EngineRootLayer();
     rootLayer.slices.add(PictureSlice(picture));
     final EngineScene scene = EngineScene(rootLayer);
-    await sceneView.renderScene(scene);
+    await sceneView.renderScene(scene, null);
 
     final DomElement sceneElement = sceneView.sceneElement;
     final List<DomElement> children = sceneElement.children.toList();
@@ -83,7 +100,8 @@ void testMain() {
     debugOverrideDevicePixelRatio(null);
   });
 
-  test('SceneView places platform view according to device-pixel ratio', () async {
+  test('SceneView places platform view according to device-pixel ratio',
+      () async {
     debugOverrideDevicePixelRatio(2.0);
 
     final PlatformView platformView = PlatformView(
@@ -95,7 +113,7 @@ void testMain() {
     final EngineRootLayer rootLayer = EngineRootLayer();
     rootLayer.slices.add(PlatformViewSlice(<PlatformView>[platformView], null));
     final EngineScene scene = EngineScene(rootLayer);
-    await sceneView.renderScene(scene);
+    await sceneView.renderScene(scene, null);
 
     final DomElement sceneElement = sceneView.sceneElement;
     final List<DomElement> children = sceneElement.children.toList();
@@ -113,7 +131,9 @@ void testMain() {
     debugOverrideDevicePixelRatio(null);
   });
 
-  test('SceneView always renders most recent picture and skips intermediate pictures', () async {
+  test(
+      'SceneView always renders most recent picture and skips intermediate pictures',
+      () async {
     final List<StubPicture> pictures = <StubPicture>[];
     final List<Future<void>> renderFutures = <Future<void>>[];
     for (int i = 1; i < 20; i++) {
@@ -127,7 +147,7 @@ void testMain() {
       final EngineRootLayer rootLayer = EngineRootLayer();
       rootLayer.slices.add(PictureSlice(picture));
       final EngineScene scene = EngineScene(rootLayer);
-      renderFutures.add(sceneView.renderScene(scene));
+      renderFutures.add(sceneView.renderScene(scene, null));
     }
     await Future.wait(renderFutures);
 
@@ -135,5 +155,22 @@ void testMain() {
     expect(stubPictureRenderer.renderedPictures.length, 2);
     expect(stubPictureRenderer.renderedPictures.first, pictures.first);
     expect(stubPictureRenderer.renderedPictures.last, pictures.last);
+  });
+
+  test('SceneView clips pictures that are outside the window screen', () async {
+      final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
+        -50,
+        -50,
+        100,
+        120,
+      ));
+
+      final EngineRootLayer rootLayer = EngineRootLayer();
+      rootLayer.slices.add(PictureSlice(picture));
+      final EngineScene scene = EngineScene(rootLayer);
+      await sceneView.renderScene(scene, null);
+
+      expect(stubPictureRenderer.renderedPictures.length, 1);
+      expect(stubPictureRenderer.clipRequests.containsKey(picture), true);
   });
 }

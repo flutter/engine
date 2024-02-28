@@ -51,12 +51,6 @@ static int ToTessWindingRule(FillType fill_type) {
       return TESS_WINDING_ODD;
     case FillType::kNonZero:
       return TESS_WINDING_NONZERO;
-    case FillType::kPositive:
-      return TESS_WINDING_POSITIVE;
-    case FillType::kNegative:
-      return TESS_WINDING_NEGATIVE;
-    case FillType::kAbsGeqTwo:
-      return TESS_WINDING_ABS_GEQ_TWO;
   }
   return TESS_WINDING_ODD;
 }
@@ -170,10 +164,22 @@ Tessellator::Result Tessellator::Tessellate(const Path& path,
   return Result::kSuccess;
 }
 
+Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
+                                               Scalar tolerance) {
+  FML_DCHECK(point_buffer_);
+  point_buffer_->clear();
+  auto polyline =
+      path.CreatePolyline(tolerance, std::move(point_buffer_),
+                          [this](Path::Polyline::PointBufferPtr point_buffer) {
+                            point_buffer_ = std::move(point_buffer);
+                          });
+  return polyline;
+}
+
 std::vector<Point> Tessellator::TessellateConvex(const Path& path,
                                                  Scalar tolerance) {
+  FML_DCHECK(point_buffer_);
   std::vector<Point> output;
-
   point_buffer_->clear();
   auto polyline =
       path.CreatePolyline(tolerance, std::move(point_buffer_),
@@ -452,7 +458,7 @@ EllipticalVertexGenerator Tessellator::FilledEllipse(
     const Rect& bounds) {
   if (bounds.IsSquare()) {
     return FilledCircle(view_transform, bounds.GetCenter(),
-                        bounds.GetSize().width * 0.5f);
+                        bounds.GetWidth() * 0.5f);
   }
   auto max_radius = bounds.GetSize().MaxDimension();
   auto divisions =
@@ -472,8 +478,8 @@ EllipticalVertexGenerator Tessellator::FilledRoundRect(
     const Matrix& view_transform,
     const Rect& bounds,
     const Size& radii) {
-  if (radii.width * 2 < bounds.GetSize().width ||
-      radii.height * 2 < bounds.GetSize().height) {
+  if (radii.width * 2 < bounds.GetWidth() ||
+      radii.height * 2 < bounds.GetHeight()) {
     auto max_radius = radii.MaxDimension();
     auto divisions = ComputeQuadrantDivisions(
         view_transform.GetMaxBasisLength() * max_radius);

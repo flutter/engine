@@ -19,6 +19,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpUnitTests(
+    withImplicitView: true,
     emulateTesterEnvironment: false,
     setUpTestViewDimensions: false,
   );
@@ -65,6 +66,11 @@ Future<void> testMain() async {
   test('text styles - paragraph height', () async {
     await testTextStyle('paragraph height',
         layoutWidth: 50, paragraphHeight: 1.5);
+  });
+
+  test('text styles - text style height overriding paragraph height', () async {
+    await testTextStyle('text style height and paragraph style height',
+      layoutWidth: 50, paragraphHeight: 1.5, height: 2.0);
   });
 
   test('text styles - paragraph text height behavior', () async {

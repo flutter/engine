@@ -14,17 +14,13 @@ import '../../common/matchers.dart';
 import '../../common/test_initialization.dart';
 
 const MethodCodec codec = StandardMethodCodec();
-final EngineFlutterWindow window = EngineFlutterView.implicit(
-  EnginePlatformDispatcher.instance,
-  createDomHTMLDivElement(),
-);
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await bootstrapAndRunApp();
+  await bootstrapAndRunApp(withImplicitView: true);
 
   late PersistedPlatformView view;
 

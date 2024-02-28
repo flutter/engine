@@ -100,6 +100,8 @@ template("embedder_source_set") {
     public_deps = [ ":embedder_headers" ]
     deps = [
       ":embedder_gpu_configuration",
+      "$dart_src/runtime/bin:dart_io_api",
+      "$dart_src/runtime/bin:elf_loader",
       "//flutter/assets",
       "//flutter/common",
       "//flutter/common/graphics",
@@ -110,8 +112,6 @@ template("embedder_source_set") {
       "//flutter/shell/common",
       "//flutter/skia",
       "//flutter/third_party/tonic",
-      "//third_party/dart/runtime/bin:dart_io_api",
-      "//third_party/dart/runtime/bin:elf_loader",
     ]
 
     if (embedder_enable_gl) {
@@ -177,6 +177,12 @@ template("embedder_source_set") {
       ]
     }
 
+    # Depend on 'icudtl.dat.S' to avoid dynamic lookups of engine library symbols.
+    if (is_android) {
+      deps += [ "//flutter/shell/platform/android:icudtl_asm" ]
+      sources += [ "$root_build_dir/gen/flutter/shell/platform/android/flutter/third_party/icu/flutter/icudtl.dat.S" ]
+    }
+
     public_configs += [
       ":embedder_gpu_configuration_config",
       ":embedder_header_config",
@@ -236,6 +242,7 @@ test_fixtures("fixtures") {
     "fixtures/dpr_noxform.png",
     "fixtures/dpr_xform.png",
     "fixtures/gradient.png",
+    "fixtures/impeller_gl_test.png",
     "fixtures/vk_dpr_noxform.png",
     "fixtures/vk_gradient.png",
     "fixtures/gradient_metal.png",
@@ -284,6 +291,7 @@ if (enable_unittests) {
       ":embedder",
       ":embedder_gpu_configuration",
       ":fixtures",
+      "$dart_src/runtime/bin:elf_loader",
       "//flutter/flow",
       "//flutter/lib/snapshot",
       "//flutter/lib/ui",
@@ -293,7 +301,6 @@ if (enable_unittests) {
       "//flutter/testing:dart",
       "//flutter/testing:skia",
       "//flutter/third_party/tonic",
-      "//third_party/dart/runtime/bin:elf_loader",
     ]
 
     if (test_enable_gl) {
@@ -306,7 +313,7 @@ if (enable_unittests) {
 
       public_deps += [
         "//flutter/testing:opengl",
-        "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
+        "//flutter/third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
       ]
     }
 
@@ -409,7 +416,7 @@ if (enable_unittests) {
       #"//flutter/testing:dart",
       #"//flutter/testing:skia",
       #"//flutter/third_party/tonic",
-      #"//third_party/dart/runtime/bin:elf_loader",
+      #"$dart_src/runtime/bin:elf_loader",
       #"//flutter/skia",
     ]
   }
@@ -452,7 +459,7 @@ if (is_mac && !embedder_for_target) {
 
   copy("copy_icu") {
     visibility = [ ":*" ]
-    sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+    sources = [ "//flutter/third_party/icu/flutter/icudtl.dat" ]
     outputs =
         [ "$_flutter_embedder_framework_dir/Versions/A/Resources/icudtl.dat" ]
   }

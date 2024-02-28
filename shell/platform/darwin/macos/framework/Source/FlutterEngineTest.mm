@@ -118,6 +118,23 @@ constexpr int64_t kImplicitViewId = 0ll;
 
 #pragma mark -
 
+@interface MockableFlutterEngine : FlutterEngine
+@end
+
+@implementation MockableFlutterEngine
+- (NSArray<NSScreen*>*)screens {
+  id mockScreen = OCMClassMock([NSScreen class]);
+  OCMStub([mockScreen backingScaleFactor]).andReturn(2.0);
+  OCMStub([mockScreen deviceDescription]).andReturn(@{
+    @"NSScreenNumber" : [NSNumber numberWithInt:10]
+  });
+  OCMStub([mockScreen frame]).andReturn(NSMakeRect(10, 20, 30, 40));
+  return [NSArray arrayWithObject:mockScreen];
+}
+@end
+
+#pragma mark -
+
 namespace flutter::testing {
 
 TEST_F(FlutterEngineTest, CanLaunch) {
@@ -205,8 +222,7 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(stdout_capture.GetOutput().find("Hello logging") != std::string::npos);
 }
 
-// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
-TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
+TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -235,8 +251,7 @@ TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   latch.Wait();
 }
 
-// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
-TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
+TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -493,6 +508,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                                                                                 nibName:nil
                                                                                  bundle:nil];
   [viewController loadView];
+  [viewController viewDidLoad];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
 
   EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
@@ -1095,6 +1111,85 @@ TEST_F(FlutterEngineTest, UnregistersPluginsOnEngineDestruction) {
   EXPECT_FALSE([fakeAppDelegate hasDelegate:plugin]);
 
   [NSApplication sharedApplication].delegate = previousDelegate;
+}
+
+TEST_F(FlutterEngineTest, RunWithEntrypointUpdatesDisplayConfig) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(updated);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:NSApplicationDidChangeScreenParametersNotification
+                    object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_set_viewport_metrics = engine.embedderAPI.SendWindowMetricsEvent;
+  engine.embedderAPI.SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&updated, &original_set_viewport_metrics](auto engine, auto* window_metrics) {
+        updated = YES;
+        return original_set_viewport_metrics(engine, window_metrics);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  // No VC.
+  EXPECT_FALSE(updated);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  project.rootIsolateCreateCallback = FlutterEngineTest::IsolateCreateCallback;
+  MockableFlutterEngine* engine = [[MockableFlutterEngine alloc] initWithName:@"foobar"
+                                                                      project:project
+                                                       allowHeadlessExecution:true];
+  BOOL updated = NO;
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        EXPECT_EQ(display_count, 1UL);
+        EXPECT_EQ(displays->display_id, 10UL);
+        EXPECT_EQ(displays->width, 60UL);
+        EXPECT_EQ(displays->height, 80UL);
+        EXPECT_EQ(displays->device_pixel_ratio, 2UL);
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(updated);
+  [engine shutDownEngine];
+  engine = nil;
 }
 
 }  // namespace flutter::testing

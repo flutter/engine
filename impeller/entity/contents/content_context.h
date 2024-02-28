@@ -12,10 +12,13 @@
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
@@ -57,6 +60,7 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -66,6 +70,8 @@
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
 #include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel_decal.frag.h"
+#include "impeller/entity/kernel_nodecal.frag.h"
 
 #include "impeller/entity/position_color.vert.h"
 
@@ -126,6 +132,9 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using TextureStrictSrcPipeline =
+    RenderPipelineT<TextureFillVertexShader,
+                    TextureFillStrictSrcFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -136,6 +145,10 @@ using GaussianBlurDecalPipeline =
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader,
                     GaussianBlurNoalphaNodecalFragmentShader>;
+using KernelDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+using KernelPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -256,6 +269,12 @@ using TiledTextureExternalPipeline =
                     TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
+// A struct used to isolate command buffer storage from the content
+// context options to preserve const-ness.
+struct PendingCommandBuffers {
+  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
+};
+
 /// Pipeline state configuration.
 ///
 /// Each unique combination of these options requires a different pipeline state
@@ -267,13 +286,58 @@ using TiledTextureExternalPipeline =
 /// Flutter application may easily require building hundreds of PSOs in total,
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
+  enum class StencilMode : uint8_t {
+    /// Turn the stencil test off. Used when drawing without stencil-then-cover.
+    kIgnore,
+
+    // Operations used for stencil-then-cover
+
+    /// Draw the stencil for the NonZero fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilNonZeroFill,
+    /// Draw the stencil for the EvenOdd fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilEvenOddFill,
+    /// Used for draw calls which fill in the stenciled area. Intended to be
+    /// used after `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set
+    /// up the stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kCoverCompare,
+    /// The opposite of `kCoverCompare`. Used for draw calls which fill in the
+    /// non-stenciled area (intersection clips). Intended to be used after
+    /// `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set up the
+    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kCoverCompareInverted,
+
+    // Operations to control the legacy clip implementation, which forms a
+    // heightmap on the stencil buffer.
+
+    /// Slice the clip heightmap to a new maximum height.
+    kLegacyClipRestore,
+    /// Increment the stencil heightmap.
+    kLegacyClipIncrement,
+    /// Decrement the stencil heightmap (used for difference clipping only).
+    kLegacyClipDecrement,
+    /// Used for applying clips to all non-clip draw calls.
+    kLegacyClipCompare,
+  };
+
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
-  CompareFunction stencil_compare = CompareFunction::kEqual;
-  StencilOperation stencil_operation = StencilOperation::kKeep;
+  CompareFunction depth_compare = CompareFunction::kAlways;
+  StencilMode stencil_mode =
+      ContentContextOptions::StencilMode::kLegacyClipCompare;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
-  bool has_stencil_attachment = true;
+  bool has_depth_stencil_attachments = true;
+  bool depth_write_enabled = false;
   bool wireframe = false;
   bool is_for_rrect_blur_clear = false;
 
@@ -282,21 +346,22 @@ struct ContentContextOptions {
       static_assert(sizeof(o.sample_count) == 1);
       static_assert(sizeof(o.blend_mode) == 1);
       static_assert(sizeof(o.sample_count) == 1);
-      static_assert(sizeof(o.stencil_compare) == 1);
-      static_assert(sizeof(o.stencil_operation) == 1);
+      static_assert(sizeof(o.depth_compare) == 1);
+      static_assert(sizeof(o.stencil_mode) == 1);
       static_assert(sizeof(o.primitive_type) == 1);
       static_assert(sizeof(o.color_attachment_pixel_format) == 1);
 
       return (o.is_for_rrect_blur_clear ? 1llu : 0llu) << 0 |
              (o.wireframe ? 1llu : 0llu) << 1 |
-             (o.has_stencil_attachment ? 1llu : 0llu) << 2 |
+             (o.has_depth_stencil_attachments ? 1llu : 0llu) << 2 |
+             (o.depth_write_enabled ? 1llu : 0llu) << 3 |
              // enums
-             static_cast<uint64_t>(o.color_attachment_pixel_format) << 16 |
-             static_cast<uint64_t>(o.primitive_type) << 24 |
-             static_cast<uint64_t>(o.stencil_operation) << 32 |
-             static_cast<uint64_t>(o.stencil_compare) << 40 |
-             static_cast<uint64_t>(o.blend_mode) << 48 |
-             static_cast<uint64_t>(o.sample_count) << 56;
+             static_cast<uint64_t>(o.color_attachment_pixel_format) << 8 |
+             static_cast<uint64_t>(o.primitive_type) << 16 |
+             static_cast<uint64_t>(o.stencil_mode) << 24 |
+             static_cast<uint64_t>(o.depth_compare) << 32 |
+             static_cast<uint64_t>(o.blend_mode) << 40 |
+             static_cast<uint64_t>(o.sample_count) << 48;
     }
   };
 
@@ -305,12 +370,14 @@ struct ContentContextOptions {
                               const ContentContextOptions& rhs) const {
       return lhs.sample_count == rhs.sample_count &&
              lhs.blend_mode == rhs.blend_mode &&
-             lhs.stencil_compare == rhs.stencil_compare &&
-             lhs.stencil_operation == rhs.stencil_operation &&
+             lhs.depth_write_enabled == rhs.depth_write_enabled &&
+             lhs.depth_compare == rhs.depth_compare &&
+             lhs.stencil_mode == rhs.stencil_mode &&
              lhs.primitive_type == rhs.primitive_type &&
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
-             lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
+             lhs.has_depth_stencil_attachments ==
+                 rhs.has_depth_stencil_attachments &&
              lhs.wireframe == rhs.wireframe &&
              lhs.is_for_rrect_blur_clear == rhs.is_for_rrect_blur_clear;
     }
@@ -332,6 +399,16 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  /// This setting does two things:
+  /// 1. Enables clipping with the depth buffer, freeing up the stencil buffer.
+  ///    See also: https://github.com/flutter/flutter/issues/138460
+  /// 2. Switches the generic tessellation fallback to use stencil-then-cover.
+  ///    See also: https://github.com/flutter/flutter/issues/123671
+  ///
+  // TODO(bdero): Remove this setting once StC is fully de-risked
+  //              https://github.com/flutter/flutter/issues/123671
+  static constexpr bool kEnableStencilThenCover = false;
 
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
@@ -410,6 +487,11 @@ class ContentContext {
     return GetPipeline(texture_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureStrictSrcPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(texture_strict_src_pipelines_, opts);
+  }
+
 #ifdef IMPELLER_ENABLE_OPENGLES
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
       ContentContextOptions opts) const {
@@ -444,6 +526,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_decal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(kernel_nodecal_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
@@ -687,27 +779,100 @@ class ContentContext {
 
   void SetWireframe(bool wireframe);
 
+  void RecordCommandBuffer(std::shared_ptr<CommandBuffer> command_buffer) const;
+
+  void FlushCommandBuffers() const;
+
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(const std::string& label,
-                                       ISize texture_size,
-                                       const SubpassCallback& subpass_callback,
-                                       bool msaa_enabled = true) const;
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      ISize texture_size,
+      const SubpassCallback& subpass_callback,
+      bool msaa_enabled = true,
+      bool depth_stencil_enabled = false,
+      int32_t mip_count = 1) const;
 
-  std::shared_ptr<LazyGlyphAtlas> GetLazyGlyphAtlas() const {
+  /// Makes a subpass that will render to `subpass_target`.
+  fml::StatusOr<RenderTarget> MakeSubpass(
+      const std::string& label,
+      const RenderTarget& subpass_target,
+      const SubpassCallback& subpass_callback) const;
+
+  const std::shared_ptr<LazyGlyphAtlas>& GetLazyGlyphAtlas() const {
     return lazy_glyph_atlas_;
   }
 
-  std::shared_ptr<RenderTargetAllocator> GetRenderTargetCache() const {
+  const std::shared_ptr<RenderTargetAllocator>& GetRenderTargetCache() const {
     return render_target_cache_;
   }
+
+  /// RuntimeEffect pipelines must be obtained via this method to avoid
+  /// re-creating them every frame.
+  ///
+  /// The unique_entrypoint_name comes from RuntimeEffect::GetEntrypoint.
+  /// Impellerc generates a unique entrypoint name for runtime effect shaders
+  /// based on the input file name and shader stage.
+  ///
+  /// The create_callback is synchronously invoked exactly once if a cached
+  /// pipeline is not found.
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name,
+      const ContentContextOptions& options,
+      const std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>()>&
+          create_callback) const;
+
+  /// Used by hot reload/hot restart to clear a cached pipeline from
+  /// GetCachedRuntimeEffectPipeline.
+  void ClearCachedRuntimeEffectPipeline(
+      const std::string& unique_entrypoint_name) const;
+
+  /// @brief Retrieve the currnent host buffer for transient storage.
+  ///
+  /// This is only safe to use from the raster threads. Other threads should
+  /// allocate their own device buffers.
+  HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
 
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+
+  /// Run backend specific additional setup and create common shader variants.
+  ///
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
+  void InitializeCommonlyUsedShadersIfNeeded() const;
+
+  struct RuntimeEffectPipelineKey {
+    std::string unique_entrypoint_name;
+    ContentContextOptions options;
+
+    struct Hash {
+      std::size_t operator()(const RuntimeEffectPipelineKey& key) const {
+        return fml::HashCombine(key.unique_entrypoint_name,
+                                ContentContextOptions::Hash{}(key.options));
+      }
+    };
+
+    struct Equal {
+      constexpr bool operator()(const RuntimeEffectPipelineKey& lhs,
+                                const RuntimeEffectPipelineKey& rhs) const {
+        return lhs.unique_entrypoint_name == rhs.unique_entrypoint_name &&
+               ContentContextOptions::Equal{}(lhs.options, rhs.options);
+      }
+    };
+  };
+
+  mutable std::unordered_map<RuntimeEffectPipelineKey,
+                             std::shared_ptr<Pipeline<PipelineDescriptor>>,
+                             RuntimeEffectPipelineKey::Hash,
+                             RuntimeEffectPipelineKey::Equal>
+      runtime_effect_pipelines_;
 
   template <class PipelineT>
   class Variants {
@@ -727,15 +892,13 @@ class ContentContext {
 
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
-                       const std::initializer_list<Scalar>& constants = {},
-                       UseSubpassInput subpass_input = UseSubpassInput::kNo) {
+                       const std::initializer_list<Scalar>& constants = {}) {
       auto desc =
           PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
-      desc->SetUseSubpassInput(subpass_input);
       options.ApplyToPipelineDescriptor(*desc);
       SetDefault(options, std::make_unique<PipelineT>(context, desc));
     }
@@ -794,6 +957,7 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<TextureStrictSrcPipeline> texture_strict_src_pipelines_;
 #ifdef IMPELLER_ENABLE_OPENGLES
   mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
   mutable Variants<TiledTextureExternalPipeline>
@@ -805,6 +969,8 @@ class ContentContext {
       gaussian_blur_noalpha_decal_pipelines_;
   mutable Variants<GaussianBlurPipeline>
       gaussian_blur_noalpha_nodecal_pipelines_;
+  mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
+  mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
@@ -873,6 +1039,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
+    TypedPipeline* pipeline = CreateIfNeeded(container, opts);
+    if (!pipeline) {
+      return nullptr;
+    }
+    return pipeline->WaitAndGet();
+  }
+
+  template <class TypedPipeline>
+  TypedPipeline* CreateIfNeeded(Variants<TypedPipeline>& container,
+                                ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
     }
@@ -881,16 +1057,17 @@ class ContentContext {
       opts.wireframe = true;
     }
 
-    if (auto found = container.Get(opts)) {
-      return found->WaitAndGet();
+    if (TypedPipeline* found = container.Get(opts)) {
+      return found;
     }
 
-    auto prototype = container.GetDefault();
+    TypedPipeline* prototype = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != nullptr);
 
-    auto pipeline = prototype->WaitAndGet();
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+        prototype->WaitAndGet();
     if (!pipeline) {
       return nullptr;
     }
@@ -902,10 +1079,10 @@ class ContentContext {
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
-    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
-    auto variant_pipeline = variant->WaitAndGet();
+    std::unique_ptr<TypedPipeline> variant =
+        std::make_unique<TypedPipeline>(std::move(variant_future));
     container.Set(opts, std::move(variant));
-    return variant_pipeline;
+    return container.Get(opts);
   }
 
   bool is_valid_ = false;
@@ -914,6 +1091,8 @@ class ContentContext {
   std::shared_ptr<scene::SceneContext> scene_context_;
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
+  std::shared_ptr<HostBuffer> host_buffer_;
+  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

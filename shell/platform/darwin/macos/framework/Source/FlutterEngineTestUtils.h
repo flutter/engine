@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINETESTUTILS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINETESTUTILS_H_
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
 #import <OCMock/OCMock.h>
@@ -12,7 +15,7 @@
 
 namespace flutter::testing {
 
-class FlutterEngineTest : public ::testing::Test {
+class FlutterEngineTest : public AutoreleasePoolTest {
  public:
   FlutterEngineTest();
 
@@ -65,3 +68,5 @@ class MockFlutterEngineTest : public AutoreleasePoolTest {
 };
 
 }  // namespace flutter::testing
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINETESTUTILS_H_

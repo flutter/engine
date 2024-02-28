@@ -399,7 +399,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+         impeller::RuntimeStageBackend runtime_stage_type =
+             impeller::RuntimeStageBackend::kSkSL);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
@@ -836,6 +838,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
+  void EndWarmUpFrame() override;
+
+  // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
   // |RuntimeDelegate|
@@ -961,8 +966,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(int64_t view_id,
-              std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|

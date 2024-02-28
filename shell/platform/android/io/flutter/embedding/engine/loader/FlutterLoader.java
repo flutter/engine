@@ -46,6 +46,8 @@ public class FlutterLoader {
       "io.flutter.embedding.android.ImpellerBackend";
   private static final String IMPELLER_OPENGL_GPU_TRACING_DATA_KEY =
       "io.flutter.embedding.android.EnableOpenGLGPUTracing";
+  private static final String IMPELLER_VULKAN_GPU_TRACING_DATA_KEY =
+      "io.flutter.embedding.android.EnableVulkanGPUTracing";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -156,8 +158,7 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    TraceSection.begin("FlutterLoader#startInitialization");
-    try {
+    try (TraceSection e = TraceSection.scoped("FlutterLoader#startInitialization")) {
       // Ensure that the context is actually the application context.
       final Context appContext = applicationContext.getApplicationContext();
 
@@ -177,8 +178,7 @@ public class FlutterLoader {
           new Callable<InitResult>() {
             @Override
             public InitResult call() {
-              TraceSection.begin("FlutterLoader initTask");
-              try {
+              try (TraceSection e = TraceSection.scoped("FlutterLoader initTask")) {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
                 flutterJNI.loadLibrary();
@@ -196,14 +196,10 @@ public class FlutterLoader {
                     PathUtils.getFilesDir(appContext),
                     PathUtils.getCacheDirectory(appContext),
                     PathUtils.getDataDirectory(appContext));
-              } finally {
-                TraceSection.end();
               }
             }
           };
       initResultFuture = executorService.submit(initTask);
-    } finally {
-      TraceSection.end();
     }
   }
 
@@ -236,8 +232,7 @@ public class FlutterLoader {
           "ensureInitializationComplete must be called after startInitialization");
     }
 
-    TraceSection.begin("FlutterLoader#ensureInitializationComplete");
-    try {
+    try (TraceSection e = TraceSection.scoped("FlutterLoader#ensureInitializationComplete")) {
       InitResult result = initResultFuture.get();
 
       List<String> shellArgs = new ArrayList<>();
@@ -331,6 +326,9 @@ public class FlutterLoader {
         if (metaData.getBoolean(IMPELLER_OPENGL_GPU_TRACING_DATA_KEY, false)) {
           shellArgs.add("--enable-opengl-gpu-tracing");
         }
+        if (metaData.getBoolean(IMPELLER_VULKAN_GPU_TRACING_DATA_KEY, false)) {
+          shellArgs.add("--enable-vulkan-gpu-tracing");
+        }
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {
           shellArgs.add("--impeller-backend=" + backend);
@@ -354,8 +352,6 @@ public class FlutterLoader {
     } catch (Exception e) {
       Log.e(TAG, "Flutter initialization failed.", e);
       throw new RuntimeException(e);
-    } finally {
-      TraceSection.end();
     }
   }
 

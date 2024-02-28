@@ -14,7 +14,8 @@ namespace flutter {
 
 GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
     GPUSurfaceGLDelegate* delegate,
-    std::shared_ptr<impeller::Context> context)
+    std::shared_ptr<impeller::Context> context,
+    bool render_to_surface)
     : weak_factory_(this) {
   if (delegate == nullptr) {
     return;
@@ -38,6 +39,7 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
 
   delegate_ = delegate;
   impeller_context_ = std::move(context);
+  render_to_surface_ = render_to_surface;
   impeller_renderer_ = std::move(renderer);
   aiks_context_ = std::move(aiks_context);
   is_valid_ = true;
@@ -82,6 +84,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
     return nullptr;
   }
 
+  if (!render_to_surface_) {
+    return std::make_unique<SurfaceFrame>(
+        nullptr, SurfaceFrame::FramebufferInfo{.supports_readback = true},
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
+          return true;
+        },
+        size);
+  }
+
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
   const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
@@ -122,7 +133,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
             fml::MakeCopyable(
                 [aiks_context, picture = std::move(picture)](
                     impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
+                  return aiks_context->Render(picture, render_target,
+                                              /*reset_host_buffer=*/true);
                 }));
       });
 

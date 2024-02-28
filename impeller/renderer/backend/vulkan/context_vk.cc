@@ -5,6 +5,9 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include "fml/concurrent_message_loop.h"
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/render_pass_builder_vk.h"
+#include "impeller/renderer/render_target.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -26,6 +29,7 @@
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
@@ -101,6 +105,13 @@ std::shared_ptr<ContextVK> ContextVK::Create(Settings settings) {
   return context;
 }
 
+// static
+size_t ContextVK::ChooseThreadCountForWorkers(size_t hardware_concurrency) {
+  // Never create more than 4 worker threads. Attempt to use up to
+  // half of the available concurrency.
+  return std::clamp(hardware_concurrency / 2ull, /*lo=*/1ull, /*hi=*/4ull);
+}
+
 namespace {
 thread_local uint64_t tls_context_count = 0;
 uint64_t CalculateHash(void* ptr) {
@@ -130,14 +141,8 @@ void ContextVK::Setup(Settings settings) {
     return;
   }
 
-  queue_submit_thread_ = std::make_unique<fml::Thread>("QueueSubmitThread");
-  queue_submit_thread_->GetTaskRunner()->PostTask([]() {
-    // submitKHR is extremely cheap and mostly blocks on an internal fence.
-    fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
-  });
-
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-      std::min(4u, std::thread::hardware_concurrency()));
+      ChooseThreadCountForWorkers(std::thread::hardware_concurrency()));
   raster_message_loop_->PostTaskToAllWorkers([]() {
     // Currently we only use the worker task pool for small parts of a frame
     // workload, if this changes this setting may need to be adjusted.
@@ -445,11 +450,14 @@ void ContextVK::Setup(Settings settings) {
   command_pool_recycler_ = std::move(command_pool_recycler);
   descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
+  command_queue_vk_ = std::make_shared<CommandQueueVK>(weak_from_this());
   is_valid_ = true;
 
   // Create the GPU Tracer later because it depends on state from
   // the ContextVK.
-  gpu_tracer_ = std::make_shared<GPUTracerVK>(GetDeviceHolder());
+  gpu_tracer_ = std::make_shared<GPUTracerVK>(weak_from_this(),
+                                              settings.enable_gpu_tracing);
+  gpu_tracer_->InitializeQueryPool(*this);
 
   //----------------------------------------------------------------------------
   /// Label all the relevant objects. This happens after setup so that the
@@ -502,10 +510,6 @@ const vk::Device& ContextVK::GetDevice() const {
   return device_holder_->device.get();
 }
 
-const fml::RefPtr<fml::TaskRunner> ContextVK::GetQueueSubmitRunner() const {
-  return queue_submit_thread_->GetTaskRunner();
-}
-
 const std::shared_ptr<fml::ConcurrentTaskRunner>
 ContextVK::GetConcurrentWorkerTaskRunner() const {
   return raster_message_loop_->GetTaskRunner();
@@ -520,7 +524,6 @@ void ContextVK::Shutdown() {
   fence_waiter_.reset();
   resource_manager_.reset();
 
-  queue_submit_thread_->Join();
   raster_message_loop_->Terminate();
 }
 
@@ -560,6 +563,56 @@ ContextVK::CreateGraphicsCommandEncoderFactory() const {
 
 std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
   return gpu_tracer_;
+}
+
+std::shared_ptr<DescriptorPoolRecyclerVK> ContextVK::GetDescriptorPoolRecycler()
+    const {
+  return descriptor_pool_recycler_;
+}
+
+std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
+  return command_queue_vk_;
+}
+
+// Creating a render pass is observed to take an additional 6ms on a Pixel 7
+// device as the driver will lazily bootstrap and compile shaders to do so.
+// The render pass does not need to be begun or executed.
+void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
+  RenderTargetAllocator rt_allocator(GetResourceAllocator());
+  RenderTarget render_target =
+      RenderTarget::CreateOffscreenMSAA(*this, rt_allocator, {1, 1}, 1);
+
+  RenderPassBuilderVK builder;
+  for (const auto& [bind_point, color] : render_target.GetColorAttachments()) {
+    builder.SetColorAttachment(
+        bind_point,                                          //
+        color.texture->GetTextureDescriptor().format,        //
+        color.texture->GetTextureDescriptor().sample_count,  //
+        color.load_action,                                   //
+        color.store_action                                   //
+    );
+  }
+
+  if (auto depth = render_target.GetDepthAttachment(); depth.has_value()) {
+    builder.SetDepthStencilAttachment(
+        depth->texture->GetTextureDescriptor().format,        //
+        depth->texture->GetTextureDescriptor().sample_count,  //
+        depth->load_action,                                   //
+        depth->store_action                                   //
+    );
+  }
+
+  if (auto stencil = render_target.GetStencilAttachment();
+      stencil.has_value()) {
+    builder.SetStencilAttachment(
+        stencil->texture->GetTextureDescriptor().format,        //
+        stencil->texture->GetTextureDescriptor().sample_count,  //
+        stencil->load_action,                                   //
+        stencil->store_action                                   //
+    );
+  }
+
+  auto pass = builder.Build(GetDevice());
 }
 
 }  // namespace impeller

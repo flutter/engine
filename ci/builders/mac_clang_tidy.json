@@ -3,32 +3,38 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "debug",
                 "--prebuilt-dart-sdk",
                 "--no-lto",
-                "--force-mac-arm64"
+                "--force-mac-arm64",
+                "--target-dir",
+                "host_debug_clang_tidy",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "host_debug",
+            "name": "host_debug_clang_tidy",
             "ninja": {
-                "config": "host_debug"
+                "config": "host_debug_clang_tidy"
             }
         },
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--ios",
@@ -36,11 +42,15 @@
                 "debug",
                 "--simulator",
                 "--no-lto",
-                "--force-mac-arm64"
+                "--force-mac-arm64",
+                "--target-dir",
+                "ios_debug_sim_clang_tidy",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "ios_debug_sim",
+            "name": "ios_debug_sim_clang_tidy",
             "ninja": {
-                "config": "ios_debug_sim"
+                "config": "ios_debug_sim_clang_tidy"
             }
         }
     ],
@@ -50,14 +60,14 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -67,10 +77,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -82,14 +92,14 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -99,10 +109,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=1",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
             "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -114,14 +124,14 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -131,10 +141,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=2",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
             "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -146,14 +156,14 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -163,10 +173,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=3",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
             "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -178,15 +188,15 @@
             "recipe": "engine_v2/tester_engine",
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug",
-                "ios_debug_sim"
+                "host_debug_clang_tidy",
+                "ios_debug_sim_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -196,10 +206,10 @@
                     "name": "test: lint ios_debug_sim",
                     "parameters": [
                         "--variant",
-                        "ios_debug_sim",
+                        "ios_debug_sim_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug"
+                        "--shard-variants=host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"

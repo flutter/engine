@@ -23,6 +23,8 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
+#include "fml/logging.h"
+#include "impeller/renderer/command_queue.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -63,6 +65,10 @@ class TestImpellerContext : public impeller::Context {
 
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
     return nullptr;
+  }
+
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override {
+    FML_UNREACHABLE();
   }
 
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
@@ -1042,6 +1048,13 @@ TEST_F(ImageDecoderFixtureTest,
 
   // Destroy the IO manager
   PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
+}
+
+TEST_F(ImageDecoderFixtureTest, NullCheckBuffer) {
+  auto context = std::make_shared<impeller::TestImpellerContext>();
+  auto allocator = ImpellerAllocator(context->GetResourceAllocator());
+
+  EXPECT_FALSE(allocator.allocPixelRef(nullptr));
 }
 
 }  // namespace testing

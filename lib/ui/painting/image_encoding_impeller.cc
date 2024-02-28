@@ -34,11 +34,8 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     SkColorType color_type,
     SkISize dimensions) {
-  auto buffer_view = buffer->AsBufferView();
-
   SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
-
   SkBitmap bitmap;
   auto func = [](void* addr, void* context) {
     auto buffer =
@@ -47,7 +44,7 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     delete buffer;
   };
   auto bytes_per_pixel = image_info.bytesPerPixel();
-  bitmap.installPixels(image_info, buffer_view.contents,
+  bitmap.installPixels(image_info, buffer->OnGetContents(),
                        dimensions.width() * bytes_per_pixel, func,
                        new std::shared_ptr<impeller::DeviceBuffer>(buffer));
   bitmap.setImmutable();
@@ -157,6 +154,7 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
 
   impeller::DeviceBufferDescriptor buffer_desc;
   buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
+  buffer_desc.readback = true;  // set to false for testing.
   buffer_desc.size =
       texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
   auto buffer =
@@ -174,11 +172,14 @@ void ImageEncodingImpeller::ConvertDlImageToSkImage(
       encode_task(fml::Status(fml::StatusCode::kUnknown, ""));
       return;
     }
+    buffer->Invalidate();
     auto sk_image = ConvertBufferToSkImage(buffer, color_type, dimensions);
     encode_task(sk_image);
   };
 
-  if (!command_buffer->SubmitCommands(completion)) {
+  if (!impeller_context->GetCommandQueue()
+           ->Submit({command_buffer}, completion)
+           .ok()) {
     FML_LOG(ERROR) << "Failed to submit commands.";
   }
 }

@@ -20,7 +20,7 @@ import("//flutter/testing/testing.gni")
 #   List datadeps
 template("dart_embedder_resources") {
   action(target_name) {
-    script = "//third_party/dart/runtime/tools/create_resources.py"
+    script = "$dart_src/runtime/tools/create_resources.py"
     deps = []
     if (defined(invoker.deps)) {
       deps += invoker.deps
@@ -136,6 +136,7 @@ source_set("common") {
   ]
 
   deps = [
+    "$dart_src/runtime:dart_api",
     "//flutter/assets",
     "//flutter/common",
     "//flutter/common/graphics",
@@ -146,7 +147,6 @@ source_set("common") {
     "//flutter/shell/common:base64",
     "//flutter/shell/profiling",
     "//flutter/skia",
-    "//third_party/dart/runtime:dart_api",
   ]
 
   if (impeller_supports_rendering) {
@@ -262,6 +262,10 @@ if (enable_unittests) {
       "//flutter/third_party/rapidjson",
     ]
 
+    if (impeller_supports_rendering) {
+      deps += [ "//flutter/impeller" ]
+    }
+
     public_configs = [
       ":shell_test_fixture_sources_config",
       ":shell_unittests_gpu_configuration_config",
@@ -328,7 +332,7 @@ if (enable_unittests) {
       "//flutter/shell/profiling:profiling_unittests",
       "//flutter/shell/version",
       "//flutter/testing:fixture_test",
-      "//third_party/googletest:gmock",
+      "//flutter/third_party/googletest:gmock",
     ]
 
     if (is_fuchsia) {

@@ -15,6 +15,8 @@
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "impeller/typographer/typographer_context.h"
+#include "include/core/SkColor.h"
+#include "include/core/SkSize.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -57,7 +59,7 @@ static size_t PairsFitInAtlasOfSize(
     const auto& pair = *it;
 
     const auto glyph_size =
-        ISize::Ceil(pair.glyph.bounds.size * pair.scaled_font.scale);
+        ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -95,7 +97,7 @@ static bool CanAppendToExistingAtlas(
     const FontGlyphPair& pair = extra_pairs[i];
 
     const auto glyph_size =
-        ISize::Ceil(pair.glyph.bounds.size * pair.scaled_font.scale);
+        ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
     if (!rect_packer->addRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -158,8 +160,8 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Rect& location,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(location.origin.x / scaled_font.scale,
-                                      location.origin.y / scaled_font.scale);
+  const auto position = SkPoint::Make(location.GetX() / scaled_font.scale,
+                                      location.GetY() / scaled_font.scale);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -220,7 +222,9 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
   switch (atlas.GetType()) {
     case GlyphAtlas::Type::kAlphaBitmap:
-      image_info = SkImageInfo::MakeA8(atlas_size.width, atlas_size.height);
+      image_info =
+          SkImageInfo::MakeA8(SkISize{static_cast<int32_t>(atlas_size.width),
+                                      static_cast<int32_t>(atlas_size.height)});
       break;
     case GlyphAtlas::Type::kColorBitmap:
       image_info =
@@ -313,7 +317,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const FontGlyphMap& font_glyph_map) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!IsValid()) {
@@ -466,7 +470,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   PixelFormat format;
   switch (type) {
     case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
+      format = context.GetCapabilities()->GetDefaultGlyphAtlasFormat();
       break;
     case GlyphAtlas::Type::kColorBitmap:
       format = PixelFormat::kR8G8B8A8UNormInt;

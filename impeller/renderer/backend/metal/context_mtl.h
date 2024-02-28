@@ -21,6 +21,7 @@
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 #if TARGET_OS_SIMULATOR
@@ -81,6 +82,9 @@ class ContextMTL final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
+
+  // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
   void SetCapabilities(const std::shared_ptr<const Capabilities>& capabilities);
@@ -92,8 +96,6 @@ class ContextMTL final : public Context,
   void Shutdown() override;
 
   id<MTLCommandBuffer> CreateMTLCommandBuffer(const std::string& label) const;
-
-  const std::shared_ptr<fml::ConcurrentTaskRunner> GetWorkerTaskRunner() const;
 
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
 
@@ -122,13 +124,13 @@ class ContextMTL final : public Context,
   std::shared_ptr<SamplerLibrary> sampler_library_;
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<const Capabilities> device_capabilities_;
-  std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
 #ifdef IMPELLER_DEBUG
   std::shared_ptr<GPUTracerMTL> gpu_tracer_;
 #endif  // IMPELLER_DEBUG
   std::deque<std::function<void()>> tasks_awaiting_gpu_;
   std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
+  std::shared_ptr<CommandQueue> command_queue_ip_;
   bool is_valid_ = false;
 
   ContextMTL(

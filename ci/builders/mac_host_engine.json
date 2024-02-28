@@ -15,7 +15,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -47,7 +47,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             },
             "tests": [
@@ -79,7 +79,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -106,7 +106,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             },
             "tests": [
@@ -139,7 +139,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -159,6 +159,7 @@
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples",
                 "--enable-impeller-vulkan",
+                "--enable-impeller-opengles",
                 "--use-glfw-swiftshader"
             ],
             "name": "host_release",
@@ -176,7 +177,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             },
             "tests": [
@@ -208,7 +209,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -237,7 +238,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             }
         },
@@ -255,7 +256,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -280,7 +281,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             }
         },
@@ -299,7 +300,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-12|Mac-13",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -325,7 +326,7 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "14e300c"
+                    "sdk_version": "15a240d"
                 }
             }
         }
@@ -474,6 +475,21 @@
         {
             "source": "out/release/snapshot/gen_snapshot.zip",
             "destination": "darwin-x64-release/gen_snapshot.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/debug/framework/framework.zip",
+            "destination": "darwin-x64/framework.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/profile/framework/framework.zip",
+            "destination": "darwin-x64-profile/framework.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/release/framework/framework.zip",
+            "destination": "darwin-x64-release/framework.zip",
             "realm": "production"
         }
     ]

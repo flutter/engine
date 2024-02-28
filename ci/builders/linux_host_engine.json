@@ -1,70 +1,6 @@
 {
     "builds": [
         {
-            "archives": [],
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "gclient_variables": {
-                "download_android_deps": false
-            },
-            "gn": [
-                "--runtime-mode",
-                "debug",
-                "--unoptimized",
-                "--prebuilt-dart-sdk"
-            ],
-            "name": "host_debug_unopt",
-            "ninja": {
-                "config": "host_debug_unopt",
-                "targets": [
-                    "flutter",
-                    "flutter/sky/packages"
-                ]
-            }
-        },
-        {
-            "archives": [],
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "gclient_variables": {
-                "download_android_deps": false
-            },
-            "gn": [
-                "--runtime-mode",
-                "debug",
-                "--unoptimized",
-                "--prebuilt-dart-sdk",
-                "--target-dir",
-                "host_debug_impeller_vulkan"
-            ],
-            "name": "host_debug_impeller_vulkan",
-            "ninja": {
-                "config": "host_debug_impeller_vulkan",
-                "targets": [
-                    "flutter",
-                    "flutter/sky/packages"
-                ]
-            },
-            "tests": [
-                {
-                    "language": "python3",
-                    "name": "Host Tests for host_debug_impeller_vulkan",
-                    "script": "flutter/testing/run_tests.py",
-                    "parameters": [
-                        "--variant",
-                        "host_debug_impeller_vulkan",
-                        "--type",
-                        "impeller-vulkan",
-                        "--engine-capture-core-dump"
-                    ]
-                }
-            ]
-        },
-        {
             "archives": [
                 {
                     "name": "host_debug",
@@ -85,13 +21,16 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "debug",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_debug",
             "ninja": {
@@ -135,14 +74,17 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "profile",
                 "--no-lto",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_profile",
             "ninja": {
@@ -192,13 +134,16 @@
                 }
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "release",
                 "--prebuilt-dart-sdk",
-                "--build-embedder-examples"
+                "--build-embedder-examples",
+                "--rbe",
+                "--no-goma"
             ],
             "name": "host_release",
             "ninja": {
