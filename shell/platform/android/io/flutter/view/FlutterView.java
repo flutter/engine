@@ -928,6 +928,7 @@ public class FlutterView extends SurfaceView
       return textureWrapper;
     }
 
+    @NonNull
     @Override
     public SurfaceTexture surfaceTexture() {
       return textureWrapper.surfaceTexture();
