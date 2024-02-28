@@ -5,7 +5,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
 #include "flutter/fml/trace_event.h"
-#include "flutter_vma/flutter_vma.h"
+#include "flutter/flutter_vma/flutter_vma.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "vulkan/vulkan_core.h"
 
