@@ -52,9 +52,9 @@ const unsigned char* mockGetString(GLenum name) {
     case GL_VENDOR:
       return kMockVendor;
     case GL_VERSION:
-      return kMockShadingLanguageVersion;
-    case GL_SHADING_LANGUAGE_VERSION:
       return g_version;
+    case GL_SHADING_LANGUAGE_VERSION:
+      return kMockShadingLanguageVersion;
     default:
       return (unsigned char*)"";
   }
