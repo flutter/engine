@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -33,6 +34,19 @@ using ::testing::NiceMock;
 using ::testing::Return;
 
 class FlutterWindowsEngineTest : public WindowsTest {};
+
+// The engine can be run without any views.
+TEST_F(FlutterWindowsEngineTest, RunHeadless) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  ASSERT_TRUE(engine->Run());
+  ASSERT_EQ(engine->view(kImplicitViewId), nullptr);
+  ASSERT_EQ(engine->view(123), nullptr);
+}
 
 TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
   FlutterWindowsEngineBuilder builder{GetContext()};
@@ -703,6 +717,8 @@ TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncementHeadless) {
 // Verify the engine does not crash if it receives an accessibility event
 // it does not support yet.
 TEST_F(FlutterWindowsEngineTest, AccessibilityTooltip) {
+  fml::testing::LogCapture log_capture;
+
   auto& context = GetContext();
   WindowsConfigBuilder builder{context};
   builder.SetDartEntrypoint("sendAccessibilityTooltipEvent");
@@ -723,6 +739,11 @@ TEST_F(FlutterWindowsEngineTest, AccessibilityTooltip) {
   while (!done) {
     windows_engine->task_runner()->ProcessTasks();
   }
+
+  // Verify no error was logged.
+  // Regression test for:
+  // https://github.com/flutter/flutter/issues/144274
+  EXPECT_EQ(log_capture.str().find("tooltip"), std::string::npos);
 }
 
 class MockWindowsLifecycleManager : public WindowsLifecycleManager {
