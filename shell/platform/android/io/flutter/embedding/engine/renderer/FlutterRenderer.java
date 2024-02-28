@@ -307,11 +307,18 @@ public class FlutterRenderer implements TextureRegistry {
             textureWrapper.markDirty();
             scheduleEngineFrame();
           };
-      // The callback relies on being executed on the UI thread (unsynchronised read of
-      // mNativeView and also the engine code check for platform thread in
-      // Shell::OnPlatformViewMarkTextureFrameAvailable), so we explicitly pass a Handler for
-      // the current thread.
-      this.surfaceTexture().setOnFrameAvailableListener(onFrameListener, new Handler());
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        // The callback relies on being executed on the UI thread (unsynchronised read of
+        // mNativeView and also the engine code check for platform thread in
+        // Shell::OnPlatformViewMarkTextureFrameAvailable), so we explicitly pass a Handler for the
+        // current thread.
+        this.surfaceTexture().setOnFrameAvailableListener(onFrameListener, new Handler());
+      } else {
+        // Android documentation states that the listener can be called on an arbitrary thread. But
+        // in practice, versions of Android that predate the newer API will call the listener on the
+        // thread where the SurfaceTexture was constructed.
+        this.surfaceTexture().setOnFrameAvailableListener(onFrameListener);
+      }
     }
 
     @Override
@@ -894,6 +901,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
+    @TargetApi(19)
     public void release() {
       if (released) {
         return;
@@ -907,6 +915,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
+    @TargetApi(19)
     public void pushImage(Image image) {
       if (released) {
         return;
@@ -967,6 +976,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
+    @TargetApi(19)
     protected void finalize() throws Throwable {
       try {
         if (released) {
