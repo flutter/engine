@@ -4,6 +4,8 @@
 
 #include "flutter/testing/assertions_skia.h"
 
+namespace std {
+
 std::ostream& operator<<(std::ostream& os, const SkClipOp& o) {
   switch (o) {
     case SkClipOp::kDifference:
@@ -96,3 +98,5 @@ std::ostream& operator<<(std::ostream& os, const SkSamplingOptions& s) {
               << ", Mipmap: " << static_cast<int>(s.mipmap);
   }
 }
+
+}  // namespace std
