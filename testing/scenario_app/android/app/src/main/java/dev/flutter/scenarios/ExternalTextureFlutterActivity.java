@@ -19,7 +19,6 @@ import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import dev.flutter.scenarios.externaltextures.CanvasSurfaceRenderer;
 import dev.flutter.scenarios.externaltextures.ImageSurfaceRenderer;
 import dev.flutter.scenarios.externaltextures.MediaSurfaceRenderer;
@@ -94,7 +93,10 @@ public class ExternalTextureFlutterActivity extends TestActivity {
           // CanvasSurfaceRenderer doesn't work correctly when used with ImageSurfaceRenderer.
           // Use MediaSurfaceRenderer for now.
           return new ImageSurfaceRenderer(
-              selectSurfaceRenderer("media", extras), extras.getParcelable("crop"));
+              selectSurfaceRenderer("media", extras),
+              extras.getParcelable("crop"),
+              SURFACE_WIDTH,
+              SURFACE_HEIGHT);
         } else {
           throw new RuntimeException("ImageSurfaceRenderer not supported");
         }
