@@ -97,7 +97,7 @@ public class MediaSurfaceRenderer implements SurfaceRenderer {
                             onFirstFrame.countDown();
                             onFirstFrame = null;
                         }
-                        Log.w(ExternalTextureFlutterActivity.TAG, "Presenting frame " + frameCount);
+                        Log.v("Scenarios", "Presenting frame " + frameCount);
                         frameCount++;
 
                         codec.releaseOutputBuffer(

@@ -16,9 +16,6 @@ public class CanvasSurfaceRenderer implements SurfaceRenderer {
     private Surface surface;
     private CountDownLatch onFirstFrame;
 
-    public CanvasSurfaceRenderer() {
-    }
-
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
         this.surface = surface;
@@ -59,5 +56,6 @@ public class CanvasSurfaceRenderer implements SurfaceRenderer {
 
     @Override
     public void destroy() {
+        // Nothing to clean up, canvas rendering has no external resources.
     }
 }

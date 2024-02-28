@@ -37,9 +37,14 @@ public class ImageSurfaceRenderer implements SurfaceRenderer {
     private boolean canReadImage = true;
     private boolean canWriteImage = true;
 
-    public ImageSurfaceRenderer(SurfaceRenderer inner, Rect crop) {
+    private final int surfaceWidth;
+    private final int surfaceHeight;
+
+    public ImageSurfaceRenderer(SurfaceRenderer inner, Rect crop, int surfaceWidth, int surfaceHeight) {
         this.inner = inner;
         this.crop = crop;
+        this.surfaceWidth = surfaceWidth;
+        this.surfaceHeight = surfaceHeight;
     }
 
     @Override
@@ -52,15 +57,15 @@ public class ImageSurfaceRenderer implements SurfaceRenderer {
             writer = ImageWriter.newInstance(surface, 3, ImageFormat.PRIVATE);
             reader =
                     ImageReader.newInstance(
-                            ExternalTextureFlutterActivity.SURFACE_WIDTH,
-                            ExternalTextureFlutterActivity.SURFACE_HEIGHT,
+                            surfaceWidth,
+                            surfaceHeight,
                             ImageFormat.PRIVATE,
                             2,
                             HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
         } else {
             // Before Android Q, this will change the format of the surface to match the images.
             writer = ImageWriter.newInstance(surface, 3);
-            reader = ImageReader.newInstance(ExternalTextureFlutterActivity.SURFACE_WIDTH, ExternalTextureFlutterActivity.SURFACE_HEIGHT, writer.getFormat(), 2);
+            reader = ImageReader.newInstance(surfaceWidth, surfaceHeight, writer.getFormat(), 2);
         }
         inner.attach(reader.getSurface(), null);
 
@@ -73,7 +78,7 @@ public class ImageSurfaceRenderer implements SurfaceRenderer {
     }
 
     private void onImageAvailable(ImageReader reader) {
-        Log.v(ExternalTextureFlutterActivity.TAG, "Image available");
+        Log.v("Scenarios", "Image available");
 
         if (!canWriteImage) {
             // If the ImageWriter hasn't released the latest image, don't attempt to enqueue another
@@ -94,11 +99,11 @@ public class ImageSurfaceRenderer implements SurfaceRenderer {
             // If the output surface disconnects, this method will be interrupted with an
             // IllegalStateException.
             // Simply log and return.
-            Log.i(ExternalTextureFlutterActivity.TAG, "Surface disconnected from ImageWriter", e);
+            Log.i("Scenarios", "Surface disconnected from ImageWriter", e);
             image.close();
         }
 
-        Log.v(ExternalTextureFlutterActivity.TAG, "Output image");
+        Log.v("Scenarios", "Output image");
 
         if (onFirstFrame != null) {
             onFirstFrame.countDown();
@@ -113,7 +118,7 @@ public class ImageSurfaceRenderer implements SurfaceRenderer {
     }
 
     private void onImageReleased(ImageWriter imageWriter) {
-        Log.v(ExternalTextureFlutterActivity.TAG, "Image released");
+        Log.v("Scenarios", "Image released");
 
         if (!canWriteImage) {
             canWriteImage = true;
@@ -132,16 +137,16 @@ public class ImageSurfaceRenderer implements SurfaceRenderer {
 
     @Override
     public void destroy() {
-        Log.i(ExternalTextureFlutterActivity.TAG, "Destroying ImageSurfaceRenderer");
+        Log.i("Scenarios", "Destroying ImageSurfaceRenderer");
         inner.destroy();
         handler.post(this::destroyReaderWriter);
     }
 
     private void destroyReaderWriter() {
         writer.close();
-        Log.i(ExternalTextureFlutterActivity.TAG, "ImageWriter destroyed");
+        Log.i("Scenarios", "ImageWriter destroyed");
         reader.close();
-        Log.i(ExternalTextureFlutterActivity.TAG, "ImageReader destroyed");
+        Log.i("Scenarios", "ImageReader destroyed");
         handlerThread.quitSafely();
     }
 }
