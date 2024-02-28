@@ -16,19 +16,15 @@ final class SurfaceTextureSurfaceProducer
   private int requestedBufferHeight;
   private boolean released;
   @Nullable private Surface surface;
-  @NonNull private final TextureRegistry.SurfaceTextureEntry texture;
+  @NonNull private final SurfaceTexture texture;
   @NonNull private final Handler handler;
   @NonNull private final FlutterJNI flutterJNI;
 
-  SurfaceTextureSurfaceProducer(
-      long id,
-      @NonNull Handler handler,
-      @NonNull FlutterJNI flutterJNI,
-      @NonNull TextureRegistry.SurfaceTextureEntry texture) {
+  SurfaceTextureSurfaceProducer(long id, @NonNull Handler handler, @NonNull FlutterJNI flutterJNI) {
     this.id = id;
     this.handler = handler;
     this.flutterJNI = flutterJNI;
-    this.texture = texture;
+    this.texture = new SurfaceTexture(0);
   }
 
   @Override
@@ -58,7 +54,7 @@ final class SurfaceTextureSurfaceProducer
   @Override
   @NonNull
   public SurfaceTexture getSurfaceTexture() {
-    return texture.surfaceTexture();
+    return texture;
   }
 
   @Override
@@ -81,7 +77,7 @@ final class SurfaceTextureSurfaceProducer
   @Override
   public Surface getSurface() {
     if (surface == null) {
-      surface = new Surface(texture.surfaceTexture());
+      surface = new Surface(texture);
     }
     return surface;
   }

@@ -6,7 +6,6 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.annotation.TargetApi;
 import android.graphics.Canvas;
-import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Surface;
@@ -23,13 +22,10 @@ public final class SurfaceTextureSurfaceProducerTest {
 
   @Test
   public void createsSurfaceTextureOfGivenSizeAndResizesWhenRequested() {
-    final FlutterRenderer flutterRenderer = new FlutterRenderer(fakeJNI);
-
     // Create a surface and set the initial size.
     final Handler handler = new Handler(Looper.getMainLooper());
     final SurfaceTextureSurfaceProducer producer =
-        new SurfaceTextureSurfaceProducer(
-            0, handler, fakeJNI, flutterRenderer.registerSurfaceTexture(new SurfaceTexture(0)));
+        new SurfaceTextureSurfaceProducer(0, handler, fakeJNI);
     final Surface surface = producer.getSurface();
     AtomicInteger frames = new AtomicInteger();
     producer
