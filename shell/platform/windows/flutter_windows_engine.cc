@@ -183,14 +183,6 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<BinaryMessengerImpl>(messenger_->ToRef());
   message_dispatcher_ =
       std::make_unique<IncomingMessageDispatcher>(messenger_->ToRef());
-  message_dispatcher_->SetMessageCallback(
-      kAccessibilityChannelName,
-      [](FlutterDesktopMessengerRef messenger,
-         const FlutterDesktopMessage* message, void* data) {
-        FlutterWindowsEngine* engine = static_cast<FlutterWindowsEngine*>(data);
-        engine->HandleAccessibilityMessage(messenger, message);
-      },
-      static_cast<void*>(this));
 
   texture_registrar_ =
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_);
@@ -219,6 +211,11 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   // https://github.com/flutter/flutter/issues/71099
   internal_plugin_registrar_ =
       std::make_unique<PluginRegistrar>(plugin_registrar_.get());
+
+  accessibility_plugin_ = std::make_unique<AccessibilityPlugin>(this);
+  AccessibilityPlugin::SetUp(messenger_wrapper_.get(),
+                             accessibility_plugin_.get());
+
   cursor_handler_ =
       std::make_unique<CursorHandler>(messenger_wrapper_.get(), this);
   platform_handler_ =
@@ -499,7 +496,7 @@ std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
   auto view = std::make_unique<FlutterWindowsView>(
       kImplicitViewId, this, std::move(window), windows_proc_table_);
 
-  view_ = view.get();
+  views_[kImplicitViewId] = view.get();
   InitializeKeyboard();
 
   return std::move(view);
@@ -534,9 +531,12 @@ std::chrono::nanoseconds FlutterWindowsEngine::FrameInterval() {
 }
 
 FlutterWindowsView* FlutterWindowsEngine::view(FlutterViewId view_id) const {
-  FML_DCHECK(view_id == kImplicitViewId);
+  auto iterator = views_.find(view_id);
+  if (iterator == views_.end()) {
+    return nullptr;
+  }
 
-  return view_;
+  return iterator->second;
 }
 
 // Returns the currently configured Plugin Registrar.
@@ -675,7 +675,7 @@ void FlutterWindowsEngine::SendSystemLocales() {
 }
 
 void FlutterWindowsEngine::InitializeKeyboard() {
-  if (view_ == nullptr) {
+  if (views_.empty()) {
     FML_LOG(ERROR) << "Cannot initialize keyboard on Windows headless mode.";
   }
 
@@ -765,13 +765,15 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
   if (engine_ && semantics_enabled_ != enabled) {
     semantics_enabled_ = enabled;
     embedder_api_.UpdateSemanticsEnabled(engine_, enabled);
-    view_->UpdateSemanticsEnabled(enabled);
+    for (auto iterator = views_.begin(); iterator != views_.end(); iterator++) {
+      iterator->second->UpdateSemanticsEnabled(enabled);
+    }
   }
 }
 
 void FlutterWindowsEngine::OnPreEngineRestart() {
   // Reset the keyboard's state on hot restart.
-  if (view_) {
+  if (!views_.empty()) {
     InitializeKeyboard();
   }
 }
@@ -813,27 +815,6 @@ void FlutterWindowsEngine::SendAccessibilityFeatures() {
       engine_, static_cast<FlutterAccessibilityFeature>(flags));
 }
 
-void FlutterWindowsEngine::HandleAccessibilityMessage(
-    FlutterDesktopMessengerRef messenger,
-    const FlutterDesktopMessage* message) {
-  const auto& codec = StandardMessageCodec::GetInstance();
-  auto data = codec.DecodeMessage(message->message, message->message_size);
-  EncodableMap map = std::get<EncodableMap>(*data);
-  std::string type = std::get<std::string>(map.at(EncodableValue("type")));
-  if (type.compare("announce") == 0) {
-    if (semantics_enabled_) {
-      EncodableMap data_map =
-          std::get<EncodableMap>(map.at(EncodableValue("data")));
-      std::string text =
-          std::get<std::string>(data_map.at(EncodableValue("message")));
-      std::wstring wide_text = fml::Utf8ToWideString(text);
-      view_->AnnounceAlert(wide_text);
-    }
-  }
-  SendPlatformMessageResponse(message->response_handle,
-                              reinterpret_cast<const uint8_t*>(""), 0);
-}
-
 void FlutterWindowsEngine::RequestApplicationQuit(HWND hwnd,
                                                   WPARAM wparam,
                                                   LPARAM lparam,
@@ -849,7 +830,9 @@ void FlutterWindowsEngine::OnQuit(std::optional<HWND> hwnd,
 }
 
 void FlutterWindowsEngine::OnDwmCompositionChanged() {
-  view_->OnDwmCompositionChanged();
+  for (auto iterator = views_.begin(); iterator != views_.end(); iterator++) {
+    iterator->second->OnDwmCompositionChanged();
+  }
 }
 
 void FlutterWindowsEngine::OnWindowStateEvent(HWND hwnd,

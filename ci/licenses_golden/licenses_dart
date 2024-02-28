@@ -1,4 +1,4 @@
-Signature: aee8d76d23570c7efd9439c5f991502a
+Signature: 5db475687563a1e27fd44fe49aa07dbc
 
 ====================================================================================================
 LIBRARY: dart
@@ -3728,7 +3728,6 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart + ../
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/deferred.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/errors_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart + ../../../third_party/dart/LICENSE
@@ -3804,7 +3803,6 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/deferred.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/double_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/errors_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/growable_list.dart
@@ -4753,7 +4751,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/e5e4aaceaf23200d0cf92ebed1506f915f364b4d
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/7896a944fe67888de5e2ff038a28aa98eb41af89
 /third_party/fallback_root_certificates/
 
 ====================================================================================================
