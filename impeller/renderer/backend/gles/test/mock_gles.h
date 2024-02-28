@@ -53,7 +53,7 @@ class MockGLES final {
  private:
   friend void RecordGLCall(const char* name);
 
-  MockGLES(ProcTableGLES::Resolver resolver = kMockResolverGLES);
+  explicit MockGLES(ProcTableGLES::Resolver resolver = kMockResolverGLES);
 
   void RecordCall(const char* name) { captured_calls_.emplace_back(name); }
 
