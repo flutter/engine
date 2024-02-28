@@ -96,6 +96,18 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
 
   FOR_EACH_IMPELLER_PROC(IMPELLER_PROC);
 
+  description_ = std::make_unique<DescriptionGLES>(*this);
+
+  if (!description_->IsValid()) {
+    return;
+  }
+
+  if (description_->IsES()) {
+    FOR_EACH_IMPELLER_ES_ONLY_PROC(IMPELLER_PROC);
+  } else {
+    FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(IMPELLER_PROC);
+  }
+
 #undef IMPELLER_PROC
 
 #define IMPELLER_PROC(proc_ivar)                                \
@@ -108,17 +120,6 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 
 #undef IMPELLER_PROC
-
-  description_ = std::make_unique<DescriptionGLES>(*this);
-
-  if (!description_->IsValid()) {
-    return;
-  }
-
-  if (!description_->IsES()) {
-    ClearDepthf.function = reinterpret_cast<decltype(ClearDepthf.function)>(
-        resolver("glClearDepth"));
-  }
 
   if (!description_->HasDebugExtension()) {
     PushDebugGroupKHR.Reset();

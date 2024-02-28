@@ -12,31 +12,25 @@
 namespace impeller {
 namespace testing {
 
-static void FakeClearDepthf(GLfloat depth) {}
-static void FakeClearDepth(GLdouble depth) {}
-static auto kClearDepthResolver =
-    ProcTableGLES::Resolver([](const char* name) -> void* {
-      if (strcmp(name, "glClearDepthf") == 0) {
-        return reinterpret_cast<void*>(FakeClearDepthf);
-      }
-      if (strcmp(name, "glClearDepth") == 0) {
-        return reinterpret_cast<void*>(FakeClearDepth);
-      }
-      return kMockResolverGLES(name);
-    });
+#define EXPECT_AVAILABLE(proc_ivar) \
+  EXPECT_TRUE(mock_gles->GetProcTable().proc_ivar.IsAvailable());
+#define EXPECT_UNAVAILABLE(proc_ivar) \
+  EXPECT_FALSE(mock_gles->GetProcTable().proc_ivar.IsAvailable());
 
 TEST(ProcTableGLES, ResolvesCorrectClearDepthProcOnES) {
-  auto mock_gles =
-      MockGLES::Init(std::nullopt, "OpenGL ES 3.0", kClearDepthResolver);
+  auto mock_gles = MockGLES::Init(std::nullopt, "OpenGL ES 3.0");
   EXPECT_TRUE(mock_gles->GetProcTable().GetDescription()->IsES());
-  EXPECT_EQ(mock_gles->GetProcTable().ClearDepthf.function, FakeClearDepthf);
+
+  FOR_EACH_IMPELLER_ES_ONLY_PROC(EXPECT_AVAILABLE);
+  FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(EXPECT_UNAVAILABLE);
 }
 
 TEST(ProcTableGLES, ResolvesCorrectClearDepthProcOnDesktopGL) {
-  auto mock_gles =
-      MockGLES::Init(std::nullopt, "OpenGL 4.0", kClearDepthResolver);
+  auto mock_gles = MockGLES::Init(std::nullopt, "OpenGL 4.0");
   EXPECT_FALSE(mock_gles->GetProcTable().GetDescription()->IsES());
-  EXPECT_EQ(mock_gles->GetProcTable().ClearDepthf.function, FakeClearDepth);
+
+  FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(EXPECT_AVAILABLE);
+  FOR_EACH_IMPELLER_ES_ONLY_PROC(EXPECT_UNAVAILABLE);
 }
 
 }  // namespace testing
