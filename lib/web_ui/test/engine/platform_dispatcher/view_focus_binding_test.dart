@@ -1,4 +1,4 @@
-// Copyright 2013 The Flutter Authors. All rights reserved.
+// Copyright 2014 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 import 'package:test/bootstrap/browser.dart';
@@ -17,6 +17,7 @@ void testMain() {
 
     setUp(() {
       domDocument.activeElement?.blur();
+      EngineSemantics.instance.semanticsEnabled = false;
 
       dispatcher = EnginePlatformDispatcher.instance;
       dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
@@ -42,7 +43,7 @@ void testMain() {
       expect(view.dom.rootElement.getAttribute('tabindex'), '-1');
     });
 
-    test('Correctly marks the focusable views as reachable by keyboard or not', () async {
+    test('marks the focusable views as reachable by the keyboard or not', () async {
       final EngineFlutterView view1 = createAndRegisterView(dispatcher);
       final EngineFlutterView view2 = createAndRegisterView(dispatcher);
 
@@ -60,6 +61,28 @@ void testMain() {
       view2.dom.rootElement.blur();
       expect(view1.dom.rootElement.getAttribute('tabindex'), '0');
       expect(view2.dom.rootElement.getAttribute('tabindex'), '0');
+    });
+
+    test('never marks the views as focusable with semantincs enabled', () async {
+      EngineSemantics.instance.semanticsEnabled = true;
+
+      final EngineFlutterView view1 = createAndRegisterView(dispatcher);
+      final EngineFlutterView view2 = createAndRegisterView(dispatcher);
+
+      expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
+      expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
+
+      view1.dom.rootElement.focus();
+      expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
+      expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
+
+      view2.dom.rootElement.focus();
+      expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
+      expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
+
+      view2.dom.rootElement.blur();
+      expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
+      expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
     });
 
     test('fires a focus event - a view was focused', () async {
