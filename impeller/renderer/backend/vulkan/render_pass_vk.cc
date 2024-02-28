@@ -68,7 +68,8 @@ static std::vector<vk::ClearValue> GetVKClearValues(
   if (depth.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil ? stencil->clear_stencil : 0u, depth->clear_depth));
-  } else if (stencil.has_value()) {
+  }
+  if (stencil.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil->clear_stencil, depth ? depth->clear_depth : 0.0f));
   }
