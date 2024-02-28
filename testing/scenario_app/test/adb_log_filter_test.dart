@@ -119,7 +119,7 @@ void main() {
     expect(parsedLogLine.tryParseProcess(), isNull);
 
     device.info(AdbLogLine.activityManagerTag, 'Start proc ${flutter.processId}:${AdbLogLine.flutterProcessName}');
-    
+
     rawLines = logcat.drain();
     expect(rawLines, hasLength(1));
     parsedLogLine = AdbLogLine.tryParse(rawLines.single)!;
