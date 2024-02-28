@@ -204,31 +204,12 @@ int ScaleBlurRadius(Scalar radius, Scalar scalar) {
   return static_cast<int>(std::round(radius * scalar));
 }
 
-Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
-                      const Entity& entity,
-                      const std::shared_ptr<FilterInput>& input,
-                      const Snapshot& input_snapshot,
-                      Entity blur_entity,
-                      const std::shared_ptr<Geometry>& geometry) {
-  if (blur_style == FilterContents::BlurStyle::kNormal) {
-    return blur_entity;
-  }
-  Entity::ClipOperation clip_operation;
-  switch (blur_style) {
-    case FilterContents::BlurStyle::kNormal:
-      FML_UNREACHABLE();
-      break;
-    case FilterContents::BlurStyle::kInner:
-      clip_operation = Entity::ClipOperation::kIntersect;
-      break;
-    case FilterContents::BlurStyle::kOuter:
-      clip_operation = Entity::ClipOperation::kDifference;
-      break;
-    case FilterContents::BlurStyle::kSolid:
-      FML_DLOG(ERROR) << "Unimplemented blur style";
-      return blur_entity;
-  }
-
+Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
+                             const Entity& entity,
+                             const std::shared_ptr<FilterInput>& input,
+                             const Snapshot& input_snapshot,
+                             Entity blur_entity,
+                             const std::shared_ptr<Geometry>& geometry) {
   auto shared_blur_entity = std::make_shared<Entity>(std::move(blur_entity));
   shared_blur_entity->SetNewClipDepth(entity.GetNewClipDepth());
   auto clipper = std::make_unique<ClipContents>();
@@ -254,6 +235,30 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
         return shared_blur_entity->GetCoverage();
       }));
   return result;
+}
+
+Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
+                      const Entity& entity,
+                      const std::shared_ptr<FilterInput>& input,
+                      const Snapshot& input_snapshot,
+                      Entity blur_entity,
+                      const std::shared_ptr<Geometry>& geometry) {
+  switch (blur_style) {
+    case FilterContents::BlurStyle::kNormal:
+      return blur_entity;
+    case FilterContents::BlurStyle::kInner:
+      return ApplyClippedBlurStyle(Entity::ClipOperation::kIntersect, entity,
+                                   input, input_snapshot,
+                                   std::move(blur_entity), geometry);
+      break;
+    case FilterContents::BlurStyle::kOuter:
+      return ApplyClippedBlurStyle(Entity::ClipOperation::kDifference, entity,
+                                   input, input_snapshot,
+                                   std::move(blur_entity), geometry);
+    case FilterContents::BlurStyle::kSolid:
+      FML_DLOG(ERROR) << "Unimplemented blur style";
+      return blur_entity;
+  }
 }
 }  // namespace
 
