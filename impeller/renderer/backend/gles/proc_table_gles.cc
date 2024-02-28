@@ -115,6 +115,11 @@ ProcTableGLES::ProcTableGLES(Resolver resolver) {
     return;
   }
 
+  if (!description_->IsES()) {
+    ClearDepthf.function = reinterpret_cast<decltype(ClearDepthf.function)>(
+        resolver("glClearDepth"));
+  }
+
   if (!description_->HasDebugExtension()) {
     PushDebugGroupKHR.Reset();
     PopDebugGroupKHR.Reset();
