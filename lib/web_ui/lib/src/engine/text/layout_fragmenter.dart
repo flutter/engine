@@ -25,6 +25,9 @@ class LayoutFragmenter extends TextFragmenter {
 
   @override
   List<LayoutFragment> fragment() {
+    if (text.isEmpty) {
+      return <LayoutFragment>[];
+    }
     final List<LayoutFragment> fragments = <LayoutFragment>[];
 
     int fragmentStart = 0;
