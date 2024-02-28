@@ -453,7 +453,7 @@ DartIsolate::DartIsolate(const Settings& settings,
 
 DartIsolate::DartIsolate(
     const Settings& settings,
-    onst UIDartState::Context& context,
+    const UIDartState::Context& context,
     std::shared_ptr<PlatformIsolateManager> platform_isolate_manager)
     : UIDartState(settings.task_observer_add,
                   settings.task_observer_remove,

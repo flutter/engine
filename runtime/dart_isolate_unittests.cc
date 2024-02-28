@@ -706,6 +706,7 @@ class FakePlatformConfigurationClient : public PlatformConfigurationClient {
 
   std::string DefaultRouteName() override { return ""; }
   void ScheduleFrame() override {}
+  void EndWarmUpFrame() override {}
   void Render(Scene* scene, double width, double height) override {}
   void UpdateSemantics(SemanticsUpdate* update) override {}
   void HandlePlatformMessage(
