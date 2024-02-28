@@ -43,14 +43,14 @@ FlAccessibilityPlugin* fl_accessibility_plugin_new(FlView* view) {
   return self;
 }
 
-void fl_accessibility_plugin_handle_update_semantics_node(
+void fl_accessibility_plugin_handle_update_semantics(
     FlAccessibilityPlugin* self,
-    const FlutterSemanticsNode* node) {
+    const FlutterSemanticsUpdate2* update) {
   if (self->view == nullptr) {
     return;
   }
 
   AtkObject* accessible = gtk_widget_get_accessible(GTK_WIDGET(self->view));
-  fl_view_accessible_handle_update_semantics_node(
-      FL_VIEW_ACCESSIBLE(accessible), node);
+  fl_view_accessible_handle_update_semantics(FL_VIEW_ACCESSIBLE(accessible),
+                                             update);
 }

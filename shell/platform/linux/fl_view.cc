@@ -225,14 +225,14 @@ static void handle_geometry_changed(FlView* self) {
   }
 }
 
-// Called when the engine updates accessibility nodes.
-static void update_semantics_node_cb(FlEngine* engine,
-                                     const FlutterSemanticsNode* node,
-                                     gpointer user_data) {
+// Called when the engine updates accessibility.
+static void update_semantics_cb(FlEngine* engine,
+                                const FlutterSemanticsUpdate2* update,
+                                gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
-  fl_accessibility_plugin_handle_update_semantics_node(
-      self->accessibility_plugin, node);
+  fl_accessibility_plugin_handle_update_semantics(self->accessibility_plugin,
+                                                  update);
 }
 
 // Invoked by the engine right before the engine is restarted.
@@ -559,8 +559,8 @@ static void fl_view_constructed(GObject* object) {
 
   self->renderer = FL_RENDERER(fl_renderer_gl_new());
   self->engine = fl_engine_new(self->project, self->renderer);
-  fl_engine_set_update_semantics_node_handler(
-      self->engine, update_semantics_node_cb, self, nullptr);
+  fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
+                                         self, nullptr);
   fl_engine_set_on_pre_engine_restart_handler(
       self->engine, on_pre_engine_restart_cb, self, nullptr);
 
@@ -666,8 +666,8 @@ static void fl_view_dispose(GObject* object) {
   FlView* self = FL_VIEW(object);
 
   if (self->engine != nullptr) {
-    fl_engine_set_update_semantics_node_handler(self->engine, nullptr, nullptr,
-                                                nullptr);
+    fl_engine_set_update_semantics_handler(self->engine, nullptr, nullptr,
+                                           nullptr);
     fl_engine_set_on_pre_engine_restart_handler(self->engine, nullptr, nullptr,
                                                 nullptr);
   }

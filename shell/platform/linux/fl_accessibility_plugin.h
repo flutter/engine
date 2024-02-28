@@ -35,15 +35,15 @@ G_DECLARE_FINAL_TYPE(FlAccessibilityPlugin,
 FlAccessibilityPlugin* fl_accessibility_plugin_new(FlView* view);
 
 /**
- * fl_accessibility_plugin_handle_update_semantics_node:
+ * fl_accessibility_plugin_handle_update_semantics:
  * @plugin: an #FlAccessibilityPlugin.
- * @node: semantic node information.
+ * @update: semantic update information.
  *
  * Handle a semantics node update.
  */
-void fl_accessibility_plugin_handle_update_semantics_node(
+void fl_accessibility_plugin_handle_update_semantics(
     FlAccessibilityPlugin* plugin,
-    const FlutterSemanticsNode* node);
+    const FlutterSemanticsUpdate2* update);
 
 G_END_DECLS
 
