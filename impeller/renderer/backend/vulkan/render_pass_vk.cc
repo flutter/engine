@@ -116,10 +116,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         depth->store_action                                   //
     );
     TextureVK::Cast(*depth->texture).SetLayout(barrier);
-  }
-
-  if (auto stencil = render_target_.GetStencilAttachment();
-      stencil.has_value()) {
+  } else if (auto stencil = render_target_.GetStencilAttachment();
+             stencil.has_value()) {
     builder.SetStencilAttachment(
         stencil->texture->GetTextureDescriptor().format,        //
         stencil->texture->GetTextureDescriptor().sample_count,  //

@@ -484,6 +484,7 @@ void main() async {
       canvas.drawPaint(Paint()..color = const Color(0x4FFFFFFF));
       canvas.drawImage(image, Offset.zero, Paint());
       final Image resultImage = await recorder.endRecording().toImage(200, 200);
+      sleep(const Duration(milliseconds: 300));
       return (await resultImage.toByteData())!;
     }
 
