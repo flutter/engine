@@ -510,6 +510,7 @@ class HtmlViewEmbedder {
       if (entity is RenderingRenderCanvas) {
         entity.pictures.clear();
         entity.pictures.addAll(picturesForLastCanvas);
+        break;
       }
     }
 
