@@ -6,8 +6,6 @@
 
 #include <memory>
 
-#include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/fml/trace_event.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"

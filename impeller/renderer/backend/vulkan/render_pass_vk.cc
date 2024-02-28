@@ -65,12 +65,19 @@ static std::vector<vk::ClearValue> GetVKClearValues(
   const auto& depth = target.GetDepthAttachment();
   const auto& stencil = target.GetStencilAttachment();
 
-  if (depth.has_value()) {
+  if (depth.has_value() && stencil.has_value()) {
+    clears.emplace_back(VKClearValueFromDepthStencil(
+      stencil->clear_stencil,
+      depth->clear_depth
+    ));
+    clears.emplace_back(VKClearValueFromDepthStencil(
+      stencil->clear_stencil,
+      depth->clear_depth
+    ));
+  } else if (depth.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil ? stencil->clear_stencil : 0u, depth->clear_depth));
-  }
-
-  if (stencil.has_value()) {
+  } else if (stencil.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil->clear_stencil, depth ? depth->clear_depth : 0.0f));
   }
@@ -271,8 +278,9 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
   if (auto depth = render_target_.GetDepthAttachment(); depth.has_value()) {
     attachments.emplace_back(
         TextureVK::Cast(*depth->texture).GetRenderTargetView());
-  } else if (auto stencil = render_target_.GetStencilAttachment();
-             stencil.has_value()) {
+  }
+
+  if (auto stencil = render_target_.GetStencilAttachment(); stencil.has_value()) {
     attachments.emplace_back(
         TextureVK::Cast(*stencil->texture).GetRenderTargetView());
   }

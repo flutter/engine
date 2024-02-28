@@ -15,7 +15,7 @@
 
 namespace impeller {
 
-constexpr size_t kAllocatorBlockSize = 1024000;  // 1024 Kb.
+constexpr size_t kAllocatorBlockSize = 4024000;  // 1024 Kb.
 
 std::shared_ptr<HostBuffer> HostBuffer::Create(
     const std::shared_ptr<Allocator>& allocator) {
@@ -182,6 +182,7 @@ HostBuffer::EmplaceInternal(const void* buffer, size_t length, size_t align) {
 }
 
 void HostBuffer::Reset() {
+  FML_LOG(ERROR) << "HostBuffer::Reset";
   // When resetting the host buffer state at the end of the frame, check if
   // there are any unused buffers and remove them.
   while (device_buffers_[frame_index_].size() > current_buffer_ + 1) {
