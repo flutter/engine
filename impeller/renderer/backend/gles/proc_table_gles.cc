@@ -71,7 +71,11 @@ ProcTableGLES::Resolver WrappedResolver(
   };
 }
 
-ProcTableGLES::ProcTableGLES(Resolver resolver) {
+ProcTableGLES::ProcTableGLES(  // NOLINT(google-readability-function-size)
+    Resolver resolver) {
+  // The reason this constructor has anywhere near enough code to tip off
+  // `google-readability-function-size` is the proc macros, so ignore the lint.
+
   if (!resolver) {
     return;
   }
