@@ -294,6 +294,7 @@ RenderTarget RenderTargetAllocator::CreateOffscreen(
                                         stencil_attachment_config.value());
   } else {
     target.SetStencilAttachment(std::nullopt);
+    target.SetDepthAttachment(std::nullopt);
   }
 
   return target;
