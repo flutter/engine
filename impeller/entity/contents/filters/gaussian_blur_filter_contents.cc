@@ -270,6 +270,7 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
 
   std::shared_ptr<Geometry> geometry = GetGeometry(input);
   auto shared_blur_entity = std::make_shared<Entity>(std::move(blur_entity));
+  shared_blur_entity->SetNewClipDepth(entity.GetNewClipDepth());
   auto clipper = std::make_unique<ClipContents>();
   clipper->SetClipOperation(clip_operation);
   clipper->SetGeometry(geometry);
@@ -284,7 +285,9 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
         bool result = true;
         result = clipper->Render(renderer, entity, pass) && result;
         result = shared_blur_entity->Render(renderer, pass) && result;
-        result = restore->Render(renderer, entity, pass) && result;
+        if constexpr (!ContentContext::kEnableStencilThenCover) {
+          result = restore->Render(renderer, entity, pass) && result;
+        }
         return result;
       }),
       [shared_blur_entity](const Entity& entity) {
