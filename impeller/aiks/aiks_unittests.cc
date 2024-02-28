@@ -3568,5 +3568,27 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   }
 }
 
+TEST_P(AiksTest, SetContentsWithRegion) {
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+
+  // Replace part of the texture with a red (or really any solid color)
+  // rectangle.
+  std::vector<uint8_t> bytes(100 * 100 * 4);
+  for (auto i = 0u; i < bytes.size(); i += 4) {
+    bytes[i] = 255;
+    bytes[i + 1] = 0;
+    bytes[i + 2] = 0;
+    bytes[i + 3] = 255;
+  }
+  ASSERT_TRUE(bridge->SetContents(bytes.data(), bytes.size(),
+                                  IRect::MakeLTRB(50, 50, 150, 150)));
+  auto image = std::make_shared<Image>(bridge);
+
+  Canvas canvas;
+  canvas.DrawImage(image, {0, 0}, {});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller

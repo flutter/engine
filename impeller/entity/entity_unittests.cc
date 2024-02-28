@@ -297,32 +297,6 @@ TEST_P(EntityTest, StrokeWithTextureContents) {
   ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
-TEST_P(EntityTest, SetContentsWithRegion) {
-  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
-
-  // Replace part of the texture with a red (or really any solid color)
-  // rectangle.
-  std::vector<uint8_t> bytes(100 * 100 * 4);
-  for (auto i = 0u; i < bytes.size(); i += 4) {
-    bytes[i] = 255;
-    bytes[i + 1] = 0;
-    bytes[i + 2] = 0;
-    bytes[i + 3] = 255;
-  }
-  ASSERT_TRUE(bridge->SetContents(bytes.data(), bytes.size(),
-                                  IRect::MakeLTRB(50, 50, 150, 150)));
-
-  Entity entity;
-  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
-  auto contents = std::make_unique<TextureContents>();
-  contents->SetTexture(bridge);
-  contents->SetSourceRect(Rect::MakeSize(bridge->GetTextureDescriptor().size));
-  contents->SetDestinationRect(
-      Rect::MakeSize(bridge->GetTextureDescriptor().size));
-  entity.SetContents(std::move(contents));
-  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
-}
-
 TEST_P(EntityTest, TriangleInsideASquare) {
   auto callback = [&](ContentContext& context, RenderPass& pass) {
     Point offset(100, 100);
