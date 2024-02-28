@@ -20,9 +20,13 @@ if (!is_aot) {
     assert(false)
   }
 
+  flutter_src_dir = rebase_path("$root_out_dir/../../flutter")
+
   copy("copy_jit_assets") {
     visibility = [ ":*" ]
     sources = [
+      # Include FontManifest.json to avoid a runtime error when loading fonts.
+      "$flutter_src_dir/testing/scenario_app/android/FontManifest.json",
       "$target_gen_dir/isolate_snapshot_data",
       "$target_gen_dir/isolate_snapshot_instr",
       "$target_gen_dir/kernel_blob.bin",
