@@ -305,7 +305,7 @@ extension type const Options._(ArgResults _args) {
   String? get outputContentsGolden => _args['output-contents-golden'] as String;
 
   /// Whether to force the use of `SurfaceTexture` for `SurfaceProducer`.
-  /// 
+  ///
   /// Always returns `false` if `--enable-impeller` is `true` and
   /// `--impeller-backend` is not `opengles`.
   bool get forceSurfaceProducerSurfaceTexture {

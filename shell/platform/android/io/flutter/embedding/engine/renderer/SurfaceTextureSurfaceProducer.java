@@ -5,8 +5,6 @@ import android.os.Handler;
 import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 
@@ -22,7 +20,11 @@ final class SurfaceTextureSurfaceProducer
   @NonNull private final Handler handler;
   @NonNull private final FlutterJNI flutterJNI;
 
-  SurfaceTextureSurfaceProducer(long id, @NonNull Handler handler, @NonNull FlutterJNI flutterJNI, @NonNull TextureRegistry.SurfaceTextureEntry texture) {
+  SurfaceTextureSurfaceProducer(
+      long id,
+      @NonNull Handler handler,
+      @NonNull FlutterJNI flutterJNI,
+      @NonNull TextureRegistry.SurfaceTextureEntry texture) {
     this.id = id;
     this.handler = handler;
     this.flutterJNI = flutterJNI;
