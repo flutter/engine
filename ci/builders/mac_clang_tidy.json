@@ -19,7 +19,8 @@
                 "--target-dir",
                 "host_debug_clang_tidy",
                 "--rbe",
-                "--no-goma"
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "host_debug_clang_tidy",
             "ninja": {
@@ -46,7 +47,8 @@
                 "--target-dir",
                 "ios_debug_sim_clang_tidy",
                 "--rbe",
-                "--no-goma"
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ios_debug_sim_clang_tidy",
             "ninja": {
