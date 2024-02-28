@@ -12,7 +12,6 @@ import android.view.WindowManager;
 import android.view.WindowMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -32,7 +31,6 @@ import java.util.function.Consumer;
  * <p>This is an abstract class because some clients of Flutter compile the Android embedding with
  * the Android System SDK, which has additional abstract methods that need to be overriden.
  */
-@VisibleForTesting
 abstract class SingleViewWindowManager implements WindowManager {
   private static final String TAG = "PlatformViewsController";
 
