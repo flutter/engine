@@ -68,9 +68,7 @@ static std::vector<vk::ClearValue> GetVKClearValues(
   if (depth.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil ? stencil->clear_stencil : 0u, depth->clear_depth));
-  }
-
-  if (stencil.has_value()) {
+  } else if (stencil.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil->clear_stencil, depth ? depth->clear_depth : 0.0f));
   }
@@ -116,10 +114,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         depth->store_action                                   //
     );
     TextureVK::Cast(*depth->texture).SetLayout(barrier);
-  }
-
-  if (auto stencil = render_target_.GetStencilAttachment();
-      stencil.has_value()) {
+  } else if (auto stencil = render_target_.GetStencilAttachment();
+             stencil.has_value()) {
     builder.SetStencilAttachment(
         stencil->texture->GetTextureDescriptor().format,        //
         stencil->texture->GetTextureDescriptor().sample_count,  //
@@ -170,26 +166,16 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
         return true;
       });
 
-  SharedHandleVK<vk::RenderPass> recycled_render_pass;
-  SharedHandleVK<vk::Framebuffer> recycled_framebuffer;
-  if (resolve_image_vk_) {
-    recycled_render_pass = TextureVK::Cast(*resolve_image_vk_).GetRenderPass();
-    recycled_framebuffer = TextureVK::Cast(*resolve_image_vk_).GetFramebuffer();
-  }
-
   const auto& target_size = render_target_.GetRenderTargetSize();
 
-  render_pass_ =
-      CreateVKRenderPass(vk_context, recycled_render_pass, command_buffer_);
+  render_pass_ = CreateVKRenderPass(vk_context, nullptr, command_buffer_);
   if (!render_pass_) {
     VALIDATION_LOG << "Could not create renderpass.";
     is_valid_ = false;
     return;
   }
 
-  auto framebuffer = (recycled_framebuffer == nullptr)
-                         ? CreateVKFramebuffer(vk_context, *render_pass_)
-                         : recycled_framebuffer;
+  auto framebuffer = CreateVKFramebuffer(vk_context, *render_pass_);
   if (!framebuffer) {
     VALIDATION_LOG << "Could not create framebuffer.";
     is_valid_ = false;
@@ -199,10 +185,6 @@ RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
   if (!encoder->Track(framebuffer) || !encoder->Track(render_pass_)) {
     is_valid_ = false;
     return;
-  }
-  if (resolve_image_vk_) {
-    TextureVK::Cast(*resolve_image_vk_).SetFramebuffer(framebuffer);
-    TextureVK::Cast(*resolve_image_vk_).SetRenderPass(render_pass_);
   }
 
   auto clear_values = GetVKClearValues(render_target_);

@@ -94,9 +94,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     super.waitUntilFlutterRendered();
 
     try {
-      if (!firstFrameLatch.await(10, java.util.concurrent.TimeUnit.SECONDS)) {
-        throw new RuntimeException("Timeout waiting for firstFrameLatch to signal");
-      }
+      firstFrameLatch.await();
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -420,7 +418,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         // Simply log and return.
         Log.i(TAG, "Surface disconnected from ImageWriter", e);
         image.close();
-        return;
       }
 
       Log.v(TAG, "Output image");

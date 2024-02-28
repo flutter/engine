@@ -53,6 +53,15 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/gn',
   r'flutter/third_party/harfbuzz/docs',
   r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
+  r'flutter/third_party/icu/filters',
+  r'flutter/third_party/icu/fuzzers',
+  r'flutter/third_party/icu/scripts',
+  r'flutter/third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
+  r'flutter/third_party/icu/source/config',
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/burmesedict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/dtd',
   r'flutter/third_party/imgui',
   r'flutter/third_party/inja/doc', // documentation
   r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
@@ -81,6 +90,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/pkg/process',
   r'flutter/third_party/pkg/process_runner',
   r'flutter/third_party/pkg/vector_math',
+  r'flutter/third_party/protobuf', // build-time dependency only
   r'flutter/third_party/pyyaml', // build-time dependency only
   r'flutter/third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable
   r'flutter/third_party/rapidjson/doc', // documentation
@@ -110,6 +120,29 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/test_shaders', // for tests only
   r'flutter/third_party/tinygltf',
   r'flutter/third_party/txt/third_party/fonts',
+  r'flutter/third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
+  r'flutter/third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files
+  r'flutter/third_party/vulkan-deps/glslang/src/glslang/OSDependent/Web', // we only use glslang in impellerc, not in web apps
+  r'flutter/third_party/vulkan-deps/glslang/src/kokoro', // only build files
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/LICENSES', // directory with license templates
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-hlsl', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-hlsl-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-msl', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-msl-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-other', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-reflection', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-ue4', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-ue4-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-headers', // only used on hosts for tests
+  r'flutter/third_party/vulkan-deps/spirv-tools', // only used on hosts for tests
+  r'flutter/third_party/vulkan-deps/vulkan-headers/src/LICENSE.md', // redundant with licenses inside files
+  r'flutter/third_party/vulkan-deps/vulkan-headers/src/registry',
+  r'flutter/third_party/vulkan-deps/vulkan-loader', // on hosts for tests
+  r'flutter/third_party/vulkan-deps/vulkan-tools', // on hosts for tests
+  r'flutter/third_party/vulkan-deps/vulkan-utility-libraries/src/LICENSE.md', // redundant with licenses inside files
+  r'flutter/third_party/vulkan-deps/vulkan-validation-layers/src/docs',
   r'flutter/third_party/wuffs/docs',
   r'flutter/third_party/wuffs/script',
   r'flutter/third_party/yapf', // only used for code formatting
@@ -161,15 +194,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/tools', // not shipped in binary
   r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/gradle',
-  r'third_party/icu/filters',
-  r'third_party/icu/fuzzers',
-  r'third_party/icu/scripts',
-  r'third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
-  r'third_party/icu/source/config',
-  r'third_party/icu/source/data/brkitr/dictionaries/burmesedict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/dtd',
   r'third_party/java', // only used for Android builds
   r'third_party/libcxx/benchmarks',
   r'third_party/libcxx/docs',
@@ -187,30 +211,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
-  r'third_party/protobuf', // build-time dependency only
-  r'third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
-  r'third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files
-  r'third_party/vulkan-deps/glslang/src/glslang/OSDependent/Web', // we only use glslang in impellerc, not in web apps
-  r'third_party/vulkan-deps/glslang/src/kokoro', // only build files
-  r'third_party/vulkan-deps/spirv-cross/src/LICENSES', // directory with license templates
-  r'third_party/vulkan-deps/spirv-cross/src/shaders', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-hlsl', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-hlsl-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-msl', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-msl-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-other', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-reflection', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-ue4', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-ue4-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-headers', // only used on hosts for tests
-  r'third_party/vulkan-deps/spirv-tools', // only used on hosts for tests
-  r'third_party/vulkan-deps/vulkan-headers/src/LICENSE.md', // redundant with licenses inside files
-  r'third_party/vulkan-deps/vulkan-headers/src/registry',
-  r'third_party/vulkan-deps/vulkan-loader', // on hosts for tests
-  r'third_party/vulkan-deps/vulkan-tools', // on hosts for tests
-  r'third_party/vulkan-deps/vulkan-utility-libraries/src/LICENSE.md', // redundant with licenses inside files
-  r'third_party/vulkan-deps/vulkan-validation-layers/src/docs',
   r'third_party/vulkan_memory_allocator/bin',
   r'third_party/vulkan_memory_allocator/docs',
   r'third_party/vulkan_memory_allocator/media',

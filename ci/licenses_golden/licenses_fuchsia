@@ -1,4 +1,4 @@
-Signature: 3ea15c71f53ffe18a06d75f72500a79b
+Signature: eda33d8cba4f5bcbded1a3598bf13f9d
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -3817,10 +3817,16 @@ FILE: ../../../fuchsia/sdk/linux/obj/x64-api-18/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/obj/x64-api-18/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api16/release/content_checklist_path
@@ -10187,10 +10193,16 @@ FILE: ../../../fuchsia/sdk/linux/obj/x64-api-18/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/obj/x64-api-18/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api16/release/content_checklist_path
@@ -12970,12 +12982,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/iso.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.kernel/msi-resource.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.lowpan.thread/capabilities.fidl + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/iso.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/overview.fidl
@@ -16825,10 +16839,16 @@ FILE: ../../../fuchsia/sdk/linux/obj/x64-api-18/sysroot/lib/librt.so
 FILE: ../../../fuchsia/sdk/linux/obj/x64-api-18/sysroot/lib/libzircon.so
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/arm64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/riscv64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-1/release/package_manifest.json
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api18/release/content_checklist_path
+FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-1/release/content_checklist_path
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api16/release/content_checklist_path
