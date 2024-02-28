@@ -255,9 +255,31 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       return ApplyClippedBlurStyle(Entity::ClipOperation::kDifference, entity,
                                    input, input_snapshot,
                                    std::move(blur_entity), geometry);
-    case FilterContents::BlurStyle::kSolid:
-      FML_DLOG(ERROR) << "Unimplemented blur style";
-      return blur_entity;
+    case FilterContents::BlurStyle::kSolid: {
+      Entity blurred = ApplyClippedBlurStyle(Entity::ClipOperation::kIntersect,
+                                             entity, input, input_snapshot,
+                                             std::move(blur_entity), geometry);
+      Entity snapshot_entity =
+          Entity::FromSnapshot(input_snapshot, entity.GetBlendMode(),
+                               entity.GetClipDepth())
+              .value();
+      Entity result;
+      result.SetContents(Contents::MakeAnonymous(
+          fml::MakeCopyable([blurred = blurred.Clone(),
+                             snapshot_entity = std::move(snapshot_entity)](
+                                const ContentContext& renderer,
+                                const Entity& entity,
+                                RenderPass& pass) mutable {
+            bool did_render = true;
+            did_render = blurred.Render(renderer, pass) && did_render;
+            did_render = snapshot_entity.Render(renderer, pass) && did_render;
+            return did_render;
+          }),
+          fml::MakeCopyable([blurred = blurred.Clone()](const Entity& entity) {
+            return blurred.GetCoverage();
+          })));
+      return result;
+    }
   }
 }
 }  // namespace
