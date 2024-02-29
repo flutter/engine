@@ -361,9 +361,12 @@ class HtmlViewEmbedder {
     rendering = _modifyRenderingForMaxCanvases(rendering);
     _updateDomForNewRendering(rendering);
     if (rendering.equalsForRendering(_activeRendering)) {
-      // Just set the rendering to be the active rendering so the display
-      // canvases carry over as well.
-      rendering = _activeRendering;
+      // Copy the display canvases to the new rendering.
+      for (int i = 0; i < rendering.canvases.length; i++) {
+        rendering.canvases[i].displayCanvas =
+            _activeRendering.canvases[i].displayCanvas;
+        _activeRendering.canvases[i].displayCanvas = null;
+      }
     }
     _activeRendering = rendering;
 
