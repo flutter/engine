@@ -22,12 +22,15 @@ final Set<String> skippedPaths = <String>{
   r'buildtools', // only used by build
   r'flutter/build',
   r'flutter/ci',
+  r'flutter/dart.revision', // only used by build
   r'flutter/docs',
+  r'flutter/engine.revision', // only used by build
   r'flutter/flutter_frontend_server',
   r'flutter/impeller/docs',
   r'flutter/lib/web_ui/build', // this is compiler-generated output
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
+  r'flutter/skia.revision', // only used by build
   r'flutter/sky/packages/sky_engine/LICENSE',
   r'flutter/third_party/benchmark', // only used by tests
   r'flutter/third_party/boringssl/src/crypto/err/err_data_generate.go',

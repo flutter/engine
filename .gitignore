@@ -142,3 +142,8 @@ app.*.symbols
 
 # The gn-sdk from Chromium and managed by DEPS and gclient.
 /tools/fuchsia/gn-sdk
+
+# Git revision files created by gclient runhooks
+engine.revision
+dart.revision
+skia.revision
