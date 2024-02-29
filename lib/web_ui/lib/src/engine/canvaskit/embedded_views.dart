@@ -50,9 +50,6 @@ class HtmlViewEmbedder {
   /// cause a performance burden.
   static const int maximumCanvases = 8;
 
-  /// Canvases used to draw on top of platform views, keyed by platform view ID.
-  final Map<int, DisplayCanvas> _overlays = <int, DisplayCanvas>{};
-
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
 
@@ -646,43 +643,6 @@ class HtmlViewEmbedder {
     return result;
   }
 
-  // Group the platform views into "overlay groups". These are sublists
-  // of the composition order which can share the same overlay. Every overlay
-  // group is a list containing a visible view followed by zero or more
-  // invisible views.
-  //
-  // If there are more visible views than overlays, then the views which cannot
-  // be assigned an overlay are grouped together and will be rendered on top of
-  // the rest of the scene.
-  List<OverlayGroup> getOverlayGroups(Rendering rendering) {
-    final List<OverlayGroup> result = <OverlayGroup>[];
-    OverlayGroup currentGroup = OverlayGroup();
-
-    for (final RenderingEntity entity in rendering.entities) {
-      /// We are at an overlay, end the current group and start the next group.
-      if (entity is RenderingRenderCanvas) {
-        result.add(currentGroup);
-        currentGroup = OverlayGroup();
-      } else if (entity is RenderingPlatformView) {
-        currentGroup.add(entity.viewId);
-      }
-    }
-    assert(_overlayGroupsAreValid(result));
-    return result;
-  }
-
-  bool _overlayGroupsAreValid(List<OverlayGroup> overlayGroups) {
-    // Overlay groups are valid if they are all non-empty except for (possibly)
-    // the first one.
-    for (int i = 0; i < overlayGroups.length; i++) {
-      final OverlayGroup overlayGroup = overlayGroups[i];
-      if (overlayGroup.isEmpty && i != 0) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   /// Deletes SVG clip paths, useful for tests.
   void debugCleanupSvgClipPaths() {
     final DomElement? parent = _svgPathDefs?.children.single;
@@ -708,7 +668,6 @@ class HtmlViewEmbedder {
     debugCleanupSvgClipPaths();
     _currentCompositionParams.clear();
     _viewClipChains.clear();
-    _overlays.clear();
     _viewsToRecomposite.clear();
     _activeCompositionOrder.clear();
     _compositionOrder.clear();
@@ -720,43 +679,6 @@ class HtmlViewEmbedder {
     dispose();
     rasterizer.removeOverlaysFromDom();
   }
-}
-
-/// A group of views that will be composited together within the same overlay.
-///
-/// Each OverlayGroup is a sublist of the composition order which can share the
-/// same overlay.
-///
-/// Every overlay group is a list containing a visible view preceded or followed
-/// by zero or more invisible views.
-class OverlayGroup {
-  OverlayGroup() : _group = <int>[];
-
-  // The internal list of ints.
-  final List<int> _group;
-
-  /// The number of visible views in this group.
-  int _visibleCount = 0;
-
-  /// Add a [view] (maybe [visible]) to this group.
-  void add(int view, {bool visible = false}) {
-    _group.add(view);
-    if (visible) {
-      _visibleCount++;
-    }
-  }
-
-  /// Get the "last" view added to this group.
-  int get last => _group.last;
-
-  /// Returns true if this group contains any visible view.
-  bool get hasVisibleView => _visibleCount > 0;
-
-  /// Returns the number of visible views in this overlay group.
-  int get visibleCount => _visibleCount;
-
-  /// Returns [true] if this overlay group is empty.
-  bool get isEmpty => _group.isEmpty;
 }
 
 /// Represents a Clip Chain (for a view).
