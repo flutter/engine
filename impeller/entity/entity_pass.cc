@@ -906,7 +906,7 @@ bool EntityPass::OnRender(
   }
   auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
-  if (!collapsed_parent_pass) {
+  if (!collapsed_parent_pass && GetClearColor(clear_color_size).has_value()) {
     // Always force the pass to construct the render pass object, even if there
     // is not a clear color. This ensures that the attachment textures are
     // cleared/transitioned to the right state.
