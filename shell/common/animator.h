@@ -106,7 +106,13 @@ class Animator final {
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
  private:
+  // Animator's work during a vsync is split into two methods, BeginFrame and
+  // EndFrame. The two methods should be called synchronously back-to-back to
+  // avoid being interrupted by a regular vsync. The reason to split them is to
+  // allow ShellTest::PumpOneFrame to insert a Render in between.
+
   void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
+  void EndFrame();
 
   bool CanReuseLastLayerTrees();
 

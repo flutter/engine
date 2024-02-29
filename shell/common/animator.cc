@@ -141,6 +141,9 @@ void Animator::BeginFrame(
   }
 }
 
+void Animator::EndFrame() {
+}
+
 void Animator::Render(int64_t view_id,
                       std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
@@ -254,6 +257,7 @@ void Animator::AwaitVSync() {
             self->DrawLastLayerTrees(std::move(frame_timings_recorder));
           } else {
             self->BeginFrame(std::move(frame_timings_recorder));
+            self->EndFrame();
           }
         }
       });
@@ -263,9 +267,7 @@ void Animator::AwaitVSync() {
 }
 
 void Animator::EndWarmUpFrame() {
-  // Do nothing. The warm up frame does not need any additional work to end the
-  // frame for now. This will change once the pipeline supports multi-view.
-  // https://github.com/flutter/flutter/issues/142851
+  EndFrame();
 }
 
 void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,
