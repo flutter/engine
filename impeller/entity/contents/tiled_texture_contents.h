@@ -64,9 +64,6 @@ class TiledTextureContents final : public ColorSourceContents {
       int32_t mip_count = 1,
       const std::string& label = "Tiled Texture Snapshot") const override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   std::shared_ptr<Texture> CreateFilterTexture(
       const ContentContext& renderer) const;

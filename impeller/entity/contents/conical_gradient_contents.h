@@ -48,9 +48,6 @@ class ConicalGradientContents final : public ColorSourceContents {
 
   void SetFocus(std::optional<Point> focus, Scalar radius);
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,

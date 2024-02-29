@@ -40,9 +40,6 @@ class FramebufferBlendContents final : public ColorSourceContents {
 
   void SetChildContents(std::shared_ptr<Contents> child_contents);
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;

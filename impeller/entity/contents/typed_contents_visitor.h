@@ -11,7 +11,7 @@
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/checkerboard_contents.h"
-#include "impeller/entity/contents/conical_gradient_contents.h"
+#include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents_visitor.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
@@ -23,15 +23,9 @@
 #include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
 #include "impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
-#include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/radial_gradient_contents.h"
-#include "impeller/entity/contents/runtime_effect_contents.h"
-#include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
-#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 
 namespace impeller {
@@ -69,15 +63,13 @@ class TypedContentsVisitor : public ContentsVisitor {
   void Visit(ColorMatrixFilterContents* contents) override {
     DoVisit(contents);
   }
-  void Visit(ConicalGradientContents* contents) override { DoVisit(contents); }
+  void Visit(ColorSourceContents* contents) override { DoVisit(contents); }
   void Visit(DirectionalMorphologyFilterContents* contents) override {
     DoVisit(contents);
   }
-  void Visit(FramebufferBlendContents* contents) override { DoVisit(contents); }
   void Visit(GaussianBlurFilterContents* contents) override {
     DoVisit(contents);
   }
-  void Visit(LinearGradientContents* contents) override { DoVisit(contents); }
   void Visit(LinearToSrgbFilterContents* contents) override {
     DoVisit(contents);
   }
@@ -85,17 +77,12 @@ class TypedContentsVisitor : public ContentsVisitor {
     DoVisit(contents);
   }
   void Visit(MatrixFilterContents* contents) override { DoVisit(contents); }
-  void Visit(RadialGradientContents* contents) override { DoVisit(contents); }
-  void Visit(RuntimeEffectContents* contents) override { DoVisit(contents); }
-  void Visit(SolidColorContents* contents) override { DoVisit(contents); }
   void Visit(SolidRRectBlurContents* contents) override { DoVisit(contents); }
   void Visit(SrgbToLinearFilterContents* contents) override {
     DoVisit(contents);
   }
-  void Visit(SweepGradientContents* contents) override { DoVisit(contents); }
   void Visit(TextContents* contents) override { DoVisit(contents); }
   void Visit(TextureContents* contents) override { DoVisit(contents); }
-  void Visit(TiledTextureContents* contents) override { DoVisit(contents); }
   void Visit(VerticesColorContents* contents) override { DoVisit(contents); }
   void Visit(VerticesContents* contents) override { DoVisit(contents); }
   void Visit(VerticesUVContents* contents) override { DoVisit(contents); }

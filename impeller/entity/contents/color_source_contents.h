@@ -104,6 +104,9 @@ class ColorSourceContents : public Contents {
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
 
+  // |Contents|
+  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
+
  protected:
   using BindFragmentCallback = std::function<bool(RenderPass& pass)>;
   using PipelineBuilderMethod = std::shared_ptr<Pipeline<PipelineDescriptor>> (

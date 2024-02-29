@@ -34,11 +34,6 @@ class SceneContents final : public ColorSourceContents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override {
-    FML_CHECK(false) << "unimplemented";
-  }
-
  private:
   Matrix camera_transform_;
   std::shared_ptr<scene::Node> node_;

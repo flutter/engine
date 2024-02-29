@@ -52,9 +52,6 @@ class SolidColorContents final : public ColorSourceContents {
   [[nodiscard]] bool ApplyColorFilter(
       const ColorFilterProc& color_filter_proc) override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   Color color_;
 
