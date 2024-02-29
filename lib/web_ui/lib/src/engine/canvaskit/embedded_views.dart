@@ -5,7 +5,8 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager;
+import '../../engine.dart'
+    show PlatformViewManager, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
@@ -365,38 +366,20 @@ class HtmlViewEmbedder {
     Rendering rendering = createOptimizedRendering(
         pictures, _compositionOrder, _currentCompositionParams);
     rendering = _modifyRenderingForMaxCanvases(rendering);
-    final List<OverlayGroup>? overlayGroups = _updateOverlays(rendering);
-    _activeRendering = rendering;
-    if (overlayGroups != null) {
-      _activeOverlayGroups = overlayGroups;
+    _updateDomForNewRendering(rendering);
+    if (rendering.equalsForRendering(_activeRendering)) {
+      // Just set the rendering to be the active rendering so the display
+      // canvases carry over as well.
+      rendering = _activeRendering;
     }
-    print('RENDERING: ${rendering.entities}');
-    assert(
-      _context.pictureRecorders.length >= _overlays.length,
-      'There should be at least as many picture recorders '
-      '(${_context.pictureRecorders.length}) as overlays (${_overlays.length}).',
-    );
+    _activeRendering = rendering;
 
     final List<RenderingRenderCanvas> renderCanvases = rendering.canvases;
-    int renderCanvasIndex = 0;
-
-    for (final OverlayGroup overlayGroup in _activeOverlayGroups) {
-      if (overlayGroup.isEmpty) {
-        // This is a canvas that comes before any platform views.
-        final DisplayCanvas baseCanvas = rasterizer.displayFactory.baseCanvas;
-        sceneHost.prepend(baseCanvas.hostElement);
-        final List<CkPicture> pictures =
-            renderCanvases[renderCanvasIndex].pictures;
-        renderCanvasIndex++;
-        await rasterizer.rasterizeToCanvas(baseCanvas, pictures);
-        continue;
-      }
-      final DisplayCanvas overlay = _overlays[overlayGroup.last]!;
-      final List<CkPicture> pictures =
-          renderCanvases[renderCanvasIndex].pictures;
-      renderCanvasIndex++;
-      await rasterizer.rasterizeToCanvas(overlay, pictures);
+    for (final RenderingRenderCanvas renderCanvas in renderCanvases) {
+      await rasterizer.rasterizeToCanvas(
+          renderCanvas.displayCanvas!, renderCanvas.pictures);
     }
+
     for (final CkPictureRecorder recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
       if (recorder.isRecording) {
@@ -415,7 +398,6 @@ class HtmlViewEmbedder {
 
     List<int>? debugInvalidViewIds;
 
-    rasterizer.removeOverlaysFromDom();
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
 
@@ -432,19 +414,13 @@ class HtmlViewEmbedder {
         continue;
       }
 
-      final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-      final DisplayCanvas? overlay = _overlays[viewId];
-      sceneHost.append(platformViewRoot);
-      if (overlay != null) {
-        sceneHost.append(overlay.hostElement);
-      }
       _activeCompositionOrder.add(viewId);
       unusedViews.remove(viewId);
     }
 
     _compositionOrder.clear();
 
-    disposeViews(unusedViews);
+    unusedViews.forEach(disposeView);
 
     assert(
       debugInvalidViewIds == null || debugInvalidViewIds!.isEmpty,
@@ -453,25 +429,14 @@ class HtmlViewEmbedder {
     );
   }
 
-  void disposeViews(Iterable<int> viewsToDispose) {
-    for (final int viewId in viewsToDispose) {
-      // Remove viewId from the _viewClipChains Map, and then from the DOM.
-      final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
-      clipChain?.root.remove();
-      // More cleanup
-      _currentCompositionParams.remove(viewId);
-      _viewsToRecomposite.remove(viewId);
-      _cleanUpClipDefs(viewId);
-      _svgClipDefs.remove(viewId);
-    }
-  }
-
-  void _releaseOverlay(int viewId) {
-    if (_overlays[viewId] != null) {
-      final DisplayCanvas overlay = _overlays[viewId]!;
-      rasterizer.releaseOverlay(overlay);
-      _overlays.remove(viewId);
-    }
+  void disposeView(int viewId) {
+    final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
+    clipChain?.root.remove();
+    // More cleanup
+    _currentCompositionParams.remove(viewId);
+    _viewsToRecomposite.remove(viewId);
+    _cleanUpClipDefs(viewId);
+    _svgClipDefs.remove(viewId);
   }
 
   /// Modify the given rendering by removing canvases until the number of
@@ -518,6 +483,119 @@ class HtmlViewEmbedder {
     return result;
   }
 
+  void _updateDomForNewRendering(Rendering rendering) {
+    if (rendering.equalsForRendering(_activeRendering)) {
+      // The rendering has not changed, so no DOM manipulation is needed.
+      return;
+    }
+    final List<int> indexMap =
+        _getIndexMapFromPreviousRendering(_activeRendering, rendering);
+    final List<int> existingIndexMap =
+        indexMap.where((int index) => index != -1).toList();
+
+    final List<int> staticElements =
+        longestIncreasingSubsequence(existingIndexMap);
+    // Convert longest increasing subsequence from subsequence of indices of
+    // `existingIndexMap` to a subsequence of indices in previous rendering.
+    for (int i = 0; i < staticElements.length; i++) {
+      staticElements[i] = existingIndexMap[staticElements[i]];
+    }
+
+    // Remove elements which are in the active rendering, but not in the new
+    // rendering.
+    for (int i = 0; i < _activeRendering.entities.length; i++) {
+      if (indexMap.contains(i)) {
+        continue;
+      }
+      final RenderingEntity entity = _activeRendering.entities[i];
+      if (entity is RenderingPlatformView) {
+        disposeView(entity.viewId);
+      } else if (entity is RenderingRenderCanvas) {
+        assert(
+            entity.displayCanvas != null,
+            'RenderCanvas in previous rendering was '
+            'not assigned a DisplayCanvas');
+        rasterizer.releaseOverlay(entity.displayCanvas!);
+        entity.displayCanvas = null;
+      }
+    }
+
+    // Updates [renderCanvas] (located in [index] in the next rendering) to have
+    // a display canvas, either taken from the associated render canvas in the
+    // previous rendering, or newly created.
+    void updateRenderCanvasWithDisplay(
+        RenderingRenderCanvas renderCanvas, int index) {
+      // Does [nextEntity] correspond with a render canvas in the previous
+      // rendering? If so, then the render canvas in the previous rendering
+      // had an associated display canvas. Use this display canvas for
+      // [nextEntity].
+      if (indexMap[index] != -1) {
+        final RenderingEntity previousEntity =
+            _activeRendering.entities[indexMap[index]];
+        assert(previousEntity is RenderingRenderCanvas &&
+            previousEntity.displayCanvas != null);
+        renderCanvas.displayCanvas =
+            (previousEntity as RenderingRenderCanvas).displayCanvas;
+        previousEntity.displayCanvas = null;
+      } else {
+        // There is no corresponding render canvas in the previous
+        // rendering. So this render canvas needs a display canvas.
+        renderCanvas.displayCanvas = rasterizer.getOverlay();
+      }
+    }
+
+    // At this point, the DOM contains the static elements and the elements from
+    // the previous rendering which need to move. We iterate over the static
+    // elements and insert the elements which come before them into the DOM.
+    int staticElementIndex = 0;
+    int nextRenderingIndex = 0;
+    while (staticElementIndex < staticElements.length) {
+      final int staticElementIndexInActiveRendering =
+          staticElements[staticElementIndex];
+      final DomElement staticDomElement = _getElement(
+          _activeRendering.entities[staticElementIndexInActiveRendering]);
+      // Go through next rendering elements until we reach the static element.
+      while (
+          indexMap[nextRenderingIndex] != staticElementIndexInActiveRendering) {
+        final RenderingEntity nextEntity =
+            rendering.entities[nextRenderingIndex];
+        if (nextEntity is RenderingRenderCanvas) {
+          updateRenderCanvasWithDisplay(nextEntity, nextRenderingIndex);
+        }
+        sceneHost.insertBefore(_getElement(nextEntity), staticDomElement);
+        nextRenderingIndex++;
+      }
+      if (rendering.entities[nextRenderingIndex] is RenderingRenderCanvas) {
+        updateRenderCanvasWithDisplay(
+            rendering.entities[nextRenderingIndex] as RenderingRenderCanvas,
+            nextRenderingIndex);
+      }
+      // Also increment the next rendering index because this is the static
+      // element.
+      nextRenderingIndex++;
+      staticElementIndex++;
+    }
+
+    // Add the leftover entities.
+    while (nextRenderingIndex < rendering.entities.length) {
+      final RenderingEntity nextEntity = rendering.entities[nextRenderingIndex];
+      if (nextEntity is RenderingRenderCanvas) {
+        updateRenderCanvasWithDisplay(nextEntity, nextRenderingIndex);
+      }
+      sceneHost.append(_getElement(nextEntity));
+      nextRenderingIndex++;
+    }
+  }
+
+  DomElement _getElement(RenderingEntity entity) {
+    switch (entity) {
+      case RenderingRenderCanvas():
+        return entity.displayCanvas!.hostElement;
+      case RenderingPlatformView():
+        return _viewClipChains[entity.viewId]!.root;
+    }
+  }
+
   // Assigns overlays to the embedded views in the scene.
   //
   // This method attempts to be efficient by taking advantage of the
@@ -540,9 +618,6 @@ class HtmlViewEmbedder {
       // The rendering has not changed, continue using the assigned overlays.
       return null;
     }
-    final List<int> indexMap =
-        _getIndexMapFromPreviousRendering(_activeRendering, rendering);
-    print('index map: $indexMap');
     // Group platform views from their composition order.
     // Each group contains one visible view, and any number of invisible views
     // before or after that visible view.
@@ -562,6 +637,9 @@ class HtmlViewEmbedder {
     return overlayGroups;
   }
 
+  /// Returns a [List] of ints mapping elements from the [next] rendering to
+  /// elements of the [previous] rendering. If there is no matching element in
+  /// the previous rendering, then the index map for that element is `-1`.
   List<int> _getIndexMapFromPreviousRendering(
       Rendering previous, Rendering next) {
     assert(!previous.equalsForRendering(next),
@@ -569,7 +647,7 @@ class HtmlViewEmbedder {
     final List<int> result = <int>[];
     int index = 0;
 
-    final int maxLength =
+    final int maxUnchangedLength =
         math.min(previous.entities.length, next.entities.length);
 
     // A canvas in the previous rendering can only be used once in the next
@@ -578,7 +656,7 @@ class HtmlViewEmbedder {
     final Set<int> alreadyClaimedCanvases = <int>{};
 
     // Add the unchanged elements from the beginning of the list.
-    while (index < maxLength &&
+    while (index < maxUnchangedLength &&
         previous.entities[index].equalsForRendering(next.entities[index])) {
       result.add(index);
       if (previous.entities[index] is RenderingRenderCanvas) {
@@ -588,6 +666,7 @@ class HtmlViewEmbedder {
     }
 
     while (index < next.entities.length) {
+      bool foundForIndex = false;
       for (int oldIndex = 0;
           oldIndex < previous.entities.length;
           oldIndex += 1) {
@@ -598,12 +677,17 @@ class HtmlViewEmbedder {
           if (previous.entities[oldIndex] is RenderingRenderCanvas) {
             alreadyClaimedCanvases.add(oldIndex);
           }
+          foundForIndex = true;
           break;
         }
+      }
+      if (!foundForIndex) {
+        result.add(-1);
       }
       index += 1;
     }
 
+    assert(result.length == next.entities.length);
     return result;
   }
 
@@ -671,7 +755,7 @@ class HtmlViewEmbedder {
 
   /// Disposes the state of this view embedder.
   void dispose() {
-    disposeViews(_viewClipChains.keys.toList());
+    _viewClipChains.keys.toList().forEach(disposeView);
     _context = EmbedderFrameContext();
     _currentCompositionParams.clear();
     debugCleanupSvgClipPaths();

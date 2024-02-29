@@ -342,8 +342,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Frame 2:
@@ -369,7 +369,6 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
       ]);
 
       // Frame 4:
@@ -399,8 +398,8 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Frame 5:
@@ -496,8 +495,8 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Frame 2:
@@ -521,8 +520,8 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Frame 3:
@@ -546,8 +545,8 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       // Frame 4:
@@ -571,8 +570,8 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
+        _platformView,
       ]);
 
       for (int i = 0; i < 20; i++) {
@@ -594,7 +593,6 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _overlay,
       ]);
 
       expect(platformViewsHost.querySelector('flt-platform-view'), isNotNull);
@@ -643,7 +641,6 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _overlay,
       ]);
 
       implicitView.debugPhysicalSizeOverride = const ui.Size(200, 200);
@@ -652,7 +649,6 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _overlay,
       ]);
 
       implicitView.debugPhysicalSizeOverride = null;
@@ -676,7 +672,6 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _overlay,
       ]);
 
       expect(platformViewsHost.querySelector('flt-platform-view'), isNotNull);
@@ -690,7 +685,6 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _overlay,
       ]);
 
       expect(
@@ -775,6 +769,10 @@ void testMain() {
     });
 
     test('does not create overlays for invisible platform views', () async {
+      final CkPicture testPicture =
+          paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
+        canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
+      });
       ui_web.platformViewRegistry.registerViewFactory(
           'test-visible-view',
           (int viewId) =>
@@ -798,17 +796,20 @@ void testMain() {
 
       LayerSceneBuilder sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
         _platformView,
-      ], reason: 'Invisible view alone renders on top of base overlay.');
+        _overlay,
+      ], reason: 'Invisible view renders, followed by an overlay.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
@@ -821,8 +822,11 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
@@ -832,16 +836,19 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _overlay,
       ],
           reason:
               'Overlays created after each group containing a visible view.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
@@ -857,10 +864,15 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
@@ -877,11 +889,17 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(5, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
@@ -899,12 +917,19 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(0, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(5, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
@@ -923,35 +948,44 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(5, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
         _overlay,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
-        _platformView,
       ],
           reason:
               'Many invisible views can be rendered on top of the base overlay.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
         _platformView,
+        _overlay,
         _platformView,
         _platformView,
         _platformView,
@@ -960,16 +994,20 @@ void testMain() {
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(2, width: 10, height: 10);
+      sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.pop();
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
+        _platformView,
+        _platformView,
         _overlay,
-        _platformView,
-        _platformView,
         _platformView,
         _platformView,
         _overlay,
@@ -999,10 +1037,10 @@ void testMain() {
     await renderScene(sb.build());
 
     _expectSceneMatches(<_EmbeddedViewMarker>[
+      _platformView,
+      _platformView,
+      _platformView,
       _overlay,
-      _platformView,
-      _platformView,
-      _platformView,
     ]);
 
     expect(() {

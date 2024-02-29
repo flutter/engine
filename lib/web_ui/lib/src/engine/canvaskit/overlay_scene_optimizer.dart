@@ -11,6 +11,7 @@ import '../display.dart';
 import '../vector_math.dart';
 import 'embedded_views.dart';
 import 'picture.dart';
+import 'rasterizer.dart';
 
 /// A [Rendering] is a concrete description of how a Flutter scene will be
 /// rendered in a web browser.
@@ -59,6 +60,11 @@ class RenderingRenderCanvas extends RenderingEntity {
 
   /// The [pictures] which should be rendered in this canvas.
   final List<CkPicture> pictures = <CkPicture>[];
+
+  /// The [DisplayCanvas] that will be used to display [pictures].
+  ///
+  /// This is set by the view embedder.
+  DisplayCanvas? displayCanvas;
 
   /// Adds the [picture] to the pictures that should be rendered in this canvas.
   void add(CkPicture picture) {
@@ -163,7 +169,9 @@ Rendering createOptimizedRendering(
   // Since "V_0" intersects with all subsequent pictures, then the first picture
   // it intersects with is "P_0", so we create a new render canvas and add "P_0"
   // to it.
-  currentRenderCanvas.add(pictures[0]);
+  if (!pictures[0].cullRect.isEmpty) {
+    currentRenderCanvas.add(pictures[0]);
+  }
   for (int i = 0; i < platformViews.length; i++) {
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
       final ui.Rect platformViewBounds =
@@ -181,7 +189,9 @@ Rendering createOptimizedRendering(
       }
     }
     result.add(RenderingPlatformView(platformViews[i]));
-    currentRenderCanvas.add(pictures[i + 1]);
+    if (!pictures[i + 1].cullRect.isEmpty) {
+      currentRenderCanvas.add(pictures[i + 1]);
+    }
   }
   if (currentRenderCanvas.pictures.isNotEmpty) {
     result.add(currentRenderCanvas);
