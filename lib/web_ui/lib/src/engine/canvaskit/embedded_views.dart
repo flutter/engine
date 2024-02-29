@@ -62,9 +62,6 @@ class HtmlViewEmbedder {
   /// The most recent composition order.
   final List<int> _activeCompositionOrder = <int>[];
 
-  /// The most recent overlay groups.
-  List<OverlayGroup> _activeOverlayGroups = <OverlayGroup>[];
-
   /// The most recent rendering.
   Rendering _activeRendering = Rendering();
 
@@ -593,47 +590,6 @@ class HtmlViewEmbedder {
       case RenderingPlatformView():
         return _viewClipChains[entity.viewId]!.root;
     }
-  }
-
-  // Assigns overlays to the embedded views in the scene.
-  //
-  // This method attempts to be efficient by taking advantage of the
-  // [diffResult] and trying to re-use overlays which have already been
-  // assigned.
-  //
-  // This method accounts for invisible platform views by grouping them
-  // with the last visible platform view which precedes it. All invisible
-  // platform views that come after a visible view share the same overlay
-  // as the preceding visible view.
-  //
-  // This is called right before compositing the scene.
-  //
-  // [_compositionOrder] and [_activeComposition] order should contain the
-  // composition order of the current and previous frame, respectively.
-  //
-  // TODO(hterkelsen): Test this more thoroughly.
-  List<OverlayGroup>? _updateOverlays(Rendering rendering) {
-    if (rendering.equalsForRendering(_activeRendering)) {
-      // The rendering has not changed, continue using the assigned overlays.
-      return null;
-    }
-    // Group platform views from their composition order.
-    // Each group contains one visible view, and any number of invisible views
-    // before or after that visible view.
-    final List<OverlayGroup> overlayGroups = getOverlayGroups(rendering);
-    final List<int> viewsNeedingOverlays = overlayGroups
-        .where((OverlayGroup group) => !group.isEmpty)
-        .map((OverlayGroup group) => group.last)
-        .toList();
-
-    // Everything is going to be explicitly recomposited anyway. Release all
-    // the surfaces and assign an overlay to all the surfaces needing one.
-    rasterizer.releaseOverlays();
-    _overlays.clear();
-
-    viewsNeedingOverlays.forEach(_initializeOverlay);
-    assert(_overlays.length == viewsNeedingOverlays.length);
-    return overlayGroups;
   }
 
   /// Returns a [List] of ints mapping elements from the [next] rendering to
