@@ -49,21 +49,21 @@ void main() async {
 
   // Authenticate the client.
   await skiaGoldClient.auth();
-  
+
   const String prefix = 'SkiaGoldClientE2ETest';
   const List<_Digest> digests = <_Digest>[
     _Digest(
-      name: '$prefix.SolidBlueSquare', 
+      name: '$prefix.SolidBlueSquare',
       source: 'e2e_fixtures/solid_blue_square.png',
       pixelCount: 512 * 512,
     ),
     _Digest(
-      name: '$prefix.SolidRedSquare', 
+      name: '$prefix.SolidRedSquare',
       source: 'e2e_fixtures/solid_red_square.png',
       pixelCount: 768 * 768,
     ),
     _Digest(
-      name: '$prefix.SolidGreenSquare', 
+      name: '$prefix.SolidGreenSquare',
       source: 'e2e_fixtures/solid_green_square.png',
       pixelCount: 1200 * 1200,
     ),
@@ -80,7 +80,7 @@ void main() async {
       exitCode = 1;
       return;
     }
-    
+
     print('Uploading digest: $digestName ($digestPath): ${digest.pixelCount} pixels...');
 
     try {
