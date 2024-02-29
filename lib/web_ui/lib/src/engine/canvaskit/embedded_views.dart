@@ -683,14 +683,6 @@ class HtmlViewEmbedder {
     return true;
   }
 
-  void _initializeOverlay(int viewId) {
-    assert(!_overlays.containsKey(viewId));
-
-    // Try reusing a cached overlay created for another platform view.
-    final DisplayCanvas overlay = rasterizer.getOverlay();
-    _overlays[viewId] = overlay;
-  }
-
   /// Deletes SVG clip paths, useful for tests.
   void debugCleanupSvgClipPaths() {
     final DomElement? parent = _svgPathDefs?.children.single;
