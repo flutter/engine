@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:engine_repo_tools/engine_repo_tools.dart';
+import 'package:path/path.dart' as path;
 import 'package:skia_gold_client/skia_gold_client.dart';
 
 /// An E2E test for the Skia Gold client.
@@ -78,7 +79,13 @@ void main() async {
   for (final _Digest digest in digests) {
     final String digestPath = digest.source;
     final String digestName = digest.name;
-    final File digestFile = File(digestPath);
+    final File digestFile = File(path.join(
+      engine.flutterDir.path,
+      'testing',
+      'skia_gold_client',
+      'tool',
+      digestPath,
+    ));
     if (!digestFile.existsSync()) {
       stderr.writeln('The digest file "$digestPath" does not exist.');
       exitCode = 1;
