@@ -1,4 +1,4 @@
-# `android_integration_tests` runner
+# Scenario App Android Test Runner
 
 This directory contains code specific to running Android integration tests.
 
