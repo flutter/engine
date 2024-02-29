@@ -76,7 +76,8 @@ class Animator final {
   ///           technically, between Animator::BeginFrame and Animator::EndFrame
   ///           (both private methods). Otherwise, this call will be ignored.
   ///
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio);
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;

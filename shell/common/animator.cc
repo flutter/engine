@@ -141,7 +141,8 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+void Animator::Render(int64_t view_id,
+                      std::unique_ptr<flutter::LayerTree> layer_tree,
                       float device_pixel_ratio) {
   has_rendered_ = true;
 
@@ -161,9 +162,6 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
-  // TODO(dkwingsmt): Currently only supports a single window.
-  // See https://github.com/flutter/flutter/issues/135530, item 2.
-  int64_t view_id = kFlutterImplicitViewId;
   std::vector<std::unique_ptr<LayerTreeTask>> layer_trees_tasks;
   layer_trees_tasks.push_back(std::make_unique<LayerTreeTask>(
       view_id, std::move(layer_tree), device_pixel_ratio));
