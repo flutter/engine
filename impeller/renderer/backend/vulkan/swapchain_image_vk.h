@@ -9,6 +9,7 @@
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/render_target.h"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -33,21 +34,24 @@ class SwapchainImageVK final : public TextureSourceVK {
 
   std::shared_ptr<Texture> GetMSAATexture() const;
 
-  bool HasMSAATexture() const;
+  RenderTarget GetRenderTarget() const;
+
+  bool HasRenderTarget() const;
+
+  void SetRenderTarget(const RenderTarget& render_target);
 
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
 
   vk::ImageView GetRenderTargetView() const override;
 
-  void SetMSAATexture(std::shared_ptr<Texture> msaa_tex);
-
   bool IsSwapchainImage() const override { return true; }
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;
   vk::UniqueImageView image_view_ = {};
-  std::shared_ptr<Texture> msaa_tex_;
+  RenderTarget render_target_ = {};
+  bool has_render_target_ = false;
   bool is_valid_ = false;
 
   SwapchainImageVK(const SwapchainImageVK&) = delete;

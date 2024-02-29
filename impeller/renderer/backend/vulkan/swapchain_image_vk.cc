@@ -35,16 +35,17 @@ bool SwapchainImageVK::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Texture> SwapchainImageVK::GetMSAATexture() const {
-  return msaa_tex_;
+RenderTarget SwapchainImageVK::GetRenderTarget() const {
+  return render_target_;
 }
 
-bool SwapchainImageVK::HasMSAATexture() const {
-  return msaa_tex_ != nullptr;
+bool SwapchainImageVK::HasRenderTarget() const {
+  return has_render_target_;
 }
 
-void SwapchainImageVK::SetMSAATexture(std::shared_ptr<Texture> msaa_tex) {
-  msaa_tex_ = std::move(msaa_tex);
+void SwapchainImageVK::SetRenderTarget(const RenderTarget& render_target) {
+  has_render_target_ = true;
+  render_target_ = render_target;
 }
 
 PixelFormat SwapchainImageVK::GetPixelFormat() const {

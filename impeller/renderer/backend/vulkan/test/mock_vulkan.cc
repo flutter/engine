@@ -40,6 +40,8 @@ struct MockSwapchainKHR {};
 
 struct MockImage {};
 
+struct MockFramebuffer {};
+
 struct MockSemaphore {};
 
 static ISize currentImageSize = ISize{1, 1};
@@ -686,6 +688,14 @@ VkResult vkAcquireNextImageKHR(VkDevice device,
   return VK_SUCCESS;
 }
 
+VkResult vkCreateFramebuffer(VkDevice device,
+                             const VkFramebufferCreateInfo* pCreateInfo,
+                             const VkAllocationCallbacks* pAllocator,
+                             VkFramebuffer* pFramebuffer) {
+  *pFramebuffer = reinterpret_cast<VkFramebuffer>(new MockFramebuffer());
+  return VK_SUCCESS;
+}
+
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -814,6 +824,8 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkDestroySurfaceKHR;
   } else if (strcmp("vkAcquireNextImageKHR", pName) == 0) {
     return (PFN_vkVoidFunction)vkAcquireNextImageKHR;
+  } else if (strcmp("vkCreateFramebuffer", pName) == 0) {
+    return (PFN_vkVoidFunction)vkCreateFramebuffer;
   }
   return noop;
 }

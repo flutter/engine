@@ -7,6 +7,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/render_target.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
@@ -20,6 +21,12 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
     return nullptr;
   }
 
+  if (swapchain_image->HasRenderTarget()) {
+    // The constructor is private. So make_unique may not be used.
+    return std::unique_ptr<SurfaceVK>(new SurfaceVK(
+        swapchain_image->GetRenderTarget(), std::move(swap_callback)));
+  }
+
   std::shared_ptr<Texture> msaa_tex;
   if (enable_msaa) {
     TextureDescriptor msaa_tex_desc;
@@ -30,16 +37,11 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
     msaa_tex_desc.size = swapchain_image->GetSize();
     msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
-    if (!swapchain_image->HasMSAATexture()) {
-      msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
-      msaa_tex->SetLabel("ImpellerOnscreenColorMSAA");
-      if (!msaa_tex) {
-        VALIDATION_LOG << "Could not allocate MSAA color texture.";
-        return nullptr;
-      }
-      swapchain_image->SetMSAATexture(msaa_tex);
-    } else {
-      msaa_tex = swapchain_image->GetMSAATexture();
+    msaa_tex = context->GetResourceAllocator()->CreateTexture(msaa_tex_desc);
+    msaa_tex->SetLabel("ImpellerOnscreenColorMSAA");
+    if (!msaa_tex) {
+      VALIDATION_LOG << "Could not allocate MSAA color texture.";
+      return nullptr;
     }
   }
 
@@ -77,6 +79,12 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
 
   RenderTarget render_target_desc;
   render_target_desc.SetColorAttachment(color0, 0u);
+
+  render_target_desc.SetupDepthStencilAttachments(
+      *context, *context->GetResourceAllocator(), swapchain_image->GetSize(),
+      enable_msaa);
+
+  swapchain_image->SetRenderTarget(render_target_desc);
 
   // The constructor is private. So make_unique may not be used.
   return std::unique_ptr<SurfaceVK>(
