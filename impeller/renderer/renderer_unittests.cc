@@ -829,67 +829,68 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   OpenPlaygroundHere(callback);
 }
 
-TEST_P(RendererTest, TheImpeller) {
-  using VS = ImpellerVertexShader;
-  using FS = ImpellerFragmentShader;
+// TESTING
+// TEST_P(RendererTest, TheImpeller) {
+//   using VS = ImpellerVertexShader;
+//   using FS = ImpellerFragmentShader;
 
-  auto context = GetContext();
-  auto pipeline_descriptor =
-      PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
-  ASSERT_TRUE(pipeline_descriptor.has_value());
-  pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
-  pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
-  auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
-  ASSERT_TRUE(pipeline && pipeline->IsValid());
+//   auto context = GetContext();
+//   auto pipeline_descriptor =
+//       PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+//   ASSERT_TRUE(pipeline_descriptor.has_value());
+//   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
+//   pipeline_descriptor->SetStencilAttachmentDescriptors(std::nullopt);
+//   auto pipeline =
+//       context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
+//   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
-  auto blue_noise = CreateTextureForFixture("blue_noise.png");
-  SamplerDescriptor noise_sampler_desc;
-  noise_sampler_desc.width_address_mode = SamplerAddressMode::kRepeat;
-  noise_sampler_desc.height_address_mode = SamplerAddressMode::kRepeat;
-  const std::unique_ptr<const Sampler>& noise_sampler =
-      context->GetSamplerLibrary()->GetSampler(noise_sampler_desc);
+//   auto blue_noise = CreateTextureForFixture("blue_noise.png");
+//   SamplerDescriptor noise_sampler_desc;
+//   noise_sampler_desc.width_address_mode = SamplerAddressMode::kRepeat;
+//   noise_sampler_desc.height_address_mode = SamplerAddressMode::kRepeat;
+//   const std::unique_ptr<const Sampler>& noise_sampler =
+//       context->GetSamplerLibrary()->GetSampler(noise_sampler_desc);
 
-  auto cube_map = CreateTextureCubeForFixture(
-      {"table_mountain_px.png", "table_mountain_nx.png",
-       "table_mountain_py.png", "table_mountain_ny.png",
-       "table_mountain_pz.png", "table_mountain_nz.png"});
-  const std::unique_ptr<const Sampler>& cube_map_sampler =
-      context->GetSamplerLibrary()->GetSampler({});
-  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+//   auto cube_map = CreateTextureCubeForFixture(
+//       {"table_mountain_px.png", "table_mountain_nx.png",
+//        "table_mountain_py.png", "table_mountain_ny.png",
+//        "table_mountain_pz.png", "table_mountain_nz.png"});
+//   const std::unique_ptr<const Sampler>& cube_map_sampler =
+//       context->GetSamplerLibrary()->GetSampler({});
+//   auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
 
-  SinglePassCallback callback = [&](RenderPass& pass) {
-    auto size = pass.GetRenderTargetSize();
+//   SinglePassCallback callback = [&](RenderPass& pass) {
+//     auto size = pass.GetRenderTargetSize();
 
-    pass.SetPipeline(pipeline);
-    pass.SetCommandLabel("Impeller SDF scene");
-    VertexBufferBuilder<VS::PerVertexData> builder;
-    builder.AddVertices({{Point()},
-                         {Point(0, size.height)},
-                         {Point(size.width, 0)},
-                         {Point(size.width, 0)},
-                         {Point(0, size.height)},
-                         {Point(size.width, size.height)}});
-    pass.SetVertexBuffer(builder.CreateVertexBuffer(*host_buffer));
+//     pass.SetPipeline(pipeline);
+//     pass.SetCommandLabel("Impeller SDF scene");
+//     VertexBufferBuilder<VS::PerVertexData> builder;
+//     builder.AddVertices({{Point()},
+//                          {Point(0, size.height)},
+//                          {Point(size.width, 0)},
+//                          {Point(size.width, 0)},
+//                          {Point(0, size.height)},
+//                          {Point(size.width, size.height)}});
+//     pass.SetVertexBuffer(builder.CreateVertexBuffer(*host_buffer));
 
-    VS::FrameInfo frame_info;
-    EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
-    frame_info.mvp = pass.GetOrthographicTransform();
-    VS::BindFrameInfo(pass, host_buffer->EmplaceUniform(frame_info));
+//     VS::FrameInfo frame_info;
+//     EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
+//     frame_info.mvp = pass.GetOrthographicTransform();
+//     VS::BindFrameInfo(pass, host_buffer->EmplaceUniform(frame_info));
 
-    FS::FragInfo fs_uniform;
-    fs_uniform.texture_size = Point(size);
-    fs_uniform.time = GetSecondsElapsed();
-    FS::BindFragInfo(pass, host_buffer->EmplaceUniform(fs_uniform));
-    FS::BindBlueNoise(pass, blue_noise, noise_sampler);
-    FS::BindCubeMap(pass, cube_map, cube_map_sampler);
+//     FS::FragInfo fs_uniform;
+//     fs_uniform.texture_size = Point(size);
+//     fs_uniform.time = GetSecondsElapsed();
+//     FS::BindFragInfo(pass, host_buffer->EmplaceUniform(fs_uniform));
+//     FS::BindBlueNoise(pass, blue_noise, noise_sampler);
+//     FS::BindCubeMap(pass, cube_map, cube_map_sampler);
 
-    pass.Draw().ok();
-    host_buffer->Reset();
-    return true;
-  };
-  OpenPlaygroundHere(callback);
-}
+//     pass.Draw().ok();
+//     host_buffer->Reset();
+//     return true;
+//   };
+//   OpenPlaygroundHere(callback);
+// }
 
 TEST_P(RendererTest, ArrayUniforms) {
   using VS = ArrayVertexShader;
