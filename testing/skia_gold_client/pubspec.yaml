@@ -22,10 +22,14 @@ dependencies:
   process: any
 
 dev_dependencies:
+  args: any
+  git_repo_tools: any
   litetest: any
   process_fakes: any
 
 dependency_overrides:
+  args:
+    path: ../../../third_party/dart/third_party/pkg/args
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
   collection:
@@ -38,6 +42,8 @@ dependency_overrides:
     path: ../../../third_party/dart/pkg/expect
   file:
     path: ../../../third_party/dart/third_party/pkg/file/packages/file
+  git_repo_tools:
+    path: ../../tools/pkg/git_repo_tools
   litetest:
     path: ../../testing/litetest
   meta:
