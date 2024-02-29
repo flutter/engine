@@ -44,15 +44,16 @@ class _SceneRender {
 
 // This class builds a DOM tree that composites an `EngineScene`.
 class EngineSceneView {
-  factory EngineSceneView(PictureRenderer pictureRenderer) {
+  factory EngineSceneView(PictureRenderer pictureRenderer, ui.FlutterView flutterView) {
     final DomElement sceneElement = createDomElement('flt-scene');
-    return EngineSceneView._(pictureRenderer, sceneElement);
+    return EngineSceneView._(pictureRenderer, flutterView, sceneElement);
   }
 
-  EngineSceneView._(this.pictureRenderer, this.sceneElement);
+  EngineSceneView._(this.pictureRenderer, this.flutterView, this.sceneElement);
 
   final PictureRenderer pictureRenderer;
   final DomElement sceneElement;
+  final ui.FlutterView flutterView;
 
   List<SliceContainer> containers = <SliceContainer>[];
 
@@ -87,41 +88,30 @@ class EngineSceneView {
     }
   }
 
-  ScenePicture _clipPictureIfNeeded(ScenePicture picture, ui.Rect clip) {
-    final ui.Rect pictureRect = picture.cullRect;
-    if (pictureRect.left >= clip.left &&
-        pictureRect.top >= clip.top &&
-        pictureRect.right <= clip.right &&
-        pictureRect.bottom <= clip.bottom) {
-      // The picture is already within the clip bounds.
-      return picture;
-    }
-
-    return pictureRenderer.clipPicture(picture, clip);
-  }
-
-  ui.Rect? _getScreenBounds() {
-    final DomScreen? screen = domWindow.screen;
-    if (screen == null) {
-      return null;
-    }
-    return ui.Rect.fromLTWH(0, 0, screen.width, screen.height);
-  }
-
   Future<void> _renderScene(EngineScene scene, FrameTimingRecorder? recorder) async {
-    final ui.Rect? screenBounds = _getScreenBounds();
-    if (screenBounds == null) {
-      // The browser isn't displaying the document. Skip rendering.
-      return;
-    }
+    final ui.Rect screenBounds = ui.Rect.fromLTWH(
+      0,
+      0,
+      flutterView.physicalSize.width,
+      flutterView.physicalSize.height,
+    );
     final List<LayerSlice> slices = scene.rootLayer.slices;
     final List<ScenePicture> picturesToRender = <ScenePicture>[];
     final List<ScenePicture> originalPicturesToRender = <ScenePicture>[];
     for (final LayerSlice slice in slices) {
-      if (slice is PictureSlice && !slice.picture.cullRect.isEmpty) {
-        originalPicturesToRender.add(slice.picture);
-        final ScenePicture clippedPicture = _clipPictureIfNeeded(slice.picture, screenBounds);
-        picturesToRender.add(clippedPicture);
+      if (slice is PictureSlice) {
+        final ui.Rect clippedRect = slice.picture.cullRect.intersect(screenBounds);
+        if (clippedRect.isEmpty) {
+          // This picture is completely offscreen, so don't render it at all
+          continue;
+        } else if (clippedRect == slice.picture.cullRect) {
+          // The picture doesn't need to be clipped, just render the original
+          originalPicturesToRender.add(slice.picture);
+          picturesToRender.add(slice.picture);
+        } else {
+          originalPicturesToRender.add(slice.picture);
+          picturesToRender.add(pictureRenderer.clipPicture(slice.picture, clippedRect));
+        }
       }
     }
     final Map<ScenePicture, DomImageBitmap> renderMap;
@@ -145,6 +135,11 @@ class EngineSceneView {
     for (final LayerSlice slice in slices) {
       switch (slice) {
         case PictureSlice():
+          final DomImageBitmap? bitmap = renderMap[slice.picture];
+          if (bitmap == null) {
+            // We didn't render this slice because no part of it is visible.
+            continue;
+          }
           PictureSliceContainer? container;
           for (int j = 0; j < reusableContainers.length; j++) {
             final SliceContainer? candidate = reusableContainers[j];
@@ -162,7 +157,7 @@ class EngineSceneView {
             container = PictureSliceContainer(clippedBounds);
           }
           container.updateContents();
-          container.renderBitmap(renderMap[slice.picture]!);
+          container.renderBitmap(bitmap);
           newContainers.add(container);
 
         case PlatformViewSlice():

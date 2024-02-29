@@ -413,7 +413,7 @@ class SkwasmRenderer implements Renderer {
   EngineSceneView _getSceneViewForView(EngineFlutterView view) {
     // TODO(mdebbar): Support multi-view mode.
     if (_sceneView == null) {
-      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
+      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface), view);
       final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
       implicitView.dom.setScene(_sceneView!.sceneElement);
     }
