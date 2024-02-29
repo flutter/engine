@@ -259,10 +259,8 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       Entity blurred = ApplyClippedBlurStyle(Entity::ClipOperation::kIntersect,
                                              entity, input, input_snapshot,
                                              std::move(blur_entity), geometry);
-      Entity snapshot_entity =
-          Entity::FromSnapshot(input_snapshot, entity.GetBlendMode(),
-                               entity.GetClipDepth())
-              .value();
+      Entity snapshot_entity = Entity::FromSnapshot(
+          input_snapshot, entity.GetBlendMode(), entity.GetClipDepth());
       Entity result;
       result.SetContents(Contents::MakeAnonymous(
           fml::MakeCopyable([blurred = blurred.Clone(),
@@ -535,13 +533,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode(), entity.GetClipDepth());
 
-  if (!blur_output_entity.has_value()) {
-    return std::nullopt;
-  }
-
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
                         input_snapshot.value(),
-                        std::move(blur_output_entity.value()), mask_geometry_);
+                        std::move(blur_output_entity), mask_geometry_);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
