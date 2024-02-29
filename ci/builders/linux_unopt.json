@@ -253,7 +253,7 @@
             ]
         },
         {
-            "name": "skia_gold_client/e2e_tests",
+            "name": "skia_gold_client_e2e_tests",
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
