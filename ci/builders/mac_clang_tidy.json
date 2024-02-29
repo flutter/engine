@@ -108,7 +108,7 @@
                         "--shard-id=1",
                         "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -140,7 +140,7 @@
                         "--shard-id=2",
                         "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -172,7 +172,7 @@
                         "--shard-id=3",
                         "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]

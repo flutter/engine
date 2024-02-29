@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <optional>
@@ -37,6 +38,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
+#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
@@ -2247,10 +2249,10 @@ TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
 
   // Create a render target with a depth-stencil, similar to how EntityPass
   // does.
-  RenderTarget target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *GetContentContext()->GetRenderTargetCache(),
-      {GetWindowSize().width, GetWindowSize().height}, 1,
-      "RuntimeEffect Texture");
+  RenderTarget target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *GetContext(), {GetWindowSize().width, GetWindowSize().height}, 1,
+          "RuntimeEffect Texture");
   testing::MockRenderPass pass(GetContext(), target);
 
   ASSERT_TRUE(contents->Render(*GetContentContext(), entity, pass));
@@ -2589,31 +2591,6 @@ TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
 }
 
-class TestRenderTargetAllocator : public RenderTargetAllocator {
- public:
-  explicit TestRenderTargetAllocator(std::shared_ptr<Allocator> allocator)
-      : RenderTargetAllocator(std::move(allocator)) {}
-
-  ~TestRenderTargetAllocator() = default;
-
-  std::shared_ptr<Texture> CreateTexture(
-      const TextureDescriptor& desc) override {
-    allocated_.push_back(desc);
-    return RenderTargetAllocator::CreateTexture(desc);
-  }
-
-  void Start() override { RenderTargetAllocator::Start(); }
-
-  void End() override { RenderTargetAllocator::End(); }
-
-  std::vector<TextureDescriptor> GetDescriptors() const { return allocated_; }
-
-  void ResetDescriptors() { allocated_.clear(); }
-
- private:
-  std::vector<TextureDescriptor> allocated_;
-};
-
 TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   if (GetContext()->GetCapabilities()->SupportsFramebufferFetch()) {
     GTEST_SKIP() << "Backends that support framebuffer fetch dont use coverage "
@@ -2633,51 +2610,35 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   EXPECT_TRUE(coverage.has_value());
 
   auto pass = std::make_unique<EntityPass>();
-  auto test_allocator = std::make_shared<TestRenderTargetAllocator>(
-      GetContext()->GetResourceAllocator());
+  std::shared_ptr<RenderTargetCache> render_target_allocator =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
   auto stencil_config = RenderTarget::AttachmentConfig{
       .storage_mode = StorageMode::kDevicePrivate,
       .load_action = LoadAction::kClear,
       .store_action = StoreAction::kDontCare,
       .clear_color = Color::BlackTransparent()};
-  auto rt = RenderTarget::CreateOffscreen(
-      *GetContext(), *test_allocator, ISize::MakeWH(1000, 1000),
+  auto rt = render_target_allocator->CreateOffscreen(
+      *GetContext(), ISize::MakeWH(1000, 1000),
       /*mip_count=*/1, "Offscreen", RenderTarget::kDefaultColorAttachmentConfig,
       stencil_config);
   auto content_context = ContentContext(
-      GetContext(), TypographerContextSkia::Make(), test_allocator);
+      GetContext(), TypographerContextSkia::Make(), render_target_allocator);
   pass->AddEntity(std::move(entity));
-  test_allocator->ResetDescriptors();
 
   EXPECT_TRUE(pass->Render(content_context, rt));
 
-  if (test_allocator->GetDescriptors().size() == 6u) {
-    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(1000, 1000));
+  auto contains_size = [&render_target_allocator](ISize size) -> bool {
+    return std::find_if(render_target_allocator->GetRenderTargetDataBegin(),
+                        render_target_allocator->GetRenderTargetDataEnd(),
+                        [&size](const auto& data) {
+                          return data.config.size == size;
+                        }) != render_target_allocator->GetRenderTargetDataEnd();
+  };
 
-    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
-  } else if (test_allocator->GetDescriptors().size() == 7u) {
-    // Onscreen render target.
-    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
-
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[6].size, ISize(200, 200));
-  } else if (test_allocator->GetDescriptors().size() == 4u) {
-    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
-
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
-  } else {
-    EXPECT_TRUE(false);
-  }
+  EXPECT_TRUE(contains_size(ISize(1000, 1000)))
+      << "The root texture wasn't allocated";
+  EXPECT_TRUE(contains_size(ISize(200, 200)))
+      << "The ColorBurned texture wasn't allocated (100x100 scales up 2x)";
 }
 
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
@@ -2757,6 +2718,44 @@ TEST_P(EntityTest, FramebufferFetchVulkanBindingOffsetIsTheSame) {
   EXPECT_TRUE(expected_layout);
 }
 #endif
+
+TEST_P(EntityTest, FillPathGeometryGetPositionBufferReturnsExpectedMode) {
+  RenderTarget target;
+  testing::MockRenderPass mock_pass(GetContext(), target);
+
+  auto get_result = [this, &mock_pass](const Path& path) {
+    auto geometry = Geometry::MakeFillPath(
+        path, /* inner rect */ Rect::MakeLTRB(0, 0, 100, 100));
+    return geometry->GetPositionBuffer(*GetContentContext(), {}, mock_pass);
+  };
+
+  // Convex path
+  {
+    GeometryResult result =
+        get_result(PathBuilder{}
+                       .AddRect(Rect::MakeLTRB(0, 0, 100, 100))
+                       .SetConvexity(Convexity::kConvex)
+                       .TakePath());
+    EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
+  }
+
+  // Concave path
+  {
+    Path path = PathBuilder{}
+                    .MoveTo({0, 0})
+                    .LineTo({100, 0})
+                    .LineTo({100, 100})
+                    .LineTo({50, 50})
+                    .Close()
+                    .TakePath();
+    GeometryResult result = get_result(path);
+    if constexpr (ContentContext::kEnableStencilThenCover) {
+      EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
+    } else {
+      EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
+    }
+  }
+}
 
 }  // namespace testing
 }  // namespace impeller

@@ -116,7 +116,7 @@ source_set("fml") {
     "$dart_src/runtime:dart_api",
 
     # These need to be in sync with the Fuchsia buildroot.
-    "//third_party/icu",
+    "//flutter/third_party/icu",
   ]
 
   if (enable_backtrace) {
@@ -124,7 +124,7 @@ source_set("fml") {
     deps += [ "//third_party/abseil-cpp/absl/debugging:symbolize" ]
   }
 
-  configs += [ "//third_party/icu:icu_config" ]
+  configs += [ "//flutter/third_party/icu:icu_config" ]
 
   public_configs = [
     "//flutter:config",
@@ -408,7 +408,8 @@ if (enable_unittests) {
         "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
       ]
 
-      # This is needed for //third_party/googletest for linking zircon symbols.
+      # This is needed for //flutter/third_party/googletest for linking zircon
+      # symbols.
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
