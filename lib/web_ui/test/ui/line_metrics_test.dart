@@ -29,7 +29,7 @@ Future<void> testMain() async {
     expect(paragraph.getLineMetricsAt(0), isNull);
     expect(paragraph.numberOfLines, 0);
     expect(paragraph.getLineNumberAt(0), isNull);
-  });
+  }, skip: isHtml); // https://github.com/flutter/flutter/issues/144412
 
   test('Basic line related metrics', () {
     const double fontSize = 10;
