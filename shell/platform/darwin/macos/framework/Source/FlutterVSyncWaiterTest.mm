@@ -70,16 +70,23 @@ TEST(FlutterVSyncWaiterTest, FirstVSyncIsSynthesized) {
     __block CFTimeInterval timestamp = 0;
     __block CFTimeInterval targetTimestamp = 0;
     __block size_t baton = 0;
+    const uintptr_t kWarmUpBaton = 0xFFFFFFFF;
     FlutterVSyncWaiter* waiter = [[FlutterVSyncWaiter alloc]
         initWithDisplayLink:displayLink
                       block:^(CFTimeInterval _timestamp, CFTimeInterval _targetTimestamp,
                               uintptr_t _baton) {
+                        if (_baton == kWarmUpBaton) {
+                          return;
+                        }
                         timestamp = _timestamp;
                         targetTimestamp = _targetTimestamp;
                         baton = _baton;
                         EXPECT_TRUE(CACurrentMediaTime() >= _timestamp - kTimerLatencyCompensation);
                         CFRunLoopStop(CFRunLoopGetCurrent());
                       }];
+
+    [waiter waitForVSync:kWarmUpBaton];
+
     // Reference vsync to setup phase.
     CFTimeInterval now = CACurrentMediaTime();
     // CVDisplayLink callback is called one and a half frame before the target.
@@ -112,6 +119,7 @@ TEST(FlutterVSyncWaiterTest, FirstVSyncIsSynthesized) {
 TEST(FlutterVSyncWaiterTest, VSyncWorks) {
   TestDisplayLink* displayLink = [[TestDisplayLink alloc] init];
   displayLink.nominalOutputRefreshPeriod = 1.0 / 60.0;
+  const uintptr_t kWarmUpBaton = 0xFFFFFFFF;
 
   struct Entry {
     CFTimeInterval timestamp;
@@ -125,9 +133,14 @@ TEST(FlutterVSyncWaiterTest, VSyncWorks) {
                     block:^(CFTimeInterval timestamp, CFTimeInterval targetTimestamp,
                             uintptr_t baton) {
                       entries.push_back({timestamp, targetTimestamp, baton});
+                      if (baton == kWarmUpBaton) {
+                        return;
+                      }
                       EXPECT_TRUE(CACurrentMediaTime() >= timestamp - kTimerLatencyCompensation);
                       CFRunLoopStop(CFRunLoopGetCurrent());
                     }];
+
+  [waiter waitForVSync:kWarmUpBaton];
 
   // Reference vsync to setup phase.
   CFTimeInterval now = CACurrentMediaTime();
@@ -157,14 +170,20 @@ TEST(FlutterVSyncWaiterTest, VSyncWorks) {
   CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.02, NO);
   ASSERT_TRUE(displayLink.paused);
 
-  EXPECT_EQ(entries.size(), size_t(3));
-  EXPECT_DOUBLE_EQ(entries[0].timestamp, now + displayLink.nominalOutputRefreshPeriod);
-  EXPECT_DOUBLE_EQ(entries[0].targetTimestamp, now + 2 * displayLink.nominalOutputRefreshPeriod);
-  EXPECT_EQ(entries[0].baton, size_t(1));
-  EXPECT_DOUBLE_EQ(entries[1].timestamp, now + 2 * displayLink.nominalOutputRefreshPeriod);
-  EXPECT_DOUBLE_EQ(entries[1].targetTimestamp, now + 3 * displayLink.nominalOutputRefreshPeriod);
-  EXPECT_EQ(entries[1].baton, size_t(2));
-  EXPECT_DOUBLE_EQ(entries[2].timestamp, now + 3 * displayLink.nominalOutputRefreshPeriod);
-  EXPECT_DOUBLE_EQ(entries[2].targetTimestamp, now + 4 * displayLink.nominalOutputRefreshPeriod);
-  EXPECT_EQ(entries[2].baton, size_t(3));
+  EXPECT_EQ(entries.size(), size_t(4));
+
+  // Warm up frame should be presented as soon as possible.
+  EXPECT_TRUE(fabs(entries[0].timestamp - now) < 0.001);
+  EXPECT_TRUE(fabs(entries[0].targetTimestamp - now) < 0.001);
+  EXPECT_EQ(entries[0].baton, kWarmUpBaton);
+
+  EXPECT_DOUBLE_EQ(entries[1].timestamp, now + displayLink.nominalOutputRefreshPeriod);
+  EXPECT_DOUBLE_EQ(entries[1].targetTimestamp, now + 2 * displayLink.nominalOutputRefreshPeriod);
+  EXPECT_EQ(entries[1].baton, size_t(1));
+  EXPECT_DOUBLE_EQ(entries[2].timestamp, now + 2 * displayLink.nominalOutputRefreshPeriod);
+  EXPECT_DOUBLE_EQ(entries[2].targetTimestamp, now + 3 * displayLink.nominalOutputRefreshPeriod);
+  EXPECT_EQ(entries[2].baton, size_t(2));
+  EXPECT_DOUBLE_EQ(entries[3].timestamp, now + 3 * displayLink.nominalOutputRefreshPeriod);
+  EXPECT_DOUBLE_EQ(entries[3].targetTimestamp, now + 4 * displayLink.nominalOutputRefreshPeriod);
+  EXPECT_EQ(entries[3].baton, size_t(3));
 }

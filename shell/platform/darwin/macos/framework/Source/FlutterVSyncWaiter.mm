@@ -34,11 +34,12 @@
 static const CFTimeInterval kTimerLatencyCompensation = 0.001;
 
 @implementation FlutterVSyncWaiter {
-  std::optional<std::uintptr_t> _pending_baton;
+  std::optional<std::uintptr_t> _pendingBaton;
   FlutterDisplayLink* _displayLink;
   void (^_block)(CFTimeInterval, CFTimeInterval, uintptr_t);
   NSRunLoop* _runLoop;
   CFTimeInterval _lastTargetTimestamp;
+  BOOL _warmUpFrame;
 }
 
 - (instancetype)initWithDisplayLink:(FlutterDisplayLink*)displayLink
@@ -53,6 +54,7 @@ static const CFTimeInterval kTimerLatencyCompensation = 0.001;
     _displayLink.delegate = self;
     // Get at least one callback to initialize _lastTargetTimestamp.
     _displayLink.paused = NO;
+    _warmUpFrame = YES;
   }
   return self;
 }
@@ -71,20 +73,20 @@ static const CFTimeInterval kTimerLatencyCompensation = 0.001;
   CFTimeInterval current = CACurrentMediaTime();
   CFTimeInterval remaining = std::max(minStart - current - kTimerLatencyCompensation, 0.0);
 
-  TRACE_VSYNC("DisplayLinkCallback-Original", _pending_baton.value_or(0));
+  TRACE_VSYNC("DisplayLinkCallback-Original", _pendingBaton.value_or(0));
 
   NSTimer* timer = [NSTimer
       timerWithTimeInterval:remaining
                     repeats:NO
                       block:^(NSTimer* _Nonnull timer) {
-                        if (!_pending_baton.has_value()) {
+                        if (!_pendingBaton.has_value()) {
                           TRACE_VSYNC("DisplayLinkPaused", size_t(0));
                           _displayLink.paused = YES;
                           return;
                         }
-                        TRACE_VSYNC("DisplayLinkCallback-Delayed", _pending_baton.value_or(0));
-                        _block(minStart, targetTimestamp, *_pending_baton);
-                        _pending_baton = std::nullopt;
+                        TRACE_VSYNC("DisplayLinkCallback-Delayed", _pendingBaton.value_or(0));
+                        _block(minStart, targetTimestamp, *_pendingBaton);
+                        _pendingBaton = std::nullopt;
                       }];
   [_runLoop addTimer:timer forMode:NSRunLoopCommonModes];
 }
@@ -106,6 +108,18 @@ static const CFTimeInterval kTimerLatencyCompensation = 0.001;
 
 // Called from UI thread.
 - (void)waitForVSync:(uintptr_t)baton {
+  // CVDisplayLink start -> callback latency is two frames, there is
+  // no need to delay the warm-up frame.
+  if (_warmUpFrame) {
+    _warmUpFrame = NO;
+    TRACE_VSYNC("WarmUpFrame", baton);
+    [[NSRunLoop currentRunLoop] performBlock:^{
+      CFTimeInterval now = CACurrentMediaTime();
+      _block(now, now, baton);
+    }];
+    return;
+  }
+
   // RunLoop is accessed both from main thread and from the display link thread.
   @synchronized(self) {
     if (_runLoop == nil) {
@@ -114,13 +128,13 @@ static const CFTimeInterval kTimerLatencyCompensation = 0.001;
   }
 
   FML_DCHECK(_runLoop == [NSRunLoop currentRunLoop]);
-  if (_pending_baton.has_value()) {
+  if (_pendingBaton.has_value()) {
     FML_LOG(WARNING) << "Engine requested vsync while another was pending";
-    _block(0, 0, *_pending_baton);
-    _pending_baton = std::nullopt;
+    _block(0, 0, *_pendingBaton);
+    _pendingBaton = std::nullopt;
   }
 
-  TRACE_VSYNC("VSyncRequest", _pending_baton.value_or(0));
+  TRACE_VSYNC("VSyncRequest", _pendingBaton.value_or(0));
 
   CFTimeInterval tick_interval = _displayLink.nominalOutputRefreshPeriod;
   if (_displayLink.paused || tick_interval == 0) {
@@ -158,12 +172,12 @@ static const CFTimeInterval kTimerLatencyCompensation = 0.001;
     [_runLoop addTimer:timer forMode:NSRunLoopCommonModes];
     _displayLink.paused = NO;
   } else {
-    _pending_baton = baton;
+    _pendingBaton = baton;
   }
 }
 
 - (void)dealloc {
-  if (_pending_baton.has_value()) {
+  if (_pendingBaton.has_value()) {
     FML_LOG(WARNING) << "Deallocating FlutterVSyncWaiter with a pending vsync";
   }
   [_displayLink invalidate];
