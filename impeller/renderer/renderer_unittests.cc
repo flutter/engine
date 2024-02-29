@@ -874,9 +874,10 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 //     pass.SetVertexBuffer(builder.CreateVertexBuffer(*host_buffer));
 
 //     VS::FrameInfo frame_info;
-//     EXPECT_EQ(pass.GetOrthographicTransform(), Matrix::MakeOrthographic(size));
-//     frame_info.mvp = pass.GetOrthographicTransform();
-//     VS::BindFrameInfo(pass, host_buffer->EmplaceUniform(frame_info));
+//     EXPECT_EQ(pass.GetOrthographicTransform(),
+//     Matrix::MakeOrthographic(size)); frame_info.mvp =
+//     pass.GetOrthographicTransform(); VS::BindFrameInfo(pass,
+//     host_buffer->EmplaceUniform(frame_info));
 
 //     FS::FragInfo fs_uniform;
 //     fs_uniform.texture_size = Point(size);
