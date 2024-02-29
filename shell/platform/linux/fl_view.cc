@@ -524,8 +524,8 @@ static GdkGLContext* create_context_cb(FlView* self) {
   self->renderer =
       fl_renderer_gdk_new(gtk_widget_get_parent_window(GTK_WIDGET(self)));
   self->engine = fl_engine_new(self->project, FL_RENDERER(self->renderer));
-  fl_engine_set_update_semantics_handler(
-      self->engine, update_semantics_cb, self, nullptr);
+  fl_engine_set_update_semantics_handler(self->engine, update_semantics_cb,
+                                         self, nullptr);
   fl_engine_set_on_pre_engine_restart_handler(
       self->engine, on_pre_engine_restart_cb, self, nullptr);
 
