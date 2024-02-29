@@ -139,32 +139,32 @@ void testMain() {
       final FlutterEngineInitializer engineInitializer = bootstrap.prepareEngineInitializer();
 
       final Object appInitializer = await promiseToFuture<Object>(callMethod<Object>(
-          engineInitializer,
-          'initializeEngine',
-          [jsify(<String, Object?>{
-            'multiViewEnabled': true,
-          })]
+        engineInitializer,
+        'initializeEngine',
+        <dynamic>[jsify(<String, Object?>{
+          'multiViewEnabled': true,
+        })]
       ));
       final Object maybeApp = await promiseToFuture<Object>(callMethod<Object>(
-          appInitializer,
-          'runApp',
-          <Object?>[]
+        appInitializer,
+        'runApp',
+        <Object?>[]
       ));
-      final Object viewId = await promiseToFuture<Object>(callMethod<Object>(
-          maybeApp,
-          'addView',
-          [jsify(<String, Object?>{
-            'hostElement': createDomElement('div'),
-          })]
-      ));
-      expect(bootstrap.viewManager[viewId as int], isNotNull);
+      final int viewId = callMethod<num>(
+        maybeApp,
+        'addView',
+        <dynamic>[jsify(<String, Object?>{
+          'hostElement': createDomElement('div'),
+        })]
+      ).toInt();
+      expect(bootstrap.viewManager[viewId], isNotNull);
 
-      await promiseToFuture<Object>(callMethod<Object>(
-          maybeApp,
-          'removeView',
-          [viewId]
-      ));
-      expect(bootstrap.viewManager[viewId as int], isNull);
+      callMethod<Object>(
+        maybeApp,
+        'removeView',
+        <Object>[viewId]
+      );
+      expect(bootstrap.viewManager[viewId], isNull);
     });
   });
 }
