@@ -62,6 +62,10 @@ void Animator::BeginFrame(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
   TRACE_EVENT_ASYNC_END0("flutter", "Frame Request Pending",
                          frame_request_number_);
+  // Clear layer trees rendered out of a frame. Only Animator::Render called
+  // within a frame is used.
+  layer_trees_tasks_.clear();
+
   frame_request_number_++;
 
   frame_timings_recorder_ = std::move(frame_timings_recorder);
@@ -150,7 +154,8 @@ void Animator::Render(int64_t view_id,
   has_rendered_ = true;
 
   if (!frame_timings_recorder_) {
-    // Framework can directly call render with a built scene.
+    // Framework can directly call render with a built scene. A major reason is
+    // to render warm up frames.
     frame_timings_recorder_ = std::make_unique<FrameTimingsRecorder>();
     const fml::TimePoint placeholder_time = fml::TimePoint::Now();
     frame_timings_recorder_->RecordVsync(placeholder_time, placeholder_time);
@@ -165,13 +170,12 @@ void Animator::Render(int64_t view_id,
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
-  std::vector<std::unique_ptr<LayerTreeTask>> layer_trees_tasks;
-  layer_trees_tasks.push_back(std::make_unique<LayerTreeTask>(
+  layer_trees_tasks_.push_back(std::make_unique<LayerTreeTask>(
       view_id, std::move(layer_tree), device_pixel_ratio));
   // Commit the pending continuation.
   PipelineProduceResult result =
       producer_continuation_.Complete(std::make_unique<FrameItem>(
-          std::move(layer_trees_tasks), std::move(frame_timings_recorder_)));
+          std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
 
   if (!result.success) {
     FML_DLOG(INFO) << "No pending continuation to commit";
