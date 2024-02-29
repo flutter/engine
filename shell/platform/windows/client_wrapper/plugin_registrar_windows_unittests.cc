@@ -73,6 +73,15 @@ TEST(PluginRegistrarWindowsTest, GetView) {
   EXPECT_NE(registrar.GetView(), nullptr);
 }
 
+TEST(PluginRegistrarWindowsTest, GetViewById) {
+  testing::ScopedStubFlutterWindowsApi scoped_api_stub(
+      std::make_unique<TestWindowsApi>());
+  auto test_api = static_cast<TestWindowsApi*>(scoped_api_stub.stub());
+  PluginRegistrarWindows registrar(
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1));
+  EXPECT_NE(registrar.GetViewById(123), nullptr);
+}
+
 // Tests that the registrar runs plugin destructors before its own teardown.
 TEST(PluginRegistrarWindowsTest, PluginDestroyedBeforeRegistrar) {
   auto dummy_registrar_handle =

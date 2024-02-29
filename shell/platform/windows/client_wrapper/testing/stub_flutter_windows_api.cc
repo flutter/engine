@@ -198,6 +198,13 @@ FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
   return reinterpret_cast<FlutterDesktopViewRef>(1);
 }
 
+FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetViewById(
+    FlutterDesktopPluginRegistrarRef controller,
+    FlutterDesktopViewId view_id) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return reinterpret_cast<FlutterDesktopViewRef>(1);
+}
+
 void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopWindowProcCallback delegate,
