@@ -223,9 +223,7 @@ std::shared_ptr<Geometry> GetGeometry(
       [&result](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, std::shared_ptr<FilterContents>>) {
-          GeometryExtractor extractor;
-          arg->Visit(&extractor);
-          result = extractor.geometry_;
+          FML_DCHECK(false) << "unimplemented";
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Contents>>) {
           GeometryExtractor extractor;
           arg->Visit(&extractor);
@@ -233,6 +231,7 @@ std::shared_ptr<Geometry> GetGeometry(
         } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture>>) {
           // TODO (https://github.com/flutter/flutter/issues/144266): I think
           // gaussian blurs have to work first for this to happen.
+          FML_DCHECK(false) << "unimplemented";
         } else if constexpr (std::is_same_v<T, Rect>) {
           // Does this ever happen?
           FML_DCHECK(false) << "unimplemented";
