@@ -138,7 +138,7 @@ Future<void> _run({
   final Directory finalLogsDir = logsDir..createSync(recursive: true);
   logsDir = Directory.systemTemp.createTempSync('scenario_app_test_logs.');
   final String logcatPath = join(logsDir.path, 'logcat.txt');
-  
+
   final String screenshotPath = logsDir.path;
   final String apkOutPath = join(scenarioAppPath, 'app', 'outputs', 'apk');
   final File testApk = File(join(apkOutPath, 'androidTest', 'debug', 'app-debug-androidTest.apk'));
@@ -511,7 +511,7 @@ void _withTemporaryCwd(String path, void Function() callback) {
 }
 
 /// Reads the file named `reruns.txt` in the logs directory and returns the number of reruns.
-/// 
+///
 /// If the file does not exist, it is created with the number 1 and that number is returned.
 int _getAndIncrementRerunNumber(String logsDir) {
   final File rerunFile = File(join(logsDir, 'reruns.txt'));
@@ -525,7 +525,7 @@ int _getAndIncrementRerunNumber(String logsDir) {
 }
 
 /// Copies the contents of [source] to [destination], optionally adding a [prefix] to the destination path.
-/// 
+///
 /// This function is used to copy the screenshots from the device to the logs directory.
 void _copyFiles({
   required Directory source,
