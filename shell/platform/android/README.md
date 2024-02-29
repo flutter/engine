@@ -220,7 +220,7 @@ code completion in the `io/flutter` and `test/io/flutter` folders. For example, 
 ![Example](https://github.com/flutter/flutter/assets/168174/387550d4-eab7-4097-9da3-7713a6ec4da7)
 
 To get code coverage displayed in line: go to the test class you wish to run and
-Right click > Modify Run Configuration..., and then in the
-window that pops up click Modify options > Specify classes
-and packages (under "code coverage"). Then, in the new box that
-appears, click the + > Add package, and then add `io.flutter.*`.
+1. Right click > Modify Run Configuration..., 
+2. In the window that pops up click Modify options > Specify classes
+and packages (under "code coverage"). 
+3. In the new box that appears at the bottom of the window, click the + > Add package, and then add `io.flutter.*`.
