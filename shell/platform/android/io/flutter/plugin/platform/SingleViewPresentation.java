@@ -7,14 +7,12 @@ package io.flutter.plugin.platform;
 import static android.content.Context.WINDOW_SERVICE;
 import static android.view.View.OnFocusChangeListener;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.app.Presentation;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.MutableContextWrapper;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
 import android.view.View;
@@ -44,7 +42,6 @@ import io.flutter.Log;
  *   EmbeddedView
  */
 @Keep
-@TargetApi(Build.VERSION_CODES.KITKAT)
 class SingleViewPresentation extends Presentation {
   private static final String TAG = "PlatformViewsController";
 
@@ -116,9 +113,7 @@ class SingleViewPresentation extends Presentation {
         .setFlags(
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      getWindow().setType(WindowManager.LayoutParams.TYPE_PRIVATE_PRESENTATION);
-    }
+    getWindow().setType(WindowManager.LayoutParams.TYPE_PRIVATE_PRESENTATION);
   }
 
   /**

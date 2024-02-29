@@ -21,8 +21,8 @@ TEST_P(RendererTest, CachesRenderPassAndFramebuffer) {
   auto allocator = std::make_shared<RenderTargetAllocator>(
       GetContext()->GetResourceAllocator());
 
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *allocator, {100, 100}, 1);
+  auto render_target =
+      allocator->CreateOffscreenMSAA(*GetContext(), {100, 100}, 1);
   auto resolve_texture =
       render_target.GetColorAttachments().find(0u)->second.resolve_texture;
   auto& texture_vk = TextureVK::Cast(*resolve_texture);

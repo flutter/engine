@@ -68,9 +68,7 @@ static std::vector<vk::ClearValue> GetVKClearValues(
   if (depth.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil ? stencil->clear_stencil : 0u, depth->clear_depth));
-  }
-
-  if (stencil.has_value()) {
+  } else if (stencil.has_value()) {
     clears.emplace_back(VKClearValueFromDepthStencil(
         stencil->clear_stencil, depth ? depth->clear_depth : 0.0f));
   }
@@ -116,10 +114,8 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         depth->store_action                                   //
     );
     TextureVK::Cast(*depth->texture).SetLayout(barrier);
-  }
-
-  if (auto stencil = render_target_.GetStencilAttachment();
-      stencil.has_value()) {
+  } else if (auto stencil = render_target_.GetStencilAttachment();
+             stencil.has_value()) {
     builder.SetStencilAttachment(
         stencil->texture->GetTextureDescriptor().format,        //
         stencil->texture->GetTextureDescriptor().sample_count,  //
@@ -129,11 +125,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
     TextureVK::Cast(*stencil->texture).SetLayout(barrier);
   }
 
-  // There may exist a previous recycled render pass that we can continue using.
-  // This is probably compatible with the render pass we are about to construct,
-  // but I have not conclusively proven this. If there are scenarios that
-  // produce validation warnings, we could use them to determine if we need
-  // additional checks at this point to determine reusability.
   if (recycled_renderpass != nullptr) {
     return recycled_renderpass;
   }
