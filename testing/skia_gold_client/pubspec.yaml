@@ -30,6 +30,8 @@ dev_dependencies:
 dependency_overrides:
   args:
     path: ../../../third_party/dart/third_party/pkg/args
+  async:
+    path: ../../../third_party/dart/third_party/pkg/async
   async_helper:
     path: ../../../third_party/dart/pkg/async_helper
   collection:
