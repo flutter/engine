@@ -42,7 +42,7 @@ vars = {
   # updates to Clang Tidy will not turn the tree red.
   #
   # See https://github.com/flutter/flutter/wiki/Engine-pre‐submits-and-post‐submits#post-submit
-  'clang_version': 'git_revision:725656bdd885483c39f482a01ea25d67acf39c46',
+  'clang_version': 'git_revision:b1d2e8510b58893e58558ffdf3f8ba29c1e25e5a',
 
   # The goma version and the clang version can be tightly coupled. If goma
   # stops working on a clang roll, this may need to be updated using the value
