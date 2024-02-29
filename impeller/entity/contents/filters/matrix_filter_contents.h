@@ -32,9 +32,6 @@ class MatrixFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform) const override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(

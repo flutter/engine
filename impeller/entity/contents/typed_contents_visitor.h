@@ -13,16 +13,7 @@
 #include "impeller/entity/contents/checkerboard_contents.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents_visitor.h"
-#include "impeller/entity/contents/filters/blend_filter_contents.h"
-#include "impeller/entity/contents/filters/border_mask_blur_filter_contents.h"
-#include "impeller/entity/contents/filters/color_matrix_filter_contents.h"
-#include "impeller/entity/contents/filters/linear_to_srgb_filter_contents.h"
-#include "impeller/entity/contents/filters/local_matrix_filter_contents.h"
-#include "impeller/entity/contents/filters/matrix_filter_contents.h"
-#include "impeller/entity/contents/filters/morphology_filter_contents.h"
-#include "impeller/entity/contents/filters/srgb_to_linear_filter_contents.h"
-#include "impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h"
-#include "impeller/entity/contents/framebuffer_blend_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -53,40 +44,17 @@ class TypedContentsVisitor : public ContentsVisitor {
   void Visit(AtlasColorContents* contents) override { DoVisit(contents); }
   void Visit(AtlasContents* contents) override { DoVisit(contents); }
   void Visit(AtlasTextureContents* contents) override { DoVisit(contents); }
-  void Visit(BlendFilterContents* contents) override { DoVisit(contents); }
-  void Visit(BorderMaskBlurFilterContents* contents) override {
-    DoVisit(contents);
-  }
   void Visit(CheckerboardContents* contents) override { DoVisit(contents); }
   void Visit(ClipContents* contents) override { DoVisit(contents); }
   void Visit(ClipRestoreContents* contents) override { DoVisit(contents); }
-  void Visit(ColorMatrixFilterContents* contents) override {
-    DoVisit(contents);
-  }
   void Visit(ColorSourceContents* contents) override { DoVisit(contents); }
-  void Visit(DirectionalMorphologyFilterContents* contents) override {
-    DoVisit(contents);
-  }
-  void Visit(GaussianBlurFilterContents* contents) override {
-    DoVisit(contents);
-  }
-  void Visit(LinearToSrgbFilterContents* contents) override {
-    DoVisit(contents);
-  }
-  void Visit(LocalMatrixFilterContents* contents) override {
-    DoVisit(contents);
-  }
-  void Visit(MatrixFilterContents* contents) override { DoVisit(contents); }
+  void Visit(FilterContents* contents) override { DoVisit(contents); }
   void Visit(SolidRRectBlurContents* contents) override { DoVisit(contents); }
-  void Visit(SrgbToLinearFilterContents* contents) override {
-    DoVisit(contents);
-  }
   void Visit(TextContents* contents) override { DoVisit(contents); }
   void Visit(TextureContents* contents) override { DoVisit(contents); }
   void Visit(VerticesColorContents* contents) override { DoVisit(contents); }
   void Visit(VerticesContents* contents) override { DoVisit(contents); }
   void Visit(VerticesUVContents* contents) override { DoVisit(contents); }
-  void Visit(YUVToRGBFilterContents* contents) override { DoVisit(contents); }
 };
 
 }  // namespace impeller

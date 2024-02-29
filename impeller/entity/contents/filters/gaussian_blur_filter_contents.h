@@ -82,9 +82,6 @@ class GaussianBlurFilterContents final : public FilterContents {
   /// equation that puts the minima there and a f(0)=1.
   static Scalar ScaleSigma(Scalar sigma);
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   // |FilterContents|
   std::optional<Entity> RenderFilter(
