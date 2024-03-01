@@ -116,7 +116,9 @@ void Animator::BeginFrame(
   dart_frame_deadline_ = frame_target_time.ToEpochDelta();
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
+}
 
+void Animator::EndFrame() {
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
     // This is a heuristic that is meant to avoid giving false positives to the
@@ -143,9 +145,6 @@ void Animator::BeginFrame(
         },
         kNotifyIdleTaskWaitTime);
   }
-}
-
-void Animator::EndFrame() {
 }
 
 void Animator::Render(int64_t view_id,
@@ -270,7 +269,9 @@ void Animator::AwaitVSync() {
 }
 
 void Animator::EndWarmUpFrame() {
-  EndFrame();
+  if (!layer_trees_tasks_.empty()) {
+    EndFrame();
+  }
 }
 
 void Animator::ScheduleSecondaryVsyncCallback(uintptr_t id,
