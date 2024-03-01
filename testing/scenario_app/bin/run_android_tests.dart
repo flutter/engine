@@ -532,13 +532,9 @@ void _copyFiles({
   required Directory destination,
   String prefix = '',
 }) {
-  for (final FileSystemEntity entity in source.listSync(recursive: true)) {
+  for (final FileSystemEntity entity in source.listSync()) {
     if (entity is File) {
-      final String relativePath = relative(entity.path, from: source.path);
-      final String destinationPath = join(destination.path, prefix, relativePath);
-      final File destinationFile = File(destinationPath);
-      destinationFile.createSync(recursive: true);
-      destinationFile.writeAsBytesSync(entity.readAsBytesSync());
+      entity.copySync(join(destination.path, prefix + basename(entity.path)));
     }
   }
 }
