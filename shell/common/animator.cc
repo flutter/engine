@@ -119,6 +119,23 @@ void Animator::BeginFrame(
 }
 
 void Animator::EndFrame() {
+  if (!layer_trees_tasks_.empty()) {
+    // Commit the pending continuation.
+    PipelineProduceResult result =
+        producer_continuation_.Complete(std::make_unique<FrameItem>(
+            std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
+
+    if (!result.success) {
+      FML_DLOG(INFO) << "No pending continuation to commit";
+    } else if (!result.is_first_item) {
+      // It has been successfully pushed to the pipeline but not as the first
+      // item. Eventually the 'Rasterizer' will consume it, so we don't need to
+      // notify the delegate.
+    } else {
+      delegate_.OnAnimatorDraw(layer_tree_pipeline_);
+    }
+  }
+
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
     // This is a heuristic that is meant to avoid giving false positives to the
@@ -173,20 +190,6 @@ void Animator::Render(int64_t view_id,
   frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
-  // Commit the pending continuation.
-  PipelineProduceResult result =
-      producer_continuation_.Complete(std::make_unique<FrameItem>(
-          std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
-
-  if (!result.success) {
-    FML_DLOG(INFO) << "No pending continuation to commit";
-  } else if (!result.is_first_item) {
-    // It has been successfully pushed to the pipeline but not as the first
-    // item. Eventually the 'Rasterizer' will consume it, so we don't need to
-    // notify the delegate.
-  } else {
-    delegate_.OnAnimatorDraw(layer_tree_pipeline_);
-  }
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {
