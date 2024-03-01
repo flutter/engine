@@ -23,6 +23,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTimeConverter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterVSyncWaiter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
@@ -739,13 +740,14 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 - (void)viewControllerViewDidLoad:(FlutterViewController*)viewController {
   __weak FlutterEngine* weakSelf = self;
+  FlutterTimeConverter* timeConverter = [[FlutterTimeConverter alloc] initWithEngine:self];
   FlutterVSyncWaiter* waiter = [[FlutterVSyncWaiter alloc]
       initWithDisplayLink:[FlutterDisplayLink displayLinkWithView:viewController.view]
                     block:^(CFTimeInterval timestamp, CFTimeInterval targetTimestamp,
                             uintptr_t baton) {
-                      // CAMediaTime and flutter time are both mach_absolute_time.
-                      uint64_t timeNanos = timestamp * 1000000000;
-                      uint64_t targetTimeNanos = targetTimestamp * 1000000000;
+                      uint64_t timeNanos = [timeConverter CAMediaTimeToEngineTime:timestamp];
+                      uint64_t targetTimeNanos =
+                          [timeConverter CAMediaTimeToEngineTime:targetTimestamp];
                       FlutterEngine* engine = weakSelf;
                       if (engine) {
                         // It is a bit unfortunate that embedder requires OnVSync call on
@@ -826,7 +828,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 - (FlutterCompositor*)createFlutterCompositor {
   _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
-      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
+      [[FlutterViewEngineProvider alloc] initWithEngine:self],
+      [[FlutterTimeConverter alloc] initWithEngine:self], _platformViewController);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);

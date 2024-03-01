@@ -103,6 +103,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterTextureRegistrar.mm",
     "framework/Source/FlutterThreadSynchronizer.h",
     "framework/Source/FlutterThreadSynchronizer.mm",
+    "framework/Source/FlutterTimeConverter.h",
+    "framework/Source/FlutterTimeConverter.mm",
     "framework/Source/FlutterVSyncWaiter.h",
     "framework/Source/FlutterVSyncWaiter.mm",
     "framework/Source/FlutterView.h",

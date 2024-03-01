@@ -10,6 +10,7 @@
 
 #include "flutter/fml/macros.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTimeConverter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -30,6 +31,7 @@ class FlutterCompositor {
   // which are used for presenting and creating backing stores.
   // It must not be null, and is typically FlutterViewEngineProvider.
   explicit FlutterCompositor(id<FlutterViewProvider> view_provider,
+                             FlutterTimeConverter* time_converter,
                              FlutterPlatformViewController* platform_views_controller);
 
   ~FlutterCompositor() = default;
@@ -67,6 +69,9 @@ class FlutterCompositor {
 
   // Where the compositor can query FlutterViews. Must not be null.
   id<FlutterViewProvider> const view_provider_;
+
+  // Converts between engine time and core animation media time.
+  FlutterTimeConverter* const time_converter_;
 
   // The controller used to manage creation and deletion of platform views.
   const FlutterPlatformViewController* platform_view_controller_;

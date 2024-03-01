@@ -10,8 +10,10 @@
 namespace flutter {
 
 FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
+                                     FlutterTimeConverter* time_converter,
                                      FlutterPlatformViewController* platform_view_controller)
     : view_provider_(view_provider),
+      time_converter_(time_converter),
       platform_view_controller_(platform_view_controller),
       mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
   FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
@@ -72,7 +74,7 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
   CFTimeInterval presentation_time = 0;
 
   if (layers_count > 0 && layers[0]->presentation_time != 0) {
-    presentation_time = layers[0]->presentation_time / 1'000'000'000.0;
+    presentation_time = [time_converter_ engineTimeToCAMediaTime:layers[0]->presentation_time];
   }
 
   [view.surfaceManager presentSurfaces:surfaces
