@@ -180,17 +180,13 @@ void Animator::Render(int64_t view_id,
 
   if (!result.success) {
     FML_DLOG(INFO) << "No pending continuation to commit";
-    return;
-  }
-
-  if (!result.is_first_item) {
+  } else if (!result.is_first_item) {
     // It has been successfully pushed to the pipeline but not as the first
     // item. Eventually the 'Rasterizer' will consume it, so we don't need to
     // notify the delegate.
-    return;
+  } else {
+    delegate_.OnAnimatorDraw(layer_tree_pipeline_);
   }
-
-  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {
