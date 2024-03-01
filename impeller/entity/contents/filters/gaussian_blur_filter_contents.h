@@ -8,6 +8,7 @@
 #include <optional>
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
 
@@ -35,10 +36,12 @@ class GaussianBlurFilterContents final : public FilterContents {
   static std::string_view kNoMipsError;
   static const int32_t kBlurFilterRequiredMipCount;
 
-  explicit GaussianBlurFilterContents(Scalar sigma_x,
-                                      Scalar sigma_y,
-                                      Entity::TileMode tile_mode,
-                                      BlurStyle blur_style);
+  explicit GaussianBlurFilterContents(
+      Scalar sigma_x,
+      Scalar sigma_y,
+      Entity::TileMode tile_mode,
+      BlurStyle blur_style,
+      const std::shared_ptr<Geometry>& geometry);
 
   Scalar GetSigmaX() const { return sigma_x_; }
   Scalar GetSigmaY() const { return sigma_y_; }
@@ -96,6 +99,7 @@ class GaussianBlurFilterContents final : public FilterContents {
   const Scalar sigma_y_ = 0.0;
   const Entity::TileMode tile_mode_;
   const BlurStyle blur_style_;
+  std::shared_ptr<Geometry> geometry_;
 };
 
 }  // namespace impeller

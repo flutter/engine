@@ -208,46 +208,12 @@ int ScaleBlurRadius(Scalar radius, Scalar scalar) {
   return static_cast<int>(std::round(radius * scalar));
 }
 
-class GeometryExtractor : public TypedContentsVisitor<ColorSourceContents> {
- public:
-  void TypedVisit(ColorSourceContents* contents) override {
-    geometry_ = contents->GetGeometry();
-  }
-  std::shared_ptr<Geometry> geometry_;
-};
-
-std::shared_ptr<Geometry> GetGeometry(
-    const std::shared_ptr<FilterInput>& input) {
-  std::shared_ptr<Geometry> result;
-  std::visit(
-      [&result](auto&& arg) {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, std::shared_ptr<FilterContents>>) {
-          FML_DCHECK(false) << "unimplemented";
-        } else if constexpr (std::is_same_v<T, std::shared_ptr<Contents>>) {
-          GeometryExtractor extractor;
-          arg->Visit(&extractor);
-          result = extractor.geometry_;
-        } else if constexpr (std::is_same_v<T, std::shared_ptr<Texture>>) {
-          // TODO (https://github.com/flutter/flutter/issues/144266): I think
-          // gaussian blurs have to work first for this to happen.
-          FML_DCHECK(false) << "unimplemented";
-        } else if constexpr (std::is_same_v<T, Rect>) {
-          // Does this ever happen?
-          FML_DCHECK(false) << "unimplemented";
-        } else {
-          static_assert(kAlwaysFalseV<T>, "non-exhaustive visitor!");
-        }
-      },
-      input->GetInput());
-  return result;
-}
-
 Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                       const Entity& entity,
                       const std::shared_ptr<FilterInput>& input,
                       const Snapshot& input_snapshot,
-                      Entity blur_entity) {
+                      Entity blur_entity,
+                      const std::shared_ptr<Geometry>& geometry) {
   if (blur_style == FilterContents::BlurStyle::kNormal) {
     return blur_entity;
   }
@@ -267,7 +233,6 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       return blur_entity;
   }
 
-  std::shared_ptr<Geometry> geometry = GetGeometry(input);
   auto shared_blur_entity = std::make_shared<Entity>(std::move(blur_entity));
   shared_blur_entity->SetNewClipDepth(entity.GetNewClipDepth());
   auto clipper = std::make_unique<ClipContents>();
@@ -303,11 +268,16 @@ GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_x,
     Scalar sigma_y,
     Entity::TileMode tile_mode,
-    BlurStyle blur_style)
+    BlurStyle blur_style,
+    const std::shared_ptr<Geometry>& geometry)
     : sigma_x_(sigma_x),
       sigma_y_(sigma_y),
       tile_mode_(tile_mode),
-      blur_style_(blur_style) {}
+      blur_style_(blur_style),
+      geometry_(geometry) {
+  // This is supposed to be enforced at a higher level.
+  FML_DCHECK(blur_style == BlurStyle::kNormal || geometry);
+}
 
 // This value was extracted from Skia, see:
 //  * https://github.com/google/skia/blob/d29cc3fe182f6e8a8539004a6a4ee8251677a6fd/src/gpu/ganesh/GrBlurUtils.cpp#L2561-L2576
@@ -547,7 +517,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   return ApplyBlurStyle(blur_style_, entity, inputs[0], input_snapshot.value(),
-                        std::move(blur_output_entity.value()));
+                        std::move(blur_output_entity.value()), geometry_);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {

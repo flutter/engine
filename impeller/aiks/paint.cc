@@ -129,7 +129,7 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   if (color_source_contents->IsSolidColor() && !color_filter) {
     return FilterContents::MakeGaussianBlur(
         FilterInput::Make(color_source_contents), sigma, sigma, style,
-        Entity::TileMode::kDecal);
+        Entity::TileMode::kDecal, color_source_contents->GetGeometry());
   }
 
   /// 1. Create an opaque white mask of the original geometry.
