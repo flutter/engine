@@ -486,7 +486,7 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
 
- std::optional<RenderTarget::AttachmentConfig> depth_stencil_config =
+  std::optional<RenderTarget::AttachmentConfig> depth_stencil_config =
       depth_stencil_enabled ? RenderTarget::kDefaultStencilAttachmentConfig
                             : std::optional<RenderTarget::AttachmentConfig>();
 
