@@ -18,6 +18,10 @@
 
 namespace flutter {
 
+class PlatformViewLayer;
+
+typedef std::pair<PlatformViewLayer, size_t> PlatformViewLayerWithIndex;
+
 // FlutterCompositor creates and manages the backing stores used for
 // rendering Flutter content and presents Flutter content and Platform views.
 // Platform views are not yet supported.
@@ -57,15 +61,14 @@ class FlutterCompositor {
 
  private:
   void PresentPlatformViews(FlutterView* default_base_view,
-                            const FlutterLayer** layers,
-                            size_t layers_count);
+                            const std::vector<PlatformViewLayerWithIndex>& platform_views_layers);
 
   // Presents the platform view layer represented by `layer`. `layer_index` is
   // used to position the layer in the z-axis. If the layer does not have a
   // superview, it will become subview of `default_base_view`.
   FlutterMutatorView* PresentPlatformView(FlutterView* default_base_view,
-                                          const FlutterLayer* layer,
-                                          size_t layer_position);
+                                          const PlatformViewLayer& layer,
+                                          size_t index);
 
   // Where the compositor can query FlutterViews. Must not be null.
   id<FlutterViewProvider> const view_provider_;

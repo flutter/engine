@@ -222,6 +222,19 @@ static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces
   [commandBuffer commit];
   [commandBuffer waitUntilScheduled];
 
+  dispatch_block_t presentBlock = ^{
+    // Get the actual dimensions of the frame (relevant for thread synchronizer).
+    CGSize size = GetRequiredFrameSize(surfaces);
+    [_delegate onPresent:size
+               withBlock:^{
+                 _lastPresentationTime = presentationTime;
+                 [self commit:surfaces];
+                 if (notify != nil) {
+                   notify();
+                 }
+               }];
+  };
+
   if (presentationTime > 0) {
     // Enforce frame pacing. It seems that the target timestamp of CVDisplayLink does not
     // exactly correspond to core animation deadline. Especially with 120hz, setting the frame
@@ -229,32 +242,25 @@ static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces
     // Empirically setting the content in the second half of frame interval seems to work
     // well for both 60hz and 120hz.
     //
-    // The easiest way to ensure that the content is not set too early is to delay raster thread.
-    // At this point raster thread should be idle (the next frame vsync has not been signalled yet).
-    // This will show on a timeline as "FlutterCompositionPresentLayers" but should not cause jank
-    // because the waiting interval is calculated relative to presentation time.
+    // This schedules a timer on current (raster) thread runloop. Raster thread at
+    // this point should be idle (the next frame vsync has not been signalled yet).
     //
-    // Alternative to blocking raster thread would be to copy all presentation info provided by
-    // embedder and schedule a presentation timer. This would require additional coordination with
-    // FlutterThreadSynchronizer.
+    // Alternative could be simply blocking the raster thread, but that would show
+    // as a average_frame_rasterizer_time_millis regresson.
     CFTimeInterval minPresentationTime = (presentationTime + _lastPresentationTime) / 2.0;
     CFTimeInterval now = CACurrentMediaTime();
     if (now < minPresentationTime) {
-      [NSThread sleepForTimeInterval:minPresentationTime - now];
+      // [NSThread sleepForTimeInterval:minPresentationTime - now];
+      NSTimer* timer = [NSTimer timerWithTimeInterval:minPresentationTime - now
+                                              repeats:NO
+                                                block:^(NSTimer* timer) {
+                                                  presentBlock();
+                                                }];
+      [[NSRunLoop currentRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
+      return;
     }
   }
-  _lastPresentationTime = presentationTime;
-
-  // Get the actual dimensions of the frame (relevant for thread synchronizer).
-  CGSize size = GetRequiredFrameSize(surfaces);
-
-  [_delegate onPresent:size
-             withBlock:^{
-               [self commit:surfaces];
-               if (notify != nil) {
-                 notify();
-               }
-             }];
+  presentBlock();
 }
 
 @end
