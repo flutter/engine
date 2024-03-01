@@ -55,7 +55,6 @@ abstract class ViewRasterizer {
     viewEmbedder.frameSize = currentFrameSize;
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize);
-    pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
     final Frame compositorFrame =
         context.acquireFrame(pictureRecorder.recordingCanvas!, viewEmbedder);
 

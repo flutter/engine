@@ -350,7 +350,7 @@ void testMain() {
       //   Render: zero platform views.
       //   Expect: main canvas, no overlays.
       await renderTestScene(viewCount: 0);
-      _expectSceneMatches(<_EmbeddedViewMarker>[_overlay]);
+      _expectSceneMatches(<_EmbeddedViewMarker>[]);
 
       // Frame 3:
       //   Render: less than cache size platform views.
@@ -406,7 +406,7 @@ void testMain() {
       //   Render: zero platform views.
       //   Expect: main canvas, no overlays.
       await renderTestScene(viewCount: 0);
-      _expectSceneMatches(<_EmbeddedViewMarker>[_overlay]);
+      _expectSceneMatches(<_EmbeddedViewMarker>[]);
 
       // Frame 6:
       //   Render: deleted platform views.
@@ -440,7 +440,7 @@ void testMain() {
       //   Expect: success. Just checking the system is not left in a corrupted state.
       await createPlatformView(0, 'test-platform-view');
       await renderTestScene(viewCount: 0);
-      _expectSceneMatches(<_EmbeddedViewMarker>[_overlay]);
+      _expectSceneMatches(<_EmbeddedViewMarker>[]);
 
       for (int i = 0; i < 16; i++) {
         await disposePlatformView(i);
@@ -591,7 +591,6 @@ void testMain() {
       sb.addPlatformView(0, width: 10, height: 10);
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
         _platformView,
       ]);
 
@@ -603,9 +602,7 @@ void testMain() {
       sb.pushOffset(0, 0);
       await renderScene(sb.build());
 
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-      ]);
+      _expectSceneMatches(<_EmbeddedViewMarker>[]);
 
       expect(platformViewsHost.querySelector('flt-platform-view'), isNull);
     });
@@ -658,7 +655,7 @@ void testMain() {
       // ImageDecoder is not supported in Safari or Firefox.
     }, skip: isSafari || isFirefox);
 
-    test('removed the DOM node of an unrendered platform view', () async {
+    test('removes the DOM node of an unrendered platform view', () async {
       ui_web.platformViewRegistry.registerViewFactory(
         'test-platform-view',
         (int viewId) => createDomHTMLDivElement()..id = 'view-0',
@@ -670,7 +667,6 @@ void testMain() {
       sb.addPlatformView(0, width: 10, height: 10);
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
         _platformView,
       ]);
 
@@ -683,7 +679,6 @@ void testMain() {
       sb.addPlatformView(1, width: 10, height: 10);
       await renderScene(sb.build());
       _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
         _platformView,
       ]);
 
@@ -697,9 +692,7 @@ void testMain() {
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       await renderScene(sb.build());
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-      ]);
+      _expectSceneMatches(<_EmbeddedViewMarker>[]);
 
       // The actual contents of the platform view are kept in the dom, until
       // it's actually disposed of!
@@ -761,9 +754,7 @@ void testMain() {
       sb.pop();
       // The below line should not throw an error.
       await renderScene(sb.build());
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-      ]);
+      _expectSceneMatches(<_EmbeddedViewMarker>[]);
 
       await disposePlatformView(0);
     });
@@ -1040,7 +1031,6 @@ void testMain() {
       _platformView,
       _platformView,
       _platformView,
-      _overlay,
     ]);
 
     expect(() {
@@ -1050,6 +1040,51 @@ void testMain() {
       // The following line used to cause a "Concurrent modification during iteration"
       embedder.dispose();
     }, returnsNormally);
+  });
+
+  test('optimizes out overlays when pictures and platform views do not overlap',
+      () async {
+    ui_web.platformViewRegistry.registerViewFactory(
+      'test-view',
+      (int viewId) => createDomHTMLDivElement()..className = 'platform-view',
+    );
+
+    CkPicture rectPicture(ui.Rect rect) {
+      return paintPicture(rect, (CkCanvas canvas) {
+        canvas.drawRect(
+            rect, CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0));
+      });
+    }
+
+    await createPlatformView(0, 'test-view');
+    await createPlatformView(1, 'test-view');
+    await createPlatformView(2, 'test-view');
+
+    // Scene 1: Pictures just overlap with the most recently painted platform
+    // view. Analogous to third-party images with subtitles overlaid. Should
+    // only need one overlay at the end of the scene.
+    final LayerSceneBuilder sb1 = LayerSceneBuilder();
+    sb1.pushOffset(0, 0);
+    sb1.addPlatformView(0,
+        offset: const ui.Offset(10, 10), width: 50, height: 50);
+    sb1.addPicture(
+        ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(12, 12, 10, 10)));
+    sb1.addPlatformView(1,
+        offset: const ui.Offset(70, 10), width: 50, height: 50);
+    sb1.addPicture(
+        ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(72, 12, 10, 10)));
+    sb1.addPlatformView(2,
+        offset: const ui.Offset(130, 10), width: 50, height: 50);
+    sb1.addPicture(
+        ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(132, 12, 10, 10)));
+    final LayerScene scene1 = sb1.build();
+    await renderScene(scene1);
+    _expectSceneMatches(<_EmbeddedViewMarker>[
+      _platformView,
+      _platformView,
+      _platformView,
+      _overlay,
+    ]);
   });
 }
 
