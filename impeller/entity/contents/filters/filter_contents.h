@@ -192,9 +192,6 @@ class FilterContents : public Contents {
   ///         is used in this case.
   virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   /// @brief  Internal utility method for |GetLocalCoverage| that computes
   ///         the output coverage of this filter across the specified inputs,

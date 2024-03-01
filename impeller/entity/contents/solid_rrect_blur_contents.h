@@ -48,9 +48,6 @@ class SolidRRectBlurContents final : public Contents {
   [[nodiscard]] bool ApplyColorFilter(
       const ColorFilterProc& color_filter_proc) override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   std::optional<Rect> rect_;
   Size corner_radii_;

@@ -10,7 +10,6 @@
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/typed_contents_visitor.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/command.h"

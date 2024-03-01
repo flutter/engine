@@ -48,9 +48,6 @@ class ClipContents final : public Contents {
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   bool RenderDepthClip(const ContentContext& renderer,
                        const Entity& entity,
@@ -105,9 +102,6 @@ class ClipRestoreContents final : public Contents {
 
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
-
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
 
  private:
   std::optional<Rect> restore_coverage_;

@@ -47,9 +47,6 @@ class VerticesContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   Scalar alpha_;
   std::shared_ptr<VerticesGeometry> geometry_;
@@ -77,9 +74,6 @@ class VerticesColorContents final : public Contents {
 
   void SetAlpha(Scalar alpha);
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   const VerticesContents& parent_;
   Scalar alpha_ = 1.0;
@@ -104,9 +98,6 @@ class VerticesUVContents final : public Contents {
               RenderPass& pass) const override;
 
   void SetAlpha(Scalar alpha);
-
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
 
  private:
   const VerticesContents& parent_;

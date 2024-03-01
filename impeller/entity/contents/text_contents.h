@@ -58,9 +58,6 @@ class TextContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  // |Contents|
-  void Visit(ContentsVisitor* visitor) override { visitor->Visit(this); }
-
  private:
   std::shared_ptr<TextFrame> frame_;
   Scalar scale_ = 1.0;

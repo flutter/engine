@@ -27862,7 +27862,6 @@ ORIGIN: ../../../flutter/impeller/entity/contents/content_context.cc + ../../../
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/contents.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/contents_visitor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.cc + ../../../flutter/LICENSE
@@ -27921,7 +27920,6 @@ ORIGIN: ../../../flutter/impeller/entity/contents/texture_contents.cc + ../../..
 ORIGIN: ../../../flutter/impeller/entity/contents/texture_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/tiled_texture_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/tiled_texture_contents.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/contents/typed_contents_visitor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/vertices_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/vertices_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity.cc + ../../../flutter/LICENSE
@@ -30700,7 +30698,6 @@ FILE: ../../../flutter/impeller/entity/contents/content_context.cc
 FILE: ../../../flutter/impeller/entity/contents/content_context.h
 FILE: ../../../flutter/impeller/entity/contents/contents.cc
 FILE: ../../../flutter/impeller/entity/contents/contents.h
-FILE: ../../../flutter/impeller/entity/contents/contents_visitor.h
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/blend_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/border_mask_blur_filter_contents.cc
@@ -30759,7 +30756,6 @@ FILE: ../../../flutter/impeller/entity/contents/texture_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/texture_contents.h
 FILE: ../../../flutter/impeller/entity/contents/tiled_texture_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/tiled_texture_contents.h
-FILE: ../../../flutter/impeller/entity/contents/typed_contents_visitor.h
 FILE: ../../../flutter/impeller/entity/contents/vertices_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/vertices_contents.h
 FILE: ../../../flutter/impeller/entity/entity.cc
