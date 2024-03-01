@@ -250,7 +250,6 @@ static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces
     CFTimeInterval minPresentationTime = (presentationTime + _lastPresentationTime) / 2.0;
     CFTimeInterval now = CACurrentMediaTime();
     if (now < minPresentationTime) {
-      // [NSThread sleepForTimeInterval:minPresentationTime - now];
       NSTimer* timer = [NSTimer timerWithTimeInterval:minPresentationTime - now
                                               repeats:NO
                                                 block:^(NSTimer* timer) {
