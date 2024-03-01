@@ -764,7 +764,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
-    msaa_backdrop_entity.SetNewClipDepth(1000); // Just set a big number.
+    msaa_backdrop_entity.SetNewClipDepth(1000);  // Just set a big number.
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
