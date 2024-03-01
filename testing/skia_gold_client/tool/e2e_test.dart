@@ -63,12 +63,12 @@ void main() async {
       pixelCount: 512 * 512,
     ),
     _Digest(
-      name: '${prefix}_.SolidRedSquare',
+      name: '${prefix}_SolidRedSquare',
       source: 'e2e_fixtures/solid_red_square.png',
       pixelCount: 768 * 768,
     ),
     _Digest(
-      name: '${prefix}_.SolidGreenSquare',
+      name: '${prefix}_SolidGreenSquare',
       source: 'e2e_fixtures/solid_green_square.png',
       pixelCount: 1200 * 1200,
     ),
