@@ -29,9 +29,6 @@ namespace {
 // 48 comes from kernel.glsl.
 const int32_t kMaxKernelSize = 48;
 
-template <class>
-inline constexpr bool kAlwaysFalseV = false;
-
 SamplerDescriptor MakeSamplerDescriptor(MinMagFilter filter,
                                         SamplerAddressMode address_mode) {
   SamplerDescriptor sampler_desc;
