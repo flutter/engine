@@ -520,7 +520,7 @@ int _getAndIncrementRerunNumber(String logsDir) {
     return 1;
   }
   final int rerunNumber = int.parse(rerunFile.readAsStringSync()) + 1;
-  rerunFile.writeAsStringSync(rerunNumber.toString());;
+  rerunFile.writeAsStringSync(rerunNumber.toString());
   return rerunNumber;
 }
 
