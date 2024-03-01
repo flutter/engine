@@ -145,6 +145,8 @@ void Animator::EndFrame() {
         },
         kNotifyIdleTaskWaitTime);
   }
+  FML_DCHECK(layer_trees_tasks_.empty());
+  FML_DCHECK(frame_timings_recorder_ == nullptr);
 }
 
 void Animator::Render(int64_t view_id,
@@ -164,6 +166,7 @@ void Animator::Render(int64_t view_id,
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder_, "flutter",
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
+
   layer_trees_tasks_.push_back(std::make_unique<LayerTreeTask>(
       view_id, std::move(layer_tree), device_pixel_ratio));
 
