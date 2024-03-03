@@ -28,7 +28,6 @@
 ../../../flutter/build
 ../../../flutter/ci
 ../../../flutter/common/README.md
-../../../flutter/dart.revision
 ../../../flutter/display_list/benchmarking/dl_complexity_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/dl_color_unittests.cc
@@ -46,7 +45,6 @@
 ../../../flutter/display_list/testing
 ../../../flutter/display_list/utils/dl_matrix_clip_tracker_unittests.cc
 ../../../flutter/docs
-../../../flutter/engine.revision
 ../../../flutter/examples
 ../../../flutter/flow/README.md
 ../../../flutter/flow/diff_context_unittests.cc
@@ -404,7 +402,6 @@
 ../../../flutter/shell/vmservice/.dart_tool
 ../../../flutter/shell/vmservice/pubspec.lock
 ../../../flutter/shell/vmservice/pubspec.yaml
-../../../flutter/skia.revision
 ../../../flutter/sky/packages/sky_engine/.gitignore
 ../../../flutter/sky/packages/sky_engine/LICENSE
 ../../../flutter/sky/packages/sky_engine/README.md

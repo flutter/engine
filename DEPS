@@ -1236,41 +1236,5 @@ hooks = [
       '--as-gclient-hook',
       Var('mac_sdk_min')
     ]
-  },
-  {
-    'name': 'Get Engine git revision',
-    'pattern': '.',
-    'action': [
-      'python3',
-      'src/flutter/build/git_revision.py',
-      '--repository',
-      'src/flutter',
-      '--output',
-      'src/flutter/engine.revision',
-    ]
-  },
-  {
-    'name': 'Get Skia git revision',
-    'pattern': '.',
-    'action': [
-      'python3',
-      'src/flutter/build/git_revision.py',
-      '--repository',
-      'src/flutter/third_party/skia',
-      '--output',
-      'src/flutter/skia.revision',
-    ]
-  },
-  {
-    'name': 'Get Dart git revision',
-    'pattern': '.',
-    'action': [
-      'python3',
-      'src/flutter/build/git_revision.py',
-      '--repository',
-      'src/third_party/dart',
-      '--output',
-      'src/flutter/dart.revision',
-    ]
   }
 ]

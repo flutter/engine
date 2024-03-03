@@ -42,18 +42,10 @@ def main():
   parser.add_argument(
       '--repository', action='store', help='Path to the Git repository.', required=True
   )
-  parser.add_argument(
-      '--output', action='store', help='Write revision to a file at this path instead of printing.'
-  )
 
   args = parser.parse_args()
   repository = os.path.abspath(args.repository)
   version = get_repository_version(repository)
-
-  if args.output:
-    with open(args.output, 'w') as file:
-      file.write(version.strip())
-
   print(version.strip())
 
   return 0
