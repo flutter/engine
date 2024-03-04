@@ -88,9 +88,9 @@
 
 - (void)blockUntilFrameAvailable {
   std::unique_lock<std::mutex> lock(_mutex);
+  [self drain];
 
   _beginResizeWaiting = YES;
-
   while (![self someViewsHaveFrame] && !_shuttingDown) {
     _condBlockBeginResize.wait(lock);
     [self drain];
