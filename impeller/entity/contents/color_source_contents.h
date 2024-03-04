@@ -5,9 +5,12 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_COLOR_SOURCE_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_COLOR_SOURCE_CONTENTS_H_
 
+#include "fml/logging.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/geometry/matrix.h"
 
 namespace impeller {
@@ -110,14 +113,82 @@ class ColorSourceContents : public Contents {
           ContentContextOptions)>;
 
   template <typename VertexShaderT>
-  bool DrawGeometry(GeometryResult geometry_result,
-                    const ContentContext& renderer,
+  bool DrawGeometry(const ContentContext& renderer,
                     const Entity& entity,
                     RenderPass& pass,
                     const PipelineBuilderCallback& pipeline_callback,
                     typename VertexShaderT::FrameInfo frame_info,
-                    const BindFragmentCallback& bind_fragment_callback) const {
+                    const BindFragmentCallback& bind_fragment_callback,
+                    bool enable_uvs = false,
+                    Rect texture_coverage = {},
+                    const Matrix& effect_transform = {}) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
+
+    GeometryResult::Mode geometry_mode = GetGeometry()->GetResultMode();
+    Geometry& geometry = *GetGeometry();
+
+    const bool is_stencil_then_cover =
+        geometry_mode == GeometryResult::Mode::kNonZero ||
+        geometry_mode == GeometryResult::Mode::kEvenOdd;
+    if (is_stencil_then_cover) {
+      pass.SetStencilReference(0);
+
+      /// Stencil preparation draw.
+
+      GeometryResult stencil_geometry_result =
+          GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+      pass.SetVertexBuffer(std::move(stencil_geometry_result.vertex_buffer));
+      options.primitive_type = stencil_geometry_result.type;
+
+      options.blend_mode = BlendMode::kDestination;
+      switch (stencil_geometry_result.mode) {
+        case GeometryResult::Mode::kNonZero:
+          pass.SetCommandLabel("Stencil preparation (NonZero)");
+          options.stencil_mode =
+              ContentContextOptions::StencilMode::kStencilNonZeroFill;
+          break;
+        case GeometryResult::Mode::kEvenOdd:
+          pass.SetCommandLabel("Stencil preparation (EvenOdd)");
+          options.stencil_mode =
+              ContentContextOptions::StencilMode::kStencilEvenOddFill;
+          break;
+        default:
+          FML_UNREACHABLE();
+      }
+      pass.SetPipeline(renderer.GetClipPipeline(options));
+      ClipPipeline::VertexShader::FrameInfo clip_frame_info;
+      clip_frame_info.depth = entity.GetShaderClipDepth();
+      clip_frame_info.mvp = stencil_geometry_result.transform;
+      ClipPipeline::VertexShader::BindFrameInfo(
+          pass, renderer.GetTransientsBuffer().EmplaceUniform(clip_frame_info));
+
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+
+      /// Cover draw.
+
+      options.blend_mode = entity.GetBlendMode();
+      options.stencil_mode = ContentContextOptions::StencilMode::kCoverCompare;
+      std::optional<Rect> maybe_cover_area = GetGeometry()->GetCoverage({});
+      if (!maybe_cover_area.has_value()) {
+        return true;
+      }
+      geometry = RectGeometry(maybe_cover_area.value());
+    }
+
+    GeometryResult geometry_result =
+        enable_uvs
+            ? geometry.GetPositionUVBuffer(texture_coverage, effect_transform,
+                                           renderer, entity, pass)
+            : geometry.GetPositionBuffer(renderer, entity, pass);
+    pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
+    options.primitive_type = geometry_result.type;
+
+    // Take the pre-populated vertex shader uniform struct and set managed
+    // values.
+    frame_info.depth = entity.GetShaderClipDepth();
+    frame_info.mvp = geometry_result.transform;
 
     // If overdraw prevention is enabled (like when drawing stroke paths), we
     // increment the stencil buffer as we draw, preventing overlapping fragments
@@ -127,14 +198,11 @@ class ColorSourceContents : public Contents {
       options.stencil_mode =
           ContentContextOptions::StencilMode::kLegacyClipIncrement;
     }
-    options.primitive_type = geometry_result.type;
-    pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
-    pass.SetStencilReference(entity.GetClipDepth());
-
-    // Take the pre-populated vertex shader uniform struct and set managed
-    // values.
-    frame_info.depth = entity.GetShaderClipDepth();
-    frame_info.mvp = geometry_result.transform;
+    if constexpr (ContentContext::kEnableStencilThenCover) {
+      pass.SetStencilReference(0);
+    } else {
+      pass.SetStencilReference(entity.GetClipDepth());
+    }
 
     VertexShaderT::BindFrameInfo(
         pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -159,42 +227,15 @@ class ColorSourceContents : public Contents {
     if (geometry_result.mode == GeometryResult::Mode::kPreventOverdraw) {
       auto restore = ClipRestoreContents();
       restore.SetRestoreCoverage(GetCoverage(entity));
-      return restore.Render(renderer, entity, pass);
+      if constexpr (ContentContext::kEnableStencilThenCover) {
+        Entity restore_entity = entity.Clone();
+        restore_entity.SetClipDepth(0);
+        return restore.Render(renderer, restore_entity, pass);
+      } else {
+        return restore.Render(renderer, entity, pass);
+      }
     }
     return true;
-  }
-
-  template <typename VertexShaderT>
-  bool DrawPositions(const ContentContext& renderer,
-                     const Entity& entity,
-                     RenderPass& pass,
-                     const PipelineBuilderCallback& pipeline_callback,
-                     typename VertexShaderT::FrameInfo frame_info,
-                     const BindFragmentCallback& bind_pipeline_callback) const {
-    GeometryResult geometry_result =
-        GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
-    return DrawGeometry<VertexShaderT>(std::move(geometry_result), renderer,
-                                       entity, pass, pipeline_callback,
-                                       frame_info, bind_pipeline_callback);
-  }
-
-  template <typename VertexShaderT>
-  bool DrawPositionsAndUVs(
-      Rect texture_coverage,
-      const Matrix& effect_transform,
-      const ContentContext& renderer,
-      const Entity& entity,
-      RenderPass& pass,
-      const PipelineBuilderCallback& pipeline_callback,
-      typename VertexShaderT::FrameInfo frame_info,
-      const BindFragmentCallback& bind_pipeline_callback) const {
-    auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-        texture_coverage, effect_transform, renderer, entity, pass);
-
-    return DrawGeometry<VertexShaderT>(std::move(geometry_result), renderer,
-                                       entity, pass, pipeline_callback,
-                                       frame_info, bind_pipeline_callback);
   }
 
  private:
