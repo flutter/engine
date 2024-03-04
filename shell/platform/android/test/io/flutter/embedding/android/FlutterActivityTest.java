@@ -20,7 +20,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -485,7 +484,7 @@ public class FlutterActivityTest {
   }
 
   @Test
-  @Config(minSdk = 21, maxSdk = Build.VERSION_CODES.P)
+  @Config(minSdk = 21, maxSdk = 28)
   public void fullyDrawn_beforeAndroidQ() {
     Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
     ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
@@ -499,7 +498,7 @@ public class FlutterActivityTest {
   }
 
   @Test
-  @Config(minSdk = Build.VERSION_CODES.Q)
+  @Config(minSdk = 29)
   public void fullyDrawn_fromAndroidQ() {
     Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
     ActivityController<FlutterActivityWithReportFullyDrawn> activityController =

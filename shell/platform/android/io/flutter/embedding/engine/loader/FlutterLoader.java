@@ -203,7 +203,7 @@ public class FlutterLoader {
   }
 
   private static boolean areValidationLayersOnByDefault() {
-    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= 26) {
       return Build.SUPPORTED_ABIS[0].equals("arm64-v8a");
     }
     return false;

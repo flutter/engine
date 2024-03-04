@@ -242,16 +242,16 @@ class AccessibilityViewEmbedder {
     output.setRangeInfo(input.getRangeInfo());
     output.setError(input.getError());
     output.setMaxTextLength(input.getMaxTextLength());
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    if (Build.VERSION.SDK_INT >= 23) {
       output.setContextClickable(input.isContextClickable());
       // TODO(amirh): copy traversal before and after.
       // https://github.com/flutter/flutter/issues/29718
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= 24) {
       output.setDrawingOrder(input.getDrawingOrder());
       output.setImportantForAccessibility(input.isImportantForAccessibility());
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= 26) {
       output.setAvailableExtraData(input.getAvailableExtraData());
       output.setHintText(input.getHintText());
       output.setShowingHintText(input.isShowingHintText());
@@ -447,7 +447,7 @@ class AccessibilityViewEmbedder {
         Log.w(TAG, "can't invoke AccessibiiltyRecord#getSourceNodeId with reflection");
       }
       // Reflection access is not allowed starting Android P on these methods.
-      if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT <= 26) {
         try {
           getParentNodeId = AccessibilityNodeInfo.class.getMethod("getParentNodeId");
         } catch (NoSuchMethodException e) {
@@ -565,7 +565,7 @@ class AccessibilityViewEmbedder {
     // details change from our assumptions in this method, this will silently break.
     @Nullable
     private static Long yoinkParentIdFromParcel(AccessibilityNodeInfo node) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT < 26) {
         Log.w(TAG, "Unexpected Android version. Unable to find the parent ID.");
         return null;
       }

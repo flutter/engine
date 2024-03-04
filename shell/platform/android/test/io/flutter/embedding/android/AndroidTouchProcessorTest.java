@@ -9,7 +9,6 @@ import static org.mockito.Mockito.when;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
@@ -351,7 +350,7 @@ public class AndroidTouchProcessorTest {
   }
 
   @Test
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = 26)
   public void scrollWheelAbove26() {
     // Pointer id must be zero to match actionIndex in mocked event.
     final int pointerId = 0;
@@ -399,7 +398,7 @@ public class AndroidTouchProcessorTest {
   }
 
   @Test
-  @Config(sdk = {Build.VERSION_CODES.N_MR1})
+  @Config(sdk = {25})
   public void scrollWheelBelow26() {
     // Pointer id must be zero to match actionIndex in mocked event.
     final int pointerId = 0;

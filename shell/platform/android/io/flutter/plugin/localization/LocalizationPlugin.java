@@ -79,7 +79,7 @@ public class LocalizationPlugin {
     //
     // LanguageRange and Locale.lookup was added in API 26 and is the preferred way to
     // select a locale. Pre-API 26, we implement a manual locale resolution.
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= 26) {
       // Modern locale resolution using LanguageRange
       // https://developer.android.com/guide/topics/resources/multilingual-support#postN
       List<Locale.LanguageRange> languageRanges = new ArrayList<>();
@@ -104,7 +104,7 @@ public class LocalizationPlugin {
         return platformResolvedLocale;
       }
       return supportedLocales.get(0);
-    } else if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+    } else if (Build.VERSION.SDK_INT >= 24) {
       // Modern locale resolution without languageRange
       // https://developer.android.com/guide/topics/resources/multilingual-support#postN
       LocaleList localeList = context.getResources().getConfiguration().getLocales();
@@ -160,7 +160,7 @@ public class LocalizationPlugin {
   @SuppressWarnings("deprecation")
   public void sendLocalesToFlutter(@NonNull Configuration config) {
     List<Locale> locales = new ArrayList<>();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= 24) {
       LocaleList localeList = config.getLocales();
       int localeCount = localeList.size();
       for (int index = 0; index < localeCount; ++index) {

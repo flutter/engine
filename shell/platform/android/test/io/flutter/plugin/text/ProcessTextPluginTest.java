@@ -15,7 +15,6 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageItemInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.dart.DartExecutor;
@@ -36,8 +35,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 @RunWith(AndroidJUnit4.class)
-@TargetApi(Build.VERSION_CODES.N)
-@RequiresApi(Build.VERSION_CODES.N)
+@TargetApi(24)
+@RequiresApi(24)
 public class ProcessTextPluginTest {
 
   private static void sendToBinaryMessageHandler(

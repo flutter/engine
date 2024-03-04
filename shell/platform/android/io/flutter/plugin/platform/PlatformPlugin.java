@@ -200,7 +200,7 @@ public class PlatformPlugin {
         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         break;
       case HEAVY_IMPACT:
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= 23) {
           view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
         }
         break;
@@ -217,7 +217,7 @@ public class PlatformPlugin {
   @SuppressWarnings("deprecation")
   private void setSystemChromeApplicationSwitcherDescription(
       PlatformChannel.AppSwitcherDescription description) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+    if (Build.VERSION.SDK_INT < 28) {
       activity.setTaskDescription(
           new TaskDescription(description.label, /* icon= */ null, description.color));
     } else {

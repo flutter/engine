@@ -427,7 +427,7 @@ public class AndroidTouchProcessor {
   }
 
   private float getHorizontalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= 26) {
       return ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
     } else {
       // Vertical scroll factor is not a typo. This is what View.java does in android.
@@ -436,7 +436,7 @@ public class AndroidTouchProcessor {
   }
 
   private float getVerticalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= 26) {
       return getVerticalScrollFactorAbove26(context);
     } else {
       return getVerticalScrollFactorPre26(context);

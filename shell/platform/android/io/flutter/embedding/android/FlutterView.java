@@ -385,7 +385,7 @@ public class FlutterView extends FrameLayout
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
     setFocusable(true);
     setFocusableInTouchMode(true);
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= 26) {
       setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
     }
   }
@@ -677,7 +677,7 @@ public class FlutterView extends FrameLayout
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
     // getSystemGestureInsets() was introduced in API 29 and immediately deprecated in 30.
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT == 29) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
       viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
       viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
@@ -689,7 +689,7 @@ public class FlutterView extends FrameLayout
     boolean navigationBarVisible =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    if (Build.VERSION.SDK_INT >= 30) {
       int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
@@ -956,7 +956,7 @@ public class FlutterView extends FrameLayout
   @SuppressLint("SoonBlockedPrivateApi")
   @Nullable
   public View findViewByAccessibilityIdTraversal(int accessibilityId) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT < 29) {
       return findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this);
     }
     // Android Q or later doesn't call this method.
@@ -1032,8 +1032,8 @@ public class FlutterView extends FrameLayout
 
   // -------- Start: Mouse -------
   @Override
-  @TargetApi(Build.VERSION_CODES.N)
-  @RequiresApi(Build.VERSION_CODES.N)
+  @TargetApi(24)
+  @RequiresApi(24)
   @NonNull
   public PointerIcon getSystemPointerIcon(int type) {
     return PointerIcon.getSystemIcon(getContext(), type);
@@ -1098,7 +1098,7 @@ public class FlutterView extends FrameLayout
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= 24) {
       mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
     textInputPlugin =

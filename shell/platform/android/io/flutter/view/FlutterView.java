@@ -234,7 +234,7 @@ public class FlutterView extends SurfaceView
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
     mKeyboardManager = new KeyboardManager(this);
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= 24) {
       mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
     } else {
       mMouseCursorPlugin = null;
@@ -560,7 +560,7 @@ public class FlutterView extends SurfaceView
   @SuppressLint({"InlinedApi", "NewApi"})
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
     // getSystemGestureInsets() was introduced in API 29 and immediately deprecated in 30.
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT == 29) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
       mMetrics.systemGestureInsetTop = systemGestureInsets.top;
       mMetrics.systemGestureInsetRight = systemGestureInsets.right;
@@ -572,7 +572,7 @@ public class FlutterView extends SurfaceView
     boolean navigationBarVisible =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    if (Build.VERSION.SDK_INT >= 30) {
       int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
@@ -789,8 +789,8 @@ public class FlutterView extends SurfaceView
   // -------- Start: Mouse -------
 
   @Override
-  @TargetApi(Build.VERSION_CODES.N)
-  @RequiresApi(Build.VERSION_CODES.N)
+  @TargetApi(24)
+  @RequiresApi(24)
   @NonNull
   public PointerIcon getSystemPointerIcon(int type) {
     return PointerIcon.getSystemIcon(getContext(), type);

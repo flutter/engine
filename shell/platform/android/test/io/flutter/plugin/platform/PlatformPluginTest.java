@@ -210,7 +210,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // ClipboardManager.getText
-  @Config(sdk = Build.VERSION_CODES.P)
+  @Config(sdk = 28)
   @Test
   public void platformPlugin_hasStrings() {
     View fakeDecorView = mock(View.class);
@@ -261,7 +261,7 @@ public class PlatformPluginTest {
     verify(clipboardManager, never()).getText();
   }
 
-  @Config(sdk = Build.VERSION_CODES.Q)
+  @Config(sdk = 29)
   @Test
   public void setNavigationBarDividerColor() {
     View fakeDecorView = mock(View.class);
@@ -335,7 +335,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = Build.VERSION_CODES.R)
+  @Config(sdk = 30)
   @Test
   public void setNavigationBarIconBrightness() {
     View fakeDecorView = mock(View.class);
@@ -382,7 +382,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = Build.VERSION_CODES.R)
+  @Config(sdk = 30)
   @Test
   public void setStatusBarIconBrightness() {
     View fakeDecorView = mock(View.class);
@@ -429,7 +429,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_*, setSystemUiVisibility
-  @Config(sdk = Build.VERSION_CODES.Q)
+  @Config(sdk = 29)
   @Test
   public void setSystemUiMode() {
     View fakeDecorView = mock(View.class);
@@ -542,7 +542,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_*, setSystemUiVisibility
-  @Config(sdk = Build.VERSION_CODES.P)
+  @Config(sdk = 28)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
     View fakeDecorView = mock(View.class);
@@ -563,7 +563,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_NAVIGATION
-  @Config(sdk = Build.VERSION_CODES.Q)
+  @Config(sdk = 29)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
     View fakeDecorView = mock(View.class);

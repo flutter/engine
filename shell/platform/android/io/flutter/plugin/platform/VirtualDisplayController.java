@@ -147,7 +147,7 @@ class VirtualDisplayController {
       getView().postDelayed(onNewSizeFrameAvailable, 0);
       return;
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    if (Build.VERSION.SDK_INT >= 31) {
       resize31(getView(), width, height, onNewSizeFrameAvailable);
       return;
     }

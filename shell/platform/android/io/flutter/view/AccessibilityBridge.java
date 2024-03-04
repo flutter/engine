@@ -324,7 +324,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
           //
           // To reproduce native behavior, see
           // https://developer.android.com/guide/topics/ui/tooltips.
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+          if (Build.VERSION.SDK_INT >= 28) {
             return;
           }
           AccessibilityEvent e =
@@ -478,7 +478,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // Tells Flutter whether the text should be bolded or not. If the user changes bold text
     // setting, the configuration will change and trigger a re-build of the accesibiltyBridge.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    if (Build.VERSION.SDK_INT >= 31) {
       setBoldTextFlag();
     }
 
@@ -616,7 +616,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       if (flutterSemanticsTree.containsKey(ROOT_NODE_ID)) {
         result.addChild(rootAccessibilityView, ROOT_NODE_ID);
       }
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      if (Build.VERSION.SDK_INT >= 24) {
         result.setImportantForAccessibility(false);
       }
       return result;
@@ -652,7 +652,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
     // Accessibility Scanner uses isImportantForAccessibility to decide whether to check
     // or skip this node.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= 24) {
       result.setImportantForAccessibility(isImportant(semanticsNode));
     }
 
@@ -758,7 +758,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setParent(rootAccessibilityView, semanticsNode.parent.id);
     } else {
       if (BuildConfig.DEBUG && semanticsNode.id != ROOT_NODE_ID) {
-        Log.e(TAG, "Semantics node id does not equal ROOT_NODE_ID.");
+        Log.e(TAG, "Sema_ntics node id does not equal ROOT_NODE_ID.");
       }
       result.setParent(rootAccessibilityView);
     }
@@ -881,12 +881,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // for non-scopes-routes semantics nodes.
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
       result.setText(semanticsNode.getValue());
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      if (Build.VERSION.SDK_INT >= 28) {
         result.setHintText(semanticsNode.getTextFieldHint());
       }
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       CharSequence content = semanticsNode.getValueLabelHint();
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+      if (Build.VERSION.SDK_INT < 28) {
         if (semanticsNode.tooltip != null) {
           // For backward compatibility with Flutter SDK before Android API
           // level 28, the tooltip is appended at the end of content description.
@@ -899,7 +899,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       }
     }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    if (Build.VERSION.SDK_INT >= 28) {
       if (semanticsNode.tooltip != null) {
         result.setTooltipText(semanticsNode.tooltip);
       }
@@ -925,7 +925,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     result.setSelected(semanticsNode.hasFlag(Flag.IS_SELECTED));
 
     // Heading support
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    if (Build.VERSION.SDK_INT >= 28) {
       result.setHeading(semanticsNode.hasFlag(Flag.IS_HEADER));
     }
 
@@ -1911,7 +1911,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       // next.
       routeName = " ";
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    if (Build.VERSION.SDK_INT >= 28) {
       setAccessibilityPaneTitle(routeName);
     } else {
       AccessibilityEvent event =
