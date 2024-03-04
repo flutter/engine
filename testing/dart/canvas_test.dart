@@ -1225,7 +1225,7 @@ void main() async {
     expect(paint.maskFilter, equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
     expect(paint.filterQuality, equals(FilterQuality.high));
     expect(paint.colorFilter, equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
-    expect(paint.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));  
+    expect(paint.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
   });
 
   test('Paint, when copied, the original changing does not mutate the copy', () {
@@ -1265,7 +1265,7 @@ void main() async {
     expect(paintCopy.maskFilter, equals(const MaskFilter.blur(BlurStyle.normal, 10.0)));
     expect(paintCopy.filterQuality, equals(FilterQuality.high));
     expect(paintCopy.colorFilter, equals(const ColorFilter.mode(Color(0xFF00FF00), BlendMode.color)));
-    expect(paintCopy.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));  
+    expect(paintCopy.imageFilter, equals(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0)));
   });
 }
 

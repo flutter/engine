@@ -1093,10 +1093,10 @@ final class Paint {
   Paint();
 
   /// Constructs a new [Paint] object with the same fields as [other].
-  /// 
+  ///
   /// Any changes made to the object returned will not affect [other], and
   /// changes to [other] will not affect the object returned.
-  /// 
+  ///
   /// Backends (for example web versus native) may have different performance
   /// characteristics. If the code is performance-sensitive, consider profiling
   /// and falling back to reusing a single [Paint] object if necessary.
