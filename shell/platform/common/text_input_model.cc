@@ -79,8 +79,7 @@ void TextInputModel::UpdateComposingText(const std::u16string& text,
       composing_range_.collapsed() ? selection_ : composing_range_;
   text_.replace(rangeToDelete.start(), rangeToDelete.length(), text);
   composing_range_.set_end(composing_range_.start() + text.length());
-  selection_ = TextRange(selection.start() + composing_range_.start(),
-                         selection.extent() + composing_range_.start());
+  selection_ = TextRange(composing_range_.end());
 }
 
 void TextInputModel::UpdateComposingText(const std::u16string& text) {
