@@ -4,6 +4,7 @@
 
 package dev.flutter.scenariosui;
 
+import android.app.Instrumentation;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import androidx.annotation.NonNull;
@@ -19,7 +20,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class PlatformTextureUiTests {
-  Intent intent;
+  private Instrumentation instrumentation;
+  private Intent intent;
 
   @Rule @NonNull
   public ActivityTestRule<PlatformViewsActivity> activityRule =
@@ -99,6 +101,7 @@ public class PlatformTextureUiTests {
     intent.putExtra("scenario_name", "platform_view_rotate");
     PlatformViewsActivity activity = activityRule.launchActivity(intent);
     activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+    instrumentation.waitForIdleSync();
     ScreenshotUtil.capture(activity, goldName("testPlatformViewRotate"));
   }
 
