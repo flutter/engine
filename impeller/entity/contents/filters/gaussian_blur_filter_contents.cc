@@ -524,7 +524,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
-  auto blur_output_entity = Entity::FromSnapshot(
+  Entity blur_output_entity = Entity::FromSnapshot(
       Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
                .transform = input_snapshot->transform *
                             padding_snapshot_adjustment *
@@ -534,8 +534,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       entity.GetBlendMode(), entity.GetClipDepth());
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
-                        input_snapshot.value(),
-                        std::move(blur_output_entity), mask_geometry_);
+                        input_snapshot.value(), std::move(blur_output_entity),
+                        mask_geometry_);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
