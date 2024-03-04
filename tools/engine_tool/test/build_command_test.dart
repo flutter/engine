@@ -80,7 +80,7 @@ void main() {
     final Logger logger = Logger.test();
     final (Environment env, _) = linuxEnv(logger);
     final List<Build> result = runnableBuilds(env, configs);
-    expect(result.length, equals(2));
+    expect(result.length, equals(6));
     expect(result[0].name, equals('build_name'));
   });
 
